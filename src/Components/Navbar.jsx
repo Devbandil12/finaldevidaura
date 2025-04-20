@@ -265,14 +265,14 @@ const Navbar = () => {
                       </div>
                       {!isLoggedIn && (
                         <div id="loginSignupButtons-2">
-                          <button id="loginButton">
-                            <a
-                              id="login-signup"
-                              onClick={() => navigate("/login")}
-                            >
-                              Login / Sign Up
-                            </a>
-                          </button>
+                          
+
+                            <SignInButton>
+                  <button id="loginButton">
+                    <span className="btn-text">Login / SignUp</span>
+                  </button>
+                </SignInButton>
+                          
                         </div>
                       )}
                       <ul>
