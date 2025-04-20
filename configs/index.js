@@ -4,4 +4,5 @@ import * as schema from "./schema"
 
 const sql = neon(import.meta.env.VITE_DATABASE_URL);
 export const db = drizzle({ client: sql },schema);
+console.log("hello")
 // const result = await db.execute('select 1');
