@@ -34,11 +34,8 @@ export const UserProvider = ({ children }) => {
 
       if (res.length > 0) {
         setUserdetails(res[0]);
-        // console.log("User details:", res[0]);
       }
-    } catch (error) {
-      console.error("Error fetching user details:", error);
-    }
+    } catch (error) {}
   };
 
   // Fetch user's orders with order items and product details
@@ -93,14 +90,10 @@ export const UserProvider = ({ children }) => {
         });
         return acc;
       }, {});
-      console.log(Object.values(groupedOrders));
       setOrders(Object.values(groupedOrders));
 
-      // console.log("Fetched Orders:", res); // Corrected console log
       // setOrders(res);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    }
+    } catch (error) {}
   };
 
   const getaddress = async () => {
@@ -109,7 +102,6 @@ export const UserProvider = ({ children }) => {
         .select()
         .from(addressTable)
         .where(eq(addressTable.userId, userdetails?.id));
-      // console.log(res);
       // setUserAddress(res);
     } catch (error) {}
   };
@@ -120,9 +112,7 @@ export const UserProvider = ({ children }) => {
         .from(UserAddressTable)
         .where(eq(UserAddressTable.userId, userdetails.id));
       setAddress(res);
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
   // Fetch user details when user changes
   useEffect(() => {

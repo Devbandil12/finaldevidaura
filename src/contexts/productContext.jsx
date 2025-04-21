@@ -75,7 +75,6 @@ export const ProductProvider = ({ children }) => {
     getproducts();
     // Optionally load products from localStorage if available.
     // const storedProducts = getproducts();
-    // console.log(storedProducts);
     // if (storedProducts) {
     // }
   }, []);

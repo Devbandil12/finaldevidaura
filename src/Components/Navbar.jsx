@@ -1,6 +1,6 @@
 // src/Components/Navbar.js
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // ------------------------------------------------------------------
@@ -8,10 +8,10 @@ import { useNavigate } from "react-router-dom";
 // ------------------------------------------------------------------
 import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
 import MyOrderIcon from "../assets/order-svgrepo-com.svg";
-// import AddressIcon from "../assets/address-location-map-svgrepo-com.svg";
 import MailUsIcon from "../assets/mail-svgrepo-com.svg";
 import LogOutIcon from "../assets/logout-svgrepo-com.svg";
 import CartIcon from "../assets/cart-svgrepo-com.svg";
+import AdminIcon from "../assets/admin.png";
 import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
 import ProfileIcon from "../assets/user-avatar-svgrepo-com.svg";
 
@@ -21,21 +21,17 @@ import ProfileIcon from "../assets/user-avatar-svgrepo-com.svg";
 import "../style/navbar.css";
 
 // Import Clerk hooks
-import {
-  useUser,
-  useClerk,
-  SignUpButton,
-  SignInButton,
-} from "@clerk/clerk-react";
+import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 // Import Cart Context
 import { CartContext } from "../contexts/CartContext";
+import { UserContext } from "../contexts/UserContext";
 
 const Navbar = () => {
   const { wishlist, cart } = useContext(CartContext);
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
   const { isSignedIn, user } = useUser();
-  const { signOut } = useClerk(); // Access signOut from useClerk
+  const { signOut } = useClerk();
 
   const isLoggedIn = isSignedIn;
 
@@ -45,6 +41,10 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   // State to control navbar visibility (hide on scroll down, show on scroll up)
   const [navbarVisible, setNavbarVisible] = useState(true);
+
+  // Create a ref for the profile container
+  const profileContainerRef = useRef(null);
+  const { userdetails } = useContext(UserContext);
 
   // Update cart count when cart changes
   useEffect(() => {
@@ -84,6 +84,48 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close profile dropdown on clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileContainerRef.current &&
+        !profileContainerRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileContainerRef]);
+
+  // Close profile dropdown when navigating to another route
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setIsProfileOpen(false);
+    };
+
+    // Listen for route changes and close the profile dropdown
+    navigate(handleRouteChange);
+  }, [navigate]);
+
+  // Close profile dropdown when clicking any <li> inside the dropdown
+  const closeProfileDropdownOnClick = () => {
+    setIsProfileOpen(false);
+  };
+
+  // Close profile dropdown on scrolling
+  useEffect(() => {
+    const handleScrollProfile = () => {
+      if (isProfileOpen) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollProfile);
+    return () => window.removeEventListener("scroll", handleScrollProfile);
+  }, [isProfileOpen]);
 
   return (
     <header>
@@ -166,7 +208,7 @@ const Navbar = () => {
             </div>
             {/* Login/SignUp or Profile */}
             {isLoggedIn ? (
-              <div className="profile-icon hidden md:block" id="profile-btn ">
+              <div className="profile-icon" id="profile-btn">
                 <button
                   id="profileButton"
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -177,7 +219,7 @@ const Navbar = () => {
             ) : (
               <div id="loginSignupButtons">
                 <SignInButton>
-                  <button id="loginButton">
+                  <button id="loginButton" onClick={() => navigate("/login")}>
                     <span className="btn-text">Login / SignUp</span>
                   </button>
                 </SignInButton>
@@ -186,41 +228,70 @@ const Navbar = () => {
 
             {/* Profile Dropdown Content */}
             {isLoggedIn && user && (
-              <div className="profile-container">
+              <div className="profile-container" ref={profileContainerRef}>
                 <div
                   className={`profile-content ${
                     isProfileOpen ? "active" : "hidden"
                   }`}
                   id="profileContent"
                 >
-                  <div className="profile-info ">
+                  <div className="desktop-profile-info">
                     <img
-                      src={user.imageUrl || "/assets/default-avatar.png"}
+                      src={UserIcon}
                       alt="User Image"
-                      className="profile-img"
-                      id="profile-img"
+                      className="mob-profile-img"
+                      id="mob-profile-img"
                     />
                     <div className="user-data">
                       <h3 id="profile-name">{user.fullName}</h3>
                       <p id="profile-email">
-                        {user.primaryEmailAddress?.emailAddress}
+                        {user.primaryEmailAddress?.emailAddress ||
+                          user.primaryEmailAddress.emailAddress ||
+                          "N/A"}
                       </p>
                     </div>
                   </div>
                   <ul>
-                    <li>
-                      <a onClick={() => navigate("/myorder")}>My Orders</a>
+                    <li
+                      onClick={() => {
+                        navigate("/myorder");
+                        closeProfileDropdownOnClick();
+                      }}
+                    >
+                      <img src={MyOrderIcon} alt="" />
+                      <a>My Orders</a>
                     </li>
-                    <li id="logout">
-                      <a
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await signOut({ redirectUrl: "/" });
+                    <li
+                      onClick={() => {
+                        navigate("/contact");
+                        closeProfileDropdownOnClick();
+                      }}
+                    >
+                      <img src={MailUsIcon} alt="" />
+                      <a>Contact Us</a>
+                    </li>
+                    {isLoggedIn && user && userdetails?.role === "admin" && (
+                      <li
+                        onClick={() => {
+                          navigate("/admin");
+                          closeProfileDropdownOnClick();
                         }}
-                        id="logout-btn"
                       >
-                        Log Out
-                      </a>
+                        <img src={AdminIcon} alt="" />
+                        <a>Admin Panel</a>
+                      </li>
+                    )}
+                    <li
+                      className="logout"
+                      id="logout-2"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        await signOut({ redirectUrl: "/" });
+                        closeProfileDropdownOnClick();
+                      }}
+                    >
+                      <a id="logout-btn-2">Log Out</a>
+                      <img src={LogOutIcon} alt="" />
                     </li>
                   </ul>
                 </div>
@@ -245,77 +316,93 @@ const Navbar = () => {
                     className={`sidebar ${isOpen ? "open" : ""}`}
                     id="sidebar"
                   >
-                    <div className="profile-info ">
+                    <div className="profile-info">
                       <img
                         src={UserIcon}
                         alt="User Image"
                         className="mob-profile-img"
                         id="mob-profile-img"
                       />
-                      <div className="user-data">
-                        <h3 id="mob-profile-name">
-                          {user?.fullName || "User"}
-                        </h3>
+                      <div
+                        className="user-data"
+                        style={{
+                          visibility: isLoggedIn ? "visible" : "hidden",
+                        }}
+                      >
+                        <h3 id="mob-profile-name">{user?.fullName}</h3>
                         <p id="mob-profile-email">
-                          {user?.primaryPhoneNumber?.phoneNumber ||
-                            (user?.emailAddresses &&
-                              user.emailAddresses[0]?.emailAddress) ||
+                          {user?.primaryEmailAddress?.emailAddress ||
+                            (user?.phoneNumbers &&
+                              user.phoneNumbers[0]?.phoneNumber) ||
                             "N/A"}
                         </p>
                       </div>
                       {!isLoggedIn && (
                         <div id="loginSignupButtons-2">
-                          <button id="loginButton">
-                            <a
-                              id="login-signup"
-                              onClick={() => navigate("/login")}
-                            >
-                              Login / Sign Up
-                            </a>
-                          </button>
+                          <SignInButton>
+                            <button id="loginButton">
+                              <a id="login-signup">Login / Sign Up</a>
+                            </button>
+                          </SignInButton>
                         </div>
                       )}
                       <ul>
-                        <li onClick={() => navigate("/myorder")}>
+                        <li
+                          onClick={() => {
+                            navigate("/myorder");
+                            closeProfileDropdownOnClick();
+                          }}
+                        >
                           <img src={MyOrderIcon} alt="" />
                           <a>My Orders</a>
                         </li>
-                        <li onClick={() => navigate("/wishlist")}>
+                        <li
+                          onClick={() => {
+                            navigate("/wishlist");
+                            closeProfileDropdownOnClick();
+                          }}
+                        >
                           <img src={WishlistIcon} alt="" />
                           <a>Wishlist</a>
                         </li>
-                        <li onClick={() => navigate("/cart")}>
+                        <li
+                          onClick={() => {
+                            navigate("/cart");
+                            closeProfileDropdownOnClick();
+                          }}
+                        >
                           <img src={CartIcon} alt="" />
                           <a>Cart</a>
                         </li>
-                        <li onClick={() => navigate("/admin")}>
-                          <img src={CartIcon} alt="" />
-                          <a>Admin</a>
-                        </li>
-                        <li onClick={() => navigate("/contact")}>
-                          <img src={MailUsIcon} alt="" />
-                          <a>Contact Us</a>
-                        </li>
-                        {isLoggedIn && (
+                        {isLoggedIn && userdetails?.role === "admin" && (
                           <li
-                            className="logout"
-                            id="logout-2"
-                            onClick={async (e) => {
-                              e.preventDefault();
-                              await signOut({ redirectUrl: "/" });
+                            onClick={() => {
+                              navigate("/admin");
+                              closeProfileDropdownOnClick();
                             }}
                           >
-                            <a id="logout-btn-2">Log Out</a>
-                            <img src={LogOutIcon} alt="" />
+                            <img src={AdminIcon} alt="" />
+                            <a>Admin Panel</a>
                           </li>
                         )}
+                        <li
+                          className="logout"
+                          id="logout-2"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await signOut({ redirectUrl: "/" });
+                            closeProfileDropdownOnClick();
+                          }}
+                        >
+                          <a id="logout-btn-2">Log Out</a>
+                          <img src={LogOutIcon} alt="" />
+                        </li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            {/* End Mobile Sidebar */}
           </div>
         </div>
       </nav>

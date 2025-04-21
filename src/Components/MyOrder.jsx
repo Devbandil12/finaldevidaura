@@ -31,11 +31,7 @@ const MyOrders = () => {
 
   // Debug: Log orders data on mount/update.
   useEffect(() => {
-    orders.forEach((order) => {
-      console.log(
-        `Order ${order.orderId}: progressStep = ${order.progressStep}, status = ${order.status}`
-      );
-    });
+    orders.forEach((order) => {});
   }, [orders]);
 
   /**
@@ -75,10 +71,6 @@ const MyOrders = () => {
   const trackOrder = (orderId) => {
     setExpandedOrders((prev) => {
       const newState = { ...prev, [orderId]: !prev[orderId] };
-      console.log(
-        `Toggled expanded state for Order ${orderId}:`,
-        newState[orderId]
-      );
       return newState;
     });
   };
@@ -117,7 +109,6 @@ const MyOrders = () => {
    * @param {number|string} orderId - The unique id of the order.
    */
   const reorder = (orderId) => {
-    console.log("Reorder", orderId);
     // Implement reorder logic here
   };
 
