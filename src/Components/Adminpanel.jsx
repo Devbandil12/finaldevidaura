@@ -1,5 +1,5 @@
 // src/Components/Adminpanel.js
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useLayoutEffect } from "react";
 import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-brand-design_826454-355-removebg-preview.png";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
@@ -83,7 +83,8 @@ const AdminPanel = () => {
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!user) navigate("/");
     user && userdetails();
   }, [user]);
   useEffect(() => {
@@ -234,670 +235,675 @@ const AdminPanel = () => {
     setSelectedOrder(order);
   };
   return (
-    <div className="admin-panel">
-      <div className=" absolute">
-        <ToastContainer />
-      </div>
-      <h1>Admin Panel</h1>
-      <nav className="admin-nav">
-        <button onClick={() => setActiveTab("products")}>Products</button>
-        <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
-        <button onClick={() => setActiveTab("orders")}>Orders</button>
-        <button onClick={() => setActiveTab("users")}>Users</button>
-        <button onClick={() => setActiveTab("queries")}>Queries</button>
-      </nav>
+    user &&
+    userkiDetails.role === "admin" && (
+      <div className="admin-panel">
+        <div className=" absolute">
+          <ToastContainer />
+        </div>
+        <h1>Admin Panel</h1>
+        <nav className="admin-nav">
+          <button onClick={() => setActiveTab("products")}>Products</button>
+          <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
+          <button onClick={() => setActiveTab("orders")}>Orders</button>
+          <button onClick={() => setActiveTab("users")}>Users</button>
+          <button onClick={() => setActiveTab("queries")}>Queries</button>
+        </nav>
 
-      <div className="admin-content">
-        {/* Products Tab */}
-        {openModal && <ImageUploadModal isopen={openModal} />}
-        {activeTab === "products" && (
-          <div className="products-tab">
-            <h2>Manage Products</h2>
-            <button
-              className="admin-btn add-btn"
-              onClick={() => setOpenModal(true)}
-            >
-              Add New Product
-            </button>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Original Price</th>
-                  <th>Discount (%)</th>
-                  <th>Size (ml)</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products?.map((product) =>
-                  editingProduct && editingProduct.id === product.id ? (
-                    <tr key={product.id}>
-                      <td>{product.id}</td>
-                      <td>
-                        <img
-                          src={product?.imageurl}
-                          alt={editingProduct.name}
-                          width="50"
-                          height="50"
-                        />
-                        <br />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
+        <div className="admin-content">
+          {/* Products Tab */}
+          {openModal && <ImageUploadModal isopen={openModal} />}
+          {activeTab === "products" && (
+            <div className="products-tab">
+              <h2>Manage Products</h2>
+              <button
+                className="admin-btn add-btn"
+                onClick={() => setOpenModal(true)}
+              >
+                Add New Product
+              </button>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Original Price</th>
+                    <th>Discount (%)</th>
+                    <th>Size (ml)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {products?.map((product) =>
+                    editingProduct && editingProduct.id === product.id ? (
+                      <tr key={product.id}>
+                        <td>{product.id}</td>
+                        <td>
+                          <img
+                            src={product?.imageurl}
+                            alt={editingProduct.name}
+                            width="50"
+                            height="50"
+                          />
+                          <br />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
 
-                            if (file) {
-                              // Generate a preview URL
-                              const imageUrl = URL.createObjectURL(file);
+                              if (file) {
+                                // Generate a preview URL
+                                const imageUrl = URL.createObjectURL(file);
 
-                              // Update local state with preview
+                                // Update local state with preview
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  img: imageUrl, // Local preview
+                                });
+
+                                // Call the upload function
+                                uploadImage(file);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingProduct.name}
+                            onChange={(e) =>
                               setEditingProduct({
                                 ...editingProduct,
-                                img: imageUrl, // Local preview
-                              });
-
-                              // Call the upload function
-                              uploadImage(file);
+                                name: e.target.value,
+                              })
                             }
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={editingProduct.name}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              name: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.oprice}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              oprice: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.discount}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              discount: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.size}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              size: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => handleProductUpdate(editingProduct)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingProduct(null)}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={product.id}>
-                      <td>{product.id}</td>
-                      <td>
-                        <img
-                          src={product.imageurl}
-                          alt={product.name}
-                          width="50"
-                          height="50"
-                        />
-                      </td>
-                      <td>{product.name}</td>
-                      <td>₹{product.oprice}</td>
-                      <td>{product.discount}</td>
-                      <td>{product.size}</td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingProduct(product)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="admin-btn delete-btn"
-                          onClick={() => handleProductDelete(product.id)}
-                        >
-                          {loading ? "deleting" : "delete"}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                )}
-                {editingProduct &&
-                  !products.find((p) => p.id === editingProduct.id) && (
-                    <tr key={editingProduct.id}>
-                      <td>{editingProduct.id}</td>
-                      <td>
-                        <img
-                          src={editingProduct.img}
-                          alt={editingProduct.name}
-                          width="50"
-                          height="50"
-                        />
-                        <br />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-
-                            if (file) {
-                              // Generate a preview URL
-                              const imageUrl = URL.createObjectURL(file);
-
-                              // Update local state with preview
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.oprice}
+                            onChange={(e) =>
                               setEditingProduct({
                                 ...editingProduct,
-                                img: imageUrl, // Local preview
-                              });
-
-                              // Call the upload function
-                              uploadImage(file);
+                                oprice: parseFloat(e.target.value),
+                              })
                             }
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          value={editingProduct.name}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              name: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.oprice}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              oprice: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.discount}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              discount: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingProduct.size}
-                          onChange={(e) =>
-                            setEditingProduct({
-                              ...editingProduct,
-                              size: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => handleProductUpdate(editingProduct)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingProduct(null)}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.discount}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                discount: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.size}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                size: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => handleProductUpdate(editingProduct)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingProduct(null)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={product.id}>
+                        <td>{product.id}</td>
+                        <td>
+                          <img
+                            src={product.imageurl}
+                            alt={product.name}
+                            width="50"
+                            height="50"
+                          />
+                        </td>
+                        <td>{product.name}</td>
+                        <td>₹{product.oprice}</td>
+                        <td>{product.discount}</td>
+                        <td>{product.size}</td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingProduct(product)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="admin-btn delete-btn"
+                            onClick={() => handleProductDelete(product.id)}
+                          >
+                            {loading ? "deleting" : "delete"}
+                          </button>
+                        </td>
+                      </tr>
+                    )
                   )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  {editingProduct &&
+                    !products.find((p) => p.id === editingProduct.id) && (
+                      <tr key={editingProduct.id}>
+                        <td>{editingProduct.id}</td>
+                        <td>
+                          <img
+                            src={editingProduct.img}
+                            alt={editingProduct.name}
+                            width="50"
+                            height="50"
+                          />
+                          <br />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
 
-        {/* Coupons Tab */}
-        {activeTab === "coupons" && (
-          <div className="coupons-tab">
-            <h2>Manage Coupon Codes</h2>
-            <button
-              className="admin-btn add-btn"
-              onClick={() => {
-                const newCoupon = {
-                  id: generateNewId(coupons),
-                  code: "",
-                  discount: 0,
-                };
-                setEditingCoupon(newCoupon);
-              }}
-            >
-              Add New Coupon
-            </button>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Coupon Code</th>
-                  <th>Discount (%)</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coupons.map((coupon) =>
-                  editingCoupon && editingCoupon.id === coupon.id ? (
-                    <tr key={coupon.id}>
-                      <td>{coupon.id}</td>
-                      <td>
-                        <input
-                          type="text"
-                          value={editingCoupon.code}
-                          onChange={(e) =>
-                            setEditingCoupon({
-                              ...editingCoupon,
-                              code: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingCoupon.discount}
-                          onChange={(e) =>
-                            setEditingCoupon({
-                              ...editingCoupon,
-                              discount: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => handleCouponUpdate(editingCoupon)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingCoupon(null)}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={coupon.id}>
-                      <td>{coupon.id}</td>
-                      <td>{coupon.code}</td>
-                      <td>{coupon.discount}</td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingCoupon(coupon)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="admin-btn delete-btn"
-                          onClick={() => handleCouponDelete(coupon.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                              if (file) {
+                                // Generate a preview URL
+                                const imageUrl = URL.createObjectURL(file);
+
+                                // Update local state with preview
+                                setEditingProduct({
+                                  ...editingProduct,
+                                  img: imageUrl, // Local preview
+                                });
+
+                                // Call the upload function
+                                uploadImage(file);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingProduct.name}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.oprice}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                oprice: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.discount}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                discount: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingProduct.size}
+                            onChange={(e) =>
+                              setEditingProduct({
+                                ...editingProduct,
+                                size: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => handleProductUpdate(editingProduct)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingProduct(null)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Coupons Tab */}
+          {activeTab === "coupons" && (
+            <div className="coupons-tab">
+              <h2>Manage Coupon Codes</h2>
+              <button
+                className="admin-btn add-btn"
+                onClick={() => {
+                  const newCoupon = {
+                    id: generateNewId(coupons),
+                    code: "",
+                    discount: 0,
+                  };
+                  setEditingCoupon(newCoupon);
+                }}
+              >
+                Add New Coupon
+              </button>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Coupon Code</th>
+                    <th>Discount (%)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coupons.map((coupon) =>
+                    editingCoupon && editingCoupon.id === coupon.id ? (
+                      <tr key={coupon.id}>
+                        <td>{coupon.id}</td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingCoupon.code}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                code: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.discount}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                discount: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => handleCouponUpdate(editingCoupon)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingCoupon(null)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={coupon.id}>
+                        <td>{coupon.id}</td>
+                        <td>{coupon.code}</td>
+                        <td>{coupon.discount}</td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingCoupon(coupon)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="admin-btn delete-btn"
+                            onClick={() => handleCouponDelete(coupon.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                  {editingCoupon &&
+                    !coupons.find((c) => c.id === editingCoupon.id) && (
+                      <tr key={editingCoupon.id}>
+                        <td>{editingCoupon.id}</td>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingCoupon.code}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                code: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.discount}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                discount: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => handleCouponUpdate(editingCoupon)}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingCoupon(null)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Orders Tab */}
+          {activeTab === "orders" && (
+            <div className="orders-tab">
+              <h2>Manage Orders</h2>
+              <div className="orders-header">
+                <span>Total Orders: {orders.length}</span>
+                <div className="order-tabs">
+                  {[
+                    "All",
+                    "Order Placed",
+                    "Processing",
+                    "Shipped",
+                    "Delivered",
+                  ].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => setOrderStatusTab(status)}
+                      className={orderStatusTab === status ? "active" : ""}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                <div className="order-search">
+                  <input
+                    type="text"
+                    placeholder="Search orders..."
+                    value={orderSearchQuery}
+                    onChange={(e) => setOrderSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {(() => {
+                const filteredOrders =
+                  orderStatusTab === "All"
+                    ? orders
+                    : orders.filter((order) => order.status === orderStatusTab);
+
+                const searchedOrders = filteredOrders.filter((order) =>
+                  [order?.userName, order?.city, order?.phone].some((field) =>
+                    field
+                      ?.toString()
+                      ?.toLowerCase()
+                      ?.includes(orderSearchQuery.toLowerCase())
                   )
-                )}
-                {editingCoupon &&
-                  !coupons.find((c) => c.id === editingCoupon.id) && (
-                    <tr key={editingCoupon.id}>
-                      <td>{editingCoupon.id}</td>
-                      <td>
-                        <input
-                          type="text"
-                          value={editingCoupon.code}
-                          onChange={(e) =>
-                            setEditingCoupon({
-                              ...editingCoupon,
-                              code: e.target.value,
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          value={editingCoupon.discount}
-                          onChange={(e) =>
-                            setEditingCoupon({
-                              ...editingCoupon,
-                              discount: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          className="admin-btn"
-                          onClick={() => handleCouponUpdate(editingCoupon)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="admin-btn"
-                          onClick={() => setEditingCoupon(null)}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                );
 
-        {/* Orders Tab */}
-        {activeTab === "orders" && (
-          <div className="orders-tab">
-            <h2>Manage Orders</h2>
-            <div className="orders-header">
-              <span>Total Orders: {orders.length}</span>
-              <div className="order-tabs">
-                {[
-                  "All",
+                const steps = [
                   "Order Placed",
                   "Processing",
                   "Shipped",
                   "Delivered",
-                ].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => setOrderStatusTab(status)}
-                    className={orderStatusTab === status ? "active" : ""}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-              <div className="order-search">
+                ];
+
+                if (searchedOrders.length === 0) return <p>No orders found.</p>;
+
+                return searchedOrders.map((order) => (
+                  <div key={order.orderId} className="order-card-admin">
+                    <h3>Order #{order.orderId}</h3>
+                    <p>
+                      <strong>Date:</strong> {order.createdAt}
+                    </p>
+                    <p>
+                      <strong>Total:</strong> ₹{order.totalAmount}
+                    </p>
+                    <p>
+                      <strong>Current Status:</strong> {order.status || "N/A"}
+                    </p>
+
+                    {/* Status Dropdown */}
+                    <div>
+                      <label>
+                        Update Status:
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            handleOrderStatusUpdate(
+                              order.id,
+                              e.target.value,
+                              order.progressStep
+                            )
+                          }
+                        >
+                          {steps.map((step) => (
+                            <option key={step} value={step}>
+                              {step}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    {/* Progress Step Dropdown */}
+                    <div>
+                      <label>
+                        Progress Step:
+                        <select
+                          value={order.progressStep}
+                          onChange={(e) =>
+                            handleOrderStatusUpdate(
+                              order.orderId,
+                              order.status,
+                              parseInt(e.target.value)
+                            )
+                          }
+                        >
+                          {[0, 1, 2, 3].map((step) => (
+                            <option key={step} value={step}>
+                              {step}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    {/* Progress Steps UI */}
+                    {order.progressStep >= 0 && (
+                      <div className="order-progress">
+                        <div className="progress-steps">
+                          {steps.map((step, index) => {
+                            const isCompleted = order.progressStep >= index;
+                            const isCurrent = order.progressStep === index;
+
+                            return (
+                              <div key={index} className="step-wrapper">
+                                <div
+                                  className={`step-samosa ${
+                                    isCompleted ? "completed-pizza" : ""
+                                  } ${isCurrent ? "current-burger" : ""}`}
+                                >
+                                  <div
+                                    className={`step-number-lassi ${
+                                      isCompleted
+                                        ? "bg-green-300 text-white"
+                                        : ""
+                                    }`}
+                                  >
+                                    {index}
+                                  </div>
+                                  <div className="step-label">{step}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Details Button */}
+                    <button
+                      className="view-details-btn-dhamaal"
+                      onClick={() => handleorderdetails(order)}
+                    >
+                      See More Details
+                    </button>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+
+          {/* Popup for Order Details */}
+          {selectedOrder && (
+            <OrderDetailsPopup
+              order={selectedOrder}
+              onClose={() => setSelectedOrder(null)}
+            />
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <div className="users-tab">
+              <h2>User Details</h2>
+              <div className="user-search">
                 <input
                   type="text"
-                  placeholder="Search orders..."
-                  value={orderSearchQuery}
-                  onChange={(e) => setOrderSearchQuery(e.target.value)}
+                  placeholder="Search users by name or phone..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
                 />
               </div>
-            </div>
-
-            {(() => {
-              const filteredOrders =
-                orderStatusTab === "All"
-                  ? orders
-                  : orders.filter((order) => order.status === orderStatusTab);
-
-              const searchedOrders = filteredOrders.filter((order) =>
-                [order?.userName, order?.city, order?.phone].some((field) =>
-                  field
-                    ?.toString()
-                    ?.toLowerCase()
-                    ?.includes(orderSearchQuery.toLowerCase())
-                )
-              );
-
-              const steps = [
-                "Order Placed",
-                "Processing",
-                "Shipped",
-                "Delivered",
-              ];
-
-              if (searchedOrders.length === 0) return <p>No orders found.</p>;
-
-              return searchedOrders.map((order) => (
-                <div key={order.orderId} className="order-card-admin">
-                  <h3>Order #{order.orderId}</h3>
-                  <p>
-                    <strong>Date:</strong> {order.createdAt}
-                  </p>
-                  <p>
-                    <strong>Total:</strong> ₹{order.totalAmount}
-                  </p>
-                  <p>
-                    <strong>Current Status:</strong> {order.status || "N/A"}
-                  </p>
-
-                  {/* Status Dropdown */}
-                  <div>
-                    <label>
-                      Update Status:
-                      <select
-                        value={order.status}
-                        onChange={(e) =>
-                          handleOrderStatusUpdate(
-                            order.id,
-                            e.target.value,
-                            order.progressStep
-                          )
-                        }
-                      >
-                        {steps.map((step) => (
-                          <option key={step} value={step}>
-                            {step}
-                          </option>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <div key={user.id} className="user-card">
+                    <h3>{user.name}</h3>
+                    <p>Phone: {user.phone}</p>
+                    <p>Total Orders: {user.orders.length}</p>
+                    {user.orders.length > 0 && (
+                      <div className="user-orders">
+                        <h4>Orders:</h4>
+                        {user.orders.map((order) => (
+                          <div key={order.orderIdid} className="user-order">
+                            <span>
+                              Order #{order.orderId} - ₹{order.amount} -{" "}
+                              {order.status}
+                            </span>
+                          </div>
                         ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  {/* Progress Step Dropdown */}
-                  <div>
-                    <label>
-                      Progress Step:
-                      <select
-                        value={order.progressStep}
-                        onChange={(e) =>
-                          handleOrderStatusUpdate(
-                            order.orderId,
-                            order.status,
-                            parseInt(e.target.value)
-                          )
-                        }
-                      >
-                        {[0, 1, 2, 3].map((step) => (
-                          <option key={step} value={step}>
-                            {step}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  {/* Progress Steps UI */}
-                  {order.progressStep >= 0 && (
-                    <div className="order-progress">
-                      <div className="progress-steps">
-                        {steps.map((step, index) => {
-                          const isCompleted = order.progressStep >= index;
-                          const isCurrent = order.progressStep === index;
-
-                          return (
-                            <div key={index} className="step-wrapper">
-                              <div
-                                className={`step-samosa ${
-                                  isCompleted ? "completed-pizza" : ""
-                                } ${isCurrent ? "current-burger" : ""}`}
-                              >
-                                <div
-                                  className={`step-number-lassi ${
-                                    isCompleted ? "bg-green-300 text-white" : ""
-                                  }`}
-                                >
-                                  {index}
-                                </div>
-                                <div className="step-label">{step}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Details Button */}
-                  <button
-                    className="view-details-btn-dhamaal"
-                    onClick={() => handleorderdetails(order)}
-                  >
-                    See More Details
-                  </button>
-                </div>
-              ));
-            })()}
-          </div>
-        )}
-
-        {/* Popup for Order Details */}
-        {selectedOrder && (
-          <OrderDetailsPopup
-            order={selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-          />
-        )}
-
-        {/* Users Tab */}
-        {activeTab === "users" && (
-          <div className="users-tab">
-            <h2>User Details</h2>
-            <div className="user-search">
-              <input
-                type="text"
-                placeholder="Search users by name or phone..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-              />
-            </div>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <div key={user.id} className="user-card">
-                  <h3>{user.name}</h3>
-                  <p>Phone: {user.phone}</p>
-                  <p>Total Orders: {user.orders.length}</p>
-                  {user.orders.length > 0 && (
-                    <div className="user-orders">
-                      <h4>Orders:</h4>
-                      {user.orders.map((order) => (
-                        <div key={order.orderIdid} className="user-order">
-                          <span>
-                            Order #{order.orderId} - ₹{order.amount} -{" "}
-                            {order.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p>No users found.</p>
-            )}
-          </div>
-        )}
-        {/* Queries Tab */}
-        {activeTab === "queries" && (
-          <div className="queries-tab">
-            <h2>User Queries</h2>
-            <div className="query-search">
-              <input
-                type="text"
-                placeholder="Search queries by email, phone or date..."
-                value={querySearch}
-                onChange={(e) => setQuerySearch(e.target.value)}
-              />
-            </div>
-            {(() => {
-              // Update filtering to check for email, phone, and date (if query.date exists)
-              const filteredQueries = queries.filter(
-                (q) =>
-                  q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                  q.phone.includes(querySearch) ||
-                  (q.date && q.date.includes(querySearch))
-              );
-              return filteredQueries.length > 0 ? (
-                filteredQueries.map((query, index) => (
-                  <div key={index} className="query-card">
-                    <p>
-                      <strong>Email:</strong> {query.email}
-                    </p>
-                    <p>
-                      <strong>Phone:</strong> {query.phone}
-                    </p>
-                    {query.date && (
-                      <p>
-                        <strong>Date:</strong> {query.date}
-                      </p>
                     )}
-                    <p>
-                      <strong>Message:</strong> {query.message}
-                    </p>
                   </div>
                 ))
               ) : (
-                <p>No queries found.</p>
-              );
-            })()}
-          </div>
-        )}
+                <p>No users found.</p>
+              )}
+            </div>
+          )}
+          {/* Queries Tab */}
+          {activeTab === "queries" && (
+            <div className="queries-tab">
+              <h2>User Queries</h2>
+              <div className="query-search">
+                <input
+                  type="text"
+                  placeholder="Search queries by email, phone or date..."
+                  value={querySearch}
+                  onChange={(e) => setQuerySearch(e.target.value)}
+                />
+              </div>
+              {(() => {
+                // Update filtering to check for email, phone, and date (if query.date exists)
+                const filteredQueries = queries.filter(
+                  (q) =>
+                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
+                    q.phone.includes(querySearch) ||
+                    (q.date && q.date.includes(querySearch))
+                );
+                return filteredQueries.length > 0 ? (
+                  filteredQueries.map((query, index) => (
+                    <div key={index} className="query-card">
+                      <p>
+                        <strong>Email:</strong> {query.email}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {query.phone}
+                      </p>
+                      {query.date && (
+                        <p>
+                          <strong>Date:</strong> {query.date}
+                        </p>
+                      )}
+                      <p>
+                        <strong>Message:</strong> {query.message}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No queries found.</p>
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    )
   );
 };
 
