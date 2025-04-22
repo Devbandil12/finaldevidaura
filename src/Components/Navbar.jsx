@@ -343,7 +343,6 @@ const Navbar = () => {
                               <span className="btn-text">Login / SignUp</span>
                             </button>
                           </SignInButton>
-
                 
                         </div>
                       )}
