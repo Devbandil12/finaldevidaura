@@ -218,7 +218,6 @@ const Navbar = () => {
               </div>
             ) : (
               <div id="loginSignupButtons">
-                <SignInButton>
                   <button id="loginButton" onClick={() => navigate("/login")}>
                     <span className="btn-text">Login / SignUp</span>
                   </button>
