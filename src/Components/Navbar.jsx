@@ -344,11 +344,7 @@ const Navbar = () => {
                             </button>
                           </SignInButton>
 
-                          <SignInButton>
-                            <button id="loginButton">
-                              <a id="login-signup">Login / Sign Up</a>
-                            </button>
-                          </SignInButton>
+                
                         </div>
                       )}
                       <ul>
