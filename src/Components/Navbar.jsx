@@ -218,7 +218,6 @@ const Navbar = () => {
               </div>
             ) : (
               <div id="loginSignupButtons">
-                <SignInButton>
                   <button id="loginButton" onClick={() => navigate("/login")}>
                     <span className="btn-text">Login / SignUp</span>
                   </button>
@@ -344,12 +343,7 @@ const Navbar = () => {
                               <span className="btn-text">Login / SignUp</span>
                             </button>
                           </SignInButton>
-
-                          <SignInButton>
-                            <button id="loginButton">
-                              <a id="login-signup">Login / Sign Up</a>
-                            </button>
-                          </SignInButton>
+                
                         </div>
                       )}
                       <ul>
