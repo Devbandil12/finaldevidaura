@@ -217,12 +217,13 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <div id="loginSignupButtons">
-                  <button id="loginButton" onClick={() => navigate("/login")}>
+              <SignInButton>
+                <div id="loginSignupButtons">
+                  <button id="loginButton">
                     <span className="btn-text">Login / SignUp</span>
                   </button>
-                </SignInButton>
-              </div>
+                </div>
+              </SignInButton>
             )}
 
             {/* Profile Dropdown Content */}
@@ -337,14 +338,13 @@ const Navbar = () => {
                         </p>
                       </div>
                       {!isLoggedIn && (
-                        <div id="loginSignupButtons-2">
-                          <SignInButton>
+                        <SignInButton>
+                          <div id="loginSignupButtons-2">
                             <button id="loginButton">
                               <span className="btn-text">Login / SignUp</span>
                             </button>
-                          </SignInButton>
-                
-                        </div>
+                          </div>
+                        </SignInButton>
                       )}
                       <ul>
                         <li
