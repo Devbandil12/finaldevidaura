@@ -1,5 +1,4 @@
 // src/pages/MyOrders.js
-
 import React, { useContext, useEffect, useState } from "react";
 import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-brand-design_826454-355-removebg-preview.png";
 import "../style/myorder.css";
@@ -29,10 +28,19 @@ const MyOrders = () => {
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cancellationMessages, setCancellationMessages] = useState({});
 
+  // Sort orders by createdAt descending (latest order on top)
+  const sortedOrders = orders
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
   // Debug: Log orders data on mount/update.
   useEffect(() => {
-    orders.forEach((order) => {});
-  }, [orders]);
+    sortedOrders.forEach((order) => {
+      console.log(
+        `Order ${order.orderId}: progressStep = ${order.progressStep}, status = ${order.status}`
+      );
+    });
+  }, [sortedOrders]);
 
   /**
    * Renders progress steps for an order.
@@ -71,6 +79,10 @@ const MyOrders = () => {
   const trackOrder = (orderId) => {
     setExpandedOrders((prev) => {
       const newState = { ...prev, [orderId]: !prev[orderId] };
+      console.log(
+        `Toggled expanded state for Order ${orderId}:`,
+        newState[orderId]
+      );
       return newState;
     });
   };
@@ -94,13 +106,9 @@ const MyOrders = () => {
     }
     setCancellationMessages((prev) => ({ ...prev, [orderId]: "" }));
     if (window.confirm(`Are you sure you want to cancel Order #${orderId}?`)) {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.orderId === orderId
-            ? { ...order, status: "Cancellation in Progress" }
-            : order
-        )
-      );
+      // Update order status in your state or context here.
+      // For example:
+      // setOrders(prevOrders => prevOrders.map(order => order.orderId === orderId ? { ...order, status: "Cancellation in Progress" } : order));
     }
   };
 
@@ -109,18 +117,18 @@ const MyOrders = () => {
    * @param {number|string} orderId - The unique id of the order.
    */
   const reorder = (orderId) => {
+    console.log("Reorder", orderId);
     // Implement reorder logic here
   };
 
   return (
     <div className="myorder-container">
       <h1 className="my-order-title">My Orders</h1>
-      <p>{/* Optionally display order count */}</p>
       <div className="myorders">
         <div className="orders-section">
           <div id="orders-list">
-            {orders && orders.length > 0 ? (
-              orders.map((order, index) => (
+            {sortedOrders && sortedOrders.length > 0 ? (
+              sortedOrders.map((order, index) => (
                 <div key={order.orderId + index} className="order-card">
                   <div className="flex justify-between p-5 font-semibold">
                     <h3>Order #{order.orderId}</h3>
@@ -151,7 +159,6 @@ const MyOrders = () => {
                     ))}
                   </div>
                   <div className="buttons">
-                    {/* Show track button if order is active */}
                     {order.status !== "Cancellation in Progress" &&
                       order.status !== "Order Cancelled" && (
                         <button
@@ -163,7 +170,7 @@ const MyOrders = () => {
                             : "Track Order"}
                         </button>
                       )}
-                    {/* {order.status === "Delivered" ? (
+                    {order.status === "Delivered" ? (
                       <button
                         className="reorder-btn"
                         onClick={() => reorder(order.orderId)}
@@ -185,14 +192,13 @@ const MyOrders = () => {
                       >
                         Cancel Order
                       </button>
-                    )} */}
+                    )}
                   </div>
                   {cancellationMessages[order.orderId] && (
                     <div className="cancel-message">
                       {cancellationMessages[order.orderId]}
                     </div>
                   )}
-                  {/* Simplified progress steps rendering */}
                   {expandedOrders[order.orderId] && (
                     <div className="order-progress">
                       {renderStepProgress(

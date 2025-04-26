@@ -1,10 +1,16 @@
-import { SignUp, SignUpButton } from "@clerk/clerk-react";
+import { SignIn, SignUp, SignUpButton, useUser } from "@clerk/clerk-react";
 import React from "react";
+import { redirect, Router, useNavigate, useRoutes } from "react-router-dom";
 
 function Register() {
+  const { user } = useUser();
+
+  if (user) {
+    redirect("/");
+  }
   return (
-    <div class="flex items-center justify-center h-screen">
-      <div class="p-6 bg-white rounded-lg shadow-lg"></div>
+    <div class=" flex items-center  justify-center  ">
+      <div className=" flex items-center justify-center w-full h-screen "></div>
     </div>
   );
 }

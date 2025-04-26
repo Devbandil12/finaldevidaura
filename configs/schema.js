@@ -9,6 +9,13 @@ export const usersTable = pgTable('users', {
   cartlength:integer("cart_length").default(0),
 
 });
+export const querytable=pgTable("query",{
+  name: text("name").notNull(),
+   email: text("email").notNull(),
+    phone: text("phone").notNull(),
+     message:text("message").notNull(),
+     createdAt:  text('created_at').notNull()
+})
 
 
 export const productsTable = pgTable('products', {

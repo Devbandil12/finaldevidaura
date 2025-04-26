@@ -5,14 +5,19 @@ import { ProductContext } from "../contexts/productContext"; // Global product d
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // Default wishlist icon
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // Filled wishlist icon
 import CartImage from "../assets/cart-svgrepo-com copy.svg"; // Cart icon
-import { useLocation } from "react-router-dom";
+import { Navigate, redirect, useLocation } from "react-router-dom";
 import { db } from "../../configs";
 import {
   addToCartTable,
   usersTable,
   wishlistTable,
 } from "../../configs/schema";
-import { useUser } from "@clerk/clerk-react";
+import {
+  RedirectToSignIn,
+  SignInButton,
+  SignUpButton,
+  useUser,
+} from "@clerk/clerk-react";
 import { and, eq } from "drizzle-orm";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
@@ -244,7 +249,7 @@ const Products = () => {
       setLoading(false);
     }
   };
-
+  const { user } = useUser();
   const removeFromCart = async (product) => {
     const backupCart = [...cart]; // Backup the cart state in case of failure
 
