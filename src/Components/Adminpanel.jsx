@@ -66,8 +66,8 @@ const AdminPanel = () => {
 
   const filteredUsers = usersWithOrders.filter(
     (user) =>
-      user.name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      user.phone.includes(userSearchQuery)
+      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      user?.phone?.includes(userSearchQuery)
   );
 
   const generateNewId = (list) =>
@@ -100,16 +100,19 @@ const AdminPanel = () => {
 
   // --- Product Functions ---
   const handleProductUpdate = async (updatedProduct) => {
+    console.log(updatedProduct);
     try {
       const res = await db
-        .insert(productsTable)
-        .values({
+        .update(productsTable)
+        .set({
+          ...updatedProduct,
           name: updatedProduct.name,
           size: updatedProduct.size,
           discount: updatedProduct.discount,
           price: updatedProduct.oprice,
           imageurl: updatedProduct.imageurl,
         })
+        .where(eq(productsTable.id, updatedProduct.id))
         .returning(productsTable);
       toast.success("Product added Successfully");
     } catch (error) {

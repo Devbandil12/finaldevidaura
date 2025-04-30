@@ -1,5 +1,14 @@
 import { pgTable, serial, text, integer, uuid, varchar, PgSerial, timestamp, unique } from 'drizzle-orm/pg-core';
 
+
+const generateNumericId = () => {
+  const timestamp = Date.now(); // milliseconds since epoch
+  return `DA${timestamp}`;
+};
+
+
+
+
 export const usersTable = pgTable('users', {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text('name').notNull(),
@@ -36,7 +45,7 @@ export const productsTable = pgTable('products', {
 export const addToCartTable = pgTable('add_to_cart', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => usersTable.id),
-  productId: uuid('product_id').notNull().references(() => productsTable.id),
+  productId: uuid('product_id').notNull(),
   quantity: integer('quantity').notNull().default(1),
   addedAt: text('added_at').default('now()'),
 });
@@ -48,12 +57,11 @@ export const wishlistTable = pgTable("wishlist_table", {
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
   productId: uuid("product_id")
-    .notNull()
-    .references(() => productsTable.id, { onDelete: "cascade" }),
+    .notNull(),
 })
 
 export const ordersTable = pgTable('orders', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey().$defaultFn(()=>generateNumericId()),
   userId: uuid('user_id').notNull().references(() => usersTable.id),
   totalAmount: integer('total_amount').notNull(),
   status: text('status').default('order placed'),
@@ -92,9 +100,9 @@ export const UserAddressTable = pgTable('user_address', {
 });
 
 export const orderItemsTable = pgTable('order_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  orderId: uuid('order_id').notNull().references(() => ordersTable.id),
-  productId: uuid('product_id').notNull().references(() => productsTable.id),
+  id: text('id').primaryKey().$defaultFn(()=>generateNumericId()),
+  orderId: text('order_id').notNull().references(() => ordersTable.id),
+  productId: uuid('product_id').notNull(),
   quantity: integer('quantity').notNull().default(1),
   price: integer('price').notNull(), // Price per unit at purchase time
   totalPrice: integer('total_price').notNull(), // quantity * price

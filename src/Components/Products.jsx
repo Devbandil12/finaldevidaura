@@ -143,7 +143,7 @@ const Modal = ({ product, onClose }) => {
                   color: "#222",
                 }}
               >
-                Composition :
+                Top Notes :
               </h3>
               <p style={{ margin: 5 }}>{product.composition}</p>
             </div>
@@ -158,7 +158,7 @@ const Modal = ({ product, onClose }) => {
                   color: "#222",
                 }}
               >
-                Fragrance Notes :
+                Base Notes :
               </h3>
               <p style={{ margin: 5 }}>{product.fragranceNotes}</p>
             </div>
@@ -173,7 +173,7 @@ const Modal = ({ product, onClose }) => {
                   color: "#222",
                 }}
               >
-                Fragrance Type :
+                Heart Notes :
               </h3>
               <p style={{ margin: 5 }}>{product.fragrance}</p>
             </div>

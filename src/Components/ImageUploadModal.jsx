@@ -101,7 +101,7 @@ const ImageUploadModal = ({ isopen }) => {
                   />
                   <input
                     name="composition"
-                    placeholder="Composition"
+                    placeholder="Top Notes"
                     onChange={handleChange}
                     className="p-2 rounded bg-white text-black"
                   />
@@ -113,13 +113,13 @@ const ImageUploadModal = ({ isopen }) => {
                   />
                   <input
                     name="fragrance"
-                    placeholder="Fragrance"
+                    placeholder="Heart Note"
                     onChange={handleChange}
                     className="p-2 rounded bg-white text-black"
                   />
                   <input
                     name="fragranceNotes"
-                    placeholder="Fragrance Notes"
+                    placeholder="Base Notes"
                     onChange={handleChange}
                     className="p-2 rounded bg-white text-black"
                   />
