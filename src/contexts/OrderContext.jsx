@@ -8,7 +8,7 @@ import {
   productsTable,
   usersTable,
 } from "../../configs/schema";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { UserContext } from "./UserContext";
 
 export const OrderContext = createContext();
@@ -16,7 +16,8 @@ export const OrderContext = createContext();
 export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { userdetails } = useContext(UserContext);
-  // Load orders from localStorage
+
+  // Fetch orders + their items from the DB
   const getorders = async () => {
     if (!userdetails) return;
     try {
@@ -30,30 +31,38 @@ export const OrderProvider = ({ children }) => {
           paymentMode: ordersTable.paymentMode,
           totalAmount: ordersTable.totalAmount,
           paymentStatus: ordersTable.paymentStatus,
-          trasactionId: ordersTable.transactionId,
+          transactionId: ordersTable.transactionId,
           status: ordersTable.status,
           progressStep: ordersTable.progressStep,
           createdAt: ordersTable.createdAt,
-
-          address: addressTable.street ?? "No Address",
-          city: addressTable.city ?? "N/A",
-          state: addressTable.state ?? "N/A",
-          zip: addressTable.postalCode ?? "N/A",
-          country: addressTable.country ?? "N/A",
+          date: ordersTable.createdAt, // alias for consistency with front‑end
+          // address fields
+          street: addressTable.street,
+          city: addressTable.city,
+          state: addressTable.state,
+          postalCode: addressTable.postalCode,
+          country: addressTable.country,
         })
         .from(ordersTable)
         .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
-        .leftJoin(addressTable, eq(usersTable.id, addressTable.userId));
+        .leftJoin(
+          addressTable,
+          eq(addressTable.userId, ordersTable.userId)
+        );
 
-      const orderIds = orderQuery.map((order) => order.orderId);
+      const orderIds = orderQuery.map((o) => o.orderId);
+      if (orderIds.length === 0) {
+        setOrders([]);
+        return;
+      }
 
       const productQuery = await db
         .select({
           orderId: orderItemsTable.orderId,
           productId: orderItemsTable.productId,
-          productName: productsTable.name,
           quantity: orderItemsTable.quantity,
           price: orderItemsTable.price,
+          productName: productsTable.name,
         })
         .from(orderItemsTable)
         .innerJoin(
@@ -62,39 +71,53 @@ export const OrderProvider = ({ children }) => {
         )
         .where(inArray(orderItemsTable.orderId, orderIds));
 
-      // 🛑 Use a Map to remove duplicate orders while merging products
-      const orderMap = new Map();
-
-      orderQuery.forEach((order) => {
-        orderMap.set(order.orderId, { ...order, products: [] });
+      // Merge orders + products
+      const map = new Map();
+      orderQuery.forEach((o) => {
+        map.set(o.orderId, { ...o, items: [] });
+      });
+      productQuery.forEach((p) => {
+        const entry = map.get(p.orderId);
+        if (entry) entry.items.push(p);
       });
 
-      productQuery.forEach((product) => {
-        if (orderMap.has(product.orderId)) {
-          orderMap.get(product.orderId).products.push(product);
-        }
-      });
-
-      const ordersWithProducts = Array.from(orderMap.values());
-
-      // console.log("Orders fetched successfully:", ordersWithProducts);
-      setOrders(ordersWithProducts);
-    } catch (error) {
-      // console.error("Error fetching orders:", error);
+      setOrders(Array.from(map.values()));
+    } catch (err) {
+      console.error("Error fetching orders:", err);
     }
   };
 
   useEffect(() => {
-    userdetails && getorders();
+    getorders();
   }, [userdetails]);
 
-  // Persist orders to localStorage
+  // Persist in localStorage as backup
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
 
+  /**
+   * Permanently update an order's status in the DB, then re-fetch.
+   */
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await db
+        .update(ordersTable)
+        .set({
+          status: newStatus,
+          progressStep: newStatus === "Order Cancelled" ? 0 : undefined,
+        })
+        .where(eq(ordersTable.id, orderId));
+      await getorders();
+    } catch (err) {
+      console.error("Failed to update order status:", err);
+    }
+  };
+
   return (
-    <OrderContext.Provider value={{ getorders, orders, setOrders }}>
+    <OrderContext.Provider
+      value={{ getorders, orders, setOrders, updateOrderStatus }}
+    >
       {children}
     </OrderContext.Provider>
   );
