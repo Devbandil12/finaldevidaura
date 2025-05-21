@@ -222,6 +222,13 @@ button {
   margin-left: 5px;
 }
 
+.jhaatu_item{
+  padding: 8px 16px;
+  text-align: center;
+  border-radius: 7px;
+  border-color: #ddd;
+}
+
 /* Responsive Styles */
 @media (max-width: 768px) {
   .myorder-container {
