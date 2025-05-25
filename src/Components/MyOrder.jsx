@@ -2,7 +2,7 @@
 import React, { useContext, useState } from "react";
 import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-brand-design_826454-355-removebg-preview.png";
 import "../style/myorder.css";
-import { OrderContext } from "../contexts/OrderContext";    // ← use this
+import { OrderContext } from "../contexts/OrderContext"; // ← use this
 import { UserContext } from "../contexts/UserContext";
 
 /**
@@ -66,11 +66,14 @@ const MyOrders = () => {
       }));
 
       try {
-        const res = await fetch(`/orders/${orderId}/refund`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refundAmount: refundAmt }),
-        });
+        const res = await fetch(
+          `https://devidaurabackend.onrender.com/${orderId}/refund`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refundAmount: refundAmt }),
+          }
+        );
         if (!res.ok) throw new Error(await res.text());
 
         await updateOrderStatus(orderId, "Order Cancelled");
@@ -117,16 +120,15 @@ const MyOrders = () => {
 
   const renderStepProgress = (progressStep, status) => {
     const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
-    const final =
-      status === "Delivered" ? steps.length + 1 : progressStep ?? 1;
+    const final = status === "Delivered" ? steps.length + 1 : progressStep ?? 1;
     return (
       <div className="progress-steps">
         {steps.map((step, idx) => (
           <div key={idx} className="step-wrapper">
             <div
-              className={`myorder-step ${
-                final > idx + 1 ? "completed" : ""
-              } ${final === idx + 1 ? "current" : ""}`}
+              className={`myorder-step ${final > idx + 1 ? "completed" : ""} ${
+                final === idx + 1 ? "current" : ""
+              }`}
             >
               <div className="step-number">{idx + 1}</div>
               <div className="step-label">{step}</div>
