@@ -4,6 +4,7 @@ import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-b
 import "../style/myorder.css";
 import { OrderContext } from "../contexts/OrderContext"; // ← use this
 import { UserContext } from "../contexts/UserContext";
+import axios from "axios";
 
 /**
  * Formats a date string into a readable format with AM/PM.
@@ -66,15 +67,12 @@ const MyOrders = () => {
       }));
 
       try {
-        const res = await fetch(
-          `https://devidaurabackend.onrender.com/${orderId}/refund`,
+        const res = await axios.post(
+          import.meta.env.VITE_BACKEND_URL + "/refund",
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refundAmount: refundAmt }),
+            orderId: orderId,
           }
         );
-        if (!res.ok) throw new Error(await res.text());
 
         await updateOrderStatus(orderId, "Order Cancelled");
         setCancellationMessages((prev) => ({

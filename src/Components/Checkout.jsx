@@ -305,7 +305,6 @@ function PaymentDetails({
       }
 
       const responseText = await orderResponse.text();
-      console.log(responseText);
       if (!responseText) {
         toast.error("Empty order response");
         return;
