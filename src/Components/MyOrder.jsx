@@ -73,7 +73,6 @@ const MyOrders = () => {
             orderId: orderId,
           }
         );
-        console.log(res.data);
         await updateOrderStatus(orderId, "Order Cancelled");
         setCancellationMessages((prev) => ({
           ...prev,
