@@ -797,7 +797,9 @@ export default function Checkout() {
       const orderItemsData = selectedItems.map((item) => ({
         orderId: res[0].id,
         productId: item.product.id,
-        quantity: item.product.quantity,
+        productName: item.product.name,
+        img: item.product.imageurl || item.product.img,
+        quantity: item.quantity,
         price: Math.floor(
           item.product.oprice -
             (item.product.discount / 100) * item.product.oprice
@@ -806,7 +808,7 @@ export default function Checkout() {
           Math.floor(
             item.product.oprice -
               (item.product.discount / 100) * item.product.oprice
-          ) * item.product?.quantity,
+          ) * item.quantity,
       }));
 
       await db.insert(orderItemsTable).values(orderItemsData);
@@ -815,6 +817,8 @@ export default function Checkout() {
         .where(eq(addToCartTable.userId, userdetails.id));
       toast.success("Order Placed");
       setCart([]);
+      await getorders(); // ✅ refresh order context
+      navigate("/myorders"); // ✅ route after context is up-to-date
       setLoading(false);
       setStep(3);
     } catch (error) {

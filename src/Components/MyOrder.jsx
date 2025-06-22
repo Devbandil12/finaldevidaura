@@ -1,13 +1,10 @@
-// src/pages/MyOrders.js
-import React, { useContext, useState } from "react";
-import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-brand-design_826454-355-removebg-preview.png";
+import React, { useContext, useState, useEffect } from "react";
 import "../style/myorder.css";
-import { OrderContext } from "../contexts/OrderContext";    // ← use this
+import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
+import { ProductContext } from "../contexts/productContext"; // for fallback image lookup
 
-/**
- * Formats a date string into a readable format with AM/PM.
- */
+/** Formats a date string into a readable format with AM/PM. */
 const formatDateTime = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleString(undefined, {
@@ -18,79 +15,51 @@ const formatDateTime = (dateString) => {
 };
 
 const MyOrders = () => {
-  // Now reading orders (and updater) from OrderContext
   const { orders, updateOrderStatus } = useContext(OrderContext);
-  const { userdetails } = useContext(UserContext); // still used for user info if needed
-
+  const { userdetails } = useContext(UserContext);
+  const { products } = useContext(ProductContext); // used for fallback image
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cancellationMessages, setCancellationMessages] = useState({});
 
-  // Sort newest first
+  // Only this user's orders, newest first
   const sortedOrders = (orders || [])
-    .slice()
+    .filter((o) => o.userId === userdetails.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const cancelOrder = async (order) => {
-    const { orderId, paymentMode, paymentStatus, totalAmount, status } = order;
-
-    if (status === "Delivered" || status === "Order Cancelled") {
-      alert(`Cannot cancel: order is already ${status.toLowerCase()}.`);
+    if (["Delivered", "Order Cancelled"].includes(order.status)) {
+      alert(`Cannot cancel: order is already ${order.status.toLowerCase()}.`);
       return;
     }
-    if (!window.confirm(`Are you sure you want to cancel Order #${orderId}?`))
-      return;
+    if (!window.confirm(`Cancel Order #${order.orderId}?`)) return;
 
-    // COD
-    if (paymentMode === "Cash on Delivery") {
-      await updateOrderStatus(orderId, "Order Cancelled");
-      return;
-    }
-
-    // Razorpay
-    if (paymentMode === "Razorpay" && paymentStatus === "paid") {
-      const feePercent = 5;
-      const fee = Math.floor((totalAmount * feePercent) / 100);
-      const refundAmt = totalAmount - fee;
-      if (
-        !window.confirm(
-          `A cancellation fee of ₹${fee} (${feePercent}%) will be deducted.\n` +
-            `You will be refunded ₹${refundAmt}.\n\nProceed?`
-        )
-      )
-        return;
-
-      await updateOrderStatus(orderId, "Cancellation in Progress");
+    try {
+      const res = await fetch(`/api/payment/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.orderId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Refund failed");
+      await updateOrderStatus(order.orderId, "Order Cancelled");
       setCancellationMessages((prev) => ({
         ...prev,
-        [orderId]: "Cancellation in progress…",
+        [order.orderId]: (
+          <div className="cancel-message">
+            <p>✅ Refund Initiated (ID: {data.refund.id})</p>
+            <p>
+              Amount: ₹{(data.refund.amount / 100).toFixed(2)}<br />
+              Status: {data.refund.status}<br />
+              Initiated: {new Date(data.refund.created_at * 1000).toLocaleString()}<br />
+              Expected in 2–5 business days.
+            </p>
+          </div>
+        ),
       }));
-
-      try {
-        const res = await fetch(`/orders/${orderId}/refund`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refundAmount: refundAmt }),
-        });
-        if (!res.ok) throw new Error(await res.text());
-
-        await updateOrderStatus(orderId, "Order Cancelled");
-        setCancellationMessages((prev) => ({
-          ...prev,
-          [orderId]: `Order Cancelled & ₹${refundAmt} refunded`,
-        }));
-      } catch (err) {
-        console.error(err);
-        alert("Refund failed; please contact support.");
-      }
-      return;
+    } catch (err) {
+      console.error(err);
+      alert("Cancellation/refund failed; please contact support.");
     }
-
-    // Fallback
-    await updateOrderStatus(orderId, "Order Cancelled");
-    setCancellationMessages((prev) => ({
-      ...prev,
-      [orderId]: "Order Cancelled",
-    }));
   };
 
   const reorder = (orderId) => {
@@ -103,7 +72,7 @@ const MyOrders = () => {
         oprice: item.price,
         discount: item.discount || 0,
         quantity: item.quantity,
-        imageurl: item.img || ProductImage,
+        imageurl: item.img,
         size: item.size || "100",
       },
       quantity: item.quantity,
@@ -117,19 +86,18 @@ const MyOrders = () => {
 
   const renderStepProgress = (progressStep, status) => {
     const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
-    const final =
-      status === "Delivered" ? steps.length + 1 : progressStep ?? 1;
+    const final = status === "Delivered" ? steps.length + 1 : progressStep || 1;
     return (
       <div className="progress-steps">
-        {steps.map((step, idx) => (
-          <div key={idx} className="step-wrapper">
+        {steps.map((label, idx) => (
+          <div key={idx} className="myorder-step-wrapper">
             <div
               className={`myorder-step ${
                 final > idx + 1 ? "completed" : ""
               } ${final === idx + 1 ? "current" : ""}`}
             >
               <div className="step-number">{idx + 1}</div>
-              <div className="step-label">{step}</div>
+              <div className="step-label">{label}</div>
             </div>
           </div>
         ))}
@@ -141,46 +109,65 @@ const MyOrders = () => {
     <div className="myorder-container">
       <h1 className="my-order-title">My Orders</h1>
       <div className="myorders">
-        <div className="orders-section" id="orders-list">
-          {sortedOrders.length === 0 && <p>No orders found.</p>}
+        {sortedOrders.length === 0 && <p>No orders found.</p>}
 
-          {sortedOrders.map((order, idx) => (
-            <div key={order.orderId + idx} className="order-card">
-              <div className="flex justify-between p-5 font-semibold">
+        {sortedOrders.map((order) => {
+          const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
+
+          return (
+            <div key={order.orderId} className="order-card">
+              <div className="order-header">
                 <h3>Order #{order.orderId}</h3>
+                <span className="badge">
+                  {totalItems} {totalItems > 1 ? "items" : "item"}
+                </span>
                 {order.status !== "Order Cancelled" &&
                   order.status !== "Cancellation in Progress" && (
-                    <label
-                      className={`jhaatu_item text-black border-2 rounded ${
-                        order.paymentStatus === "paid"
-                          ? "bg-green-500"
-                          : "bg-yellow-400"
+                    <span
+                      className={`payment-status ${
+                        order.paymentStatus === "paid" ? "paid" : "pending"
                       }`}
                     >
                       {order.paymentStatus}
-                    </label>
+                    </span>
                   )}
               </div>
 
-              <p className="order-details">
-                <strong>Date:</strong> {formatDateTime(order.createdAt)}
-              </p>
-              <p className="order-details">
-                <strong>Total Amount:</strong> ₹{order.totalAmount}
-              </p>
+              <div className="order-summary">
+                <p>
+                  <strong>Date:</strong> {formatDateTime(order.createdAt)}
+                </p>
+                <p>
+                  <strong>Total Amount:</strong> ₹{order.totalAmount}
+                </p>
+              </div>
 
               <div className="order-items">
-                {order.items.map((item, i) => (
-                  <div key={i} className="order-item">
-                    <img
-                      src={item.img || ProductImage}
-                      alt={item.productName}
-                    />
-                    <span>
-                      {item.productName} - ₹{item.price}
-                    </span>
-                  </div>
-                ))}
+                {order.items.map((item, i) => {
+                  const fallbackProduct = products.find(
+                    (p) => p.id === item.productId
+                  );
+                  const imgSrc = item.img || fallbackProduct?.imageurl || "/fallback.png";
+
+                  return (
+                    <div key={i} className="order-item">
+                      <img src={imgSrc} alt={item.productName} />
+                      <p className="product-name">{item.productName}</p>
+                      <div className="item-price">₹{item.price * item.quantity}</div>
+                      <div className="item-details">
+                        <p>
+                          Qty: <span>{item.quantity}</span>
+                        </p>
+                        {item.size && (
+                          <p>
+                            Size: <span>{item.size} ml</span>
+                          </p>
+                        )}
+                      </div>
+                      {/* "View Details" button removed */}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="buttons">
@@ -193,7 +180,6 @@ const MyOrders = () => {
                       Cancel Order
                     </button>
                   )}
-
                 {order.status === "Delivered" && (
                   <button
                     className="reorder-btn"
@@ -202,33 +188,65 @@ const MyOrders = () => {
                     Reorder
                   </button>
                 )}
-
                 {order.status !== "Order Cancelled" && (
                   <button
                     className="track-btn"
                     onClick={() => trackOrder(order.orderId)}
                   >
                     {expandedOrders[order.orderId]
-                      ? "Hide Track Order"
+                      ? "Hide Tracking"
                       : "Track Order"}
                   </button>
                 )}
               </div>
 
-              {cancellationMessages[order.orderId] && (
-                <div className="cancel-message">
-                  {cancellationMessages[order.orderId]}
+              {cancellationMessages[order.orderId]}
+
+              {order.refund_id && (
+                <div className="refund-tracker">
+                  <p>
+                    <strong>Refund ID:</strong> {order.refund_id}
+                  </p>
+                  <p>
+                    <strong>Initiated:</strong> {formatDateTime(order.refund_initiated_at)}
+                  </p>
+                  <p>
+                    <strong>Speed:</strong> {order.refund_speed}
+                  </p>
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {{
+                      created: "Received by Razorpay",
+                      speed_changed: "Speed Updated",
+                      processed: "Refund Completed",
+                      failed: "Refund Failed—contact support",
+                    }[order.refund_status]}
+                  </p>
+                  {order.refund_status === "processed" && (
+                    <p>
+                      <strong>Completed:</strong>{" "}
+                      {formatDateTime(order.refund_completed_at)}
+                    </p>
+                  )}
+                  <p>
+                    <strong>Amount:</strong> ₹{(order.refund_amount / 100).toFixed(2)}
+                  </p>
+                  {order.refund_status === "created" && (
+                    <p className="eta">❓ Processing—typically 2–5 business days.</p>
+                  )}
+                  {order.refund_status === "speed_changed" && (
+                    <p className="eta">⏱ Speed upgraded—check your bank sooner.</p>
+                  )}
                 </div>
               )}
 
-              {expandedOrders[order.orderId] &&
-                order.status !== "Order Cancelled" && (
-                  <div className="order-progress">
-                    {renderStepProgress(order.progressStep, order.status)}
-                  </div>
-                )}
+              {expandedOrders[order.orderId] && order.status !== "Order Cancelled" && (
+                <div className="order-progress">
+                  {renderStepProgress(order.progressStep, order.status)}
+                </div>
+              )}
 
-              <div className="tracking-status flex justify-between items-center">
+              <div className="tracking-status">
                 <span>
                   <strong>Status:</strong> {order.status}
                 </span>
@@ -237,8 +255,8 @@ const MyOrders = () => {
                 </span>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
