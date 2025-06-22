@@ -11,7 +11,8 @@ import { toast, ToastContainer } from "react-toastify";
 
 const Wishlist = () => {
   const [wishlistitems, setWishlistitems] = useState([]);
-  const { wishlist, setWishlist, getwishlist, cart, setCart } = useContext(CartContext);
+  const { wishlist, setWishlist, getwishlist, cart, setCart } =
+    useContext(CartContext);
 
   // Fetch the latest wishlist when the component mounts
   useEffect(() => {
@@ -155,60 +156,116 @@ const Wishlist = () => {
   };
 
   return (
-    <div className="main-container">
+    <div className="wishlist-main-container">
       <div className="absolute">
         <ToastContainer />
       </div>
       <h2 className="w-title">MY WISHLIST</h2>
-      <div id="wishlistitems-container">
-        <div id="wishlistitems-items">
-          {wishlistitems.length === 0 ? (
-            <div id="empty-wishlistitems-message" style={{ color: "black" }}>
-              Your Wishlist is empty.
-            </div>
-          ) : (
-            wishlistitems.map((wishlisti, index) => {
+
+      {wishlistitems.length === 0 ? (
+        <div id="empty-wishlistitems-message">Your Wishlist is empty.</div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="wishlist-table-container">
+            <table className="wishlist-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Name</th>
+                  <th>Size</th>
+                  <th>Price</th>
+                  <th>Discount</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wishlistitems.map((wishlisti, index) => {
+                  const item = wishlisti.product || {};
+                  const discountedPrice = Math.trunc(
+                    item.oprice - (item.oprice * item.discount) / 100
+                  );
+
+                  return (
+                    <tr key={item?.id}>
+                      <td>
+                        <img
+                          src={item.imageurl}
+                          alt={item.name}
+                          className="wishlist-product-img"
+                        />
+                      </td>
+                      <td>{item.name}</td>
+                      <td>{item.size}ml</td>
+                      <td>
+                        <strong style={{ color: "green" }}>
+                          ₹{discountedPrice}
+                        </strong>
+                        <br />
+                        <del style={{ color: "gray" }}>₹{item.oprice}</del>
+                      </td>
+                      <td style={{ color: "blue" }}>{item.discount}%</td>
+                      <td>
+                        <button
+                          className="action-btn add"
+                          onClick={() => moveToCart(wishlisti, index)}
+                        >
+                          Add to Cart
+                        </button>
+                        <button
+                          className="action-btn remove"
+                          onClick={() => removeWishlistItem(wishlisti, index)}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="wishlist-mobile-list">
+            {wishlistitems.map((wishlisti, index) => {
               const item = wishlisti.product || {};
               const discountedPrice = Math.trunc(
                 item.oprice - (item.oprice * item.discount) / 100
               );
 
               return (
-                <div key={item?.id} className="wishlistitems-item">
-                  <img src={item.imageurl} alt={item.name} className="w-52" />
-                  <div className="item-title">
-                    <h3>{item.name}</h3>
-                    <span style={{ fontWeight: 100, fontSize: "1rem" }}>
-                      {item.size}ml
-                    </span>
+                <div className="wishlist-mobile-card">
+                  <div className="wishlist-mobile-left">
+                    <img src={item.imageurl} alt={item.name} />
+                    <div className="title">{item.name}</div>
                   </div>
-                  <div className="item-price">
-                    <span>
-                      <strong style={{ color: "green" }}>
-                        ₹{discountedPrice}
-                      </strong>
-                      <del style={{ color: "lightgray" }}>₹{item.oprice}</del>
-                    </span>
-                    <span style={{ color: "blue" }}>{item.discount}% Off</span>
+                  <div className="wishlist-mobile-right">
+                    <div className="wishlist-price-discount">
+                      <strong>₹{discountedPrice}</strong>
+                      <span className="discount">{item.discount}% Off</span>
+                    </div>
+                    <div className="wishlist-mobile-actions">
+                      <button
+                        className="action-btn add"
+                        onClick={() => moveToCart(wishlisti, index)}
+                      >
+                        Add to Cart
+                      </button>
+                      <button
+                        className="action-btn remove"
+                        onClick={() => removeWishlistItem(wishlisti, index)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    className="move-to-cart"
-                    onClick={() => moveToCart(wishlisti, index)}
-                  >
-                    Move to Cart
-                  </button>
-                  <button
-                    className="remove-wishlistitems"
-                    onClick={() => removeWishlistItem(wishlisti, index)}
-                  >
-                    Remove from Wishlist
-                  </button>
                 </div>
               );
-            })
-          )}
-        </div>
-      </div>
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };

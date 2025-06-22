@@ -1,21 +1,3 @@
-/* Global Reset & Variables */
-* {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --blue: #06152e;
-}
-
-/* Global Body Styles */
-body {
-  width: 100vw;
-  background-color: white;
-  overflow-x: hidden !important;
-}
-
 /* Header & Navbar Container */
 header {
   width: 100%;
@@ -27,28 +9,29 @@ header {
 }
 
 #navbar {
-  width: 90%;
-  max-width: 1200px;
+  width: 100%;
+  height: 50px;
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.5rem 0rem 1rem;
+  padding: 0.2rem 2rem 0rem 2rem;
   align-items: center;
   position: fixed;
-  margin-top: 10px;
-  border-radius: 22px;
   transition: all 0.3s ease-in-out;
-  background-color: white;
   gap: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* background: rgba(255, 251, 248, 0.76); */
+  /* border-bottom: 1px solid rgba(255, 230, 209, 0.836); */
+
 }
+
 #navbar a {
   text-decoration: none;
+  font-weight: 600;
 }
 
 /* Left Part */
 .part-1 {
   display: flex;
-  font-size: 2rem;
+  font-size: 1.5rem;
   align-items: center;
   padding-left: 0;
   color: black;
@@ -170,14 +153,14 @@ header {
 .nav-links li {
   list-style: none;
   font-size: 1.2rem;
-  font-weight: bold;
+  font-weight: 600;
   font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   cursor: pointer;
   /* color: white; */
 }
-.nav-links a {
+.nav-links li a {
   text-decoration: none;
-  /* color: white; */
+  color: black;
 }
 
 /* Part-3: Icons */
@@ -187,7 +170,6 @@ header {
 .part-3 .icons {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .part-3 .icons .profile-icon {
@@ -197,7 +179,7 @@ header {
 
 /* Wishlist & Cart Icons */
 .wishlist-icon {
-  width: 70px;
+  width: 60px;
   margin: 0;
 }
 
@@ -217,19 +199,19 @@ header {
 #wishlist-count {
   background-color: transparent;
   color: black;
-  font-weight: bold;
+  font-size: 12px;
 }
+
 .cart-icon {
-  width: 70px;
+  width: 60px;
 }
 .cart-icon a {
   text-decoration: none;
 }
 #cart-icon {
   background-color: transparent;
-  color: white;
+  color: black;
   border: none;
-  /* border-radius: 8px; */
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -239,9 +221,7 @@ header {
 #cart-count {
   background-color: transparent;
   color: black;
-  /* border-radius: 50%; */
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 12px;
 }
 
 /* Profile Icon */
@@ -340,14 +320,12 @@ header {
 #loginButton {
   position: relative; /* establishes positioning context */
   overflow: hidden; /* hides the growing pseudo-element */
-  padding: 8px 10px;
-  background-color: rgb(0, 0, 0);
-  border: 1px solid rgb(226, 226, 226);
-  border-radius: 99px;
-  transition: color 0.5s ease, border 0.5s ease;
-  font-weight: bolder;
+  padding: 5px 10px;
+  border: 2px solid rgb(218, 212, 212);
+  border-radius: 6px;
+  /* font-weight: bolder; */
   color: white;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 /* Ensure the text inside is above the pseudo-element */
@@ -369,16 +347,16 @@ header {
   bottom: 0;
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
-  border-radius: 99px;
+  background-color: #525151;
+  border-radius: 6px;
   transform: scaleY(0);
   transform-origin: bottom;
-  transition: transform 0.5s ease;
+  transition: transform 0.6s ease-in-out;
   z-index: 1; /* behind the text */
 }
 
 #loginButton:hover {
-  color: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
   border: 1px solid black;
 }
 

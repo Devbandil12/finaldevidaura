@@ -21,6 +21,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
+// import WheelOfFate from "../Components/WheelOfFate.jsx";
 
 // -------------------------------
 // Modal Component (Detailed Perfume Info)
@@ -51,7 +52,7 @@ const Modal = ({ product, onClose }) => {
         position: "fixed",
         top: 0,
         left: 0,
-        width: "100%",
+        width: "100vw",
         height: "100%",
         backgroundColor: "rgba(0,0,0,0.6)",
         display: "flex",
@@ -64,20 +65,22 @@ const Modal = ({ product, onClose }) => {
         style={{
           position: "relative",
           background: "#fff",
-          padding: "30px",
+          padding: "250px 30px",
           borderRadius: "10px", // Button radius remains unchanged
           boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           transform: animate ? "scale(1)" : "scale(0)",
           transition: "transform 0.5s ease",
-          maxWidth: "600px",
-          width: "90%",
-          maxHeight: "90vh", // Limit modal height to 90% of viewport
+          maxWidth: "650px",
+          width: "100%",
+          maxHeight: "100vh", // Limit modal height to 90% of viewport
           // overflowY: "auto",
         }}
       >
         <button
           onClick={onClose}
           style={{
+            width:"40px",
+            height:"30px",
             position: "absolute",
             top: "10px",
             right: "10px",
@@ -85,6 +88,8 @@ const Modal = ({ product, onClose }) => {
             background: "black",
             fontSize: "16px",
             cursor: "pointer",
+            color:"white",
+            borderRadius:"6px",
           }}
         >
           &times;
@@ -93,8 +98,8 @@ const Modal = ({ product, onClose }) => {
           src={product.imageurl}
           alt={product.name}
           style={{
-            width: "250px",
-            Height: "100px", // Do not change this image size
+            width: "200px",
+            Height: "60px", // Do not change this image size
             objectFit: "cover",
             borderRadius: "8px", // Remains unchanged
             margin: "0 auto ",
@@ -103,10 +108,12 @@ const Modal = ({ product, onClose }) => {
         />
         <h2
           style={{
+            margin: "20px auto",
             textAlign: "center",
             fontSize: "12px",
             fontWeight: "600",
             color: "#333",
+
           }}
         >
           {product.name}
@@ -272,46 +279,6 @@ const Products = () => {
     }
   };
 
-  // const getcartsitem = async () => {
-  //   try {
-  //     const res = await db
-  //       .select({
-  //         product: productsTable,
-  //         userId: addToCartTable.userId,
-  //         cartId: addToCartTable.id,
-  //       })
-  //       .from(addToCartTable)
-  //       .innerJoin(
-  //         productsTable,
-  //         eq(addToCartTable.productId, productsTable.id)
-  //       )
-  //       .where(eq(addToCartTable.userId, userdetails.id));
-  //     setCartitem(res);
-  //     console.log(res);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-
-  // const toggleCart = (product) => {
-  //   console.log(product);
-  //   setCart((prevCart) => {
-  //     const existingItem = prevCart.find((item) => item.name === product.name);
-  //     if (existingItem) {
-  //       return prevCart.filter((item) => item.name !== product.name);
-  //     } else {
-  //       const discountedPrice = Math.trunc(
-  //         product.oprice - (product.oprice * product.discount) / 100
-  //       );
-
-  //       return [
-  //         ...prevCart,
-  //         { ...product, dprice: discountedPrice, quantity: 1 },
-  //       ];
-  //     }
-  //   });
-  // };
-
   const toggleWishlist = async (product) => {
     const tempWishlistItem = {
       productId: product.id,
@@ -382,107 +349,98 @@ const Products = () => {
   };
 
   return (
-    <section className="py-20 mt-50 flex flex-col items-center">
-      {/* <h1 id="products-section" className="product-heading">
-        Our Collection
-      </h1> */}
+    <>
+      <section className="py-20 flex flex-col items-center">
 
-      {/* Custom 3D Coverflow Carousel Section */}
-      {/* <div className="w-9/10 flex items-center justify-center py-10  ">
-        <CoverflowCarousel
-          products={products}
-          pause={modalProduct !== null}
-          onSlideClick={handleSlideClick}
-        />
-      </div> */}
+        <h1 id="shop-section" className="product-heading">
+          Shop The Luxury
+        </h1>
 
-      <h1 id="shop-section" className="product-heading">
-        Shop The Luxury
-      </h1>
+        {/* Products Container */}
+        <div className="w-full flex flex-wrap justify-center gap-8 px-6">
+          {products.map((product, index) => {
+            const discountedPrice = Math.trunc(
+              product.oprice - (product.oprice * product.discount) / 100
+            );
+            const inCart = cart.some((item) => item.product.id === product.id);
+            const inWishlist = wishlist.some(
+              (item) => item.productId == product.id
+            );
 
-      {/* Products Container */}
-      <div className="w-full flex flex-wrap justify-center gap-8 px-6">
-        {products.map((product, index) => {
-          const discountedPrice = Math.trunc(
-            product.oprice - (product.oprice * product.discount) / 100
-          );
-          const inCart = cart.some((item) => item.product.id === product.id);
-          const inWishlist = wishlist.some(
-            (item) => item.productId == product.id
-          );
-
-          return (
-            <div
-              key={index}
-              className="relative w-72 h-96 flex flex-col items-center gap-2 p-12 rounded-xl overflow-hidden shadow-lg bg-white"
-            >
-              <img
-                className="w-72 h-64 object-cover"
-                src={product.imageurl}
-                alt={product.name}
-                onClick={() => handleSlideClick(product)}
-                style={{ cursor: "pointer" }}
-              />
-              <button
-                onClick={() => toggleWishlist(product)}
-                className="absolute top-2 right-2 p-2 rounded-full transition"
+            return (
+              <div
+                key={index}
+                className="relative w-62 h-86 flex flex-col items-center gap-2 rounded-xl overflow-hidden shadow-lg bg-white"
               >
                 <img
-                  src={inWishlist ? WishlistFilledImage : WishlistImage}
-                  alt="wishlist"
-                  className="w-10 h-10"
+                  className="w-72 h-54 object-cover"
+                  src={product.imageurl}
+                  alt={product.name}
+                  onClick={() => handleSlideClick(product)}
+                  style={{ cursor: "pointer" }}
                 />
-              </button>
-              <div className="w-9/10 flex justify-between items-center">
-                <h3 className="text-lg font-semibold">{product.name}</h3>
-                <span className="text-gray-700 font-medium">
-                  {product.size} ml
-                </span>
-              </div>
-              <div className="w-9/10 flex justify-between items-center">
-                <span className="flex justify-between gap-4 items-center">
-                  <span className="text-lg font-bold text-black">
-                    ₹{discountedPrice}
-                  </span>
-                  <span className="text-sm text-gray-400 line-through">
-                    (₹{product.oprice})
-                  </span>
-                </span>
-                <span className="text-blue-700 font-semibold">
-                  {product.discount}% Off
-                </span>
-              </div>
-              {inCart ? (
                 <button
-                  onClick={() => {
-                    removeFromCart(product);
-                  }}
-                  className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
-                    inCart ? "bg-black text-white" : "bg-black text-white"
-                  }`}
+                  onClick={() => toggleWishlist(product)}
+                  className="absolute top-2 right-2 p-2 rounded-full transition"
                 >
-                  {"remove from cart"}
-                  <img src={CartImage} alt="Cart" className="w-8 h-8" />
+                  <img
+                    src={inWishlist ? WishlistFilledImage : WishlistImage}
+                    alt="wishlist"
+                    className="w-10 h-10"
+                  />
                 </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    addtocart(product);
-                  }}
-                  className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
-                    inCart ? "bg-black text-white" : "bg-black text-white"
-                  }`}
-                >
-                  {"add to cart"}
-                  <img src={CartImage} alt="Cart" className="w-8 h-8" />
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {modalProduct && <Modal product={modalProduct} onClose={closeModal} />}
-    </section>
+                <div className="w-9/10 flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">{product.name}</h3>
+                  <span className="text-gray-700 font-medium">
+                    {product.size} ml
+                  </span>
+                </div>
+                <div className="w-9/10 flex justify-between items-center">
+                  <span className="flex justify-between gap-4 items-center">
+                    <span className="text-lg font-bold text-black">
+                      ₹{discountedPrice}
+                    </span>
+                    <span className="text-sm text-gray-400 line-through">
+                      (₹{product.oprice})
+                    </span>
+                  </span>
+                  <span className="text-blue-700 font-semibold">
+                    {product.discount}% Off
+                  </span>
+                </div>
+                {inCart ? (
+                  <button
+                    onClick={() => {
+                      removeFromCart(product);
+                    }}
+                    className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
+                      inCart ? "bg-black text-white" : "bg-black text-white"
+                    }`}
+                  >
+                    {"remove from cart"}
+                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      addtocart(product);
+                    }}
+                    className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
+                      inCart ? "bg-black text-white" : "bg-black text-white"
+                    }`}
+                  >
+                    {"add to cart"}
+                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {modalProduct && <Modal product={modalProduct} onClose={closeModal} />}
+      </section>
+      {/* <WheelOfFate /> */}
+    </>
   );
 };
 

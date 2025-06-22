@@ -1,70 +1,41 @@
-import React, { useState } from "react";
-import InstagramIcon from "../assets/instagram-2016-logo-svgrepo-com.svg";
-import FacebookIcon from "../assets/icons8-facebook-logo (1).svg";
-import TwitterIcon from "../assets/icons8-x (1).svg";
-import RIghtArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
-import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892-removebg-preview (1).png";
-
+import React from "react";
+import BottleImage from "../assets/New folder/Adobe Express - file.png";
+import BackgroundImage from "../assets/right-arrow-svgrepo-com.svg";   // your new bg
+import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
 import "../style/style.css";
-import ImageUploadModal from "./ImageUploadModal";
 
-const HeroSection = () => {
-  const [open, setOpen] = useState();
-  return (
-    <section id="home-section" className="section-1">
-      <div className="hero-container ">
-        <div className="title">
-          <div className="head-title">
-            <h1>DEVID AURA</h1>
-          </div>
-          <p>Presence in every step</p>
-        </div>
-        <div className="bottle-image">
-          <img className="bottle-img" src={BottleImage} alt="" />
-        </div>
+const HeroSection = () => (
+  <section className="hero">
+    {/* background layer */}
+    <div
+      className="hero__bg"
+      style={{ backgroundImage: `url(${BackgroundImage})` }}
+    />
 
-        <div className="hero-bottom">
-          <div className="shop-btn">
-            <button
-              onClick={() =>
-                document
-                  .getElementById("shop-section")
-                  .scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <span className="btn-text">Shop Now</span>
-              <span>
-                <img src={RIghtArrowIcon} alt="Arrow Icon" />
-              </span>
-            </button>
-          </div>
-          <div className="social-link">
-            <a
-              href="https://www.instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img src={InstagramIcon} alt="" />
-            </a>
-            <a
-              href="https://www.x.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img src={TwitterIcon} alt="" />
-            </a>
-            <a
-              href="https://www.facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img src={FacebookIcon} alt="" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
+    {/* content layer */}
+    <div className="hero__content">
+      {/* <img src={BottleImage} alt="Perfume Bottle" className="hero__bottle" /> */}
+
+      <h1 className="hero__title">DEVID AURA</h1>
+      <p className="hero__subtitle">Presence in Every Step</p>
+      <p className="hero__copy">
+        Immerse yourself in the art of scent—crafted for those who leave a
+        lasting impression at every moment.
+      </p>
+
+      <button
+        className="hero__cta"
+        onClick={() =>
+          document
+            .getElementById("shop-section")
+            .scrollIntoView({ behavior: "smooth" })
+        }
+      >
+        Shop Devidaura{" "}
+        <img src={RightArrowIcon} alt="→" className="hero__cta-icon" />
+      </button>
+    </div>
+  </section>
+);
 
 export default HeroSection;

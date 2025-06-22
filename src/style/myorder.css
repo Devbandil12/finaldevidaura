@@ -35,7 +35,7 @@
 
 .myorders {
   display: flex;
-  width: 100%;
+  width: 75%;
   min-height: 70vh;
   flex-wrap: wrap;
   gap: 20px;
@@ -110,13 +110,11 @@
   justify-content: center;
 }
 
-button {
+ .buttons button {
   padding: 8px 12px;
-  border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
-  color: white;
   font-weight: bold;
 }
 
@@ -275,6 +273,7 @@ button {
   }
 
   .myorders {
+    width: 100%;
     flex-direction: column;
     gap: 10px;
   }

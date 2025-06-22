@@ -36,6 +36,7 @@ const formatAddress = (address) => {
 // Component: AddressSelection
 // Renders a list of saved addresses and a form to add or edit an address.
 // -------------------------------------------------------------------
+
 function AddressSelection({
   addresses,
   selectedAddress,
@@ -50,100 +51,129 @@ function AddressSelection({
   handleDeleteAddress,
   addressFieldsOrder,
   editingIndex,
+  setEditingIndex,
+  emptyAddress,
 }) {
+  const [showForm, setShowForm] = useState(false);
+
+  const onSelectAddress = (addr, idx) => {
+    setSelectedAddressIndex(idx);
+    setSelectedAddress(addr);
+    setEditingIndex(null);
+    setNewAddress(emptyAddress);
+    setShowForm(false);
+  };
+
+  const onAddNewClick = () => {
+    setEditingIndex(null);
+    setNewAddress(emptyAddress);
+    setSelectedAddress(null);
+    setSelectedAddressIndex(null);
+    setShowForm(true);
+  };
+
+  const onEditClick = (idx) => {
+    handleEditAddress(idx);
+    setEditingIndex(idx);
+    setNewAddress(addresses[idx]);
+    setShowForm(true);
+  };
+
   return (
     <div className="address-selection">
       <h2>Select or Add Delivery Address</h2>
-      <div className="address-list">
-        {addresses?.map((addr, index) => (
-          <div
-            key={index}
-            className={`address-item ${
-              selectedAddressIndex === index ? "active" : ""
-            }`}
-          >
-            <span
-              onClick={() => {
-                setSelectedAddressIndex(index);
-                setSelectedAddress(addr);
-                // Reset newAddress when an address is selected
-                setNewAddress({
-                  name: "",
-                  phone: "",
-                  address: "",
-                  city: "",
-                  postalCode: "",
-                  state: "",
-                  country: "",
-                });
-              }}
-            >
-              {formatAddress(addr)}
-            </span>
 
-            <div className="address-actions">
+      <button className="add-new-btn" onClick={onAddNewClick}>
+        + Add New Address
+      </button>
+
+      <div className="address-selection__content">
+        {/* Saved-address list (always visible) */}
+        <div className="address-selection__list">
+          {addresses.map((addr, i) => (
+            <div
+              key={i}
+              className={`address-card ${
+                selectedAddressIndex === i ? "address-card--active" : ""
+              }`}
+              onClick={() => onSelectAddress(addr, i)}
+            >
+              <div className="address-card__header">
+                <strong>{addr.name}</strong>
+                <div className="address-card__actions">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditClick(i);
+                    }}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAddress(i);
+                    }}
+                  >
+                    🗑
+                  </button>
+                </div>
+              </div>
+              <p>
+                {addr.address}, {addr.city}, {addr.state} – {addr.postalCode}
+              </p>
+              <p>{addr.country}</p>
+              {addr.phone && <p>📞 {addr.phone}</p>}
+            </div>
+          ))}
+        </div>
+
+        {/* Conditionally render form */}
+        {showForm && (
+          <div className="address-selection__form">
+            <h3>
+              {editingIndex !== null ? "Edit Address" : "Add New Address"}
+            </h3>
+            <div className="address-form__fields">
+              {addressFieldsOrder.map((field) => (
+                <label key={field}>
+                  <span>{field[0].toUpperCase() + field.slice(1)}</span>
+                  <input
+                    name={field}
+                    value={newAddress[field] || ""}
+                    onFocus={() => {
+                      setSelectedAddress(null);
+                      setSelectedAddressIndex(null);
+                    }}
+                    onChange={(e) =>
+                      setNewAddress({ ...newAddress, [field]: e.target.value })
+                    }
+                    onKeyDown={
+                      field === "postalCode"
+                        ? (e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handlePincodeBlur();
+                            }
+                          }
+                        : undefined
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="address-form__actions">
               <button
-                onClick={() => handleEditAddress(index)}
-                className="btn btn-link edit-button"
+                onClick={() => {
+                  handleSaveAddress();
+                  setShowForm(false);
+                }}
               >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteAddress(index)}
-                className="btn btn-link delete-button"
-              >
-                Delete
+                {editingIndex !== null ? "Update Address" : "Save Address"}
               </button>
             </div>
           </div>
-        ))}
-      </div>
-      <h3>{editingIndex !== null ? "Edit Address" : "Add New Address"}</h3>
-      <div className="new-address-form">
-        {addressFieldsOrder.map((field) => (
-          <input
-            key={field}
-            type="text"
-            name={field}
-            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-            value={newAddress[field]}
-            onFocus={() => {
-              setSelectedAddress(null);
-              setSelectedAddressIndex(null);
-            }}
-            onChange={(e) =>
-              setNewAddress({ ...newAddress, [field]: e.target.value })
-            }
-            {...(field === "postalCode"
-              ? {
-                  onKeyDown: (e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handlePincodeBlur();
-                    }
-                  },
-                }
-              : {})}
-            className="form-control"
-          />
-        ))}
-        <div className="address-form-actions">
-          {editingIndex !== null ? (
-            <button
-              onClick={handleSaveAddress}
-              className="btn btn-outline-primary"
-            >
-              Update Address
-            </button>
-          ) : (
-            <button
-              onClick={handleSaveAddress}
-              className="btn btn-outline-primary"
-            >
-              Save Address
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -154,83 +184,84 @@ function AddressSelection({
 // Displays the selected delivery address, products, and pricing breakdown.
 // -------------------------------------------------------------------
 function OrderSummary({ selectedAddress, selectedItems, deliveryCharge }) {
+  const itemCount = selectedItems.reduce(
+    (acc, i) => acc + (i.quantity || 1),
+    0
+  );
   const originalTotal = selectedItems.reduce(
-    (acc, item) =>
-      acc + Math.floor(item.product.oprice) * (item?.quantity || 1),
+    (acc, item) => acc + Math.floor(item.product.oprice) * (item.quantity || 1),
     0
   );
   const productTotal = selectedItems.reduce(
     (acc, item) =>
       acc +
       Math.floor(
-        item?.product.oprice -
-          (item?.product?.oprice * item?.product.discount) / 100
+        item.product.oprice -
+          (item.product.oprice * item.product.discount) / 100
       ) *
-        (item?.quantity || 1),
+        (item.quantity || 1),
     0
   );
-  const discountCalculated = originalTotal - productTotal;
+  const discount = originalTotal - productTotal;
+  const total = productTotal + deliveryCharge;
 
   return (
-    <div className="order-summary">
-      <div className="summary-address">
-        <strong>Delivery Address:</strong>
-        {selectedAddress ? (
-          <div className="order-summary-address-item">
-            <span>{formatAddress(selectedAddress)}</span>
-          </div>
-        ) : (
-          "Please select an address"
-        )}
+    <div className="order-summary-card">
+      <div className="order-summary-card__header">
+        <h2>Order Summary</h2>
+        <span>
+          {itemCount} item{itemCount > 1 && "s"}
+        </span>
       </div>
-      <div className="selected-products">
-        {selectedItems.length > 0 ? (
-          selectedItems.map((item, index) => (
-            <div key={index} className="selected-product">
+
+      <div className="order-summary-card__address">
+        <strong>Deliver to:</strong>
+        <p>
+          {selectedAddress
+            ? formatAddress(selectedAddress)
+            : "No address selected"}
+        </p>
+      </div>
+
+      <details className="order-summary-card__items" open>
+        <summary>Items</summary>
+        <ul>
+          {selectedItems.map((item, idx) => (
+            <li key={idx} className="order-summary-item-details;">
               <img src={item.product.imageurl} alt={item.product.name} />
-              <div className="product-title-quantity">
-                <h3>{item.product.name}</h3>
-                <span>{item.product.size} ml</span>
+              <div className="item-info">
+                <p className="item-name">{item.product.name}</p>
+                <p className="item-qty">×{item.quantity || 1}</p>
               </div>
-              <div className="item-price-quantity">
-                <span style={{ color: "green" }}>
-                  ₹
-                  {Math.floor(
-                    item.product.oprice -
-                      (item.product.oprice * item.product.discount) / 100
-                  )}
-                </span>
-                <p>Quantity: {item.quantity || 1}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p>No products selected.</p>
-        )}
-      </div>
-      <div className="price-breakdown">
-        <p>
-          <span>
-            Products (
-            {selectedItems.reduce((acc, item) => acc + (item.quantity || 1), 0)}{" "}
-            items):
-          </span>
+              <p className="item-price">
+                ₹
+                {Math.floor(
+                  item.product.oprice * (1 - item.product.discount / 100)
+                )}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </details>
+
+      <div className="order-summary-card__breakdown">
+        <div>
+          <span>Subtotal</span>
           <span>₹{productTotal}</span>
-        </p>
-        <p>
-          <span>Discount:</span>
-          <span>₹{discountCalculated}</span>
-        </p>
-        <p>
-          <span>Delivery Charge:</span>
-          <span>₹{deliveryCharge}</span>
-        </p>
-        <div className="total-price">
-          <p>
-            <span>Total:</span>
-            <span>₹{productTotal + deliveryCharge}</span>
-          </p>
         </div>
+        <div>
+          <span>Discount</span>
+          <span className="text-danger">-₹{discount}</span>
+        </div>
+        <div>
+          <span>Delivery</span>
+          <span>₹{deliveryCharge}</span>
+        </div>
+      </div>
+
+      <div className="order-summary-card__total">
+        <span>Total</span>
+        <span>₹{total}</span>
       </div>
     </div>
   );
@@ -460,7 +491,7 @@ function PaymentDetails({
               className="razorpay-pay-btn btn btn-outline-primary"
               disabled={false}
             >
-              {loading ? "wait......" : "Pay Now"}
+              {loading ? "Loading" : "Pay Now"}
             </button>
           </div>
         )}
@@ -785,7 +816,7 @@ export default function Checkout() {
       toast.success("Order Placed");
       setCart([]);
       setLoading(false);
-      setStep(4);
+      setStep(3);
     } catch (error) {
       console.log(error);
     }
@@ -844,7 +875,7 @@ export default function Checkout() {
         return;
       }
     }
-    setStep((prev) => Math.min(prev + 1, 4));
+    setStep((prev) => Math.min(prev + 1, 3));
   };
 
   const handlePrev = () => {
@@ -863,99 +894,107 @@ export default function Checkout() {
 
   return (
     <div className="checkout-wrapper">
+      {/* HEADER */}
       <div className="checkout-header">
         <div className="absolute top-2">
           <ToastContainer />
         </div>
         <h1>Checkout</h1>
         <div className="progress-indicator">
-          {["Address", "Order Summary", "Payment", "Confirmation"].map(
-            (label, idx) => (
-              <div
-                key={idx}
-                className={`progress-step ${step >= idx + 1 ? "active" : ""}`}
-              >
-                <span>{idx + 1}</span>
-                <p>{label}</p>
-              </div>
-            )
-          )}
+          {["Address", "Payment", "Confirmation"].map((label, idx) => (
+            <div
+              key={idx}
+              className={`progress-step ${step === idx + 1 ? "active" : ""}`}
+            >
+              <span>{idx + 1}</span>
+              <p>{label}</p>
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* BODY */}
       <div className="checkout-body">
-        {step === 1 && (
-          <AddressSelection
-            addresses={addresses}
-            selectedAddress={selectedAddress}
-            setSelectedAddress={setSelectedAddress}
-            selectedAddressIndex={selectedAddressIndex}
-            setSelectedAddressIndex={setSelectedAddressIndex}
-            newAddress={newAddress}
-            setNewAddress={setNewAddress}
-            handleSaveAddress={handleSaveAddress}
-            handlePincodeBlur={handlePincodeBlur}
-            handleEditAddress={handleEditAddress}
-            handleDeleteAddress={handleDeleteAddress}
-            addressFieldsOrder={addressFieldsOrder}
-            editingIndex={editingIndex}
-          />
-        )}
-        {step === 2 && (
+        {/* LEFT COLUMN: step-specific content + nav */}
+        <div className="checkout-main">
+          {step === 1 && (
+            <AddressSelection
+              addresses={addresses}
+              selectedAddress={selectedAddress}
+              setSelectedAddress={setSelectedAddress}
+              selectedAddressIndex={selectedAddressIndex}
+              setSelectedAddressIndex={setSelectedAddressIndex}
+              newAddress={newAddress}
+              setNewAddress={setNewAddress}
+              handleSaveAddress={handleSaveAddress}
+              handlePincodeBlur={handlePincodeBlur}
+              handleEditAddress={handleEditAddress}
+              handleDeleteAddress={handleDeleteAddress}
+              addressFieldsOrder={addressFieldsOrder}
+              editingIndex={editingIndex}
+              setEditingIndex={setEditingIndex} // ← add this
+              emptyAddress={{
+                name: "",
+                phone: "",
+                address: "",
+                city: "",
+                postalCode: "",
+                state: "",
+                country: "",
+              }} // ← and this
+            />
+          )}
+
+          {step === 2 && (
+            <PaymentDetails
+              transactionId={transactionId}
+              setTransactionId={setTransactionId}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              upiId={upiId}
+              setUpiId={setUpiId}
+              verifiedUpi={verifiedUpi}
+              selectedUpiApp={selectedUpiApp}
+              setSelectedUpiApp={setSelectedUpiApp}
+              onPaymentVerified={setPaymentVerified}
+              paymentVerified={paymentVerified}
+              productTotal={productTotal}
+              discountCalculated={discountCalculated}
+              deliveryCharge={deliveryCharge}
+              totalPrice={totalPrice}
+              selectedAddress={selectedAddress}
+              userdetails={userdetails}
+              selectedItems={selectedItems}
+              onRazorpaySuccess={handleRazorpaySuccess}
+            />
+          )}
+
+          {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
+
+          {/* NAV BUTTONS */}
+          <div className="checkout-nav-buttons">
+            {/* “Back” or “Back to Cart” */}
+            <button onClick={handlePrev} className="btn btn-outline">
+              {step === 1 ? "Back to Cart" : "Back"}
+            </button>
+
+            {/* “Next” only on step 1 */}
+            {step === 1 && (
+              <button onClick={handleNext} className="btn btn-primary">
+                Next
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: order summary */}
+        <aside className="checkout-summary">
           <OrderSummary
             selectedAddress={selectedAddress}
             selectedItems={selectedItems}
             deliveryCharge={deliveryCharge}
           />
-        )}
-        {step === 3 && (
-          <PaymentDetails
-            transactionId={transactionId}
-            setTransactionId={setTransactionId}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            upiId={upiId}
-            setUpiId={setUpiId}
-            verifiedUpi={verifiedUpi}
-            selectedUpiApp={selectedUpiApp}
-            setSelectedUpiApp={setSelectedUpiApp}
-            onPaymentVerified={setPaymentVerified}
-            paymentVerified={paymentVerified}
-            productTotal={productTotal}
-            discountCalculated={discountCalculated}
-            deliveryCharge={deliveryCharge}
-            totalPrice={totalPrice}
-            selectedAddress={selectedAddress}
-            userdetails={userdetails}
-            selectedItems={selectedItems}
-            onRazorpaySuccess={handleRazorpaySuccess}
-          />
-        )}
-        {step === 4 && <Confirmation resetCheckout={resetCheckout} />}
-      </div>
-      <div className="checkout-footer">
-        {step !== 4 && (
-          <>
-            <button onClick={handlePrev} className="btn btn-outline-secondary">
-              Back
-            </button>
-            {step === 3 ? (
-              // For Cash on Delivery only, show "Place Order" button
-              paymentMethod === "Cash on Delivery" && (
-                <button
-                  onClick={handlePlaceOrder}
-                  className="btn btn-primary"
-                  disabled={loading}
-                >
-                  {loading ? "Placing order..." : "Place Order"}
-                </button>
-              )
-            ) : (
-              <button onClick={handleNext} className="btn btn-primary">
-                Next
-              </button>
-            )}
-          </>
-        )}
+        </aside>
       </div>
     </div>
   );

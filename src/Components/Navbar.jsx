@@ -13,7 +13,7 @@ import LogOutIcon from "../assets/logout-svgrepo-com.svg";
 import CartIcon from "../assets/cart-svgrepo-com.svg";
 import AdminIcon from "../assets/admin.png";
 import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
-import ProfileIcon from "../assets/user-avatar-svgrepo-com.svg";
+import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
 
 // ------------------------------------------------------------------
 // CSS Import
@@ -199,7 +199,7 @@ const Navbar = () => {
                   <img src={CartIcon} alt="Cart" />
                   <span
                     id="cart-count"
-                    className={`${!cartCount && "animate-pulse"}`}
+                    className={`${!cartCount }`}
                   >
                     {cartCount >= 0 ? cartCount : ""}
                   </span>
@@ -220,7 +220,7 @@ const Navbar = () => {
               <SignInButton>
                 <div id="loginSignupButtons">
                   <button id="loginButton">
-                    <span className="btn-text">Login / SignUp</span>
+                    <span className="btn-text">Sign Up</span>
                   </button>
                 </div>
               </SignInButton>
