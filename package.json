@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.25.5",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@neondatabase/serverless": "^1.0.0",
     "@radix-ui/react-dialog": "^1.1.6",
     "@react-three/drei": "^10.0.4",
@@ -24,7 +26,8 @@
     "express": "^5.1.0",
     "firebase": "^11.5.0",
     "framer-motion": "^12.4.10",
-    "gsap": "^3.12.7",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.523.0",
     "nanoid": "^5.1.5",
     "pg": "^8.14.1",
     "razorpay": "^2.9.6",

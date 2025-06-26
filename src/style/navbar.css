@@ -18,9 +18,6 @@ header {
   position: fixed;
   transition: all 0.3s ease-in-out;
   gap: 10px;
-  /* background: rgba(255, 251, 248, 0.76); */
-  /* border-bottom: 1px solid rgba(255, 230, 209, 0.836); */
-
 }
 
 #navbar a {
@@ -101,23 +98,7 @@ header {
 }
 
 /* Sidebar */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 100%;
-  width: 70vw;
-  height: 100dvh;
-  background: #ffffff;
-  color: white;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
-  transition: all 0.5s ease;
-  overflow: hidden;
-  z-index: 999;
-  pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
+
 
 .sidebar.open {
   top: 0;
@@ -321,10 +302,10 @@ header {
   position: relative; /* establishes positioning context */
   overflow: hidden; /* hides the growing pseudo-element */
   padding: 5px 10px;
-  border: 2px solid rgb(218, 212, 212);
+  border: 1px solid rgb(0, 0, 0);
   border-radius: 6px;
-  /* font-weight: bolder; */
-  color: white;
+  font-weight: bolder;
+  color: rgb(0, 0, 0);
   font-size: 14px;
 }
 
@@ -332,11 +313,12 @@ header {
 #loginButton .btn-text {
   position: relative;
   z-index: 2;
+  /* color: #000; */
 }
 
 #loginButton a {
   text-decoration: none;
-  color: inherit;
+  color: black;
 }
 
 /* Create the balloon overlay with a lower z-index */
@@ -347,8 +329,8 @@ header {
   bottom: 0;
   width: 100%;
   height: 100%;
-  background-color: #525151;
-  border-radius: 6px;
+  background-color: #000000;
+  /* border-radius: 6px; */
   transform: scaleY(0);
   transform-origin: bottom;
   transition: transform 0.6s ease-in-out;
@@ -490,99 +472,148 @@ header {
     display: none !important;
   }
 
-  .sidebar #loginSignupButtons {
-    display: block !important;
-  }
+}
 
-  /* Profile Info */
-  .profile-info {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-align: center;
-    padding: 5px;
-    gap: 0px;
-  }
 
-  .profile-info img {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    margin-top: 15px;
-    margin-left: 10px;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
-  }
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 100%;
+  width: 70vw;
+  max-width: 300px;
+  height: 100dvh;
+  background: #ffffff;
+  color: white;
+  overflow: hidden;
+  z-index: 999;
+  pointer-events: auto;
+  transition: left 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  padding: 0;
+}
 
-  .user-data {
-    width: 100%;
-    font-size: 0.8rem;
-    align-items: self-start;
-    gap: 1rem;
-    color: black;
-    padding-left: 15px;
-    padding-top: 10px;
-    margin-top: 15px;
-    margin-bottom: 30px;
-  }
+.sidebar.open {
+  left: 30%;
+}
 
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    align-items: space-between;
-    gap: 0px;
-    height: 100dvh;
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
-  }
+/* Header */
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-items: left;
+  padding: 0.5rem 1rem;
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
+}
 
-  .sidebar ul {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
-    padding: 20px;
-    padding-left: 0px;
-    gap: 25px;
-    flex-grow: 1;
-    justify-content: start;
-    flex-grow: 2;
-  }
-  .sidebar li {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
+.sidebar-header img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  align-self: flex-start;
+}
 
-  .sidebar li img {
-    width: 30px;
-    height: 30px;
-    box-shadow: none;
-    border-radius: 0px;
-    margin: 0px 0px 0px 15px;
-  }
+.sidebar-user {
+  margin-left: 0.75rem;
+  flex-grow: 1;
+}
 
-  .sidebar ul a {
-    text-decoration: none;
-    color: black;
-    font-weight: bold;
-  }
+.sidebar-user h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
 
-  .sidebar .logout {
-    padding-left: 15px;
-  }
+.sidebar-user p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  align-self: flex-start ;
+}
 
-  #loginSignupButtons-2 {
-    margin-top: 0px;
-    height: 100%;
-    margin-bottom: 30px;
-  }
-  .sidebar #loginButton {
-    background-color: rgb(255, 255, 255);
-    color: black;
-    border-radius: 12px;
-    /* box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset, rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset; */
-  }
+.sidebar-signin {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-end;
+}
 
-  #loginButton a {
-    color: black;
-  }
+/* Close button */
+.sidebar-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* Navigation */
+.sidebar-nav {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 1rem;
+}
+
+.sidebar-nav li {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.75rem;
+  transition: background 0.2s;
+}
+
+.sidebar-nav li:hover {
+  background: #f9f9f9;
+
+}
+
+.sidebar-nav li img {
+  width: 40px;
+  margin-right: 0.75rem;
+  padding-right: 10px;
+  border-right:1px solid #f1efef ;
+
+}
+
+.sidebar-nav li span {
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Footer */
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.sidebar-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #e00;
+}
+
+.sidebar-footer img {
+  width: 20px;
 }

@@ -197,10 +197,7 @@ const Navbar = () => {
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon">
                   <img src={CartIcon} alt="Cart" />
-                  <span
-                    id="cart-count"
-                    className={`${!cartCount }`}
-                  >
+                  <span id="cart-count" className={`${!cartCount}`}>
                     {cartCount >= 0 ? cartCount : ""}
                   </span>
                 </button>
@@ -302,103 +299,109 @@ const Navbar = () => {
             <div className="part-1">
               <div className="mobile-view">
                 <div className="menu-icon" onClick={toggleSidebar}>
+                  {/* hamburger unchanged */}
                   <div className="menu-container">
                     <div
                       className={`hamburger ${isOpen ? "active" : ""}`}
                       id="hamburger"
                     >
-                      <div className="line"></div>
-                      <div className="line"></div>
-                      <div className="line"></div>
+                      <div className="line" />
+                      <div className="line" />
+                      <div className="line" />
                     </div>
                   </div>
+                  {/* redesigned sidebar content */}
                   <div
                     className={`sidebar ${isOpen ? "open" : ""}`}
                     id="sidebar"
                   >
-                    <div className="profile-info">
-                      <img
-                        src={UserIcon}
-                        alt="User Image"
-                        className="mob-profile-img"
-                        id="mob-profile-img"
-                      />
-                      <div
-                        className="user-data"
-                        style={{
-                          visibility: isLoggedIn ? "visible" : "hidden",
-                        }}
-                      >
-                        <h3 id="mob-profile-name">{user?.fullName}</h3>
-                        <p id="mob-profile-email">
-                          {user?.primaryEmailAddress?.emailAddress ||
-                            (user?.phoneNumbers &&
-                              user.phoneNumbers[0]?.phoneNumber) ||
-                            "N/A"}
-                        </p>
-                      </div>
-                      {!isLoggedIn && (
+                    <header className="sidebar-header">
+                      <img src={UserIcon} alt="User" />
+                      {isLoggedIn ? (
+                        <div className="sidebar-user">
+                          <h4>{user.fullName}</h4>
+                          <p>
+                            {user.primaryEmailAddress?.emailAddress || "N/A"}
+                          </p>
+                        </div>
+                      ) : (
                         <SignInButton>
-                          <div id="loginSignupButtons-2">
-                            <button id="loginButton">
-                              <span className="btn-text">Login / SignUp</span>
-                            </button>
-                          </div>
+                          <button className="sidebar-signin">
+                            Login / Sign Up
+                          </button>
                         </SignInButton>
                       )}
+                      <button className="sidebar-close" onClick={toggleSidebar}>
+                        ✕
+                      </button>
+                    </header>
+
+                    <nav className="sidebar-nav">
                       <ul>
                         <li
                           onClick={() => {
                             navigate("/myorder");
-                            closeProfileDropdownOnClick();
+                            toggleSidebar();
                           }}
                         >
                           <img src={MyOrderIcon} alt="" />
-                          <a>My Orders</a>
+                          <span>My Orders</span>
                         </li>
                         <li
                           onClick={() => {
                             navigate("/wishlist");
-                            closeProfileDropdownOnClick();
+                            toggleSidebar();
                           }}
                         >
                           <img src={WishlistIcon} alt="" />
-                          <a>Wishlist</a>
+                          <span>Wishlist</span>
                         </li>
                         <li
                           onClick={() => {
                             navigate("/cart");
-                            closeProfileDropdownOnClick();
+                            toggleSidebar();
                           }}
                         >
                           <img src={CartIcon} alt="" />
-                          <a>Cart</a>
+                          <span>Cart</span>
                         </li>
                         {isLoggedIn && userdetails?.role === "admin" && (
                           <li
                             onClick={() => {
                               navigate("/admin");
-                              closeProfileDropdownOnClick();
+                              toggleSidebar();
                             }}
                           >
                             <img src={AdminIcon} alt="" />
-                            <a>Admin Panel</a>
+                            <span>Admin Panel</span>
                           </li>
                         )}
                         <li
-                          className="logout"
-                          id="logout-2"
+                          onClick={() => {
+                            navigate("/contact");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={MailUsIcon} alt="" />
+                          <span>Contact Us</span>
+                        </li>
+                      </ul>
+                    </nav>
+
+                    {isLoggedIn && (
+                      <footer className="sidebar-footer">
+                        <button
                           onClick={async (e) => {
                             e.preventDefault();
                             await signOut({ redirectUrl: "/" });
-                            closeProfileDropdownOnClick();
+                            toggleSidebar();
                           }}
                         >
-                          <a id="logout-btn-2">Log Out</a>
-                          <img src={LogOutIcon} alt="" />
-                        </li>
-                      </ul>
-                    </div>
+                          <img src={LogOutIcon} alt="Log out" />
+                          <span>Log Out</span>
+                        </button>
+                      </footer>
+                    )}
                   </div>
                 </div>
               </div>
