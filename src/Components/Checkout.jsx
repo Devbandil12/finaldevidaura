@@ -17,7 +17,6 @@ import { ToastContainer, toast } from "react-toastify";
 import { CartContext } from "../contexts/CartContext";
 import { eq } from "drizzle-orm";
 import { useUser } from "@clerk/clerk-react";
-import Loader from "./Loader";
 
 // -------------------------------------------------------------------
 // Helper Function: formatAddress
@@ -313,7 +312,7 @@ function PaymentDetails({
       setLoading(true);
       // Step 1: Create an order on the backend
       const orderResponse = await fetch(
-        "https://devidaurabackend.onrender.com/createOrder",
+        "http://localhost:3000/createOrder",
         {
           method: "POST",
           headers: {
@@ -376,7 +375,7 @@ function PaymentDetails({
 
           // Step 3: Verify payment with backend
           const verifyRes = await fetch(
-            "https://devidaurabackend.onrender.com/verify-payment",
+            "http://localhost:3000/verify-payment",
             {
               method: "POST",
               headers: {
