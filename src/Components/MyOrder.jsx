@@ -35,7 +35,7 @@ const MyOrders = () => {
     if (!window.confirm(`Cancel Order #${order.orderId}?`)) return;
 
     try {
-      const res = await fetch(`https://devidaurabackend.onrender.com/api/payment/refund`, {
+      const res = await fetch(`/api/payment/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: order.orderId }),
