@@ -39,7 +39,7 @@
 }
 
 /* Empty State */
-.myorders > p {
+.myorders>p {
   text-align: center;
   color: #666;
   font-size: 1rem;
@@ -53,6 +53,7 @@
   padding: 1.5rem;
   transition: transform 0.2s ease-in-out;
 }
+
 .order-card:hover {
   transform: translateY(-2px);
 }
@@ -83,6 +84,7 @@
   border-radius: 9999px;
 }
 
+/* Payment status badges */
 .payment-status {
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -101,17 +103,38 @@
   color: #f57c00;
 }
 
+/* NEW: refunded badge */
+.payment-status.refunded {
+  background: #e0f7fa;
+  color: #00695c;
+}
+
+/* NEW: refund status badge */
+.refund-status {
+  background-color: #fff8e1;
+  color: #ff9800;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
 /* Summary */
 .order-summary {
   display: flex;
   gap: 1.5rem;
   margin-bottom: 1rem;
 }
+
 .order-summary p {
   margin: 0;
   font-size: 0.875rem;
   color: #555;
 }
+
 .order-summary strong {
   font-weight: 600;
 }
@@ -130,6 +153,7 @@
 .order-items::-webkit-scrollbar {
   width: 6px;
 }
+
 .order-items::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 4px;
@@ -183,6 +207,7 @@
   color: #1b5e20;
 }
 
+/* Buttons */
 .details-btn {
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
@@ -193,11 +218,11 @@
   cursor: pointer;
   white-space: nowrap;
 }
+
 .details-btn:hover {
   background: #f1f3f8;
 }
 
-/* Action Buttons */
 .buttons {
   display: flex;
   flex-wrap: wrap;
@@ -216,18 +241,28 @@
   transition: background 0.2s;
 }
 
+/* Cancel button */
 .cancel-btn {
   color: #e53935;
   background: #fdecea;
 }
+
 .cancel-btn:hover {
   background: #fbdad5;
 }
 
+/* NEW: disabled cancel */
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Reorder & Track buttons */
 .reorder-btn {
   color: #1565c0;
   background: #e3f2fd;
 }
+
 .reorder-btn:hover {
   background: #c5e1fb;
 }
@@ -236,8 +271,30 @@
   color: #6a1b9a;
   background: #f3e5f5;
 }
+
 .track-btn:hover {
   background: #e1bee7;
+}
+
+/* NEW: success & error messages */
+.success-message {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 0.75rem 1rem;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin: 0.75rem 0;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ef9a9a;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  margin: 0.75rem 0;
 }
 
 /* Progress Tracker */
@@ -287,7 +344,7 @@
   text-align: center;
 }
 
-/* Tracking Status */
+/* Tracking status */
 .tracking-status {
   display: flex;
   justify-content: space-between;
@@ -302,24 +359,24 @@
 }
 
 /* Cancel & Refund Messages */
-.cancel-message,
-.refund-tracker {
+.cancel-message {
+  background: #fdecea;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
   margin: 1rem 0;
   padding: 1rem;
   border-radius: 8px;
   font-size: 0.875rem;
 }
 
-.cancel-message {
-  background: #fdecea;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-}
-
 .refund-tracker {
   background: #fff8e1;
   border: 1px solid #ffecb3;
   color: #5d4037;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
 }
 
 .refund-tracker .eta {
@@ -353,7 +410,6 @@
   top: 0.75rem;
   right: 0.75rem;
   font-size: 1.25rem;
-  line-height: 1;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -372,7 +428,7 @@
   color: #444;
 }
 
-/* Responsive Breakpoints */
+/* Responsive */
 @media (max-width: 768px) {
   .order-summary {
     flex-direction: column;
@@ -404,7 +460,6 @@
     padding: 15px;
   }
 
-
   .order-header h3 {
     font-size: 1rem;
   }
@@ -430,12 +485,15 @@
     gap: 0.25rem 1rem;
     align-items: center;
   }
+
   .order-header h3 {
     grid-area: title;
   }
+
   .order-header .badge {
     grid-area: badge;
   }
+
   .order-header .payment-status {
     grid-area: status;
   }
