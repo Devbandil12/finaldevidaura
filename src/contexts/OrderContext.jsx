@@ -42,6 +42,13 @@ export const OrderProvider = ({ children }) => {
           state: addressTable.state,
           postalCode: addressTable.postalCode,
           country: addressTable.country,
+          refundId: ordersTable.refund_id,
+          refundAmount: ordersTable.refund_amount,
+          refundStatus: ordersTable.refund_status,
+          refundSpeed: ordersTable.refund_speed,
+          refundInitiatedAt: ordersTable.refund_initiated_at,
+          refundCompletedAt: ordersTable.refund_completed_at,
+
         })
         .from(ordersTable)
         .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
