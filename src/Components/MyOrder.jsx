@@ -32,7 +32,7 @@ const MyOrders = () => {
     if (!window.confirm(`Cancel Order #${order.orderId}?`)) return;
 
     try {
-      const res = await fetch(`/api/payments/refund`, {
+      const res = await fetch(import.meta.env.VITE_BACKEND_URL + "/refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: order.orderId }),
