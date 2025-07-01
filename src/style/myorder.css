@@ -39,7 +39,7 @@
 }
 
 /* Empty State */
-.myorders>p {
+.myorders > p {
   text-align: center;
   color: #666;
   font-size: 1rem;
@@ -497,4 +497,72 @@
   .order-header .payment-status {
     grid-area: status;
   }
+}
+
+/* Cancellation Confirmation Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.modal h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: #333333;
+}
+
+.modal p {
+  font-size: 1rem;
+  color: #555555;
+  margin: 1rem 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger {
+  background-color: #e53935;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #d32f2f;
+}
+
+.btn-secondary {
+  background-color: #9e9e9e;
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background-color: #757575;
 }

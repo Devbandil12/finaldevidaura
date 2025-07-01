@@ -817,7 +817,6 @@ export default function Checkout() {
       toast.success("Order Placed");
       setCart([]);
       await getorders(); // ✅ refresh order context
-      navigate("/myorders"); // ✅ route after context is up-to-date
       setLoading(false);
       setStep(3);
     } catch (error) {

@@ -1,5 +1,5 @@
-// MyOrders.jsx
 import React, { useContext, useState } from "react";
+import { createPortal } from "react-dom";
 import "../style/myorder.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
@@ -16,34 +16,41 @@ const formatDateTime = (dateString) => {
   });
 };
 
-const MyOrders = () => {
-  const { orders, updateOrderStatus } = useContext(OrderContext);
+export default function MyOrders() {
+  const { orders, updateOrderStatus, updateOrderRefund } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
   const [expandedOrders, setExpandedOrders] = useState({});
   const [cancellationMessages, setCancellationMessages] = useState({});
+  const [modalOrder, setModalOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Only current user's orders, newest first
   const sortedOrders = (orders || [])
     .filter((o) => o.userId === userdetails.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+  // Sends refund API request
   const cancelOrder = async (order) => {
-    if (!window.confirm(`Cancel Order #${order.orderId}?`)) return;
-    
     try {
       const res = await fetch(import.meta.env.VITE_BACKEND_URL + "refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.orderId, amount: order.totalAmount * 100, speed: 'optimum'}),
+        body: JSON.stringify({
+          orderId: order.orderId,
+          amount: order.totalAmount * 100,
+          speed: 'optimum',
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Refund failed");
 
-      // Update local context/status
+      // Merge refund data into context
+      updateOrderRefund(order.orderId, data.refund);
+      // Update local status
       await updateOrderStatus(order.orderId, "Order Cancelled");
 
-      // Show rich cancellation message
+      // Show inline cancellation message
       setCancellationMessages((prev) => ({
         ...prev,
         [order.orderId]: (
@@ -53,7 +60,6 @@ const MyOrders = () => {
               Amount: ₹{(data.refund.amount / 100).toFixed(2)}<br />
               Status: {data.refund.status}<br />
               Initiated: {formatDateTime(new Date(data.refund.created_at * 1000).toISOString())}<br />
-              Expected in 2–5 business days.
             </p>
           </div>
         ),
@@ -62,13 +68,21 @@ const MyOrders = () => {
       console.error(err);
       setCancellationMessages((prev) => ({
         ...prev,
-        [order.orderId]: (
-          <div className="error-message" key={`err-${order.orderId}`}>
+        [modalOrder.orderId]: (
+          <div className="error-message" key={`err-${modalOrder.orderId}`}>
             ❌ Cancellation/refund failed; please contact support.
           </div>
         ),
       }));
     }
+  };
+
+  // Called when user confirms in modal
+  const handleConfirmCancel = async () => {
+    if (!modalOrder) return;
+    setIsModalOpen(false);
+    await cancelOrder(modalOrder);
+    setModalOrder(null);
   };
 
   const reorder = (orderId) => {
@@ -95,16 +109,14 @@ const MyOrders = () => {
 
   const renderStepProgress = (progressStep, status) => {
     const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
-    const final =
-      status === "Delivered" ? steps.length + 1 : progressStep || 1;
+    const final = status === "Delivered" ? steps.length + 1 : progressStep || 1;
     return (
       <div className="progress-steps">
         {steps.map((label, idx) => (
           <div key={idx} className="myorder-step-wrapper">
             <div
-              className={`myorder-step ${
-                final > idx + 1 ? "completed" : ""
-              } ${final === idx + 1 ? "current" : ""}`}
+              className={`myorder-step ${final > idx + 1 ? "completed" : ""} ${final === idx + 1 ? "current" : ""
+                }`}
             >
               <div className="step-number">{idx + 1}</div>
               <div className="step-label">{label}</div>
@@ -118,6 +130,30 @@ const MyOrders = () => {
   return (
     <div className="myorder-container">
       <h1 className="my-order-title">My Orders</h1>
+
+      {/* Confirmation Modal */}
+      {isModalOpen && modalOrder &&
+        createPortal(
+          <div className="modal-overlay">
+            <div className="modal">
+              <h2>Confirm Cancellation</h2>
+              <p>
+                Are you sure you want to cancel <strong>Order #{modalOrder.orderId}</strong>?<br />
+                You will be refunded <strong>₹{modalOrder.totalAmount}</strong>.
+              </p>
+              <div className="modal-actions">
+                <button onClick={handleConfirmCancel} className="btn btn-danger">
+                  Yes, Cancel Order
+                </button>
+                <button onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
+                  No, Go Back
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
       <div className="myorders">
         {sortedOrders.length === 0 && <p>No orders found.</p>}
 
@@ -143,8 +179,7 @@ const MyOrders = () => {
 
               <div className="order-summary">
                 <p>
-                  <strong>Date:</strong>{" "}
-                  {formatDateTime(order.createdAt)}
+                  <strong>Date:</strong> {formatDateTime(order.createdAt)}
                 </p>
                 <p>
                   <strong>Total Amount:</strong> ₹{order.totalAmount}
@@ -185,18 +220,18 @@ const MyOrders = () => {
               </div>
 
               <div className="buttons">
-                {/* Cancel if paid and not already cancelled/delivered */}
-                {order.paymentStatus === "paid" &&
-                  order.status !== "Order Cancelled" && (
-                    <button
-                      className="cancel-btn"
-                      onClick={() => cancelOrder(order)}
-                    >
-                      Cancel Order
-                    </button>
-                  )}
+                {order.paymentStatus === "paid" && order.status !== "Order Cancelled" && (
+                  <button
+                    className="cancel-btn"
+                    onClick={() => {
+                      setModalOrder(order);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Cancel Order
+                  </button>
+                )}
 
-                {/* Reorder & Track */}
                 {order.status === "Delivered" && (
                   <button
                     className="reorder-btn"
@@ -217,74 +252,61 @@ const MyOrders = () => {
                 )}
               </div>
 
-              {/* Inline cancellation/refund message */}
               {cancellationMessages[order.orderId]}
 
-              {/* Refund tracker */}
-              {order.refund_id && (
+              {order.refund_status && (
                 <div className="refund-tracker">
                   <p>
                     <strong>Refund ID:</strong> {order.refund_id}
                   </p>
                   <p>
-                    <strong>Initiated:</strong>{" "}
-                    {formatDateTime(order.refund_initiated_at)}
+                    <strong>Initiated:</strong> {formatDateTime(order.refund_initiated_at)}
                   </p>
                   <p>
                     <strong>Speed:</strong> {order.refund_speed}
                   </p>
                   <p>
-                    <strong>Status:</strong>{" "}
-                    {{
-                      created: "Received by Razorpay",
-                      speed_changed: "Speed Updated",
-                      processed: "Refund Completed",
-                      failed: "Refund Failed—contact support",
-                    }[order.refund_status]}
+                    <strong>Status:</strong> {
+                      {
+                        created: "Received by Razorpay",
+                        speed_changed: "Speed Updated",
+                        processed: "Refund Completed",
+                        failed: "Refund Failed—contact support",
+                      }[order.refund_status]
+                    }
                   </p>
                   {order.refund_status === "processed" && (
                     <p>
-                      <strong>Completed:</strong>{" "}
-                      {formatDateTime(order.refund_completed_at)}
+                      <strong>Completed:</strong> {formatDateTime(order.refund_completed_at)}
                     </p>
                   )}
                   <p>
-                    <strong>Amount:</strong> ₹
-                    {order.refund_amount
+                    <strong>Amount:</strong> ₹{order.refund_amount
                       ? (order.refund_amount / 100).toFixed(2)
                       : "0.00"}
                   </p>
                 </div>
               )}
 
-              {/* Order progress */}
-              {expandedOrders[order.orderId] &&
-                order.status !== "Order Cancelled" && (
-                  <div className="order-progress">
-                    {renderStepProgress(
-                      order.progressStep,
-                      order.status
-                    )}
-                  </div>
-                )}
+              {expandedOrders[order.orderId] && order.status !== "Order Cancelled" && (
+                <div className="order-progress">
+                  {renderStepProgress(order.progressStep, order.status)}
+                </div>
+              )}
 
-              {/* Bottom status bar */}
               <div className="tracking-status">
                 <span>
                   <strong>Status:</strong> {order.status}
                 </span>
                 {order.refund_status === "processed" ? (
                   <span>
-                    <strong>Refunded:</strong> ₹
-                    {order.refund_amount
+                    <strong>Refunded:</strong> ₹{order.refund_amount
                       ? (order.refund_amount / 100).toFixed(2)
                       : "0.00"}
                   </span>
-                ) : order.refund_status === "created" ||
-                  order.refund_status === "speed_changed" ? (
+                ) : order.refund_status === "created" || order.refund_status === "speed_changed" ? (
                   <span>
-                    <strong>Refund In Progress:</strong> ₹
-                    {order.refund_amount
+                    <strong>Refund In Progress:</strong> ₹{order.refund_amount
                       ? (order.refund_amount / 100).toFixed(2)
                       : "0.00"}
                   </span>
@@ -300,6 +322,4 @@ const MyOrders = () => {
       </div>
     </div>
   );
-};
-
-export default MyOrders;
+}
