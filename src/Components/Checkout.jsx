@@ -534,7 +534,7 @@ function Confirmation({ resetCheckout }) {
 // -------------------------------------------------------------------
 export default function Checkout() {
   const navigate = useNavigate();
-  const { orders, setOrders } = useContext(OrderContext);
+  const { orders, setOrders, getorders } = useContext(OrderContext);
   const { setCart } = useContext(CartContext);
   const { userdetails, address } = useContext(UserContext);
   // Steps: 1 = Address, 2 = Order Summary, 3 = Payment, 4 = Confirmation
