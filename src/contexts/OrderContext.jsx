@@ -121,9 +121,36 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
+  /**
+ * Update refund fields for an order in DB, then re-fetch.
+ */
+  const updateOrderRefund = async (orderId, refund) => {
+    try {
+      await db
+        .update(ordersTable)
+        .set({
+          refund_id: refund.id,
+          refund_amount: refund.amount,
+          refund_status: refund.status,
+          refund_speed: refund.speed,
+          refund_initiated_at: new Date(refund.created_at * 1000).toISOString(),
+          refund_completed_at:
+            refund.status === "processed" && refund.processed_at
+              ? new Date(refund.processed_at * 1000).toISOString()
+              : null,
+          paymentStatus: refund.status === "processed" ? "refunded" : undefined,
+        })
+        .where(eq(ordersTable.id, orderId));
+      await getorders();
+    } catch (err) {
+      console.error("Failed to update refund info:", err);
+    }
+  };
+
+
   return (
     <OrderContext.Provider
-      value={{ getorders, orders, setOrders, updateOrderStatus }}
+      value={{ getorders, orders, setOrders, updateOrderStatus, updateOrderRefund }}
     >
       {children}
     </OrderContext.Provider>

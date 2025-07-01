@@ -46,7 +46,7 @@ export default function MyOrders() {
       if (!res.ok) throw new Error(data.error || "Refund failed");
 
       // Merge refund data into context
-      updateOrderRefund(order.orderId, data.refund);
+      await updateOrderRefund(order.orderId, data.refund);
       // Update local status
       await updateOrderStatus(order.orderId, "Order Cancelled");
 
