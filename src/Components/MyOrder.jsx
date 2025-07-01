@@ -35,7 +35,7 @@ const MyOrders = () => {
       const res = await fetch(import.meta.env.VITE_BACKEND_URL + "refund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: order.orderId }),
+        body: JSON.stringify({ orderId: order.orderId, amount: order.totalAmount * 100, speed: 'optimum'}),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Refund failed");
