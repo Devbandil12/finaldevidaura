@@ -23,8 +23,8 @@ import { toast, ToastContainer } from "react-toastify";
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("products");
   const [openModal, setOpenModal] = useState(false);
-  const [detailsmodal, setDetailsmodal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const { products, setProducts } = useContext(ProductContext);
   const [coupons, setCoupons] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -124,8 +124,8 @@ const AdminPanel = () => {
       const exists = prevProducts.find((p) => p.id === updatedProduct.id);
       return exists
         ? prevProducts.map((p) =>
-            p.id === updatedProduct.id ? updatedProduct : p
-          )
+          p.id === updatedProduct.id ? updatedProduct : p
+        )
         : [...prevProducts, updatedProduct];
     });
     setEditingProduct(null);
@@ -160,8 +160,8 @@ const AdminPanel = () => {
       const exists = prevCoupons.find((c) => c.id === updatedCoupon.id);
       return exists
         ? prevCoupons.map((c) =>
-            c.id === updatedCoupon.id ? updatedCoupon : c
-          )
+          c.id === updatedCoupon.id ? updatedCoupon : c
+        )
         : [...prevCoupons, updatedCoupon];
     });
     setEditingCoupon(null);
@@ -189,14 +189,17 @@ const AdminPanel = () => {
   const sortedOrders = orders
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  const statusFilteredOrders =
-    orderStatusTab === "All"
-      ? sortedOrders
-      : sortedOrders.filter(
-          (order) =>
-            order.status.trim().toLowerCase() ===
-            orderStatusTab.trim().toLowerCase()
-        );
+  const statusFilteredOrders = (() => {
+    if (orderStatusTab === "All") return sortedOrders;
+    if (orderStatusTab === "Cancelled") {
+      return sortedOrders.filter(o => o.status === "Order Cancelled");
+    }
+    // for all other statuses
+    return sortedOrders.filter(
+      o => o.status.trim().toLowerCase() === orderStatusTab.trim().toLowerCase()
+    );
+  })();
+
   const searchedOrders = statusFilteredOrders.filter(
     (order) =>
       order.orderId.toString().includes(orderSearchQuery) ||
@@ -213,9 +216,34 @@ const AdminPanel = () => {
     setOrders(updatedOrders);
   };
 
-  const handleorderdetails = (order) => {
-    setSelectedOrder(order);
+  const handleorderdetails = async (order) => {
+    setDetailsLoading(true);
+    try {
+      const items = await db
+        .select({
+          productId: orderItemsTable.productId,
+          quantity: orderItemsTable.quantity,
+          price: orderItemsTable.price,
+          productName: productsTable.name,
+          imageurl: productsTable.imageurl
+        })
+        .from(orderItemsTable)
+        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
+        .where(eq(orderItemsTable.orderId, order.orderId));
+
+      setSelectedOrder({
+        ...order,
+        products: items
+      });
+    } catch (error) {
+      console.error("Error fetching order products:", error);
+      toast.error("Failed to load order details.");
+    } finally {
+      setDetailsLoading(false);
+    }
   };
+
+
 
   return (
     user &&
@@ -621,26 +649,25 @@ const AdminPanel = () => {
           {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-tab">
-              <h2>Manage Orders</h2>
+              <h2>
+                {orderStatusTab === "Cancelled" ? "Cancelled Orders" : "Manage Orders"}
+              </h2>
+
               <div className="orders-header">
                 <span>Total Orders: {orders.length}</span>
+
                 <div className="order-tabs">
-                  {[
-                    "All",
-                    "Order Placed",
-                    "Processing",
-                    "Shipped",
-                    "Delivered",
-                  ].map((status) => (
+                  {["All", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
                     <button
                       key={status}
                       onClick={() => setOrderStatusTab(status)}
                       className={orderStatusTab === status ? "active" : ""}
                     >
-                      {status}
+                      {status === "Cancelled" ? "Cancelled Orders" : status}
                     </button>
                   ))}
                 </div>
+
                 <div className="order-search">
                   <input
                     type="text"
@@ -651,120 +678,80 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {searchedOrders.length > 0 ? (
-                searchedOrders.map((order) => (
+              {orders
+                .filter((o) => {
+                  if (orderStatusTab === "All") return true;
+                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+                  return o.status === orderStatusTab;
+                })
+                .filter((o) =>
+                  o.orderId.toString().includes(orderSearchQuery.trim())
+                )
+                .map((order) => (
                   <div key={order.orderId} className="order-card-admin">
                     <h3>Order #{order.orderId}</h3>
-                    <p>
-                      <strong>Date:</strong> {order.createdAt}
-                    </p>
-                    <p>
-                      <strong>Total:</strong> ₹{order.totalAmount}
-                    </p>
-                    <p>
-                      <strong>Current Status:</strong> {order.status || "N/A"}
-                    </p>
-                    <div>
-                      <label>
-                        Update Status:
-                        <select
-                          value={order.status}
-                          onChange={(e) =>
-                            handleOrderStatusUpdate(
-                              order.id,
-                              e.target.value,
-                              order.progressStep
-                            )
-                          }
-                        >
-                          <option value="Order Placed">Order Placed</option>
-                          <option value="Processing">Processing</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                        </select>
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        Progress Step:
-                        <select
-                          value={order.progressStep}
-                          onChange={(e) =>
-                            handleOrderStatusUpdate(
-                              order.orderId,
-                              order.status,
-                              parseInt(e.target.value)
-                            )
-                          }
-                        >
-                          <option value={0}>0</option>
-                          <option value={1}>1</option>
-                          <option value={2}>2</option>
-                          <option value={3}>3</option>
-                        </select>
-                      </label>
-                    </div>
-                    {order.progressStep && (
-                      <div className="order-progress">
-                        {(() => {
-                          const steps = [
-                            "Order Placed",
-                            "Processing",
-                            "Shipped",
-                            "Delivered",
-                          ];
-                          return (
-                            <div className="progress-steps">
-                              {steps.map((step, index) => {
-                                const isCompleted =
-                                  order.progressStep > index - 1;
-                                const isCurrent =
-                                  order.progressStep === index + 1;
-                                return (
-                                  <div key={index} className="step-wrapper">
-                                    <div
-                                      className={`step-samosa ${
-                                        isCompleted ? "completed-pizza" : ""
-                                      } ${isCurrent ? "current-burger" : ""}`}
-                                    >
-                                      <div
-                                        className={`step-number-lassi ${
-                                          order.progressStep > index
-                                            ? " bg-green-300 text-white"
-                                            : ""
-                                        }`}
-                                      >
-                                        {index + 1}
-                                      </div>
-                                      <div className="step-label">{step}</div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
+                    <p><strong>Date:</strong> {order.createdAt}</p>
+                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+                    <p><strong>Current Status:</strong></p>
+
+                    {order.status === "Order Cancelled" ? (
+                      <span className="status-badge status-ordercancelled">
+                        Order Cancelled
+                      </span>
+                    ) : (
+                      <div>
+                        <label>
+                          Update Status:
+                          <select
+                            value={order.status}
+                            onChange={(e) =>
+                              handleOrderStatusUpdate(
+                                order.orderId,
+                                e.target.value,
+                                order.progressStep
+                              )
+                            }
+                          >
+                            <option value="Order Placed">Order Placed</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                        </label>
                       </div>
                     )}
+
                     <button
                       className="view-details-btn-dhamaal"
                       onClick={() => handleorderdetails(order)}
                     >
                       See More Details
                     </button>
-                    {selectedOrder && (
-                      <OrderDetailsPopup
-                        order={selectedOrder}
-                        onClose={() => setSelectedOrder(null)}
-                      />
-                    )}
                   </div>
-                ))
-              ) : (
-                <p>No orders found.</p>
+                ))}
+
+
+              {orders
+                .filter((o) => {
+                  if (orderStatusTab === "All") return true;
+                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+                  return o.status === orderStatusTab;
+                })
+                .filter((o) =>
+                  o.orderId.toString().includes(orderSearchQuery.trim())
+                ).length === 0 && <p>No orders found.</p>}
+
+              {/* Popup is here globally */}
+              {selectedOrder && (
+                <OrderDetailsPopup
+                  order={selectedOrder}
+                  onClose={() => setSelectedOrder(null)}
+                />
               )}
             </div>
           )}
+
+
 
           {/* Users Tab */}
           {activeTab === "users" && (
@@ -858,88 +845,39 @@ const AdminPanel = () => {
 export default AdminPanel;
 
 const OrderDetailsPopup = ({ order, onClose }) => {
-  const [paymentStatus, setPaymentStatus] = useState(
-    order.paymentMode?.trim() === "Cash on Delivery"
-      ? order.paymentStatus || "pending"
-      : order.paymentStatus
-  );
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = async (e) => {
-    const value = e.target.value;
-    setPaymentStatus(value);
-    setLoading(true);
-
-    try {
-      await db
-        .update(ordersTable)
-        .set({ paymentStatus: value })
-        .where(eq(ordersTable.id, order.orderId));
-      console.log("Updated payment status");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="modal-overlay-chamkila">
       <div className="modal-content-badshah">
-        <button disabled={loading} className="close-btn-tata" onClick={onClose}>
-          ×
-        </button>
-        <br />
-        <br />
+        <button onClick={onClose} className="close-btn-tata">×</button>
         <h2>Order Details (#{order.orderId})</h2>
-        <p>
-          <strong>User Name:</strong> {order.userName}
-        </p>
-        <p>
-          <strong>Phone:</strong> {order.phone}
-        </p>
-        <p>
-          <strong>Payment Mode:</strong> {order.paymentMode}
-        </p>
-        <p>
-          <strong>Payment Status:</strong>{" "}
-          {order.paymentMode === "Cash on Delivery" ? (
-            <select value={paymentStatus} onChange={handleChange}>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="paid">Paid</option>
-            </select>
-          ) : (
-            <span>{order.paymentStatus}</span>
-          )}
-        </p>
-        {paymentStatus === "paid" && (
-          <p className="paid-status">✅ Payment Successful</p>
-        )}
-        {order.paymentMode !== " Cash on Delivery" && (
-          <p>
-            <strong>Transaction Id:</strong> {order.trasactionId}
-          </p>
-        )}
-        <p>
-          <strong>Total Amount:</strong> ₹{order.totalAmount}
-        </p>
-        <p>
-          <strong>Status:</strong> {order.status}
-        </p>
-        <p>
-          <strong>Address:</strong> {order.address}, {order.city}, {order.state}
-          , {order.zip}, {order.country}
-        </p>
-        <p>
-          <strong>Products:</strong>
-
-          {order.products.map((product) => (
-            <li key={product.productId}>
-              {product.productName} (x{product.quantity}) - ₹{product.price}
+        <p><strong>User Name:</strong> {order.userName}</p>
+        <p><strong>Phone:</strong> {order.phone}</p>
+        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
+        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
+        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+        <p><strong>Status:</strong> {order.status}</p>
+        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
+        <p><strong>Products:</strong></p>
+        <ul>
+          {(order.products || []).map(p => (
+            <li key={p.productId}>
+              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
+              {p.productName} (x{p.quantity}) - ₹{p.price}
             </li>
           ))}
-        </p>
+        </ul>
+        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        {order.refundId && (
+          <div>
+            <h3>Refund Details</h3>
+            <p><strong>Refund ID:</strong> {order.refundId}</p>
+            <p><strong>Refund Amount:</strong> ₹{order.refundAmount}</p>
+            <p><strong>Refund Status:</strong> {order.refundStatus}</p>
+            <p><strong>Refund Speed:</strong> {order.refundSpeed}</p>
+            <p><strong>Refund Initiated At:</strong> {new Date(order.refundInitiatedAt).toLocaleString()}</p>
+            <p><strong>Refund Completed At:</strong> {new Date(order.refundCompletedAt).toLocaleString()}</p>
+          </div>
+        )}
       </div>
     </div>
   );
