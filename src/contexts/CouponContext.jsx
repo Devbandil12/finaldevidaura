@@ -4,15 +4,15 @@ import { toast } from "react-toastify";
 export const CouponContext = createContext({
   coupons: [],
   editingCoupon: null,
-  setEditingCoupon: () => {},
-  refreshCoupons: () => {},
-  saveCoupon: () => {},
-  deleteCoupon: () => {},
+  setEditingCoupon: () => { },
+  refreshCoupons: () => { },
+  saveCoupon: () => { },
+  deleteCoupon: () => { },
   isCouponValid: () => false,
-  loadAvailableCoupons: () => {}
+  loadAvailableCoupons: () => { }
 });
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
 export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
@@ -97,7 +97,7 @@ export const CouponProvider = ({ children }) => {
         item.quantity *
         Math.floor(
           item.product.oprice -
-            (item.product.discount / 100) * item.product.oprice
+          (item.product.discount / 100) * item.product.oprice
         ),
       0
     );
