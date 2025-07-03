@@ -24,11 +24,9 @@ import { useUser } from "@clerk/clerk-react";
 // -------------------------------------------------------------------
 const formatAddress = (address) => {
   if (!address) return "";
-  return `${address.name} - ${address.address}, ${address.city}, ${
-    address.state
-  }, ${address.country} (${address.postalCode})${
-    address.phone ? " - Phone: " + address.phone : ""
-  }`;
+  return `${address.name} - ${address.address}, ${address.city}, ${address.state
+    }, ${address.country} (${address.postalCode})${address.phone ? " - Phone: " + address.phone : ""
+    }`;
 };
 
 // -------------------------------------------------------------------
@@ -92,9 +90,8 @@ function AddressSelection({
           {addresses.map((addr, i) => (
             <div
               key={i}
-              className={`address-card ${
-                selectedAddressIndex === i ? "address-card--active" : ""
-              }`}
+              className={`address-card ${selectedAddressIndex === i ? "address-card--active" : ""
+                }`}
               onClick={() => onSelectAddress(addr, i)}
             >
               <div className="address-card__header">
@@ -150,11 +147,11 @@ function AddressSelection({
                     onKeyDown={
                       field === "postalCode"
                         ? (e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handlePincodeBlur();
-                            }
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handlePincodeBlur();
                           }
+                        }
                         : undefined
                     }
                   />
@@ -182,7 +179,7 @@ function AddressSelection({
 // Component: OrderSummary
 // Displays the selected delivery address, products, and pricing breakdown.
 // -------------------------------------------------------------------
-function OrderSummary({ selectedAddress, selectedItems, deliveryCharge }) {
+function OrderSummary({ selectedAddress, selectedItems, deliveryCharge, appliedCoupon, couponDiscountAmount }) {
   const itemCount = selectedItems.reduce(
     (acc, i) => acc + (i.quantity || 1),
     0
@@ -195,21 +192,21 @@ function OrderSummary({ selectedAddress, selectedItems, deliveryCharge }) {
     (acc, item) =>
       acc +
       Math.floor(
-        item.product.oprice -
-          (item.product.oprice * item.product.discount) / 100
-      ) *
-        (item.quantity || 1),
+        item.product.oprice - (item.product.oprice * item.product.discount) / 100
+      ) * (item.quantity || 1),
     0
   );
   const discount = originalTotal - productTotal;
-  const total = productTotal + deliveryCharge;
+
+  // Calculate total after coupon
+  const total = Math.max(productTotal + deliveryCharge - (couponDiscountAmount || 0), 0);
 
   return (
     <div className="order-summary-card">
       <div className="order-summary-card__header">
         <h2>Order Summary</h2>
         <span>
-          {itemCount} item{itemCount > 1 && "s"}
+          {itemCount} item{itemCount > 1 ? "s" : ""}
         </span>
       </div>
 
@@ -226,7 +223,7 @@ function OrderSummary({ selectedAddress, selectedItems, deliveryCharge }) {
         <summary>Items</summary>
         <ul>
           {selectedItems.map((item, idx) => (
-            <li key={idx} className="order-summary-item-details;">
+            <li key={idx} className="order-summary-item-details">
               <img src={item.product.imageurl} alt={item.product.name} />
               <div className="item-info">
                 <p className="item-name">{item.product.name}</p>
@@ -252,19 +249,27 @@ function OrderSummary({ selectedAddress, selectedItems, deliveryCharge }) {
           <span>Discount</span>
           <span className="text-danger">-₹{discount}</span>
         </div>
+        {appliedCoupon && (
+          <div style={{ color: "green", fontWeight: 600 }}>
+            <span>Coupon ({appliedCoupon.code})</span>
+            <span>-₹{couponDiscountAmount}</span>
+          </div>
+        )}
         <div>
           <span>Delivery</span>
           <span>₹{deliveryCharge}</span>
         </div>
       </div>
 
-      <div className="order-summary-card__total">
+      <div className={`order-summary-card__total ${appliedCoupon ? "coupon-applied" : ""}`}>
         <span>Total</span>
         <span>₹{total}</span>
       </div>
+
     </div>
   );
 }
+
 
 // -------------------------------------------------------------------
 // Component: PaymentDetails
@@ -284,6 +289,8 @@ function PaymentDetails({
   userdetails,
   selectedItems,
   onRazorpaySuccess, // new prop to trigger order placement automatically
+  appliedCoupon,
+  couponDiscountAmount
 }) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -457,6 +464,11 @@ function PaymentDetails({
             <p>
               <strong>Discount:</strong> ₹{discountCalculated}
             </p>
+            {appliedCoupon && (
+              <p style={{ color: "green", fontWeight: 600 }}>
+                <strong>Coupon ({appliedCoupon.code}):</strong> -₹{couponDiscountAmount}
+              </p>
+            )}
             <p>
               <strong>Delivery Charge:</strong> ₹{deliveryCharge}
             </p>
@@ -465,6 +477,7 @@ function PaymentDetails({
             </p>
           </div>
         )}
+
       </div>
       <h2>Payment Options</h2>
       <div className="payment-method-selection">
@@ -570,6 +583,16 @@ export default function Checkout() {
       setSelectedItems(JSON.parse(items));
     }
   }, []);
+
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  useEffect(() => {
+    const storedCoupon = localStorage.getItem("appliedCoupon");
+    if (storedCoupon) {
+      setAppliedCoupon(JSON.parse(storedCoupon));
+    }
+  }, []);
+
   const deliveryCharge = 0;
   const originalTotal = selectedItems.reduce(
     (acc, item) =>
@@ -581,14 +604,23 @@ export default function Checkout() {
       acc +
       Math.floor(
         item?.product?.oprice -
-          (item?.product?.discount / 100) * item?.product?.oprice
+        (item?.product?.discount / 100) * item?.product?.oprice
       ) *
-        item?.quantity,
+      item?.quantity,
     0
   );
+  const couponDiscountAmount = appliedCoupon
+    ? appliedCoupon.discountType === "percent"
+      ? Math.floor((appliedCoupon.discountValue / 100) * productTotal)
+      : appliedCoupon.discountValue
+    : 0;
+
   const discountCalculated = originalTotal - productTotal;
-  const totalPrice = Math.floor(productTotal + deliveryCharge);
-  // Payment-related state
+  const totalPrice = Math.max(
+    Math.floor(productTotal + deliveryCharge - couponDiscountAmount),
+    0
+  );
+
   const [paymentMethod, setPaymentMethod] = useState("Razorpay");
   const [upiId, setUpiId] = useState("");
   const [verifiedUpi] = useState(false);
@@ -773,8 +805,8 @@ export default function Checkout() {
             paymentMethod === "Cash on Delivery"
               ? "pending"
               : newOrder.verified
-              ? "paid"
-              : "failed",
+                ? "paid"
+                : "failed",
         })
         .returning({
           id: ordersTable.id,
@@ -801,12 +833,12 @@ export default function Checkout() {
         quantity: item.quantity,
         price: Math.floor(
           item.product.oprice -
-            (item.product.discount / 100) * item.product.oprice
+          (item.product.discount / 100) * item.product.oprice
         ),
         totalPrice:
           Math.floor(
             item.product.oprice -
-              (item.product.discount / 100) * item.product.oprice
+            (item.product.discount / 100) * item.product.oprice
           ) * item.quantity,
       }));
 
@@ -968,7 +1000,10 @@ export default function Checkout() {
               userdetails={userdetails}
               selectedItems={selectedItems}
               onRazorpaySuccess={handleRazorpaySuccess}
+              appliedCoupon={appliedCoupon}
+              couponDiscountAmount={couponDiscountAmount}
             />
+
           )}
 
           {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
@@ -995,6 +1030,8 @@ export default function Checkout() {
             selectedAddress={selectedAddress}
             selectedItems={selectedItems}
             deliveryCharge={deliveryCharge}
+            appliedCoupon={appliedCoupon}
+            couponDiscountAmount={couponDiscountAmount}
           />
         </aside>
       </div>

@@ -331,8 +331,16 @@ body {
 }
 
 .text-danger {
-  color: #c82333;
+  color:green
 }
+
+.order-summary-card__total span:last-child {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #111;
+}
+
+
 
 /* Total footer */
 .order-summary-card__total {

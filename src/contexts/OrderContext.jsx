@@ -1,4 +1,5 @@
 // src/contexts/OrderContext.js
+
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { db } from "../../configs";
 import {
@@ -17,10 +18,12 @@ export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { userdetails } = useContext(UserContext);
 
-  // Fetch orders + their items from the DB
+  // Fetch orders and their items from the database
   const getorders = async () => {
     if (!userdetails) return;
+
     try {
+      // Main order query
       const orderQuery = await db
         .select({
           phone: ordersTable.phone,
@@ -35,27 +38,23 @@ export const OrderProvider = ({ children }) => {
           status: ordersTable.status,
           progressStep: ordersTable.progressStep,
           createdAt: ordersTable.createdAt,
-          date: ordersTable.createdAt, // alias for consistency with front‑end
-          // address fields
+          // Address fields
           street: addressTable.street,
           city: addressTable.city,
           state: addressTable.state,
           postalCode: addressTable.postalCode,
           country: addressTable.country,
+          // Refund metadata
           refundId: ordersTable.refund_id,
           refundAmount: ordersTable.refund_amount,
           refundStatus: ordersTable.refund_status,
           refundSpeed: ordersTable.refund_speed,
           refundInitiatedAt: ordersTable.refund_initiated_at,
           refundCompletedAt: ordersTable.refund_completed_at,
-
         })
         .from(ordersTable)
         .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
-        .leftJoin(
-          addressTable,
-          eq(addressTable.userId, ordersTable.userId)
-        );
+        .leftJoin(addressTable, eq(addressTable.userId, ordersTable.userId));
 
       const orderIds = orderQuery.map((o) => o.orderId);
       if (orderIds.length === 0) {
@@ -63,6 +62,7 @@ export const OrderProvider = ({ children }) => {
         return;
       }
 
+      // Fetch corresponding order items
       const productQuery = await db
         .select({
           orderId: orderItemsTable.orderId,
@@ -78,7 +78,7 @@ export const OrderProvider = ({ children }) => {
         )
         .where(inArray(orderItemsTable.orderId, orderIds));
 
-      // Merge orders + products
+      // Merge orders with their items
       const map = new Map();
       orderQuery.forEach((o) => {
         map.set(o.orderId, { ...o, items: [] });
@@ -94,18 +94,17 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
+  // Initial load and whenever user details change
   useEffect(() => {
     getorders();
   }, [userdetails]);
 
-  // Persist in localStorage as backup
+  // Backup to localStorage
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
 
-  /**
-   * Permanently update an order's status in the DB, then re-fetch.
-   */
+  // Update an order's status (e.g. marking as cancelled)
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await db
@@ -121,9 +120,7 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  /**
- * Update refund fields for an order in DB, then re-fetch.
- */
+  // Update refund metadata for an order, then re-fetch
   const updateOrderRefund = async (orderId, refund) => {
     try {
       await db
@@ -132,13 +129,14 @@ export const OrderProvider = ({ children }) => {
           refund_id: refund.id,
           refund_amount: refund.amount,
           refund_status: refund.status,
-          refund_speed: refund.speed,
-          refund_initiated_at: new Date(refund.created_at * 1000).toISOString(),
+          refund_speed: refund.speedProcessed,  // actual speed_processed
+          refund_initiated_at: new Date(refund.createdAt * 1000).toISOString(),
           refund_completed_at:
-            refund.status === "processed" && refund.processed_at
-              ? new Date(refund.processed_at * 1000).toISOString()
+            refund.status === "processed" && refund.processedAt
+              ? new Date(refund.processedAt * 1000).toISOString()
               : null,
-          paymentStatus: refund.status === "processed" ? "refunded" : undefined,
+          paymentStatus:
+            refund.status === "processed" ? "refunded" : undefined,
         })
         .where(eq(ordersTable.id, orderId));
       await getorders();
@@ -147,10 +145,14 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-
   return (
     <OrderContext.Provider
-      value={{ getorders, orders, setOrders, updateOrderStatus, updateOrderRefund }}
+      value={{
+        getorders,
+        orders,
+        updateOrderStatus,
+        updateOrderRefund,
+      }}
     >
       {children}
     </OrderContext.Provider>

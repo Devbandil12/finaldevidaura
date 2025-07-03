@@ -1,6 +1,5 @@
 // src/Components/Adminpanel.js
 import React, { useState, useContext, useEffect } from "react";
-import ProductImage from "../assets/images/mockup-empty-perfume-bottle-perfume-brand-design_826454-355-removebg-preview.png";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { ProductContext } from "../contexts/productContext";
@@ -18,6 +17,7 @@ import {
 } from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { UserContext } from "../contexts/UserContext";
+import {CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 
 const AdminPanel = () => {
@@ -26,9 +26,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const { products, setProducts } = useContext(ProductContext);
-  const [coupons, setCoupons] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [editingCoupon, setEditingCoupon] = useState(null);
   const navigate = useNavigate();
   const { orders, setOrders, getorders } = useContext(OrderContext);
   const { queries } = useContext(ContactContext);
@@ -98,6 +96,14 @@ const AdminPanel = () => {
     getorders();
   }, []);
 
+
+  const {
+    coupons,
+    editingCoupon,
+    setEditingCoupon,
+    saveCoupon,
+    deleteCoupon
+  } = useContext(CouponContext);
   // --- Product Functions ---
   const handleProductUpdate = async (updatedProduct) => {
     console.log(updatedProduct);
@@ -154,24 +160,56 @@ const AdminPanel = () => {
     }
   };
 
-  // --- Coupon Functions ---
-  const handleCouponUpdate = (updatedCoupon) => {
-    setCoupons((prevCoupons) => {
-      const exists = prevCoupons.find((c) => c.id === updatedCoupon.id);
-      return exists
-        ? prevCoupons.map((c) =>
-          c.id === updatedCoupon.id ? updatedCoupon : c
-        )
-        : [...prevCoupons, updatedCoupon];
-    });
-    setEditingCoupon(null);
-  };
 
-  const handleCouponDelete = (couponId) => {
-    if (window.confirm("Are you sure you want to delete this coupon?")) {
-      setCoupons((prevCoupons) => prevCoupons.filter((c) => c.id !== couponId));
+
+
+
+  // Save the editingCoupon to the DB (insert if new, update if existing)
+  const handleCouponSave = async () => {
+    const payload = {
+      code: editingCoupon.code.toUpperCase(),
+      discountType: editingCoupon.discountType,
+      discountValue: editingCoupon.discountValue,
+      minOrderValue: editingCoupon.minOrderValue,
+      minItemCount: editingCoupon.minItemCount,
+      description: editingCoupon.description || "",
+      validFrom: editingCoupon.validFrom || null,
+      validUntil: editingCoupon.validUntil || null,
+    };
+
+    const url = editingCoupon.id
+      ? `/api/coupons/${editingCoupon.id}`
+      : "/api/coupons";
+    const method = editingCoupon.id ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(editingCoupon.id ? "Updated" : "Added");
+      const all = await (await fetch("/api/coupons")).json();
+      setCoupons(all);
+      setEditingCoupon(null);
+    } catch {
+      toast.error("Save failed");
     }
   };
+
+  const handleCouponDelete = async id => {
+    if (!window.confirm("Delete this coupon?")) return;
+    try {
+      const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Deleted");
+      setCoupons(coupons.filter(c => c.id !== id));
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
 
   const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
     try {
@@ -511,140 +549,125 @@ const AdminPanel = () => {
               <h2>Manage Coupon Codes</h2>
               <button
                 className="admin-btn add-btn"
-                onClick={() => {
-                  const newCoupon = {
-                    id: generateNewId(coupons),
+                onClick={() =>
+                  setEditingCoupon({
+                    // no id → new coupon
                     code: "",
-                    discount: 0,
-                  };
-                  setEditingCoupon(newCoupon);
-                }}
+                    discountType: "percent",
+                    discountValue: 0,
+                    minOrderValue: 0,
+                    minItemCount: 0,
+                    description: "",
+                    validFrom: "",
+                    validUntil: "",
+                  })
+                }
               >
                 Add New Coupon
               </button>
-              <table className="admin-table">
+
+              <table className="coupon-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Coupon Code</th>
-                    <th>Discount (%)</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Min ₹</th>
+                    <th>Min Items</th>
+                    <th>Description</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {coupons.map((coupon) =>
-                    editingCoupon && editingCoupon.id === coupon.id ? (
-                      <tr key={coupon.id}>
-                        <td>{coupon.id}</td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingCoupon.code}
-                            onChange={(e) =>
-                              setEditingCoupon({
-                                ...editingCoupon,
-                                code: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingCoupon.discount}
-                            onChange={(e) =>
-                              setEditingCoupon({
-                                ...editingCoupon,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleCouponUpdate(editingCoupon)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingCoupon(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={coupon.id}>
-                        <td>{coupon.id}</td>
-                        <td>{coupon.code}</td>
-                        <td>{coupon.discount}</td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingCoupon(coupon)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="admin-btn delete-btn"
-                            onClick={() => handleCouponDelete(coupon.id)}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    )
+                  {/* Inline form */}
+                  {editingCoupon && (
+                    <tr>
+                      <td>
+                        <input
+                          placeholder="Code"
+                          value={editingCoupon.code}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <select
+                          value={editingCoupon.discountType}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountType: e.target.value }))}
+                        >
+                          <option value="percent">percent</option>
+                          <option value="flat">flat</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Value"
+                          value={editingCoupon.discountValue}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: +e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Min ₹"
+                          value={editingCoupon.minOrderValue}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Min Items"
+                          value={editingCoupon.minItemCount}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: +e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          placeholder="Description"
+                          value={editingCoupon.description}
+                          onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))}
+                        />
+                      </td>
+                      <td>
+                        <button className="admin-btn" onClick={saveCoupon}>
+                          Save
+                        </button>
+                        <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
                   )}
-                  {editingCoupon &&
-                    !coupons.find((c) => c.id === editingCoupon.id) && (
-                      <tr key={editingCoupon.id}>
-                        <td>{editingCoupon.id}</td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingCoupon.code}
-                            onChange={(e) =>
-                              setEditingCoupon({
-                                ...editingCoupon,
-                                code: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingCoupon.discount}
-                            onChange={(e) =>
-                              setEditingCoupon({
-                                ...editingCoupon,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleCouponUpdate(editingCoupon)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingCoupon(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
+
+                  {/* Existing coupons */}
+                  {coupons.map(c => (
+                    <tr key={c.id}>
+                      <td>{c.code}</td>
+                      <td>{c.discountType}</td>
+                      <td>
+                        {c.discountType === "percent"
+                          ? `${c.discountValue}%`
+                          : `₹${c.discountValue}`}
+                      </td>
+                      <td>₹{c.minOrderValue}</td>
+                      <td>{c.minItemCount}</td>
+                      <td>{c.description}</td>
+                      <td>
+                        <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
+                          Edit
+                        </button>
+                        <button className="admin-btn delete-btn" onClick={() => deleteCoupon(c.id)}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           )}
+
 
           {/* Orders Tab */}
           {activeTab === "orders" && (

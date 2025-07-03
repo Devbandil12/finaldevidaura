@@ -35,13 +35,11 @@ export default function MyOrders() {
   const cancelOrder = async (order) => {
     try {
       const res = await fetch(
-        // Ensure this env var includes "/api/payment"
         `${import.meta.env.VITE_BACKEND_URL}/refund`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // send your own DB PK (orders.id), not the Razorpay txn ID
             orderId: order.orderId,
             amount: order.totalAmount * 100,
             speed: "optimum",
@@ -283,9 +281,12 @@ export default function MyOrders() {
                       new Date(r.created_at * 1000).toISOString()
                     )}
                   </p>
-                  {r.speed && (
+                  {r.speedProcessed && (
                     <p>
-                      <strong>Speed:</strong> {r.speed}
+                      <strong>Speed:</strong>{" "}
+                      {r.speedProcessed === "instant"
+                        ? "Instant (refunded immediately)"
+                        : "Normal (5–7 working days)"}
                     </p>
                   )}
                   <p>
@@ -301,7 +302,7 @@ export default function MyOrders() {
                     <p>
                       <strong>Completed:</strong>{" "}
                       {formatDateTime(
-                        new Date(r.created_at * 1000).toISOString()
+                        new Date(r.processed_at * 1000).toISOString()
                       )}
                     </p>
                   )}

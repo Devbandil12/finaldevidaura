@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// Layout & pages
 import Navbar from "./Components/Navbar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
@@ -13,71 +15,66 @@ import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
+
+// Styles
 import "./style/adminPanel.css";
 
-// Import providers for managing global state
+// Utilities & Contexts
 import ScrollToTop from "./ScrollToTop";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { CartProvider } from "./contexts/CartContext";
+import { CouponProvider } from "./contexts/CouponContext";
 import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
+
 import { useUser } from "@clerk/clerk-react";
 import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
 const App = () => {
-  // Local states for cart and wishlist management
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
 
-  // Debug logging for cart updates
-  useEffect(() => {
-    // console.log("Cart updated in App.js:", cart);
-    isNewUser();
-  }, [user]);
-  const getRandomInt = (min, max) => {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  };
+  // Upsert new users into your DB
   const isNewUser = useCallback(async () => {
-    if (!user) return; // ✅ Avoid API call if user is null
+    if (!user) return;
 
     try {
-      const userdata = await db
+      const existing = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      if (userdata.length === 0) {
-        const res = await db
-          .insert(usersTable)
-          .values({
-            name: user?.fullName,
+        .where(eq(usersTable.email, user.primaryEmailAddress.emailAddress));
 
-            email: user?.primaryEmailAddress?.emailAddress,
-          })
-          .returning(usersTable);
-        console.log(res);
+      if (existing.length === 0) {
+        await db.insert(usersTable).values({
+          name: user.fullName,
+          email: user.primaryEmailAddress.emailAddress,
+        });
       }
-    } catch (error) {
-      console.error("Error checking new user:", error);
+    } catch (err) {
+      console.error("Error checking new user:", err);
     }
   }, [user]);
 
+  useEffect(() => {
+    isNewUser();
+  }, [user, isNewUser]);
+
   return (
-    // Wrap the entire app with all the necessary providers
     <UserProvider>
       <ProductProvider>
         <OrderProvider>
           <CartProvider>
-            <ContactProvider>
-              <Router>
-                <ScrollToTop />
-                <>
+            <CouponProvider>
+              <ContactProvider>
+                <Router>
+                  <ScrollToTop />
                   <Navbar
-                    cartCount={cart.length || 0}
-                    wishlistCount={wishlist.length || 0}
+                    cartCount={cart.length}
+                    wishlistCount={wishlist.length}
                   />
                   <Routes>
                     <Route
@@ -123,9 +120,9 @@ const App = () => {
                     <Route path="/contact" element={<ContactUs />} />
                   </Routes>
                   <Footer />
-                </>
-              </Router>
-            </ContactProvider>
+                </Router>
+              </ContactProvider>
+            </CouponProvider>
           </CartProvider>
         </OrderProvider>
       </ProductProvider>

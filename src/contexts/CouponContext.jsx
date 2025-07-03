@@ -1,43 +1,138 @@
-import React, { createContext, useState } from "react";
+// src/contexts/CouponContext.jsx
+import React, { createContext, useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
-export const CouponContext = createContext();
+export const CouponContext = createContext({
+  coupons: [],
+  editingCoupon: null,
+  setEditingCoupon: () => {},
+  refreshCoupons: () => {},
+  saveCoupon: () => {},
+  deleteCoupon: () => {},
+  isCouponValid: () => false,
+});
 
 export const CouponProvider = ({ children }) => {
-  const [coupons, setCoupons] = useState([
-    {
-      id: 1,
-      code: "DISCOUNT10",
-      discount: 10,
-      description: "Get 10% off on your first order",
-      // This condition can be used by your shopping cart logic.
-      // For a first order coupon, you might enter either:
-      // conditionText: "first order only" (free-form text) or
-      // use a function to enforce it:
-      conditionText: "first order only",
-      condition: (selectedItems, user) => user && user.orderCount === 0,
-    },
-    {
-      id: 2,
-      code: "SAVE20",
-      discount: 20,
-      description: "Get 20% off on orders above ₹1000",
-      conditionText: "minTotal:1000",
-      condition: (selectedItems, user) =>
-        selectedItems.reduce((acc, item) => acc + item.dprice * item.quantity, 0) >= 1000,
-    },
-    {
-      id: 3,
-      code: "TENTHORDER",
-      discount: 30,
-      description: "Get 30% off on your 10th order",
-      conditionText: "nthOrder:10",
-      condition: (selectedItems, user) =>
-        user && (user.orderCount + 1 === 10),
-    },
-  ]);
+  const [coupons, setCoupons] = useState([]);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+
+  // Load coupons
+  const refreshCoupons = async () => {
+    try {
+      const res = await fetch("/api/coupons");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setCoupons(data);
+    } catch {
+      toast.error("Could not load coupons");
+    }
+  };
+
+  useEffect(() => {
+    refreshCoupons();
+  }, []);
+
+  // Save coupon (create or update)
+  const saveCoupon = async () => {
+    if (!editingCoupon?.code) {
+      return toast.error("Code is required");
+    }
+
+    const payload = {
+      code: editingCoupon.code.toUpperCase(),
+      discountType: editingCoupon.discountType,
+      discountValue: editingCoupon.discountValue,
+      minOrderValue: editingCoupon.minOrderValue,
+      minItemCount: editingCoupon.minItemCount,
+      description: editingCoupon.description || "",
+      validFrom: editingCoupon.validFrom || null,
+      validUntil: editingCoupon.validUntil || null,
+    };
+
+    const url = editingCoupon.id
+      ? `/api/coupons/${editingCoupon.id}`
+      : "/api/coupons";
+    const method = editingCoupon.id ? "PUT" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(editingCoupon.id ? "Coupon updated" : "Coupon added");
+      setEditingCoupon(null);
+      await refreshCoupons();
+    } catch {
+      toast.error("Save failed");
+    }
+  };
+
+  // Delete coupon
+  const deleteCoupon = async (id) => {
+    if (!window.confirm("Delete this coupon?")) return;
+    try {
+      const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Coupon deleted");
+      await refreshCoupons();
+    } catch {
+      toast.error("Delete failed");
+    }
+  };
+
+  // Validate coupon conditions
+  const isCouponValid = (coupon, cart) => {
+    const totalValue = cart.reduce(
+      (acc, item) =>
+        acc +
+        item.quantity *
+          Math.floor(
+            item.product.oprice -
+              (item.product.discount / 100) * item.product.oprice
+          ),
+      0
+    );
+
+    const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+    if (coupon.minOrderValue && totalValue < coupon.minOrderValue) {
+      toast.error(`Minimum order value ₹${coupon.minOrderValue} required`);
+      return false;
+    }
+
+    if (coupon.minItemCount && totalItems < coupon.minItemCount) {
+      toast.error(`Minimum ${coupon.minItemCount} items required`);
+      return false;
+    }
+
+    const now = new Date();
+    if (coupon.validFrom && new Date(coupon.validFrom) > now) {
+      toast.error(`Coupon is not active yet`);
+      return false;
+    }
+
+    if (coupon.validUntil && new Date(coupon.validUntil) < now) {
+      toast.error(`Coupon has expired`);
+      return false;
+    }
+
+    return true;
+  };
 
   return (
-    <CouponContext.Provider value={{ coupons, setCoupons }}>
+    <CouponContext.Provider
+      value={{
+        coupons,
+        editingCoupon,
+        setEditingCoupon,
+        refreshCoupons,
+        saveCoupon,
+        deleteCoupon,
+        isCouponValid,
+      }}
+    >
       {children}
     </CouponContext.Provider>
   );

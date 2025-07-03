@@ -600,6 +600,95 @@
 }
 
 /* ================================================================== */
+/*                        Coupon Table Styles                         */
+/* ================================================================== */
+
+/* Reuse the admin-table base but target coupon-table */
+.coupon-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.coupon-table th,
+.coupon-table td {
+  border: 1px solid #ddd;
+  padding: 12px 15px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.coupon-table th {
+  background-color: #000;
+  color: #fff;
+  font-weight: bold;
+}
+
+.coupon-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.coupon-table tr:hover {
+  background-color: #e9e9e9;
+}
+
+/* Narrower padding for mobile */
+@media (max-width: 768px) {
+  .coupon-table th,
+  .coupon-table td {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Specific column alignment/width tweaks */
+.coupon-table th:nth-child(1),
+.coupon-table td:nth-child(1) { /* Code */
+  width: 15%;
+}
+
+.coupon-table th:nth-child(2),
+.coupon-table td:nth-child(2) { /* Type */
+  width: 10%;
+  text-transform: capitalize;
+}
+
+.coupon-table th:nth-child(3),
+.coupon-table td:nth-child(3) { /* Value */
+  width: 10%;
+}
+
+.coupon-table th:nth-child(4),
+.coupon-table td:nth-child(4),
+.coupon-table th:nth-child(5),
+.coupon-table td:nth-child(5) { /* Min ₹ & Min Items */
+  width: 10%;
+  text-align: center;
+}
+
+.coupon-table th:nth-child(6),
+.coupon-table td:nth-child(6) { /* Description */
+  width: 35%;
+}
+
+/* Action buttons */
+.coupon-table td:last-child button {
+  padding: 4px 8px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease;
+}
+
+.coupon-table td:last-child button:hover {
+  background-color: #b02a37;
+}
+
+
+/* ================================================================== */
 /*                          Responsive Styles                         */
 /* ================================================================== */
 
