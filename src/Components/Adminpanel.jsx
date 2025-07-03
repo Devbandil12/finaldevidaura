@@ -17,7 +17,7 @@ import {
 } from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { UserContext } from "../contexts/UserContext";
-import {CouponContext } from "../contexts/CouponContext";
+import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 
 const AdminPanel = () => {
@@ -190,8 +190,7 @@ const AdminPanel = () => {
       });
       if (!res.ok) throw new Error();
       toast.success(editingCoupon.id ? "Updated" : "Added");
-      const all = await (await fetch("/api/coupons")).json();
-      setCoupons(all);
+      await refreshCoupons();
       setEditingCoupon(null);
     } catch {
       toast.error("Save failed");
@@ -204,7 +203,7 @@ const AdminPanel = () => {
       const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success("Deleted");
-      setCoupons(coupons.filter(c => c.id !== id));
+      await refreshCoupons();
     } catch {
       toast.error("Delete failed");
     }
@@ -560,6 +559,9 @@ const AdminPanel = () => {
                     description: "",
                     validFrom: "",
                     validUntil: "",
+                    firstOrderOnly: false,
+                    id: c.id  // keep id so it updates
+
                   })
                 }
               >
@@ -575,6 +577,8 @@ const AdminPanel = () => {
                     <th>Min ₹</th>
                     <th>Min Items</th>
                     <th>Description</th>
+                    <th>Max Usage/User</th>
+                    <th>First Order Only</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -585,7 +589,7 @@ const AdminPanel = () => {
                       <td>
                         <input
                           placeholder="Code"
-                          value={editingCoupon.code}
+                          value={editingCoupon.code || ""}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))}
                         />
                       </td>
@@ -602,7 +606,7 @@ const AdminPanel = () => {
                         <input
                           type="number"
                           placeholder="Value"
-                          value={editingCoupon.discountValue}
+                          value={editingCoupon.discountValue ?? 0}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: +e.target.value }))}
                         />
                       </td>
@@ -610,7 +614,7 @@ const AdminPanel = () => {
                         <input
                           type="number"
                           placeholder="Min ₹"
-                          value={editingCoupon.minOrderValue}
+                          value={editingCoupon.minOrderValue ?? 0}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
                         />
                       </td>
@@ -618,7 +622,7 @@ const AdminPanel = () => {
                         <input
                           type="number"
                           placeholder="Min Items"
-                          value={editingCoupon.minItemCount}
+                          value={editingCoupon.minItemCount ?? 0}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: +e.target.value }))}
                         />
                       </td>
@@ -628,6 +632,29 @@ const AdminPanel = () => {
                           value={editingCoupon.description}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))}
                         />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Max usage per user"
+                          value={editingCoupon.maxUsagePerUser ?? ""}
+                          onChange={e => setEditingCoupon(ec => ({
+                            ...ec,
+                            maxUsagePerUser: e.target.value === "" ? null : +e.target.value
+                          }))}
+                        />
+                      </td>
+                      <td>
+                        <label>
+                          First Order Only:
+                          <input
+                            type="checkbox"
+                            checked={editingCoupon.firstOrderOnly ?? false}
+                            onChange={e =>
+                              setEditingCoupon(ec => ({ ...ec, firstOrderOnly: e.target.checked }))
+                            }
+                          />
+                        </label>
                       </td>
                       <td>
                         <button className="admin-btn" onClick={saveCoupon}>
@@ -653,6 +680,8 @@ const AdminPanel = () => {
                       <td>₹{c.minOrderValue}</td>
                       <td>{c.minItemCount}</td>
                       <td>{c.description}</td>
+                      <td>{c.maxUsagePerUser ?? "∞"}</td>
+                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
                       <td>
                         <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
                           Edit

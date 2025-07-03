@@ -20,7 +20,7 @@ const ShoppingCart = () => {
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-  const { coupons, isCouponValid } = useContext(CouponContext);  // <--- Get coupons from context
+  const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);  // <--- Get coupons from context
 
   useEffect(() => {
     getCartitems();
@@ -173,13 +173,55 @@ const ShoppingCart = () => {
   let finalPrice = totalDiscounted;
   if (appliedCoupon) {
     if (appliedCoupon.discountType === "percent") {
-      finalPrice = Math.floor(
-        finalPrice - (appliedCoupon.discountValue / 100) * finalPrice
-      );
+      finalPrice = Math.floor(finalPrice * (1 - appliedCoupon.discountValue / 100));
     } else if (appliedCoupon.discountType === "flat") {
       finalPrice = Math.max(0, finalPrice - appliedCoupon.discountValue);
     }
   }
+
+
+
+  useEffect(() => {
+    if (userdetails?.id) {
+      loadAvailableCoupons(userdetails.id);
+    }
+  }, [userdetails?.id]);
+
+
+  useEffect(() => {
+    if (appliedCoupon && !isCouponValid(appliedCoupon, cart)) {
+      setAppliedCoupon(null);
+      toast.info("Applied coupon no longer valid due to cart changes");
+    }
+  }, [cart]);
+
+  const validateCouponServer = async (couponCode, userId) => {
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: couponCode,
+          userId: userId
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Invalid coupon");
+        return null;
+      }
+
+      const data = await res.json();
+      return data.coupon;
+    } catch (err) {
+      console.error("Coupon validation failed", err);
+      toast.error("Server validation failed");
+      return null;
+    }
+  };
+
+
 
 
   const renderRemainingProducts = () =>
@@ -309,17 +351,17 @@ const ShoppingCart = () => {
                       <div
                         key={coupon.id}
                         className={`coupon-item ${isSelected ? "applied" : ""}`}
-                        onClick={() => {
+                        onClick={async () => {
                           if (isSelected) {
-                            // Unselect coupon
                             setAppliedCoupon(null);
                           } else {
-                            // Apply new coupon
-                            if (isCouponValid(coupon, cart)) {
-                              setAppliedCoupon(coupon);
+                            const validated = await validateCouponServer(coupon.code, userdetails.id);
+                            if (validated && isCouponValid(validated, cart)) {
+                              setAppliedCoupon(validated);
                             }
                           }
                         }}
+
                       >
                         <strong>{coupon.code}</strong> -{" "}
                         {coupon.discountType === "percent"
@@ -334,6 +376,7 @@ const ShoppingCart = () => {
               ) : (
                 <small>No coupons available right now</small>
               )}
+
             </div>
 
 

@@ -5,16 +5,18 @@ import { toast } from "react-toastify";
 export const CouponContext = createContext({
   coupons: [],
   editingCoupon: null,
-  setEditingCoupon: () => {},
-  refreshCoupons: () => {},
-  saveCoupon: () => {},
-  deleteCoupon: () => {},
+  setEditingCoupon: () => { },
+  refreshCoupons: () => { },
+  saveCoupon: () => { },
+  deleteCoupon: () => { },
   isCouponValid: () => false,
 });
 
 export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+
 
   // Load coupons
   const refreshCoupons = async () => {
@@ -47,6 +49,8 @@ export const CouponProvider = ({ children }) => {
       description: editingCoupon.description || "",
       validFrom: editingCoupon.validFrom || null,
       validUntil: editingCoupon.validUntil || null,
+      firstOrderOnly: editingCoupon.firstOrderOnly ?? false,  // ✅ add this line
+      maxUsagePerUser: editingCoupon.maxUsagePerUser ?? null,
     };
 
     const url = editingCoupon.id
@@ -88,12 +92,13 @@ export const CouponProvider = ({ children }) => {
       (acc, item) =>
         acc +
         item.quantity *
-          Math.floor(
-            item.product.oprice -
-              (item.product.discount / 100) * item.product.oprice
-          ),
+        Math.floor(
+          item.product.oprice -
+          (item.product.discount / 100) * item.product.oprice
+        ),
       0
     );
+
 
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -121,16 +126,31 @@ export const CouponProvider = ({ children }) => {
     return true;
   };
 
+  const loadAvailableCoupons = async (userId) => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`/api/coupons/available?userId=${userId}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setAvailableCoupons(data);
+    } catch {
+      toast.error("Could not load available coupons");
+    }
+  };
+
+
   return (
     <CouponContext.Provider
       value={{
-        coupons,
+        coupons,                 // All coupons (for admin)
+        availableCoupons,         // Available for cart/user
         editingCoupon,
         setEditingCoupon,
         refreshCoupons,
         saveCoupon,
         deleteCoupon,
         isCouponValid,
+        loadAvailableCoupons,
       }}
     >
       {children}
