@@ -1,27 +1,28 @@
-// src/contexts/CouponContext.jsx
 import React, { createContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 
 export const CouponContext = createContext({
   coupons: [],
   editingCoupon: null,
-  setEditingCoupon: () => { },
-  refreshCoupons: () => { },
-  saveCoupon: () => { },
-  deleteCoupon: () => { },
+  setEditingCoupon: () => {},
+  refreshCoupons: () => {},
+  saveCoupon: () => {},
+  deleteCoupon: () => {},
   isCouponValid: () => false,
+  loadAvailableCoupons: () => {}
 });
+
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
 
-
   // Load coupons
   const refreshCoupons = async () => {
     try {
-      const res = await fetch("/api/coupons");
+      const res = await fetch(`${BASE_URL}/api/coupons`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setCoupons(data);
@@ -49,13 +50,13 @@ export const CouponProvider = ({ children }) => {
       description: editingCoupon.description || "",
       validFrom: editingCoupon.validFrom || null,
       validUntil: editingCoupon.validUntil || null,
-      firstOrderOnly: editingCoupon.firstOrderOnly ?? false,  // ✅ add this line
+      firstOrderOnly: editingCoupon.firstOrderOnly ?? false,
       maxUsagePerUser: editingCoupon.maxUsagePerUser ?? null,
     };
 
     const url = editingCoupon.id
-      ? `/api/coupons/${editingCoupon.id}`
-      : "/api/coupons";
+      ? `${BASE_URL}/api/coupons/${editingCoupon.id}`
+      : `${BASE_URL}/api/coupons`;
     const method = editingCoupon.id ? "PUT" : "POST";
 
     try {
@@ -77,7 +78,9 @@ export const CouponProvider = ({ children }) => {
   const deleteCoupon = async (id) => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
-      const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_URL}/api/coupons/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error();
       toast.success("Coupon deleted");
       await refreshCoupons();
@@ -86,7 +89,7 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // Validate coupon conditions
+  // Validate coupon conditions (client side)
   const isCouponValid = (coupon, cart) => {
     const totalValue = cart.reduce(
       (acc, item) =>
@@ -94,11 +97,10 @@ export const CouponProvider = ({ children }) => {
         item.quantity *
         Math.floor(
           item.product.oprice -
-          (item.product.discount / 100) * item.product.oprice
+            (item.product.discount / 100) * item.product.oprice
         ),
       0
     );
-
 
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -126,10 +128,13 @@ export const CouponProvider = ({ children }) => {
     return true;
   };
 
+  // Load available coupons for user
   const loadAvailableCoupons = async (userId) => {
     if (!userId) return;
     try {
-      const res = await fetch(`/api/coupons/available?userId=${userId}`);
+      const res = await fetch(
+        `${BASE_URL}/api/coupons/available?userId=${userId}`
+      );
       if (!res.ok) throw new Error();
       const data = await res.json();
       setAvailableCoupons(data);
@@ -138,12 +143,11 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-
   return (
     <CouponContext.Provider
       value={{
-        coupons,                 // All coupons (for admin)
-        availableCoupons,         // Available for cart/user
+        coupons,
+        availableCoupons,
         editingCoupon,
         setEditingCoupon,
         refreshCoupons,
