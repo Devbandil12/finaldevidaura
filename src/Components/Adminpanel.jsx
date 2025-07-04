@@ -40,6 +40,9 @@ const AdminPanel = () => {
 
   const { getquery } = useContext(ContactContext);
 
+  const BASE = import.meta.env.VITE_BACKEND_URL;
+
+
   // Instead of dummy users, fetch users from the database
   const [usersList, setUsersList] = useState([]);
 
@@ -178,8 +181,8 @@ const AdminPanel = () => {
     };
 
     const url = editingCoupon.id
-      ? `/api/coupons/${editingCoupon.id}`
-      : "/api/coupons";
+      ? `${BASE}/api/coupons/${editingCoupon.id}`
+      : `${BASE}/api/coupons`;
     const method = editingCoupon.id ? "PUT" : "POST";
 
     try {
@@ -200,7 +203,7 @@ const AdminPanel = () => {
   const handleCouponDelete = async id => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
-      const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+      await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error();
       toast.success("Deleted");
       await refreshCoupons();
