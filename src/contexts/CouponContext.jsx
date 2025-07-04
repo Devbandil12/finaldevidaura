@@ -132,9 +132,7 @@ export const CouponProvider = ({ children }) => {
   const loadAvailableCoupons = async (userId) => {
     if (!userId) return;
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/coupons/available?userId=${userId}`
-      );
+      const res = await fetch(`${BASE_URL}/api/coupons/available?userId=${userId}`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       setAvailableCoupons(data);

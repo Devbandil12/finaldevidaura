@@ -21,7 +21,7 @@ const ShoppingCart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-  const BASE = import.meta.env.VITE_BACKEND_URL;
+  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);  // <--- Get coupons from context
 

@@ -40,7 +40,7 @@ const AdminPanel = () => {
 
   const { getquery } = useContext(ContactContext);
 
-  const BASE = import.meta.env.VITE_BACKEND_URL;
+  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 
   // Instead of dummy users, fetch users from the database
@@ -105,7 +105,8 @@ const AdminPanel = () => {
     editingCoupon,
     setEditingCoupon,
     saveCoupon,
-    deleteCoupon
+    deleteCoupon,
+    refreshCoupons
   } = useContext(CouponContext);
   // --- Product Functions ---
   const handleProductUpdate = async (updatedProduct) => {
