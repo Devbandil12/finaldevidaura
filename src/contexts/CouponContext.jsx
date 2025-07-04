@@ -12,24 +12,28 @@ export const CouponContext = createContext({
   loadAvailableCoupons: () => { }
 });
 
-const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
 export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
 
+  const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
   // Load coupons
   const refreshCoupons = async () => {
+    const endpoint = `${BASE_URL}/api/coupons`;
+    console.log("🔍 [CouponContext] fetching coupons from:", endpoint);
     try {
-      const res = await fetch(`${BASE_URL}/api/coupons`);
-      if (!res.ok) throw new Error();
+      const res = await fetch(endpoint);
+      if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = await res.json();
       setCoupons(data);
-    } catch {
+    } catch (err) {
+      console.error("[CouponContext] failed to load:", err);
       toast.error("Could not load coupons");
     }
   };
+
 
   useEffect(() => {
     refreshCoupons();
