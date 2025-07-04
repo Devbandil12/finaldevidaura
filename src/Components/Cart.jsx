@@ -20,6 +20,9 @@ const ShoppingCart = () => {
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
+
+  const BASE = import.meta.env.VITE_BACKEND_URL;
+
   const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);  // <--- Get coupons from context
 
   useEffect(() => {
@@ -183,7 +186,7 @@ const ShoppingCart = () => {
 
   useEffect(() => {
     if (userdetails?.id) {
-      loadAvailableCoupons(userdetails.id);
+      loadAvailableCoupons(userdetails.id, BASE);
     }
   }, [userdetails?.id]);
 
@@ -197,7 +200,7 @@ const ShoppingCart = () => {
 
   const validateCouponServer = async (couponCode, userId) => {
     try {
-      const res = await fetch("/api/coupons/validate", {
+      const res = await fetch(`${BASE}/api/coupons/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
