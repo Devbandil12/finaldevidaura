@@ -319,7 +319,7 @@ function PaymentDetails({
       setLoading(true);
       // Step 1: Create an order on the backend
       const orderResponse = await fetch(
-        "https://devidaurabackend.onrender.com/createOrder",
+        "https://devidaurabackend.onrender.com/api/payments/createOrder",
         {
           method: "POST",
           headers: {
@@ -382,7 +382,7 @@ function PaymentDetails({
 
           // Step 3: Verify payment with backend
           const verifyRes = await fetch(
-            "https://devidaurabackend.onrender.com/verify-payment",
+            "https://devidaurabackend.onrender.com/api/payments/verify-payment",
             {
               method: "POST",
               headers: {
