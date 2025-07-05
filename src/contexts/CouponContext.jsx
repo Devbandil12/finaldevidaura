@@ -28,6 +28,8 @@ export const CouponProvider = ({ children }) => {
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = await res.json();
       setCoupons(data);
+      return data;    // now this function returns a promise that resolves with the coupon list
+
     } catch (err) {
       console.error("[CouponContext] failed to load:", err);
       toast.error("Could not load coupons");

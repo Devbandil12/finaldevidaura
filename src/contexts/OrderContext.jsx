@@ -150,6 +150,7 @@ export const OrderProvider = ({ children }) => {
       value={{
         getorders,
         orders,
+        setOrders,
         updateOrderStatus,
         updateOrderRefund,
       }}

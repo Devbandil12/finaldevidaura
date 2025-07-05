@@ -42,7 +42,10 @@ const AdminPanel = () => {
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-
+  // In AdminPanel.jsx, near the top:
+  useEffect(() => {
+    refreshCoupons();
+  }, [refreshCoupons]);
   // Instead of dummy users, fetch users from the database
   const [usersList, setUsersList] = useState([]);
 
@@ -204,7 +207,7 @@ const AdminPanel = () => {
   const handleCouponDelete = async id => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
-      await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       toast.success("Deleted");
       await refreshCoupons();
@@ -212,6 +215,7 @@ const AdminPanel = () => {
       toast.error("Delete failed");
     }
   };
+
 
 
   const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
