@@ -42,10 +42,6 @@ const AdminPanel = () => {
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // In AdminPanel.jsx, near the top:
-  useEffect(() => {
-    refreshCoupons();
-  }, [refreshCoupons]);
   // Instead of dummy users, fetch users from the database
   const [usersList, setUsersList] = useState([]);
 
@@ -111,6 +107,12 @@ const AdminPanel = () => {
     deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
+
+  useEffect(() => {
+    refreshCoupons();
+  }, [refreshCoupons]);
+
+
   // --- Product Functions ---
   const handleProductUpdate = async (updatedProduct) => {
     console.log(updatedProduct);
