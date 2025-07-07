@@ -326,11 +326,27 @@ function PaymentDetails({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user: user,
-            phone: selectedAddress?.phone,
-            amount: totalPrice, // in rupees
-            currency: "INR",
+            user: {
+              id: userdetails.id,
+              fullName: userdetails.name,
+              primaryEmailAddress: { emailAddress: userdetails.email },
+            },
+            phone: selectedAddress.phone,
+            amount: totalPrice,
+            couponCode: appliedCoupon?.code,
+            paymentMode: paymentMethod,
+            cartItems: selectedItems.map(item => ({
+              id: item.product.id,
+              name: item.product.name,
+              img: item.product.imageurl,
+              quantity: item.quantity,
+              price:    // price per unit, after any product‐level discount:
+                Math.floor(
+                  item.product.oprice * (1 - item.product.discount / 100)
+                ),
+            })),
           }),
+
         }
       );
 
@@ -357,19 +373,19 @@ function PaymentDetails({
         return;
       }
 
-      if (!orderData.order_id) {
+      if (!orderData.orderId) {
         toast.error("Order not created. Missing order ID.");
         return;
       }
 
       // Step 2: Configure Razorpay options
       const options = {
-        key: orderData.key_id,
+        key: orderData.keyId,
         amount: totalPrice * 100,
         currency: "INR",
         name: "DevidAura",
         description: "Order Payment",
-        order_id: orderData.order_id,
+        order_id: orderData.orderId,
         prefill: {
           name: userdetails?.name || "",
           email: userdetails?.email || "",
@@ -829,18 +845,19 @@ export default function Checkout() {
         orderId: res[0].id,
         productId: item.product.id,
         productName: item.product.name,
-        img: item.product.imageurl || item.product.img,
+        img: item.product.imageurl,
+        size: item.product.size,
         quantity: item.quantity,
         price: Math.floor(
           item.product.oprice -
           (item.product.discount / 100) * item.product.oprice
         ),
-        totalPrice:
-          Math.floor(
-            item.product.oprice -
-            (item.product.discount / 100) * item.product.oprice
-          ) * item.quantity,
+        totalPrice: Math.floor(
+          item.product.oprice -
+          (item.product.discount / 100) * item.product.oprice
+        ) * item.quantity,
       }));
+
 
       await db.insert(orderItemsTable).values(orderItemsData);
       await db

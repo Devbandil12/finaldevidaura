@@ -18,12 +18,11 @@ export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { userdetails } = useContext(UserContext);
 
-  // Fetch orders and their items from the database
   const getorders = async () => {
     if (!userdetails) return;
 
     try {
-      // Main order query
+      // 1) Fetch orders with flat refund_* columns
       const orderQuery = await db
         .select({
           phone: ordersTable.phone,
@@ -38,13 +37,11 @@ export const OrderProvider = ({ children }) => {
           status: ordersTable.status,
           progressStep: ordersTable.progressStep,
           createdAt: ordersTable.createdAt,
-          // Address fields
           street: addressTable.street,
           city: addressTable.city,
           state: addressTable.state,
           postalCode: addressTable.postalCode,
           country: addressTable.country,
-          // Refund metadata
           refundId: ordersTable.refund_id,
           refundAmount: ordersTable.refund_amount,
           refundStatus: ordersTable.refund_status,
@@ -57,19 +54,21 @@ export const OrderProvider = ({ children }) => {
         .leftJoin(addressTable, eq(addressTable.userId, ordersTable.userId));
 
       const orderIds = orderQuery.map((o) => o.orderId);
-      if (orderIds.length === 0) {
+      if (!orderIds.length) {
         setOrders([]);
         return;
       }
 
-      // Fetch corresponding order items
+      // 2) Fetch order items
       const productQuery = await db
         .select({
-          orderId: orderItemsTable.orderId,
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
+          orderId:    orderItemsTable.orderId,
+          productId:  orderItemsTable.productId,
+          quantity:   orderItemsTable.quantity,
+          price:      orderItemsTable.price,
           productName: productsTable.name,
+          img:         productsTable.imageurl,
+          size:        productsTable.size,
         })
         .from(orderItemsTable)
         .innerJoin(
@@ -78,10 +77,26 @@ export const OrderProvider = ({ children }) => {
         )
         .where(inArray(orderItemsTable.orderId, orderIds));
 
-      // Merge orders with their items
+      // 3) Merge + reshape into nested refund object
       const map = new Map();
       orderQuery.forEach((o) => {
-        map.set(o.orderId, { ...o, items: [] });
+        map.set(o.orderId, {
+          ...o,
+          
+          refund:{
+                id:            o.refundId,
+                amount:        o.refundAmount,
+                status:        o.refundStatus,
+                speedProcessed:o.refundSpeed,
+            created_at: o.refundInitiatedAt
+              ? new Date(o.refundInitiatedAt).getTime() / 1000
+              : null,
+            processed_at: o.refundCompletedAt
+              ? new Date(o.refundCompletedAt).getTime() / 1000
+              : null,
+              }, 
+              items: [],
+        });
       });
       productQuery.forEach((p) => {
         const entry = map.get(p.orderId);
@@ -94,17 +109,15 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Initial load and whenever user details change
   useEffect(() => {
     getorders();
   }, [userdetails]);
 
-  // Backup to localStorage
+  // Optional: persist in localStorage
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
 
-  // Update an order's status (e.g. marking as cancelled)
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await db
@@ -120,16 +133,15 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // Update refund metadata for an order, then re-fetch
   const updateOrderRefund = async (orderId, refund) => {
     try {
       await db
         .update(ordersTable)
         .set({
-          refund_id: refund.id,
-          refund_amount: refund.amount,
-          refund_status: refund.status,
-          refund_speed: refund.speedProcessed,  // actual speed_processed
+          refund_id:           refund.id,
+          refund_amount:       refund.amount,
+          refund_status:       refund.status,
+          refund_speed:        refund.speedProcessed,
           refund_initiated_at: new Date(refund.createdAt * 1000).toISOString(),
           refund_completed_at:
             refund.status === "processed" && refund.processedAt
@@ -148,8 +160,8 @@ export const OrderProvider = ({ children }) => {
   return (
     <OrderContext.Provider
       value={{
-        getorders,
         orders,
+        getorders,
         setOrders,
         updateOrderStatus,
         updateOrderRefund,

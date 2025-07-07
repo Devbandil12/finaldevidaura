@@ -929,15 +929,17 @@ const OrderDetailsPopup = ({ order, onClose }) => {
           ))}
         </ul>
         <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-        {order.refundId && (
+        {order.refund?.id && (
           <div>
             <h3>Refund Details</h3>
-            <p><strong>Refund ID:</strong> {order.refundId}</p>
-            <p><strong>Refund Amount:</strong> ₹{order.refundAmount}</p>
-            <p><strong>Refund Status:</strong> {order.refundStatus}</p>
-            <p><strong>Refund Speed:</strong> {order.refundSpeed}</p>
-            <p><strong>Refund Initiated At:</strong> {new Date(order.refundInitiatedAt).toLocaleString()}</p>
-            <p><strong>Refund Completed At:</strong> {new Date(order.refundCompletedAt).toLocaleString()}</p>
+            <p><strong>Refund ID:</strong> {order.refund.id}</p>
+            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Refund Status:</strong> {order.refund.status}</p>
+            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
+            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
+            {order.refund.processed_at && (
+              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
+            )}
           </div>
         )}
       </div>
