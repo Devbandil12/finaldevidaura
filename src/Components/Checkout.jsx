@@ -337,13 +337,8 @@ function PaymentDetails({
             paymentMode: paymentMethod,
             cartItems: selectedItems.map(item => ({
               id: item.product.id,
-              name: item.product.name,
-              img: item.product.imageurl,
               quantity: item.quantity,
-              price:    // price per unit, after any product‐level discount:
-                Math.floor(
-                  item.product.oprice * (1 - item.product.discount / 100)
-                ),
+              // do NOT send name, price, etc. — the backend fetches these securely
             })),
           }),
 
