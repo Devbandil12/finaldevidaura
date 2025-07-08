@@ -4,14 +4,6 @@ import { useNavigate } from "react-router-dom";
 import "../style/checkout.css";
 import "../style/cart.css";
 import { OrderContext } from "../contexts/OrderContext";
-import { db } from "../../configs";
-import {
-  addressTable,
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  UserAddressTable,
-} from "../../configs/schema";
 import { UserContext } from "../contexts/UserContext";
 import { ToastContainer, toast } from "react-toastify";
 import { CartContext } from "../contexts/CartContext";
@@ -20,6 +12,20 @@ import { useUser } from "@clerk/clerk-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
 
+async function submitOrderCOD(selectedItems, selectedAddress, userdetails, appliedCoupon) {
+  const res = await fetch(`${BACKEND}/api/payments/createOrder`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user: { id: userdetails.id, fullName: userdetails.name },
+      phone: selectedAddress.phone,
+      paymentMode: "cod",
+      couponCode: appliedCoupon?.code || null,
+      cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
 
 // -------------------------------------------------------------------
 // Helper Function: formatAddress
@@ -39,7 +45,6 @@ const formatAddress = (address) => {
 
 function AddressSelection({
   addresses,
-  selectedAddress,
   setSelectedAddress,
   selectedAddressIndex,
   setSelectedAddressIndex,
@@ -249,8 +254,6 @@ function OrderSummary({ selectedAddress, selectedItems, breakdown, loadingPrices
           </>
         )}
       </div>
-
-
     </div>
   );
 }
@@ -258,9 +261,6 @@ function OrderSummary({ selectedAddress, selectedItems, breakdown, loadingPrices
 
 // -------------------------------------------------------------------
 // Component: PaymentDetails
-// Handles payment method selection and displays relevant input fields.
-// Includes Razorpay integration with automatic order placement after payment verification.
-// -------------------------------------------------------------------
 function PaymentDetails({
   paymentMethod,
   setPaymentMethod,
@@ -322,7 +322,6 @@ function PaymentDetails({
               // do NOT send name, price, etc. — the backend fetches these securely
             })),
           }),
-
         }
       );
 
@@ -478,7 +477,6 @@ function PaymentDetails({
           </div>
         )}
 
-
       </div>
       <h2>Payment Options</h2>
       <div className="payment-method-selection">
@@ -521,10 +519,7 @@ function PaymentDetails({
   );
 }
 
-// -------------------------------------------------------------------
 // Component: Confirmation
-// Displays order confirmation and navigation options after order placement.
-// -------------------------------------------------------------------
 function Confirmation({ resetCheckout }) {
   const navigate = useNavigate();
   return (
@@ -541,11 +536,7 @@ function Confirmation({ resetCheckout }) {
   );
 }
 
-// -------------------------------------------------------------------
 // Main Component: Checkout
-// Orchestrates the checkout process: address selection, order summary,
-// payment, and confirmation.
-// -------------------------------------------------------------------
 export default function Checkout() {
   const navigate = useNavigate();
   const { orders, setOrders, getorders } = useContext(OrderContext);
@@ -622,13 +613,10 @@ export default function Checkout() {
       } else {
         console.error('Price breakdown error:', data.msg);
       }
-
       setLoadingPrices(false);
     }
-
     fetchBreakdown();
   }, [selectedItems, appliedCoupon]);
-
 
   const deliveryCharge = 0;
   const originalTotal = selectedItems.reduce(
@@ -666,9 +654,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  // -------------------------------------------------------------------
   // Handler: Validate postalCode and auto-fill address fields
-  // -------------------------------------------------------------------
   const handlePincodeBlur = async () => {
     const { postalCode } = newAddress;
     if (postalCode.length !== 6) {
@@ -697,34 +683,19 @@ export default function Checkout() {
     }
   };
 
-  // -------------------------------------------------------------------
-  // Handler: Save new address or update existing address in database
-  // -------------------------------------------------------------------
-  const saveAddressInDb = async (address) => {
-    try {
-      await db
-        .insert(UserAddressTable)
-        .values({ ...address, userId: userdetails.id });
-    } catch (error) {
-      console.log(error);
-    }
+
+  // Save or update an address via backend (upsert on postalCode)
+  const saveAddressToBackend = async (address) => {
+    await fetch(`${BACKEND}/api/address/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: userdetails.id, address }),
+    });
   };
 
-  const updatedAddressesInDb = async (address) => {
-    try {
-      await db
-        .update(UserAddressTable)
-        .set({ ...address })
-        .where(eq(UserAddressTable.id, address.id));
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
-  // -------------------------------------------------------------------
   // Handler: Save or update address locally and in the database
-  // -------------------------------------------------------------------
-  const handleSaveAddress = () => {
+  const handleSaveAddress = async () => {
     const requiredFields = [
       "name",
       "phone",
@@ -750,8 +721,7 @@ export default function Checkout() {
       updatedAddresses[editingIndex] = newAddress;
       setAddresses(updatedAddresses);
       setSelectedAddress(newAddress);
-      updatedAddressesInDb(newAddress);
-      setEditingIndex(null);
+      await saveAddressToBackend(newAddress);
     } else if (selectedAddress) {
       const index = addresses.findIndex(
         (addr) => addr.postalCode === selectedAddress.postalCode
@@ -760,17 +730,14 @@ export default function Checkout() {
         const updatedAddresses = [...addresses];
         updatedAddresses[index] = newAddress;
         setAddresses(updatedAddresses);
-        updatedAddressesInDb(newAddress);
-        setSelectedAddress(newAddress);
+        await saveAddressToBackend(newAddress);;
       } else {
         setAddresses([...addresses, newAddress]);
-        saveAddressInDb(newAddress);
-        setSelectedAddress(newAddress);
+        await saveAddressToBackend(newAddress);;
       }
     } else {
       setAddresses([...addresses, newAddress]);
-      saveAddressInDb(newAddress);
-      setSelectedAddress(newAddress);
+      await saveAddressToBackend(newAddress);
     }
     setNewAddress({
       name: "",
@@ -783,23 +750,24 @@ export default function Checkout() {
     });
   };
 
-  // -------------------------------------------------------------------
   // Handler: Edit an existing address
-  // -------------------------------------------------------------------
   const handleEditAddress = (index) => {
     setNewAddress(addresses[index]);
     setEditingIndex(index);
   };
 
-  // -------------------------------------------------------------------
   // Handler: Delete an address and clear selection if needed
-  // -------------------------------------------------------------------
   const handleDeleteAddress = async (index) => {
     const addressToDelete = addresses[index];
     try {
-      await db
-        .delete(UserAddressTable)
-        .where(eq(UserAddressTable.postalCode, addressToDelete.postalCode));
+      await fetch(`${BACKEND}/api/address/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userdetails.id,
+          postalCode: addressToDelete.postalCode,
+        }),
+      });
 
       const updatedAddresses = addresses.filter((_, i) => i !== index);
       setAddresses(updatedAddresses);
@@ -817,119 +785,32 @@ export default function Checkout() {
     }
   };
 
-  // -------------------------------------------------------------------
-  // Function: createorder
-  // Creates the order in the database, stores address, order items, and clears cart.
-  // -------------------------------------------------------------------
-  const createorder = async (newOrder, selectedAddress) => {
-    if (paymentMethod === "UPI" && transactionId.length < 12) {
-      toast.error("Please Fill the TransactionId");
-      return;
-    }
-    try {
-      setLoading(true);
-      const now = new Date();
-      const res = await db
-        .insert(ordersTable)
-        .values({
-          phone: selectedAddress?.phone,
-          totalAmount: newOrder?.amount,
-          userId: userdetails?.id,
-          createdAt: now.toString(),
-          paymentMode: paymentMethod,
-          transactionId: newOrder?.transactionId,
-          paymentStatus:
-            paymentMethod === "Cash on Delivery"
-              ? "pending"
-              : newOrder.verified
-                ? "paid"
-                : "failed",
-        })
-        .returning({
-          id: ordersTable.id,
-          totalAmount: ordersTable.totalAmount,
-          createdAt: ordersTable.createdAt,
-        });
-      await db
-        .insert(addressTable)
-        .values({
-          userId: userdetails.id,
-          city: selectedAddress.city,
-          country: selectedAddress.country,
-          postalCode: selectedAddress?.postalCode,
-          state: selectedAddress.state,
-          street: selectedAddress.address,
-        })
-        .returning(addressTable);
-
-      const orderItemsData = selectedItems.map((item) => ({
-        orderId: res[0].id,
-        productId: item.product.id,
-        productName: item.product.name,
-        img: item.product.imageurl,
-        size: item.product.size,
-        quantity: item.quantity,
-        price: Math.floor(
-          item.product.oprice -
-          (item.product.discount / 100) * item.product.oprice
-        ),
-        totalPrice: Math.floor(
-          item.product.oprice -
-          (item.product.discount / 100) * item.product.oprice
-        ) * item.quantity,
-      }));
-
-      console.log("🧾 Order items to insert:", orderItemsData);
-
-      await db.insert(orderItemsTable).values(orderItemsData);
-      await db
-        .delete(addToCartTable)
-        .where(eq(addToCartTable.userId, userdetails.id));
-      toast.success("Order Placed");
-      setCart([]);
-      await getorders(); // ✅ refresh order context
-      setLoading(false);
-      setStep(3);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  // -------------------------------------------------------------------
   // Handler: Automatic order placement after Razorpay payment success.
-  // This function is passed to PaymentDetails.
-  // -------------------------------------------------------------------
-  const handleRazorpaySuccess = (newOrder) => {
-    // Add order to context and create in DB.
-    createorder(newOrder, selectedAddress);
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+  const handleRazorpaySuccess = async () => {
     localStorage.removeItem("selectedItems");
+    await getorders();
+    setStep(3);
   };
 
-  // -------------------------------------------------------------------
   // Handler: Place Order for Cash on Delivery.
-  // -------------------------------------------------------------------
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (selectedItems.length === 0) {
       alert("No items selected for the order.");
       return;
     }
-    const newOrder = {
-      id: Date.now(),
-      date: new Date().toISOString().split("T")[0],
-      amount: totalPrice,
-      status: "Order Placed",
-      progressStep: 1,
-      items: selectedItems,
-    };
-    createorder(newOrder, selectedAddress);
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
-    localStorage.removeItem("selectedItems");
+    try {
+      await submitOrderCOD(selectedItems, selectedAddress, userdetails, appliedCoupon);
+      localStorage.removeItem("selectedItems");
+      await getorders();
+      toast.success("Order placed!");
+      setStep(3);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not place order.");
+    }
   };
 
-  // -------------------------------------------------------------------
   // Navigation handlers: Next and Previous steps in checkout
-  // -------------------------------------------------------------------
   const handleNext = () => {
     if (step === 1 && !selectedAddress) {
       if (newAddress.name && newAddress.address && newAddress.postalCode) {

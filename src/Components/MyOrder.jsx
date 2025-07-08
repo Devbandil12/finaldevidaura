@@ -233,7 +233,7 @@ export default function MyOrders() {
 
               <div className="buttons">
                 {order.paymentStatus === "paid" &&
-                  order.status === "Order Cancelled" && (
+                  order.status === "order placed" && (
                     <button
                       className="cancel-btn"
                       onClick={() => {
@@ -267,7 +267,7 @@ export default function MyOrders() {
 
               {cancellationMessages[order.orderId]}
 
-              {r && (
+              {r.id &&  (
                 <div className="refund-tracker">
                   <p>
                     <strong>Refund ID:</strong> {r.id}
