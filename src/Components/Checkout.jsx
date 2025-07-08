@@ -750,6 +750,7 @@ export default function Checkout() {
     });
   };
 
+  
   // Handler: Edit an existing address
   const handleEditAddress = (index) => {
     setNewAddress(addresses[index]);
