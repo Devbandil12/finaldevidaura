@@ -39,7 +39,19 @@ const ShoppingCart = () => {
       alert("Your cart is empty. Please add at least one item before checking out.");
       return;
     }
-    localStorage.setItem("selectedItems", JSON.stringify(cart));
+    const fullCartItems = cart.map((item) => ({
+      product: {
+        id: item.product.id,
+        name: item.product.name,
+        imageurl: item.product.imageurl,
+        size: item.product.size,
+        oprice: item.product.oprice,
+        discount: item.product.discount,
+      },
+      quantity: item.quantity || 1,
+    }));
+
+    localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
     navigate("/checkout");
   };

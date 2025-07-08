@@ -18,7 +18,7 @@ import { CartContext } from "../contexts/CartContext";
 import { eq } from "drizzle-orm";
 import { useUser } from "@clerk/clerk-react";
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL || '';
+const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
 
 
 // -------------------------------------------------------------------
@@ -879,6 +879,7 @@ export default function Checkout() {
         ) * item.quantity,
       }));
 
+      console.log("🧾 Order items to insert:", orderItemsData);
 
       await db.insert(orderItemsTable).values(orderItemsData);
       await db
