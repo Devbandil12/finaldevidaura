@@ -18,6 +18,7 @@ import { CartContext } from "../contexts/CartContext";
 import { eq } from "drizzle-orm";
 import { useUser } from "@clerk/clerk-react";
 
+const BACKEND = import.meta.env.VITE_BACKEND_URL || '';
 
 
 // -------------------------------------------------------------------
@@ -300,7 +301,7 @@ function PaymentDetails({
       setLoading(true);
       // Step 1: Create an order on the backend
       const orderResponse = await fetch(
-        "https://devidaurabackend.onrender.com/api/payments/createOrder",
+        `${BACKEND}/api/payments/createOrder`,
         {
           method: "POST",
           headers: {
@@ -373,7 +374,7 @@ function PaymentDetails({
 
           // Step 3: Verify payment with backend
           const verifyRes = await fetch(
-            "https://devidaurabackend.onrender.com/api/payments/verify-payment",
+            `${BACKEND}/api/payments/verify-payment`,
             {
               method: "POST",
               headers: {
@@ -607,7 +608,7 @@ export default function Checkout() {
       if (!selectedItems.length) return;
       setLoadingPrices(true);
 
-      const res = await fetch('/api/payments/breakdown', {
+      const res = await fetch(`${BACKEND}/api/payments/breakdown`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
