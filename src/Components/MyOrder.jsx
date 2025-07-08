@@ -39,7 +39,7 @@ export default function MyOrders() {
   // 1) refund + cancel API → context helpers
   const cancelOrder = async (order) => {
     try {
-      const res = await fetch(`${BACKEND}/api/payment/refund`, {
+      const res = await fetch(`${BACKEND}/api/payments/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
