@@ -37,7 +37,7 @@ export default function MyOrders() {
   const cancelOrder = async (order) => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payment/refund/${order.orderId}`,
+        `${import.meta.env.VITE_BACKEND_URL}/api/payment/refund`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -233,7 +233,7 @@ export default function MyOrders() {
 
               <div className="buttons">
                 {order.paymentStatus === "paid" &&
-                  order.status !== "Order Cancelled" && (
+                  order.status === "Order Cancelled" && (
                     <button
                       className="cancel-btn"
                       onClick={() => {

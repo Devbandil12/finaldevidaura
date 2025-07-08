@@ -18,6 +18,8 @@ import { CartContext } from "../contexts/CartContext";
 import { eq } from "drizzle-orm";
 import { useUser } from "@clerk/clerk-react";
 
+
+
 // -------------------------------------------------------------------
 // Helper Function: formatAddress
 // Formats an address object into a display string.
@@ -179,27 +181,13 @@ function AddressSelection({
 // Component: OrderSummary
 // Displays the selected delivery address, products, and pricing breakdown.
 // -------------------------------------------------------------------
-function OrderSummary({ selectedAddress, selectedItems, deliveryCharge, appliedCoupon, couponDiscountAmount }) {
+function OrderSummary({ selectedAddress, selectedItems, breakdown, loadingPrices, appliedCoupon }) {
   const itemCount = selectedItems.reduce(
     (acc, i) => acc + (i.quantity || 1),
     0
   );
-  const originalTotal = selectedItems.reduce(
-    (acc, item) => acc + Math.floor(item.product.oprice) * (item.quantity || 1),
-    0
-  );
-  const productTotal = selectedItems.reduce(
-    (acc, item) =>
-      acc +
-      Math.floor(
-        item.product.oprice - (item.product.oprice * item.product.discount) / 100
-      ) * (item.quantity || 1),
-    0
-  );
-  const discount = originalTotal - productTotal;
 
-  // Calculate total after coupon
-  const total = Math.max(productTotal + deliveryCharge - (couponDiscountAmount || 0), 0);
+  const productDiscount = breakdown.originalTotal - breakdown.productTotal;
 
   return (
     <div className="order-summary-card">
@@ -241,30 +229,26 @@ function OrderSummary({ selectedAddress, selectedItems, deliveryCharge, appliedC
       </details>
 
       <div className="order-summary-card__breakdown">
-        <div>
-          <span>Subtotal</span>
-          <span>₹{productTotal}</span>
-        </div>
-        <div>
-          <span>Discount</span>
-          <span className="text-danger">-₹{discount}</span>
-        </div>
-        {appliedCoupon && (
-          <div style={{ color: "green", fontWeight: 600 }}>
-            <span>Coupon ({appliedCoupon.code})</span>
-            <span>-₹{couponDiscountAmount}</span>
-          </div>
+        {loadingPrices ? (
+          <p>Loading price details…</p>
+        ) : (
+          <>
+            <div><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
+            <div><span>Product Discount</span><span className="text-danger">-₹{productDiscount}</span></div>
+            {appliedCoupon && (
+              <div style={{ color: "green", fontWeight: 600 }}>
+                <span>Coupon ({appliedCoupon.code})</span>
+                <span>-₹{breakdown.discountAmount}</span>
+              </div>
+            )}
+            <div><span>Delivery Charge </span><span>₹{breakdown.deliveryCharge}</span></div>
+            <div className="order-summary-card__total">
+              <span>Total</span><span>₹{breakdown.total}</span>
+            </div>
+          </>
         )}
-        <div>
-          <span>Delivery</span>
-          <span>₹{deliveryCharge}</span>
-        </div>
       </div>
 
-      <div className={`order-summary-card__total ${appliedCoupon ? "coupon-applied" : ""}`}>
-        <span>Total</span>
-        <span>₹{total}</span>
-      </div>
 
     </div>
   );
@@ -280,17 +264,14 @@ function PaymentDetails({
   paymentMethod,
   setPaymentMethod,
   onPaymentVerified,
-  productTotal,
-  discountCalculated,
-  deliveryCharge,
-  totalPrice,
+  breakdown,
   setTransactionId,
   selectedAddress,
   userdetails,
   selectedItems,
-  onRazorpaySuccess, // new prop to trigger order placement automatically
+  onRazorpaySuccess,
   appliedCoupon,
-  couponDiscountAmount
+  loadingPrices
 }) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -332,7 +313,6 @@ function PaymentDetails({
               primaryEmailAddress: { emailAddress: userdetails.email },
             },
             phone: selectedAddress.phone,
-            amount: totalPrice,
             couponCode: appliedCoupon?.code,
             paymentMode: paymentMethod,
             cartItems: selectedItems.map(item => ({
@@ -376,7 +356,7 @@ function PaymentDetails({
       // Step 2: Configure Razorpay options
       const options = {
         key: orderData.keyId,
-        amount: totalPrice * 100,
+        amount: breakdown.total * 100,
         currency: "INR",
         name: "DevidAura",
         description: "Order Payment",
@@ -423,7 +403,7 @@ function PaymentDetails({
             const newOrder = {
               id: Date.now(),
               date: new Date().toISOString().split("T")[0],
-              amount: totalPrice,
+              amount: breakdown.total,
               status: "Order Placed",
               progressStep: 1,
               verified: true,
@@ -462,32 +442,41 @@ function PaymentDetails({
           onClick={() => setSummaryExpanded(!summaryExpanded)}
         >
           <span className="payment-total-price">
-            Total Price: ₹{totalPrice}
+            Total Price: ₹{breakdown.total}
           </span>
           <span className="toggle-icon">{summaryExpanded ? "▲" : "▼"}</span>
         </div>
         {summaryExpanded && (
           <div className="summary-details">
             <p>Please review your price details below:</p>
-            <p>
-              <strong>Products Total:</strong> ₹{productTotal}
-            </p>
-            <p>
-              <strong>Discount:</strong> ₹{discountCalculated}
-            </p>
-            {appliedCoupon && (
-              <p style={{ color: "green", fontWeight: 600 }}>
-                <strong>Coupon ({appliedCoupon.code}):</strong> -₹{couponDiscountAmount}
-              </p>
+            {loadingPrices ? (
+              <p>Loading breakdown...</p>
+            ) : (
+              <>
+                <p>
+                  <strong>Original Price:</strong> ₹{breakdown.originalTotal}
+                </p>
+                <p>
+                  <strong>Product Discount:</strong> -₹
+                  {breakdown.originalTotal - breakdown.productTotal}
+                </p>
+                {appliedCoupon && (
+                  <p style={{ color: "green", fontWeight: 600 }}>
+                    <strong>Coupon ({appliedCoupon.code}):</strong> -₹
+                    {breakdown.discountAmount}
+                  </p>
+                )}
+                <p>
+                  <strong>Delivery Charge:</strong> ₹{breakdown.deliveryCharge}
+                </p>
+                <p className="total-price-display">
+                  <strong>Total Price:</strong> ₹{breakdown.total}
+                </p>
+              </>
             )}
-            <p>
-              <strong>Delivery Charge:</strong> ₹{deliveryCharge}
-            </p>
-            <p className="total-price-display">
-              <strong>Total Price:</strong> ₹{totalPrice}
-            </p>
           </div>
         )}
+
 
       </div>
       <h2>Payment Options</h2>
@@ -603,6 +592,42 @@ export default function Checkout() {
       setAppliedCoupon(JSON.parse(storedCoupon));
     }
   }, []);
+
+  // server‑computed totals
+  const [breakdown, setBreakdown] = useState({
+    productTotal: 0,
+    deliveryCharge: 0,
+    discountAmount: 0,
+    total: 0,
+  });
+  const [loadingPrices, setLoadingPrices] = useState(false);
+
+  useEffect(() => {
+    async function fetchBreakdown() {
+      if (!selectedItems.length) return;
+      setLoadingPrices(true);
+
+      const res = await fetch('/api/payments/breakdown', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+          couponCode: appliedCoupon?.code || null,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBreakdown(data.breakdown);
+      } else {
+        console.error('Price breakdown error:', data.msg);
+      }
+
+      setLoadingPrices(false);
+    }
+
+    fetchBreakdown();
+  }, [selectedItems, appliedCoupon]);
+
 
   const deliveryCharge = 0;
   const originalTotal = selectedItems.reduce(
@@ -1014,6 +1039,8 @@ export default function Checkout() {
               onRazorpaySuccess={handleRazorpaySuccess}
               appliedCoupon={appliedCoupon}
               couponDiscountAmount={couponDiscountAmount}
+              breakdown={breakdown}
+              loadingPrices={loadingPrices}
             />
 
           )}
@@ -1044,6 +1071,8 @@ export default function Checkout() {
             deliveryCharge={deliveryCharge}
             appliedCoupon={appliedCoupon}
             couponDiscountAmount={couponDiscountAmount}
+            breakdown={breakdown}
+            loadingPrices={loadingPrices}
           />
         </aside>
       </div>
