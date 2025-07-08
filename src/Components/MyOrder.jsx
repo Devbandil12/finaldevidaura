@@ -7,6 +7,9 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 
+const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
+
+
 const formatDateTime = (dateString) => {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
@@ -36,18 +39,15 @@ export default function MyOrders() {
   // 1) refund + cancel API → context helpers
   const cancelOrder = async (order) => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payment/refund`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: order.orderId,
-            amount: order.totalAmount * 100,
-            speed: "optimum",
-          }),
-        }
-      );
+      const res = await fetch(`${BACKEND}/api/payment/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.orderId,
+          amount: order.totalAmount * 100,
+          speed: "optimum",
+        }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Refund failed");
 
