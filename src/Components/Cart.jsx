@@ -39,22 +39,31 @@ const ShoppingCart = () => {
       alert("Your cart is empty. Please add at least one item before checking out.");
       return;
     }
-    const fullCartItems = cart.map((item) => ({
-      product: {
-        id: item.product.id,
-        name: item.product.name,
-        imageurl: item.product.imageurl,
-        size: item.product.size,
-        oprice: item.product.oprice,
-        discount: item.product.discount,
-      },
-      quantity: item.quantity || 1,
-    }));
+
+    const fullCartItems = cart.map((item) => {
+      const discountedPrice = Math.floor(
+        item.product.oprice - (item.product.discount / 100) * item.product.oprice
+      );
+      return {
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          imageurl: item.product.imageurl,
+          size: item.product.size,
+          oprice: item.product.oprice,
+          discount: item.product.discount,
+          price: discountedPrice,
+        },
+        quantity: item.quantity || 1,
+        totalPrice: discountedPrice * (item.quantity || 1),
+      };
+    });
 
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
     navigate("/checkout");
   };
+
 
   let count = 1;
   const addToCart = async (product) => {
