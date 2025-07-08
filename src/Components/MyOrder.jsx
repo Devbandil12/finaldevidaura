@@ -28,6 +28,9 @@ export default function MyOrders() {
   const [modalOrder, setModalOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
+
+
   // filter & sort
   const sortedOrders = (orders || [])
     .filter((o) => o.userId === userdetails.id)
@@ -37,7 +40,7 @@ export default function MyOrders() {
   const cancelOrder = async (order) => {
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/payment/refund`,
+        `${BACKEND}/api/payment/refund`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
