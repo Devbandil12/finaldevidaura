@@ -267,7 +267,7 @@ export default function MyOrders() {
 
               {cancellationMessages[order.orderId]}
 
-              {r.id &&  (
+              {r.id && (
                 <div className="refund-tracker">
                   <p>
                     <strong>Refund ID:</strong> {r.id}
@@ -321,12 +321,13 @@ export default function MyOrders() {
                 <span>
                   <strong>Status:</strong> {order.status}
                 </span>
-                {r?.status === "processed" ? (
+                {r && r.amount > 0 && r.status === "processed" ? (
                   <span>
                     <strong>Refunded:</strong> ₹
                     {(r.amount / 100).toFixed(2)}
                   </span>
-                ) : r ? (
+                ) : r && r.amount > 0 ? (
+
                   <span>
                     <strong>Refund In Progress:</strong> ₹
                     {(r.amount / 100).toFixed(2)}
