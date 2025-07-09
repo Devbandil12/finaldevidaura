@@ -148,9 +148,15 @@ export default function MyOrders() {
                 Are you sure you want to cancel{" "}
                 <strong>Order #{modalOrder.orderId}</strong>?
                 <br />
-                You will be refunded{" "}
-                <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong>.
+                You paid: <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong><br />
+                A 5% cancellation fee applies.
+                <br />
+                You will be refunded:{" "}
+                <strong>
+                  ₹{(modalOrder.totalAmount * 0.95).toFixed(2)}
+                </strong>
               </p>
+
               <div className="modal-actions">
                 <button
                   onClick={handleConfirmCancel}
@@ -267,7 +273,7 @@ export default function MyOrders() {
 
               {cancellationMessages[order.orderId]}
 
-              {r.id &&  (
+              {r.id && (
                 <div className="refund-tracker">
                   <p>
                     <strong>Refund ID:</strong> {r.id}
