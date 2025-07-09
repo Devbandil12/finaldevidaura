@@ -44,7 +44,7 @@ export default function MyOrders() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: order.orderId,
-          amount: order.totalAmount * 100,
+          amount: order.totalAmount,
           speed: "optimum",
         }),
       });
