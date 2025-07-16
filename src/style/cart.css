@@ -256,6 +256,9 @@
 }
 
 /* === Cart Price Summary === */
+.cart-summary-price{ 
+  border-bottom: 1px solid #ccc;
+}
 .cart-summary-price h3 {
   display:flex;
   justify-content: space-between;
