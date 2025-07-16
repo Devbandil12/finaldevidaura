@@ -257,6 +257,8 @@
 
 /* === Cart Price Summary === */
 .cart-summary-price h3 {
+  display:flex;
+  justify-content: space-between;
   font-size: 1rem;
   color: #555;
   margin: 8px 0;
