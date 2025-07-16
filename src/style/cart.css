@@ -293,6 +293,10 @@
 }
 
 /* === Remaining Products Section === */
+#remaining-products-container {
+  margin-bottom: 30px;
+}
+
 #remaining-products-container > h3 {
   font-size: 2rem;
   margin-top: 80px;
