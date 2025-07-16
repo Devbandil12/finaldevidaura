@@ -391,7 +391,7 @@
 @media (max-width: 480px) {
   .main-container{
     width: 100%;
-    padding: 5px 5px;
+    padding: 0px;
     background-color: #eeeeee86;
   }
   .cart-title {
