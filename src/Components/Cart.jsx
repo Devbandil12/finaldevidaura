@@ -350,7 +350,7 @@ const ShoppingCart = () => {
 
           <div className="cart-summary">
             <div className="cart-summary-price">
-              <h3>Total: ₹{totalOriginal}</h3>
+              <h3><span>Total:</span> <span>₹{totalOriginal}</span></h3>
               <h3 className={`discounted-total ${appliedCoupon ? "with-coupon" : ""}`}>
                 Discounted Total: ₹{finalPrice}
               </h3>
