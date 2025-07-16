@@ -290,7 +290,7 @@ const ShoppingCart = () => {
 
   return (
     <>
-      <h1 className="cart-title">Cart</h1>
+      <h1 className="cart-title">My Cart</h1>
       <main className="main-container" style={{ position: "relative" }}>
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
