@@ -390,7 +390,7 @@
 /* === Small Mobile Adjustments (<480px) === */
 @media (max-width: 480px) {
   .main-container{
-    width: 100%;
+    width: 95%;
     padding: 0px;
     background-color: #eeeeee86;
     border:none;
