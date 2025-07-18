@@ -89,15 +89,21 @@ export default function Footer() {
     return () => ctx.revert();
   }, [isMobile]);
 
-  const openModal = (policy) => {
-    setCurrentPolicy(policy);
-    setModalOpen(true);          
-document.body.classList.add("modal-open");
-  };
+  // Open modal and lock scroll
+const openModal = (policy) => {
+  setCurrentPolicy(policy);
+  setModalOpen(true);
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+};
 
-  const closeModal = () => {
-    setModalOpen(false);    document.body.classList.remove("modal-open");
-  };
+// Close modal and restore scroll
+const closeModal = () => {
+  setModalOpen(false);
+  document.body.style.overflow = "auto";
+  document.documentElement.style.overflow = "auto";
+};
+
 
   const policyComponents = {
     privacy: <PrivacyPolicy />,
