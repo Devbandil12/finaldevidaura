@@ -8,7 +8,12 @@ import {
   faInstagram,
   faTwitter,
 } from "@fortawesome/free-brands-svg-icons";
-import "../style/footer.css"; // contains both .desktop and .mobile rules
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import "./footer.css";
+
+import PrivacyPolicy from "./policies/PrivacyPolicy";
+import TermsAndConditions from "./policies/TermsAndConditions";
+import RefundPolicy from "./policies/RefundPolicy";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,18 +23,19 @@ export default function Footer() {
     typeof window !== "undefined" ? window.innerWidth <= 600 : false
   );
   const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentPolicy, setCurrentPolicy] = useState("privacy");
 
-  // track viewport changes
+  // Track viewport width for mobile vs desktop
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // GSAP animations (runs once)
+  // GSAP entrance animations (runs once, re-runs on isMobile change)
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // brand
       gsap.from(".footer-brand h2", {
         y: -20,
         opacity: 0,
@@ -46,7 +52,6 @@ export default function Footer() {
       });
 
       if (isMobile) {
-        // mobile inline links
         gsap.from(".footer-inline-links a", {
           y: 20,
           opacity: 0,
@@ -55,7 +60,6 @@ export default function Footer() {
           ease: "power3.out",
           scrollTrigger: { trigger: ".footer-inline-links", start: "top 90%" },
         });
-        // accordion
         gsap.from(".footer-policies", {
           y: 20,
           opacity: 0,
@@ -64,7 +68,6 @@ export default function Footer() {
           scrollTrigger: { trigger: ".footer-policies", start: "top 85%" },
         });
       } else {
-        // desktop columns & tagline
         gsap.from([".footer-links", ".footer-policies"], {
           y: 30,
           opacity: 0,
@@ -75,7 +78,6 @@ export default function Footer() {
         });
       }
 
-      // social
       gsap.from(".footer-social a", {
         scale: 0.8,
         opacity: 0,
@@ -89,81 +91,133 @@ export default function Footer() {
     return () => ctx.revert();
   }, [isMobile]);
 
+  // Open modal with selected policy
+  const openModal = (policy) => {
+    setCurrentPolicy(policy);
+    setModalOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setModalOpen(false);
+    document.body.style.overflow = "";
+  };
+
+  // Map keys to components
+  const policyComponents = {
+    privacy: <PrivacyPolicy />,
+    terms: <TermsAndConditions />,
+    refund: <RefundPolicy />,
+  };
+
   return (
-    <footer
-      className={`footer ${isMobile ? "mobile" : "desktop"}`}
-      ref={footerRef}
-    >
-      <div className="footer-grid">
-        {/* Brand */}
-        <div className="footer-brand">
-          <h2>Devid Aura</h2>
-          <p>
-            This isn't just a perfume—it's a signature. Step in. Stand out. Stay
-            remembered.
-          </p>
+    <>
+      <footer
+        className={`footer ${isMobile ? "mobile" : "desktop"}`}
+        ref={footerRef}
+      >
+        <div className="footer-grid">
+          {/* Brand */}
+          <div className="footer-brand">
+            <h2>Devid Aura</h2>
+            <p>
+              This isn't just a perfume—it's a signature. Step in. Stand out. Stay
+              remembered.
+            </p>
+          </div>
+
+          {isMobile ? (
+            // ——— mobile layout ———
+            <>
+              <div className="footer-inline-links">
+                <a href="#">Our Story</a>
+                <a href="#">Contact Us</a>
+              </div>
+
+              <div className="footer-section footer-policies">
+                <button
+                  className="footer-toggle"
+                  onClick={() => setPoliciesOpen(!policiesOpen)}
+                  aria-expanded={policiesOpen}
+                >
+                  <h4>Policies</h4>
+                  <span className={`arrow ${policiesOpen ? "open" : ""}`} />
+                </button>
+                <div className={`footer-content ${policiesOpen ? "open" : ""}`}>
+                  <button onClick={() => openModal("privacy")}>
+                    Privacy Policy
+                  </button>
+                  <button onClick={() => openModal("terms")}>
+                    Terms &amp; Conditions
+                  </button>
+                  <button onClick={() => openModal("refund")}>
+                    Refund Policy
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            // ——— desktop layout ———
+            <>
+              <div className="footer-links">
+                <h4>About</h4>
+                <a href="#">Our Story</a>
+                <h4>Contact</h4>
+                <a href="#">Contact Us</a>
+              </div>
+              <div className="footer-policies">
+                <h4>Policies</h4>
+                <button onClick={() => openModal("privacy")}>
+                  Privacy Policy
+                </button>
+                <button onClick={() => openModal("terms")}>
+                  Terms &amp; Conditions
+                </button>
+                <button onClick={() => openModal("refund")}>
+                  Refund Policy
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
-        {isMobile ? (
-          // ——— mobile layout ———
-          <>
-            <div className="footer-inline-links">
-              <a href="#">Our Story</a>
-              <a href="#">Contact Us</a>
-            </div>
+        {/* Social icons */}
+        <div className="footer-social">
+          <a href="#" aria-label="Facebook">
+            <FontAwesomeIcon icon={faFacebookF} />
+          </a>
+          <a href="#" aria-label="Instagram">
+            <FontAwesomeIcon icon={faInstagram} />
+          </a>
+          <a href="#" aria-label="Twitter">
+            <FontAwesomeIcon icon={faTwitter} />
+          </a>
+        </div>
 
-            <div className="footer-section footer-policies">
-              <button
-                className="footer-toggle"
-                onClick={() => setPoliciesOpen(!policiesOpen)}
-                aria-expanded={policiesOpen}
-              >
-                <h4>Policies</h4>
-                <span className={`arrow ${policiesOpen ? "open" : ""}`} />
-              </button>
-              <div className={`footer-content ${policiesOpen ? "open" : ""}`}>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms &amp; Conditions</a>
-                <a href="#">Refund Policy</a>
-              </div>
-            </div>
-          </>
-        ) : (
-          // ——— desktop layout ———
-          <>
-            <div className="footer-links">
-              <h4>About</h4>
-              <a href="#">Our Story</a>
-              <h4>Contact</h4>
-              <a href="#">Contact Us</a>
-            </div>
-            <div className="footer-policies">
-              <h4>Policies</h4>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms &amp; Conditions</a>
-              <a href="#">Refund Policy</a>
-            </div>
-          </>
-        )}
-      </div>
+        {/* Copy */}
+        <div className="footer-copy">
+          © {new Date().getFullYear()} Devid Aura. All rights reserved.
+        </div>
+      </footer>
 
-      {/* Social icons */}
-      <div className="footer-social">
-        <a href="#" aria-label="Facebook">
-          <FontAwesomeIcon icon={faFacebookF} />
-        </a>
-        <a href="#" aria-label="Instagram">
-          <FontAwesomeIcon icon={faInstagram} />
-        </a>
-        <a href="#" aria-label="Twitter">
-          <FontAwesomeIcon icon={faTwitter} />
-        </a>
-      </div>
-
-      {/* Copy */}
-      <div className="footer-copy">
-        © {new Date().getFullYear()} Devid Aura. All rights reserved.
-      </div>
-    </footer>
+      {/* Modal Overlay */}
+      {modalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={closeModal}
+              aria-label="Close"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <div className="modal-body">
+              {policyComponents[currentPolicy]}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
