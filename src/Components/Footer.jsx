@@ -9,7 +9,7 @@ import {
   faTwitter,
 } from "@fortawesome/free-brands-svg-icons";
 
-import "./footer.css";
+import "../style/footer.css";
 
 import PrivacyPolicy from "./PrivacyPolicy";
 import TermsAndConditions from "./TermsAndConditions";
