@@ -5,8 +5,9 @@ export default function RefundPolicy() {
   return (
     <div className="policy-content">
       <h2>Refund Policy</h2>
-      <p><em>Last updated: [Date]</em></p>
-
+     <p><em>Last updated: July 18, 2025</em></p>
+      <p>At Devid Aura, we strive to ensure your complete satisfaction with every purchase. Given the nature of our products (perfumes), we have the following refund and cancellation guidelines in place:</p>
+      
       <h3>1. Order Cancellation &amp; Refunds Before Processing</h3>
       <ul>
         <li>
