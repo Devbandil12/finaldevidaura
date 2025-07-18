@@ -311,9 +311,9 @@
 
 @media (max-width: 600px) {
   .modal-content {
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
+    width: 95%;
+    height: 95%;
+    border-radius: 15px;
     padding: 1rem;
   }
 }
