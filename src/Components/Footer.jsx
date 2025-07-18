@@ -143,15 +143,16 @@ const closeModal = () => {
                   <span className={`arrow ${policiesOpen ? "open" : ""}`} />
                 </button>
                 <div className={`footer-content ${policiesOpen ? "open" : ""}`}>
-                  <button onClick={() => openModal("privacy")}>
-                    Privacy Policy
-                  </button>
-                  <button onClick={() => openModal("terms")}>
-                    Terms &amp; Conditions
-                  </button>
-                  <button onClick={() => openModal("refund")}>
-                    Refund Policy
-                  </button>
+                 <button className="policy-button" onClick={() => openModal("privacy")}>
+  Privacy Policy
+</button>
+<button className="policy-button" onClick={() => openModal("terms")}>
+  Terms & Conditions
+</button>
+<button className="policy-button" onClick={() => openModal("refund")}>
+  Refund Policy
+</button>
+
                 </div>
               </div>
             </>
