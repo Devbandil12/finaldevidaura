@@ -1,5 +1,5 @@
 import React from "react";
-import ""../style/PolicyStyles.css";
+import "../style/PolicyStyles.css";
 
 export default function RefundPolicy() {
   return (
