@@ -5,7 +5,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="policy-content">
       <h2>Privacy Policy</h2>
-      <p><em>Last updated: [Date]</em></p>
+     <p><em>Last updated: July 18, 2025</em></p>
 
       <h3>1. Introduction</h3>
       <p>
