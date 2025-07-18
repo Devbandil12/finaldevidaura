@@ -11,9 +11,9 @@ import {
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import "./footer.css";
 
-import PrivacyPolicy from "./policies/PrivacyPolicy";
-import TermsAndConditions from "./policies/TermsAndConditions";
-import RefundPolicy from "./policies/RefundPolicy";
+import PrivacyPolicy from "./PrivacyPolicy";
+import TermsAndConditions from "./TermsAndConditions";
+import RefundPolicy from "./RefundPolicy";
 
 gsap.registerPlugin(ScrollTrigger);
 
