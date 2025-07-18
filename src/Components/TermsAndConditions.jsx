@@ -5,7 +5,13 @@ export default function TermsAndConditions() {
   return (
     <div className="policy-content">
       <h2>Terms &amp; Conditions</h2>
-      <p><em>Last updated: [Date]</em></p>
+     <p><em>Last updated: July 18, 2025</em></p>
+
+      <p>
+        Welcome to Devid Aura. By accessing or using our website <strong>www.devidaura.com</strong>,
+        you agree to comply with and be bound by the following Terms and Conditions ("Terms").
+        Please read them carefully. If you do not agree with any part of these Terms, you must not access or use our site.
+      </p>
 
       <h3>1. Eligibility &amp; Use</h3>
       <ul>
