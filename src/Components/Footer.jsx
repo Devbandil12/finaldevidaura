@@ -1,4 +1,3 @@
-
 // src/components/Footer.jsx
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
@@ -9,7 +8,7 @@ import {
   faInstagram,
   faTwitter,
 } from "@fortawesome/free-brands-svg-icons";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+
 import "./footer.css";
 
 import PrivacyPolicy from "./PrivacyPolicy";
@@ -27,14 +26,12 @@ export default function Footer() {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPolicy, setCurrentPolicy] = useState("privacy");
 
-  // Track viewport width for mobile vs desktop
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // GSAP entrance animations (runs once, re-runs on isMobile change)
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".footer-brand h2", {
@@ -92,20 +89,17 @@ export default function Footer() {
     return () => ctx.revert();
   }, [isMobile]);
 
-  // Open modal with selected policy
   const openModal = (policy) => {
     setCurrentPolicy(policy);
     setModalOpen(true);
     document.body.style.overflow = "hidden";
   };
 
-  // Close modal
   const closeModal = () => {
     setModalOpen(false);
     document.body.style.overflow = "";
   };
 
-  // Map keys to components
   const policyComponents = {
     privacy: <PrivacyPolicy />,
     terms: <TermsAndConditions />,
@@ -119,17 +113,15 @@ export default function Footer() {
         ref={footerRef}
       >
         <div className="footer-grid">
-          {/* Brand */}
           <div className="footer-brand">
             <h2>Devid Aura</h2>
             <p>
-              This isn't just a perfume—it's a signature. Step in. Stand out. Stay
-              remembered.
+              This isn't just a perfume—it's a signature. Step in. Stand out.
+              Stay remembered.
             </p>
           </div>
 
           {isMobile ? (
-            // ——— mobile layout ———
             <>
               <div className="footer-inline-links">
                 <a href="#">Our Story</a>
@@ -159,7 +151,6 @@ export default function Footer() {
               </div>
             </>
           ) : (
-            // ——— desktop layout ———
             <>
               <div className="footer-links">
                 <h4>About</h4>
@@ -183,7 +174,6 @@ export default function Footer() {
           )}
         </div>
 
-        {/* Social icons */}
         <div className="footer-social">
           <a href="#" aria-label="Facebook">
             <FontAwesomeIcon icon={faFacebookF} />
@@ -196,13 +186,11 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Copy */}
         <div className="footer-copy">
           © {new Date().getFullYear()} Devid Aura. All rights reserved.
         </div>
       </footer>
 
-      {/* Modal Overlay */}
       {modalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -211,11 +199,9 @@ export default function Footer() {
               onClick={closeModal}
               aria-label="Close"
             >
-              <FontAwesomeIcon icon={faTimes} />
+              ×
             </button>
-            <div className="modal-body">
-              {policyComponents[currentPolicy]}
-            </div>
+            <div className="modal-body">{policyComponents[currentPolicy]}</div>
           </div>
         </div>
       )}
