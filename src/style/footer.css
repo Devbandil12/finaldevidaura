@@ -321,3 +321,39 @@
   body.modal-open {
   overflow: hidden;
 }
+
+
+.policy-button {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 1rem;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.policy-button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: #fff;
+  transition: width 0.3s ease;
+}
+
+.policy-button:hover {
+  color: #fff;
+}
+
+.policy-button:hover::after {
+  width: 100%;
+}
