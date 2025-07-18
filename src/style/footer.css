@@ -294,6 +294,7 @@
   border-radius: 8px;
   position: relative;
   padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .modal-close {
