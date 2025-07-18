@@ -313,7 +313,7 @@
   .modal-content {
     width: 95%;
     height: 95%;
-    border-radius: 15px;
+    border-radius: 0;
     padding: 1rem;
   }
 }
