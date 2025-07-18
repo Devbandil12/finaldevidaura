@@ -91,13 +91,12 @@ export default function Footer() {
 
   const openModal = (policy) => {
     setCurrentPolicy(policy);
-    setModalOpen(true);
-    document.body.style.overflow = "hidden";
+    setModalOpen(true);          
+document.body.classList.add("modal-open");
   };
 
   const closeModal = () => {
-    setModalOpen(false);
-    document.body.style.overflow = "";
+    setModalOpen(false);    document.body.classList.remove("modal-open");
   };
 
   const policyComponents = {
