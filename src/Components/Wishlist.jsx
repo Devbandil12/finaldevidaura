@@ -113,11 +113,10 @@ const Wishlist = () => {
           )
         );
 
-      toast.success("Moved to cart");
       setWishlist((prev) => prev.filter((_, i) => i !== index));
     } catch (error) {
-      console.error("Error moving item to cart:", error);
-      toast.error("Failed to move item to cart");
+      
+      
 
       // 🔹 Restore wishlist item if DB operation fails
       setWishlistitems((prevWishlist) => [...prevWishlist, item]);
@@ -148,17 +147,15 @@ const Wishlist = () => {
       setWishlist((prev) => prev.filter((_, i) => i !== index));
       setWishlistitems((prev) => prev.filter((_, i) => i !== index));
 
-      toast.success("Item removed from wishlist");
     } catch (error) {
       console.error("Error removing item from wishlist:", error);
-      toast.error("Failed to remove item");
+      
     }
   };
 
   return (
     <div className="wishlist-main-container">
       <div className="absolute">
-        <ToastContainer />
       </div>
       <h2 className="w-title">MY WISHLIST</h2>
 
