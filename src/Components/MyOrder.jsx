@@ -335,12 +335,9 @@ export default function MyOrders() {
   <span>
     <strong>Refunded:</strong> ₹{(r.amount / 100).toFixed(2)}
   </span>
-) : r?.status === "pending" || r?.status === "created" ? (
+) : r?.status === "pending" || r?.status === "created" || r?.status === "queued" ? (
   <span>
-    <span>
-  <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
-</span>
-
+    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
   </span>
 ) : r?.status === "failed" ? (
   <span style={{ color: "red" }}>
@@ -351,6 +348,7 @@ export default function MyOrders() {
     <strong>Payment Mode:</strong> {order.paymentMode}
   </span>
 )}
+
 
               </div>
             </div>
