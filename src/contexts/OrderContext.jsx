@@ -113,6 +113,23 @@ export const OrderProvider = ({ children }) => {
     getorders();
   }, [userdetails]);
 
+useEffect(() => {
+  // Check if any orders have a pending or created refund
+  const hasPendingRefund = orders.some(
+    o => o.refund?.status && !['processed', 'failed'].includes(o.refund.status)
+  );
+
+  if (!hasPendingRefund) return;
+
+  const interval = setInterval(() => {
+    console.log("🔄 Polling: Checking for refund updates...");
+    getorders();
+  }, 60000); // refresh every 60 sec
+
+  return () => clearInterval(interval); // cleanup
+}, [orders]);
+
+
   // Optional: persist in localStorage
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
