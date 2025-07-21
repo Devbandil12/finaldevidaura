@@ -328,20 +328,23 @@ export default function MyOrders() {
                   <strong>Status:</strong> {order.status}
                 </span>
                 {r?.status === "processed" ? (
-                  <span>
-                    <strong>Refunded:</strong> ₹
-                    {(r.amount / 100).toFixed(2)}
-                  </span>
-                ) : r ? (
-                  <span>
-                    <strong>Refund In Progress:</strong> ₹
-                    {(r.amount / 100).toFixed(2)}
-                  </span>
-                ) : (
-                  <span>
-                    <strong>Payment Mode:</strong> {order.paymentMode}
-                  </span>
-                )}
+  <span>
+    <strong>Refunded:</strong> ₹{(r.amount / 100).toFixed(2)}
+  </span>
+) : r?.status === "pending" || r?.status === "created" ? (
+  <span>
+    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
+  </span>
+) : r?.status === "failed" ? (
+  <span style={{ color: "red" }}>
+    <strong>Refund Failed:</strong> Please contact support.
+  </span>
+) : (
+  <span>
+    <strong>Payment Mode:</strong> {order.paymentMode}
+  </span>
+)}
+
               </div>
             </div>
           );
