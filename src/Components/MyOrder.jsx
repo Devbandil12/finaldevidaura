@@ -7,6 +7,15 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 
+const refundStatusMap = {
+  created: "Initiated",
+  queued: "Queued",
+  pending: "In Process",
+  processed: "Completed",
+  speed_changed: "Speed Changed",
+  failed: "Failed — Contact Support",
+};
+
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
 
 
@@ -293,14 +302,9 @@ export default function MyOrders() {
                     </p>
                   )}
                   <p>
-                    <strong>Status:</strong>{" "}
-                    {{
-                      created: "Received by Razorpay",
-                      speed_changed: "Speed Updated",
-                      processed: "Completed",
-                      failed: "Failed—contact support",
-                    }[r.status] || r.status}
-                  </p>
+  <strong>Status:</strong> {refundStatusMap[r.status] || r.status}
+</p>
+
                   {r.status === "processed" && (
                     <p>
                       <strong>Completed:</strong>{" "}
@@ -333,7 +337,10 @@ export default function MyOrders() {
   </span>
 ) : r?.status === "pending" || r?.status === "created" ? (
   <span>
-    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
+    <span>
+  <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
+</span>
+
   </span>
 ) : r?.status === "failed" ? (
   <span style={{ color: "red" }}>
