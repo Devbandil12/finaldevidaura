@@ -305,14 +305,13 @@ export default function MyOrders() {
   <strong>Status:</strong> {refundStatusMap[r.status] || r.status}
 </p>
 
-                  {r.status === "processed" && (
-                    <p>
-                      <strong>Completed:</strong>{" "}
-                      {formatDateTime(
-                        new Date(r.processed_at * 1000).toISOString()
-                      )}
-                    </p>
-                  )}
+                  {r.status === "processed" && r.processed_at ? (
+  <p>
+    <strong>Completed:</strong>{" "}
+    {formatDateTime(new Date(r.processed_at * 1000).toISOString())}
+  </p>
+) : null}
+
                   <p>
                     <strong>Amount:</strong> ₹
                     {(r.amount / 100).toFixed(2)}
@@ -331,23 +330,28 @@ export default function MyOrders() {
                 <span>
                   <strong>Status:</strong> {order.status}
                 </span>
-                {r?.status === "processed" ? (
-  <span>
-    <strong>Refunded:</strong> ₹{(r.amount / 100).toFixed(2)}
-  </span>
+                {r?.status === "processed" && r.processed_at ? (
+  <span>
+    <strong>Refunded:</strong> ₹{(r.amount / 100).toFixed(2)}
+  </span>
+) : r?.status === "processed" ? (
+  <span>
+    <strong>Refund Status:</strong> Processing — Amount not yet credited.
+  </span>
 ) : r?.status === "pending" || r?.status === "created" || r?.status === "queued" ? (
-  <span>
-    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
-  </span>
+  <span>
+    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
+  </span>
 ) : r?.status === "failed" ? (
-  <span style={{ color: "red" }}>
-    <strong>Refund Failed:</strong> Please contact support.
-  </span>
+  <span style={{ color: "red" }}>
+    <strong>Refund Failed:</strong> Please contact support.
+  </span>
 ) : (
-  <span>
-    <strong>Payment Mode:</strong> {order.paymentMode}
-  </span>
+  <span>
+    <strong>Payment Mode:</strong> {order.paymentMode}
+  </span>
 )}
+
 
 
               </div>
