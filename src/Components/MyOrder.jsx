@@ -8,12 +8,12 @@ import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 
 const refundStatusMap = {
-  created: "Initiated",
-  queued: "Queued",
-  pending: "In Process",
-  processed: "Completed",
-  speed_changed: "Speed Changed",
-  failed: "Failed — Contact Support",
+  created: "Initiated",
+  queued: "Queued",
+  pending: "In Process",
+  processed: "Processing Refund",   // ← not completed!
+  speed_changed: "Speed Changed",
+  failed: "Failed — Contact Support",
 };
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
