@@ -164,12 +164,13 @@ useEffect(() => {
           refund_id:           refund.id,
           refund_amount:       refund.amount,
           refund_status:       refund.status,
-          refund_speed:        refund.speedProcessed,
+          refund_speed: refund.speedProcessed || refund.speed_processed,
           refund_initiated_at: new Date(refund.createdAt * 1000).toISOString(),
           refund_completed_at:
-            refund.status === "processed" && refund.processedAt
-              ? new Date(refund.processedAt * 1000).toISOString()
-              : null,
+  refund.status === "processed" && refund.processed_at
+    ? new Date(refund.processed_at * 1000).toISOString()
+    : null,
+
           paymentStatus:
             refund.status === "processed" ? "refunded" : undefined,
         })
