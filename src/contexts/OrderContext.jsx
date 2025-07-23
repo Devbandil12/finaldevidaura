@@ -96,8 +96,9 @@ setLoadingOrders(true); // ⬅️ Start loading
               ? new Date(o.refundInitiatedAt).getTime() / 1000
               : null,
             processed_at: o.refundCompletedAt
-              ? new Date(o.refundCompletedAt).getTime() / 1000
-              : null,
+  ? Math.floor(new Date(o.refundCompletedAt).getTime() / 1000)
+  : null,
+
               }, 
               items: [],
         });
