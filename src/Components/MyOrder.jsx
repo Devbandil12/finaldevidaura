@@ -42,7 +42,7 @@ export default function MyOrders() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
 if (loadingOrders) {
-  return <Loader text="Fetching your orders..." />;
+  return <Loader text="Loading your orders..." />;
 }
 
   // filter & sort
