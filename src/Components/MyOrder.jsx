@@ -290,42 +290,7 @@ if (loadingOrders) {
 
               {cancellationMessages[order.orderId]}
 
-              {r.id && (
-                <div className="refund-tracker">
-                  <p>
-                    <strong>Refund ID:</strong> {r.id}
-                  </p>
-                  <p>
-                    <strong>Initiated:</strong>{" "}
-                    {formatDateTime(
-                      new Date(r.created_at * 1000).toISOString()
-                    )}
-                  </p>
-               {r.speedProcessed && (
-  <p>
-    <strong>Speed:</strong>{" "}
-    {order.refund_speed === "instant" ? "Instant" : "Normal (5–7 days)"}
-  </p>
-)}
 
-
-                  <p>
-  <strong>Status:</strong> {refundStatusMap[r.status] || r.status}
-</p>
-
-                  {r.status === "processed" && r.processed_at ? (
-  <p>
-    <strong>Completed:</strong>{" "}
-    {formatDateTime(new Date(r.processed_at * 1000).toISOString())}
-  </p>
-) : null}
-
-                  <p>
-                    <strong>Amount:</strong> ₹
-                    {(r.amount / 100).toFixed(2)}
-                  </p>
-                </div>
-              )}
 
               {expandedOrders[order.orderId] &&
                 order.status !== "Order Cancelled" && (
