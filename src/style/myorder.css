@@ -498,6 +498,13 @@
     grid-area: status;
   }
 
+.item-details {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
   .tracking-status {
   display: flex;
   flex-direction:column;
