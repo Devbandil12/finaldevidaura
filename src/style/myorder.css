@@ -497,6 +497,16 @@
   .order-header .payment-status {
     grid-area: status;
   }
+
+  .tracking-status {
+  display: flex;
+  flex-direction:column;
+  gap:10px;
+  border-top: 1px solid #ececec;
+  padding-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #555;
+}
 }
 
 /* Cancellation Confirmation Modal */
