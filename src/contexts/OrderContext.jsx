@@ -97,7 +97,10 @@ setLoadingOrders(true); // ⬅️ Start loading
               : null,
             processed_at: o.refundCompletedAt
   ? Math.floor(new Date(o.refundCompletedAt).getTime() / 1000)
-  : null,
+  : (o.refundStatus === 'processed'
+     ? Math.floor(Date.now() / 1000)
+     : null),
+
 
               }, 
               items: [],
@@ -168,9 +171,14 @@ useEffect(() => {
           refund_speed: refund.speedProcessed || refund.speed_processed,
           refund_initiated_at: new Date(refund.createdAt * 1000).toISOString(),
           refund_completed_at:
-  refund.status === "processed" && refund.processed_at
-    ? new Date(refund.processed_at * 1000).toISOString()
+  refund.status === "processed"
+    ? (
+        refund.processed_at
+          ? new Date(refund.processed_at * 1000).toISOString()
+          : new Date().toISOString()
+      )
     : null,
+
 
           paymentStatus:
             refund.status === "processed" ? "refunded" : undefined,
