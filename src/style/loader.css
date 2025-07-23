@@ -1,5 +1,6 @@
 /* src/style/loader.css */
 .loader-wrapper {
+height:50vh;
   display: flex;
   flex-direction: column;
   align-items: center;
