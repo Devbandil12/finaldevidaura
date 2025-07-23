@@ -296,14 +296,13 @@ export default function MyOrders() {
                       new Date(r.created_at * 1000).toISOString()
                     )}
                   </p>
-               {order.refund_speed && (
+               {r.speedProcessed && (
   <p>
     <strong>Speed:</strong>{" "}
-    {order.refund_speed === "instant"
-      ? "Instant"
-      : "Optimum (5–7 days)"}
+    {order.refund_speed === "instant" ? "Instant" : "Optimum (5–7 days)"}
   </p>
 )}
+
 
                   <p>
   <strong>Status:</strong> {refundStatusMap[r.status] || r.status}
