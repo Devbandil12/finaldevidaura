@@ -299,7 +299,7 @@ export default function MyOrders() {
                {r.speedProcessed && (
   <p>
     <strong>Speed:</strong>{" "}
-    {order.refund_speed === "instant" ? "Instant" : "Optimum (5–7 days)"}
+    {order.refund_speed === "instant" ? "Instant" : "Normal (5–7 days)"}
   </p>
 )}
 
