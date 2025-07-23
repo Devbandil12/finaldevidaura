@@ -16,12 +16,16 @@ export const OrderContext = createContext();
 
 export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
+// 1. Add state
+const [loadingOrders, setLoadingOrders] = useState(true);
+
   const { userdetails } = useContext(UserContext);
 
   const getorders = async () => {
     if (!userdetails) return;
 
     try {
+setLoadingOrders(true); // ⬅️ Start loading
       // 1) Fetch orders with flat refund_* columns
       const orderQuery = await db
         .select({
@@ -106,7 +110,9 @@ export const OrderProvider = ({ children }) => {
       setOrders(Array.from(map.values()));
     } catch (err) {
       console.error("Error fetching orders:", err);
-    }
+    }finally {
+    setLoadingOrders(false); // ⬅️ Stop loading
+  }
   };
 
   useEffect(() => {
@@ -182,6 +188,7 @@ useEffect(() => {
         setOrders,
         updateOrderStatus,
         updateOrderRefund,
+loadingOrders, // ⬅️ export it
       }}
     >
       {children}
