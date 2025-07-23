@@ -6,6 +6,7 @@ import "../style/myorder.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
+import Loader from "./Loader";
 
 const refundStatusMap = {
   created: "Initiated",
@@ -30,7 +31,7 @@ const formatDateTime = (dateString) => {
 };
 
 export default function MyOrders() {
-  const { orders, updateOrderStatus, updateOrderRefund } =
+  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } =
     useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
@@ -39,6 +40,10 @@ export default function MyOrders() {
   const [cancellationMessages, setCancellationMessages] = useState({});
   const [modalOrder, setModalOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+if (loadingOrders) {
+  return <Loader text="Fetching your orders..." />;
+}
 
   // filter & sort
   const sortedOrders = (orders || [])
