@@ -499,8 +499,7 @@
   }
 
 .item-details {
-  flex: 2;
-  width: fit-content;
+  min-width: fit-content;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
