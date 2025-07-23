@@ -199,12 +199,15 @@ export default function MyOrders() {
             <div key={order.orderId} className="order-card">
               <div className="order-header">
                 <h3>Order #{order.orderId}</h3>
-                <span className="badge">
-                  {totalItems} {totalItems > 1 ? "items" : "item"}
-                </span>
-                <span className={`payment-status ${order.paymentStatus}`}>
-                  {order.paymentStatus}
-                </span>
+               <span className="badge">
+  {totalItems} {totalItems > 1 ? "items" : "item"}
+</span>
+<span className={`payment-status ${order.paymentStatus}`}>
+  {(r?.status === 'processed' && !order.refund_completed_at)
+    ? 'REFUNDING'
+    : order.paymentStatus.toUpperCase()}
+</span>
+
               </div>
 
               <div className="order-summary">
