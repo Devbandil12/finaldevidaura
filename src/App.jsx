@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Layout & pages
 import Navbar from "./Components/Navbar";
+import MobileBackBar from "./Components/MobileBackBar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
 import Login from "./Components/Register";
@@ -15,6 +16,7 @@ import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
+
 
 // Styles
 import "./style/adminPanel.css";
@@ -28,6 +30,7 @@ import { CouponProvider } from "./contexts/CouponContext";
 import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
 
+
 import { useUser } from "@clerk/clerk-react";
 import { db } from "../configs";
 import { usersTable } from "../configs/schema";
@@ -37,6 +40,8 @@ const App = () => {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
+const [isNavbarVisible, setNavbarVisible] = useState(true);
+
 
   // Upsert new users into your DB
   const isNewUser = useCallback(async () => {
@@ -72,10 +77,13 @@ const App = () => {
               <ContactProvider>
                 <Router>
                   <ScrollToTop />
-                  <Navbar
-                    cartCount={cart.length}
-                    wishlistCount={wishlist.length}
-                  />
+                 <Navbar
+  cartCount={cart.length}
+  wishlistCount={wishlist.length}
+  onVisibilityChange={setNavbarVisible}
+//>
+<MobileBackBar isNavbarVisible={isNavbarVisible} />
+
                   <Routes>
                     <Route
                       path="/"
