@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import './MobileBackBar.css';
+import "../style/MobileBackBar.css";
 
 const pageTitles = {
   "/": "Home",
