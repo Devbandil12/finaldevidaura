@@ -583,3 +583,24 @@
 .btn-secondary:hover {
   background-color: #757575;
 }
+
+
+.refund-note-permanent {
+  background-color: #f1f8ff;
+  border-left: 4px solid #2e86de;
+  padding: 8px 12px;
+  margin-top: 8px;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  color: #1c3e6e;
+}
+
+.refund-delay-warning {
+  background-color: #fff4e5;
+  border-left: 4px solid #ffa726;
+  padding: 8px 12px;
+  margin-top: 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #7a4f01;
+}
