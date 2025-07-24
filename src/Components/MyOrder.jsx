@@ -41,6 +41,9 @@ export default function MyOrders() {
   const [modalOrder, setModalOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+const [showRefundInfo, setShowRefundInfo] = useState({});
+
+
 const [cancellingOrderId, setCancellingOrderId] = useState(null);
 
 
@@ -72,6 +75,19 @@ if (loadingOrders) {
       await updateOrderRefund(order.orderId, data.refund);
       // mark order cancelled
       await updateOrderStatus(order.orderId, "Order Cancelled");
+
+// Show refund info for this order
+setShowRefundInfo((prev) => ({ ...prev, [order.orderId]: true }));
+
+// Hide after 6 seconds
+setTimeout(() => {
+  setShowRefundInfo((prev) => {
+    const updated = { ...prev };
+    delete updated[order.orderId];
+    return updated;
+  });
+}, 6000);
+
 
       // inline message
       setCancellationMessages((prev) => ({
@@ -319,39 +335,48 @@ if (loadingOrders) {
   <strong>Status:</strong> {order.status}
 </span>
 
-{r?.status === "processed" && r.processed_at ? (
-  <>
-    <span>
-      <strong>Refund Completed:</strong> ₹{(r.amount / 100).toFixed(2)}
-    </span>
-    <br />
-    <span className="refund-note">
-      {r.speed === "optimum"
-        ? "Amount credited instantly to your source account."
-        : "Amount will be credited within 5–7 business days."}
-    </span>
-  </>
-) : r?.status === "processed" ? (
-  <span>
-    <strong>Refund Processing:</strong> Amount debited, awaiting credit.
-  </span>
-) : r?.status === "pending" || r?.status === "created" || r?.status === "queued" ? (
-  <span>
-    <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
-  </span>
-) : r?.status === "failed" ? (
-  <span style={{ color: "red" }}>
-    <strong>Refund Failed:</strong> Please contact support.
-  </span>
-) : (
-  <span>
-    <strong>Payment Mode:</strong> {order.paymentMode}
-  </span>
-)}
 
-)}
-
-
+{(() => {
+  if (r?.status === "processed" && r.processed_at && showRefundInfo[order.orderId]) {
+    return (
+      <>
+        <span>
+          <strong>Refund Completed:</strong> ₹{(r.amount / 100).toFixed(2)}
+        </span>
+        <br />
+        <span className="refund-note">
+          {r.speed === "optimum"
+            ? "Amount credited instantly to your source account."
+            : "Amount will be credited within 5–7 business days."}
+        </span>
+      </>
+    );
+  } else if (r?.status === "processed") {
+    return (
+      <span>
+        <strong>Refund Processing:</strong> Amount debited, awaiting credit.
+      </span>
+    );
+  } else if (["pending", "created", "queued"].includes(r?.status)) {
+    return (
+      <span>
+        <strong>Refund In Progress:</strong> ₹{(r.amount / 100).toFixed(2)}
+      </span>
+    );
+  } else if (r?.status === "failed") {
+    return (
+      <span style={{ color: "red" }}>
+        <strong>Refund Failed:</strong> Please contact support.
+      </span>
+    );
+  } else {
+    return (
+      <span>
+        <strong>Payment Mode:</strong> {order.paymentMode}
+      </span>
+    );
+  }
+})()}
 
               </div>
             </div>
