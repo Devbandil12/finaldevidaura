@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "../style/mobileBackBar.css";
+import "../style/MobileBackBar.css";
 
 const MobileBackBar = ({ isNavbarVisible }) => {
   const navigate = useNavigate();
