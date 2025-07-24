@@ -41,6 +41,8 @@ export default function MyOrders() {
   const [modalOrder, setModalOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+const [refundDropdowns, setRefundDropdowns] = useState({});
+
 const [showRefundInfo, setShowRefundInfo] = useState({});
 
 
@@ -380,26 +382,35 @@ setTimeout(() => {
 
 })()}
 
-{r?.status === "processed" && !showRefundInfo[order.orderId] && (
-  <>
-    <div className="refund-note-permanent">
-      <strong>Refund Speed:</strong>{" "}
-      {r.speed === "optimum"
-        ? "Credited instantly to source account."
-        : "Will be credited within 5–7 business days."}
-    </div>
+{r?.status === "processed" && r.speed === "normal" && (
+  <div className="refund-dropdown-container">
+    <div
+      className="refund-dropdown-toggle"
+      onClick={() =>
+        setRefundDropdowns((prev) => ({
+          ...prev,
+          [order.orderId]: !prev[order.orderId],
+        }))
+      }
+    >
+      <span className="dropdown-label">
+        {refundDropdowns[order.orderId] ? "▴" : "▾"} Refund info available (click to {refundDropdowns[order.orderId] ? "collapse" : "expand"})
+      </span>
+    </div>
 
-    <div
-      className={`refund-delay-warning-wrapper ${
-        r.speed === "normal" ? "show" : ""
-      }`}
-    >
-      <div className="refund-delay-warning">
-        <em>Note: Refund speed changed. Credit may take 5–7 business days.</em>
-      </div>
-    </div>
-  </>
+    {refundDropdowns[order.orderId] && (
+      <div className="refund-dropdown-content">
+        <div className="refund-note-permanent">
+          <strong>Refund Speed:</strong> Will be credited within 5–7 business days.
+        </div>
+        <div className="refund-delay-warning">
+          Note: Refund speed changed. Credit may take 5–7 business days.
+        </div>
+      </div>
+    )}
+  </div>
 )}
+
 
 
 
