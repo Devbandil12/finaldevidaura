@@ -403,8 +403,8 @@ setTimeout(() => {
         <div className="refund-note-permanent">
           <strong>Refund Speed:</strong> Will be credited within 5–7 business days.
         </div>
-        <div className="refund-delay-warning">
-          Note: Refund speed changed. Credit may take 5–7 business days.
+        <div className="refund-note-permanent">
+          <strong>Note:</strong> Refund speed changed. Please allow extra time.
         </div>
       </div>
     )}
