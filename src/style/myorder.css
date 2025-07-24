@@ -617,3 +617,47 @@
   border-radius: 6px;
   font-size: 0.95rem;
 }
+
+
+.refund-dropdown-container {
+  margin-top: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  overflow: hidden;
+}
+
+.refund-dropdown-toggle {
+  padding: 10px 14px;
+  cursor: pointer;
+  background-color: #f0f4ff;
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+  border-bottom: 1px solid #dbeafe;
+  user-select: none;
+}
+
+.refund-dropdown-content {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #444;
+}
+
+.refund-note-permanent {
+  margin-bottom: 8px;
+}
+
+.refund-delay-warning {
+  background: #fffbe6;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #856404;
+  border: 1px solid #ffe58f;
+}
+
+
+.refund-dropdown-content {
+  transition: all 0.3s ease-in-out;
+}
