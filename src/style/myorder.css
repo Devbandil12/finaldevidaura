@@ -652,3 +652,12 @@
 .refund-dropdown-content {
   transition: all 0.3s ease-in-out;
 }
+
+
+.refund-dropdown-content {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 5px;
+}
