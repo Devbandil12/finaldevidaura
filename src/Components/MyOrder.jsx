@@ -7,7 +7,7 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import Loader from "./Loader";
-
+import MiniLoader from "./MiniLoader";
 const refundStatusMap = {
   created: "Initiated",
   queued: "Queued",
@@ -40,6 +40,9 @@ export default function MyOrders() {
   const [cancellationMessages, setCancellationMessages] = useState({});
   const [modalOrder, setModalOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
 
 if (loadingOrders) {
   return <Loader text="Loading your orders..." />;
@@ -99,11 +102,14 @@ if (loadingOrders) {
   };
 
   const handleConfirmCancel = async () => {
-    if (!modalOrder) return;
-    setIsModalOpen(false);
-    await cancelOrder(modalOrder);
-    setModalOrder(null);
-  };
+  if (!modalOrder) return;
+  setCancellingOrderId(modalOrder.orderId); // Start loader
+  setIsModalOpen(false);
+  await cancelOrder(modalOrder);
+  setCancellingOrderId(null); // Stop loader
+  setModalOrder(null);
+};
+
 
   const reorder = (orderId) => {
     const order = orders.find((o) => o.orderId === orderId);
@@ -260,18 +266,22 @@ if (loadingOrders) {
               </div>
 
               <div className="buttons">
-                {order.paymentStatus === "paid" &&
-                  order.status === "order placed" && (
-                    <button
-                      className="cancel-btn"
-                      onClick={() => {
-                        setModalOrder(order);
-                        setIsModalOpen(true);
-                      }}
-                    >
-                      Cancel Order
-                    </button>
-                  )}
+                {order.paymentStatus === "paid" && order.status === "order placed" && (
+  cancellingOrderId === order.orderId ? (
+    <MiniLoader text="Cancelling..." />
+  ) : (
+    <button
+      className="cancel-btn"
+      onClick={() => {
+        setModalOrder(order);
+        setIsModalOpen(true);
+      }}
+    >
+      Cancel Order
+    </button>
+  )
+)}
+
 
                 {order.status === "Delivered" && (
                   <button
