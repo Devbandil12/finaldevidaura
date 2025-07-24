@@ -208,10 +208,15 @@ if (loadingOrders) {
   {totalItems} {totalItems > 1 ? "items" : "item"}
 </span>
 <span className={`payment-status ${order.paymentStatus}`}>
-  {(r?.status === 'processed' && !order.refund_completed_at)
-    ? 'REFUNDING'
-    : order.paymentStatus.toUpperCase()}
+  {r?.status === "failed"
+    ? "REFUND FAILED"
+    : r?.status === "processed"
+      ? "REFUNDED"
+      : r?.status === "pending" || r?.status === "created" || r?.status === "queued"
+        ? "REFUNDING"
+        : order.paymentStatus.toUpperCase()}
 </span>
+
 
               </div>
 
@@ -301,15 +306,24 @@ if (loadingOrders) {
 
               <div className="tracking-status">
                 <span>
-                  <strong>Status:</strong> {order.status}
-                </span>
-                {r?.status === "processed" && r.processed_at ? (
-  <span>
-    <strong>Refunded:</strong> ₹{(r.amount / 100).toFixed(2)}
-  </span>
+  <strong>Status:</strong> {order.status}
+</span>
+
+{r?.status === "processed" && r.processed_at ? (
+  <>
+    <span>
+      <strong>Refund Completed:</strong> ₹{(r.amount / 100).toFixed(2)}
+    </span>
+    <br />
+    <span className="refund-note">
+      {r.speed === "optimum"
+        ? "Amount credited instantly to your source account."
+        : "Amount will be credited within 5–7 business days."}
+    </span>
+  </>
 ) : r?.status === "processed" ? (
   <span>
-    <strong>Refund Status:</strong> Processing — Amount not yet credited.
+    <strong>Refund Processing:</strong> Amount debited, awaiting credit.
   </span>
 ) : r?.status === "pending" || r?.status === "created" || r?.status === "queued" ? (
   <span>
@@ -323,6 +337,8 @@ if (loadingOrders) {
   <span>
     <strong>Payment Mode:</strong> {order.paymentMode}
   </span>
+)}
+
 )}
 
 
