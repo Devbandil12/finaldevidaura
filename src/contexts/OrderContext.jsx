@@ -21,11 +21,10 @@ const [loadingOrders, setLoadingOrders] = useState(true);
 
   const { userdetails } = useContext(UserContext);
 
-  const getorders = async () => {
+  const getorders = async (showLoader = true) => {
     if (!userdetails) return;
-
+    if (showLoader) setLoadingOrders(true);
     try {
-setLoadingOrders(true); // ⬅️ Start loading
       // 1) Fetch orders with flat refund_* columns
       const orderQuery = await db
         .select({
@@ -115,7 +114,7 @@ setLoadingOrders(true); // ⬅️ Start loading
     } catch (err) {
       console.error("Error fetching orders:", err);
     }finally {
-    setLoadingOrders(false); // ⬅️ Stop loading
+    if (showLoader) setLoadingOrders(false);
   }
   };
 
@@ -184,7 +183,7 @@ useEffect(() => {
             refund.status === "processed" ? "refunded" : undefined,
         })
         .where(eq(ordersTable.id, orderId));
-      await getorders();
+      await getorders(false);
     } catch (err) {
       console.error("Failed to update refund info:", err);
     }
@@ -194,7 +193,7 @@ useEffect(() => {
     <OrderContext.Provider
       value={{
         orders,
-        getorders,
+        getorders(false),
         setOrders,
         updateOrderStatus,
         updateOrderRefund,
