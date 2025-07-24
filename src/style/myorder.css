@@ -430,19 +430,7 @@
 
 
 
-.refund-delay-warning-wrapper {
-  overflow: hidden;
-  transition: max-height 0.4s ease, opacity 0.4s ease;
-  max-height: 0;
-  opacity: 0;
-  margin-top: 0;
-}
 
-.refund-delay-warning-wrapper.show {
-  max-height: 100px; /* enough space for the warning message */
-  opacity: 1;
-  margin-top: 8px;
-}
 
 
 .refund-dropdown-container {
