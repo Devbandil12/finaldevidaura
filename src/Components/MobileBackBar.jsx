@@ -1,39 +1,45 @@
+// src/Components/MobileBackBar.js
+
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-
-import "../style/MobileBackBar.css";
-
-const routeNames = {
-  "/": "Home",
-  "/login": "Login",
-  "/myorder": "My Orders",
-  "/wishlist": "Wishlist",
-  "/cart": "Cart",
-  "/checkout": "Checkout",
-  "/admin": "Admin Panel",
-  "/contact": "Contact Us",
-};
+import { useNavigate, useLocation } from "react-router-dom";
+import "../style/mobileBackBar.css";
 
 const MobileBackBar = ({ isNavbarVisible }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const pageName = routeNames[location.pathname] || "Page";
+  // Define readable titles for known routes
+  const pageTitles = {
+    "/": "Home",
+    "/cart": "Cart",
+    "/wishlist": "Wishlist",
+    "/checkout": "Checkout",
+    "/myorder": "My Orders",
+    "/contact": "Contact",
+    "/login": "Login",
+    "/signup": "Sign Up",
+    "/admin": "Admin Panel",
+   
+  };
 
-  return (
-    <div
-      className="mobile-back-bar"
-      style={{
-        top: isNavbarVisible ? "60px" : "0", // Adjust based on your navbar height
-        transition: "top 0.3s ease-in-out",
-      }}
-    >
-      <button className="back-btn" onClick={() => navigate(-1)}>
-        ← Back
-      </button>
-      <span className="page-title">{pageName}</span>
-    </div>
-  );
+  const title = pageTitles[location.pathname] || "";
+
+  return (
+    <div
+      className="mobile-back-bar"
+      style={{ top: isNavbarVisible ? "80px" : "0px" }} // Adjust if your navbar height differs
+    >
+      <button
+        className="back-btn"
+        onClick={() => navigate(-1)}
+        aria-label="Go back"
+      >
+        ←
+      </button>
+      <div className="page-title">{title}</div>
+      <div style={{ width: "24px" }} /> {/* Keeps title centered */}
+    </div>
+  );
 };
 
 export default MobileBackBar;
