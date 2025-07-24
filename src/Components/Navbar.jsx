@@ -26,7 +26,7 @@ import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-const Navbar = (onVisibilityChange) => {
+const Navbar = ({onVisibilityChange}) => {
 
   const { wishlist, cart } = useContext(CartContext);
   const [cartCount, setCartCount] = useState(0);
