@@ -376,7 +376,18 @@ setTimeout(() => {
       </span>
     );
   }
+
+
 })()}
+
+{r?.status === "processed" && !showRefundInfo[order.orderId] && (
+  <div className="refund-note-permanent">
+    <strong>Refund Speed:</strong>{" "}
+    {r.speed === "optimum"
+      ? "Credited instantly to source account."
+      : "Will be credited within 5–7 business days."}
+  </div>
+)}
 
               </div>
             </div>
