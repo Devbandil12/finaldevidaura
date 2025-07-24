@@ -1,38 +1,33 @@
-/* src/style/mobileBackBar.css */
+/* src/style/MobileBackBar.css */
 
 .mobile-back-bar {
-  display: none;
+  display: none;
 }
 
 @media (max-width: 768px) {
-  .mobile-back-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    background-color: white;
-    position: fixed;
-    width: 100%;
-    top: 80px;
-    z-index: 998;
-    transition: top 0.3s ease-in-out;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  }
+  .mobile-back-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: transparent;
+    position: sticky;
+    top: 80px; /* Adjust if your main navbar height differs */
+    z-index: 998;
+    width: 100%;
+  }
 
-  .back-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #333;
-    line-height: 1;
-  }
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+  }
 
-  .page-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #444;
-    text-align: center;
-    flex: 1;
-  }
+  .page-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #444;
+  }
 }
