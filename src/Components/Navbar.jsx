@@ -26,7 +26,8 @@ import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-const Navbar = () => {
+const Navbar = ({ cartCount, wishlistCount, onVisibilityChange }) => {
+
   const { wishlist, cart } = useContext(CartContext);
   const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
@@ -70,20 +71,26 @@ const Navbar = () => {
 
   // Hide navbar on scroll down and show on scroll up
   useEffect(() => {
-    let lastScrollTop = 0;
-    const handleScroll = () => {
-      const currentScroll =
-        window.pageYOffset || document.documentElement.scrollTop;
-      if (currentScroll > lastScrollTop) {
-        setNavbarVisible(false);
-      } else {
-        setNavbarVisible(true);
-      }
-      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  let lastScrollTop = 0;
+  const handleScroll = () => {
+    const currentScroll =
+      window.pageYOffset || document.documentElement.scrollTop;
+    const isVisible = currentScroll < lastScrollTop;
+
+    setNavbarVisible(isVisible);
+
+    // 🔥 NEW: Notify parent (App.js)
+    if (onVisibilityChange) {
+      onVisibilityChange(isVisible);
+    }
+
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+  };
+
+  window.addEventListener("scroll", handleScroll);
+  return () => window.removeEventListener("scroll", handleScroll);
+}, [onVisibilityChange]);
+
 
   // Close profile dropdown on clicking outside of it
   useEffect(() => {
