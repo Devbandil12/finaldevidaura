@@ -381,19 +381,26 @@ setTimeout(() => {
 })()}
 
 {r?.status === "processed" && !showRefundInfo[order.orderId] && (
-  <div className="refund-note-permanent">
-    <strong>Refund Speed:</strong>{" "}
-    {r.speed === "optimum"
-      ? "Credited instantly to source account."
-      : "Will be credited within 5–7 business days."}
-  </div>
+  <>
+    <div className="refund-note-permanent">
+      <strong>Refund Speed:</strong>{" "}
+      {r.speed === "optimum"
+        ? "Credited instantly to source account."
+        : "Will be credited within 5–7 business days."}
+    </div>
+
+    <div
+      className={`refund-delay-warning-wrapper ${
+        r.speed === "normal" ? "show" : ""
+      }`}
+    >
+      <div className="refund-delay-warning">
+        <em>Note: Refund speed changed. Credit may take 5–7 business days.</em>
+      </div>
+    </div>
+  </>
 )}
 
-{r?.status === "processed" && r.speed === "normal" && !showRefundInfo[order.orderId] && (
-  <div className="refund-delay-warning">
-    <em>Note: Refund speed changed. Credit may take 5–7 business days.</em>
-  </div>
-)}
 
 
               </div>
