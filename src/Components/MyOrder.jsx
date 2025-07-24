@@ -339,7 +339,7 @@ setTimeout(() => {
 
 
 {(() => {
-  if (r?.status === "processed" && r.processed_at && showRefundInfo[order.orderId]) {
+  if (r?.status === "processed" && (r.completed_at || r.refund_completed_at) && showRefundInfo[order.orderId]) {
     return (
       <>
         <span>
