@@ -13,7 +13,7 @@
     background-color: white;
     position: fixed;
     width: 100%;
-    top: 80px; /* Default if main navbar is visible */
+    top: 80px;
     z-index: 998;
     transition: top 0.3s ease-in-out;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -22,9 +22,10 @@
   .back-btn {
     background: none;
     border: none;
-    font-size: 1rem;
+    font-size: 1.25rem;
     cursor: pointer;
     color: #333;
+    line-height: 1;
   }
 
   .page-title {
