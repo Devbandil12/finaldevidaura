@@ -132,7 +132,7 @@ useEffect(() => {
 
   const interval = setInterval(() => {
     console.log("🔄 Polling: Checking for refund updates...");
-    getorders();
+    getorders(false);
   }, 60000); // refresh every 60 sec
 
   return () => clearInterval(interval); // cleanup
@@ -193,7 +193,7 @@ useEffect(() => {
     <OrderContext.Provider
       value={{
         orders,
-        getorders(false),
+        getorders,
         setOrders,
         updateOrderStatus,
         updateOrderRefund,
