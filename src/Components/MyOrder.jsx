@@ -389,6 +389,13 @@ setTimeout(() => {
   </div>
 )}
 
+{r?.status === "processed" && r.speed === "normal" && !showRefundInfo[order.orderId] && (
+  <div className="refund-delay-warning">
+    <em>Note: Refund speed changed. Credit may take 5–7 business days.</em>
+  </div>
+)}
+
+
               </div>
             </div>
           );
