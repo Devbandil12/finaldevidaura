@@ -586,21 +586,34 @@
 
 
 .refund-note-permanent {
-  background-color: #f1f8ff;
-  border-left: 4px solid #2e86de;
+  background-color: #e6f4ea;
+  color: #2e7d32;
   padding: 8px 12px;
-  margin-top: 8px;
+  border-left: 4px solid #66bb6a;
   border-radius: 4px;
+  margin-top: 10px;
   font-size: 0.95rem;
-  color: #1c3e6e;
+}
+
+.refund-delay-warning-wrapper {
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.4s ease;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.refund-delay-warning-wrapper.show {
+  max-height: 100px; /* enough space for the warning message */
+  opacity: 1;
+  margin-top: 8px;
 }
 
 .refund-delay-warning {
-  background-color: #fff4e5;
-  border-left: 4px solid #ffa726;
+  background-color: #fff8e1;
+  color: #8a6d3b;
+  border: 1px solid #f0c36d;
   padding: 8px 12px;
-  margin-top: 6px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: #7a4f01;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
