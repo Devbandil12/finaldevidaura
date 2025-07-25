@@ -174,7 +174,6 @@ setTimeout(() => {
 
   return (
     <div className="myorder-container">
-      <h1 className="my-order-title">My Orders</h1>
 
       {isModalOpen &&
         modalOrder &&
