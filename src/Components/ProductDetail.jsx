@@ -3,12 +3,10 @@ import React, { useState, useContext } from 'react';
 import { CartContext } from '../contexts/CartContext';
 
 const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
-
   const { cart, setCart } = useContext(CartContext);
   const [currentImg, setCurrentImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
-  // Fallback: if product.images is a non-empty array, use it; otherwise wrap the single imageurl
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
     : [product.imageurl];
@@ -32,9 +30,9 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 overflow-auto">
-      <div className="bg-white max-w-4xl w-full rounded-2xl shadow-xl flex overflow-hidden">
+      <div className="bg-white max-w-4xl w-full rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
         {/* Left: Image Gallery */}
-        <div className="w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
+        <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
           <button
             onClick={() => changeImage(-1)}
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
@@ -53,7 +51,7 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
             &gt;
           </button>
 
-          {/* Thumbnails (up to 5) */}
+          {/* Thumbnails */}
           <div className="flex space-x-2 mt-4 overflow-x-auto">
             {images.slice(0, 5).map((img, idx) => (
               <img
@@ -69,8 +67,9 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
           </div>
         </div>
 
-        {/* Right: Details */}
-        <div className="w-1/2 p-6 flex flex-col justify-between relative">
+        {/* Right: Product Details */}
+        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
+          {/* Close Button */}
           <button
             onClick={onClose}
             className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
@@ -80,17 +79,17 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
 
           <div>
             {/* Name */}
-            <h2 className="text-3xl font-semibold text-gray-800">
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800">
               {product.name}
             </h2>
 
             {/* Price & Size */}
-            <div className="flex items-baseline mt-2">
-              <span className="text-2xl font-bold text-gray-900">
+            <div className="flex items-baseline mt-2 flex-wrap gap-2">
+              <span className="text-xl md:text-2xl font-bold text-gray-900">
                 ₹{discountedPrice.toFixed(2)}
               </span>
               {product.discountPercent > 0 && (
-                <span className="ml-2 text-sm line-through text-gray-500">
+                <span className="text-sm line-through text-gray-500">
                   ₹{product.basePrice.toFixed(2)}
                 </span>
               )}
@@ -151,38 +150,35 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
             </div>
           </div>
 
-          {/* Bottom action buttons */}
-<div className="mt-6">
-  {/* Wishlist Button - Bottom Left */}
-  <button
-    onClick={onToggleWishlist}
-    className={`absolute left-6 bottom-6 py-3 px-6 font-semibold rounded-lg border ${
-      inWishlist
-        ? 'bg-white text-pink-600 border-pink-500 hover:bg-pink-50'
-        : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
-    }`}
-  >
-    {inWishlist ? '♥ Wishlisted' : '♡ Add to Wishlist'}
-  </button>
+          {/* Bottom Action Buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4">
+            <button
+              onClick={onToggleWishlist}
+              className={`w-full sm:w-auto py-3 px-6 font-semibold rounded-lg border ${
+                inWishlist
+                  ? 'bg-white text-pink-600 border-pink-500 hover:bg-pink-50'
+                  : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              {inWishlist ? '♥ Wishlisted' : '♡ Add to Wishlist'}
+            </button>
 
-  {/* Add/Remove Cart Button - Bottom Right */}
-  {inCart ? (
-    <button
-      onClick={removeFromCart}
-      className="absolute right-6 bottom-6 py-3 px-6 font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
-    >
-      Remove from Cart
-    </button>
-  ) : (
-    <button
-      onClick={addToCart}
-      className="absolute right-6 bottom-6 py-3 px-6 font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-    >
-      Add to Cart
-    </button>
-  )}
-</div>
-
+            {inCart ? (
+              <button
+                onClick={removeFromCart}
+                className="w-full sm:w-auto py-3 px-6 font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Remove from Cart
+              </button>
+            ) : (
+              <button
+                onClick={addToCart}
+                className="w-full sm:w-auto py-3 px-6 font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                Add to Cart
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
