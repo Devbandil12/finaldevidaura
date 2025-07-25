@@ -2,7 +2,8 @@
 import React, { useState, useContext } from 'react';
 import { CartContext } from '../contexts/CartContext';
 
-const ProductDetail = ({ product, onClose }) => {
+const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
+
   const { cart, setCart } = useContext(CartContext);
   const [currentImg, setCurrentImg] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -150,24 +151,38 @@ const ProductDetail = ({ product, onClose }) => {
             </div>
           </div>
 
-          {/* Add/Remove Cart button at bottom-right */}
-          <div className="mt-6">
-            {inCart ? (
-              <button
-                onClick={removeFromCart}
-                className="absolute right-6 bottom-6 py-3 px-8 font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
-              >
-                Remove from Cart
-              </button>
-            ) : (
-              <button
-                onClick={addToCart}
-                className="absolute right-6 bottom-6 py-3 px-8 font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-              >
-                Add to Cart
-              </button>
-            )}
-          </div>
+          {/* Bottom action buttons */}
+<div className="mt-6">
+  {/* Wishlist Button - Bottom Left */}
+  <button
+    onClick={onToggleWishlist}
+    className={`absolute left-6 bottom-6 py-3 px-6 font-semibold rounded-lg border ${
+      inWishlist
+        ? 'bg-white text-pink-600 border-pink-500 hover:bg-pink-50'
+        : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+    }`}
+  >
+    {inWishlist ? '♥ Wishlisted' : '♡ Add to Wishlist'}
+  </button>
+
+  {/* Add/Remove Cart Button - Bottom Right */}
+  {inCart ? (
+    <button
+      onClick={removeFromCart}
+      className="absolute right-6 bottom-6 py-3 px-6 font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700"
+    >
+      Remove from Cart
+    </button>
+  ) : (
+    <button
+      onClick={addToCart}
+      className="absolute right-6 bottom-6 py-3 px-6 font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+    >
+      Add to Cart
+    </button>
+  )}
+</div>
+
         </div>
       </div>
     </div>
