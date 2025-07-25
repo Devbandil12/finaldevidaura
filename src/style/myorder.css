@@ -6,7 +6,6 @@
   padding: 20px;
   width: 100%;
   min-height: 100vh;
-margin-top: 200px;
   background-color: #f9fafb;
 }
 
@@ -509,7 +508,7 @@ margin-top: 200px;
 
 @media (max-width: 480px) {
   .myorder-container {
-    margin-top: 20px;
+    margin-top: 100px;
     padding: 15px;
   }
 
