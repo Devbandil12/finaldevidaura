@@ -29,23 +29,7 @@ const MobileBackBar = ({ isNavbarVisible }) => {
       className="mobile-back-bar"
       style={{ top: isNavbarVisible ? '50px' : '0px' }}
     >
-      <button className="back-btn" onClick={handleBack}>
-        <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M15 18L9 12L15 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+      
       <div className="page-title">{currentTitle}</div>
 </div>
   );
