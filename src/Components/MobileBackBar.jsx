@@ -47,8 +47,7 @@ const MobileBackBar = ({ isNavbarVisible }) => {
         </svg>
       </button>
       <div className="page-title">{currentTitle}</div>
-      <div style={{ width: "28px" }} /> {/* Spacer to balance back button */}
-    </div>
+      
   );
 };
 
