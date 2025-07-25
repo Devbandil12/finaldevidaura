@@ -217,50 +217,57 @@ const Products = () => {
 
   const { userdetails } = useContext(UserContext);
   let count = 1;
-  const addtocart = async (product, quantity = 1) => {
-  const tempCartItem = {
-    product,
-    quantity, // ✅ Store quantity here
-    cartId: `temp-${product.id + count++}`,
-    userId: userdetails?.id,
-  };
+const addtocart = async (product, quantity = 1, isBuyNow = false) => {
+  const tempCartItem = {
+    product,
+    quantity,
+    cartId: `temp-${product.id + count++}`,
+    userId: userdetails?.id,
+  };
 
-  // Optimistically update cart with quantity
-  setCart((prev) => [...prev, tempCartItem]);
+  // 1. If it's Buy Now – set in localStorage & skip DB
+  if (isBuyNow) {
+    localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
+    navigate("/cart?buyNow=true");
+    return;
+  }
 
-  try {
-    setLoading(true);
-    const res1 = await db
-      .insert(addToCartTable)
-      .values({
-        productId: product.id,
-        userId: userdetails?.id,
-        quantity, // ✅ Ensure this is stored in DB schema
-      })
-      .returning({
-        cartId: addToCartTable.id,
-        userId: addToCartTable.userId,
-        quantity: addToCartTable.quantity,
-      });
+  // 2. Normal cart logic
+  setCart((prev) => [...prev, tempCartItem]);
 
-    // Replace temp cart item with real one
-    setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === product.id && item.userId === userdetails?.id
-          ? { ...item, cartId: res1.cartId, quantity }
-          : item
-      )
-    );
-  } catch (error) {
-    console.error("Failed to add to cart:", error);
-    // Rollback temp cart
-    setCart((prev) =>
-      prev.filter((item) => item.cartId !== tempCartItem.cartId)
-    );
-  } finally {
-    setLoading(false);
-  }
+  try {
+    setLoading(true);
+    const res1 = await db
+      .insert(addToCartTable)
+      .values({
+        productId: product.id,
+        userId: userdetails?.id,
+        quantity,
+      })
+      .returning({
+        cartId: addToCartTable.id,
+        userId: addToCartTable.userId,
+        quantity: addToCartTable.quantity,
+      });
+
+    // Replace temp item with DB entry
+    setCart((prev) =>
+      prev.map((item) =>
+        item.product.id === product.id && item.userId === userdetails?.id
+          ? { ...item, cartId: res1.cartId, quantity }
+          : item
+      )
+    );
+  } catch (error) {
+    console.error("Failed to add to cart:", error);
+    setCart((prev) =>
+      prev.filter((item) => item.cartId !== tempCartItem.cartId)
+    );
+  } finally {
+    setLoading(false);
+  }
 };
+
 
   const { user } = useUser();
   const removeFromCart = async (product) => {
@@ -450,7 +457,7 @@ const Products = () => {
       images: modalProduct.images || [modalProduct.imageurl],
     }}
     onClose={closeModal}
-    onAddToCart={(product, quantity) => addtocart(product, quantity)}
+    onAddToCart={(product, quantity, isBuyNow) => addtocart(product, quantity, isBuyNow)}
     inCart={cart.some((item) => item.product.id === modalProduct.id)}
     onToggleWishlist={() => toggleWishlist(modalProduct)}
     inWishlist={wishlist.some(
