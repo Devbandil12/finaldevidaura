@@ -12,8 +12,8 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
     : [product.imageurl];
 
   const discountedPrice = Math.round(
-    (product.basePrice * (1 - product.discountPercent / 100)) * 100
-  ) / 100;
+    product.basePrice * (1 - product.discountPercent / 100)
+  );
 
   const inCart = cart.some(item => item.product.id === product.id);
 
@@ -28,9 +28,26 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
     setCart(prev => prev.filter(item => item.product.id !== product.id));
   };
 
+  const handleShare = () => {
+    const shareData = {
+      title: product.name,
+      text: `${product.name} - ₹${discountedPrice}. ${product.description || ''}`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch(err =>
+        console.error('Error sharing:', err)
+      );
+    } else {
+      alert('Sharing is not supported on this browser.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 overflow-auto">
       <div className="bg-white max-w-4xl w-full rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+
         {/* Left: Image Gallery */}
         <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
           <button
@@ -86,11 +103,11 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
             {/* Price & Size */}
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
               <span className="text-xl md:text-2xl font-bold text-gray-900">
-                ₹{discountedPrice.toFixed(2)}
+                ₹{discountedPrice}
               </span>
               {product.discountPercent > 0 && (
                 <span className="text-sm line-through text-gray-500">
-                  ₹{product.basePrice.toFixed(2)}
+                  ₹{Math.round(product.basePrice)}
                 </span>
               )}
               <span className="ml-auto text-sm text-gray-700">
@@ -151,7 +168,7 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
           </div>
 
           {/* Bottom Action Buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4">
+          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4 flex-wrap">
             <button
               onClick={onToggleWishlist}
               className={`w-full sm:w-auto py-3 px-6 font-semibold rounded-lg border ${
@@ -161,6 +178,13 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
               }`}
             >
               {inWishlist ? '♥ Wishlisted' : '♡ Add to Wishlist'}
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="w-full sm:w-auto py-3 px-6 font-semibold rounded-lg bg-white text-blue-700 border border-blue-500 hover:bg-blue-50"
+            >
+              📤 Share
             </button>
 
             {inCart ? (
