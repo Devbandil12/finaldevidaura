@@ -27,7 +27,7 @@ const MobileBackBar = ({ isNavbarVisible }) => {
   return (
     <div
       className="mobile-back-bar"
-      style={{ top: isNavbarVisible ? '45px' : '0px' }}
+      style={{ top: isNavbarVisible ? '50px' : '0px' }}
     >
       <button className="back-btn" onClick={handleBack}>
         <svg
