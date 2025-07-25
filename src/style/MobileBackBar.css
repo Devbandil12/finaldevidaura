@@ -14,7 +14,7 @@
     z-index: 998;
     background-color: #fff;
 box-shadow: rgba(0, 0, 0, 0.1) -4px 9px 25px -6px;
-    transition: top 0.3s ease-in-out; /* Smooth transition */
+    transition: top 0.2s ease-in-out; /* Smooth transition */
   }
 
   .back-btn {
