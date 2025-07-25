@@ -299,7 +299,7 @@ const AdminPanel = () => {
         <div className="absolute">
           <ToastContainer />
         </div>
-        <h1>Admin Panel</h1>
+        
         <nav className="admin-nav">
           <button onClick={() => setActiveTab("products")}>Products</button>
           <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
