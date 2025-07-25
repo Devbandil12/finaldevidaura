@@ -47,7 +47,7 @@ const MobileBackBar = ({ isNavbarVisible }) => {
         </svg>
       </button>
       <div className="page-title">{currentTitle}</div>
-      
+</div>
   );
 };
 
