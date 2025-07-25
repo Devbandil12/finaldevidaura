@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { CartContext } from '../contexts/CartContext';
 import { ProductContext } from '../contexts/productContext';
+import { useNavigate } from "react-router-dom";
 
 const ProductDetail = ({
   product,
@@ -12,6 +13,21 @@ const ProductDetail = ({
 }) => {
   const { products } = useContext(ProductContext);
   const fullProduct = products.find(p => p.id === product.id) || product;
+
+
+
+const navigate = useNavigate();
+
+const handleBuyNow = () => {
+  const buyNowItem = {
+    product,
+    quantity, // If you already have quantity state passed in
+  };
+  localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
+  navigate("/cart?buyNow=true");
+};
+
+
 
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
@@ -150,6 +166,13 @@ const ProductDetail = ({
             >
               {inCart ? 'Remove from Cart' : `Add to Cart (${quantity})`}
             </button>
+<button
+  onClick={handleBuyNow}
+  className="bg-blue-600 text-white px-4 py-2 rounded-md w-full mt-2"
+>
+  Buy Now
+</button>
+
           </div>
         </div>
       </div>
