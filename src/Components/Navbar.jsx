@@ -139,7 +139,7 @@ const Navbar = ({onVisibilityChange}) => {
       <nav
         id="navbar"
         style={{
-          top: navbarVisible ? "0" : "-60px",
+          top: navbarVisible ? "0" : "-50px",
           transition: "top 0.3s ease-in-out",
         }}
       >
