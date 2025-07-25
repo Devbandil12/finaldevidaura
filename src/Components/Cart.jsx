@@ -22,8 +22,9 @@ const ShoppingCart = () => {
   const { cart, setCart, wishlist, setWishlist, getCartitems } =
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-const [searchParams] = useSearchParams();
+const searchParams = new URLSearchParams(location.search);
 const isBuyNow = searchParams.get("buyNow") === "true";
+const buyNowItem = JSON.parse(localStorage.getItem("buyNowItem"));
 
 const [buyNowCart, setBuyNowCart] = useState(null);
 
@@ -36,13 +37,22 @@ const [buyNowCart, setBuyNowCart] = useState(null);
 
 
 useEffect(() => {
-  if (isBuyNow) {
-    const storedItem = JSON.parse(localStorage.getItem("buyNowItem"));
-    if (storedItem) {
-      setBuyNowCart([storedItem]);
-    }
-  }
+  if (isBuyNow) {
+    const storedItem = localStorage.getItem("buyNowItem");
+    if (storedItem) {
+      try {
+        const parsedItem = JSON.parse(storedItem);
+        setBuyNowCart([parsedItem]);
+      } catch (err) {
+        console.error("Failed to parse buyNowItem from localStorage", err);
+        setBuyNowCart([]);
+      }
+    } else {
+      setBuyNowCart([]);
+    }
+  }
 }, [isBuyNow]);
+
 
 
 
@@ -241,11 +251,15 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
 
 
   useEffect(() => {
-    if (appliedCoupon && !isCouponValid(appliedCoupon, cart)) {
-      setAppliedCoupon(null);
-      toast.info("Applied coupon no longer valid due to cart changes");
-    }
-  }, [cart]);
+  if (appliedCoupon) {
+    const activeCart = isBuyNow ? buyNowCart : cart;
+    if (!isCouponValid(appliedCoupon, activeCart)) {
+      setAppliedCoupon(null);
+      toast.info("Applied coupon no longer valid due to cart changes");
+    }
+  }
+}, [cart, buyNowCart, isBuyNow]);
+
 
   const validateCouponServer = async (couponCode, userId) => {
     try {
