@@ -217,47 +217,51 @@ const Products = () => {
 
   const { userdetails } = useContext(UserContext);
   let count = 1;
-  const addtocart = async (product) => {
-    const tempCartItem = {
-      product,
-      cartId: `temp-${product.id + count++}`, // Temporary cart ID
-      userId: userdetails?.id,
-    };
-
-    // Optimistically update the cart
-    setCart((prev) => [...prev, tempCartItem]);
-
-    try {
-      setLoading(true);
-      const res1 = await db
-        .insert(addToCartTable)
-        .values({
-          productId: product.id,
-          userId: userdetails?.id,
-        })
-        .returning({
-          cartId: addToCartTable.id,
-          userId: addToCartTable.userId,
-        });
-
-      // Replace temp cart item with actual DB response
-      setCart((prev) =>
-        prev.map((item) =>
-          item.product.id === product.id && item.userId === userdetails?.id
-            ? { ...item, cartId: res1.cartId }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
-      // Remove the temp item if DB call fails
-      setCart((prev) =>
-        prev.filter((item) => item.cartId !== tempCartItem.cartId)
-      );
-    } finally {
-      setLoading(false);
-    }
+  const addtocart = async (product, quantity = 1) => {
+  const tempCartItem = {
+    product,
+    quantity, // ✅ Store quantity here
+    cartId: `temp-${product.id + count++}`,
+    userId: userdetails?.id,
   };
+
+  // Optimistically update cart with quantity
+  setCart((prev) => [...prev, tempCartItem]);
+
+  try {
+    setLoading(true);
+    const res1 = await db
+      .insert(addToCartTable)
+      .values({
+        productId: product.id,
+        userId: userdetails?.id,
+        quantity, // ✅ Ensure this is stored in DB schema
+      })
+      .returning({
+        cartId: addToCartTable.id,
+        userId: addToCartTable.userId,
+        quantity: addToCartTable.quantity,
+      });
+
+    // Replace temp cart item with real one
+    setCart((prev) =>
+      prev.map((item) =>
+        item.product.id === product.id && item.userId === userdetails?.id
+          ? { ...item, cartId: res1.cartId, quantity }
+          : item
+      )
+    );
+  } catch (error) {
+    console.error("Failed to add to cart:", error);
+    // Rollback temp cart
+    setCart((prev) =>
+      prev.filter((item) => item.cartId !== tempCartItem.cartId)
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
   const { user } = useUser();
   const removeFromCart = async (product) => {
     const backupCart = [...cart]; // Backup the cart state in case of failure
