@@ -1,74 +1,86 @@
 // src/components/ProductDetail.jsx
-import React, { useState, useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { CartContext } from '../contexts/CartContext';
+import { ProductContext } from '../contexts/productContext';
 
 const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
   const { cart, setCart } = useContext(CartContext);
-  const [currentImg, setCurrentImg] = useState(0);
+  const { products } = useContext(ProductContext);
+
+  const fullProduct = products.find((p) => p.id === product.id) || product;
+
+  const basePrice = Number(fullProduct.oprice) || 0;
+  const discount = Number(fullProduct.discount) || 0;
+  const discountedPrice = Math.round(basePrice - (basePrice * discount / 100));
+
+  const inCart = cart.some((item) => item.product.id === fullProduct.id);
   const [quantity, setQuantity] = useState(1);
+  const [currentImg, setCurrentImg] = useState(0);
 
-  const images = Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : [product.imageurl];
-
-  const discountedPrice = Math.round(
-    product.basePrice * (1 - product.discountPercent / 100)
-  );
-
-  const inCart = cart.some(item => item.product.id === product.id);
-
-  const changeImage = delta =>
-    setCurrentImg(idx => (idx + delta + images.length) % images.length);
+  const images = Array.isArray(fullProduct.images) && fullProduct.images.length > 0
+    ? fullProduct.images
+    : [fullProduct.imageurl];
 
   const addToCart = () => {
-    setCart(prev => [...prev, { product, size: product.size, qty: quantity }]);
+    setCart((prev) => {
+      const exists = prev.find((item) => item.product.id === fullProduct.id);
+      if (exists) {
+        return prev.map((item) =>
+          item.product.id === fullProduct.id
+            ? { ...item, qty: item.qty + quantity }
+            : item
+        );
+      }
+      return [...prev, { product: fullProduct, size: fullProduct.size, qty: quantity }];
+    });
   };
 
   const removeFromCart = () => {
-    setCart(prev => prev.filter(item => item.product.id !== product.id));
+    setCart((prev) => prev.filter((item) => item.product.id !== fullProduct.id));
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     const shareData = {
-      title: product.name,
-      text: `${product.name} - ₹${discountedPrice}. ${product.description || ''}`,
+      title: fullProduct.name,
+      text: 'Check out this product from Davidaura!',
       url: window.location.href,
     };
 
-    if (navigator.share) {
-      navigator.share(shareData).catch(err =>
-        console.error('Error sharing:', err)
-      );
-    } else {
-      alert('Sharing is not supported on this browser.');
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 overflow-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white max-w-4xl w-full rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
-
         {/* Left: Image Gallery */}
         <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
           <button
-            onClick={() => changeImage(-1)}
+            onClick={() => setCurrentImg((prev) => (prev - 1 + images.length) % images.length)}
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
           >
             &lt;
           </button>
           <img
             src={images[currentImg]}
-            alt={`${product.name} ${currentImg + 1}`}
+            alt={`${fullProduct.name} ${currentImg + 1}`}
             className="object-cover w-full h-96 rounded-lg"
           />
           <button
-            onClick={() => changeImage(1)}
+            onClick={() => setCurrentImg((prev) => (prev + 1) % images.length)}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
           >
             &gt;
           </button>
 
-          {/* Thumbnails */}
           <div className="flex space-x-2 mt-4 overflow-x-auto">
             {images.slice(0, 5).map((img, idx) => (
               <img
@@ -86,7 +98,6 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
 
         {/* Right: Product Details */}
         <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
-          {/* Close Button */}
           <button
             onClick={onClose}
             className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
@@ -95,24 +106,18 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
           </button>
 
           <div>
-            {/* Name */}
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800">
-              {product.name}
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800">{fullProduct.name}</h2>
 
-            {/* Price & Size */}
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
               <span className="text-xl md:text-2xl font-bold text-gray-900">
                 ₹{discountedPrice}
               </span>
-              {product.discountPercent > 0 && (
+              {discount > 0 && (
                 <span className="text-sm line-through text-gray-500">
-                  ₹{Math.round(product.basePrice)}
+                  ₹{Math.round(basePrice)}
                 </span>
               )}
-              <span className="ml-auto text-sm text-gray-700">
-                {product.size} ml
-              </span>
+              <span className="ml-auto text-sm text-gray-700">{fullProduct.size} ml</span>
             </div>
 
             {/* Quantity */}
@@ -136,39 +141,41 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
             </div>
 
             {/* Description */}
-            <div className="mt-6 text-gray-700 space-y-2">
-              <h3 className="font-medium">Description</h3>
-              <p>{product.description}</p>
-            </div>
+            {fullProduct.description && (
+              <div className="mt-6 text-gray-700 space-y-2">
+                <h3 className="font-medium">Description</h3>
+                <p>{fullProduct.description}</p>
+              </div>
+            )}
 
             {/* Notes */}
             <div className="mt-6 text-gray-700 space-y-4">
-              {product.topNotes && (
+              {fullProduct.composition && (
                 <div>
                   <h3 className="font-medium">Top Notes</h3>
                   <hr className="border-t border-gray-300 my-1" />
-                  <p>{product.topNotes}</p>
+                  <p>{fullProduct.composition}</p>
                 </div>
               )}
-              {product.baseNotes && (
+              {fullProduct.fragranceNotes && (
                 <div>
                   <h3 className="font-medium">Base Notes</h3>
                   <hr className="border-t border-gray-300 my-1" />
-                  <p>{product.baseNotes}</p>
+                  <p>{fullProduct.fragranceNotes}</p>
                 </div>
               )}
-              {product.heartNotes && (
+              {fullProduct.fragrance && (
                 <div>
                   <h3 className="font-medium">Heart Notes</h3>
                   <hr className="border-t border-gray-300 my-1" />
-                  <p>{product.heartNotes}</p>
+                  <p>{fullProduct.fragrance}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Bottom Action Buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4 flex-wrap">
+          {/* Action Buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row justify-between gap-4">
             <button
               onClick={onToggleWishlist}
               className={`w-full sm:w-auto py-3 px-6 font-semibold rounded-lg border ${
@@ -182,9 +189,9 @@ const ProductDetail = ({ product, onClose, onToggleWishlist, inWishlist }) => {
 
             <button
               onClick={handleShare}
-              className="w-full sm:w-auto py-3 px-6 font-semibold rounded-lg bg-white text-blue-700 border border-blue-500 hover:bg-blue-50"
+              className="w-full sm:w-auto py-3 px-6 font-semibold rounded-lg border border-blue-500 text-blue-600 bg-white hover:bg-blue-50"
             >
-              📤 Share
+              Share
             </button>
 
             {inCart ? (
