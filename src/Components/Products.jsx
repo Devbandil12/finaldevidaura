@@ -22,6 +22,8 @@ import { and, eq } from "drizzle-orm";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 // import WheelOfFate from "../Components/WheelOfFate.jsx";
+import ProductDetail from "../components/ProductDetail";
+
 
 // -------------------------------
 // Modal Component (Detailed Perfume Info)
@@ -437,9 +439,25 @@ const Products = () => {
             );
           })}
         </div>
-        {modalProduct && <Modal product={modalProduct} onClose={closeModal} />}
+        {modalProduct && (
+  <ProductDetail
+    product={{
+      ...modalProduct,
+      images: modalProduct.images || [modalProduct.imageurl],
+    }}
+    onClose={closeModal}
+    onAddToCart={() => addtocart(modalProduct)}
+    inCart={cart.some((item) => item.product.id === modalProduct.id)}
+    onToggleWishlist={() => toggleWishlist(modalProduct)}
+    inWishlist={wishlist.some(
+      (item) => item.productId === modalProduct.id
+    )}
+    quantity={1}
+  />
+)}
+
       </section>
-      {/* <WheelOfFate /> */}
+      
     </>
   );
 };
