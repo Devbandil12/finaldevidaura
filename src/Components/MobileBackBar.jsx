@@ -9,7 +9,7 @@ const pageTitles = {
   "/myorder": "My Orders",
   "/checkout": "Checkout",
   "/contact": "Contact",
-  "/Admin": "Admin Panel",
+  "/admin": "Admin Panel",
 };
 
 const MobileBackBar = ({ isNavbarVisible }) => {
