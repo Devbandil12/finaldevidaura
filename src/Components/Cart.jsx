@@ -9,6 +9,9 @@ import { and, eq } from "drizzle-orm";
 import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";  // <--- Added CouponContext
 import { toast, ToastContainer } from "react-toastify";
+import { useSearchParams } from "react-router-dom";
+
+
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -19,28 +22,51 @@ const ShoppingCart = () => {
   const { cart, setCart, wishlist, setWishlist, getCartitems } =
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+const [searchParams] = useSearchParams();
+const isBuyNow = searchParams.get("buyNow") === "true";
+
+const [buyNowCart, setBuyNowCart] = useState(null);
+
+
 
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);  // <--- Get coupons from context
 
+
+useEffect(() => {
+  if (isBuyNow) {
+    const storedItem = JSON.parse(localStorage.getItem("buyNowItem"));
+    if (storedItem) {
+      setBuyNowCart([storedItem]);
+    }
+  }
+}, [isBuyNow]);
+
+
+
   useEffect(() => {
     getCartitems();
   }, []);
 
   useEffect(() => {
-    setCartitems(cart);
-  }, [cart]);
+  setCartitems(isBuyNow ? buyNowCart : cart);
+}, [cart, buyNowCart, isBuyNow]);
+
 
   // Checkout Handler
   const handleCheckout = () => {
-    if (!cart?.length) {
-      alert("Your cart is empty. Please add at least one item before checking out.");
-      return;
-    }
+    const activeCart = isBuyNow ? buyNowCart : cart;
 
-    const fullCartItems = cart.map((item) => {
+if (!activeCart?.length) {
+  alert("Your cart is empty. Please add at least one item before checking out.");
+  return;
+}
+
+
+    const fullCartItems = activeCart.map((item) => {
+
       const discountedPrice = Math.floor(
         item.product.oprice - (item.product.discount / 100) * item.product.oprice
       );
@@ -61,6 +87,8 @@ const ShoppingCart = () => {
 
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
+if (isBuyNow) localStorage.removeItem("buyNowItem");
+
     navigate("/checkout");
   };
 
@@ -405,25 +433,31 @@ const ShoppingCart = () => {
 
 
             <div className="cart-summary-button">
-              <button id="clear-cart" onClick={clearCart}>
-                Clear Cart
-              </button>
+                {!isBuyNow && (
+    <button id="clear-cart" onClick={clearCart}>
+      Clear Cart
+    </button>
+  )}
               <button
-                id="checkout-button"
-                disabled={!cart?.length}
-                onClick={handleCheckout}
-              >
-                Checkout
-              </button>
+  id="checkout-button"
+  disabled={!cartitems?.length}
+  onClick={handleCheckout}
+>
+  {isBuyNow ? "Buy Now" : "Checkout"}
+</button>
+
             </div>
           </div>
         </div>
       </main>
 
-      <div id="remaining-products-container">
-        <h3>Explore more</h3>
-        <div id="remaining-products">{renderRemainingProducts()}</div>
-      </div>
+      {!isBuyNow && (
+  <div id="remaining-products-container">
+    <h3>Explore more</h3>
+    <div id="remaining-products">{renderRemainingProducts()}</div>
+  </div>
+)}
+
     </>
   );
 };
