@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import "../style/MobileBackBar.css";
 
 const pageTitles = {
-  "/": "Home",
   "/login": "Login",
   "/cart": "Cart",
   "/wishlist": "Wishlist",
