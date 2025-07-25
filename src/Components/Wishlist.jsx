@@ -157,7 +157,7 @@ const Wishlist = () => {
     <div className="wishlist-main-container">
       <div className="absolute">
       </div>
-      <h2 className="w-title">MY WISHLIST</h2>
+      
 
       {wishlistitems.length === 0 ? (
         <div id="empty-wishlistitems-message">Your Wishlist is empty.</div>
