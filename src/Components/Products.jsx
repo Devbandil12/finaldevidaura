@@ -22,7 +22,7 @@ import { and, eq } from "drizzle-orm";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 // import WheelOfFate from "../Components/WheelOfFate.jsx";
-import ProductDetail from "../components/ProductDetail";
+import ProductDetail from "./ProductDetail";
 
 
 // -------------------------------
