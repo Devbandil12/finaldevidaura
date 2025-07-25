@@ -27,6 +27,7 @@ const isBuyNow = searchParams.get("buyNow") === "true";
 const buyNowItem = JSON.parse(localStorage.getItem("buyNowItem"));
 
 const [buyNowCart, setBuyNowCart] = useState(null);
+const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
 
@@ -44,14 +45,16 @@ useEffect(() => {
         const parsedItem = JSON.parse(storedItem);
         setBuyNowCart([parsedItem]);
       } catch (err) {
-        console.error("Failed to parse buyNowItem from localStorage", err);
+        console.error("Failed to parse buyNowItem", err);
         setBuyNowCart([]);
       }
     } else {
       setBuyNowCart([]);
     }
   }
+  setBuyNowLoaded(true);  // ✅ Moved outside of condition
 }, [isBuyNow]);
+
 
 
 
@@ -61,8 +64,15 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-  setCartitems(isBuyNow ? buyNowCart : cart);
-}, [cart, buyNowCart, isBuyNow]);
+  if (isBuyNow) {
+    if (buyNowLoaded) {
+      setCartitems(buyNowCart || []);
+    }
+  } else {
+    setCartitems(cart || []);
+  }
+}, [cart, buyNowCart, isBuyNow, buyNowLoaded]);
+
 
 
   // Checkout Handler
@@ -336,7 +346,9 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
       <main className="main-container" style={{ position: "relative" }}>
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
-            {cartitems && cartitems.length > 0 ? (
+            {!buyNowLoaded ? (
+  <div className="loading-cart">Loading...</div>
+) :  cartitems && cartitems.length > 0 ? (
               cartitems.map((item, idx) => (
                 <div key={idx} className="cart-item">
                   <div className="product-content">
