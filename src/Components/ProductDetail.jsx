@@ -1,4 +1,3 @@
-// src/components/ProductDetail.jsx
 import React, { useState, useContext } from 'react';
 import { CartContext } from '../contexts/CartContext';
 import { ProductContext } from '../contexts/productContext';
@@ -21,9 +20,9 @@ const ProductDetail = ({
     ? fullProduct.images
     : [fullProduct.imageurl];
 
-  const basePrice = Number(fullProduct.oprice) || 0;
-  const discount = Number(fullProduct.discount) || 0;
-  const discountedPrice = Math.round(basePrice - (basePrice * discount / 100));
+  const basePrice = Math.floor(Number(fullProduct.oprice) || 0);
+  const discount = Math.floor(Number(fullProduct.discount) || 0);
+  const discountedPrice = Math.floor(basePrice - (basePrice * discount / 100));
 
   const changeImage = delta =>
     setCurrentImg(idx => (idx + delta + images.length) % images.length);
@@ -38,11 +37,15 @@ const ProductDetail = ({
       text: `${fullProduct.name} – ₹${discountedPrice}`,
       url: window.location.href,
     };
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard');
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard');
+      }
+    } catch (err) {
+      console.error("Share failed", err);
     }
   };
 
@@ -79,7 +82,7 @@ const ProductDetail = ({
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
               <span className="text-xl md:text-2xl font-bold text-gray-900">₹{discountedPrice}</span>
               {discount > 0 && (
-                <span className="text-sm line-through text-gray-500">₹{Math.round(basePrice)}</span>
+                <span className="text-sm line-through text-gray-500">₹{basePrice}</span>
               )}
               <span className="ml-auto text-sm text-gray-700">{fullProduct.size} ml</span>
             </div>
@@ -102,7 +105,7 @@ const ProductDetail = ({
               </div>
             )}
 
-            {/* Notes */}
+            {/* Notes — YOUR ORIGINAL LOGIC PRESERVED */}
             <div className="mt-6 text-gray-700 space-y-4">
               {fullProduct.composition && (
                 <div>
