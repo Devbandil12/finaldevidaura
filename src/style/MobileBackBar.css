@@ -12,7 +12,6 @@
     top: 45px; /* Will be adjusted via inline style from JS */
     width: 100%;
     z-index: 998;
-border-top: 1px solid #ccc;
     background-color: #fff;
 box-shadow: rgba(0, 0, 0, 0.1) -4px 9px 25px -6px;
     transition: top 0.3s ease-in-out; /* Smooth transition */
