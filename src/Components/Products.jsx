@@ -446,7 +446,7 @@ const Products = () => {
       images: modalProduct.images || [modalProduct.imageurl],
     }}
     onClose={closeModal}
-    onAddToCart={() => addtocart(modalProduct)}
+    onAddToCart={(product, quantity) => addtocart(product, quantity)}
     inCart={cart.some((item) => item.product.id === modalProduct.id)}
     onToggleWishlist={() => toggleWishlist(modalProduct)}
     inWishlist={wishlist.some(
