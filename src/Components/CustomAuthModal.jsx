@@ -7,7 +7,7 @@ import MiniLoader from "./MiniLoader";
 import "../style/CustomAuthModal.css";
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 
 export default function CustomAuthModal({ open, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
@@ -163,17 +163,28 @@ export default function CustomAuthModal({ open, onClose }) {
               </>
             )}
             <div className="password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <span onClick={togglePasswordVisibility} className="eye-icon">
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
-            </div>
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Enter your password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    required
+  />
+  <span className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
+    {showPassword ? (
+      // 👁️ Eye open SVG
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#666" strokeWidth="2"/>
+        <circle cx="12" cy="12" r="3" stroke="#666" strokeWidth="2"/>
+      </svg>
+    ) : (
+      // 🚫 Eye slash SVG
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M17.94 17.94A10.944 10.944 0 0112 20C5 20 1 12 1 12a17.26 17.26 0 013.94-5.94M9.9 4.24A10.944 10.944 0 0112 4c7 0 11 8 11 8a17.222 17.222 0 01-2.31 3.43M1 1l22 22" stroke="#666" strokeWidth="2"/>
+      </svg>
+    )}
+  </span>
+</div>
 
             {isSignUp && (
               <ul className="password-checks">
