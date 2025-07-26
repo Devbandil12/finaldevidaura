@@ -3,6 +3,10 @@ import { CartContext } from '../contexts/CartContext';
 import { ProductContext } from '../contexts/productContext';
 import { useNavigate } from 'react-router-dom';
 
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // outline
+import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
+
+
 const ProductDetail = ({
   product,
   onClose,
@@ -90,7 +94,17 @@ const ProductDetail = ({
           <button onClick={onClose} className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
 
           <div>
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800">{fullProduct.name}</h2>
+            <div className="flex items-center justify-center gap-2 mt-5">
+  <h2 className="text-sm font-semibold text-gray-800">{product.name}</h2>
+  <button onClick={onToggleWishlist}>
+    <img
+      src={inWishlist ? WishlistFilledImage : WishlistImage}
+      alt="Wishlist"
+      className="w-6 h-6"
+    />
+  </button>
+</div>
+
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
               <span className="text-xl md:text-2xl font-bold text-gray-900">₹{discountedPrice}</span>
               {discount > 0 && (
