@@ -94,30 +94,39 @@ const ProductDetail = ({
           <button onClick={onClose} className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
    
        <div>
-          <div className="w-full flex items-center justify-between mt-6 ">
+          <div className="w-full flex justify-between items-start mt-6">
+  {/* Product Name on the Left */}
   <h2 className="text-xl md:text-2xl font-bold text-gray-900">{product.name}</h2>
-  <button onClick={onToggleWishlist} className="hover:scale-110 transition">
-    <img
-      src={inWishlist ? WishlistFilledImage : WishlistImage}
-      alt="Wishlist"
-      className="w-6 h-6"
-    />
-  </button>
- {/* Share Icon */}
+
+  {/* Icons stacked vertically on the right */}
+  <div className="flex flex-col items-end gap-2">
+    {/* Wishlist Icon */}
+    <button onClick={onToggleWishlist} className="hover:scale-110 transition">
+      <img
+        src={inWishlist ? WishlistFilledImage : WishlistImage}
+        alt="Wishlist"
+        className="w-6 h-6"
+      />
+    </button>
+
+    {/* Share Icon */}
     <button
       onClick={handleShare}
       className="hover:scale-110 transition"
       title="Share"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        className="w-6 h-6">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" strokeWidth="2"
+        strokeLinecap="round" strokeLinejoin="round"
+        className="w-6 h-6 text-blue-600"
+      >
         <path d="M4 12v-2a4 4 0 014-4h8a4 4 0 014 4v2" />
         <path d="M16 16l-4 4m0 0l-4-4m4 4V8" />
       </svg>
     </button>
-
+  </div>
 </div>
+
 
 
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
