@@ -8,12 +8,10 @@ import "../style/CustomAuthModal.css";
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
-
 export default function CustomAuthModal({ open, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,28 +46,15 @@ export default function CustomAuthModal({ open, onClose }) {
       setPassword("");
       setFirstName("");
       setLastName("");
-      setUsername("");
       setError("");
     }
   }, [open]);
 
   const passwordChecks = [
-    {
-      label: "Minimum 8 characters",
-      passed: password.length >= 8,
-    },
-    {
-      label: "First letter capital",
-      passed: /^[A-Z]/.test(password),
-    },
-    {
-      label: "One special character",
-      passed: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    },
-    {
-      label: "At least one number",
-      passed: /\d/.test(password),
-    },
+    { label: "Minimum 8 characters", passed: password.length >= 8 },
+    { label: "First letter capital", passed: /^[A-Z]/.test(password) },
+    { label: "One special character", passed: /[!@#$%^&*(),.?\":{}|<>]/.test(password) },
+    { label: "At least one number", passed: /\d/.test(password) },
   ];
 
   const handleToggle = () => {
@@ -91,16 +76,9 @@ export default function CustomAuthModal({ open, onClose }) {
     e.preventDefault();
     setError("");
     setFormLoading(true);
-
     try {
       if (isSignUp) {
-        await signUp.create({
-          emailAddress: email,
-          password,
-          username,
-          firstName,
-          lastName,
-        });
+        await signUp.create({ emailAddress: email, password, firstName, lastName });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
         alert("Check your email for verification link.");
       } else {
@@ -122,18 +100,14 @@ export default function CustomAuthModal({ open, onClose }) {
     setError("");
     setGoogleLoading(true);
     try {
-      if (isSignUp) {
-        await signUp.authenticateWithRedirect({ strategy: "oauth_google" });
-      } else {
-        await signIn.authenticateWithRedirect({ strategy: "oauth_google" });
-      }
+      const strategy = isSignUp ? "oauth_google" : "oauth_google";
+      const action = isSignUp ? signUp : signIn;
+      await action.authenticateWithRedirect({ strategy });
     } catch (err) {
       setError(err.errors?.[0]?.message || "Google auth failed");
       setGoogleLoading(false);
     }
   };
-
-  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
   if (!open) return null;
 
@@ -144,53 +118,48 @@ export default function CustomAuthModal({ open, onClose }) {
           <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
           <button className="google-btn" onClick={handleGoogle} disabled={googleLoading}>
-            {googleLoading
-              ? <MiniLoader text={isSignUp ? "Signing up..." : "Signing in..."} />
-              : isSignUp
-              ? "Sign up with Google"
-              : "Sign in with Google"}
+            {googleLoading ? <MiniLoader text="Processing..." /> : isSignUp ? "Sign up with Google" : "Sign in with Google"}
           </button>
 
           <div className="divider"><span>OR</span></div>
 
-          <form onSubmit={handleAuth}>
-            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <form onSubmit={handleAuth} className="form-scroll-area">
             {isSignUp && (
-              <>
-                <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <div className="name-row">
                 <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
                 <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-              </>
+              </div>
             )}
+
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+
             <div className="password-wrapper">
-  <input
-    type={showPassword ? "text" : "password"}
-    placeholder="Enter your password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    required
-  />
-  <span className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
-    {showPassword ? (
-      // 👁️ Eye open SVG
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#666" strokeWidth="2"/>
-        <circle cx="12" cy="12" r="3" stroke="#666" strokeWidth="2"/>
-      </svg>
-    ) : (
-      // 🚫 Eye slash SVG
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M17.94 17.94A10.944 10.944 0 0112 20C5 20 1 12 1 12a17.26 17.26 0 013.94-5.94M9.9 4.24A10.944 10.944 0 0112 4c7 0 11 8 11 8a17.222 17.222 0 01-2.31 3.43M1 1l22 22" stroke="#666" strokeWidth="2"/>
-      </svg>
-    )}
-  </span>
-</div>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <span className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#666" strokeWidth="2"/>
+                    <circle cx="12" cy="12" r="3" stroke="#666" strokeWidth="2"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M17.94 17.94A10.944 10.944 0 0112 20C5 20 1 12 1 12a17.26 17.26 0 013.94-5.94M9.9 4.24A10.944 10.944 0 0112 4c7 0 11 8 11 8a17.222 17.222 0 01-2.31 3.43M1 1l22 22" stroke="#666" strokeWidth="2"/>
+                  </svg>
+                )}
+              </span>
+            </div>
 
             {isSignUp && (
               <ul className="password-checks">
                 {passwordChecks.map((check, idx) => (
                   <li key={idx} className={check.passed ? "passed" : "failed"}>
-                    {check.passed ? "✔" : "❌"} {check.label}
+                    • {check.label}
                   </li>
                 ))}
               </ul>
@@ -217,9 +186,7 @@ export default function CustomAuthModal({ open, onClose }) {
         <div className="auth-image" ref={imageRef}>
           <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
           <div className="image-overlay-text">
-            {isSignUp
-              ? "Join the fragrance revolution."
-              : "Welcome back! Great to see you again."}
+            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
           </div>
         </div>
       </div>
