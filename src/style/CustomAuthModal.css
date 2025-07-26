@@ -1,184 +1,129 @@
 .auth-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; align-items: center; justify-content: center;
   z-index: 10000;
 }
-
 .auth-modal-container {
   position: relative;
-  width: 800px;
-  max-width: 95%;
+  width: 800px; max-width: 90%;
   height: 500px;
-  max-height: 90vh;
-  display: flex;
-  overflow: hidden;
+  display: flex; overflow: hidden;
   background: #fff;
   border-radius: 16px;
-  transition: all 0.4s ease-in-out;
+  transition: all 0.3s ease;
 }
 
-.auth-fields,
-.auth-image {
-  position: absolute;
-  width: 50%;
-  height: 100%;
-  transition: all 0.4s ease-in-out;
-}
-
+/* Fields */
 .auth-fields {
-  left: 0;
+  position: absolute;
+  width: 50%; height: 100%;
   padding: 40px;
   box-sizing: border-box;
-  background: #fff;
   z-index: 2;
+  background: #fff;
 }
-
 .auth-fields h2 {
   margin-bottom: 20px;
   font-size: 1.8rem;
 }
-
 .google-btn {
-  width: 100%;
-  padding: 12px;
-  background: #4285F4;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  width: 100%; padding: 12px;
+  background: #4285F4; color: #fff; border: none;
+  border-radius: 4px; margin-bottom: 16px;
   cursor: pointer;
 }
-
 .divider {
-  text-align: center;
-  margin: 12px 0;
+  text-align: center; margin: 12px 0;
   position: relative;
 }
-
 .divider::before,
 .divider::after {
-  content: "";
-  height: 1px;
-  background: #ccc;
-  position: absolute;
-  top: 50%;
-  width: 40%;
+  content: ""; height: 1px; background: #ccc;
+  position: absolute; top: 50%; width: 40%;
 }
-
 .divider::before { left: 0; }
-.divider::after { right: 0; }
-.divider span { background: #fff; padding: 0 8px; color: #666; }
-
+.divider::after  { right: 0; }
+.divider span    { background: #fff; padding: 0 8px; color: #666; }
 .auth-fields form input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  width: 100%; padding: 10px;
+  margin-bottom: 12px; border: 1px solid #ddd;
+  border-radius: 4px; font-size: 1rem;
 }
-
 .action-btn {
-  width: 100%;
-  padding: 12px;
-  background: #111;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-top: 8px;
-  cursor: pointer;
-  font-size: 1rem;
+  width: 100%; padding: 12px;
+  background: #111; color: #fff; border: none;
+  border-radius: 4px; margin-top: 8px;
+  cursor: pointer; font-size: 1rem;
 }
-
 .error {
-  color: #c00;
-  margin-bottom: 8px;
+  color: #c00; margin-bottom: 8px;
 }
-
 .toggle-text {
-  margin-top: 16px;
-  font-size: 0.9rem;
+  margin-top: 16px; font-size: 0.9rem;
 }
-
 .toggle-text span {
-  color: #007bff;
-  cursor: pointer;
+  color: #007bff; cursor: pointer;
   text-decoration: underline;
 }
 
+/* Image Panel */
 .auth-image {
-  right: 0;
+  position: absolute; top: 0; right: 0;
+  width: 50%; height: 100%;
   overflow: hidden;
   z-index: 1;
 }
-
 .auth-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100%; height: 100%; object-fit: cover;
   clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
 }
-
 .image-overlay-text {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  color: #fff;
-  font-size: 1.2rem;
-  max-width: 70%;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  position: absolute; bottom: 20px; left: 20px;
+  color: #fff; font-size: 1.2rem; max-width: 70%;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
+/* Close */
 .close-modal {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #333;
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none;
+  font-size: 1.5rem; color: #333;
   cursor: pointer;
 }
 
-/* Mobile layout */
+/* Mobile styles */
 @media (max-width: 768px) {
   .auth-modal-container {
     flex-direction: column;
+    width: 95%;
     height: 90vh;
+    border-radius: 12px;
   }
 
-  .auth-fields,
-  .auth-image {
+  .auth-fields {
+    position: relative;
     width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0;
+    height: 60%;
+    z-index: 2;
+    padding: 24px;
   }
 
   .auth-image {
-    top: 0;
-    height: 50%;
-    z-index: 1;
+    position: relative;
+    width: 100%;
+    height: 40%;
+    z-index: 3;
+    clip-path: none;
   }
 
   .auth-image img {
     clip-path: none;
-    border-bottom-left-radius: 24px;
-    border-bottom-right-radius: 24px;
   }
 
-  .auth-fields {
-    top: 35%;
-    padding-top: 80px;
-    height: 65%;
-    background: #fff;
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
-    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.1);
-    z-index: 2;
+  .image-overlay-text {
+    bottom: 10px;
+    left: 16px;
+    font-size: 1rem;
   }
 }
