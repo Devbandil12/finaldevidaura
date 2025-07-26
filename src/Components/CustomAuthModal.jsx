@@ -29,27 +29,29 @@ export default function CustomAuthModal({ open, onClose }) {
     if (!open) return;
 
     if (isMobile()) {
-      gsap.set(fieldsRef.current, { y: 0 });
-      gsap.set(imageRef.current, { y: 0 });
+      gsap.set(fieldsRef.current, { y: "0%" });
+      gsap.set(imageRef.current, { y: "0%" });
     } else {
       gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
       gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
     }
-  }, [open]);
+  }, [open, isSignUp]);
 
   const handleToggle = () => {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
 
     if (isMobile()) {
       tl.to(imageRef.current, { y: "-100%" }, 0);
-      tl.to(fieldsRef.current, { y: "100%" }, 0.05);
-      tl.add(() => setIsSignUp(prev => !prev), 0.3);
+      tl.to(fieldsRef.current, { y: "100%" }, 0);
+
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+
       tl.to(fieldsRef.current, { y: "0%" }, 0.5);
-      tl.to(imageRef.current, { y: "0%" }, 0.55);
+      tl.to(imageRef.current, { y: "0%" }, 0.5);
     } else {
       tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
       tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
-      tl.add(() => setIsSignUp(prev => !prev), 0.3);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
     }
   };
 
@@ -150,8 +152,8 @@ export default function CustomAuthModal({ open, onClose }) {
 
         <div className="auth-image" ref={imageRef}>
           <img
-            src={isSignUp ? "/signup-img.png" : "/signin-img.png"}
-            alt="Auth Visual"
+            src={isSignUp ? "/auth-signup.jpg" : "/auth-signin.jpg"}
+            alt="Creative background"
             className="cutout-img"
           />
           <div className="image-overlay-text">
