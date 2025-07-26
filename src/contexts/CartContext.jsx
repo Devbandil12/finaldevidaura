@@ -17,6 +17,10 @@ export const CartProvider = ({ children }) => {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [selectedItems, setSelectedItems] = useState([]);
   const { userdetails } = useContext(UserContext);
+const [buyNowCart, setBuyNowCart] = useState([]);
+
+
+
   // You could also add logic here for loading/saving cart data from localStorage
   const getCartitems = async () => {
     if (!userdetails) return;
@@ -60,9 +64,23 @@ export const CartProvider = ({ children }) => {
     }
   };
   useEffect(() => {
-    userdetails && getCartitems();
-    userdetails && getwishlist();
-  }, [userdetails]);
+  if (userdetails) {
+    getCartitems();
+    getwishlist();
+
+    // ✅ Load Buy Now item from localStorage
+    const storedItem = localStorage.getItem("buyNowItem");
+    if (storedItem) {
+      try {
+        const parsedItem = JSON.parse(storedItem);
+        setBuyNowCart([parsedItem]); // Wrap in array since it's a cart format
+      } catch (error) {
+        console.error("Error parsing buyNowItem from localStorage:", error);
+      }
+    }
+  }
+}, [userdetails]);
+
   return (
     <CartContext.Provider
       value={{
@@ -78,6 +96,8 @@ export const CartProvider = ({ children }) => {
         setSelectedItems,
         getwishlist,
         getCartitems,
+        buyNowCart,  
+        setBuyNowCart,
       }}
     >
       {children}
