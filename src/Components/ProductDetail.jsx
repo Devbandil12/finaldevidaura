@@ -107,7 +107,7 @@ const ProductDetail = ({
       <img
         src={inWishlist ? WishlistFilledImage : WishlistImage}
         alt="Wishlist"
-        className="w-6 h-6"
+        className="w-8 h-8"
       />
     </button>
 
