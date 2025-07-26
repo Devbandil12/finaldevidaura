@@ -101,20 +101,24 @@
     border-radius: 12px;
   }
 
-  .auth-fields {
-    position: relative;
-    width: 100%;
-    height: 60%;
-    z-index: 2;
-    padding: 24px;
-  }
-
   .auth-image {
     position: relative;
     width: 100%;
-    height: 40%;
+    height: 45%; /* slightly smaller so it overlaps fields */
     z-index: 3;
-    clip-path: none;
+  }
+
+  .auth-fields {
+    position: absolute;
+    top: 35%;
+    width: 100%;
+    height: 65%;
+    padding-top: 80px; /* space for overlap without covering form controls */
+    background: #fff;
+    z-index: 2;
+    overflow-y: auto;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
   }
 
   .auth-image img {
