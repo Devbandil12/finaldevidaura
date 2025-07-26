@@ -68,7 +68,6 @@ const ProductDetail = ({
   return (
     <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-hidden">
 
-<button onClick={onClose} className="w-full text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
 
 
       <div className="bg-white max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-xl flex flex-col md:flex-row overflow-y-auto">
