@@ -5,6 +5,10 @@ import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import MiniLoader from "./MiniLoader";
 import "../style/CustomAuthModal.css";
+import SignUpImage from "../assets/New folder/Adobe Express - file.png";
+import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
+
+
 
 export default function CustomAuthModal({ open, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
@@ -152,7 +156,7 @@ export default function CustomAuthModal({ open, onClose }) {
 
         <div className="auth-image" ref={imageRef}>
           <img
-            src={isSignUp ? "/auth-signup.jpg" : "/auth-signin.jpg"}
+            src={isSignUp ? SignUpImage : SignInImage}
             alt="Creative background"
             className="cutout-img"
           />
