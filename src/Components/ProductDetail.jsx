@@ -177,12 +177,7 @@ const ProductDetail = ({
 
           <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
 
-            <button
-              onClick={handleShare}
-              className="flex-1 py-3 px-6 font-semibold rounded-lg border border-blue-500 text-blue-600 bg-white hover:bg-blue-50"
-            >
-              Share
-            </button>
+            
 
             <button
               onClick={addToCartHandler}
