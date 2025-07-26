@@ -65,17 +65,17 @@ export default function CustomAuthModal({ open, onClose }) {
   setIsLoading(true);
   try {
     if (isSignUp) {
-      await signUp.create({ strategy: "oauth_google" });
       await signUp.authenticateWithRedirect({ strategy: "oauth_google" });
     } else {
-      await signIn.create({ strategy: "oauth_google" });
       await signIn.authenticateWithRedirect({ strategy: "oauth_google" });
     }
+    // Clerk will redirect, no further code runs here
   } catch (err) {
     setError(err.errors?.[0]?.message || "Google auth failed");
     setIsLoading(false);
   }
 };
+
 
 
   return createPortal(
