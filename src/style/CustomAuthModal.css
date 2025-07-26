@@ -88,3 +88,12 @@
   font-size: 1.5rem; color: #333;
   cursor: pointer;
 }
+
+
+.auth-image.signup img {
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+}
+
+.auth-image.login img {
+  clip-path: polygon(0% 0%, 90% 0%, 100% 100%, 10% 100%);
+}
