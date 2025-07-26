@@ -23,6 +23,7 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 // import WheelOfFate from "../Components/WheelOfFate.jsx";
 import ProductDetail from "./ProductDetail";
+import { useNavigate } from "react-router-dom"; // ⬅ Add this
 
 
 // -------------------------------
@@ -32,6 +33,7 @@ const Modal = ({ product, onClose }) => {
   const [animate, setAnimate] = useState(false);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
+const navigate = useNavigate(); // ⬅ Add this near useState
 
   useEffect(() => {
     setAnimate(true);
