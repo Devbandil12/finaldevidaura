@@ -30,8 +30,13 @@ const ProductDetail = ({
     setCurrentImg(idx => (idx + delta + images.length) % images.length);
 
   const addToCartHandler = () => {
+  if (inCart) {
+    onAddToCart(fullProduct, 0); // ✅ Tell parent to REMOVE it
+  } else {
     onAddToCart(fullProduct, quantity);
-  };
+  }
+};
+
 
   const handleBuyNow = () => {
    // delegate to the shared add-to-cart logic with the buyNow flag
