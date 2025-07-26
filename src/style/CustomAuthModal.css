@@ -153,6 +153,63 @@
   cursor: pointer;
 }
 
+/* 👁️ Password visibility toggle */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
+  width: 100%;
+  padding-right: 40px; /* space for the icon */
+}
+
+.eye-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #666;
+  font-size: 1rem;
+}
+
+/* 🔐 Password validation checklist */
+.password-checks {
+  list-style: none;
+  padding-left: 0;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  color: #444;
+}
+
+.password-checks li {
+  margin: 4px 0;
+}
+
+.password-checks .passed {
+  color: green;
+}
+
+.password-checks .failed {
+  color: #c00;
+}
+
+/* 🔁 Forgot password link */
+.forgot-password {
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+.forgot-password a {
+  font-size: 0.85rem;
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+
+
 /* --- Mobile View --- */
 @media (max-width: 768px) {
   .auth-modal-container {
