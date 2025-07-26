@@ -117,14 +117,7 @@ const ProductDetail = ({
       className="hover:scale-110 transition"
       title="Share"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round"
-        className="w-6 h-6 text-blue-600"
-      >
-        <path d="M4 12v-2a4 4 0 014-4h8a4 4 0 014 4v2" />
-        <path d="M16 16l-4 4m0 0l-4-4m4 4V8" />
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="22.703" height="21.928"><path d="M1.056 21.928c0-6.531 5.661-9.034 10.018-9.375V18.1L22.7 9.044 11.073 0v4.836a10.5 10.5 0 0 0-7.344 3.352C-.618 12.946-.008 21 .076 21.928z"/></svg>
     </button>
   </div>
 </div>
