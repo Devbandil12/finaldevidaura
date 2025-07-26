@@ -34,13 +34,9 @@ const ProductDetail = ({
   };
 
   const handleBuyNow = () => {
-    const buyNowItem = {
-      product: fullProduct,
-      quantity,
-    };
-    localStorage.setItem("buyNowItem", JSON.stringify(buyNowItem));
-    navigate("/cart?buyNow=true");
-  };
+   // delegate to the shared add-to-cart logic with the buyNow flag
+   onAddToCart(fullProduct, quantity, true);
+ };
 
   const handleShare = async () => {
     const shareData = {
