@@ -92,7 +92,7 @@ const ProductDetail = ({
         {/* Right Product Section */}
         <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
           <button onClick={onClose} className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
-</div>
+
           <div className="w-full flex items-center justify-between mt-4 px-2">
   <h2 className="text-sm font-semibold text-gray-800">{product.name}</h2>
   <button onClick={onToggleWishlist} className="hover:scale-110 transition">
@@ -156,12 +156,6 @@ const ProductDetail = ({
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
-            <button
-              onClick={onToggleWishlist}
-              className={`flex-1 py-3 px-6 font-semibold rounded-lg border ${inWishlist ? 'bg-white text-pink-600 border-pink-500 hover:bg-pink-50' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'}`}
-            >
-              {inWishlist ? '♥ Wishlisted' : '♡ Add to Wishlist'}
-            </button>
 
             <button
               onClick={handleShare}
