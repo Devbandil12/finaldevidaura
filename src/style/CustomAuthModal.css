@@ -166,7 +166,7 @@
 
   .auth-image {
     width: 100%;
-    height: 45%;
+    height: 40%;
     position: relative;
     order: 1;
     z-index: 2;
@@ -174,7 +174,7 @@
 
   .auth-fields {
     width: 100%;
-    height: 55%;
+    height: 60%;
     position: relative;
     order: 2;
     padding: 24px;
