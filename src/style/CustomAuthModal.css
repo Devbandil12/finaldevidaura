@@ -1,44 +1,47 @@
-/* === Backdrop === */
 .auth-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
 }
 
-/* === Modal Container === */
 .auth-modal-container {
   position: relative;
   width: 800px;
-  max-width: 90%;
+  max-width: 95%;
   height: 500px;
-  max-height: 90%;
+  max-height: 90vh;
   display: flex;
+  overflow: hidden;
   background: #fff;
   border-radius: 16px;
-  overflow: hidden;
-  flex-direction: row;
+  transition: all 0.4s ease-in-out;
 }
 
-/* === FIELDS PANEL === */
-.auth-fields {
+.auth-fields,
+.auth-image {
   position: absolute;
-  left: 0;
-  top: 0;
   width: 50%;
   height: 100%;
+  transition: all 0.4s ease-in-out;
+}
+
+.auth-fields {
+  left: 0;
   padding: 40px;
   box-sizing: border-box;
   background: #fff;
-  z-index: 3;
+  z-index: 2;
 }
+
 .auth-fields h2 {
   margin-bottom: 20px;
   font-size: 1.8rem;
 }
+
 .google-btn {
   width: 100%;
   padding: 12px;
@@ -49,11 +52,13 @@
   margin-bottom: 16px;
   cursor: pointer;
 }
+
 .divider {
   text-align: center;
   margin: 12px 0;
   position: relative;
 }
+
 .divider::before,
 .divider::after {
   content: "";
@@ -63,17 +68,11 @@
   top: 50%;
   width: 40%;
 }
-.divider::before {
-  left: 0;
-}
-.divider::after {
-  right: 0;
-}
-.divider span {
-  background: #fff;
-  padding: 0 8px;
-  color: #666;
-}
+
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+.divider span { background: #fff; padding: 0 8px; color: #666; }
+
 .auth-fields form input {
   width: 100%;
   padding: 10px;
@@ -82,6 +81,7 @@
   border-radius: 4px;
   font-size: 1rem;
 }
+
 .action-btn {
   width: 100%;
   padding: 12px;
@@ -93,36 +93,36 @@
   cursor: pointer;
   font-size: 1rem;
 }
+
 .error {
   color: #c00;
   margin-bottom: 8px;
 }
+
 .toggle-text {
   margin-top: 16px;
   font-size: 0.9rem;
 }
+
 .toggle-text span {
   color: #007bff;
   cursor: pointer;
   text-decoration: underline;
 }
 
-/* === IMAGE PANEL === */
 .auth-image {
-  position: absolute;
   right: 0;
-  top: 0;
-  width: 50%;
-  height: 100%;
   overflow: hidden;
-  z-index: 2;
+  z-index: 1;
 }
+
 .auth-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
 }
+
 .image-overlay-text {
   position: absolute;
   bottom: 20px;
@@ -130,11 +130,9 @@
   color: #fff;
   font-size: 1.2rem;
   max-width: 70%;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  z-index: 3;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
 }
 
-/* === CLOSE BUTTON === */
 .close-modal {
   position: absolute;
   top: 16px;
@@ -146,38 +144,41 @@
   cursor: pointer;
 }
 
-/* === RESPONSIVE: MOBILE === */
-@media (max-width: 767px) {
+/* Mobile layout */
+@media (max-width: 768px) {
   .auth-modal-container {
     flex-direction: column;
     height: 90vh;
-    width: 95%;
+  }
+
+  .auth-fields,
+  .auth-image {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
   }
 
   .auth-image {
-    position: relative;
-    width: 100%;
+    top: 0;
     height: 50%;
+    z-index: 1;
   }
 
   .auth-image img {
     clip-path: none;
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
   }
 
   .auth-fields {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 60%;
-    max-height: 60%;
-    padding: 24px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(6px);
-    overflow-y: auto;
-  }
-
-  .image-overlay-text {
-    font-size: 1rem;
-    max-width: 90%;
+    top: 35%;
+    padding-top: 80px;
+    height: 65%;
+    background: #fff;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.1);
+    z-index: 2;
   }
 }
