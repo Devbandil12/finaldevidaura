@@ -219,6 +219,11 @@ const navigate = useNavigate(); // ⬅ Add this near useState
   const { userdetails } = useContext(UserContext);
   let count = 1;
 const addtocart = async (product, quantity = 1, isBuyNow = false) => {
+
+if (quantity === 0) {
+    return removeFromCart(product);
+  }
+
   const tempCartItem = {
     product,
     quantity,
