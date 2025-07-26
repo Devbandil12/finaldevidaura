@@ -11,6 +11,7 @@ export default function CustomAuthModal({ open, onClose }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
   const [formLoading, setFormLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -22,37 +23,37 @@ export default function CustomAuthModal({ open, onClose }) {
   const fieldsRef = useRef();
   const imageRef = useRef();
 
-  // Set initial positions
+  const isMobile = () => window.innerWidth <= 768;
+
   useEffect(() => {
     if (!open) return;
-    const isMobile = window.innerWidth < 768;
 
-    if (isMobile) {
-      gsap.set(imageRef.current, { y: isSignUp ? "0%" : "-100%" });
-      gsap.set(fieldsRef.current, { y: isSignUp ? "0%" : "100%" });
+    // Initial entrance position
+    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
+
+    if (isMobile()) {
+      gsap.set(fieldsRef.current, { y: "0%" });
+      gsap.set(imageRef.current, { y: "0%" });
     } else {
       gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
       gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
     }
   }, [open]);
 
-  // Animate transitions
-  useEffect(() => {
-    if (!open) return;
-    const isMobile = window.innerWidth < 768;
-
+  const handleToggle = () => {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
 
-    if (isMobile) {
-      tl.to(imageRef.current, { y: isSignUp ? "0%" : "-100%" }, 0);
-      tl.to(fieldsRef.current, { y: isSignUp ? "0%" : "100%" }, 0);
+    if (isMobile()) {
+      tl.to(imageRef.current, { y: isSignUp ? "-100%" : "0%" }, 0);
+      tl.to(fieldsRef.current, { y: isSignUp ? "100%" : "0%" }, 0.1);
     } else {
-      tl.to(fieldsRef.current, { x: isSignUp ? "0%" : "100%" }, 0);
-      tl.to(imageRef.current, { x: isSignUp ? "0%" : "-100%" }, 0);
+      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
+      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
     }
 
-    return () => tl.kill();
-  }, [isSignUp, open]);
+    // Wait until half animation, then switch
+    tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -143,7 +144,7 @@ export default function CustomAuthModal({ open, onClose }) {
 
           <p className="toggle-text">
             {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <span onClick={() => setIsSignUp(!isSignUp)}>
+            <span onClick={handleToggle}>
               {isSignUp ? "Log in" : "Sign up"}
             </span>
           </p>
