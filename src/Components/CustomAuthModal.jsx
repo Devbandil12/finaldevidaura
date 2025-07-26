@@ -45,8 +45,8 @@ export default function CustomAuthModal({ open, onClose }) {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
 
     if (isMobile()) {
-      tl.to(imageRef.current, { y: "-100%" }, 0);
-      tl.to(fieldsRef.current, { y: "100%" }, 0);
+      tl.to(imageRef.current, { y: "-130%" }, 0);
+      tl.to(fieldsRef.current, { y: "130%" }, 0);
 
       tl.add(() => setIsSignUp((prev) => !prev), 0.3);
 
