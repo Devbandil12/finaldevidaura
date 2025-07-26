@@ -15,7 +15,7 @@
   height: 800px;
   max-height: 90%;
   display: flex;
-  overflow: hidden;
+  overflow: auto;
   background: #fff;
   border-radius: 16px;
 }
