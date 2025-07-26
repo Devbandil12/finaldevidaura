@@ -103,6 +103,16 @@ const ProductDetail = ({
       className="w-6 h-6"
     />
   </button>
+<button
+  onClick={handleShare}
+  className="flex items-center justify-center flex-1 py-3 px-6 rounded-lg border border-blue-500 text-blue-600 bg-white hover:bg-blue-50"
+  title="Share"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <path d="M17 18.06L15.59 16.65L17.24 15H6V13H17.24L15.59 11.35L17 9.94L22 14.94L17 18.06ZM5 4H19C20.1 4 21 4.9 21 6V11H19V6H5V18H19V13H21V18C21 19.1 20.1 20 19 20H5C3.9 20 3 19.1 3 18V6C3 4.9 3.9 4 5 4Z"/>
+</svg>
+</button>
+
 </div>
 
 
