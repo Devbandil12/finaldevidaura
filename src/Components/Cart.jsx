@@ -56,14 +56,15 @@ useEffect(() => {
 
 
   useEffect(() => {
-    getCartitems();
-  }, []);
+    if (!isBuyNow) {
+      getCartitems();
+    }
+  }, [isBuyNow, userdetails?.id]);
 
   useEffect(() => {
   if (!buyNowLoaded) return;
 
-  const items = isBuyNow ? buyNowCart : cart;
-  setCartitems(items || []);
+  setCartitems(isBuyNow ? buyNowCart : cart);
 }, [cart, buyNowCart, isBuyNow, buyNowLoaded]);
 
 
