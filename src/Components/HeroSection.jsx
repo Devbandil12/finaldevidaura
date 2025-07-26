@@ -3,11 +3,10 @@ import BottleImage from "../assets/New folder/Adobe Express - file.png";
 import BackgroundImage from "../assets/right-arrow-svgrepo-com.svg";
 import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
 import "../style/style.css";
-
-import CustomAuthModal from "./CustomAuthModal"; // You’ll create this separately
+import CustomAuthModal from "./CustomAuthModal";
 
 const HeroSection = () => {
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <section className="hero">
@@ -19,8 +18,6 @@ const HeroSection = () => {
 
       {/* content layer */}
       <div className="hero__content">
-        {/* <img src={BottleImage} alt="Perfume Bottle" className="hero__bottle" /> */}
-
         <h1 className="hero__title">DEVID AURA</h1>
         <p className="hero__subtitle">Presence in Every Step</p>
         <p className="hero__copy">
@@ -28,32 +25,28 @@ const HeroSection = () => {
           lasting impression at every moment.
         </p>
 
-        <button
-          className="hero__cta"
-          onClick={() =>
-            document
-              .getElementById("shop-section")
-              .scrollIntoView({ behavior: "smooth" })
-          }
-        >
-          Shop Devidaura{" "}
-          <img src={RightArrowIcon} alt="→" className="hero__cta-icon" />
-        </button>
+        <div className="hero__buttons">
+          <button
+            className="hero__cta"
+            onClick={() =>
+              document
+                .getElementById("shop-section")
+                .scrollIntoView({ behavior: "smooth" })
+            }
+          >
+            Shop Devidaura{" "}
+            <img src={RightArrowIcon} alt="→" className="hero__cta-icon" />
+          </button>
 
-        {/* SIGN IN BUTTON */}
-        <button
-          className="hero__cta"
-          style={{ marginTop: "1rem" }}
-          onClick={() => setAuthModalOpen(true)}
-        >
-          Sign In
-        </button>
+          {/* Sign In button */}
+          <button className="hero__signin" onClick={() => setIsModalOpen(true)}>
+            Sign In
+          </button>
+        </div>
       </div>
 
-      {/* Modal Component */}
-      {authModalOpen && (
-        <CustomAuthModal onClose={() => setAuthModalOpen(false)} />
-      )}
+      {/* ✅ Pass `open` prop */}
+      <CustomAuthModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </section>
   );
 };
