@@ -22,11 +22,11 @@ const ShoppingCart = () => {
   const { cart, setCart, wishlist, setWishlist, getCartitems } =
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-const searchParams = new URLSearchParams(location.search);
+const [searchParams] = useSearchParams();
 const isBuyNow = searchParams.get("buyNow") === "true";
 const buyNowItem = JSON.parse(localStorage.getItem("buyNowItem"));
 
-const [buyNowCart, setBuyNowCart] = useState(null);
+const [buyNowCart, setBuyNowCart] = useState([]);
 const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
@@ -38,22 +38,17 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
 useEffect(() => {
-  if (isBuyNow) {
-    const storedItem = localStorage.getItem("buyNowItem");
-    if (storedItem) {
-      try {
-        const parsedItem = JSON.parse(storedItem);
-        setBuyNowCart([parsedItem]);
-      } catch (err) {
-        console.error("Failed to parse buyNowItem", err);
-        setBuyNowCart([]);
-      }
-    } else {
-      setBuyNowCart([]);
-    }
-setBuyNowLoaded(true); 
-  }
-  setBuyNowLoaded(true);  // ✅ Moved outside of condition
+  if (isBuyNow) {
+    const stored = localStorage.getItem("buyNowItem");
+    try {
+      setBuyNowCart(stored ? [JSON.parse(stored)] : []);
+    } catch {
+      console.error("Failed to parse buyNowItem");
+      setBuyNowCart([]);
+    }
+  }
+  // Always mark loaded so we don’t get stuck in the loading state
+  setBuyNowLoaded(true);
 }, [isBuyNow]);
 
 
