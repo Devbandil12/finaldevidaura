@@ -4,130 +4,169 @@
   display: flex; align-items: center; justify-content: center;
   z-index: 10000;
 }
+
 .auth-modal-container {
   position: relative;
-  width: 800px; max-width: 90%;
+  width: 800px;
+  max-width: 90%;
   height: 500px;
-  display: flex; overflow: hidden;
+  display: flex;
   background: #fff;
   border-radius: 16px;
-  transition: all 0.3s ease;
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
 }
 
-/* Fields */
+/* FIELDS PANEL */
 .auth-fields {
   position: absolute;
-  width: 50%; height: 100%;
+  left: 0; top: 0;
+  width: 50%;
+  height: 100%;
   padding: 40px;
   box-sizing: border-box;
-  z-index: 2;
   background: #fff;
+  z-index: 2;
 }
+
 .auth-fields h2 {
   margin-bottom: 20px;
   font-size: 1.8rem;
 }
 .google-btn {
-  width: 100%; padding: 12px;
-  background: #4285F4; color: #fff; border: none;
-  border-radius: 4px; margin-bottom: 16px;
+  width: 100%;
+  padding: 12px;
+  background: #4285F4;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  margin-bottom: 16px;
   cursor: pointer;
 }
 .divider {
-  text-align: center; margin: 12px 0;
+  text-align: center;
+  margin: 12px 0;
   position: relative;
 }
 .divider::before,
 .divider::after {
-  content: ""; height: 1px; background: #ccc;
-  position: absolute; top: 50%; width: 40%;
+  content: "";
+  height: 1px;
+  background: #ccc;
+  position: absolute;
+  top: 50%;
+  width: 40%;
 }
 .divider::before { left: 0; }
-.divider::after  { right: 0; }
-.divider span    { background: #fff; padding: 0 8px; color: #666; }
+.divider::after { right: 0; }
+.divider span {
+  background: #fff;
+  padding: 0 8px;
+  color: #666;
+}
 .auth-fields form input {
-  width: 100%; padding: 10px;
-  margin-bottom: 12px; border: 1px solid #ddd;
-  border-radius: 4px; font-size: 1rem;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 .action-btn {
-  width: 100%; padding: 12px;
-  background: #111; color: #fff; border: none;
-  border-radius: 4px; margin-top: 8px;
-  cursor: pointer; font-size: 1rem;
+  width: 100%;
+  padding: 12px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 1rem;
 }
 .error {
-  color: #c00; margin-bottom: 8px;
+  color: #c00;
+  margin-bottom: 8px;
 }
 .toggle-text {
-  margin-top: 16px; font-size: 0.9rem;
+  margin-top: 16px;
+  font-size: 0.9rem;
 }
 .toggle-text span {
-  color: #007bff; cursor: pointer;
+  color: #007bff;
+  cursor: pointer;
   text-decoration: underline;
 }
 
-/* Image Panel */
+/* IMAGE PANEL */
 .auth-image {
-  position: absolute; top: 0; right: 0;
-  width: 50%; height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
   overflow: hidden;
   z-index: 1;
 }
-.auth-image img {
-  width: 100%; height: 100%; object-fit: cover;
+.cutout-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
 }
 .image-overlay-text {
-  position: absolute; bottom: 20px; left: 20px;
-  color: #fff; font-size: 1.2rem; max-width: 70%;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: #fff;
+  font-size: 1.2rem;
+  max-width: 70%;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-/* Close */
+/* CLOSE BUTTON */
 .close-modal {
-  position: absolute; top: 16px; right: 16px;
-  background: none; border: none;
-  font-size: 1.5rem; color: #333;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #333;
   cursor: pointer;
 }
 
-/* Mobile styles */
+/* ======== MOBILE STYLES ======== */
 @media (max-width: 768px) {
   .auth-modal-container {
     flex-direction: column;
-    width: 95%;
-    height: 90vh;
-    border-radius: 12px;
-  }
-
-  .auth-image {
-    position: relative;
     width: 100%;
-    height: 45%; /* slightly smaller so it overlaps fields */
-    z-index: 3;
+    height: 90vh;
+    max-width: 95%;
   }
 
   .auth-fields {
-    position: absolute;
-    top: 35%;
     width: 100%;
-    height: 65%;
-    padding-top: 80px; /* space for overlap without covering form controls */
-    background: #fff;
+    height: 60%;
+    padding: 24px;
     z-index: 2;
-    overflow-y: auto;
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
   }
 
-  .auth-image img {
+  .auth-image {
+    width: 100%;
+    height: 40%;
+    z-index: 1;
     clip-path: none;
   }
 
+  .cutout-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   .image-overlay-text {
-    bottom: 10px;
-    left: 16px;
     font-size: 1rem;
+    bottom: 12px;
+    left: 12px;
   }
 }
