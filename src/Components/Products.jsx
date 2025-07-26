@@ -55,8 +55,9 @@ const Modal = ({ product, onClose }) => {
         position: "fixed",
         top: 0,
         left: 0,
+        trans
         width: "100vw",
-        height: "100%",
+        height: "100vh",
         backgroundColor: "rgba(0,0,0,0.6)",
         display: "flex",
         alignItems: "center",
@@ -75,7 +76,7 @@ const Modal = ({ product, onClose }) => {
           transition: "transform 0.5s ease",
           maxWidth: "650px",
           width: "100%",
-          maxHeight: "100vh", // Limit modal height to 90% of viewport
+          maxHeight: "90vh", // Limit modal height to 90% of viewport
           // overflowY: "auto",
         }}
       >
