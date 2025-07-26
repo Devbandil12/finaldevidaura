@@ -101,7 +101,7 @@ const ProductDetail = ({
   <h2 className="text-xl md:text-2xl font-bold text-gray-900">{product.name}</h2>
 
   {/* Icons on the Right */}
-  <div className="flex items-center gap-[10px]">
+  <div className="flex items-center gap-[15px]">
     {/* Wishlist Icon */}
     <button onClick={onToggleWishlist} className="hover:scale-110 transition">
       <img
