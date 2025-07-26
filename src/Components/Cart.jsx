@@ -51,6 +51,7 @@ useEffect(() => {
     } else {
       setBuyNowCart([]);
     }
+setBuyNowLoaded(true); 
   }
   setBuyNowLoaded(true);  // ✅ Moved outside of condition
 }, [isBuyNow]);
@@ -64,14 +65,12 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-  if (isBuyNow) {
-    if (buyNowLoaded) {
-      setCartitems(buyNowCart || []);
-    }
-  } else {
-    setCartitems(cart || []);
-  }
+  if (!buyNowLoaded) return;
+
+  const items = isBuyNow ? buyNowCart : cart;
+  setCartitems(items || []);
 }, [cart, buyNowCart, isBuyNow, buyNowLoaded]);
+
 
 
 
