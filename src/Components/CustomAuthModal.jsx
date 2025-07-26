@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import gsap from "gsap";
-import "./CustomAuthModal.css"; // see CSS below
+import "../style/CustomAuthModal.css"; // see CSS below
 
 export default function CustomAuthModal({ open, onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
