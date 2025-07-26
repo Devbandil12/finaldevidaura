@@ -11,7 +11,6 @@ export default function CustomAuthModal({ open, onClose }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const [formLoading, setFormLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -28,9 +27,7 @@ export default function CustomAuthModal({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
 
-    // Initial entrance position
-    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
-
+    // Set initial positions based on signUp/signIn
     if (isMobile()) {
       gsap.set(fieldsRef.current, { y: "0%" });
       gsap.set(imageRef.current, { y: "0%" });
@@ -38,20 +35,26 @@ export default function CustomAuthModal({ open, onClose }) {
       gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
       gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
     }
-  }, [open]);
+  }, [open, isSignUp]);
 
   const handleToggle = () => {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
 
     if (isMobile()) {
+      // Mobile: top-bottom animation
       tl.to(imageRef.current, { y: isSignUp ? "-100%" : "0%" }, 0);
       tl.to(fieldsRef.current, { y: isSignUp ? "100%" : "0%" }, 0.1);
     } else {
+      // Desktop: left-right with overlap
       tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
       tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
+
+      // During animation, bring image above fields
+      tl.set(imageRef.current, { zIndex: 3 }, 0.2);
+      tl.set(fieldsRef.current, { zIndex: 1 }, 0.2);
     }
 
-    // Wait until half animation, then switch
+    // Toggle form mode midway through animation
     tl.add(() => setIsSignUp((prev) => !prev), 0.3);
   };
 
@@ -104,6 +107,7 @@ export default function CustomAuthModal({ open, onClose }) {
         ref={containerRef}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Auth Fields */}
         <div className="auth-fields" ref={fieldsRef}>
           <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
@@ -150,6 +154,7 @@ export default function CustomAuthModal({ open, onClose }) {
           </p>
         </div>
 
+        {/* Image Side */}
         <div className="auth-image" ref={imageRef}>
           <img
             src="/auth-cutout.png"
