@@ -179,7 +179,7 @@
     order: 2;
     padding: 24px;
     background: #fff;
-    z-index: 2;
+    z-index: 1;
     margin-top: -40px;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
