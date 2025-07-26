@@ -94,8 +94,8 @@ const ProductDetail = ({
           <button onClick={onClose} className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
    
        <div>
-          <div className="w-full flex items-center justify-between mt-4 px-2">
-  <h2 className="text-sm font-semibold text-gray-800">{product.name}</h2>
+          <div className="w-full flex items-center justify-between mt-6 ">
+  <h2 className="text-xl md:text-2xl font-bold text-gray-900">{product.name}</h2>
   <button onClick={onToggleWishlist} className="hover:scale-110 transition">
     <img
       src={inWishlist ? WishlistFilledImage : WishlistImage}
