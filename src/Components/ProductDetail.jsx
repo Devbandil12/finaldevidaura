@@ -93,10 +93,9 @@ const ProductDetail = ({
         <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
           <button onClick={onClose} className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold">×</button>
 
-          <div>
-            <div className="flex items-center justify-center gap-2 mt-5">
+          <div className="w-full flex items-center justify-between mt-4 px-2">
   <h2 className="text-sm font-semibold text-gray-800">{product.name}</h2>
-  <button onClick={onToggleWishlist}>
+  <button onClick={onToggleWishlist} className="hover:scale-110 transition">
     <img
       src={inWishlist ? WishlistFilledImage : WishlistImage}
       alt="Wishlist"
@@ -104,6 +103,7 @@ const ProductDetail = ({
     />
   </button>
 </div>
+
 
             <div className="flex items-baseline mt-2 flex-wrap gap-2">
               <span className="text-xl md:text-2xl font-bold text-gray-900">₹{discountedPrice}</span>
