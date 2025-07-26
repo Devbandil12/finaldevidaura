@@ -25,7 +25,6 @@ import { CartContext } from "../contexts/CartContext";
 import ProductDetail from "./ProductDetail";
 import { useNavigate } from "react-router-dom"; // ⬅ Add this
 
-
 // -------------------------------
 // Modal Component (Detailed Perfume Info)
 // -------------------------------
@@ -33,7 +32,7 @@ const Modal = ({ product, onClose }) => {
   const [animate, setAnimate] = useState(false);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
-const navigate = useNavigate(); // ⬅ Add this near useState
+
 
   useEffect(() => {
     setAnimate(true);
@@ -206,7 +205,7 @@ const Products = () => {
   // const { user } = useUser();
   const { setCart, cart, wishlist, setWishlist } = useContext(CartContext);
   // Prevent background scrolling when modal is open.
-
+const navigate = useNavigate(); // ⬅ Add this near useState
   useEffect(() => {
     if (modalProduct) {
       document.body.style.overflow = "hidden";
