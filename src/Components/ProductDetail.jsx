@@ -15,6 +15,16 @@ const ProductDetail = ({
   onAddToCart,
   inCart
 }) => {
+
+// at top of ProductDetail:
+useEffect(() => {
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, []);
+
+
   const { products } = useContext(ProductContext);
   const fullProduct = products.find(p => p.id === product.id) || product;
 
@@ -40,6 +50,9 @@ const ProductDetail = ({
     onAddToCart(fullProduct, quantity);
   }
 };
+
+
+
 
 
   const handleBuyNow = () => {
