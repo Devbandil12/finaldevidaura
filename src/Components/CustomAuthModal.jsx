@@ -9,189 +9,184 @@ import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 export default function CustomAuthModal({ open, onClose }) {
-  const [isSignUp, setIsSignUp] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [formLoading, setFormLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [email, setEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState("");
+  const [formLoading, setFormLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
 
-  const { signUp, setActive: activateSignUp } = useSignUp();
-  const { signIn, setActive: activateSignIn } = useSignIn();
-  const navigate = useNavigate();
+  const { signUp, setActive: activateSignUp } = useSignUp();
+  const { signIn, setActive: activateSignIn } = useSignIn();
+  const navigate = useNavigate();
 
-  const containerRef = useRef();
-  const fieldsRef = useRef();
-  const imageRef = useRef();
+  const containerRef = useRef();
+  const fieldsRef = useRef();
+  const imageRef = useRef();
 
-  const isMobile = () => window.innerWidth <= 768;
+  const isMobile = () => window.innerWidth <= 768;
 
-  useEffect(() => {
-    if (!open) return;
-    if (isMobile()) {
-      gsap.set(fieldsRef.current, { y: "0%" });
-      gsap.set(imageRef.current, { y: "0%" });
-    } else {
-      gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
-      gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
-    }
-  }, [open, isSignUp]);
+  useEffect(() => {
+    if (!open) return;
+    if (isMobile()) {
+      gsap.set(fieldsRef.current, { y: "0%" });
+      gsap.set(imageRef.current, { y: "0%" });
+    } else {
+      gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
+      gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
+    }
+  }, [open, isSignUp]);
 
-  useEffect(() => {
-    if (!open) {
-      setEmail("");
-      setPassword("");
-      setFirstName("");
-      setLastName("");
-      setError("");
-    }
-  }, [open]);
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+      setOtpCode("");
+      setFirstName("");
+      setLastName("");
+      setError("");
+      setOtpSent(false);
+    }
+  }, [open]);
 
-  const passwordChecks = [
-    { label: "Minimum 8 characters", passed: password.length >= 8 },
-    { label: "First letter capital", passed: /^[A-Z]/.test(password) },
-    { label: "One special character", passed: /[!@#$%^&*(),.?\":{}|<>]/.test(password) },
-    { label: "At least one number", passed: /\d/.test(password) },
-  ];
+  const handleToggle = () => {
+    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
+    if (isMobile()) {
+      tl.to(imageRef.current, { y: "-130%" }, 0);
+      tl.to(fieldsRef.current, { y: "130%" }, 0);
+      tl.add(() => {
+        setIsSignUp((prev) => !prev);
+        setOtpSent(false);
+        setError("");
+      }, 0.3);
+      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
+      tl.to(imageRef.current, { y: "0%" }, 0.5);
+    } else {
+      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
+      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
+      tl.add(() => {
+        setIsSignUp((prev) => !prev);
+        setOtpSent(false);
+        setError("");
+      }, 0.3);
+    }
+  };
 
-  const handleToggle = () => {
-    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
-    if (isMobile()) {
-      tl.to(imageRef.current, { y: "-130%" }, 0);
-      tl.to(fieldsRef.current, { y: "130%" }, 0);
-      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
-      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
-      tl.to(imageRef.current, { y: "0%" }, 0.5);
-    } else {
-      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
-      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
-      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
-    }
-  };
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setError("");
+    setFormLoading(true);
 
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setError("");
-    setFormLoading(true);
-    try {
-      if (isSignUp) {
-        await signUp.create({ emailAddress: email, password, firstName, lastName });
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-        alert("Check your email for verification link.");
-      } else {
-        const result = await signIn.create({ identifier: email, password });
-        if (result.status === "complete") {
-          await activateSignIn({ session: result.createdSessionId });
-          onClose();
-          navigate("/");
-        }
-      }
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Something went wrong");
-    } finally {
-      setFormLoading(false);
-    }
-  };
+    try {
+      if (isSignUp) {
+        await signUp.create({ emailAddress: email, firstName, lastName });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        setOtpSent(true);
+      } else {
+        await signIn.create({ identifier: email, strategy: "email_code" });
+        setOtpSent(true);
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Something went wrong");
+      setFormLoading(false);
+    }
+  };
 
-  const handleGoogle = async () => {
-    setError("");
-    setGoogleLoading(true);
-    try {
-      const strategy = isSignUp ? "oauth_google" : "oauth_google";
-      const action = isSignUp ? signUp : signIn;
-      await action.authenticateWithRedirect({ strategy });
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Google auth failed");
-      setGoogleLoading(false);
-    }
-  };
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    setError("");
+    setFormLoading(true);
 
-  if (!open) return null;
+    try {
+      if (isSignUp) {
+        const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
+        if (result.status === "complete") {
+          await activateSignUp({ session: result.createdSessionId });
+          onClose();
+          navigate("/");
+        }
+      } else {
+        const result = await signIn.attemptFirstFactor({ code: otpCode });
+        if (result.status === "complete") {
+          await activateSignIn({ session: result.createdSessionId });
+          onClose();
+          navigate("/");
+        }
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Invalid or expired code");
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-  return createPortal(
-    <div className="auth-modal-backdrop" onClick={onClose}>
-      <div className="auth-modal-container" ref={containerRef} onClick={(e) => e.stopPropagation()}>
-        <div className="auth-fields" ref={fieldsRef}>
-          <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
+  const handleGoogle = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const strategy = "oauth_google";
+      const action = isSignUp ? signUp : signIn;
+      await action.authenticateWithRedirect({ strategy });
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Google auth failed");
+      setGoogleLoading(false);
+    }
+  };
 
-          <button className="google-btn" onClick={handleGoogle} disabled={googleLoading}>
-            {googleLoading ? <MiniLoader text="Processing..." /> : isSignUp ? "Sign up with Google" : "Sign in with Google"}
-          </button>
+  if (!open) return null;
 
-          <div className="divider"><span>OR</span></div>
+  return createPortal(
+    <div className="auth-modal-backdrop" onClick={onClose}>
+      <div className="auth-modal-container" ref={containerRef} onClick={(e) => e.stopPropagation()}>
+        <div className="auth-fields" ref={fieldsRef}>
+          <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
-          <form onSubmit={handleAuth} className="form-scroll-area">
-            {isSignUp && (
-              <div className="name-row">
-                <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-              </div>
-            )}
+          <button className="google-btn" onClick={handleGoogle} disabled={googleLoading}>
+            {googleLoading ? <MiniLoader text="Processing..." /> : isSignUp ? "Sign up with Google" : "Sign in with Google"}
+          </button>
 
-            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <div className="divider"><span>OR</span></div>
 
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <span className="eye-icon" onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#666" strokeWidth="2"/>
-                    <circle cx="12" cy="12" r="3" stroke="#666" strokeWidth="2"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M17.94 17.94A10.944 10.944 0 0112 20C5 20 1 12 1 12a17.26 17.26 0 013.94-5.94M9.9 4.24A10.944 10.944 0 0112 4c7 0 11 8 11 8a17.222 17.222 0 01-2.31 3.43M1 1l22 22" stroke="#666" strokeWidth="2"/>
-                  </svg>
-                )}
-              </span>
-            </div>
+          <form onSubmit={otpSent ? handleVerifyCode : handleAuth} className="form-scroll-area">
+            {isSignUp && !otpSent && (
+              <div className="name-row">
+                <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                <input type="text" placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              </div>
+            )}
 
-            {isSignUp && (
-              <ul className="password-checks">
-                {passwordChecks.map((check, idx) => (
-                  <li key={idx} className={check.passed ? "passed" : "failed"}>
-                    • {check.label}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {!otpSent && (
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            )}
 
-            {!isSignUp && (
-              <div className="forgot-password">
-                <a href="/forgot-password">Forgot password?</a>
-              </div>
-            )}
+            {otpSent && (
+              <input type="text" placeholder="Enter 6-digit code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} required />
+            )}
 
-            {error && <div className="error">{error}</div>}
-            <button type="submit" className="action-btn" disabled={formLoading}>
-              {formLoading ? <MiniLoader text="Processing..." /> : isSignUp ? "Sign up" : "Log in"}
-            </button>
-          </form>
+            {error && <div className="error">{error}</div>}
 
-          <p className="toggle-text">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <span onClick={handleToggle}>{isSignUp ? "Log in" : "Sign up"}</span>
-          </p>
-        </div>
+            <button type="submit" className="action-btn" disabled={formLoading}>
+              {formLoading ? <MiniLoader text="Processing..." /> : otpSent ? "Verify Code" : isSignUp ? "Sign up" : "Log in"}
+            </button>
+          </form>
 
-        <div className="auth-image" ref={imageRef}>
-          <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
-          <div className="image-overlay-text">
-            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
-          </div>
-        </div>
-      </div>
-      <button className="close-modal" onClick={onClose}>✕</button>
-    </div>,
-    document.body
-  );
+          <p className="toggle-text">
+            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+            <span onClick={handleToggle}>{isSignUp ? "Log in" : "Sign up"}</span>
+          </p>
+        </div>
+
+        <div className="auth-image" ref={imageRef}>
+          <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
+          <div className="image-overlay-text">
+            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
+          </div>
+        </div>
+      </div>
+      <button className="close-modal" onClick={onClose}>✕</button>
+    </div>,
+    document.body
+  );
 }
