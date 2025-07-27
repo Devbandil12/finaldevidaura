@@ -134,7 +134,7 @@ export default function CustomAuthPage() {
 
           {/* ← Google button restored here */}
           <button className="google-btn" onClick={handleGoogle}>
-            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
+            {isSignUp ? "Sign in with Google" : "Sign in with Google"}
           </button>
 
           <div className="divider"><span>OR</span></div>
