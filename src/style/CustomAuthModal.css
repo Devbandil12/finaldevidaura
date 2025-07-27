@@ -373,3 +373,131 @@
   border-color: #1d4ed8;
   outline: none;
 }
+
+
+/* ========== Form Container ========== */
+.auth-fields {
+  padding: 2rem 1.5rem;         /* reduced side padding */
+  gap: 1.25rem;                 /* consistent vertical gap */
+}
+
+/* ========== Headings ========== */
+.auth-fields h2 {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+  color: #1f2937;               /* dark slate */
+}
+
+/* ========== Input Groups ========== */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;         /* slightly tighter */
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  color: #4b5563;               /* gray-600 */
+}
+
+.input-group input {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;    /* gray-300 */
+  border-radius: 0.5rem;        /* 8px */
+  background-color: #f9fafb;    /* gray-50 */
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #3b82f6;        /* blue-500 */
+  background-color: #ffffff;
+  outline: none;
+}
+
+/* Placeholder color */
+.input-group input::placeholder {
+  color: #9ca3af;               /* gray-400 */
+  opacity: 1;
+}
+
+/* ========== OTP Row ========== */
+.otp-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+/* Send OTP button */
+.send-otp-btn {
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  background-color: #3b82f6;    /* blue-500 */
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.send-otp-btn:hover:not(:disabled) {
+  background-color: #2563eb;    /* blue-600 */
+}
+
+.send-otp-btn:disabled {
+  background-color: #93c5fd;    /* blue-300 */
+  cursor: not-allowed;
+}
+
+/* ========== Main Action Button ========== */
+.action-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #111827;    /* gray-900 */
+  color: #f9fafb;               /* gray-50 */
+  border: none;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 0.5rem;
+}
+
+.action-btn:hover:not(:disabled) {
+  background-color: #1f2937;    /* gray-800 */
+  transform: translateY(-1px);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.action-btn:disabled {
+  background-color: #6b7280;    /* gray-500 */
+  cursor: not-allowed;
+}
+
+/* ========== Error Message ========== */
+.error {
+  color: #b91c1c;               /* red-700 */
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ========== Toggle Text ========== */
+.toggle-text {
+  font-size: 0.875rem;
+  color: #6b7280;               /* gray-500 */
+  margin-top: 1rem;
+}
+
+.toggle-text span {
+  color: #3b82f6;               /* blue-500 */
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.toggle-text span:hover {
+  text-decoration: underline;
+}
