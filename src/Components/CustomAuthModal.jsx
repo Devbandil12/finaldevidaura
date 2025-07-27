@@ -29,6 +29,7 @@ export default function CustomAuthPage() {
 
   const isMobile = () => window.innerWidth <= 768;
 
+  // initial panel slide
   useEffect(() => {
     if (isMobile()) {
       gsap.set(fieldsRef.current, { y: "0%" });
@@ -39,62 +40,50 @@ export default function CustomAuthPage() {
     }
   }, [isSignUp]);
 
+  // stagger form‑field reveal
   useEffect(() => {
     if (!formFieldsRef.current) return;
-
-    const elements = formFieldsRef.current.querySelectorAll(
-      "label, input, button, .error, h2"
-    );
-
+    const elems = formFieldsRef.current.querySelectorAll("label, input, button, .error, h2");
     gsap.fromTo(
-      elements,
+      elems,
       { opacity: 0, y: 20 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: "power2.out",
-      }
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power2.out" }
     );
   }, [isSignUp]);
 
+  // toggle between login / signup
   const handleToggle = () => {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
-
     if (isMobile()) {
-      tl.to(imageRef.current, { y: "-130%" }, 0);
-      tl.to(fieldsRef.current, { y: "130%" }, 0);
-      tl.to(fieldsRef.current, { opacity: 0 }, 0.2);
+      tl.to(fieldsRef.current, { y: "130%", opacity: 0 }, 0);
       tl.add(() => setIsSignUp((prev) => !prev), 0.3);
       tl.to(fieldsRef.current, { y: "0%", opacity: 1 }, 0.5);
-      tl.to(imageRef.current, { y: "0%" }, 0.5);
     } else {
       tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%", opacity: 0 }, 0);
-      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
       tl.add(() => setIsSignUp((prev) => !prev), 0.3);
       tl.to(fieldsRef.current, { opacity: 1 }, 0.5);
     }
-
     setOtpCode("");
     setError("");
     setOtpSent(false);
   };
 
+  // Google OAuth redirect
+  const handleGoogleSignIn = () => {
+    signIn.authenticateWithRedirect({ strategy: "oauth_google" });
+  };
+
   const handleSendOtp = async () => {
     if (!email) return;
-
     try {
       setSendingOtp(true);
       setError("");
-
       if (isSignUp) {
         await signUp.create({ emailAddress: email, firstName, lastName });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       } else {
         await signIn.create({ identifier: email, strategy: "email_code" });
       }
-
       setOtpSent(true);
     } catch (err) {
       setError(err.errors?.[0]?.message || "OTP error.");
@@ -107,30 +96,24 @@ export default function CustomAuthPage() {
     e.preventDefault();
     setFormLoading(true);
     setError("");
-
     try {
       if (!otpSent || !otpCode) {
         setError("Please send and enter the OTP.");
         setFormLoading(false);
         return;
       }
-
       if (isSignUp) {
         const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
           navigate("/");
-        } else {
-          throw new Error("OTP verification failed");
-        }
+        } else throw new Error("OTP verification failed");
       } else {
         const result = await signIn.attemptFirstFactor({ strategy: "email_code", code: otpCode });
         if (result.status === "complete") {
           await setSignInActive({ session: result.createdSessionId });
           navigate("/");
-        } else {
-          throw new Error("Invalid code or session");
-        }
+        } else throw new Error("Invalid code or session");
       }
     } catch (err) {
       setError(err.errors?.[0]?.message || "Verification failed.");
@@ -147,28 +130,57 @@ export default function CustomAuthPage() {
 
           <form onSubmit={handleContinue} className="form-scroll-area">
             <div className="form-animated-fields" ref={formFieldsRef}>
+              {/* Google Button */}
+              <button
+                type="button"
+                className="google-btn"
+                onClick={handleGoogleSignIn}
+                disabled={formLoading}
+              >
+                Sign in with Google
+              </button>
+
               {isSignUp && (
                 <div className="name-row">
                   <div className="input-group">
                     <label>First Name</label>
-                    <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="input-group">
                     <label>Last Name</label>
-                    <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
                   </div>
                 </div>
               )}
 
               <div className="input-group">
                 <label>Email Address</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
 
               <div className="otp-row">
-                <div className="input-group" style={{ flex: 1 }}>
+                <div className="input-group otp-input-group">
                   <label>OTP Code</label>
-                  <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                  />
                 </div>
                 <button
                   type="button"
@@ -201,9 +213,15 @@ export default function CustomAuthPage() {
         </div>
 
         <div className="auth-image" ref={imageRef}>
-          <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
+          <img
+            src={isSignUp ? SignUpImage : SignInImage}
+            alt="Creative background"
+            className="cutout-img"
+          />
           <div className="image-overlay-text">
-            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
+            {isSignUp
+              ? "Join the fragrance revolution."
+              : "Welcome back! Great to see you again."}
           </div>
         </div>
       </div>
