@@ -38,17 +38,6 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
   const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);  // <--- Get coupons from context
 
 
-useEffect(() => {
-  if (isBuyNow) {
-    document.body.style.overflow = "auto"; // or "unset"
-  } else {
-    document.body.style.overflow = ""; // restores normal behavior
-  }
-
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, [isBuyNow]);
 
 
 
