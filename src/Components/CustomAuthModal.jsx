@@ -25,6 +25,7 @@ export default function CustomAuthPage() {
   const containerRef = useRef();
   const fieldsRef = useRef();
   const imageRef = useRef();
+  const formFieldsRef = useRef();
 
   const isMobile = () => window.innerWidth <= 768;
 
@@ -38,21 +39,43 @@ export default function CustomAuthPage() {
     }
   }, [isSignUp]);
 
+  useEffect(() => {
+    if (!formFieldsRef.current) return;
+
+    const elements = formFieldsRef.current.querySelectorAll(
+      "label, input, button, .error, h2"
+    );
+
+    gsap.fromTo(
+      elements,
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: "power2.out",
+      }
+    );
+  }, [isSignUp]);
+
   const handleToggle = () => {
     const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
+
     if (isMobile()) {
       tl.to(imageRef.current, { y: "-130%" }, 0);
       tl.to(fieldsRef.current, { y: "130%" }, 0);
+      tl.to(fieldsRef.current, { opacity: 0 }, 0.2);
       tl.add(() => setIsSignUp((prev) => !prev), 0.3);
-      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
+      tl.to(fieldsRef.current, { y: "0%", opacity: 1 }, 0.5);
       tl.to(imageRef.current, { y: "0%" }, 0.5);
     } else {
-      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
+      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%", opacity: 0 }, 0);
       tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
       tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+      tl.to(fieldsRef.current, { opacity: 1 }, 0.5);
     }
 
-    // Reset form state
     setOtpCode("");
     setError("");
     setOtpSent(false);
@@ -123,45 +146,52 @@ export default function CustomAuthPage() {
           <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
           <form onSubmit={handleContinue} className="form-scroll-area">
-            {isSignUp && (
-              <div className="name-row">
-                <label>
-                  First Name
-                  <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                </label>
-                <label>
-                  Last Name
-                  <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-                </label>
+            <div className="form-animated-fields" ref={formFieldsRef}>
+              {isSignUp && (
+                <div className="name-row">
+                  <div className="input-group">
+                    <label>First Name</label>
+                    <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  </div>
+                  <div className="input-group">
+                    <label>Last Name</label>
+                    <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                  </div>
+                </div>
+              )}
+
+              <div className="input-group">
+                <label>Email Address</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
-            )}
 
-            <label>
-              Email Address
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </label>
+              <div className="otp-row">
+                <div className="input-group" style={{ flex: 1 }}>
+                  <label>OTP Code</label>
+                  <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  className="send-otp-btn"
+                  disabled={sendingOtp}
+                >
+                  {sendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}
+                </button>
+              </div>
 
-            <div className="otp-row">
-              <label className="otp-label">
-                OTP Code
-                <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
-              </label>
-              <button type="button" onClick={handleSendOtp} disabled={sendingOtp}>
-                {sendingOtp ? "Sending OTP..." : otpSent ? "Resend OTP" : "Send OTP"}
+              {error && <div className="error">{error}</div>}
+
+              <button type="submit" className="action-btn" disabled={formLoading}>
+                {formLoading
+                  ? isSignUp
+                    ? "Signing Up..."
+                    : "Signing In..."
+                  : isSignUp
+                  ? "Sign Up"
+                  : "Sign In"}
               </button>
             </div>
-
-            {error && <div className="error">{error}</div>}
-
-            <button type="submit" className="action-btn" disabled={formLoading}>
-              {formLoading
-                ? isSignUp
-                  ? "Signing Up..."
-                  : "Signing In..."
-                : isSignUp
-                ? "Sign Up"
-                : "Sign In"}
-            </button>
           </form>
 
           <p className="toggle-text">
