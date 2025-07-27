@@ -191,12 +191,13 @@ const ProductDetail = ({
 </button>
 
 
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 py-3 px-6 font-semibold rounded-lg bg-black text-white hover:bg-white text-black"
-            >
-              Buy Now
-            </button>
+            <<button
+  onClick={handleBuyNow}
+  className="flex-1 py-3 px-6 font-semibold rounded-lg bg-black text-white border border-black hover:bg-white hover:text-black transition-colors duration-200"
+>
+  Buy Now
+</button>
+
           </div>
         </div>
       </div>
