@@ -10,6 +10,7 @@ import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";  // <--- Added CouponContext
 import { toast, ToastContainer } from "react-toastify";
 import { useSearchParams } from "react-router-dom";
+import Loader from "./Loader"; // Adjust path if needed
 
 
 
@@ -335,16 +336,23 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
         );
       });
 
+
+if (isBuyNow && !buyNowLoaded) {
+  return <Loader text="Loading your cart..." />;
+}
+
+
   return (
     <>
       
       <main className="main-container" style={{ position: "relative" }}>
-        <div className="cart-item-summary-container">
-          <div className="cart-items-box">
-            {!buyNowLoaded ? (
-  <div className="loading-cart">Loading...</div>
-) :  cartitems && cartitems.length > 0 ? (
-              cartitems.map((item, idx) => (
+      
+<div className="cart-item-summary-container">
+          
+<div className="cart-items-box">
+       
+  {cartitems && cartitems.length > 0 ? (
+           cartitems.map((item, idx) => (
                 <div key={idx} className="cart-item">
                   <div className="product-content">
                     <img src={item.product.imageurl} alt={item.product.name} />
