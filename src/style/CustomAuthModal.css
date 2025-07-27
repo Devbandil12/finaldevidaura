@@ -100,8 +100,8 @@
   margin-bottom: 8px;
   border: 1px solid #ccc;
   border-radius: 6px;
-  background: #f8f8f8;
-  font-size: 1rem;
+  background: #fff;
+  font-size: 0.8rem;
   transition: border 0.3s, background 0.3s;
 }
 
