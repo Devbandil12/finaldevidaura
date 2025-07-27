@@ -180,11 +180,16 @@ const ProductDetail = ({
             
 
             <button
-              onClick={addToCartHandler}
-              className={`flex-1 py-3 px-6 font-semibold rounded-lg ${inCart ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-black text-white hover:bg-black-200 text-white'}`}
-            >
-              {inCart ? 'Remove from Cart' : `Add to Cart (${quantity})`}
-            </button>
+  onClick={addToCartHandler}
+  className={`flex-1 py-3 px-6 font-semibold rounded-lg border 
+    ${inCart 
+      ? 'bg-red-600 text-white hover:bg-red-700' 
+      : 'bg-white text-black border-black hover:bg-gray-100'
+    }`}
+>
+  {inCart ? 'Remove from Cart' : `Add to Cart (${quantity})`}
+</button>
+
 
             <button
               onClick={handleBuyNow}
