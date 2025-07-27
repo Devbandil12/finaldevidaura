@@ -1,29 +1,27 @@
+/* 🔄 Converted Modal to Full Page Layout */
 .auth-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  overflow: hidden;
 }
 
+/* 🔄 Converted Modal Container to Full Page Width */
 .auth-modal-container {
   position: relative;
-  width: 800px;
-  max-width: 90%;
-  height: 500px;
-  max-height: 90%;
+  width: 100%;
+  height: 100%;
   display: flex;
   overflow: hidden;
   background: #fff;
-  border-radius: 16px;
 }
 
+/* 📜 Input Fields Section */
 .auth-fields {
-  position: absolute;
-  left: 0;
-  top: 0;
   width: 50%;
   height: 100%;
   padding: 40px;
@@ -35,22 +33,57 @@
   overflow: hidden;
 }
 
+.form-scroll-area {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 8px;
+}
+
+/* 🖼️ Image Section */
+.auth-image {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.auth-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+}
+
+/* 📝 Headings and Buttons */
 .auth-fields h2 {
   margin-bottom: 20px;
   font-size: 1.8rem;
 }
 
-.google-btn {
+.google-btn,
+.action-btn {
   width: 100%;
   padding: 12px;
-  background: #4285F4;
-  color: #fff;
   border: none;
   border-radius: 4px;
-  margin-bottom: 16px;
   cursor: pointer;
+  font-size: 1rem;
 }
 
+.google-btn {
+  background: #4285F4;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.action-btn {
+  background: #111;
+  color: #fff;
+  margin-top: 8px;
+}
+
+/* 🎨 Dividers and Text */
 .divider {
   text-align: center;
   margin: 12px 0;
@@ -81,22 +114,7 @@
   color: #666;
 }
 
-.form-scroll-area {
-  overflow-y: auto;
-  flex: 1;
-  padding-right: 8px;
-}
-
-/* 👤 Name fields row */
-.name-row {
-  display: flex;
-  gap: 12px;
-}
-
-.name-row input {
-  flex: 1;
-}
-
+/* ✅ Inputs & Password */
 .auth-fields form input {
   width: 100%;
   padding: 10px;
@@ -106,81 +124,12 @@
   font-size: 1rem;
 }
 
-.action-btn {
-  width: 100%;
-  padding: 12px;
-  background: #111;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-top: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.error {
-  color: #c00;
-  margin-bottom: 8px;
-}
-
-.toggle-text {
-  margin-top: 16px;
-  font-size: 0.9rem;
-}
-
-.toggle-text span {
-  color: #007bff;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.auth-image {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.auth-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
-}
-
-.image-overlay-text {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  color: #fff;
-  font-size: 1.2rem;
-  max-width: 70%;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-}
-
-.close-modal {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #333;
-  cursor: pointer;
-}
-
-/* 👁️ Password visibility toggle */
 .password-wrapper {
   position: relative;
 }
 
-.password-wrapper input[type="password"],
-.password-wrapper input[type="text"] {
-  width: 100%;
-  padding-right: 40px; /* space for the icon */
+.password-wrapper input {
+  padding-right: 40px;
 }
 
 .eye-icon {
@@ -189,17 +138,16 @@
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: #666;
   font-size: 1rem;
+  color: #666;
 }
 
-/* 🔐 Password validation checklist */
+/* 🔐 Password Checks */
 .password-checks {
   list-style: none;
   padding-left: 0;
   font-size: 0.85rem;
   margin-bottom: 12px;
-  color: #444;
 }
 
 .password-checks li {
@@ -223,49 +171,36 @@
   font-size: 1.2rem;
 }
 
-/* 🔁 Forgot password link */
-.forgot-password {
-  text-align: right;
+/* ❌ Error & Toggle Text */
+.error {
+  color: #c00;
   margin-bottom: 8px;
 }
 
-.forgot-password a {
-  font-size: 0.85rem;
-  color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
+.toggle-text {
+  margin-top: 16px;
+  font-size: 0.9rem;
 }
 
-/* --- Mobile View --- */
+.toggle-text span {
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* 📱 Mobile Adjustments */
 @media (max-width: 768px) {
   .auth-modal-container {
     flex-direction: column;
-    width: 100%;
-    height: 90vh;
-    max-width: 95%;
-    position: relative;
+    height: 100vh;
     overflow: hidden;
   }
 
   .auth-image {
     width: 100%;
     height: 35%;
-    position: relative;
     order: 1;
-    z-index: 5;
-  }
-
-  .auth-fields {
-    width: 100%;
-    height: 60%;
-    position: relative;
-    order: 2;
-    padding: 24px;
-    background: #fff;
-    z-index: 1;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
   }
 
   .cutout-img {
@@ -274,9 +209,32 @@
     object-fit: cover;
   }
 
+  .auth-fields {
+    width: 100%;
+    height: 65%;
+    padding: 24px;
+    order: 2;
+    overflow: hidden;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-scroll-area {
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
   .image-overlay-text {
     font-size: 1rem;
     bottom: 12px;
     left: 12px;
   }
+}
+
+/* ❌ Removed Modal Close Button for Page Version */
+.close-modal {
+  display: none;
 }
