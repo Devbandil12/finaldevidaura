@@ -141,7 +141,8 @@ export default function CustomAuthModal(){
   
 
   return (
-      <div className="auth-modal-container" ref={containerRef} onClick={(e) => e.stopPropagation()}>
+<div className="auth-modal-main-container">
+    <div className="auth-modal-container">
         <div className="auth-fields" ref={fieldsRef}>
           <h2>{isSignUp ? "Create account" : awaitingOTP ? "Enter OTP" : "Welcome back"}</h2>
 
@@ -231,6 +232,7 @@ export default function CustomAuthModal(){
           </div>
         </div>
       </div>
+ </div>
      
   );
 }
