@@ -181,14 +181,14 @@ const ProductDetail = ({
 
             <button
               onClick={addToCartHandler}
-              className={`flex-1 py-3 px-6 font-semibold rounded-lg ${inCart ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+              className={`flex-1 py-3 px-6 font-semibold rounded-lg ${inCart ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-white text-black hover:bg-black-200 text-white'}`}
             >
               {inCart ? 'Remove from Cart' : `Add to Cart (${quantity})`}
             </button>
 
             <button
               onClick={handleBuyNow}
-              className="flex-1 py-3 px-6 font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              className="flex-1 py-3 px-6 font-semibold rounded-lg bg-black text-white hover:bg-white text-black"
             >
               Buy Now
             </button>
