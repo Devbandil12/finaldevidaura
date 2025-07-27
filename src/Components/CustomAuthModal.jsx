@@ -15,9 +15,11 @@ export default function CustomAuthModal({ open, onClose }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
-  const [formLoading, setFormLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+
   const [otpSent, setOtpSent] = useState(false);
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const { signUp, setActive: activateSignUp } = useSignUp();
   const { signIn, setActive: activateSignIn } = useSignIn();
@@ -56,69 +58,66 @@ export default function CustomAuthModal({ open, onClose }) {
     if (isMobile()) {
       tl.to(imageRef.current, { y: "-130%" }, 0);
       tl.to(fieldsRef.current, { y: "130%" }, 0);
-      tl.add(() => {
-        setIsSignUp((prev) => !prev);
-        setOtpSent(false);
-        setError("");
-      }, 0.3);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
       tl.to(fieldsRef.current, { y: "0%" }, 0.5);
       tl.to(imageRef.current, { y: "0%" }, 0.5);
     } else {
       tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
       tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
-      tl.add(() => {
-        setIsSignUp((prev) => !prev);
-        setOtpSent(false);
-        setError("");
-      }, 0.3);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
     }
+
+    // Reset states
+    setEmail("");
+    setOtpCode("");
+    setError("");
+    setOtpSent(false);
   };
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setError("");
-    setFormLoading(true);
 
+    if (otpSent) {
+      setOtpVerifying(true);
+      try {
+        if (isSignUp) {
+          const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
+          if (result.status === "complete") {
+            await activateSignUp({ session: result.createdSessionId });
+            onClose();
+            navigate("/");
+          }
+        } else {
+          const result = await signIn.attemptFirstFactor({ code: otpCode });
+          if (result.status === "complete") {
+            await activateSignIn({ session: result.createdSessionId });
+            onClose();
+            navigate("/");
+          }
+        }
+      } catch (err) {
+        setError(err.errors?.[0]?.message || "Invalid or expired code");
+      } finally {
+        setOtpVerifying(false);
+      }
+      return;
+    }
+
+    // STEP 1 — Send OTP
+    setEmailSubmitting(true);
     try {
       if (isSignUp) {
         await signUp.create({ emailAddress: email, firstName, lastName });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-        setOtpSent(true);
       } else {
         await signIn.create({ identifier: email, strategy: "email_code" });
-        setOtpSent(true);
       }
+      setOtpSent(true);
     } catch (err) {
       setError(err.errors?.[0]?.message || "Something went wrong");
-      setFormLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
-    setError("");
-    setFormLoading(true);
-
-    try {
-      if (isSignUp) {
-        const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
-        if (result.status === "complete") {
-          await activateSignUp({ session: result.createdSessionId });
-          onClose();
-          navigate("/");
-        }
-      } else {
-        const result = await signIn.attemptFirstFactor({ code: otpCode });
-        if (result.status === "complete") {
-          await activateSignIn({ session: result.createdSessionId });
-          onClose();
-          navigate("/");
-        }
-      }
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Invalid or expired code");
     } finally {
-      setFormLoading(false);
+      setEmailSubmitting(false);
     }
   };
 
@@ -149,7 +148,7 @@ export default function CustomAuthModal({ open, onClose }) {
 
           <div className="divider"><span>OR</span></div>
 
-          <form onSubmit={otpSent ? handleVerifyCode : handleAuth} className="form-scroll-area">
+          <form onSubmit={handleAuth} className="form-scroll-area">
             {isSignUp && !otpSent && (
               <div className="name-row">
                 <input type="text" placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
@@ -157,18 +156,26 @@ export default function CustomAuthModal({ open, onClose }) {
               </div>
             )}
 
-            {!otpSent && (
-              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            )}
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={otpSent} />
 
             {otpSent && (
-              <input type="text" placeholder="Enter 6-digit code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} required />
+              <input type="text" placeholder="Enter OTP code" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} required />
             )}
 
             {error && <div className="error">{error}</div>}
 
-            <button type="submit" className="action-btn" disabled={formLoading}>
-              {formLoading ? <MiniLoader text="Processing..." /> : otpSent ? "Verify Code" : isSignUp ? "Sign up" : "Log in"}
+            <button
+              type="submit"
+              className="action-btn"
+              disabled={otpSent ? otpVerifying : emailSubmitting}
+            >
+              {(otpSent ? otpVerifying : emailSubmitting)
+                ? <MiniLoader text="Processing..." />
+                : otpSent
+                ? "Verify Code"
+                : isSignUp
+                ? "Sign up"
+                : "Log in"}
             </button>
           </form>
 
