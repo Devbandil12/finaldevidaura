@@ -6,7 +6,7 @@ import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
-import Login from "./Components/Register";
+import Login from "./Components/CustomAuthModal";
 import Products from "./Components/Products";
 import MyOrder from "./Components/MyOrder";
 import Wishlist from "./Components/Wishlist";
