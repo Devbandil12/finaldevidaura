@@ -7,22 +7,22 @@ import "../style/CustomAuthModal.css";
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
-export default function CustomAuthModal() {
+export default function CustomAuthPage() {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [awaitingOTP, setAwaitingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
-
   const [sendingOtp, setSendingOtp] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
 
   const { signUp, setActive: setSignUpActive } = useSignUp();
   const { signIn, setActive: setSignInActive } = useSignIn();
   const navigate = useNavigate();
 
+  const containerRef = useRef();
   const fieldsRef = useRef();
   const imageRef = useRef();
 
@@ -39,183 +39,129 @@ export default function CustomAuthModal() {
   }, [isSignUp]);
 
   const handleToggle = () => {
-    setIsSignUp((prev) => !prev);
-    setAwaitingOTP(false);
+    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
+    if (isMobile()) {
+      tl.to(imageRef.current, { y: "-130%" }, 0);
+      tl.to(fieldsRef.current, { y: "130%" }, 0);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
+      tl.to(imageRef.current, { y: "0%" }, 0.5);
+    } else {
+      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
+      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+    }
+
+    // Reset form state
     setOtpCode("");
     setError("");
-    setSendingOtp(false);
-    setSubmitting(false);
+    setOtpSent(false);
   };
 
-  const handleSendOTP = async () => {
-    setError("");
-    setSendingOtp(true);
+  const handleSendOtp = async () => {
+    if (!email) return;
+
     try {
+      setSendingOtp(true);
+      setError("");
+
       if (isSignUp) {
-        await signUp.create({
-          emailAddress: email,
-          firstName,
-          lastName,
-        });
+        await signUp.create({ emailAddress: email, firstName, lastName });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       } else {
-        const res = await signIn.create({
-          identifier: email,
-          strategy: "email_code",
-        });
-        if (res.status === "needs_first_factor") {
-          // continue
-        }
+        await signIn.create({ identifier: email, strategy: "email_code" });
       }
-      setAwaitingOTP(true);
+
+      setOtpSent(true);
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Failed to send OTP.");
+      setError(err.errors?.[0]?.message || "OTP error.");
     } finally {
       setSendingOtp(false);
     }
   };
 
-  const handleSubmitOTP = async (e) => {
+  const handleContinue = async (e) => {
     e.preventDefault();
+    setFormLoading(true);
     setError("");
-    setSubmitting(true);
+
     try {
+      if (!otpSent || !otpCode) {
+        setError("Please send and enter the OTP.");
+        setFormLoading(false);
+        return;
+      }
+
       if (isSignUp) {
-        const result = await signUp.attemptEmailAddressVerification({
-          code: otpCode,
-        });
+        const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
           navigate("/");
         } else {
-          throw new Error("Verification not complete.");
+          throw new Error("OTP verification failed");
         }
       } else {
-        const result = await signIn.attemptFirstFactor({
-          strategy: "email_code",
-          code: otpCode,
-        });
+        const result = await signIn.attemptFirstFactor({ strategy: "email_code", code: otpCode });
         if (result.status === "complete") {
           await setSignInActive({ session: result.createdSessionId });
           navigate("/");
         } else {
-          throw new Error("Verification not complete.");
+          throw new Error("Invalid code or session");
         }
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || "OTP verification failed.");
+      setError(err.errors?.[0]?.message || "Verification failed.");
     } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setError("");
-    try {
-      const strategy = "oauth_google";
-      const action = isSignUp ? signUp : signIn;
-      await action.authenticateWithRedirect({ strategy });
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Google auth failed");
+      setFormLoading(false);
     }
   };
 
   return (
     <div className="auth-modal-main-container">
-      <div className="auth-modal-container">
+      <div className="auth-modal-container" ref={containerRef}>
         <div className="auth-fields" ref={fieldsRef}>
-          <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+          <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
-          <button className="google-btn" onClick={handleGoogle}>
-            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
-          </button>
-
-          <div className="divider"><span>OR</span></div>
-
-          <form onSubmit={handleSubmitOTP} className="form-scroll-area">
+          <form onSubmit={handleContinue} className="form-scroll-area">
             {isSignUp && (
               <div className="name-row">
-                <div className="input-group">
-                  <label htmlFor="firstName">First Name</label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    placeholder="First name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="input-group">
-                  <label htmlFor="lastName">Last Name</label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
+                <label>
+                  First Name
+                  <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                </label>
+                <label>
+                  Last Name
+                  <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                </label>
               </div>
             )}
 
-            <div className="input-group">
-              <label htmlFor="email">Email</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+            <label>
+              Email Address
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
 
-            <div className="input-group">
-              <label htmlFor="otp">OTP</label>
-              <input
-                id="otp"
-                type="text"
-                placeholder="Enter OTP"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-                required
-              />
+            <div className="otp-row">
+              <label className="otp-label">
+                OTP Code
+                <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+              </label>
+              <button type="button" onClick={handleSendOtp} disabled={sendingOtp}>
+                {sendingOtp ? "Sending OTP..." : otpSent ? "Resend OTP" : "Send OTP"}
+              </button>
             </div>
 
             {error && <div className="error">{error}</div>}
 
-            <div className="otp-button-group">
-              <button
-                type="button"
-                className="action-btn"
-                onClick={handleSendOTP}
-                disabled={sendingOtp}
-              >
-                {sendingOtp
-                  ? "Sending OTP..."
-                  : awaitingOTP
-                  ? "Resend OTP"
-                  : "Send OTP"}
-              </button>
-
-              {awaitingOTP && (
-                <button
-                  type="submit"
-                  className="action-btn"
-                  disabled={submitting}
-                >
-                  {submitting
-                    ? isSignUp
-                      ? "Signing Up..."
-                      : "Signing In..."
-                    : isSignUp
-                    ? "Sign Up"
-                    : "Sign In"}
-                </button>
-              )}
-            </div>
+            <button type="submit" className="action-btn" disabled={formLoading}>
+              {formLoading
+                ? isSignUp
+                  ? "Signing Up..."
+                  : "Signing In..."
+                : isSignUp
+                ? "Sign Up"
+                : "Sign In"}
+            </button>
           </form>
 
           <p className="toggle-text">
@@ -225,15 +171,9 @@ export default function CustomAuthModal() {
         </div>
 
         <div className="auth-image" ref={imageRef}>
-          <img
-            src={isSignUp ? SignUpImage : SignInImage}
-            alt="Creative background"
-            className="cutout-img"
-          />
+          <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
           <div className="image-overlay-text">
-            {isSignUp
-              ? "Join the fragrance revolution."
-              : "Welcome back! Great to see you again."}
+            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
           </div>
         </div>
       </div>
