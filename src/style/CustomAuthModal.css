@@ -332,7 +332,6 @@
     position: relative;
     order: 2;
     padding: 24px;
-    overflow-y: auto;
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
