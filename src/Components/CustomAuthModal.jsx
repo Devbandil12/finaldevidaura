@@ -188,7 +188,7 @@ export default function CustomAuthPage() {
               </div>
               <button
                 type="button"
-                className="action-btn"
+                className="send-otp-btn"
                 onClick={handleSendOtp}
                 disabled={sendingOtp}
               >
