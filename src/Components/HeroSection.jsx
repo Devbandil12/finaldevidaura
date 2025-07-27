@@ -39,7 +39,7 @@ const HeroSection = () => {
           </button>
 
           {/* Sign In button redirects to auth page */}
-          <button className="hero__signin" onClick={() => navigate("/auth")}>
+          <button className="hero__signin" onClick={() => navigate("/Login")}>
             Sign In
           </button>
         </div>
