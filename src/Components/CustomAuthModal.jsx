@@ -15,14 +15,14 @@ export default function CustomAuthModal() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
-  const [formLoading, setFormLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const { signUp, setActive: setSignUpActive } = useSignUp();
   const { signIn, setActive: setSignInActive } = useSignIn();
   const navigate = useNavigate();
 
-  const containerRef = useRef();
   const fieldsRef = useRef();
   const imageRef = useRef();
 
@@ -39,28 +39,17 @@ export default function CustomAuthModal() {
   }, [isSignUp]);
 
   const handleToggle = () => {
-    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
-    if (isMobile()) {
-      tl.to(imageRef.current, { y: "-130%" }, 0);
-      tl.to(fieldsRef.current, { y: "130%" }, 0);
-      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
-      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
-      tl.to(imageRef.current, { y: "0%" }, 0.5);
-    } else {
-      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
-      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
-      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
-    }
+    setIsSignUp((prev) => !prev);
     setAwaitingOTP(false);
     setOtpCode("");
     setError("");
+    setSendingOtp(false);
+    setSubmitting(false);
   };
 
-  const handleAuth = async (e) => {
-    e.preventDefault();
+  const handleSendOTP = async () => {
     setError("");
-    setFormLoading(true);
-
+    setSendingOtp(true);
     try {
       if (isSignUp) {
         await signUp.create({
@@ -69,7 +58,38 @@ export default function CustomAuthModal() {
           lastName,
         });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-        setAwaitingOTP(true);
+      } else {
+        const res = await signIn.create({
+          identifier: email,
+          strategy: "email_code",
+        });
+        if (res.status === "needs_first_factor") {
+          // continue
+        }
+      }
+      setAwaitingOTP(true);
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Failed to send OTP.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleSubmitOTP = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      if (isSignUp) {
+        const result = await signUp.attemptEmailAddressVerification({
+          code: otpCode,
+        });
+        if (result.status === "complete") {
+          await setSignUpActive({ session: result.createdSessionId });
+          navigate("/");
+        } else {
+          throw new Error("Verification not complete.");
+        }
       } else {
         const result = await signIn.attemptFirstFactor({
           strategy: "email_code",
@@ -79,61 +99,40 @@ export default function CustomAuthModal() {
           await setSignInActive({ session: result.createdSessionId });
           navigate("/");
         } else {
-          setError("Invalid code or session issue.");
+          throw new Error("Verification not complete.");
         }
       }
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Something went wrong.");
+      setError(err.errors?.[0]?.message || "OTP verification failed.");
     } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleSendOTP = async () => {
-    setError("");
-    setFormLoading(true);
-    try {
-      const res = await signIn.create({
-        identifier: email,
-        strategy: "email_code",
-      });
-      if (res.status === "needs_first_factor") {
-        setAwaitingOTP(true);
-      }
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Failed to send OTP.");
-    } finally {
-      setFormLoading(false);
+      setSubmitting(false);
     }
   };
 
   const handleGoogle = async () => {
     setError("");
-    setGoogleLoading(true);
     try {
       const strategy = "oauth_google";
       const action = isSignUp ? signUp : signIn;
       await action.authenticateWithRedirect({ strategy });
     } catch (err) {
       setError(err.errors?.[0]?.message || "Google auth failed");
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
   return (
     <div className="auth-modal-main-container">
-      <div className="auth-modal-container" ref={containerRef}>
+      <div className="auth-modal-container">
         <div className="auth-fields" ref={fieldsRef}>
-          <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
+          <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
 
-          <button className="google-btn" onClick={handleGoogle} disabled={googleLoading}>
-            {googleLoading ? <MiniLoader text="Processing..." /> : isSignUp ? "Sign up with Google" : "Sign in with Google"}
+          <button className="google-btn" onClick={handleGoogle}>
+            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
           </button>
 
           <div className="divider"><span>OR</span></div>
 
-          <form onSubmit={handleAuth} className="form-scroll-area">
+          <form onSubmit={handleSubmitOTP} className="form-scroll-area">
             {isSignUp && (
               <div className="name-row">
                 <div className="input-group">
@@ -166,7 +165,7 @@ export default function CustomAuthModal() {
               <input
                 id="email"
                 type="email"
-                placeholder="Email"
+                placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -192,14 +191,30 @@ export default function CustomAuthModal() {
                 type="button"
                 className="action-btn"
                 onClick={handleSendOTP}
-                disabled={formLoading}
+                disabled={sendingOtp}
               >
-                {formLoading && !awaitingOTP ? <MiniLoader text="Sending..." /> : "Send OTP"}
+                {sendingOtp
+                  ? "Sending OTP..."
+                  : awaitingOTP
+                  ? "Resend OTP"
+                  : "Send OTP"}
               </button>
 
-              <button type="submit" className="action-btn" disabled={formLoading}>
-                {formLoading ? <MiniLoader text="Signing..." /> : "Continue"}
-              </button>
+              {awaitingOTP && (
+                <button
+                  type="submit"
+                  className="action-btn"
+                  disabled={submitting}
+                >
+                  {submitting
+                    ? isSignUp
+                      ? "Signing Up..."
+                      : "Signing In..."
+                    : isSignUp
+                    ? "Sign Up"
+                    : "Sign In"}
+                </button>
+              )}
             </div>
           </form>
 
@@ -216,7 +231,9 @@ export default function CustomAuthModal() {
             className="cutout-img"
           />
           <div className="image-overlay-text">
-            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
+            {isSignUp
+              ? "Join the fragrance revolution."
+              : "Welcome back! Great to see you again."}
           </div>
         </div>
       </div>
