@@ -16,13 +16,6 @@ const ProductDetail = ({
   inCart
 }) => {
 
-// at top of ProductDetail:
-useEffect(() => {
-  document.body.style.overflow = "hidden";
-  return () => {
-    document.body.style.overflow = "";
-  };
-}, []);
 
 
   const { products } = useContext(ProductContext);
