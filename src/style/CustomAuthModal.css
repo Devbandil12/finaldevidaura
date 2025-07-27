@@ -1,338 +1,183 @@
-.auth-modal-main-container{
+import React, { useState, useRef, useEffect } from "react";
+import { useSignIn, useSignUp } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
+import gsap from "gsap";
+import MiniLoader from "./MiniLoader";
+import "../style/CustomAuthModal.css";
+import SignUpImage from "../assets/New folder/Adobe Express - file.png";
+import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
+export default function CustomAuthPage() {
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [email, setEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
 
-.auth-modal-container {
-  position: relative;
-  width: 100%;
-  max-width: 800px;
-  height: 600px;
-  display: flex;
-  overflow: hidden;
-  background: #fff;
-  border-radius: 16px;
-}
+  const { signUp, setActive: setSignUpActive } = useSignUp();
+  const { signIn, setActive: setSignInActive } = useSignIn();
+  const navigate = useNavigate();
 
-.auth-fields {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  padding: 40px;
-  box-sizing: border-box;
-  background: #fff;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  
-}
+  const containerRef = useRef();
+  const fieldsRef = useRef();
+  const imageRef = useRef();
 
-.auth-fields h2 {
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-}
+  const isMobile = () => window.innerWidth <= 768;
 
-.google-btn {
-  width: 100%;
-  padding: 12px;
-  background: #4285F4;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  cursor: pointer;
-}
+  useEffect(() => {
+    if (isMobile()) {
+      gsap.set(fieldsRef.current, { y: "0%" });
+      gsap.set(imageRef.current, { y: "0%" });
+    } else {
+      gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
+      gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
+    }
+  }, [isSignUp]);
 
-.divider {
-  text-align: center;
-  margin: 12px 0;
-  position: relative;
-}
+  const handleToggle = () => {
+    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
+    if (isMobile()) {
+      tl.to(imageRef.current, { y: "-130%" }, 0);
+      tl.to(fieldsRef.current, { y: "130%" }, 0);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
+      tl.to(imageRef.current, { y: "0%" }, 0.5);
+    } else {
+      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
+      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
+      tl.add(() => setIsSignUp((prev) => !prev), 0.3);
+    }
 
-.divider::before,
-.divider::after {
-  content: "";
-  height: 1px;
-  background: #ccc;
-  position: absolute;
-  top: 50%;
-  width: 40%;
-}
+    // Reset form state
+    setOtpCode("");
+    setError("");
+    setOtpSent(false);
+  };
 
-.divider::before {
-  left: 0;
-}
+  const handleSendOtp = async () => {
+    if (!email) return;
 
-.divider::after {
-  right: 0;
-}
+    try {
+      setSendingOtp(true);
+      setError("");
 
-.divider span {
-  background: #fff;
-  padding: 0 8px;
-  color: #666;
-}
+      if (isSignUp) {
+        await signUp.create({ emailAddress: email, firstName, lastName });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      } else {
+        await signIn.create({ identifier: email, strategy: "email_code" });
+      }
 
-.form-scroll-area {
-  
-  flex: 1;
-  padding-right: 8px;
-}
+      setOtpSent(true);
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "OTP error.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
-/* 👤 Name fields row */
-.name-row {
-  display: flex;
-  gap: 12px;
-}
+  const handleContinue = async (e) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setError("");
 
-.name-row input {
-  flex: 1;
-}
+    try {
+      if (!otpSent || !otpCode) {
+        setError("Please send and enter the OTP.");
+        setFormLoading(false);
+        return;
+      }
 
-.auth-fields form input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
+      if (isSignUp) {
+        const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
+        if (result.status === "complete") {
+          await setSignUpActive({ session: result.createdSessionId });
+          navigate("/");
+        } else {
+          throw new Error("OTP verification failed");
+        }
+      } else {
+        const result = await signIn.attemptFirstFactor({ strategy: "email_code", code: otpCode });
+        if (result.status === "complete") {
+          await setSignInActive({ session: result.createdSessionId });
+          navigate("/");
+        } else {
+          throw new Error("Invalid code or session");
+        }
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Verification failed.");
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
-.action-btn {
-  width: 100%;
-  padding: 12px;
-  background: #111;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  margin-top: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-}
+  return (
+    <div className="auth-modal-main-container">
+      <div className="auth-modal-container" ref={containerRef}>
+        <div className="auth-fields" ref={fieldsRef}>
+          <h2>{isSignUp ? "Create account" : "Welcome back"}</h2>
 
-.error {
-  color: #c00;
-  margin-bottom: 8px;
-}
+          <form onSubmit={handleContinue} className="form-scroll-area">
+            {isSignUp && (
+              <div className="name-row">
+                <label>
+                  First Name
+                  <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                </label>
+                <label>
+                  Last Name
+                  <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                </label>
+              </div>
+            )}
 
-.toggle-text {
-  margin-top: 16px;
-  font-size: 0.9rem;
-}
+            <label>
+              Email Address
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </label>
 
-.toggle-text span {
-  color: #007bff;
-  cursor: pointer;
-  text-decoration: underline;
-}
+            <div className="otp-row">
+              <label className="otp-label">
+                OTP Code
+                <input type="text" value={otpCode} onChange={(e) => setOtpCode(e.target.value)} />
+              </label>
+              <button type="button" onClick={handleSendOtp} disabled={sendingOtp}>
+                {sendingOtp ? "Sending OTP..." : otpSent ? "Resend OTP" : "Send OTP"}
+              </button>
+            </div>
 
-.auth-image {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
-}
+            {error && <div className="error">{error}</div>}
 
-.auth-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
-}
+            <button type="submit" className="action-btn" disabled={formLoading}>
+              {formLoading
+                ? isSignUp
+                  ? "Signing Up..."
+                  : "Signing In..."
+                : isSignUp
+                ? "Sign Up"
+                : "Sign In"}
+            </button>
+          </form>
 
-.image-overlay-text {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  color: #fff;
-  font-size: 1.2rem;
-  max-width: 70%;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-}
+          <p className="toggle-text">
+            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+            <span onClick={handleToggle}>{isSignUp ? "Log in" : "Sign up"}</span>
+          </p>
+        </div>
 
-.close-modal {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #333;
-  cursor: pointer;
-}
-
-/* 👁️ Password visibility toggle */
-.password-wrapper {
-  position: relative;
-}
-
-.password-wrapper input[type="password"],
-.password-wrapper input[type="text"] {
-  width: 100%;
-  padding-right: 40px; /* space for the icon */
-}
-
-.eye-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: #666;
-  font-size: 1rem;
-}
-
-/* 🔐 Password validation checklist */
-.password-checks {
-  list-style: none;
-  padding-left: 0;
-  font-size: 0.85rem;
-  margin-bottom: 12px;
-  color: #444;
-}
-
-.password-checks li {
-  margin: 4px 0;
-  display: flex;
-  align-items: center;
-}
-
-.password-checks .passed {
-  color: green;
-}
-
-.password-checks .failed {
-  color: #c00;
-}
-
-.password-checks li::before {
-  content: "•";
-  display: inline-block;
-  margin-right: 8px;
-  font-size: 1.2rem;
-}
-
-/* 🔁 Forgot password link */
-.forgot-password {
-  text-align: right;
-  margin-bottom: 8px;
-}
-
-.forgot-password a {
-  font-size: 0.85rem;
-  color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.otp-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0;
-}
-
-.otp-row input {
-  flex: 1;
-  padding: 10px 12px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.otp-row input:focus {
-  border-color: #5a67d8;
-}
-
-.send-otp-btn {
-  padding: 10px 16px;
-  font-size: 0.95rem;
-  background-color: #5a67d8;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  white-space: nowrap;
-}
-
-.send-otp-btn:hover {
-  background-color: #434190;
-}
-
-.send-otp-btn:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-}
-
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 14px;
-}
-
-.input-group label {
-  font-size: 14px;
-  margin-bottom: 4px;
-  color: #333;
-}
-
-
-
-/* --- Mobile View --- */
-@media (max-width: 768px) {
-  .auth-modal-container {
-    flex-direction: column;
-    width: 100%;
-    height: 90vh;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .auth-image {
-    width: 100%;
-    height: 35%;
-    position: relative;
-    order: 1;
-    z-index: 5;
-  }
-
-  .auth-fields {
-    width: 100%;
-    height: 60%;
-    position: relative;
-    order: 2;
-    padding: 24px;
-    background: #fff;
-    z-index: 1;
-    overflow-y: auto;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .cutout-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .image-overlay-text {
-    font-size: 1rem;
-    bottom: 12px;
-    left: 12px;
-  }
+        <div className="auth-image" ref={imageRef}>
+          <img src={isSignUp ? SignUpImage : SignInImage} alt="Creative background" className="cutout-img" />
+          <div className="image-ove
+rlay-text">
+            {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
