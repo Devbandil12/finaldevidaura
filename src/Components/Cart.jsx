@@ -39,6 +39,20 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
 useEffect(() => {
+  if (isBuyNow) {
+    document.body.style.overflow = "auto"; // or "unset"
+  } else {
+    document.body.style.overflow = ""; // restores normal behavior
+  }
+
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [isBuyNow]);
+
+
+
+useEffect(() => {
   if (isBuyNow) {
     const stored = localStorage.getItem("buyNowItem");
     try {
