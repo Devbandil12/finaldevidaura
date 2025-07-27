@@ -56,10 +56,10 @@ useEffect(() => {
 
 
   useEffect(() => {
-    if (!isBuyNow) {
-      getCartitems();
-    }
-  }, [isBuyNow, userdetails?.id]);
+  if (!isBuyNow && buyNowLoaded) {
+    getCartitems();
+  }
+}, [isBuyNow, userdetails?.id, buyNowLoaded]);
 
   useEffect(() => {
   if (!buyNowLoaded) return;
