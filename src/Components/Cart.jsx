@@ -79,13 +79,17 @@ useEffect(() => {
       setIsBuyNowActive(true);
     } catch (error) {
       console.error("Error parsing buyNowItem:", error);
+      setBuyNowCart([]);
+      setIsBuyNowActive(false);
+      localStorage.removeItem("buyNowItem");
     }
   } else {
-    // 🧹 Clear buyNowItem if not in buyNow mode
-    localStorage.removeItem("buyNowItem");
+    // 🚨 Always clear stale buyNow cart
+    setBuyNowCart([]);
     setIsBuyNowActive(false);
+    localStorage.removeItem("buyNowItem");
   }
-}, [isBuyNow]);
+}, [isBuyNow, searchParams]);
 
 
 
