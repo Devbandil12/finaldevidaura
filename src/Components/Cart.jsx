@@ -278,7 +278,6 @@ useEffect(() => {
 
   return (
     <>
-      <ToastContainer />
       <main className="main-container">
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
