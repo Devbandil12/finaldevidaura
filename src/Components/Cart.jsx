@@ -20,20 +20,33 @@ const ShoppingCart = () => {
   const { coupons, isCouponValid, loadAvailableCoupons } =
     useContext(CouponContext);
 
+
+
   // === Temp‐cart (Buy Now) state ===
-  const [buyNowCart, setBuyNowCart] = useState([]);
-  const [isBuyNowActive, setIsBuyNowActive] = useState(false);
+  // Synchronously read localStorage on first render:
+const stored = localStorage.getItem("buyNowItem");
+const initialTemp =  stored ? [JSON.parse(stored)] : [];
+
+// Initialize state *once* from that stored value:
+const [buyNowCart, setBuyNowCart] = useState(initialTemp);
+const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
+
 
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-  // === Load main cart on login, and temp cart once on mount ===
+
+
+ // === Load main cart on login, and temp cart once on mount ===
   useEffect(() => {
     if (userdetails?.id) {
       getCartitems();
       loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
     }
   }, [userdetails?.id]);
+
+
+
 
 
   // Hydrate temp cart from localStorage once
@@ -248,13 +261,13 @@ const ShoppingCart = () => {
   }, [activeCart, appliedCoupon, isCouponValid]);
 
   // Show loader if main cart is loading
-  if (!isBuyNowActive && cart.length === 0) {
-    return <Loader text="Loading cart..." />;
-  }
+ if (!isBuyNowActive && cart.length === 0) {
+ return <Loader text="Loading cart..." />;
+ }
+
 
   return (
     <>
-      <ToastContainer />
       <main className="main-container">
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
@@ -297,10 +310,10 @@ const ShoppingCart = () => {
                     </div>
                   </div>
                   <div className="procduct-shifting-buttons">
-                    <button onClick={() => removeFromCart(item, idx)}>
+                    <button className="remove" onClick={() => removeFromCart(item, idx)}>
                       Remove
                     </button>
-                    <button onClick={() => moveToWishlist(item)}>
+                    <button className="move-to-wishlist" onClick={() => moveToWishlist(item)}>
                       Move to Wishlist
                     </button>
                   </div>
@@ -329,7 +342,7 @@ const ShoppingCart = () => {
             </div>
 
             {/* Coupons (only main cart) */}
-            {!isBuyNowActive && (
+            
               <div className="cart-coupons">
                 <h4>Available Coupons</h4>
                 {coupons.length > 0 ? (
@@ -377,7 +390,7 @@ const ShoppingCart = () => {
                   <small>No coupons available right now</small>
                 )}
               </div>
-            )}
+            
 
             {/* Buttons */}
             <div className="cart-summary-button">
@@ -391,7 +404,7 @@ const ShoppingCart = () => {
                 </button>
               )}
               <button
-                id="checkout-button"
+                id="checkout-button" className="checkout" 
                 disabled={!itemsToRender.length}
                 onClick={handleCheckout}
               >
