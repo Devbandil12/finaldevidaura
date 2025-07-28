@@ -17,8 +17,14 @@ import Loader from "./Loader"; // Adjust path if needed
 const ShoppingCart = () => {
 
 useEffect(() => {
-  document.body.style.overflow = "unset"; // restore scroll
+  const prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = "unset";
+
+  return () => {
+    document.body.style.overflow = prevOverflow;
+  };
 }, []);
+
 
   const navigate = useNavigate();
   const [cartitems, setCartitems] = useState([]);
@@ -47,9 +53,9 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
 useEffect(() => {
-  if (isBuyNow) {
-    const stored = localStorage.getItem("buyNowItem");
-    setTimeout(() => {
+  const loadCart = async () => {
+    if (isBuyNow) {
+      const stored = localStorage.getItem("buyNowItem");
       try {
         setBuyNowCart(stored ? [JSON.parse(stored)] : []);
       } catch {
@@ -57,21 +63,14 @@ useEffect(() => {
         setBuyNowCart([]);
       }
       setBuyNowLoaded(true);
-    }, 100); // short delay to allow loader to show
-  } else {
-    setBuyNowLoaded(true); // for normal cart
-  }
+    } else {
+      await getCartitems();
+      setBuyNowLoaded(true);
+    }
+  };
+  loadCart();
 }, [isBuyNow]);
 
-
-
-
-
-  useEffect(() => {
-  if (!isBuyNow && buyNowLoaded && userdetails?.id) {
-    getCartitems();
-  }
-}, [isBuyNow, buyNowLoaded, userdetails?.id]);
 
 
 
