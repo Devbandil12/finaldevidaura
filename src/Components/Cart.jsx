@@ -15,12 +15,18 @@ import Loader from "./Loader"; // Adjust path if needed
 
 
 const ShoppingCart = () => {
+
+useEffect(() => {
+  document.body.style.overflow = "unset"; // restore scroll
+}, []);
+
   const navigate = useNavigate();
   const [cartitems, setCartitems] = useState([]);
   const [selectedCoupon, setSelectedCoupon] = useState(null);  // <--- Added coupon selection
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
-  const { cart, setCart, wishlist, setWishlist, getCartitems } =
+  const { cart, setCart, wishlist, setWishlist, getCartitems,buyNowCart,
+    buyNowLoaded, } =
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 const [searchParams] = useSearchParams();
@@ -42,17 +48,20 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
 
 
 useEffect(() => {
-  if (isBuyNow) {
-    const stored = localStorage.getItem("buyNowItem");
-    try {
-      setBuyNowCart(stored ? [JSON.parse(stored)] : []);
-    } catch {
-      console.error("Failed to parse buyNowItem");
-      setBuyNowCart([]);
-    }
-  }
-  // Always mark loaded so we don’t get stuck in the loading state
-  setBuyNowLoaded(true);
+  if (isBuyNow) {
+    const stored = localStorage.getItem("buyNowItem");
+    setTimeout(() => {
+      try {
+        setBuyNowCart(stored ? [JSON.parse(stored)] : []);
+      } catch {
+        console.error("Failed to parse buyNowItem");
+        setBuyNowCart([]);
+      }
+      setBuyNowLoaded(true);
+    }, 100); // short delay to allow loader to show
+  } else {
+    setBuyNowLoaded(true); // for normal cart
+  }
 }, [isBuyNow]);
 
 
@@ -60,16 +69,19 @@ useEffect(() => {
 
 
   useEffect(() => {
-  if (!isBuyNow && buyNowLoaded) {
+  if (!isBuyNow && buyNowLoaded && userdetails?.id) {
     getCartitems();
   }
-}, [isBuyNow, userdetails?.id, buyNowLoaded]);
+}, [isBuyNow, buyNowLoaded, userdetails?.id]);
+
+
 
   useEffect(() => {
-  if (!buyNowLoaded) return;
+  if (buyNowLoaded) {
+    setCartitems(isBuyNow ? buyNowCart : cart);
+  }
+}, [buyNowLoaded, isBuyNow, cart, buyNowCart]);
 
-  setCartitems(isBuyNow ? buyNowCart : cart);
-}, [cart, buyNowCart, isBuyNow, buyNowLoaded]);
 
 
 
@@ -140,6 +152,8 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
       setCart((prev) => prev.filter((item) => item.cartId !== tempCartItem.cartId));
     }
   };
+
+
 
   const moveToWishlist = async (prod) => {
     const product = prod?.product || {};
