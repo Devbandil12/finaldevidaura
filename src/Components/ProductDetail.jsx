@@ -56,7 +56,7 @@ const ProductDetail = ({
 
 
   const handleBuyNow = () => {
-    onAddToCart(full product, quantity, true);
+    onAddToCart(fullProduct, quantity, true);
 };
 
   const handleShare = async () => {
