@@ -24,6 +24,8 @@ import { CartContext } from "../contexts/CartContext";
 // import WheelOfFate from "../Components/WheelOfFate.jsx";
 import ProductDetail from "./ProductDetail";
 import { useNavigate } from "react-router-dom"; // ⬅ Add this
+import { useLocation } from "react-router-dom";
+
 
 // -------------------------------
 // Modal Component (Detailed Perfume Info)
@@ -206,6 +208,17 @@ const Products = () => {
   const { setCart, cart, wishlist, setWishlist } = useContext(CartContext);
   // Prevent background scrolling when modal is open.
 const navigate = useNavigate(); // ⬅ Add this near useState
+
+const location = useLocation();
+
+
+useEffect(() => {
+  // Reset scrolling on route change
+  document.body.style.overflow = "auto";
+  document.documentElement.style.overflow = "auto";
+}, [location.pathname]);
+
+
   useEffect(() => {
     if (modalProduct) {
       document.body.style.overflow = "hidden";
