@@ -20,35 +20,20 @@ const ShoppingCart = () => {
   const { coupons, isCouponValid, loadAvailableCoupons } =
     useContext(CouponContext);
 
-
-
   // === Temp‐cart (Buy Now) state ===
-  // Synchronously read localStorage on first render:
-const stored = localStorage.getItem("buyNowItem");
-const initialTemp =  stored ? [JSON.parse(stored)] : [];
-
-// Initialize state *once* from that stored value:
-const [buyNowCart, setBuyNowCart] = useState(initialTemp);
-const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
-
+  const [buyNowCart, setBuyNowCart] = useState([]);
+  const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   // === Load main cart on login, and temp cart once on mount ===
-  // Only fetch the main cart if we're NOT in Buy Now (temp) mode
-
-useEffect(() => {
-  if (!isBuyNowActive && userdetails?.id) {
-    getCartitems()
-  }
-  // coupons still load on login
-  if (userdetails?.id) {
-    loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-  }
-}, [isBuyNowActive, userdetails?.id]);
-
-
+  useEffect(() => {
+    if (userdetails?.id) {
+      getCartitems();
+      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+    }
+  }, [userdetails?.id]);
 
   // Hydrate temp cart from localStorage once
   useEffect(() => {
@@ -262,13 +247,13 @@ useEffect(() => {
   }, [activeCart, appliedCoupon, isCouponValid]);
 
   // Show loader if main cart is loading
- if (!isBuyNowActive && cart.length === 0) {
- return <Loader text="Loading cart..." />;
- }
-
+  if (!isBuyNowActive && cart.length === 0) {
+    return <Loader text="Loading cart..." />;
+  }
 
   return (
     <>
+      <ToastContainer />
       <main className="main-container">
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
@@ -311,10 +296,10 @@ useEffect(() => {
                     </div>
                   </div>
                   <div className="procduct-shifting-buttons">
-                    <button className="remove" onClick={() => removeFromCart(item, idx)}>
+                    <button onClick={() => removeFromCart(item, idx)}>
                       Remove
                     </button>
-                    <button className="move-to-wishlist" onClick={() => moveToWishlist(item)}>
+                    <button onClick={() => moveToWishlist(item)}>
                       Move to Wishlist
                     </button>
                   </div>
@@ -343,7 +328,7 @@ useEffect(() => {
             </div>
 
             {/* Coupons (only main cart) */}
-            
+            {!isBuyNowActive && (
               <div className="cart-coupons">
                 <h4>Available Coupons</h4>
                 {coupons.length > 0 ? (
@@ -391,7 +376,7 @@ useEffect(() => {
                   <small>No coupons available right now</small>
                 )}
               </div>
-            
+            )}
 
             {/* Buttons */}
             <div className="cart-summary-button">
@@ -405,7 +390,7 @@ useEffect(() => {
                 </button>
               )}
               <button
-                id="checkout-button" className="checkout" 
+                id="checkout-button"
                 disabled={!itemsToRender.length}
                 onClick={handleCheckout}
               >
