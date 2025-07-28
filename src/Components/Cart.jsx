@@ -58,7 +58,6 @@ useEffect(() => {
         setBuyNowCart([]);
       }
       
-localStorage.removeItem("buyNowItem");
 
     } else {
       await getCartitems();
