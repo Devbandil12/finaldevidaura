@@ -21,19 +21,32 @@ const ShoppingCart = () => {
     useContext(CouponContext);
 
   // === Temp‐cart (Buy Now) state ===
-  const [buyNowCart, setBuyNowCart] = useState([]);
-  const [isBuyNowActive, setIsBuyNowActive] = useState(false);
+  // Synchronously read localStorage on first render:
+const stored = localStorage.getItem("buyNowItem");
+const initialTemp = stored ? [JSON.parse(stored)] : [];
+
+// Initialize state *once* from that stored value:
+const [buyNowCart, setBuyNowCart] = useState(initialTemp);
+const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
+
 
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   // === Load main cart on login, and temp cart once on mount ===
-  useEffect(() => {
-    if (userdetails?.id) {
-      getCartitems();
-      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-    }
-  }, [userdetails?.id]);
+  // Only fetch the main cart if we're NOT in Buy Now (temp) mode
+
+useEffect(() => {
+  if (!isBuyNowActive && userdetails?.id) {
+    getCartitems();
+  }
+  // We still always load coupons on login, even in temp‑cart mode:
+  if (userdetails?.id) {
+    loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+  }
+}, [isBuyNowActive, userdetails?.id]);
+
+
 
   // Hydrate temp cart from localStorage once
   useEffect(() => {
