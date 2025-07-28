@@ -19,14 +19,13 @@ const ShoppingCart = () => {
     useContext(CartContext);
   const { coupons, isCouponValid, loadAvailableCoupons } =
     useContext(CouponContext);
-const location = useLocation();
-const cameFromBuyNow = location.state?.buyNow === true;
+
 
 
   // === Temp‐cart (Buy Now) state ===
   // Synchronously read localStorage on first render:
 const stored = localStorage.getItem("buyNowItem");
-const initialTemp = cameFromBuyNow && stored ? [JSON.parse(stored)] : [];
+const initialTemp =  stored ? [JSON.parse(stored)] : [];
 
 // Initialize state *once* from that stored value:
 const [buyNowCart, setBuyNowCart] = useState(initialTemp);
