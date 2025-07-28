@@ -56,9 +56,22 @@ const ProductDetail = ({
 
 
   const handleBuyNow = () => {
-   // delegate to the shared add-to-cart logic with the buyNow flag
-   onAddToCart(fullProduct, quantity, true);
- };
+    // 1) build the single-item temp cart
+    const tempCartItem = {
+      product: fullProduct,
+      quantity,
+      cartId: `temp-${fullProduct.id}`,
+    };
+
+    // 2) persist it
+    localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
+
+    // 3) close the modal
+    onClose();
+
+    // 4) navigate to /cart, replacing history entry
+    navigate("/cart", { replace: true });
+  };
 
   const handleShare = async () => {
     const shareData = {
