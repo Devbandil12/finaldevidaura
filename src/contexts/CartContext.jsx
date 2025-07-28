@@ -17,9 +17,6 @@ export const CartProvider = ({ children }) => {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [selectedItems, setSelectedItems] = useState([]);
   const { userdetails } = useContext(UserContext);
-const [buyNowCart, setBuyNowCart] = useState([]);
-
-const [buyNowLoaded, setBuyNowLoaded] = useState(false);
 
 
   // You could also add logic here for loading/saving cart data from localStorage
@@ -64,25 +61,13 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);
       console.log(error);
     }
   };
+
+
   useEffect(() => {
   if (userdetails) {
     getCartitems();
     getwishlist();
   }
-
-  // ✅ Load Buy Now item from localStorage (even if user is not logged in)
-  const storedItem = localStorage.getItem("buyNowItem");
-  if (storedItem) {
-    try {
-      const parsedItem = JSON.parse(storedItem);
-      setBuyNowCart([parsedItem]); // Wrap in array since it's a cart format
-    } catch (error) {
-      console.error("Error parsing buyNowItem from localStorage:", error);
-    }
-  }
-
-  // ✅ Always mark buyNow as loaded
-  setBuyNowLoaded(true);
 }, [userdetails]);
 
 
@@ -101,10 +86,6 @@ const [buyNowLoaded, setBuyNowLoaded] = useState(false);
         setSelectedItems,
         getwishlist,
         getCartitems,
-        buyNowCart,  
-        setBuyNowCart,
-        buyNowLoaded,
-
       }}
     >
       {children}
