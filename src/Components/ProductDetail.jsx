@@ -66,8 +66,6 @@ const ProductDetail = ({
     // 2) persist it
     localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
 
-    // 3) close the modal
-    onClose();
 
     // 4) navigate to /cart, replacing history entry
     navigate("/cart", { state: { buyNow: true }, replace: true });
