@@ -16,14 +16,7 @@ import Loader from "./Loader"; // Adjust path if needed
 
 const ShoppingCart = () => {
 
-useEffect(() => {
-  const prevOverflow = document.body.style.overflow;
-  document.body.style.overflow = "unset";
 
-  return () => {
-    document.body.style.overflow = prevOverflow;
-  };
-}, []);
 
 
   const navigate = useNavigate();
