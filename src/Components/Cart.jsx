@@ -19,7 +19,7 @@ const ShoppingCart = () => {
     useContext(CartContext);
   const { coupons, isCouponValid, loadAvailableCoupons } =
     useContext(CouponContext);
-const [cartLoading, setCartLoading] = useState(true);
+
 
   // === Temp‐cart (Buy Now) state ===
   // Synchronously read localStorage on first render:
@@ -39,18 +39,8 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
 
 useEffect(() => {
   if (!isBuyNowActive && userdetails?.id) {
-    // we’re about to fetch the real cart
-    setCartLoading(true);
-
-    // fetch cart, then always turn loading off
-    getCartitems().finally(() => {
-      setCartLoading(false);
-    });
-  } else {
-    // no fetch in temp‑mode, or no user—stop loading immediately
-    setCartLoading(false);
+    getCartitems()
   }
-
   // coupons still load on login
   if (userdetails?.id) {
     loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
@@ -271,9 +261,9 @@ useEffect(() => {
   }, [activeCart, appliedCoupon, isCouponValid]);
 
   // Show loader if main cart is loading
-  if (cartLoading) {
-  return <Loader text="Loading cart..." />;
-}
+ if (!isBuyNowActive && cart.length === 0) {
+ return <Loader text="Loading cart..." />;
+ }
 
 
   return (
