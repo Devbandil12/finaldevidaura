@@ -77,10 +77,17 @@ if (quantity === 0) {
 
   // 1. If it's Buy Now – set in localStorage & skip DB
   if (isBuyNow) {
+
+document.body.style.overflow = "auto";
+document.documentElement.style.overflow = "auto";
+
     localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
+
     navigate("/cart?buyNow=true");
     return;
   }
+
+
 
   // 2. Normal cart logic
   setCart((prev) => [...prev, tempCartItem]);
