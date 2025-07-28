@@ -25,8 +25,7 @@ useEffect(() => {
   const [selectedCoupon, setSelectedCoupon] = useState(null);  // <--- Added coupon selection
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
-  const { cart, setCart, wishlist, setWishlist, getCartitems,buyNowCart,
-    buyNowLoaded, } =
+  const { cart, setCart, wishlist, setWishlist, getCartitems, } =
     useContext(CartContext);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 const [searchParams] = useSearchParams();
