@@ -68,7 +68,7 @@ const ProductDetail = ({
 
 
     // 4) navigate to /cart, replacing history entry
-    navigate("/cart", { replace: true };
+    navigate("/cart", { replace: true });
 
   };
 
