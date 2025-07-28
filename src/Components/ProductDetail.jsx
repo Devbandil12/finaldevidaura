@@ -56,19 +56,7 @@ const ProductDetail = ({
 
 
   const handleBuyNow = () => {
-    // 1) build the single-item temp cart
-    const tempCartItem = {
-      product: fullProduct,
-      quantity,
-      cartId: `temp-${fullProduct.id}`,
-    };
-
-    // 2) persist it
-    localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
-
-
-    // 4) navigate to /cart, replacing history entry
-    navigate("/cart", { replace: true });
+    onAddToCart(full product , quantity , true
 
   };
 
