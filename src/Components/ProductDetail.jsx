@@ -70,7 +70,8 @@ const ProductDetail = ({
     onClose();
 
     // 4) navigate to /cart, replacing history entry
-    navigate("/cart", { replace: true });
+    navigate("/cart", { state: { buyNow: true }, replace: true });
+
   };
 
   const handleShare = async () => {
