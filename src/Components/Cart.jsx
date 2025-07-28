@@ -20,7 +20,7 @@ const ShoppingCart = () => {
 
 
   const navigate = useNavigate();
-  const [cartitems, setCartitems] = useState([]);
+  
   const [selectedCoupon, setSelectedCoupon] = useState(null);  // <--- Added coupon selection
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
@@ -32,7 +32,9 @@ const isBuyNow = searchParams.get("buyNow") === "true";
 const buyNowItem = JSON.parse(localStorage.getItem("buyNowItem"));
 
 const [buyNowCart, setBuyNowCart] = useState([]);
-const [buyNowLoaded, setBuyNowLoaded] = useState(false);  // Add this
+const [isBuyNowActive, setIsBuyNowActive] = useState(false);
+
+
 
 
 
@@ -55,10 +57,10 @@ useEffect(() => {
         console.error("Failed to parse buyNowItem");
         setBuyNowCart([]);
       }
-      setBuyNowLoaded(true);
+      
     } else {
       await getCartitems();
-      setBuyNowLoaded(true);
+      
     }
   };
   loadCart();
@@ -66,15 +68,26 @@ useEffect(() => {
 
 
 
+useEffect(() => {
+  const storedItem = localStorage.getItem("buyNowItem");
+  if (storedItem) {
+    try {
+      const parsedItem = JSON.parse(storedItem);
+      setBuyNowCart([parsedItem]); // wrap in array to mimic normal cart
+      setIsBuyNowActive(true);
+    } catch (error) {
+      console.error("Error parsing buyNowItem:", error);
+    }
+  }
+}, []);
 
-  useEffect(() => {
-  if (buyNowLoaded) {
-    setCartitems(isBuyNow ? buyNowCart : cart);
-  }
-}, [buyNowLoaded, isBuyNow, cart, buyNowCart]);
+
+
+  
 
 
 
+const itemsToRender = isBuyNowActive ? buyNowCart : cart;
 
 
   // Checkout Handler
@@ -345,9 +358,10 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
       });
 
 
-if (isBuyNow && !buyNowLoaded) {
-  return <Loader text="Loading your cart..." />;
+if (isBuyNowActive && buyNowCart.length === 0) {
+  return <Loader text="Loading Buy Now cart..." />;
 }
+
 
 
   return (
@@ -359,8 +373,9 @@ if (isBuyNow && !buyNowLoaded) {
           
 <div className="cart-items-box">
        
-  {cartitems && cartitems.length > 0 ? (
-           cartitems.map((item, idx) => (
+  {itemsToRender && itemsToRender.length > 0 ? (
+  itemsToRender.map((item, idx) => (
+
                 <div key={idx} className="cart-item">
                   <div className="product-content">
                     <img src={item.product.imageurl} alt={item.product.name} />
