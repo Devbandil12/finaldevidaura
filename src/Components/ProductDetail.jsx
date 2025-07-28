@@ -6,6 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // outline
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
 
+import { useLocation } from "react-router-dom";
+
+
 
 const ProductDetail = ({
   product,
@@ -23,7 +26,16 @@ const ProductDetail = ({
 
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
+
   const navigate = useNavigate();
+
+const location = useLocation();
+
+useEffect(() => {
+  // Reset scrolling on route change
+  document.body.style.overflow = "auto";
+  document.documentElement.style.overflow = "auto";
+}, [location.pathname]);
 
   const images = Array.isArray(fullProduct.images) && fullProduct.images.length > 0
     ? fullProduct.images
