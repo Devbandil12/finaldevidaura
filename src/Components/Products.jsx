@@ -83,7 +83,7 @@ document.documentElement.style.overflow = "auto";
 
     localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
 
-    navigate("/cart?buyNow=true");
+    navigate("/cart", { replace: true });
     return;
   }
 
