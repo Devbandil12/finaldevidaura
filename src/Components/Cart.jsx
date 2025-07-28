@@ -71,16 +71,22 @@ useEffect(() => {
 
 useEffect(() => {
   const storedItem = localStorage.getItem("buyNowItem");
-  if (storedItem) {
+
+  if (isBuyNow && storedItem) {
     try {
       const parsedItem = JSON.parse(storedItem);
-      setBuyNowCart([parsedItem]); // wrap in array to mimic normal cart
+      setBuyNowCart([parsedItem]);
       setIsBuyNowActive(true);
     } catch (error) {
       console.error("Error parsing buyNowItem:", error);
     }
+  } else {
+    // 🧹 Clear buyNowItem if not in buyNow mode
+    localStorage.removeItem("buyNowItem");
+    setIsBuyNowActive(false);
   }
-}, []);
+}, [isBuyNow]);
+
 
 
 
@@ -245,20 +251,24 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
     } catch { }
   };
 
-  const totalOriginal = cart?.reduce(
-    (acc, item) => acc + (item?.product?.oprice || 0) * (item?.quantity || 0),
-    0
-  );
-  const totalDiscounted = cart?.reduce(
-    (acc, item) =>
-      acc +
-      Math.floor(
-        (item?.product?.oprice || 0) -
+  const activeCart = isBuyNowActive ? buyNowCart : cart;
+
+const totalOriginal = activeCart?.reduce(
+  (acc, item) => acc + (item?.product?.oprice || 0) * (item?.quantity || 0),
+  0
+);
+
+const totalDiscounted = activeCart?.reduce(
+  (acc, item) =>
+    acc +
+    Math.floor(
+      (item?.product?.oprice || 0) -
         ((item?.product?.discount || 0) / 100) * (item?.product?.oprice || 0)
-      ) *
+    ) *
       (item?.quantity || 0),
-    0
-  );
+  0
+);
+
 
   let finalPrice = totalDiscounted;
   if (appliedCoupon) {
