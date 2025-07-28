@@ -358,8 +358,8 @@ if (isBuyNow) localStorage.removeItem("buyNowItem");
       });
 
 
-if (isBuyNowActive && buyNowCart.length === 0) {
-  return <Loader text="Loading Buy Now cart..." />;
+if (!isBuyNowActive && (!cart || cart.length === 0)) {
+  return <Loader text="Loading cart..." />;
 }
 
 
@@ -490,11 +490,12 @@ if (isBuyNowActive && buyNowCart.length === 0) {
       Clear Cart
     </button>
   )}
-              <button
+             <button
   id="checkout-button"
-  disabled={!cartitems?.length}
+  disabled={!itemsToRender?.length}
   onClick={handleCheckout}
 >
+
   {isBuyNow ? "Buy Now" : "Checkout"}
 </button>
 
