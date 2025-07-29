@@ -71,17 +71,17 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
  }, [isBuyNowActive, userdetails?.id]);
 
 
+// Clear temp‐cart as soon as we navigate *off* /cart or /checkout
 useEffect(() => {
-  return () => {
-    // Only clear temp‐cart when leaving *completely*—
-    // not when going from /cart → /checkout
-    const next = window.location.pathname;
-    if (!["/cart", "/checkout"].includes(next)) {
-      localStorage.removeItem("buyNowItem");
-      localStorage.removeItem("buyNowActive");
-    }
-  };
+  const keepPaths = ["/cart", "/checkout"];
+  if (!keepPaths.includes(location.pathname)) {
+    localStorage.removeItem("buyNowItem");
+    localStorage.removeItem("buyNowActive");
+    // also sync state so you don’t briefly flash temp‐cart:
+    setIsBuyNowActive(false);
+  }
 }, [location.pathname]);
+
 
 
 
