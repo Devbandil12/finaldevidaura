@@ -122,10 +122,7 @@ useEffect(() => {
 
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
-    if (isBuyNowActive) {
-      localStorage.removeItem("buyNowItem");
-localStorage.removeItem("buyNowActive");
-    }
+    
     navigate("/checkout");
   };
 
