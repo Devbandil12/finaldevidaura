@@ -36,29 +36,42 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-  // Hydrate temp cart only when navigated via Buy Now
+  // On mount, only hydrate if the history entry really is Buy Now
   useEffect(() => {
-  const raw = localStorage.getItem("buyNowItem");
-  if (raw) {
-    try {
-      const item = JSON.parse(raw);
-      setBuyNowCart([item]);
-      setIsBuyNowActive(true);
-    } catch {
-      console.warn("Invalid buyNowItem in storage");
-      localStorage.removeItem("buyNowItem");
+    // React Router state on fresh navigate, or fallback to history.state on reload
+    const navState = location.state?.buyNow;
+    const histState = window.history.state?.buyNow;
+    if (navState || histState) {
+      const raw = localStorage.getItem("buyNowItem");
+      if (raw) {
+        try {
+          const item = JSON.parse(raw);
+          setBuyNowCart([item]);
+          setIsBuyNowActive(true);
+        } catch {
+          console.warn("Failed to parse buyNowItem");
+        }
+      }
     }
-  }
-}, []);
+  }, []); // run once
 
-useEffect(() => {
-  // whenever the route changes...
-  if (!["/cart", "/checkout"].includes(location.pathname)) {
-    localStorage.removeItem("buyNowItem");
-    setIsBuyNowActive(false);
-  }
-}, [location.pathname]);
 
+  // 3) Whenever you leave BOTH /cart and /checkout, remove the temp payload
+  useEffect(() => {
+    if (!["/cart", "/checkout"].includes(location.pathname)) {
+      localStorage.removeItem("buyNowItem");
+      setIsBuyNowActive(false);
+    }
+  }, [location.pathname]);
+
+  // 4) History‑injection to ensure Back never closes the tab
+  useEffect(() => {
+    if (window.history.length <= 1 && isBuyNowActive) {
+      // first add a products entry, then re‑add cart with our buyNow flag
+      window.history.pushState({}, "", "/products");
+      window.history.pushState({ buyNow: true }, "", "/cart");
+    }
+  }, [isBuyNowActive]);
 
 
   // Ensure stale buyNowItem is cleared once temp mode turns off
