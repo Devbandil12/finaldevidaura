@@ -73,6 +73,7 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
   useEffect(() => {
     if (!isBuyNowActive) {
       localStorage.removeItem("buyNowItem");
+localStorage.removeItem("buyNowActive");
     }
   }, [isBuyNowActive]);
 
@@ -85,7 +86,7 @@ useEffect(() => {
       localStorage.removeItem("buyNowActive");
     }
   };
-}, []);
+}, [location.pathname]);
 
 
 
