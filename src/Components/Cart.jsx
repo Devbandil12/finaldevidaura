@@ -37,22 +37,6 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
 
 
- // === Load main cart on login, and temp useEffect(() => {
-  // 1️⃣ Only load the *main* cart if we're NOT in temp‐cart mode:
-useEffect(() => {
-  if (!isBuyNowActive && userdetails?.id) {
-    getCartitems();
-  }
-  // 2️⃣ Coupons still always load:
-  if (userdetails?.id) {
-    loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-  }
-}, [isBuyNowActive, userdetails?.id]);
-
-
-
-
-
 
   // Hydrate temp cart from localStorage once
   useEffect(() => {
