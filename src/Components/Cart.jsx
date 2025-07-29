@@ -66,14 +66,34 @@ useEffect(() => {
 }, [location.pathname]);
 
 
-  // After a hard refresh with no back entry, add a dummy state so Back won't close the tab
+  // Seed a safe back target after a hard refresh (robust across devices)
 useEffect(() => {
   const nav = performance.getEntriesByType("navigation")[0];
-  if (nav && nav.type === "reload" && window.history.length <= 1) {
-    // Push a no-op state for the same URL
-    window.history.pushState({ __dummy__: true }, "");
+  const reloaded = nav && nav.type === "reload";
+
+  // If this tab has no meaningful back entry, create one.
+  if ((reloaded || document.referrer === "") && window.history.length <= 1) {
+    // 1) replace current entry with a safe route
+    window.history.replaceState({ __seed__: true }, "", "/products");
+    // 2) push the current cart route back on top
+    window.history.pushState({ __cart__: true }, "", "/cart");
   }
 }, []);
+
+
+// Fallback: intercept back to avoid tab-close when history is thin
+useEffect(() => {
+  const onPop = (e) => {
+    // If history is too short and we’re still on /cart, send user to a safe page
+    if (window.history.length <= 1 && window.location.pathname === "/cart") {
+      e.preventDefault?.();
+      navigate("/products", { replace: true });
+    }
+  };
+  window.addEventListener("popstate", onPop);
+  return () => window.removeEventListener("popstate", onPop);
+}, [navigate]);
+
 
 
   useEffect(() => {
