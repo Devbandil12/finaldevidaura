@@ -56,8 +56,19 @@ const ProductDetail = ({
 
 
   const handleBuyNow = () => {
-    onAddToCart(fullProduct, quantity, true);
+  const tempCartItem = {
+    product: fullProduct,
+    quantity,
+    cartId: `temp-${fullProduct.id}`,
+  };
+
+  localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
+  localStorage.setItem("fromBuyNow", "true"); // ✅ Flag it as Buy Now mode
+
+  onClose();
+  navigate("/cart", { replace: true }); // ✅ Replace history to avoid back-flicker
 };
+
 
   const handleShare = async () => {
     const shareData = {
