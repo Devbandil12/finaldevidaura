@@ -32,59 +32,78 @@ const location = useLocation();
 const [buyNowCart, setBuyNowCart] = useState([]);
 const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
+const [cartFetched, setCartFetched] = useState(false);
+
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-  // On mount, only hydrate if the history entry really is Buy Now
+  // Hydrate temp cart on mount (refresh-safe, same tab)
+useEffect(() => {
+  const raw = sessionStorage.getItem("buyNowItem");
+  if (raw) {
+    try {
+      const item = JSON.parse(raw);
+      setBuyNowCart([item]);
+      setIsBuyNowActive(true);
+    } catch {
+      console.warn("Invalid buyNowItem in sessionStorage");
+      sessionStorage.removeItem("buyNowItem");
+    }
+  } else {
+    setIsBuyNowActive(false);
+  }
+}, []);
+
+
+
+  // Clear temp cart when leaving both /cart and /checkout
+useEffect(() => {
+  if (!["/cart", "/checkout"].includes(location.pathname)) {
+    sessionStorage.removeItem("buyNowItem");
+    setIsBuyNowActive(false);
+  }
+}, [location.pathname]);
+
+
+  // After a hard refresh with no back entry, add a dummy state so Back won't close the tab
+useEffect(() => {
+  const nav = performance.getEntriesByType("navigation")[0];
+  if (nav && nav.type === "reload" && window.history.length <= 1) {
+    // Push a no-op state for the same URL
+    window.history.pushState({ __dummy__: true }, "");
+  }
+}, []);
+
+
   useEffect(() => {
-    // React Router state on fresh navigate, or fallback to history.state on reload
-    const navState = location.state?.buyNow;
-    const histState = window.history.state?.buyNow;
-    if (navState || histState) {
-      const raw = localStorage.getItem("buyNowItem");
-      if (raw) {
-        try {
-          const item = JSON.parse(raw);
-          setBuyNowCart([item]);
-          setIsBuyNowActive(true);
-        } catch {
-          console.warn("Failed to parse buyNowItem");
-        }
+  let cancelled = false;
+
+  const run = async () => {
+    // Always try to load coupons for the user
+    if (userdetails?.id) {
+      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+    }
+
+    // Fetch main cart only when NOT in Buy Now mode
+    if (!isBuyNowActive && userdetails?.id) {
+      try {
+        await getCartitems();
+      } finally {
+        if (!cancelled) setCartFetched(true);
       }
+    } else {
+      // In Buy Now mode (or no user), we consider the cart "fetched"
+      if (!cancelled) setCartFetched(true);
     }
-  }, []); // run once
+  };
 
+  // reset fetched while dependencies change
+  setCartFetched(false);
+  run();
 
-  // 3) Whenever you leave BOTH /cart and /checkout, remove the temp payload
-  useEffect(() => {
-    if (!["/cart", "/checkout"].includes(location.pathname)) {
-      localStorage.removeItem("buyNowItem");
-      setIsBuyNowActive(false);
-    }
-  }, [location.pathname]);
-
-  // 4) History‑injection to ensure Back never closes the tab
-  useEffect(() => {
-    if (window.history.length <= 1 && isBuyNowActive) {
-      // first add a products entry, then re‑add cart with our buyNow flag
-      window.history.pushState({}, "", "/products");
-      window.history.pushState({ buyNow: true }, "", "/cart");
-    }
-  }, [isBuyNowActive]);
-
-
-  // Ensure stale buyNowItem is cleared once temp mode turns off
-  useEffect(() => {
-   // Only fetch the *main* cart when NOT in Buy Now mode:
-   if (!isBuyNowActive && userdetails?.id) {
-     getCartitems();
-   }
-   // coupons still always load:
-   if (userdetails?.id) {
-     loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-   }
- }, [isBuyNowActive, userdetails?.id]);
+  return () => { cancelled = true; };
+}, [isBuyNowActive, userdetails?.id]);
 
 
 
@@ -276,9 +295,10 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
   }, [activeCart, appliedCoupon, isCouponValid]);
 
   // Show loader if main cart is loading
- if (!isBuyNowActive && cart.length === 0) {
- return <Loader text="Loading cart..." />;
- }
+ if (!isBuyNowActive && !cartFetched) {
+  return <Loader text="Loading cart..." />;
+}
+
 
 
   return (
