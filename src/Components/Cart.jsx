@@ -83,16 +83,6 @@ useEffect(() => {
 
 
 
-// ② Whenever we turn OFF temp mode internally, also clear the flag:
-useEffect(() => {
-  if (!isBuyNowActive) {
-    localStorage.removeItem("buyNowItem");
-    localStorage.removeItem("buyNowActive");
-  }
-}, [isBuyNowActive]);
-
-
-
 
   // Choose which array and setter to use
   const itemsToRender = isBuyNowActive ? buyNowCart : cart;
