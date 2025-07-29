@@ -65,7 +65,7 @@ const ProductDetail = ({
  // Store payload only in sessionStorage (persists through refresh, same tab)
   sessionStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
   
-  navigate("/cart"); 
+  navigate("/cart?mode=buynow"); 
   onClose();
 };
 
