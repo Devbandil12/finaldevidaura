@@ -11,6 +11,11 @@ import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import Loader from "./Loader";
 
+import { useLocation } from "react-router-dom";
+
+
+
+
 const ShoppingCart = () => {
   const navigate = useNavigate();
   const { products } = useContext(ProductContext);
@@ -20,17 +25,12 @@ const ShoppingCart = () => {
   const { coupons, isCouponValid, loadAvailableCoupons } =
     useContext(CouponContext);
 
+const location = useLocation();
 
-
-  // === Temp‐cart (Buy Now) state ===
-  // Synchronously read localStorage on first render:
-const stored = localStorage.getItem("buyNowItem");
-const initialTemp =  stored ? [JSON.parse(stored)] : [];
 
 // Initialize state *once* from that stored value:
-const [buyNowCart, setBuyNowCart] = useState(initialTemp);
-const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
-
+const [buyNowCart, setBuyNowCart] = useState([]);
+const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -51,19 +51,23 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
 
   // Hydrate temp cart from localStorage once
   useEffect(() => {
-    const stored = localStorage.getItem("buyNowItem");
-    if (stored) {
-      try {
-        setBuyNowCart([JSON.parse(stored)]);
-        setIsBuyNowActive(true);
-      } catch {
-        console.error("Failed to parse buyNowItem");
-        setBuyNowCart([]);
-        setIsBuyNowActive(false);
-        localStorage.removeItem("buyNowItem");
-      }
+  const active = localStorage.getItem("buyNowActive") === "true";
+  const item = localStorage.getItem("buyNowItem");
+  if (active && item) {
+    try {
+      setBuyNowCart([JSON.parse(item)]);
+      setIsBuyNowActive(true);
+    } catch (e) {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
+      setBuyNowCart([]);
+      setIsBuyNowActive(false);
     }
-  }, []);
+  } else {
+    setIsBuyNowActive(false);
+  }
+}, []);
+
 
   // Ensure stale buyNowItem is cleared once temp mode turns off
   useEffect(() => {
@@ -71,6 +75,19 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(initialTemp.length > 0);
       localStorage.removeItem("buyNowItem");
     }
   }, [isBuyNowActive]);
+
+
+useEffect(() => {
+  return () => {
+    // cleanup when navigating away from /cart
+    if (location.pathname !== "/cart") {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
+    }
+  };
+}, []);
+
+
 
   // Choose which array and setter to use
   const itemsToRender = isBuyNowActive ? buyNowCart : cart;
