@@ -64,7 +64,7 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
     } catch {
       localStorage.removeItem("buyNowItem");
       localStorage.removeItem("buyNowActive");
-      setBuyNowCart([]);
+      
       setIsBuyNowActive(false);
     }
   } else {
@@ -95,6 +95,17 @@ useEffect(() => {
     }
   };
 }, [location.pathname]);
+
+
+
+// ② Whenever we turn OFF temp mode internally, also clear the flag:
+useEffect(() => {
+  if (!isBuyNowActive) {
+    localStorage.removeItem("buyNowItem");
+    localStorage.removeItem("buyNowActive");
+  }
+}, [isBuyNowActive]);
+
 
 
 
