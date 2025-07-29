@@ -66,7 +66,7 @@ const ProductDetail = ({
 
 
   onClose();
-  navigate("/cart", { state: { buyNow: true } }); ✅ Replace history to avoid back-flicker
+  navigate("/cart", { state: { buyNow: true } }); // ✅ Replace history to avoid back-flicker
 };
 
 
