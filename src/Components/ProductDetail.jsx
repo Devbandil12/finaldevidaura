@@ -63,10 +63,10 @@ const ProductDetail = ({
   };
 
   localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
-localStorage.setItem("buyNowActive", "true");
+
 
   onClose();
-  navigate("/cart", { replace: true }); // ✅ Replace history to avoid back-flicker
+  navigate("/cart", { state: { buyNow: true } }); ✅ Replace history to avoid back-flicker
 };
 
 
