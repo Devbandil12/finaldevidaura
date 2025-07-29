@@ -38,21 +38,27 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
   // Hydrate temp cart only when navigated via Buy Now
   useEffect(() => {
-    if (location.state?.buyNow) {
-      const raw = localStorage.getItem("buyNowItem");
-      if (raw) {
-        try {
-          const item = JSON.parse(raw);
-          setBuyNowCart([item]);
-          setIsBuyNowActive(true);
-        } catch {
-          console.warn("Invalid buyNowItem in storage");
-        }
-      }
-      // Clear immediately so it doesn’t stick on future loads
+  const raw = localStorage.getItem("buyNowItem");
+  if (raw) {
+    try {
+      const item = JSON.parse(raw);
+      setBuyNowCart([item]);
+      setIsBuyNowActive(true);
+    } catch {
+      console.warn("Invalid buyNowItem in storage");
       localStorage.removeItem("buyNowItem");
     }
-  }, []); // run once on mount
+  }
+}, []);
+
+useEffect(() => {
+  // whenever the route changes...
+  if (!["/cart", "/checkout"].includes(location.pathname)) {
+    localStorage.removeItem("buyNowItem");
+    setIsBuyNowActive(false);
+  }
+}, [location.pathname]);
+
 
 
   // Ensure stale buyNowItem is cleared once temp mode turns off
