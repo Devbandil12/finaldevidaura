@@ -37,13 +37,17 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
 
 
- // === Load main cart on login, and temp cart once on mount ===
-  useEffect(() => {
-    if (userdetails?.id) {
-      getCartitems();
-      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-    }
-  }, [userdetails?.id]);
+ // === Load main cart on login, and temp useEffect(() => {
+  // 1️⃣ Only load the *main* cart if we're NOT in temp‐cart mode:
+  if (!isBuyNowActive && userdetails?.id) {
+    getCartitems();
+  }
+  // 2️⃣ Coupons still always load:
+  if (userdetails?.id) {
+    loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+  }
+}, [isBuyNowActive, userdetails?.id]);
+
 
 
 
@@ -57,7 +61,7 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
     try {
       setBuyNowCart([JSON.parse(item)]);
       setIsBuyNowActive(true);
-    } catch (e) {
+    } catch {
       localStorage.removeItem("buyNowItem");
       localStorage.removeItem("buyNowActive");
       setBuyNowCart([]);
