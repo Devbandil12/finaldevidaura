@@ -36,26 +36,23 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-
-
-  // Hydrate temp cart from localStorage once
+  // Hydrate temp cart only when navigated via Buy Now
   useEffect(() => {
-  const active = localStorage.getItem("buyNowActive") === "true";
-  const item = localStorage.getItem("buyNowItem");
-  if (active && item) {
-    try {
-      setBuyNowCart([JSON.parse(item)]);
-      setIsBuyNowActive(true);
-    } catch {
+    if (location.state?.buyNow) {
+      const raw = localStorage.getItem("buyNowItem");
+      if (raw) {
+        try {
+          const item = JSON.parse(raw);
+          setBuyNowCart([item]);
+          setIsBuyNowActive(true);
+        } catch {
+          console.warn("Invalid buyNowItem in storage");
+        }
+      }
+      // Clear immediately so it doesn’t stick on future loads
       localStorage.removeItem("buyNowItem");
-      localStorage.removeItem("buyNowActive");
-      
-      setIsBuyNowActive(false);
     }
-  } else {
-    setIsBuyNowActive(false);
-  }
-}, []);
+  }, []); // run once on mount
 
 
   // Ensure stale buyNowItem is cleared once temp mode turns off
@@ -69,20 +66,6 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
    }
  }, [isBuyNowActive, userdetails?.id]);
-
-
-// Clear temp‐cart as soon as we navigate *off* /cart or /checkout
-useEffect(() => {
-  const keepPaths = ["/cart", "/checkout"];
-  if (!keepPaths.includes(location.pathname)) {
-    localStorage.removeItem("buyNowItem");
-    localStorage.removeItem("buyNowActive");
-    // also sync state so you don’t briefly flash temp‐cart:
-    setIsBuyNowActive(false);
-  }
-}, [location.pathname]);
-
-
 
 
 
