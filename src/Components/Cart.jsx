@@ -137,27 +137,7 @@ useEffect(() => {
 
 
 
-function DebugBar({ isBuyNowActive, buyNowCart, cart, cartFetched }) {
-  const hasSession = !!sessionStorage.getItem("buyNowItem");
-  const nav = performance.getEntriesByType("navigation")[0];
-  const navType = nav ? nav.type : "unknown";
-  return (
-    <div style={{
-      position:"fixed", bottom:0, left:0, right:0, zIndex:9999,
-      fontFamily:"monospace", fontSize:12, background:"#111", color:"#fff",
-      padding:"6px 8px", opacity:0.9
-    }}>
-      <span>mode: {isBuyNowActive ? "BUY_NOW" : "MAIN"}</span>{" | "}
-      <span>url: {window.location.pathname}{window.location.search}</span>{" | "}
-      <span>session.buyNowItem: {hasSession ? "yes" : "no"}</span>{" | "}
-      <span>buyNowCart: {buyNowCart.length}</span>{" | "}
-      <span>mainCart: {cart.length}</span>{" | "}
-      <span>cartFetched: {String(cartFetched)}</span>{" | "}
-      <span>history.length: {window.history.length}</span>{" | "}
-      <span>nav.type: {navType}</span>
-    </div>
-  );
-}
+
 
 
 
@@ -512,15 +492,6 @@ function DebugBar({ isBuyNowActive, buyNowCart, cart, cartFetched }) {
           <div id="remaining-products">{renderRemainingProducts()}</div>
         </div>
       )}
-
-{new URLSearchParams(location.search).has("debug") && (
-  <DebugBar
-    isBuyNowActive={isBuyNowActive}
-    buyNowCart={buyNowCart}
-    cart={cart}
-    cartFetched={cartFetched}
-  />
-)}
 
     </>
   );
