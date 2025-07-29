@@ -71,11 +71,15 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
   // Ensure stale buyNowItem is cleared once temp mode turns off
   useEffect(() => {
-    if (!isBuyNowActive) {
-      localStorage.removeItem("buyNowItem");
-localStorage.removeItem("buyNowActive");
-    }
-  }, [isBuyNowActive]);
+   // Only fetch the *main* cart when NOT in Buy Now mode:
+   if (!isBuyNowActive && userdetails?.id) {
+     getCartitems();
+   }
+   // coupons still always load:
+   if (userdetails?.id) {
+     loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+   }
+ }, [isBuyNowActive, userdetails?.id]);
 
 
 useEffect(() => {
@@ -127,6 +131,7 @@ useEffect(() => {
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
     if (isBuyNowActive) {
       localStorage.removeItem("buyNowItem");
+localStorage.removeItem("buyNowActive");
     }
     navigate("/checkout");
   };
