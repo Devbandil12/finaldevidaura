@@ -39,6 +39,7 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
  // === Load main cart on login, and temp useEffect(() => {
   // 1️⃣ Only load the *main* cart if we're NOT in temp‐cart mode:
+useEffect(() => {
   if (!isBuyNowActive && userdetails?.id) {
     getCartitems();
   }
