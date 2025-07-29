@@ -38,22 +38,31 @@ const [cartFetched, setCartFetched] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-  // Hydrate temp cart on mount (refresh-safe, same tab)
+  // Decide temp-cart from URL: /cart?mode=buynow => temp cart; /cart => main cart
 useEffect(() => {
-  const raw = sessionStorage.getItem("buyNowItem");
-  if (raw) {
-    try {
-      const item = JSON.parse(raw);
-      setBuyNowCart([item]);
-      setIsBuyNowActive(true);
-    } catch {
-      console.warn("Invalid buyNowItem in sessionStorage");
-      sessionStorage.removeItem("buyNowItem");
+  const isBuyNowURL = new URLSearchParams(location.search).get("mode") === "buynow";
+
+  if (isBuyNowURL) {
+    const raw = sessionStorage.getItem("buyNowItem");
+    if (raw) {
+      try {
+        const item = JSON.parse(raw);
+        setBuyNowCart([item]);
+        setIsBuyNowActive(true);
+      } catch {
+        sessionStorage.removeItem("buyNowItem");
+        setIsBuyNowActive(false);
+      }
+    } else {
+      // No payload -> fallback to main cart
+      setIsBuyNowActive(false);
     }
   } else {
+    // Visiting /cart WITHOUT buynow flag => always show main cart
+    sessionStorage.removeItem("buyNowItem");
     setIsBuyNowActive(false);
   }
-}, []);
+}, [location.search]);
 
 
 
@@ -164,7 +173,8 @@ useEffect(() => {
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
     
-    navigate("/checkout");
+    navigate(isBuyNowActive ? "/checkout?mode=buynow" : "/checkout");
+
   };
 
   // Update quantity
