@@ -73,13 +73,16 @@ const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
 useEffect(() => {
   return () => {
-    // cleanup when navigating away from /cart
-    if (location.pathname !== "/cart") {
+    // Only clear temp‐cart when leaving *completely*—
+    // not when going from /cart → /checkout
+    const next = window.location.pathname;
+    if (!["/cart", "/checkout"].includes(next)) {
       localStorage.removeItem("buyNowItem");
       localStorage.removeItem("buyNowActive");
     }
   };
 }, [location.pathname]);
+
 
 
 
