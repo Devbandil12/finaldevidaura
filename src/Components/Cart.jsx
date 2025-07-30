@@ -1,5 +1,4 @@
 // src/pages/ShoppingCart.jsx
-
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../style/cart.css";
@@ -31,7 +30,8 @@ const ShoppingCart = () => {
     getCartitems, // rehydrate when NOT in Buy Now
   } = useContext(CartContext);
 
-  const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);
+  const { coupons, isCouponValid, loadAvailableCoupons } =
+    useContext(CouponContext);
 
   // ---- Buy Now temp cart state ----
   const [buyNowCart, setBuyNowCart] = useState([]);
@@ -61,12 +61,14 @@ const ShoppingCart = () => {
   // Rehydrate main cart & coupons when NOT in Buy Now mode
   useEffect(() => {
     if (!isBuyNowActive && userdetails?.id) {
-      getCartitems();
+      getCartitems(); // avoid adding getCartitems to deps to prevent flicker loops
     }
     if (userdetails?.id) {
       loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
     }
-  }, [isBuyNowActive, userdetails?.id, getCartitems, loadAvailableCoupons]);
+    // Depend only on primitives to avoid effect loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBuyNowActive, userdetails?.id]);
 
   // Cleanup temp buy-now on route leave
   useEffect(() => {
@@ -100,7 +102,9 @@ const ShoppingCart = () => {
 
     // Build minimal payload for checkout page
     const fullCartItems = itemsToRender.map((item) => {
-      const price = Math.floor(item.product.oprice * (1 - item.product.discount / 100));
+      const price = Math.floor(
+        item.product.oprice * (1 - item.product.discount / 100)
+      );
       return {
         product: {
           id: item.product.id,
@@ -145,7 +149,9 @@ const ShoppingCart = () => {
   // Remove from cart
   const handleRemove = async (item) => {
     if (isBuyNowActive) {
-      setBuyNowCart((prev) => prev.filter((i) => i.product.id !== item.product.id));
+      setBuyNowCart((prev) =>
+        prev.filter((i) => i.product.id !== item.product.id)
+      );
     } else {
       await removeFromCart(item.product.id);
     }
@@ -156,11 +162,17 @@ const ShoppingCart = () => {
     const product = entry.product;
 
     // Already in wishlist?
-    if (wishlist.find((w) => (w.productId ?? w.product?.id) === product.id)) {
+    if (
+      wishlist.find(
+        (w) => (w.productId ?? w.product?.id) === product.id
+      )
+    ) {
       toast.info("Already in wishlist");
       // Optionally remove from cart
       if (isBuyNowActive) {
-        setBuyNowCart((prev) => prev.filter((i) => i.product.id !== product.id));
+        setBuyNowCart((prev) =>
+          prev.filter((i) => i.product.id !== product.id)
+        );
       } else {
         await removeFromCart(product.id);
       }
@@ -175,7 +187,9 @@ const ShoppingCart = () => {
 
     // Remove from the cart after adding to wishlist
     if (isBuyNowActive) {
-      setBuyNowCart((prev) => prev.filter((i) => i.product.id !== product.id));
+      setBuyNowCart((prev) =>
+        prev.filter((i) => i.product.id !== product.id)
+      );
     } else {
       await removeFromCart(product.id);
     }
@@ -187,9 +201,11 @@ const ShoppingCart = () => {
   const renderRemainingProducts = () =>
     !isBuyNowActive &&
     products
-      .filter((p) => !cart.some((c) => c.product.id === p.id))
+      .filter((p) => !cart.some((c) => c.product?.id === p.id))
       .map((product) => {
-        const price = Math.trunc(product.oprice * (1 - product.discount / 100));
+        const price = Math.trunc(
+          product.oprice * (1 - product.discount / 100)
+        );
         return (
           <div key={product.id} className="remaining-product-item">
             <img src={product.imageurl} alt={product.name} />
@@ -199,12 +215,16 @@ const ShoppingCart = () => {
             </div>
             <div className="product-price">
               <div className="price">
-                <span style={{ color: "green", fontWeight: "bold" }}>₹{price}</span>
+                <span style={{ color: "green", fontWeight: "bold" }}>
+                  ₹{price}
+                </span>
                 <span className="old-price">₹{product.oprice}</span>
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <button onClick={() => addToCart(product, 1)}>Add to Cart</button>
+            <button onClick={() => addToCart(product, 1)}>
+              Add to Cart
+            </button>
           </div>
         );
       });
@@ -216,7 +236,9 @@ const ShoppingCart = () => {
     0
   );
   const totalDiscounted = activeCart.reduce((sum, i) => {
-    const price = Math.floor(i.product.oprice * (1 - i.product.discount / 100));
+    const price = Math.floor(
+      i.product.oprice * (1 - i.product.discount / 100)
+    );
     return sum + price * (i.quantity || 1);
   }, 0);
 
@@ -251,7 +273,10 @@ const ShoppingCart = () => {
               activeCart.map((item) => (
                 <div key={item.product.id} className="cart-item">
                   <div className="product-content">
-                    <img src={item.product.imageurl} alt={item.product.name} />
+                    <img
+                      src={item.product.imageurl}
+                      alt={item.product.name}
+                    />
                     <div className="title-quantity-price">
                       <div className="title-quantity">
                         <div className="product-title">
@@ -259,28 +284,41 @@ const ShoppingCart = () => {
                           <span>{item.product.size} ml</span>
                         </div>
                         <div className="quantity-controls">
-                          <button onClick={() => updateQuantity(item, -1)}>–</button>
+                          <button onClick={() => updateQuantity(item, -1)}>
+                            –
+                          </button>
                           <span>{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item, +1)}>+</button>
+                          <button onClick={() => updateQuantity(item, +1)}>
+                            +
+                          </button>
                         </div>
                       </div>
                       <div className="item-price">
                         <span>
                           ₹
                           {Math.floor(
-                            item.product.oprice * (1 - item.product.discount / 100)
+                            item.product.oprice *
+                              (1 - item.product.discount / 100)
                           )}
                         </span>
-                        <span className="old-price">₹{item.product.oprice}</span>
+                        <span className="old-price">
+                          ₹{item.product.oprice}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="procduct-shifting-buttons">
-                    <button className="remove" onClick={() => handleRemove(item)}>
+                    <button
+                      className="remove"
+                      onClick={() => handleRemove(item)}
+                    >
                       Remove
                     </button>
-                    <button className="move-to-wishlist" onClick={() => moveToWishlist(item)}>
+                    <button
+                      className="move-to-wishlist"
+                      onClick={() => moveToWishlist(item)}
+                    >
                       Move to Wishlist
                     </button>
                   </div>
@@ -297,11 +335,18 @@ const ShoppingCart = () => {
               <h3>
                 <span>Total:</span> <span>₹{totalOriginal}</span>
               </h3>
-              <h3 className={`discounted-total ${appliedCoupon ? "with-coupon" : ""}`}>
-                <span>Discounted Total:</span> <span>₹{finalPrice}</span>
+              <h3
+                className={`discounted-total ${
+                  appliedCoupon ? "with-coupon" : ""
+                }`}
+              >
+                <span>Discounted Total:</span>{" "}
+                <span>₹{finalPrice}</span>
               </h3>
               {appliedCoupon && (
-                <small className="coupon-applied">{appliedCoupon.code} applied</small>
+                <small className="coupon-applied">
+                  {appliedCoupon.code} applied
+                </small>
               )}
             </div>
 
@@ -314,7 +359,9 @@ const ShoppingCart = () => {
                   return (
                     <div
                       key={coupon.id}
-                      className={`coupon-item ${isSelected ? "applied" : ""}`}
+                      className={`coupon-item ${
+                        isSelected ? "applied" : ""
+                      }`}
                       onClick={async () => {
                         if (isSelected) {
                           setAppliedCoupon(null);
@@ -331,7 +378,10 @@ const ShoppingCart = () => {
                             }
                           ).then((r) => r.json());
 
-                          if (validated && isCouponValid(validated, activeCart)) {
+                          if (
+                            validated &&
+                            isCouponValid(validated, activeCart)
+                          ) {
                             setAppliedCoupon(validated);
                           }
                         }
@@ -378,7 +428,7 @@ const ShoppingCart = () => {
         </div>
       )}
 
-      {/* Toasts, if not already mounted globally */}
+      {/* Toasts (if not already mounted globally) */}
       <ToastContainer position="bottom-center" />
     </>
   );
