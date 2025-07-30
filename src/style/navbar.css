@@ -417,6 +417,7 @@ header {
   transition: left 0.3s ease;
   box-shadow: 0 8px 28px rgba(0,0,0,0.12);
   padding: 0;
+  margin:0;
 }
 
 /* (You had two .sidebar.open earlier; the one below is the effective one) */
