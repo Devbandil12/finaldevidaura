@@ -1,12 +1,13 @@
+// src/App.jsx
 import React, { useState, useEffect, useCallback } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 
 // Layout & pages
 import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
-import Login from "./Components/CustomAuthModal";
+import Login from "./Components/CustomAuthModal";         // /login page (unchanged)
 import Products from "./Components/Products";
 import MyOrder from "./Components/MyOrder";
 import Wishlist from "./Components/Wishlist";
@@ -15,6 +16,7 @@ import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
+
 // Styles
 import "./style/adminPanel.css";
 
@@ -32,7 +34,31 @@ import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
+/**
+ * Watches login state while on /login.
+ * If a post-login target exists in sessionStorage (e.g. "/cart"),
+ * redirect there immediately after Clerk reports the user is signed in.
+ * This lets the login page remain unchanged.
+ */
+function PostLoginRedirector() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isLoaded, isSignedIn } = useUser();
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+
+    const target = sessionStorage.getItem("post_login_redirect");
+    if (target) {
+      sessionStorage.removeItem("post_login_redirect");
+      if (location.pathname !== target) {
+        navigate(target, { replace: true });
+      }
+    }
+  }, [isLoaded, isSignedIn, location.pathname, navigate]);
+
+  return null;
+}
 
 const App = () => {
   const [cart, setCart] = useState([]);
@@ -40,22 +66,7 @@ const App = () => {
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
- const { isLoaded, isSignedIn } = useUser();
-
-useEffect(() => {
-  if (!isLoaded || !isSignedIn) return;
-
-  // If we previously set a "return here after login" path, go there now
-  const target = sessionStorage.getItem("post_login_redirect");
-  if (target) {
-    sessionStorage.removeItem("post_login_redirect");
-    if (location.pathname !== target) {
-      navigate(target, { replace: true });
-    }
-  }
-}, [isLoaded, isSignedIn, location.pathname, navigate]);
-
- // Upsert new users into your DB
+  // Upsert new users into your DB
   const isNewUser = useCallback(async () => {
     if (!user) return;
 
@@ -89,6 +100,7 @@ useEffect(() => {
               <ContactProvider>
                 <Router>
                   <ScrollToTop />
+                  <PostLoginRedirector /> {/* NEW: global watcher */}
 
                   <Navbar
                     cartCount={cart.length}
@@ -99,6 +111,7 @@ useEffect(() => {
                   <MobileBackBar isNavbarVisible={isNavbarVisible} />
 
                   <Routes>
+                    {/* Public: Home */}
                     <Route
                       path="/"
                       element={
@@ -114,8 +127,8 @@ useEffect(() => {
                       }
                     />
 
+                    {/* Public: Auth & other pages */}
                     <Route path="/login" element={<Login />} />
-
                     <Route path="/myorder" element={<MyOrder />} />
                     <Route
                       path="/wishlist"
@@ -139,11 +152,13 @@ useEffect(() => {
                         />
                       }
                     />
-<Route element={<CheckoutGuard />}>
-                    <Route path="/checkout" element={<Checkout />} />
-</Route>
                     <Route path="/Admin" element={<Adminpannel />} />
                     <Route path="/contact" element={<ContactUs />} />
+
+                    {/* Checkout: guarded by intent, never open directly */}
+                    <Route element={<CheckoutGuard />}>
+                      <Route path="/checkout" element={<Checkout />} />
+                    </Route>
                   </Routes>
 
                   <Footer />
