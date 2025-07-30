@@ -129,11 +129,12 @@ const ShoppingCart = () => {
     }
 
   if (!isSignedIn) {
-    // Guest → go log in, then return to CART (not checkout)
-    navigate(`/login?redirect=${encodeURIComponent("/cart")}`, { replace: true });
+    // Save where we want to go AFTER login (policy: back to /cart)
+    sessionStorage.setItem("post_login_redirect", "/cart");
+    // Go to login (no need to add ?redirect=..., keep the login page as-is)
+    navigate("/login", { replace: true });
     return;
   }
-
     sessionStorage.setItem("checkout_intent", JSON.stringify({ ts: Date.now() }));
   navigate("/checkout");
   };
