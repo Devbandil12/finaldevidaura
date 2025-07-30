@@ -428,8 +428,6 @@ const ShoppingCart = () => {
         </div>
       )}
 
-      {/* Toasts (if not already mounted globally) */}
-      <ToastContainer position="bottom-center" />
     </>
   );
 };
