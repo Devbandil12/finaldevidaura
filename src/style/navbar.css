@@ -420,7 +420,7 @@ header {
 }
 
 /* (You had two .sidebar.open earlier; the one below is the effective one) */
-.sidebar.open { left: 30%; }
+.sidebar.open { left: 70%; }
 
 /* header */
 .sidebar-header {
