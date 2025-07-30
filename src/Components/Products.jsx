@@ -1,18 +1,20 @@
 // src/pages/Products.js
 
 import React, { useContext, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import { ProductContext } from "../contexts/productContext";
+import { CartContext } from "../contexts/CartContext";
+
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
 import CartImage from "../assets/cart-svgrepo-com copy.svg";
-import { useLocation, useNavigate } from "react-router-dom";
-import ProductDetail from "./ProductDetail";
 
-// ✅ Use ONLY CartContext helpers – no DB/schema imports here
-import { CartContext } from "../contexts/CartContext";
+import ProductDetail from "./ProductDetail";
 
 const Products = () => {
   const [modalProduct, setModalProduct] = useState(null);
+
   const { products } = useContext(ProductContext);
   const {
     cart,
@@ -21,7 +23,7 @@ const Products = () => {
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional loading flag (if you want to disable UI while mutating)
+    // Optional: use to disable buttons while mutating
     isCartLoading,
   } = useContext(CartContext);
 
@@ -34,7 +36,7 @@ const Products = () => {
     document.documentElement.style.overflow = "auto";
   }, [location.pathname]);
 
-  // Lock scroll when modal open
+  // Lock/unlock scroll when modal toggles
   useEffect(() => {
     if (modalProduct) {
       document.body.style.overflow = "hidden";
@@ -45,20 +47,14 @@ const Products = () => {
     }
   }, [modalProduct]);
 
-  const handleSlideClick = (product) => {
-    setModalProduct(product);
-  };
+  const handleSlideClick = (product) => setModalProduct(product);
+  const closeModal = () => setModalProduct(null);
 
-  const closeModal = () => {
-    setModalProduct(null);
-  };
-
-  // Unified add handler used by card button and modal
+  // Unified add handler used by both card and modal
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
-      // Buy Now flow uses localStorage (same keys your cart page reads)
-      const ok = startBuyNow(product, quantity);
-      // Always restore scrolling when leaving modal
+      const ok = startBuyNow(product, quantity); // CartContext handles guest/user
+      // Always restore scroll before navigation
       document.body.style.overflow = "auto";
       document.documentElement.style.overflow = "auto";
       if (ok) navigate("/cart", { replace: true });
@@ -70,11 +66,9 @@ const Products = () => {
   return (
     <>
       <section className="py-20 flex flex-col items-center">
-        <h1 id="shop-section" className="product-heading">
-          Shop The Luxury
-        </h1>
+        <h1 id="shop-section" className="product-heading">Shop The Luxury</h1>
 
-        {/* Products Container */}
+        {/* Products grid */}
         <div className="w-full flex flex-wrap justify-center gap-8 px-6">
           {products.map((product, index) => {
             const discountedPrice = Math.trunc(
@@ -82,7 +76,7 @@ const Products = () => {
             );
             const inCart = cart.some((item) => item.product.id === product.id);
             const inWishlist = wishlist.some(
-              (item) => item.productId === product.id
+              (item) => (item.productId ?? item.product?.id) === product.id
             );
 
             return (
@@ -159,7 +153,7 @@ const Products = () => {
           })}
         </div>
 
-        {/* Modal */}
+        {/* Product modal */}
         {modalProduct && (
           <ProductDetail
             product={{
@@ -167,15 +161,18 @@ const Products = () => {
               images: modalProduct.images || [modalProduct.imageurl],
             }}
             onClose={closeModal}
-            // When modal clicks "Add" or "Buy Now"
+
+            // Keep backward compatible props:
             onAddToCart={(product, quantity, isBuyNow) =>
               handleAdd(product, quantity, isBuyNow)
             }
             inCart={cart.some((item) => item.product.id === modalProduct.id)}
+
             onToggleWishlist={() => toggleWishlist(modalProduct)}
             inWishlist={wishlist.some(
-              (item) => item.productId === modalProduct.id
+              (item) => (item.productId ?? item.product?.id) === modalProduct.id
             )}
+
             quantity={1}
           />
         )}
