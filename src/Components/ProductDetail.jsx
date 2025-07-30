@@ -1,15 +1,18 @@
+// src/pages/ProductDetail.jsx
+
 import React, { useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // outline
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg";        // outline
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
 
 const ProductDetail = ({
   product,
   onClose,
-  // Optional props for backward compatibility. If not provided, we use context.
+
+  // Optional / legacy props (component works without them):
   onToggleWishlist,
   inWishlist,
   onAddToCart,
@@ -17,7 +20,7 @@ const ProductDetail = ({
 }) => {
   const navigate = useNavigate();
 
-  // ---- Contexts ----
+  // Contexts
   const { products } = useContext(ProductContext);
   const {
     cart,
@@ -26,20 +29,18 @@ const ProductDetail = ({
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional, if you want to disable buttons during loading you can add it in CartContext
-    // isCartLoading,
+    // isCartLoading, // if you want to disable buttons while mutating
   } = useContext(CartContext);
 
-  // ---- Resolve full product & images ----
-  const fullProduct =
-    products.find((p) => p.id === product.id) || product;
+  // Resolve the full product (images etc.)
+  const fullProduct = products.find((p) => p.id === product.id) || product;
 
   const images =
     Array.isArray(fullProduct.images) && fullProduct.images.length > 0
       ? fullProduct.images
       : [fullProduct.imageurl];
 
-  // ---- Derived state (fallback to context when props aren’t provided) ----
+  // Derive inCart / inWishlist from context if props not provided
   const ctxInCart = useMemo(
     () => cart?.some((i) => i.product.id === fullProduct.id),
     [cart, fullProduct.id]
@@ -47,17 +48,17 @@ const ProductDetail = ({
   const isInCart = typeof inCart === "boolean" ? inCart : !!ctxInCart;
 
   const ctxInWishlist = useMemo(
-    () => wishlist?.some((w) => w.productId === fullProduct.id),
+    () => wishlist?.some((w) => (w.productId ?? w.product?.id) === fullProduct.id),
     [wishlist, fullProduct.id]
   );
   const isInWishlist =
     typeof inWishlist === "boolean" ? inWishlist : !!ctxInWishlist;
 
-  // ---- Local UI state ----
+  // Local UI state
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
 
-  // ---- Pricing helpers ----
+  // Pricing
   const basePrice = Math.floor(Number(fullProduct.oprice) || 0);
   const discount = Math.floor(Number(fullProduct.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
@@ -65,10 +66,10 @@ const ProductDetail = ({
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + images.length) % images.length);
 
-  // ---- Handlers (prefer props if provided; otherwise use context) ----
+  // Handlers (use props if provided; otherwise use context)
   const addToCartHandler = async () => {
     if (onAddToCart) {
-      // Keep old contract: quantity === 0 means remove
+      // Keep legacy contract: quantity 0 => remove
       return onAddToCart(fullProduct, isInCart ? 0 : quantity, false);
     }
 
@@ -80,11 +81,9 @@ const ProductDetail = ({
   };
 
   const handleBuyNow = async () => {
-    // If parent supplied custom handler, use it
     if (onAddToCart) {
       onAddToCart(fullProduct, quantity, true);
     } else {
-      // Context-first Buy Now: store temp item and go to /cart
       const ok = startBuyNow(fullProduct, quantity);
       if (!ok) return;
     }
@@ -170,14 +169,14 @@ const ProductDetail = ({
 
           <div>
             <div className="w-full flex justify-between items-start mt-6">
-              {/* Product Name on the Left */}
+              {/* Product Name */}
               <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                 {fullProduct.name}
               </h2>
 
-              {/* Icons on the Right */}
+              {/* Icons */}
               <div className="flex items-center gap-[15px]">
-                {/* Wishlist Icon */}
+                {/* Wishlist */}
                 <button
                   onClick={handleToggleWishlist}
                   className="hover:scale-110 transition"
@@ -189,18 +188,14 @@ const ProductDetail = ({
                   />
                 </button>
 
-                {/* Share Icon */}
+                {/* Share */}
                 <button
                   onClick={handleShare}
                   className="hover:scale-110 transition"
                   title="Share"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="26.703"
-                    height="25.928"
-                  >
-                    <path d="M1.056 21.928c0-6.531 5.661-9.034 10.018-9.375V18.1L22.7 9.044 11.073 0v4.836a10.5 10.5 0 0 0-7.344 3.352C-.618 12.946-.008 21 .076 21.928z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="26.703" height="25.928">
+                    <path d="M1.056 21.928c0-6.531 5.661-9.034 10.018-9.375V18.1L22.7 9.044 11.073 0v4.836a10.5 10.5 0 0 0-7.344 3.352C-.618 12.946-.008 21 .076 21.928z"/>
                   </svg>
                 </button>
               </div>
@@ -211,13 +206,9 @@ const ProductDetail = ({
                 ₹{discountedPrice}
               </span>
               {discount > 0 && (
-                <span className="text-sm line-through text-gray-500">
-                  ₹{basePrice}
-                </span>
+                <span className="text-sm line-through text-gray-500">₹{basePrice}</span>
               )}
-              <span className="ml-auto text-sm text-gray-700">
-                {fullProduct.size} ml
-              </span>
+              <span className="ml-auto text-sm text-gray-700">{fullProduct.size} ml</span>
             </div>
 
             <div className="mt-4 flex items-center space-x-4">
