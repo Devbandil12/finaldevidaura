@@ -1,5 +1,5 @@
 // src/pages/Products.js
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { ProductContext } from "../contexts/productContext";
@@ -10,9 +10,12 @@ import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
 import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import ProductDetail from "./ProductDetail";
+import "../style/products.css"; // <-- NEW: styles for overlay + animations
 
 const Products = () => {
   const [modalProduct, setModalProduct] = useState(null);
+  // UI-only: track which products just got added (for success animation)
+  const [justAddedIds, setJustAddedIds] = useState(new Set());
 
   const { products } = useContext(ProductContext);
   const {
@@ -22,8 +25,7 @@ const Products = () => {
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional: isCartLoading (disable buttons during mutations)
-    // isCartLoading,
+    // Optional: isCartLoading,
   } = useContext(CartContext);
 
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ const Products = () => {
   const handleSlideClick = (product) => setModalProduct(product);
   const closeModal = () => setModalProduct(null);
 
-  // Unified add handler (used by card button and modal)
+  // Unified add handler (kept as-is, only UI animation added after success)
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
       const ok = startBuyNow(product, quantity); // context handles guest/user
@@ -66,8 +68,34 @@ const Products = () => {
       return;
     }
 
+    // Same logic: add to cart
     await addToCart(product, quantity);
+
+    // UI-only: trigger a small "added" animation on this card
+    setJustAddedIds((prev) => {
+      const next = new Set(prev);
+      next.add(product.id);
+      return next;
+    });
+    // Remove the flag after animation completes (900ms)
+    setTimeout(() => {
+      setJustAddedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 900);
   };
+
+  // Keep these memo helpers purely for rendering classNames (no logic change)
+  const cartIds = useMemo(
+    () => new Set(cart.map((c) => c.product?.id)),
+    [cart]
+  );
+  const wishlistIds = useMemo(
+    () => new Set(wishlist.map((w) => (w.productId ?? w.product?.id))),
+    [wishlist]
+  );
 
   return (
     <>
@@ -81,29 +109,42 @@ const Products = () => {
               product.oprice - (product.oprice * product.discount) / 100
             );
 
-            const inCart = cart.some((item) => item.product?.id === product.id);
-            const inWishlist = wishlist.some(
-              (item) => (item.productId ?? item.product?.id) === product.id
-            );
+            const inCart = cartIds.has(product.id);
+            const inWishlist = wishlistIds.has(product.id);
+            const justAdded = justAddedIds.has(product.id);
 
             return (
               <div
                 key={index}
-                className="relative w-62 h-86 flex flex-col items-center gap-2 rounded-xl overflow-hidden shadow-lg bg-white"
+                className={`product-card relative flex flex-col items-center gap-2 rounded-xl overflow-hidden bg-white`}
               >
-                <img
-                  className="w-72 h-54 object-cover"
-                  src={product.imageurl}
-                  alt={product.name}
+                {/* Image + hover overlay */}
+                <div
+                  className="product-thumb relative w-full"
                   onClick={() => handleSlideClick(product)}
                   style={{ cursor: "pointer" }}
-                />
+                >
+                  <img
+                    className="product-img"
+                    src={product.imageurl}
+                    alt={product.name}
+                    loading="lazy"
+                  />
+                  {/* Hover/Fallback overlay */}
+                  <div
+                    className="img-overlay"
+                    role="button"
+                    aria-label="View Description"
+                    title="View Description"
+                  >
+                    View Description
+                  </div>
+                </div>
 
                 {/* Wishlist toggle */}
                 <button
-                  onClick={() => toggleWishlist(product)}
-                  className="absolute top-2 right-2 p-2 rounded-full transition"
-                  // disabled={isCartLoading}
+                  onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+                  className="wishlist-toggle absolute top-2 right-2 p-2 rounded-full transition"
                 >
                   <img
                     src={inWishlist ? WishlistFilledImage : WishlistImage}
@@ -113,16 +154,18 @@ const Products = () => {
                 </button>
 
                 {/* Title & size */}
-                <div className="w-9/10 flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">{product.name}</h3>
-                  <span className="text-gray-700 font-medium">
+                <div className="w-9/10 flex justify-between items-center px-3">
+                  <h3 className="text-lg font-semibold truncate max-w-[70%]">
+                    {product.name}
+                  </h3>
+                  <span className="text-gray-700 font-medium whitespace-nowrap">
                     {product.size} ml
                   </span>
                 </div>
 
                 {/* Pricing */}
-                <div className="w-9/10 flex justify-between items-center">
-                  <span className="flex justify-between gap-4 items-center">
+                <div className="w-9/10 flex justify-between items-center px-3">
+                  <span className="flex gap-3 items-center">
                     <span className="text-lg font-bold text-black">
                       ₹{discountedPrice}
                     </span>
@@ -135,26 +178,34 @@ const Products = () => {
                   </span>
                 </div>
 
-                {/* Cart button */}
-                {inCart ? (
-                  <button
-                    onClick={() => removeFromCart(product.id)}
-                    className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
-                    // disabled={isCartLoading}
-                  >
-                    remove from cart
-                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleAdd(product, 1, false)}
-                    className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
-                    // disabled={isCartLoading}
-                  >
-                    add to cart
-                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
-                  </button>
-                )}
+                {/* Cart button area */}
+                <div className="w-full px-3 pb-3">
+                  {/* If it's in the cart, show View Cart (requested change) */}
+                  {inCart ? (
+                    <button
+                      onClick={() => navigate("/cart")}
+                      className="cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+                    >
+                      View Cart
+                      <img src={CartImage} alt="Cart" className="w-7 h-7" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAdd(product, 1, false)}
+                      className={`cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white ${justAdded ? "btn-added" : ""}`}
+                    >
+                      {justAdded ? "Added!" : "Add to Cart"}
+                      <img src={CartImage} alt="Cart" className="w-7 h-7" />
+                    </button>
+                  )}
+
+                  {/* Subtle success burst (purely visual) */}
+                  {justAdded && (
+                    <div className="added-burst" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -168,18 +219,13 @@ const Products = () => {
               images: modalProduct.images || [modalProduct.imageurl],
             }}
             onClose={closeModal}
-
             // Keep backward-compatible props:
             onAddToCart={(product, quantity, isBuyNow) =>
               handleAdd(product, quantity, isBuyNow)
             }
-            inCart={cart.some((item) => item.product?.id === modalProduct.id)}
-
+            inCart={cartIds.has(modalProduct.id)}
             onToggleWishlist={() => toggleWishlist(modalProduct)}
-            inWishlist={wishlist.some(
-              (item) => (item.productId ?? item.product?.id) === modalProduct.id
-            )}
-
+            inWishlist={wishlistIds.has(modalProduct.id)}
             quantity={1}
           />
         )}
