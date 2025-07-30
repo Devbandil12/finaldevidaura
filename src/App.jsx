@@ -14,7 +14,7 @@ import Cart from "./Components/Cart";
 import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
-
+import CheckoutGuard from "./CheckoutGuard";
 // Styles
 import "./style/adminPanel.css";
 
@@ -96,7 +96,9 @@ const App = () => {
                         </>
                       }
                     />
+<Route element={<CheckoutGuard />}>
                     <Route path="/login" element={<Login />} />
+</Route>
                     <Route path="/myorder" element={<MyOrder />} />
                     <Route
                       path="/wishlist"
