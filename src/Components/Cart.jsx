@@ -1,3 +1,5 @@
+// src/pages/ShoppingCart.jsx
+
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../style/cart.css";
@@ -7,7 +9,7 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";
 
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import Loader from "./Loader";
 
 const ShoppingCart = () => {
@@ -26,17 +28,16 @@ const ShoppingCart = () => {
     addToWishlist,
     wishlist,
     isCartLoading,
-    getCartitems, // still used to rehydrate when NOT in Buy Now
+    getCartitems, // rehydrate when NOT in Buy Now
   } = useContext(CartContext);
 
-  const { coupons, isCouponValid, loadAvailableCoupons } =
-    useContext(CouponContext);
+  const { coupons, isCouponValid, loadAvailableCoupons } = useContext(CouponContext);
 
-  // --- Buy Now temp cart state ---
+  // ---- Buy Now temp cart state ----
   const [buyNowCart, setBuyNowCart] = useState([]);
   const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
-  // --- Coupon state ---
+  // ---- Coupon state ----
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   // Hydrate temp Buy Now cart once
@@ -85,7 +86,7 @@ const ShoppingCart = () => {
     }
   }, [isBuyNowActive]);
 
-  // Choose active array & setter
+  // Choose active array
   const itemsToRender = isBuyNowActive ? buyNowCart : cart;
 
   // === Handlers ===
@@ -97,10 +98,9 @@ const ShoppingCart = () => {
       return;
     }
 
+    // Build minimal payload for checkout page
     const fullCartItems = itemsToRender.map((item) => {
-      const price = Math.floor(
-        item.product.oprice * (1 - item.product.discount / 100)
-      );
+      const price = Math.floor(item.product.oprice * (1 - item.product.discount / 100));
       return {
         product: {
           id: item.product.id,
@@ -125,10 +125,10 @@ const ShoppingCart = () => {
     navigate("/checkout");
   };
 
-  // Update qty
+  // Update quantity
   const updateQuantity = (item, delta) => {
     if (isBuyNowActive) {
-      // Only touch the local temp array
+      // Only change local temp array
       setBuyNowCart((prev) =>
         prev.map((i) =>
           i.product.id === item.product.id
@@ -142,7 +142,7 @@ const ShoppingCart = () => {
     }
   };
 
-  // Remove item
+  // Remove from cart
   const handleRemove = async (item) => {
     if (isBuyNowActive) {
       setBuyNowCart((prev) => prev.filter((i) => i.product.id !== item.product.id));
@@ -156,9 +156,9 @@ const ShoppingCart = () => {
     const product = entry.product;
 
     // Already in wishlist?
-    if (wishlist.find((w) => w.productId === product.id)) {
+    if (wishlist.find((w) => (w.productId ?? w.product?.id) === product.id)) {
       toast.info("Already in wishlist");
-      // Also remove from cart if that was the user's action:
+      // Optionally remove from cart
       if (isBuyNowActive) {
         setBuyNowCart((prev) => prev.filter((i) => i.product.id !== product.id));
       } else {
@@ -204,9 +204,7 @@ const ShoppingCart = () => {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <button onClick={() => addToCart(product, 1)}>
-              Add to Cart
-            </button>
+            <button onClick={() => addToCart(product, 1)}>Add to Cart</button>
           </div>
         );
       });
@@ -218,9 +216,7 @@ const ShoppingCart = () => {
     0
   );
   const totalDiscounted = activeCart.reduce((sum, i) => {
-    const price = Math.floor(
-      i.product.oprice * (1 - i.product.discount / 100)
-    );
+    const price = Math.floor(i.product.oprice * (1 - i.product.discount / 100));
     return sum + price * (i.quantity || 1);
   }, 0);
 
@@ -255,10 +251,7 @@ const ShoppingCart = () => {
               activeCart.map((item) => (
                 <div key={item.product.id} className="cart-item">
                   <div className="product-content">
-                    <img
-                      src={item.product.imageurl}
-                      alt={item.product.name}
-                    />
+                    <img src={item.product.imageurl} alt={item.product.name} />
                     <div className="title-quantity-price">
                       <div className="title-quantity">
                         <div className="product-title">
@@ -275,8 +268,7 @@ const ShoppingCart = () => {
                         <span>
                           ₹
                           {Math.floor(
-                            item.product.oprice *
-                              (1 - item.product.discount / 100)
+                            item.product.oprice * (1 - item.product.discount / 100)
                           )}
                         </span>
                         <span className="old-price">₹{item.product.oprice}</span>
@@ -309,9 +301,7 @@ const ShoppingCart = () => {
                 <span>Discounted Total:</span> <span>₹{finalPrice}</span>
               </h3>
               {appliedCoupon && (
-                <small className="coupon-applied">
-                  {appliedCoupon.code} applied
-                </small>
+                <small className="coupon-applied">{appliedCoupon.code} applied</small>
               )}
             </div>
 
@@ -336,7 +326,7 @@ const ShoppingCart = () => {
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
                                 code: coupon.code,
-                                userId: userdetails.id,
+                                userId: userdetails?.id ?? null,
                               }),
                             }
                           ).then((r) => r.json());
@@ -365,9 +355,7 @@ const ShoppingCart = () => {
             {/* Buttons */}
             <div className="cart-summary-button">
               {!isBuyNowActive && (
-                <button onClick={clearCart}>
-                  Clear Cart
-                </button>
+                <button onClick={clearCart}>Clear Cart</button>
               )}
               <button
                 id="checkout-button"
@@ -389,6 +377,9 @@ const ShoppingCart = () => {
           <div id="remaining-products">{renderRemainingProducts()}</div>
         </div>
       )}
+
+      {/* Toasts, if not already mounted globally */}
+      <ToastContainer position="bottom-center" />
     </>
   );
 };
