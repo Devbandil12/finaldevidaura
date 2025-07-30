@@ -171,14 +171,7 @@ const Wishlist = () => {
                     {item.discount > 0 && (
                       <span className="wl-badge">{item.discount}% OFF</span>
                     )}
-                    <button
-                      className="wl-remove-icon"
-                      aria-label="Remove from wishlist"
-                      onClick={() => removeWishlistItem(wishlisti, index)}
-                      title="Remove"
-                    >
-                      ×
-                    </button>
+                   
                     <img
                       src={item.imageurl}
                       alt={item.name}
