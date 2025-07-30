@@ -342,6 +342,7 @@ header {
 .menu-container {
   position: relative;
   z-index: 1000;
+  padding-right:10px;
 }
 
 .hamburger {
