@@ -853,6 +853,7 @@ export default function Checkout() {
       <div className="checkout-header">
         <div className="absolute top-2">
           <ToastContainer />
+        </div>
       <div className="progress-indicator">
           {["Address", "Payment", "Confirmation"].map((label, idx) => (
             <div
