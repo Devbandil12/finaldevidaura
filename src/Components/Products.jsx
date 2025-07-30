@@ -1,333 +1,301 @@
-// src/pages/Products.js
-
-import React, { useContext, useEffect, useState } from "react";
-import { ProductContext } from "../contexts/productContext"; // Global product data
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // Default wishlist icon
-import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // Filled wishlist icon
-import CartImage from "../assets/cart-svgrepo-com copy.svg"; // Cart icon
-import { Navigate, redirect, useLocation } from "react-router-dom";
-import { db } from "../../configs";
-import {
-  addToCartTable,
-  usersTable,
-  wishlistTable,
-} from "../../configs/schema";
-import {
-  RedirectToSignIn,
-  SignInButton,
-  SignUpButton,
-  useUser,
-} from "@clerk/clerk-react";
-import { and, eq } from "drizzle-orm";
-import { UserContext } from "../contexts/UserContext";
+import React, { useState, useContext, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
-// import WheelOfFate from "../Components/WheelOfFate.jsx";
-import ProductDetail from "./ProductDetail";
-import { useNavigate } from "react-router-dom"; // ⬅ Add this
 
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // outline
+import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
 
+const ProductDetail = ({
+  product,
+  onClose,
+  // Optional props for backward compatibility. If not provided, we use context.
+  onToggleWishlist,
+  inWishlist,
+  onAddToCart,
+  inCart,
+}) => {
+  const navigate = useNavigate();
 
-// -------------------------------
-// Products Component
-// -------------------------------
-const Products = () => {
-  const [loading, setLoading] = useState(false);
-  // const [cart, setCart] = useState([]);
+  // ---- Contexts ----
   const { products } = useContext(ProductContext);
-  const [modalProduct, setModalProduct] = useState(null);
-  // const { user } = useUser();
-  const { setCart, cart, wishlist, setWishlist } = useContext(CartContext);
-  // Prevent background scrolling when modal is open.
-const navigate = useNavigate(); // ⬅ Add this near useState
+  const {
+    cart,
+    wishlist,
+    addToCart,
+    removeFromCart,
+    toggleWishlist,
+    startBuyNow,
+    // Optional, if you want to disable buttons during loading you can add it in CartContext
+    // isCartLoading,
+  } = useContext(CartContext);
 
-const location = useLocation();
+  // ---- Resolve full product & images ----
+  const fullProduct =
+    products.find((p) => p.id === product.id) || product;
 
+  const images =
+    Array.isArray(fullProduct.images) && fullProduct.images.length > 0
+      ? fullProduct.images
+      : [fullProduct.imageurl];
 
-useEffect(() => {
-  // Reset scrolling on route change
-  document.body.style.overflow = "auto";
-  document.documentElement.style.overflow = "auto";
-}, [location.pathname]);
+  // ---- Derived state (fallback to context when props aren’t provided) ----
+  const ctxInCart = useMemo(
+    () => cart?.some((i) => i.product.id === fullProduct.id),
+    [cart, fullProduct.id]
+  );
+  const isInCart = typeof inCart === "boolean" ? inCart : !!ctxInCart;
 
+  const ctxInWishlist = useMemo(
+    () => wishlist?.some((w) => w.productId === fullProduct.id),
+    [wishlist, fullProduct.id]
+  );
+  const isInWishlist =
+    typeof inWishlist === "boolean" ? inWishlist : !!ctxInWishlist;
 
-  useEffect(() => {
-    if (modalProduct) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
+  // ---- Local UI state ----
+  const [quantity, setQuantity] = useState(1);
+  const [currentImg, setCurrentImg] = useState(0);
+
+  // ---- Pricing helpers ----
+  const basePrice = Math.floor(Number(fullProduct.oprice) || 0);
+  const discount = Math.floor(Number(fullProduct.discount) || 0);
+  const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
+
+  const changeImage = (delta) =>
+    setCurrentImg((idx) => (idx + delta + images.length) % images.length);
+
+  // ---- Handlers (prefer props if provided; otherwise use context) ----
+  const addToCartHandler = async () => {
+    if (onAddToCart) {
+      // Keep old contract: quantity === 0 means remove
+      return onAddToCart(fullProduct, isInCart ? 0 : quantity, false);
+    }
+
+    if (isInCart) {
+      await removeFromCart(fullProduct.id);
     } else {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    }
-  }, [modalProduct]);
-
-  const { userdetails } = useContext(UserContext);
-  let count = 1;
-const addtocart = async (product, quantity = 1, isBuyNow = false) => {
-
-if (quantity === 0) {
-    return removeFromCart(product);
-  }
-
-  const tempCartItem = {
-    product,
-    quantity,
-    cartId: `temp-${product.id + count++}`,
-    userId: userdetails?.id,
-  };
-
-  // 1. If it's Buy Now – set in localStorage & skip DB
-  if (isBuyNow) {
-
-document.body.style.overflow = "auto";
-document.documentElement.style.overflow = "auto";
-
-    localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
-
-    navigate("/cart", { replace: true });
-    return;
-  }
-
-
-
-  // 2. Normal cart logic
-  setCart((prev) => [...prev, tempCartItem]);
-
-  try {
-    setLoading(true);
-    const res1 = await db
-      .insert(addToCartTable)
-      .values({
-        productId: product.id,
-        userId: userdetails?.id,
-        quantity,
-      })
-      .returning({
-        cartId: addToCartTable.id,
-        userId: addToCartTable.userId,
-        quantity: addToCartTable.quantity,
-      });
-
-    // Replace temp item with DB entry
-    setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === product.id && item.userId === userdetails?.id
-          ? { ...item, cartId: res1.cartId, quantity }
-          : item
-      )
-    );
-  } catch (error) {
-    console.error("Failed to add to cart:", error);
-    setCart((prev) =>
-      prev.filter((item) => item.cartId !== tempCartItem.cartId)
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  const { user } = useUser();
-  const removeFromCart = async (product) => {
-    const backupCart = [...cart]; // Backup the cart state in case of failure
-
-    try {
-      setCart((prev) => prev.filter((item) => item.product.id !== product.id));
-
-      await db
-        .delete(addToCartTable)
-        .where(
-          and(
-            eq(addToCartTable.userId, userdetails?.id),
-            eq(addToCartTable.productId, product?.id)
-          )
-        );
-    } catch (error) {
-      // console.error("Failed to remove from cart:", error);
-      setCart(backupCart); // Restore the previous state if the call fails
-    } finally {
-      setLoading(false);
+      await addToCart(fullProduct, quantity);
     }
   };
 
-  const toggleWishlist = async (product) => {
-    const tempWishlistItem = {
-      productId: product.id,
-      wishlistId: `temp-${product.id + count++}`, // Temporary wishlist ID
-      userId: userdetails?.id,
+  const handleBuyNow = async () => {
+    // If parent supplied custom handler, use it
+    if (onAddToCart) {
+      onAddToCart(fullProduct, quantity, true);
+    } else {
+      // Context-first Buy Now: store temp item and go to /cart
+      const ok = startBuyNow(fullProduct, quantity);
+      if (!ok) return;
+    }
+
+    // Always unlock scroll and close modal before navigating
+    document.body.style.overflow = "auto";
+    document.documentElement.style.overflow = "auto";
+    onClose?.();
+    navigate("/cart", { replace: true });
+  };
+
+  const handleToggleWishlist = async () => {
+    if (onToggleWishlist) return onToggleWishlist();
+    await toggleWishlist(fullProduct);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: fullProduct.name,
+      text: `${fullProduct.name} – ₹${discountedPrice}`,
+      url: window.location.href,
     };
-
-    // Optimistically update the wishlist
-    setWishlist((prev) => [...prev, tempWishlistItem]);
-
     try {
-      const existingWishlistItem = wishlist.find(
-        (item) => item.productId === product.id
-      );
-
-      if (existingWishlistItem) {
-        // Remove from wishlist
-        setWishlist((prev) =>
-          prev.filter((item) => item.productId !== product.id)
-        );
-
-        await db
-          .delete(wishlistTable)
-          .where(
-            and(
-              eq(wishlistTable.userId, userdetails?.id),
-              eq(wishlistTable.productId, product.id)
-            )
-          );
+      if (navigator.share) {
+        await navigator.share(shareData);
       } else {
-        // Add to wishlist in DB
-        const res = await db
-          .insert(wishlistTable)
-          .values({
-            userId: userdetails?.id,
-            productId: product.id,
-          })
-          .returning({
-            wishlistId: wishlistTable.id,
-            productId: wishlistTable.productId,
-            userId: wishlistTable.userId,
-          });
-
-        // Replace temp wishlist item with actual DB response
-        setWishlist((prev) =>
-          prev.map((item) =>
-            item.productId === product.id && item.userId === userdetails?.id
-              ? { ...item, wishlistId: res.wishlistId }
-              : item
-          )
-        );
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Link copied to clipboard");
       }
-    } catch (error) {
-      // console.error("Error toggling wishlist:", error);
-      // Remove the temp item if DB call fails
-      setWishlist((prev) =>
-        prev.filter((item) => item.wishlistId !== tempWishlistItem.wishlistId)
-      );
+    } catch (err) {
+      console.error("Share failed", err);
     }
-  };
-
-  const handleSlideClick = (product) => {
-    setModalProduct(product);
-  };
-
-  const closeModal = () => {
-    setModalProduct(null);
   };
 
   return (
-    <>
-      <section className="py-20 flex flex-col items-center">
+    <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-hidden">
+      <div className="bg-white max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-xl flex flex-col md:flex-row overflow-y-auto">
+        {/* Left Image Section */}
+        <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
+          <button
+            onClick={() => changeImage(-1)}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
+          >
+            &lt;
+          </button>
 
-        <h1 id="shop-section" className="product-heading">
-          Shop The Luxury
-        </h1>
+          <img
+            src={images[currentImg]}
+            alt={`${fullProduct.name} ${currentImg + 1}`}
+            className="object-cover w-full h-96 rounded-lg"
+          />
 
-        {/* Products Container */}
-        <div className="w-full flex flex-wrap justify-center gap-8 px-6">
-          {products.map((product, index) => {
-            const discountedPrice = Math.trunc(
-              product.oprice - (product.oprice * product.discount) / 100
-            );
-            const inCart = cart.some((item) => item.product.id === product.id);
-            const inWishlist = wishlist.some(
-              (item) => item.productId == product.id
-            );
+          <button
+            onClick={() => changeImage(1)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
+          >
+            &gt;
+          </button>
 
-            return (
-              <div
-                key={index}
-                className="relative w-62 h-86 flex flex-col items-center gap-2 rounded-xl overflow-hidden shadow-lg bg-white"
-              >
-                <img
-                  className="w-72 h-54 object-cover"
-                  src={product.imageurl}
-                  alt={product.name}
-                  onClick={() => handleSlideClick(product)}
-                  style={{ cursor: "pointer" }}
-                />
+          <div className="flex space-x-2 mt-4 overflow-x-auto">
+            {images.slice(0, 5).map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                onClick={() => setCurrentImg(idx)}
+                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${
+                  idx === currentImg ? "border-indigo-500" : "border-transparent"
+                }`}
+                alt={`thumb-${idx}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Right Product Section */}
+        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold"
+          >
+            ×
+          </button>
+
+          <div>
+            <div className="w-full flex justify-between items-start mt-6">
+              {/* Product Name on the Left */}
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                {fullProduct.name}
+              </h2>
+
+              {/* Icons on the Right */}
+              <div className="flex items-center gap-[15px]">
+                {/* Wishlist Icon */}
                 <button
-                  onClick={() => toggleWishlist(product)}
-                  className="absolute top-2 right-2 p-2 rounded-full transition"
+                  onClick={handleToggleWishlist}
+                  className="hover:scale-110 transition"
                 >
                   <img
-                    src={inWishlist ? WishlistFilledImage : WishlistImage}
-                    alt="wishlist"
-                    className="w-10 h-10"
+                    src={isInWishlist ? WishlistFilledImage : WishlistImage}
+                    alt="Wishlist"
+                    className="w-8 h-8"
                   />
                 </button>
-                <div className="w-9/10 flex justify-between items-center">
-                  <h3 className="text-lg font-semibold">{product.name}</h3>
-                  <span className="text-gray-700 font-medium">
-                    {product.size} ml
-                  </span>
-                </div>
-                <div className="w-9/10 flex justify-between items-center">
-                  <span className="flex justify-between gap-4 items-center">
-                    <span className="text-lg font-bold text-black">
-                      ₹{discountedPrice}
-                    </span>
-                    <span className="text-sm text-gray-400 line-through">
-                      (₹{product.oprice})
-                    </span>
-                  </span>
-                  <span className="text-blue-700 font-semibold">
-                    {product.discount}% Off
-                  </span>
-                </div>
-                {inCart ? (
-                  <button
-                    onClick={() => {
-                      removeFromCart(product);
-                    }}
-                    className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
-                      inCart ? "bg-black text-white" : "bg-black text-white"
-                    }`}
-                  >
-                    {"remove from cart"}
-                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      addtocart(product);
-                    }}
-                    className={`w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition ${
-                      inCart ? "bg-black text-white" : "bg-black text-white"
-                    }`}
-                  >
-                    {"add to cart"}
-                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        {modalProduct && (
-  <ProductDetail
-    product={{
-      ...modalProduct,
-      images: modalProduct.images || [modalProduct.imageurl],
-    }}
-    onClose={closeModal}
-    onAddToCart={(product, quantity, isBuyNow) => addtocart(product, quantity, isBuyNow)}
-    inCart={cart.some((item) => item.product.id === modalProduct.id)}
-    onToggleWishlist={() => toggleWishlist(modalProduct)}
-    inWishlist={wishlist.some(
-      (item) => item.productId === modalProduct.id
-    )}
-    quantity={1}
-  />
-)}
 
-      </section>
-      
-    </>
+                {/* Share Icon */}
+                <button
+                  onClick={handleShare}
+                  className="hover:scale-110 transition"
+                  title="Share"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="26.703"
+                    height="25.928"
+                  >
+                    <path d="M1.056 21.928c0-6.531 5.661-9.034 10.018-9.375V18.1L22.7 9.044 11.073 0v4.836a10.5 10.5 0 0 0-7.344 3.352C-.618 12.946-.008 21 .076 21.928z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-baseline mt-2 flex-wrap gap-2">
+              <span className="text-xl md:text-2xl font-bold text-gray-900">
+                ₹{discountedPrice}
+              </span>
+              {discount > 0 && (
+                <span className="text-sm line-through text-gray-500">
+                  ₹{basePrice}
+                </span>
+              )}
+              <span className="ml-auto text-sm text-gray-700">
+                {fullProduct.size} ml
+              </span>
+            </div>
+
+            <div className="mt-4 flex items-center space-x-4">
+              <span className="text-sm font-medium text-gray-700">Qty:</span>
+              <div className="flex items-center border rounded">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  className="px-3 py-1"
+                >
+                  –
+                </button>
+                <span className="px-4">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => q + 1)}
+                  className="px-3 py-1"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {fullProduct.description && (
+              <div className="mt-6 text-gray-700 space-y-2">
+                <h3 className="font-medium">Description</h3>
+                <p>{fullProduct.description}</p>
+              </div>
+            )}
+
+            {/* Notes (if available) */}
+            <div className="mt-6 text-gray-700 space-y-4">
+              {fullProduct.composition && (
+                <div>
+                  <h3 className="font-medium">Top Notes</h3>
+                  <hr className="border-t border-gray-300 my-1" />
+                  <p>{fullProduct.composition}</p>
+                </div>
+              )}
+              {fullProduct.fragranceNotes && (
+                <div>
+                  <h3 className="font-medium">Base Notes</h3>
+                  <hr className="border-t border-gray-300 my-1" />
+                  <p>{fullProduct.fragranceNotes}</p>
+                </div>
+              )}
+              {fullProduct.fragrance && (
+                <div>
+                  <h3 className="font-medium">Heart Notes</h3>
+                  <hr className="border-t border-gray-300 my-1" />
+                  <p>{fullProduct.fragrance}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CTA buttons */}
+          <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
+            <button
+              onClick={addToCartHandler}
+              className={`flex-1 py-3 px-6 font-semibold rounded-lg border ${
+                isInCart
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-white text-black border-black hover:bg-gray-100"
+              }`}
+            >
+              {isInCart ? "Remove from Cart" : `Add to Cart (${quantity})`}
+            </button>
+
+            <button
+              onClick={handleBuyNow}
+              className="flex-1 py-3 px-6 font-semibold rounded-lg bg-black text-white border border-black hover:bg-white hover:text-black transition-colors duration-200"
+            >
+              Buy Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default Products;
+export default ProductDetail;
