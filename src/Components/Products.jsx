@@ -1,23 +1,18 @@
-import React, { useState, useContext, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/Products.js
+
+import React, { useContext, useEffect, useState } from "react";
 import { ProductContext } from "../contexts/productContext";
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
+import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
+import CartImage from "../assets/cart-svgrepo-com copy.svg";
+import { useLocation, useNavigate } from "react-router-dom";
+import ProductDetail from "./ProductDetail";
+
+// ✅ Use ONLY CartContext helpers – no DB/schema imports here
 import { CartContext } from "../contexts/CartContext";
 
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg"; // outline
-import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
-
-const ProductDetail = ({
-  product,
-  onClose,
-  // Optional props for backward compatibility. If not provided, we use context.
-  onToggleWishlist,
-  inWishlist,
-  onAddToCart,
-  inCart,
-}) => {
-  const navigate = useNavigate();
-
-  // ---- Contexts ----
+const Products = () => {
+  const [modalProduct, setModalProduct] = useState(null);
   const { products } = useContext(ProductContext);
   const {
     cart,
@@ -26,276 +21,167 @@ const ProductDetail = ({
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional, if you want to disable buttons during loading you can add it in CartContext
-    // isCartLoading,
+    // Optional loading flag (if you want to disable UI while mutating)
+    isCartLoading,
   } = useContext(CartContext);
 
-  // ---- Resolve full product & images ----
-  const fullProduct =
-    products.find((p) => p.id === product.id) || product;
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const images =
-    Array.isArray(fullProduct.images) && fullProduct.images.length > 0
-      ? fullProduct.images
-      : [fullProduct.imageurl];
-
-  // ---- Derived state (fallback to context when props aren’t provided) ----
-  const ctxInCart = useMemo(
-    () => cart?.some((i) => i.product.id === fullProduct.id),
-    [cart, fullProduct.id]
-  );
-  const isInCart = typeof inCart === "boolean" ? inCart : !!ctxInCart;
-
-  const ctxInWishlist = useMemo(
-    () => wishlist?.some((w) => w.productId === fullProduct.id),
-    [wishlist, fullProduct.id]
-  );
-  const isInWishlist =
-    typeof inWishlist === "boolean" ? inWishlist : !!ctxInWishlist;
-
-  // ---- Local UI state ----
-  const [quantity, setQuantity] = useState(1);
-  const [currentImg, setCurrentImg] = useState(0);
-
-  // ---- Pricing helpers ----
-  const basePrice = Math.floor(Number(fullProduct.oprice) || 0);
-  const discount = Math.floor(Number(fullProduct.discount) || 0);
-  const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
-
-  const changeImage = (delta) =>
-    setCurrentImg((idx) => (idx + delta + images.length) % images.length);
-
-  // ---- Handlers (prefer props if provided; otherwise use context) ----
-  const addToCartHandler = async () => {
-    if (onAddToCart) {
-      // Keep old contract: quantity === 0 means remove
-      return onAddToCart(fullProduct, isInCart ? 0 : quantity, false);
-    }
-
-    if (isInCart) {
-      await removeFromCart(fullProduct.id);
-    } else {
-      await addToCart(fullProduct, quantity);
-    }
-  };
-
-  const handleBuyNow = async () => {
-    // If parent supplied custom handler, use it
-    if (onAddToCart) {
-      onAddToCart(fullProduct, quantity, true);
-    } else {
-      // Context-first Buy Now: store temp item and go to /cart
-      const ok = startBuyNow(fullProduct, quantity);
-      if (!ok) return;
-    }
-
-    // Always unlock scroll and close modal before navigating
+  // Reset scrolling on route change
+  useEffect(() => {
     document.body.style.overflow = "auto";
     document.documentElement.style.overflow = "auto";
-    onClose?.();
-    navigate("/cart", { replace: true });
-  };
+  }, [location.pathname]);
 
-  const handleToggleWishlist = async () => {
-    if (onToggleWishlist) return onToggleWishlist();
-    await toggleWishlist(fullProduct);
-  };
-
-  const handleShare = async () => {
-    const shareData = {
-      title: fullProduct.name,
-      text: `${fullProduct.name} – ₹${discountedPrice}`,
-      url: window.location.href,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        alert("Link copied to clipboard");
-      }
-    } catch (err) {
-      console.error("Share failed", err);
+  // Lock scroll when modal open
+  useEffect(() => {
+    if (modalProduct) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
     }
+  }, [modalProduct]);
+
+  const handleSlideClick = (product) => {
+    setModalProduct(product);
+  };
+
+  const closeModal = () => {
+    setModalProduct(null);
+  };
+
+  // Unified add handler used by card button and modal
+  const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
+    if (isBuyNow) {
+      // Buy Now flow uses localStorage (same keys your cart page reads)
+      const ok = startBuyNow(product, quantity);
+      // Always restore scrolling when leaving modal
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+      if (ok) navigate("/cart", { replace: true });
+      return;
+    }
+    await addToCart(product, quantity);
   };
 
   return (
-    <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-hidden">
-      <div className="bg-white max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-xl flex flex-col md:flex-row overflow-y-auto">
-        {/* Left Image Section */}
-        <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
-          <button
-            onClick={() => changeImage(-1)}
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
-          >
-            &lt;
-          </button>
+    <>
+      <section className="py-20 flex flex-col items-center">
+        <h1 id="shop-section" className="product-heading">
+          Shop The Luxury
+        </h1>
 
-          <img
-            src={images[currentImg]}
-            alt={`${fullProduct.name} ${currentImg + 1}`}
-            className="object-cover w-full h-96 rounded-lg"
-          />
+        {/* Products Container */}
+        <div className="w-full flex flex-wrap justify-center gap-8 px-6">
+          {products.map((product, index) => {
+            const discountedPrice = Math.trunc(
+              product.oprice - (product.oprice * product.discount) / 100
+            );
+            const inCart = cart.some((item) => item.product.id === product.id);
+            const inWishlist = wishlist.some(
+              (item) => item.productId === product.id
+            );
 
-          <button
-            onClick={() => changeImage(1)}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow hover:bg-gray-200"
-          >
-            &gt;
-          </button>
+            return (
+              <div
+                key={index}
+                className="relative w-62 h-86 flex flex-col items-center gap-2 rounded-xl overflow-hidden shadow-lg bg-white"
+              >
+                <img
+                  className="w-72 h-54 object-cover"
+                  src={product.imageurl}
+                  alt={product.name}
+                  onClick={() => handleSlideClick(product)}
+                  style={{ cursor: "pointer" }}
+                />
 
-          <div className="flex space-x-2 mt-4 overflow-x-auto">
-            {images.slice(0, 5).map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                onClick={() => setCurrentImg(idx)}
-                className={`w-16 h-16 object-cover rounded cursor-pointer border-2 ${
-                  idx === currentImg ? "border-indigo-500" : "border-transparent"
-                }`}
-                alt={`thumb-${idx}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Right Product Section */}
-        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between relative">
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 text-2xl text-gray-500 hover:text-gray-800 font-bold"
-          >
-            ×
-          </button>
-
-          <div>
-            <div className="w-full flex justify-between items-start mt-6">
-              {/* Product Name on the Left */}
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                {fullProduct.name}
-              </h2>
-
-              {/* Icons on the Right */}
-              <div className="flex items-center gap-[15px]">
-                {/* Wishlist Icon */}
+                {/* Wishlist toggle */}
                 <button
-                  onClick={handleToggleWishlist}
-                  className="hover:scale-110 transition"
+                  onClick={() => toggleWishlist(product)}
+                  className="absolute top-2 right-2 p-2 rounded-full transition"
+                  disabled={isCartLoading}
                 >
                   <img
-                    src={isInWishlist ? WishlistFilledImage : WishlistImage}
-                    alt="Wishlist"
-                    className="w-8 h-8"
+                    src={inWishlist ? WishlistFilledImage : WishlistImage}
+                    alt="wishlist"
+                    className="w-10 h-10"
                   />
                 </button>
 
-                {/* Share Icon */}
-                <button
-                  onClick={handleShare}
-                  className="hover:scale-110 transition"
-                  title="Share"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="26.703"
-                    height="25.928"
+                {/* Title & size */}
+                <div className="w-9/10 flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">{product.name}</h3>
+                  <span className="text-gray-700 font-medium">
+                    {product.size} ml
+                  </span>
+                </div>
+
+                {/* Pricing */}
+                <div className="w-9/10 flex justify-between items-center">
+                  <span className="flex justify-between gap-4 items-center">
+                    <span className="text-lg font-bold text-black">
+                      ₹{discountedPrice}
+                    </span>
+                    <span className="text-sm text-gray-400 line-through">
+                      (₹{product.oprice})
+                    </span>
+                  </span>
+                  <span className="text-blue-700 font-semibold">
+                    {product.discount}% Off
+                  </span>
+                </div>
+
+                {/* Cart button */}
+                {inCart ? (
+                  <button
+                    onClick={() => removeFromCart(product.id)}
+                    className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
+                    disabled={isCartLoading}
                   >
-                    <path d="M1.056 21.928c0-6.531 5.661-9.034 10.018-9.375V18.1L22.7 9.044 11.073 0v4.836a10.5 10.5 0 0 0-7.344 3.352C-.618 12.946-.008 21 .076 21.928z" />
-                  </svg>
-                </button>
+                    remove from cart
+                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleAdd(product, 1, false)}
+                    className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
+                    disabled={isCartLoading}
+                  >
+                    add to cart
+                    <img src={CartImage} alt="Cart" className="w-8 h-8" />
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-baseline mt-2 flex-wrap gap-2">
-              <span className="text-xl md:text-2xl font-bold text-gray-900">
-                ₹{discountedPrice}
-              </span>
-              {discount > 0 && (
-                <span className="text-sm line-through text-gray-500">
-                  ₹{basePrice}
-                </span>
-              )}
-              <span className="ml-auto text-sm text-gray-700">
-                {fullProduct.size} ml
-              </span>
-            </div>
-
-            <div className="mt-4 flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">Qty:</span>
-              <div className="flex items-center border rounded">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="px-3 py-1"
-                >
-                  –
-                </button>
-                <span className="px-4">{quantity}</span>
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="px-3 py-1"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {fullProduct.description && (
-              <div className="mt-6 text-gray-700 space-y-2">
-                <h3 className="font-medium">Description</h3>
-                <p>{fullProduct.description}</p>
-              </div>
-            )}
-
-            {/* Notes (if available) */}
-            <div className="mt-6 text-gray-700 space-y-4">
-              {fullProduct.composition && (
-                <div>
-                  <h3 className="font-medium">Top Notes</h3>
-                  <hr className="border-t border-gray-300 my-1" />
-                  <p>{fullProduct.composition}</p>
-                </div>
-              )}
-              {fullProduct.fragranceNotes && (
-                <div>
-                  <h3 className="font-medium">Base Notes</h3>
-                  <hr className="border-t border-gray-300 my-1" />
-                  <p>{fullProduct.fragranceNotes}</p>
-                </div>
-              )}
-              {fullProduct.fragrance && (
-                <div>
-                  <h3 className="font-medium">Heart Notes</h3>
-                  <hr className="border-t border-gray-300 my-1" />
-                  <p>{fullProduct.fragrance}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CTA buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-4">
-            <button
-              onClick={addToCartHandler}
-              className={`flex-1 py-3 px-6 font-semibold rounded-lg border ${
-                isInCart
-                  ? "bg-red-600 text-white hover:bg-red-700"
-                  : "bg-white text-black border-black hover:bg-gray-100"
-              }`}
-            >
-              {isInCart ? "Remove from Cart" : `Add to Cart (${quantity})`}
-            </button>
-
-            <button
-              onClick={handleBuyNow}
-              className="flex-1 py-3 px-6 font-semibold rounded-lg bg-black text-white border border-black hover:bg-white hover:text-black transition-colors duration-200"
-            >
-              Buy Now
-            </button>
-          </div>
+            );
+          })}
         </div>
-      </div>
-    </div>
+
+        {/* Modal */}
+        {modalProduct && (
+          <ProductDetail
+            product={{
+              ...modalProduct,
+              images: modalProduct.images || [modalProduct.imageurl],
+            }}
+            onClose={closeModal}
+            // When modal clicks "Add" or "Buy Now"
+            onAddToCart={(product, quantity, isBuyNow) =>
+              handleAdd(product, quantity, isBuyNow)
+            }
+            inCart={cart.some((item) => item.product.id === modalProduct.id)}
+            onToggleWishlist={() => toggleWishlist(modalProduct)}
+            inWishlist={wishlist.some(
+              (item) => item.productId === modalProduct.id
+            )}
+            quantity={1}
+          />
+        )}
+      </section>
+    </>
   );
 };
 
-export default ProductDetail;
+export default Products;
