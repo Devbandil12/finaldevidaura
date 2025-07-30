@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useContext,
   useCallback,
+  useRef,
 } from "react";
 import { db } from "../../configs";
 import {
@@ -16,11 +17,11 @@ import { UserContext } from "./UserContext";
 
 export const CartContext = createContext();
 
-// ---- LocalStorage keys for guest mode ----
+// ---------- LocalStorage keys for guest mode ----------
 const LS_CART_KEY = "guest_cart";
 const LS_WISHLIST_KEY = "guest_wishlist";
 
-// Small helpers
+// ---------- Small helpers ----------
 const uuid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
@@ -57,6 +58,9 @@ export const CartProvider = ({ children }) => {
   const { userdetails } = useContext(UserContext);
   const isSignedIn = !!userdetails?.id;
 
+  // Guard so merges run once per sign-in (avoid Strict Mode double-run)
+  const mergedOnceRef = useRef(false);
+
   // =========================
   // Fetchers
   // =========================
@@ -64,11 +68,10 @@ export const CartProvider = ({ children }) => {
   // Cart
   const getCartitems = useCallback(async () => {
     if (!isSignedIn) {
-      // Guest: hydrate from LS, don't show loader
+      // Guest: hydrate from LS, no loader
       const guest = readLS(LS_CART_KEY, []);
-      // Ensure every entry has cartId and product
       const normalized = guest.map((i) => ({
-        product: i.product, // full product object
+        product: i.product,
         quantity: i.quantity || 1,
         cartId: i.cartId || uuid(),
         userId: null,
@@ -105,9 +108,8 @@ export const CartProvider = ({ children }) => {
   // Wishlist
   const getwishlist = useCallback(async () => {
     if (!isSignedIn) {
-      // Guest: hydrate from LS, don't show loader
+      // Guest: hydrate from LS, no loader
       const guest = readLS(LS_WISHLIST_KEY, []);
-      // Ensure shape contains productId and product
       const normalized = guest.map((w) => ({
         product: w.product,
         productId: w.productId ?? w.product?.id,
@@ -152,7 +154,7 @@ export const CartProvider = ({ children }) => {
       if (!product) return false;
 
       if (!isSignedIn) {
-        // Guest: update state + LS
+        // Guest: state + LS
         const existing = cart.find((i) => i.product?.id === product.id);
         const next = existing
           ? cart.map((i) =>
@@ -160,10 +162,7 @@ export const CartProvider = ({ children }) => {
                 ? { ...i, quantity: (i.quantity || 1) + quantity }
                 : i
             )
-          : [
-              ...cart,
-              { product, quantity, cartId: uuid(), userId: null },
-            ];
+          : [...cart, { product, quantity, cartId: uuid(), userId: null }];
         setCart(next);
         writeLS(
           LS_CART_KEY,
@@ -391,7 +390,6 @@ export const CartProvider = ({ children }) => {
       if (!product) return false;
 
       if (!isSignedIn) {
-        // Guest: ensure unique by productId
         const exists = wishlist.some(
           (w) => (w.productId ?? w.product?.id) === product.id
         );
@@ -526,16 +524,122 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   // =========================
-  // Initialize on auth changes
+  // Merge guest ➜ user on login
+  // =========================
+
+  /** Merge guest cart (localStorage) into the signed-in user's DB cart. */
+  const mergeGuestCartIntoDB = useCallback(async () => {
+    if (!isSignedIn) return;
+
+    const guestCart = readLS(LS_CART_KEY, []);
+    if (!guestCart.length) return;
+
+    try {
+      // Ensure we know current DB state (cart state already loaded by getCartitems)
+      const existingMap = new Map(
+        cart.map((i) => [i.product?.id, i]) // productId -> cart row
+      );
+
+      for (const g of guestCart) {
+        const productId = g?.product?.id;
+        if (!productId) continue;
+
+        const guestQty = Math.max(1, Number(g.quantity || 1));
+        const existing = existingMap.get(productId);
+
+        if (existing) {
+          // Update quantity (sum)
+          const newQty = Math.max(1, Number(existing.quantity || 1) + guestQty);
+          await db
+            .update(addToCartTable)
+            .set({ quantity: newQty })
+            .where(
+              and(
+                eq(addToCartTable.userId, userdetails.id),
+                eq(addToCartTable.productId, productId)
+              )
+            );
+        } else {
+          // Insert as new row
+          await db
+            .insert(addToCartTable)
+            .values({
+              userId: userdetails.id,
+              productId,
+              quantity: guestQty,
+            });
+        }
+      }
+
+      // Clear guest cart now that it's merged
+      writeLS(LS_CART_KEY, []);
+
+      // Refresh DB cart state
+      await getCartitems();
+      return true;
+    } catch (e) {
+      console.error("mergeGuestCartIntoDB error:", e);
+      // Do NOT clear guest LS on failure
+      return false;
+    }
+  }, [isSignedIn, userdetails?.id, cart, getCartitems]);
+
+  /** Merge guest wishlist (localStorage) into the signed-in user's DB wishlist. */
+  const mergeGuestWishlistIntoDB = useCallback(async () => {
+    if (!isSignedIn) return;
+
+    const guestWish = readLS(LS_WISHLIST_KEY, []);
+    if (!guestWish.length) return;
+
+    try {
+      const existingIds = new Set(
+        wishlist.map((w) => w.productId ?? w.product?.id)
+      );
+
+      for (const gw of guestWish) {
+        const productId = gw?.productId ?? gw?.product?.id;
+        if (!productId) continue;
+        if (existingIds.has(productId)) continue; // already in DB
+
+        await db
+          .insert(wishlistTable)
+          .values({ userId: userdetails.id, productId });
+      }
+
+      // Clear guest wishlist after merge
+      writeLS(LS_WISHLIST_KEY, []);
+
+      // Refresh DB wishlist state
+      await getwishlist();
+      return true;
+    } catch (e) {
+      console.error("mergeGuestWishlistIntoDB error:", e);
+      return false;
+    }
+  }, [isSignedIn, userdetails?.id, wishlist, getwishlist]);
+
+  // =========================
+  // Initialize on auth changes (and merge once on login)
   // =========================
 
   useEffect(() => {
     (async () => {
       if (isSignedIn) {
+        // 1) Load user's current DB state first
         await getCartitems();
         await getwishlist();
+
+        // 2) Merge guest -> DB ONCE per sign-in (guarded for Strict Mode)
+        if (!mergedOnceRef.current) {
+          mergedOnceRef.current = true;
+          await mergeGuestCartIntoDB();
+          await mergeGuestWishlistIntoDB();
+        }
       } else {
-        // Guest: hydrate both from LS; never show loaders for guests
+        // Reset guard when user signs out
+        mergedOnceRef.current = false;
+
+        // Guest: hydrate both from LS (no loaders)
         const gCart = readLS(LS_CART_KEY, []);
         setCart(
           gCart.map((i) => ({
