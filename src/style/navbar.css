@@ -46,6 +46,7 @@ header {
 }
 
 .part-1.nav-brand h1 {
+padding-left:10px;
   font-size: 1.25rem;
   letter-spacing: 0.5px;
   margin: 0;
