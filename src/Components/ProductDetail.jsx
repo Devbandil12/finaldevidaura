@@ -1,5 +1,4 @@
 // src/pages/ProductDetail.jsx
-
 import React, { useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
@@ -12,7 +11,7 @@ const ProductDetail = ({
   product,
   onClose,
 
-  // Optional / legacy props (component works without them):
+  // Optional legacy props (component works without them):
   onToggleWishlist,
   inWishlist,
   onAddToCart,
@@ -29,20 +28,23 @@ const ProductDetail = ({
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // isCartLoading, // if you want to disable buttons while mutating
+    // If you want to disable buttons during a mutation, expose isCartLoading from context
+    // isCartLoading,
   } = useContext(CartContext);
 
-  // Resolve the full product (images etc.)
-  const fullProduct = products.find((p) => p.id === product.id) || product;
+  // Resolve full product (prefer global product for latest data)
+  const fullProduct =
+    products.find((p) => p.id === product.id) || product;
 
+  // Images
   const images =
     Array.isArray(fullProduct.images) && fullProduct.images.length > 0
       ? fullProduct.images
       : [fullProduct.imageurl];
 
-  // Derive inCart / inWishlist from context if props not provided
+  // Derived inCart / inWishlist (fallback to context if props not provided)
   const ctxInCart = useMemo(
-    () => cart?.some((i) => i.product.id === fullProduct.id),
+    () => cart?.some((i) => i.product?.id === fullProduct.id),
     [cart, fullProduct.id]
   );
   const isInCart = typeof inCart === "boolean" ? inCart : !!ctxInCart;
@@ -66,10 +68,10 @@ const ProductDetail = ({
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + images.length) % images.length);
 
-  // Handlers (use props if provided; otherwise use context)
+  // Handlers (prefer legacy props if provided; otherwise use context)
   const addToCartHandler = async () => {
     if (onAddToCart) {
-      // Keep legacy contract: quantity 0 => remove
+      // Keep legacy contract: quantity === 0 means "remove from cart"
       return onAddToCart(fullProduct, isInCart ? 0 : quantity, false);
     }
 
@@ -130,11 +132,11 @@ const ProductDetail = ({
             &lt;
           </button>
 
-          <img
-            src={images[currentImg]}
-            alt={`${fullProduct.name} ${currentImg + 1}`}
-            className="object-cover w-full h-96 rounded-lg"
-          />
+            <img
+              src={images[currentImg]}
+              alt={`${fullProduct.name} ${currentImg + 1}`}
+              className="object-cover w-full h-96 rounded-lg"
+            />
 
           <button
             onClick={() => changeImage(1)}
@@ -206,9 +208,13 @@ const ProductDetail = ({
                 ₹{discountedPrice}
               </span>
               {discount > 0 && (
-                <span className="text-sm line-through text-gray-500">₹{basePrice}</span>
+                <span className="text-sm line-through text-gray-500">
+                  ₹{basePrice}
+                </span>
               )}
-              <span className="ml-auto text-sm text-gray-700">{fullProduct.size} ml</span>
+              <span className="ml-auto text-sm text-gray-700">
+                {fullProduct.size} ml
+              </span>
             </div>
 
             <div className="mt-4 flex items-center space-x-4">
