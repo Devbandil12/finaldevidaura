@@ -1,3 +1,4 @@
+// src/CheckoutGuard.jsx
 import React, { useMemo } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
@@ -33,8 +34,8 @@ export default function CheckoutGuard() {
 
   // 2) Not signed in? Go to login and come back to CART (not checkout).
   if (!isSignedIn) {
-    // Do NOT pass /checkout here; policy says return to /cart after login.
-    return <Navigate to={`/login?redirect=${encodeURIComponent("/cart")}`} replace />;
+    // Policy says: after login, return to /cart
+    return <Navigate to="/login" replace />;
   }
 
   // 3) Valid intent + signed in → enter checkout
