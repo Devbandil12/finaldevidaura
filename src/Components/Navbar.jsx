@@ -1,11 +1,15 @@
 // src/Components/Navbar.js
-
-import React, { useState, useEffect, useContext, useRef, useLayoutEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 
-import "../style/navbar.css";
-
+// Assets
 import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
 import MyOrderIcon from "../assets/order-svgrepo-com.svg";
 import MailUsIcon from "../assets/mail-svgrepo-com.svg";
@@ -15,40 +19,51 @@ import AdminIcon from "../assets/admin.png";
 import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
 import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
 
+// CSS
+import "../style/navbar.css";
+
+// Clerk
+import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
+
+// Contexts
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-// NEW: GSAP
+// GSAP
 import { gsap } from "gsap";
 
 const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
+  const { userdetails } = useContext(UserContext);
+
   const [cartCount, setCartCount] = useState(0);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // sidebar
+  const [navbarVisible, setNavbarVisible] = useState(true);
 
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const isLoggedIn = isSignedIn;
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // sidebar
-  const [navbarVisible, setNavbarVisible] = useState(true);
-
   const navigate = useNavigate();
+
+  // ---- Refs ----
+  const navRef = useRef(null);            // scope for page-load GSAP
+  const sidebarScopeRef = useRef(null);   // scope for sidebar GSAP
+  const profileAnimScopeRef = useRef(null); // scope for profile dropdown GSAP
+  const profileWrapperRef = useRef(null); // wrapper for outside-click
   const profileContainerRef = useRef(null);
 
-  // NEW: refs to scope GSAP
-  const navRef = useRef(null);
-  const sidebarRef = useRef(null);
-  const profileRef = useRef(null);
-
-  const { userdetails } = useContext(UserContext);
-
-  // Update cart count when cart changes
+  // -------------------------
+  // Counts
+  // -------------------------
   useEffect(() => {
     if (cart) setCartCount(cart.length);
   }, [cart]);
 
-  // Toggle the mobile sidebar (hamburger logic unchanged)
+  // -------------------------
+  // Hamburger toggle (logic unchanged)
+  // -------------------------
   const toggleSidebar = (e) => {
     e.preventDefault();
     setIsOpen((v) => !v);
@@ -65,14 +80,17 @@ const Navbar = ({ onVisibilityChange }) => {
     }
   }, [isOpen]);
 
+  // -------------------------
   // Hide navbar on scroll down, show on scroll up (unchanged)
+  // -------------------------
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const currentScroll =
+        window.pageYOffset || document.documentElement.scrollTop;
       const isVisible = currentScroll < lastScrollTop;
-      setNavbarVisible(isVisible);
 
+      setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
 
       lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
@@ -81,15 +99,21 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
 
-  // Close profile dropdown on outside click
+  // -------------------------
+  // Outside click to close profile (wrapper contains button + dropdown)
+  // -------------------------
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileContainerRef.current && !profileContainerRef.current.contains(event.target)) {
+      if (
+        profileWrapperRef.current &&
+        !profileWrapperRef.current.contains(event.target)
+      ) {
         setIsProfileOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside, true);
   }, []);
 
   // Close profile dropdown on scroll
@@ -101,58 +125,158 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScrollProfile);
   }, [isProfileOpen]);
 
+  // ===========================================================
+  // Compute sidebar top offset (main navbar + MobileBackBar)
+  // ===========================================================
+  const updateSidebarOffset = useCallback(() => {
+    const mainBar = document.getElementById("navbar"); // top fixed bar
+    const secondBar =
+      document.getElementById("mobile-back-bar") ||
+      document.querySelector(".mobile-back-bar"); // MobileBackBar
+
+    const visibleHeight = (el) => {
+      if (!el) return 0;
+      const r = el.getBoundingClientRect();
+      const top = Math.max(r.top, 0);
+      const bottom = Math.min(r.bottom, window.innerHeight);
+      return Math.max(0, bottom - top);
+    };
+
+    const offset = visibleHeight(mainBar) + visibleHeight(secondBar);
+    document.documentElement.style.setProperty(
+      "--sidebar-top",
+      `${offset}px`
+    );
+  }, []);
+
+  // Run on mount + resize/orientation change + observe bars
+  useLayoutEffect(() => {
+    updateSidebarOffset();
+    const onRes = () => updateSidebarOffset();
+    window.addEventListener("resize", onRes);
+    window.addEventListener("orientationchange", onRes);
+
+    const ro = new ResizeObserver(updateSidebarOffset);
+    const mainBar = document.getElementById("navbar");
+    const secondBar = document.getElementById("mobile-back-bar");
+    if (mainBar) ro.observe(mainBar);
+    if (secondBar) ro.observe(secondBar);
+
+    return () => {
+      window.removeEventListener("resize", onRes);
+      window.removeEventListener("orientationchange", onRes);
+      ro.disconnect();
+    };
+  }, [updateSidebarOffset]);
+
+  // Update when main bar hides/shows
+  useEffect(() => {
+    updateSidebarOffset();
+  }, [navbarVisible, updateSidebarOffset]);
+
   // =======================
   // GSAP: Page-load stagger
   // =======================
   useLayoutEffect(() => {
-    // Respect reduced motion
-    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+        willChange: "transform, opacity",
+        force3D: true,
+      });
 
-      tl.from(".nav-brand", { y: -10, opacity: 0, duration: 0.4 })
-        .from(".nav-links li", { y: -12, opacity: 0, stagger: 0.06, duration: 0.35 }, "-=0.1")
-        .from(".icons > *", { y: -10, opacity: 0, stagger: 0.06, duration: 0.35 }, "-=0.2");
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
+        .from(
+          ".nav-links li",
+          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+          "-=0.06"
+        )
+        .from(
+          ".icons > *",
+          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+          "-=0.1"
+        )
+        .add(() =>
+          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+            willChange: "auto",
+          })
+        );
     }, navRef);
 
     return () => ctx.revert();
   }, []);
 
   // =======================
-  // GSAP: Sidebar stagger
+  // GSAP: Sidebar stagger (after panel slides in)
   // =======================
   useEffect(() => {
-    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
 
-    if (isOpen) {
-      const ctx = gsap.context(() => {
+    if (!isOpen) return;
+
+    const ctx = gsap.context(() => {
+      const sidebarEl =
+        sidebarScopeRef.current?.querySelector(".sidebar") ||
+        document.querySelector(".sidebar");
+      if (!sidebarEl) return;
+
+      const runStagger = () => {
         const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-        tl.from(".sidebar-header", { y: -8, opacity: 0, duration: 0.25 })
-          .from(".sidebar-nav li", { y: 8, opacity: 0, stagger: 0.06, duration: 0.25 }, "-=0.05")
-          .from(".sidebar-footer", { y: 6, opacity: 0, duration: 0.2 }, "-=0.08");
-      }, sidebarRef);
-      return () => ctx.revert();
-    }
+        tl.from(".sidebar-header", { y: -8, autoAlpha: 0, duration: 0.24 })
+          .from(
+            ".sidebar-nav li",
+            { y: 8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+            "-=0.04"
+          )
+          .from(".sidebar-footer", { y: 6, autoAlpha: 0, duration: 0.18 }, "-=0.1");
+      };
+
+      const onEnd = () => {
+        sidebarEl.removeEventListener("transitionend", onEnd);
+        runStagger();
+      };
+      sidebarEl.addEventListener("transitionend", onEnd);
+
+      // Fallback if transitionend is missed
+      const t = setTimeout(runStagger, 360);
+
+      return () => {
+        sidebarEl.removeEventListener("transitionend", onEnd);
+        clearTimeout(t);
+      };
+    }, sidebarScopeRef);
+
+    return () => ctx.revert();
   }, [isOpen]);
 
   // ==============================
   // GSAP: Profile dropdown reveal
   // ==============================
   useEffect(() => {
-    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
 
-    if (isProfileOpen) {
-      const ctx = gsap.context(() => {
-        const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-        tl.from(".profile-content", { y: -10, opacity: 0, duration: 0.2 })
-          .from(".profile-content ul li", { y: 6, opacity: 0, stagger: 0.04, duration: 0.2 }, "-=0.05");
-      }, profileRef);
-      return () => ctx.revert();
-    }
+    if (!isProfileOpen) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(".profile-content", { y: -10, autoAlpha: 0, duration: 0.18 })
+        .from(
+          ".profile-content ul li",
+          { y: 6, autoAlpha: 0, duration: 0.18, stagger: 0.04 },
+          "-=0.04"
+        );
+    }, profileAnimScopeRef);
+
+    return () => ctx.revert();
   }, [isProfileOpen]);
 
   return (
@@ -180,7 +304,9 @@ const Navbar = ({ onVisibilityChange }) => {
             <li>
               <a
                 onClick={() =>
-                  document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" })
+                  document
+                    .getElementById("products-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
                 }
               >
                 Collection
@@ -189,7 +315,9 @@ const Navbar = ({ onVisibilityChange }) => {
             <li>
               <a
                 onClick={() =>
-                  document.getElementById("shop-section")?.scrollIntoView({ behavior: "smooth" })
+                  document
+                    .getElementById("shop-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
                 }
               >
                 Shop
@@ -198,7 +326,7 @@ const Navbar = ({ onVisibilityChange }) => {
           </ul>
         </div>
 
-        {/* RIGHT: Icons row */}
+        {/* RIGHT: Icons */}
         <div className="part-3">
           <div className="icons">
             {/* Wishlist */}
@@ -227,15 +355,20 @@ const Navbar = ({ onVisibilityChange }) => {
 
             {/* Profile / Sign in */}
             {isLoggedIn ? (
-              <div className="profile-icon" id="profile-btn" ref={profileRef}>
-                <button
-                  id="profileButton"
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  aria-expanded={isProfileOpen}
-                  aria-controls="profileContent"
-                >
-                  <img src={ProfileIcon} alt="Profile" />
-                </button>
+              <div
+                className="profile-wrapper"
+                ref={profileWrapperRef}
+              >
+                <div className="profile-icon" id="profile-btn" ref={profileAnimScopeRef}>
+                  <button
+                    id="profileButton"
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    aria-expanded={isProfileOpen}
+                    aria-controls="profileContent"
+                  >
+                    <img src={ProfileIcon} alt="Profile" />
+                  </button>
+                </div>
 
                 {/* Profile Dropdown */}
                 <div className="profile-container" ref={profileContainerRef}>
@@ -253,9 +386,7 @@ const Navbar = ({ onVisibilityChange }) => {
                       <div className="user-data">
                         <h3 id="profile-name">{user?.fullName}</h3>
                         <p id="profile-email">
-                          {user?.primaryEmailAddress?.emailAddress ||
-                            user?.primaryEmailAddress?.emailAddress ||
-                            "N/A"}
+                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
                         </p>
                       </div>
                     </div>
@@ -318,7 +449,7 @@ const Navbar = ({ onVisibilityChange }) => {
 
             {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
             <div className="part-1">
-              <div className="mobile-view" ref={sidebarRef}>
+              <div className="mobile-view" ref={sidebarScopeRef}>
                 <div className="menu-icon" onClick={toggleSidebar}>
                   {/* hamburger unchanged */}
                   <div className="menu-container">
@@ -329,7 +460,7 @@ const Navbar = ({ onVisibilityChange }) => {
                     </div>
                   </div>
 
-                  {/* sidebar content (same structure; styled + animated) */}
+                  {/* Sidebar */}
                   <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
                     <header className="sidebar-header">
                       <img src={UserIcon} alt="User" />
