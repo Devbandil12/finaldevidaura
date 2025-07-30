@@ -96,9 +96,9 @@ const App = () => {
                         </>
                       }
                     />
-<Route element={<CheckoutGuard />}>
+
                     <Route path="/login" element={<Login />} />
-</Route>
+
                     <Route path="/myorder" element={<MyOrder />} />
                     <Route
                       path="/wishlist"
@@ -122,7 +122,9 @@ const App = () => {
                         />
                       }
                     />
+<Route element={<CheckoutGuard />}>
                     <Route path="/checkout" element={<Checkout />} />
+</Route>
                     <Route path="/Admin" element={<Adminpannel />} />
                     <Route path="/contact" element={<ContactUs />} />
                   </Routes>
