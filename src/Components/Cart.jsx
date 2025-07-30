@@ -29,8 +29,25 @@ const location = useLocation();
 
 
 // Initialize state *once* from that stored value:
-const [buyNowCart, setBuyNowCart] = useState([]);
-const [isBuyNowActive, setIsBuyNowActive] = useState(false);
+// Decide Buy‑Now from URL synchronously (prevents flicker/race)
+const isBuyNowURLInitial =
+  new URLSearchParams(window.location.search).get("mode") === "buynow";
+
+const initialBuyNowItem = (() => {
+  if (isBuyNowURLInitial) {
+    const raw = sessionStorage.getItem("buyNowItem");
+    if (raw) {
+      try { return JSON.parse(raw); } catch { /* ignore */ }
+    }
+  }
+  return null;
+})();
+
+const [isBuyNowActive, setIsBuyNowActive] = useState(Boolean(initialBuyNowItem));
+const [buyNowCart, setBuyNowCart] = useState(
+  initialBuyNowItem ? [initialBuyNowItem] : []
+);
+
 
 const [cartFetched, setCartFetched] = useState(false);
 
@@ -68,11 +85,13 @@ useEffect(() => {
 
   // Clear temp cart when leaving both /cart and /checkout
 useEffect(() => {
-  if (!["/cart", "/checkout"].includes(location.pathname)) {
+  const path = location.pathname.replace(/\/+$/, ""); // trim trailing slashes
+  if (path !== "/cart" && path !== "/checkout") {
     sessionStorage.removeItem("buyNowItem");
     setIsBuyNowActive(false);
   }
 }, [location.pathname]);
+
 
 
   // Seed a safe back target after a hard refresh (robust across devices)
@@ -80,14 +99,13 @@ useEffect(() => {
   const nav = performance.getEntriesByType("navigation")[0];
   const reloaded = nav && nav.type === "reload";
 
-  // If this tab has no meaningful back entry, create one.
   if ((reloaded || document.referrer === "") && window.history.length <= 1) {
-    // 1) replace current entry with a safe route
+    const current = window.location.pathname + window.location.search;
     window.history.replaceState({ __seed__: true }, "", "/products");
-    // 2) push the current cart route back on top
-    window.history.pushState({ __cart__: true }, "", "/cart");
+    window.history.pushState({ __cart__: true }, "", current); // keeps ?mode=buynow
   }
 }, []);
+
 
 
 // Fallback: intercept back to avoid tab-close when history is thin
