@@ -420,7 +420,11 @@ header {
 }
 
 /* (You had two .sidebar.open earlier; the one below is the effective one) */
-.sidebar.open { left: -170%; }
+/* fully visible: 100% - width */
+.sidebar.open { 
+  left: calc(100% - min(70vw, 300px));
+}
+
 
 /* header */
 .sidebar-header {
@@ -550,7 +554,7 @@ header {
   #navbar {
     width: 100%;
     padding: 5px 10px;
-    background-color: white;   /* solid on mobile for clarity */
+    background-color: white;  
     margin-top: 0px;
     border-radius: 0px;
     border-bottom: 1px solid #eee;
