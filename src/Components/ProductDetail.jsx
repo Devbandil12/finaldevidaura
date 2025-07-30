@@ -60,13 +60,13 @@ const ProductDetail = ({
     product: fullProduct,
     quantity,
     cartId: `temp-${fullProduct.id}`,
-};
+  };
 
- // Store payload only in sessionStorage (persists through refresh, same tab)
-  sessionStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
-  
-  navigate("/cart?mode=buynow"); 
+  localStorage.setItem("buyNowItem", JSON.stringify(tempCartItem));
+localStorage.setItem("buyNowActive", "true");
+
   onClose();
+  navigate("/cart", { replace: true }); // ✅ Replace history to avoid back-flicker
 };
 
 
