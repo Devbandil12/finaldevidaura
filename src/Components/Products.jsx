@@ -1,5 +1,5 @@
 // src/pages/Products.js
-import React, { useContext, useEffect, useState, useMemo } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { ProductContext } from "../contexts/productContext";
@@ -10,12 +10,12 @@ import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
 import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import ProductDetail from "./ProductDetail";
-import "../style/products.css"; // <-- NEW: styles for overlay + animations
+
+// Styles for overlay + fly-to-cart animation + small utilities
+import "../style/products.css";
 
 const Products = () => {
   const [modalProduct, setModalProduct] = useState(null);
-  // UI-only: track which products just got added (for success animation)
-  const [justAddedIds, setJustAddedIds] = useState(new Set());
 
   const { products } = useContext(ProductContext);
   const {
@@ -51,7 +51,7 @@ const Products = () => {
   const handleSlideClick = (product) => setModalProduct(product);
   const closeModal = () => setModalProduct(null);
 
-  // Unified add handler (kept as-is, only UI animation added after success)
+  // Unified add handler (logic unchanged; only adds UI animation after success)
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
       const ok = startBuyNow(product, quantity); // context handles guest/user
@@ -68,34 +68,65 @@ const Products = () => {
       return;
     }
 
-    // Same logic: add to cart
+    // Add to cart (original logic)
     await addToCart(product, quantity);
 
-    // UI-only: trigger a small "added" animation on this card
-    setJustAddedIds((prev) => {
-      const next = new Set(prev);
-      next.add(product.id);
-      return next;
-    });
-    // Remove the flag after animation completes (900ms)
-    setTimeout(() => {
-      setJustAddedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(product.id);
-        return next;
-      });
-    }, 900);
-  };
+    // ===== UI-only: Fly-to-cart animation (curved path + cart bounce) =====
+    try {
+      // Product image for this card
+      const productImg = document.querySelector(
+        `img[data-product-id="${product.id}"]`
+      );
+      // Navbar cart button (already has id="cart-icon" in your Navbar.js)
+      const cartBtn = document.getElementById("cart-icon");
+      if (!productImg || !cartBtn) return;
 
-  // Keep these memo helpers purely for rendering classNames (no logic change)
-  const cartIds = useMemo(
-    () => new Set(cart.map((c) => c.product?.id)),
-    [cart]
-  );
-  const wishlistIds = useMemo(
-    () => new Set(wishlist.map((w) => (w.productId ?? w.product?.id))),
-    [wishlist]
-  );
+      const imgRect = productImg.getBoundingClientRect();
+      const cartRect = cartBtn.getBoundingClientRect();
+
+      // Use centers for smoother travel
+      const startX = imgRect.left + imgRect.width / 2;
+      const startY = imgRect.top + imgRect.height / 2;
+      const endX = cartRect.left + cartRect.width / 2;
+      const endY = cartRect.top + cartRect.height / 2;
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+
+      // Clone the image and position it at the start
+      const clone = productImg.cloneNode(true);
+      clone.className = "fly-clone";
+      clone.style.position = "fixed";
+      clone.style.left = `${startX - imgRect.width / 2}px`;
+      clone.style.top = `${startY - imgRect.height / 2}px`;
+      clone.style.width = `${imgRect.width}px`;
+      clone.style.height = `${imgRect.height}px`;
+      clone.style.pointerEvents = "none";
+      clone.style.zIndex = "9999";
+
+      // Pass travel deltas to CSS keyframes
+      clone.style.setProperty("--tx", `${deltaX}px`);
+      clone.style.setProperty("--ty", `${deltaY}px`);
+
+      document.body.appendChild(clone);
+
+      // After animation ends: remove clone and bounce cart
+      const onEnd = () => {
+        clone.removeEventListener("animationend", onEnd);
+        clone.remove();
+
+        // Bounce the cart icon (class defined in navbar.css)
+        cartBtn.classList.remove("cart-bounce");
+        // Force reflow so we can re-trigger quickly if users add multiple items
+        // eslint-disable-next-line no-unused-expressions
+        cartBtn.offsetHeight;
+        cartBtn.classList.add("cart-bounce");
+      };
+      clone.addEventListener("animationend", onEnd);
+    } catch {
+      // Animation is cosmetic; ignore failures
+    }
+    // ===== end fly-to-cart UI effect =====
+  };
 
   return (
     <>
@@ -109,16 +140,17 @@ const Products = () => {
               product.oprice - (product.oprice * product.discount) / 100
             );
 
-            const inCart = cartIds.has(product.id);
-            const inWishlist = wishlistIds.has(product.id);
-            const justAdded = justAddedIds.has(product.id);
+            const inCart = cart.some((item) => item.product?.id === product.id);
+            const inWishlist = wishlist.some(
+              (item) => (item.productId ?? item.product?.id) === product.id
+            );
 
             return (
               <div
                 key={index}
-                className={`product-card relative flex flex-col items-center gap-2 rounded-xl overflow-hidden bg-white`}
+                className="product-card relative flex flex-col items-center gap-2 rounded-xl overflow-hidden bg-white"
               >
-                {/* Image + hover overlay */}
+                {/* Image + hover overlay (click opens modal) */}
                 <div
                   className="product-thumb relative w-full"
                   onClick={() => handleSlideClick(product)}
@@ -126,11 +158,11 @@ const Products = () => {
                 >
                   <img
                     className="product-img"
+                    data-product-id={product.id}
                     src={product.imageurl}
                     alt={product.name}
                     loading="lazy"
                   />
-                  {/* Hover/Fallback overlay */}
                   <div
                     className="img-overlay"
                     role="button"
@@ -178,9 +210,8 @@ const Products = () => {
                   </span>
                 </div>
 
-                {/* Cart button area */}
+                {/* Cart button: show "View Cart" when already in cart */}
                 <div className="w-full px-3 pb-3">
-                  {/* If it's in the cart, show View Cart (requested change) */}
                   {inCart ? (
                     <button
                       onClick={() => navigate("/cart")}
@@ -192,18 +223,11 @@ const Products = () => {
                   ) : (
                     <button
                       onClick={() => handleAdd(product, 1, false)}
-                      className={`cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white ${justAdded ? "btn-added" : ""}`}
+                      className="cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
                     >
-                      {justAdded ? "Added!" : "Add to Cart"}
+                      Add to Cart
                       <img src={CartImage} alt="Cart" className="w-7 h-7" />
                     </button>
-                  )}
-
-                  {/* Subtle success burst (purely visual) */}
-                  {justAdded && (
-                    <div className="added-burst" aria-hidden="true">
-                      <span></span><span></span><span></span><span></span><span></span>
-                    </div>
                   )}
                 </div>
               </div>
@@ -223,9 +247,11 @@ const Products = () => {
             onAddToCart={(product, quantity, isBuyNow) =>
               handleAdd(product, quantity, isBuyNow)
             }
-            inCart={cartIds.has(modalProduct.id)}
+            inCart={cart.some((item) => item.product?.id === modalProduct.id)}
             onToggleWishlist={() => toggleWishlist(modalProduct)}
-            inWishlist={wishlistIds.has(modalProduct.id)}
+            inWishlist={wishlist.some(
+              (item) => (item.productId ?? item.product?.id) === modalProduct.id
+            )}
             quantity={1}
           />
         )}
