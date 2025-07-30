@@ -1,5 +1,4 @@
 // src/pages/Products.js
-
 import React, { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -23,8 +22,8 @@ const Products = () => {
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional: use to disable buttons while mutating
-    isCartLoading,
+    // Optional: isCartLoading (disable buttons during mutations)
+    // isCartLoading,
   } = useContext(CartContext);
 
   const navigate = useNavigate();
@@ -50,16 +49,23 @@ const Products = () => {
   const handleSlideClick = (product) => setModalProduct(product);
   const closeModal = () => setModalProduct(null);
 
-  // Unified add handler used by both card and modal
+  // Unified add handler (used by card button and modal)
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
-      const ok = startBuyNow(product, quantity); // CartContext handles guest/user
+      const ok = startBuyNow(product, quantity); // context handles guest/user
       // Always restore scroll before navigation
       document.body.style.overflow = "auto";
       document.documentElement.style.overflow = "auto";
       if (ok) navigate("/cart", { replace: true });
       return;
     }
+
+    // Legacy ProductDetail passes quantity === 0 to mean "remove"
+    if (quantity === 0) {
+      await removeFromCart(product.id);
+      return;
+    }
+
     await addToCart(product, quantity);
   };
 
@@ -68,13 +74,14 @@ const Products = () => {
       <section className="py-20 flex flex-col items-center">
         <h1 id="shop-section" className="product-heading">Shop The Luxury</h1>
 
-        {/* Products grid */}
+        {/* Products Container */}
         <div className="w-full flex flex-wrap justify-center gap-8 px-6">
           {products.map((product, index) => {
             const discountedPrice = Math.trunc(
               product.oprice - (product.oprice * product.discount) / 100
             );
-            const inCart = cart.some((item) => item.product.id === product.id);
+
+            const inCart = cart.some((item) => item.product?.id === product.id);
             const inWishlist = wishlist.some(
               (item) => (item.productId ?? item.product?.id) === product.id
             );
@@ -96,7 +103,7 @@ const Products = () => {
                 <button
                   onClick={() => toggleWishlist(product)}
                   className="absolute top-2 right-2 p-2 rounded-full transition"
-                  disabled={isCartLoading}
+                  // disabled={isCartLoading}
                 >
                   <img
                     src={inWishlist ? WishlistFilledImage : WishlistImage}
@@ -133,7 +140,7 @@ const Products = () => {
                   <button
                     onClick={() => removeFromCart(product.id)}
                     className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
-                    disabled={isCartLoading}
+                    // disabled={isCartLoading}
                   >
                     remove from cart
                     <img src={CartImage} alt="Cart" className="w-8 h-8" />
@@ -142,7 +149,7 @@ const Products = () => {
                   <button
                     onClick={() => handleAdd(product, 1, false)}
                     className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 transition bg-black text-white"
-                    disabled={isCartLoading}
+                    // disabled={isCartLoading}
                   >
                     add to cart
                     <img src={CartImage} alt="Cart" className="w-8 h-8" />
@@ -162,11 +169,11 @@ const Products = () => {
             }}
             onClose={closeModal}
 
-            // Keep backward compatible props:
+            // Keep backward-compatible props:
             onAddToCart={(product, quantity, isBuyNow) =>
               handleAdd(product, quantity, isBuyNow)
             }
-            inCart={cart.some((item) => item.product.id === modalProduct.id)}
+            inCart={cart.some((item) => item.product?.id === modalProduct.id)}
 
             onToggleWishlist={() => toggleWishlist(modalProduct)}
             inWishlist={wishlist.some(
