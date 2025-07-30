@@ -11,8 +11,11 @@ import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import ProductDetail from "./ProductDetail";
 
-// Styles for overlay + fly-to-cart animation + small utilities
+// Styles for overlay/card polish (keep your existing file)
 import "../style/products.css";
+
+// NEW: GSAP for smooth animation
+import { gsap } from "gsap";
 
 const Products = () => {
   const [modalProduct, setModalProduct] = useState(null);
@@ -51,7 +54,7 @@ const Products = () => {
   const handleSlideClick = (product) => setModalProduct(product);
   const closeModal = () => setModalProduct(null);
 
-  // Unified add handler (logic unchanged; only adds UI animation after success)
+  // Unified add handler (logic unchanged; GSAP animation added after success)
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
       const ok = startBuyNow(product, quantity); // context handles guest/user
@@ -71,13 +74,13 @@ const Products = () => {
     // Add to cart (original logic)
     await addToCart(product, quantity);
 
-    // ===== UI-only: Fly-to-cart animation (curved path + cart bounce) =====
+    // ===== UI-only: Fly-to-cart with GSAP (curved path + easing + bounce) =====
     try {
-      // Product image for this card
+      // Product image on this card
       const productImg = document.querySelector(
         `img[data-product-id="${product.id}"]`
       );
-      // Navbar cart button (already has id="cart-icon" in your Navbar.js)
+      // Navbar cart button (has id="cart-icon" in your Navbar.js)
       const cartBtn = document.getElementById("cart-icon");
       if (!productImg || !cartBtn) return;
 
@@ -89,43 +92,89 @@ const Products = () => {
       const startY = imgRect.top + imgRect.height / 2;
       const endX = cartRect.left + cartRect.width / 2;
       const endY = cartRect.top + cartRect.height / 2;
-      const deltaX = endX - startX;
-      const deltaY = endY - startY;
 
-      // Clone the image and position it at the start
+      // Smaller starting visual size so it doesn't look huge
+      const MAX_W = 120;
+      const scaleStart = Math.min(1, MAX_W / imgRect.width);
+      const startW = imgRect.width * scaleStart;
+      const startH = imgRect.height * scaleStart;
+
+      // Create a visual clone (outside React tree)
       const clone = productImg.cloneNode(true);
-      clone.className = "fly-clone";
-      clone.style.position = "fixed";
-      clone.style.left = `${startX - imgRect.width / 2}px`;
-      clone.style.top = `${startY - imgRect.height / 2}px`;
-      clone.style.width = `${imgRect.width}px`;
-      clone.style.height = `${imgRect.height}px`;
-      clone.style.pointerEvents = "none";
-      clone.style.zIndex = "9999";
-
-      // Pass travel deltas to CSS keyframes
-      clone.style.setProperty("--tx", `${deltaX}px`);
-      clone.style.setProperty("--ty", `${deltaY}px`);
-
+      Object.assign(clone.style, {
+        position: "fixed",
+        left: `${startX - startW / 2}px`,
+        top: `${startY - startH / 2}px`,
+        width: `${startW}px`,
+        height: `${startH}px`,
+        pointerEvents: "none",
+        zIndex: 9999,
+        borderRadius: "12px",
+      });
       document.body.appendChild(clone);
 
-      // After animation ends: remove clone and bounce cart
-      const onEnd = () => {
-        clone.removeEventListener("animationend", onEnd);
-        clone.remove();
+      // Compute deltas (we’ll animate with transforms only — GPU friendly)
+      const dx = endX - startX;
+      const dy = endY - startY;
 
-        // Bounce the cart icon (class defined in navbar.css)
-        cartBtn.classList.remove("cart-bounce");
-        // Force reflow so we can re-trigger quickly if users add multiple items
-        // eslint-disable-next-line no-unused-expressions
-        cartBtn.offsetHeight;
-        cartBtn.classList.add("cart-bounce");
-      };
-      clone.addEventListener("animationend", onEnd);
+      // Build GSAP timeline for a nice arc
+      const tl = gsap.timeline({
+        defaults: { ease: "power3.inOut" },
+        onComplete: () => {
+          // Clean up clone
+          try {
+            document.body.removeChild(clone);
+          } catch (e) {}
+          // Bounce the cart icon to confirm
+          gsap.fromTo(
+            cartBtn,
+            { scale: 1 },
+            { scale: 1.18, duration: 0.18, ease: "back.out(3)" }
+          ).then(() =>
+            gsap.to(cartBtn, {
+              scale: 1,
+              duration: 0.18,
+              ease: "back.out(3)",
+            })
+          );
+        },
+      });
+
+      // Set initial transform state
+      gsap.set(clone, {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        willChange: "transform",
+        filter: "drop-shadow(0 6px 16px rgba(0,0,0,.12))",
+      });
+
+      // Flight: two segments to create a light arc
+      tl.to(clone, {
+        duration: 0.32,
+        x: dx * 0.6,
+        y: dy * 0.6 - 80, // lift for the arc
+        scale: 0.85,
+        opacity: 0.95,
+        ease: "power2.out",
+      }).to(
+        clone,
+        {
+          duration: 0.23,
+          x: dx,
+          y: dy,
+          scale: 0.25,
+          opacity: 0,
+          ease: "power2.in",
+          filter: "drop-shadow(0 0 0 rgba(0,0,0,0))",
+        },
+        ">-0.02" // slight overlap for snappier feel
+      );
     } catch {
-      // Animation is cosmetic; ignore failures
+      // Cosmetic only; ignore failures
     }
-    // ===== end fly-to-cart UI effect =====
+    // ===== end GSAP fly-to-cart effect =====
   };
 
   return (
@@ -158,7 +207,7 @@ const Products = () => {
                 >
                   <img
                     className="product-img"
-                    data-product-id={product.id}
+                    data-product-id={product.id}   // <-- used by animation
                     src={product.imageurl}
                     alt={product.name}
                     loading="lazy"
