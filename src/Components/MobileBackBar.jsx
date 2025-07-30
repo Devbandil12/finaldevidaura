@@ -25,7 +25,7 @@ const MobileBackBar = ({ isNavbarVisible }) => {
   if (!isMobile || currentPath === '/') return null;
 
   return (
-    <div id="mobile-back-bar" className="mobile-back-bar"
+    <div className="mobile-back-bar"
       style={{ top: isNavbarVisible ? '50px' : '0px' }}
     >
       <button className="back-btn" onClick={handleBack}>
