@@ -1,574 +1,396 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
-import { db } from "../../configs";
-import {
-  addToCartTable,
-  productsTable,
-  wishlistTable,
-} from "../../configs/schema";
-import { and, eq } from "drizzle-orm";
-import { UserContext } from "./UserContext";
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import "../style/cart.css";
 
-export const CartContext = createContext();
+import { ProductContext } from "../contexts/productContext";
+import { UserContext } from "../contexts/UserContext";
+import { CartContext } from "../contexts/CartContext";
+import { CouponContext } from "../contexts/CouponContext";
 
-const LS_CART_KEY = "guest_cart";
-const LS_WISHLIST_KEY = "guest_wishlist";
+import { toast } from "react-toastify";
+import Loader from "./Loader";
 
-const uuid = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
+const ShoppingCart = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-const readLS = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-};
-const writeLS = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
-};
-
-export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]); // [{ product, quantity, cartId?, userId? }]
-  const [wishlist, setWishlist] = useState([]); // [{ product, productId, wishlistId?, userId? }]
-
-  const [isCartLoading, setIsCartLoading] = useState(false);
-  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-
-  // Kept for compatibility with your app
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [selectedItems, setSelectedItems] = useState([]);
-
+  const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
-  const isSignedIn = !!userdetails?.id;
 
-  // ------------ FETCHERS ------------
-  const getCartitems = async () => {
-    if (!isSignedIn) {
-      // Guest mode: hydrate from localStorage
-      const guest = readLS(LS_CART_KEY, []);
-      // Normalize: ensure each item has a cartId for React lists
-      const normalized = guest.map((i) => ({
-        ...i,
-        cartId: i.cartId || uuid(),
-      }));
-      setCart(normalized);
-      return;
-    }
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    changeCartQuantity,
+    clearCart,
+    addToWishlist,
+    wishlist,
+    isCartLoading,
+    getCartitems, // still used to rehydrate when NOT in Buy Now
+  } = useContext(CartContext);
 
-    try {
-      setIsCartLoading(true);
-      const res = await db
-        .select({
-          product: productsTable,
-          userId: addToCartTable.userId,
-          cartId: addToCartTable.id,
-          quantity: addToCartTable.quantity,
-        })
-        .from(addToCartTable)
-        .innerJoin(productsTable, eq(addToCartTable.productId, productsTable.id))
-        .where(eq(addToCartTable.userId, userdetails.id));
+  const { coupons, isCouponValid, loadAvailableCoupons } =
+    useContext(CouponContext);
 
-      setCart(res);
-    } catch (e) {
-      console.error("getCartitems error:", e);
-    } finally {
-      setIsCartLoading(false);
-    }
-  };
+  // --- Buy Now temp cart state ---
+  const [buyNowCart, setBuyNowCart] = useState([]);
+  const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
-  const getwishlist = async () => {
-    if (!isSignedIn) {
-      const guest = readLS(LS_WISHLIST_KEY, []);
-      setWishlist(guest);
-      return;
-    }
+  // --- Coupon state ---
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-    try {
-      setIsWishlistLoading(true);
-      const res = await db
-        .select({
-          product: productsTable,
-          wishlistId: wishlistTable.id,
-          userId: wishlistTable.userId,
-          productId: wishlistTable.productId,
-        })
-        .from(wishlistTable)
-        .innerJoin(productsTable, eq(wishlistTable.productId, productsTable.id))
-        .where(eq(wishlistTable.userId, userdetails.id));
-      setWishlist(res);
-    } catch (e) {
-      console.error("getwishlist error:", e);
-    } finally {
-      setIsWishlistLoading(false);
-    }
-  };
-
-  // ------------ GUEST <-> DB MERGE ON SIGN-IN ------------
-  const mergeGuestCartIntoDB = async () => {
-    const guest = readLS(LS_CART_KEY, []);
-    if (!guest.length) return;
-
-    try {
-      // For each guest item, upsert into DB (sum quantities)
-      for (const g of guest) {
-        const productId = g.product.id;
-        const quantity = g.quantity || 1;
-
-        // Find if product exists in current DB cart (may not yet be fetched)
-        const existing = cart.find((i) => i.product.id === productId);
-        if (existing) {
-          const newQty = (existing.quantity || 1) + quantity;
-          await db
-            .update(addToCartTable)
-            .set({ quantity: newQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
-        } else {
-          await db.insert(addToCartTable).values({
-            userId: userdetails.id,
-            productId,
-            quantity,
-          });
-        }
+  // Hydrate temp Buy Now cart once
+  useEffect(() => {
+    const active = localStorage.getItem("buyNowActive") === "true";
+    const item = localStorage.getItem("buyNowItem");
+    if (active && item) {
+      try {
+        setBuyNowCart([JSON.parse(item)]);
+        setIsBuyNowActive(true);
+      } catch {
+        localStorage.removeItem("buyNowItem");
+        localStorage.removeItem("buyNowActive");
+        setIsBuyNowActive(false);
       }
-      // Clear guest storage and rehydrate from DB
-      writeLS(LS_CART_KEY, []);
-      await getCartitems();
-    } catch (e) {
-      console.error("mergeGuestCartIntoDB error:", e);
+    } else {
+      setIsBuyNowActive(false);
     }
-  };
+  }, []);
 
-  const mergeGuestWishlistIntoDB = async () => {
-    const guest = readLS(LS_WISHLIST_KEY, []);
-    if (!guest.length) return;
+  // Rehydrate main cart & coupons when NOT in Buy Now mode
+  useEffect(() => {
+    if (!isBuyNowActive && userdetails?.id) {
+      getCartitems();
+    }
+    if (userdetails?.id) {
+      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+    }
+  }, [isBuyNowActive, userdetails?.id, getCartitems, loadAvailableCoupons]);
 
-    try {
-      const dbProducts = new Set(wishlist.map((w) => w.productId));
-      for (const g of guest) {
-        const pid = g.productId || g.product?.id;
-        if (!pid || dbProducts.has(pid)) continue;
-        await db.insert(wishlistTable).values({
-          userId: userdetails.id,
-          productId: pid,
-        });
+  // Cleanup temp buy-now on route leave
+  useEffect(() => {
+    return () => {
+      if (location.pathname !== "/cart") {
+        localStorage.removeItem("buyNowItem");
+        localStorage.removeItem("buyNowActive");
       }
-      writeLS(LS_WISHLIST_KEY, []);
-      await getwishlist();
-    } catch (e) {
-      console.error("mergeGuestWishlistIntoDB error:", e);
-    }
-  };
-
-  // ------------ CART MUTATIONS ------------
-  const addToCart = async (product, quantity = 1) => {
-    if (!product) return false;
-
-    if (!isSignedIn) {
-      // Guest mode: merge & persist to localStorage
-      const existing = cart.find((i) => i.product.id === product.id);
-      let next;
-      if (existing) {
-        next = cart.map((i) =>
-          i.product.id === product.id
-            ? { ...i, quantity: (i.quantity || 1) + quantity }
-            : i
-        );
-      } else {
-        next = [
-          ...cart,
-          { product, quantity, cartId: uuid(), userId: null },
-        ];
-      }
-      setCart(next);
-      // Save a simplified copy for guests
-      writeLS(
-        LS_CART_KEY,
-        next.map(({ product, quantity, cartId }) => ({ product, quantity, cartId }))
-      );
-      return true;
-    }
-
-    // Signed-in: DB-backed
-    const existing = cart.find((i) => i.product.id === product.id);
-    const tempId = existing ? null : uuid();
-
-    // Optimistic UI
-    setCart((prev) => {
-      if (existing) {
-        return prev.map((i) =>
-          i.product.id === product.id
-            ? { ...i, quantity: (i.quantity || 1) + quantity }
-            : i
-        );
-      }
-      return [...prev, { product, quantity, cartId: tempId, userId: userdetails.id }];
-    });
-
-    try {
-      if (existing) {
-        const newQty = (existing.quantity || 1) + quantity;
-        await db
-          .update(addToCartTable)
-          .set({ quantity: newQty })
-          .where(
-            and(
-              eq(addToCartTable.userId, userdetails.id),
-              eq(addToCartTable.productId, product.id)
-            )
-          );
-      } else {
-        const [row] = await db
-          .insert(addToCartTable)
-          .values({
-            productId: product.id,
-            userId: userdetails.id,
-            quantity,
-          })
-          .returning({
-            cartId: addToCartTable.id,
-            userId: addToCartTable.userId,
-            quantity: addToCartTable.quantity,
-          });
-
-        setCart((prev) =>
-          prev.map((i) =>
-            i.cartId === tempId ? { ...i, cartId: row.cartId, quantity: row.quantity } : i
-          )
-        );
-      }
-      return true;
-    } catch (e) {
-      console.error("addToCart error:", e);
-      // rollback
-      setCart((prev) => {
-        if (existing) {
-          return prev.map((i) =>
-            i.product.id === product.id ? { ...i, quantity: existing.quantity } : i
-          );
-        }
-        return prev.filter((i) => i.cartId !== tempId);
-      });
-      return false;
-    }
-  };
-
-  const removeFromCart = async (productId) => {
-    if (!productId && productId !== 0) return false;
-
-    if (!isSignedIn) {
-      const next = cart.filter((i) => i.product.id !== productId);
-      setCart(next);
-      writeLS(
-        LS_CART_KEY,
-        next.map(({ product, quantity, cartId }) => ({ product, quantity, cartId }))
-      );
-      return true;
-    }
-
-    const backup = cart;
-    setCart((prev) => prev.filter((i) => i.product.id !== productId));
-    try {
-      await db
-        .delete(addToCartTable)
-        .where(
-          and(
-            eq(addToCartTable.userId, userdetails.id),
-            eq(addToCartTable.productId, productId)
-          )
-        );
-      return true;
-    } catch (e) {
-      console.error("removeFromCart error:", e);
-      setCart(backup);
-      return false;
-    }
-  };
-
-  const changeCartQuantity = async (productId, delta) => {
-    if (!delta) return false;
-    const existing = cart.find((i) => i.product.id === productId);
-    if (!existing) return false;
-
-    const current = existing.quantity || 1;
-    const nextQty = Math.max(0, current + delta);
-
-    if (!isSignedIn) {
-      // Guest
-      let next;
-      if (nextQty === 0) {
-        next = cart.filter((i) => i.product.id !== productId);
-      } else {
-        next = cart.map((i) =>
-          i.product.id === productId ? { ...i, quantity: nextQty } : i
-        );
-      }
-      setCart(next);
-      writeLS(
-        LS_CART_KEY,
-        next.map(({ product, quantity, cartId }) => ({ product, quantity, cartId }))
-      );
-      return true;
-    }
-
-    // Signed in
-    const backup = cart;
-    setCart((prev) =>
-      nextQty === 0
-        ? prev.filter((i) => i.product.id !== productId)
-        : prev.map((i) =>
-            i.product.id === productId ? { ...i, quantity: nextQty } : i
-          )
-    );
-
-    try {
-      if (nextQty === 0) {
-        await db
-          .delete(addToCartTable)
-          .where(
-            and(
-              eq(addToCartTable.userId, userdetails.id),
-              eq(addToCartTable.productId, productId)
-            )
-          );
-      } else {
-        await db
-          .update(addToCartTable)
-          .set({ quantity: nextQty })
-          .where(
-            and(
-              eq(addToCartTable.userId, userdetails.id),
-              eq(addToCartTable.productId, productId)
-            )
-          );
-      }
-      return true;
-    } catch (e) {
-      console.error("changeCartQuantity error:", e);
-      setCart(backup);
-      return false;
-    }
-  };
-
-  const clearCart = async () => {
-    if (!isSignedIn) {
-      setCart([]);
-      writeLS(LS_CART_KEY, []);
-      return true;
-    }
-    const backup = cart;
-    setCart([]);
-    try {
-      await db.delete(addToCartTable).where(eq(addToCartTable.userId, userdetails.id));
-      return true;
-    } catch (e) {
-      console.error("clearCart error:", e);
-      setCart(backup);
-      return false;
-    }
-  };
-
-  // ------------ WISHLIST MUTATIONS ------------
-  const toggleWishlist = async (product) => {
-    const exists = wishlist.some((w) => (w.productId ?? w.product?.id) === product.id);
-    if (exists) return removeFromWishlist(product.id);
-    return addToWishlist(product);
-  };
-
-  const addToWishlist = async (product) => {
-    if (!product) return false;
-
-    if (!isSignedIn) {
-      const exists = wishlist.some((w) => (w.productId ?? w.product?.id) === product.id);
-      if (exists) return true;
-      const next = [
-        ...wishlist,
-        { productId: product.id, wishlistId: uuid(), userId: null, product },
-      ];
-      setWishlist(next);
-      writeLS(LS_WISHLIST_KEY, next);
-      return true;
-    }
-
-    // Signed in
-    const tempId = uuid();
-    setWishlist((prev) => [
-      ...prev,
-      { productId: product.id, wishlistId: tempId, userId: userdetails.id, product },
-    ]);
-
-    try {
-      const [row] = await db
-        .insert(wishlistTable)
-        .values({ userId: userdetails.id, productId: product.id })
-        .returning({
-          wishlistId: wishlistTable.id,
-          productId: wishlistTable.productId,
-          userId: wishlistTable.userId,
-        });
-
-      setWishlist((prev) =>
-        prev.map((w) =>
-          w.wishlistId === tempId ? { ...w, wishlistId: row.wishlistId } : w
-        )
-      );
-      return true;
-    } catch (e) {
-      console.error("addToWishlist error:", e);
-      setWishlist((prev) => prev.filter((w) => w.wishlistId !== tempId));
-      return false;
-    }
-  };
-
-  const removeFromWishlist = async (productId) => {
-    if (!isSignedIn) {
-      const next = wishlist.filter((w) => (w.productId ?? w.product?.id) !== productId);
-      setWishlist(next);
-      writeLS(LS_WISHLIST_KEY, next);
-      return true;
-    }
-
-    const backup = wishlist;
-    setWishlist((prev) => prev.filter((w) => w.productId !== productId));
-
-    try {
-      await db
-        .delete(wishlistTable)
-        .where(
-          and(
-            eq(wishlistTable.userId, userdetails.id),
-            eq(wishlistTable.productId, productId)
-          )
-        );
-      return true;
-    } catch (e) {
-      console.error("removeFromWishlist error:", e);
-      setWishlist(backup);
-      return false;
-    }
-  };
-
-  // ------------ BUY NOW HELPERS ------------
-  const startBuyNow = (product, quantity = 1) => {
-    const temp = {
-      product,
-      quantity,
-      cartId: uuid(),
-      userId: isSignedIn ? userdetails.id : null,
     };
-    try {
-      localStorage.setItem("buyNowItem", JSON.stringify(temp));
-      localStorage.setItem("buyNowActive", "true");
-      return true;
-    } catch (e) {
-      console.error("startBuyNow error:", e);
-      return false;
-    }
-  };
+  }, [location.pathname]);
 
-  const clearBuyNow = () => {
-    try {
+  // When Buy Now turns off, clear flags
+  useEffect(() => {
+    if (!isBuyNowActive) {
       localStorage.removeItem("buyNowItem");
       localStorage.removeItem("buyNowActive");
-      return true;
-    } catch (e) {
-      console.error("clearBuyNow error:", e);
-      return false;
+    }
+  }, [isBuyNowActive]);
+
+  // Choose active array & setter
+  const itemsToRender = isBuyNowActive ? buyNowCart : cart;
+
+  // === Handlers ===
+
+  // Checkout
+  const handleCheckout = () => {
+    if (!itemsToRender.length) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    const fullCartItems = itemsToRender.map((item) => {
+      const price = Math.floor(
+        item.product.oprice * (1 - item.product.discount / 100)
+      );
+      return {
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          imageurl: item.product.imageurl,
+          size: item.product.size,
+          oprice: item.product.oprice,
+          discount: item.product.discount,
+          price,
+        },
+        quantity: item.quantity || 1,
+        totalPrice: price * (item.quantity || 1),
+      };
+    });
+
+    localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
+    localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
+    if (isBuyNowActive) {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
+    }
+    navigate("/checkout");
+  };
+
+  // Update qty
+  const updateQuantity = (item, delta) => {
+    if (isBuyNowActive) {
+      // Only touch the local temp array
+      setBuyNowCart((prev) =>
+        prev.map((i) =>
+          i.product.id === item.product.id
+            ? { ...i, quantity: Math.max(1, (i.quantity || 1) + delta) }
+            : i
+        )
+      );
+    } else {
+      // Persisted cart
+      changeCartQuantity(item.product.id, delta);
     }
   };
 
-  // ------------ TOTALS UTILITY ------------
-  const computeTotals = (items = cart) => {
-    const totalOriginal = items.reduce(
-      (sum, i) => sum + (i.product?.oprice || 0) * (i.quantity || 1),
-      0
-    );
-    const totalDiscounted = items.reduce((sum, i) => {
-      const price = Math.floor(
-        (i.product?.oprice || 0) * (1 - (i.product?.discount || 0) / 100)
-      );
-      return sum + price * (i.quantity || 1);
-    }, 0);
-    return { totalOriginal, totalDiscounted };
+  // Remove item
+  const handleRemove = async (item) => {
+    if (isBuyNowActive) {
+      setBuyNowCart((prev) => prev.filter((i) => i.product.id !== item.product.id));
+    } else {
+      await removeFromCart(item.product.id);
+    }
   };
 
-  // ------------ EFFECTS ------------
-  // When auth status changes: switch sources and merge guest -> DB
-  useEffect(() => {
-    (async () => {
-      if (isSignedIn) {
-        await getCartitems();
-        await getwishlist();
-        // Try to merge any guest data if present
-        await mergeGuestCartIntoDB();
-        await mergeGuestWishlistIntoDB();
+  // Move to wishlist
+  const moveToWishlist = async (entry) => {
+    const product = entry.product;
+
+    // Already in wishlist?
+    if (wishlist.find((w) => w.productId === product.id)) {
+      toast.info("Already in wishlist");
+      // Also remove from cart if that was the user's action:
+      if (isBuyNowActive) {
+        setBuyNowCart((prev) => prev.filter((i) => i.product.id !== product.id));
       } else {
-        // Guest mode: load from LS
-        const gCart = readLS(LS_CART_KEY, []);
-        setCart(gCart.map((i) => ({ ...i, cartId: i.cartId || uuid() })));
-        const gWish = readLS(LS_WISHLIST_KEY, []);
-        setWishlist(gWish);
+        await removeFromCart(product.id);
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userdetails?.id]);
+      return;
+    }
+
+    const ok = await addToWishlist(product);
+    if (!ok) {
+      toast.error("Failed to move to wishlist");
+      return;
+    }
+
+    // Remove from the cart after adding to wishlist
+    if (isBuyNowActive) {
+      setBuyNowCart((prev) => prev.filter((i) => i.product.id !== product.id));
+    } else {
+      await removeFromCart(product.id);
+    }
+
+    toast.success("Moved to wishlist");
+  };
+
+  // Render remaining products (main cart only)
+  const renderRemainingProducts = () =>
+    !isBuyNowActive &&
+    products
+      .filter((p) => !cart.some((c) => c.product.id === p.id))
+      .map((product) => {
+        const price = Math.trunc(product.oprice * (1 - product.discount / 100));
+        return (
+          <div key={product.id} className="remaining-product-item">
+            <img src={product.imageurl} alt={product.name} />
+            <div className="r-product-title">
+              <h3>{product.name}</h3>
+              <span>{product.size} ml</span>
+            </div>
+            <div className="product-price">
+              <div className="price">
+                <span style={{ color: "green", fontWeight: "bold" }}>₹{price}</span>
+                <span className="old-price">₹{product.oprice}</span>
+              </div>
+              <span className="discount">{product.discount}% Off</span>
+            </div>
+            <button onClick={() => addToCart(product, 1)}>
+              Add to Cart
+            </button>
+          </div>
+        );
+      });
+
+  // Totals & coupon logic (use activeCart!)
+  const activeCart = itemsToRender;
+  const totalOriginal = activeCart.reduce(
+    (sum, i) => sum + i.product.oprice * (i.quantity || 1),
+    0
+  );
+  const totalDiscounted = activeCart.reduce((sum, i) => {
+    const price = Math.floor(
+      i.product.oprice * (1 - i.product.discount / 100)
+    );
+    return sum + price * (i.quantity || 1);
+  }, 0);
+
+  let finalPrice = totalDiscounted;
+  if (appliedCoupon) {
+    finalPrice =
+      appliedCoupon.discountType === "percent"
+        ? Math.floor(finalPrice * (1 - appliedCoupon.discountValue / 100))
+        : Math.max(0, finalPrice - appliedCoupon.discountValue);
+  }
+
+  // Invalidate coupon if cart changes or becomes ineligible
+  useEffect(() => {
+    if (appliedCoupon && !isCouponValid(appliedCoupon, activeCart)) {
+      setAppliedCoupon(null);
+      toast.info("Coupon no longer valid");
+    }
+  }, [activeCart, appliedCoupon, isCouponValid]);
+
+  // Proper loader (only when main cart is actually loading)
+  if (!isBuyNowActive && isCartLoading) {
+    return <Loader text="Loading cart..." />;
+  }
 
   return (
-    <CartContext.Provider
-      value={{
-        // state
-        cart,
-        wishlist,
-        isCartLoading,
-        isWishlistLoading,
+    <>
+      <main className="main-container">
+        <div className="cart-item-summary-container">
+          {/* Items */}
+          <div className="cart-items-box">
+            {activeCart.length > 0 ? (
+              activeCart.map((item) => (
+                <div key={item.product.id} className="cart-item">
+                  <div className="product-content">
+                    <img
+                      src={item.product.imageurl}
+                      alt={item.product.name}
+                    />
+                    <div className="title-quantity-price">
+                      <div className="title-quantity">
+                        <div className="product-title">
+                          <h3>{item.product.name}</h3>
+                          <span>{item.product.size} ml</span>
+                        </div>
+                        <div className="quantity-controls">
+                          <button onClick={() => updateQuantity(item, -1)}>–</button>
+                          <span>{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item, +1)}>+</button>
+                        </div>
+                      </div>
+                      <div className="item-price">
+                        <span>
+                          ₹
+                          {Math.floor(
+                            item.product.oprice *
+                              (1 - item.product.discount / 100)
+                          )}
+                        </span>
+                        <span className="old-price">₹{item.product.oprice}</span>
+                      </div>
+                    </div>
+                  </div>
 
-        // compatibility state
-        selectedCoupon,
-        setSelectedCoupon,
-        couponDiscount,
-        setCouponDiscount,
-        selectedItems,
-        setSelectedItems,
+                  <div className="procduct-shifting-buttons">
+                    <button className="remove" onClick={() => handleRemove(item)}>
+                      Remove
+                    </button>
+                    <button className="move-to-wishlist" onClick={() => moveToWishlist(item)}>
+                      Move to Wishlist
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">Your cart is empty.</div>
+            )}
+          </div>
 
-        // fetchers
-        getCartitems,
-        getwishlist,
+          {/* Summary & Checkout */}
+          <div className="cart-summary">
+            <div className="cart-summary-price">
+              <h3>
+                <span>Total:</span> <span>₹{totalOriginal}</span>
+              </h3>
+              <h3 className={`discounted-total ${appliedCoupon ? "with-coupon" : ""}`}>
+                <span>Discounted Total:</span> <span>₹{finalPrice}</span>
+              </h3>
+              {appliedCoupon && (
+                <small className="coupon-applied">
+                  {appliedCoupon.code} applied
+                </small>
+              )}
+            </div>
 
-        // cart ops
-        addToCart,
-        removeFromCart,
-        changeCartQuantity,
-        clearCart,
+            {/* Coupons */}
+            <div className="cart-coupons">
+              <h4>Available Coupons</h4>
+              {coupons.length > 0 ? (
+                coupons.map((coupon) => {
+                  const isSelected = appliedCoupon?.id === coupon.id;
+                  return (
+                    <div
+                      key={coupon.id}
+                      className={`coupon-item ${isSelected ? "applied" : ""}`}
+                      onClick={async () => {
+                        if (isSelected) {
+                          setAppliedCoupon(null);
+                        } else {
+                          const validated = await fetch(
+                            `${import.meta.env.VITE_BACKEND_URL}/api/coupons/validate`,
+                            {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                code: coupon.code,
+                                userId: userdetails.id,
+                              }),
+                            }
+                          ).then((r) => r.json());
 
-        // wishlist ops
-        toggleWishlist,
-        addToWishlist,
-        removeFromWishlist,
+                          if (validated && isCouponValid(validated, activeCart)) {
+                            setAppliedCoupon(validated);
+                          }
+                        }
+                      }}
+                    >
+                      <strong>{coupon.code}</strong>{" "}
+                      –{" "}
+                      {coupon.discountType === "percent"
+                        ? `${coupon.discountValue}% off`
+                        : `₹${coupon.discountValue} off`}
+                      <br />
+                      <small>{coupon.description}</small>
+                    </div>
+                  );
+                })
+              ) : (
+                <small>No coupons available right now</small>
+              )}
+            </div>
 
-        // buy now
-        startBuyNow,
-        clearBuyNow,
+            {/* Buttons */}
+            <div className="cart-summary-button">
+              {!isBuyNowActive && (
+                <button onClick={clearCart}>
+                  Clear Cart
+                </button>
+              )}
+              <button
+                id="checkout-button"
+                className="checkout"
+                disabled={!itemsToRender.length}
+                onClick={handleCheckout}
+              >
+                {isBuyNowActive ? "Buy Now" : "Checkout"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
 
-        // utilities
-        computeTotals,
-
-        // expose setters if ever needed
-        setCart,
-        setWishlist,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+      {/* Explore More (main-cart only) */}
+      {!isBuyNowActive && (
+        <div id="remaining-products-container">
+          <h3>Explore more</h3>
+          <div id="remaining-products">{renderRemainingProducts()}</div>
+        </div>
+      )}
+    </>
   );
 };
+
+export default ShoppingCart;
