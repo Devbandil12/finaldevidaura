@@ -1,3 +1,5 @@
+:root { --sidebar-top: 0px; }
+
 /* ===========================
    Header & Navbar Container
    =========================== */
@@ -406,11 +408,11 @@ padding-left:10px;
   flex-direction: column;
   justify-content: space-between;
   position: fixed;
-  top: 0;
+  top: var(--sidebar-top);
   left: 100%;
   width: 70vw;
   max-width: 300px;
-  height: 100dvh;
+  height: calc(100dvh - var(--sidebar-top));
   background: #ffffff;
   color: white;
   overflow: hidden;
