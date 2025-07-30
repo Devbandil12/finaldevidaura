@@ -1,3 +1,5 @@
+ 
+
 :root { --sidebar-top: 0px; }
 
 /* ===========================
@@ -48,7 +50,7 @@ header {
 }
 
 .part-1.nav-brand h1 {
-  padding-left: 10px;
+padding-left:10px;
   font-size: 1.25rem;
   letter-spacing: 0.5px;
   margin: 0;
@@ -143,8 +145,9 @@ header {
   width: 60px;
   margin: 0;
 }
-.wishlist-icon a { text-decoration: none; }
-
+.wishlist-icon a {
+  text-decoration: none;
+}
 #wishlist-icon {
   background-color: transparent;
   border: none;
@@ -154,15 +157,19 @@ header {
   justify-content: center;
   gap: 2px;
 }
+
 #wishlist-count {
   background-color: transparent;
   color: black;
   font-size: 12px;
 }
 
-.cart-icon { width: 60px; }
-.cart-icon a { text-decoration: none; }
-
+.cart-icon {
+  width: 60px;
+}
+.cart-icon a {
+  text-decoration: none;
+}
 #cart-icon {
   background-color: transparent;
   color: black;
@@ -271,7 +278,9 @@ header {
   align-items: center;
   gap: 10px;
 }
-.profile-content ul li img { width: 30px; }
+.profile-content ul li img {
+  width: 30px;
+}
 .profile-content ul li a {
   text-decoration: none;
   color: #333;
@@ -279,8 +288,13 @@ header {
   font-size: 14px;
   display: block;
 }
-.profile-content ul li:hover { background: #f6f6f6; }
-.profile-content ul li:hover a { color: #000; font-weight: bold; }
+.profile-content ul li:hover {
+  background: #f6f6f6;
+}
+.profile-content ul li:hover a {
+  color: #000;
+  font-weight: bold;
+}
 
 /* ===========================
    Login button (kept)
@@ -295,8 +309,14 @@ header {
   color: rgb(0, 0, 0);
   font-size: 14px;
 }
-#loginButton .btn-text { position: relative; z-index: 2; }
-#loginButton a { text-decoration: none; color: black; }
+#loginButton .btn-text {
+  position: relative;
+  z-index: 2;
+}
+#loginButton a {
+  text-decoration: none;
+  color: black;
+}
 #loginButton::after {
   content: "";
   position: absolute;
@@ -308,13 +328,18 @@ header {
   transition: transform 0.6s ease-in-out;
   z-index: 1;
 }
-#loginButton:hover { color: #fff; border: 1px solid black; }
+#loginButton:hover {
+  color: #fff;
+  border: 1px solid black;
+}
 #loginButton:hover::after { transform: scaleY(1); }
 
 /* ===========================
    Mobile view
    =========================== */
-.mobile-view { display: none; }
+.mobile-view {
+  display: none;
+}
 
 /* ===========================
    HAMBURGER (UNCHANGED)
@@ -322,8 +347,9 @@ header {
 .menu-container {
   position: relative;
   z-index: 1000;
-  padding-right: 10px;
+  padding-right:10px;
 }
+
 .hamburger {
   width: 35px;
   height: 25px;
@@ -338,6 +364,7 @@ header {
   z-index: 999999;
   pointer-events: auto !important;
 }
+
 .line {
   width: 100%;
   height: 3px;
@@ -345,10 +372,20 @@ header {
   transition: all 0.5s ease;
   border-radius: 999px;
 }
+
 /* Adjusting line lengths */
-.line:nth-child(1) { width: 17.5px; transform: translateX(-50%); }
-.line:nth-child(2) { width: 35px; }
-.line:nth-child(3) { width: 17.5px; transform: translateX(50%); }
+.line:nth-child(1) {
+  width: 17.5px;
+  transform: translateX(-50%);
+}
+.line:nth-child(2) {
+  width: 35px;
+}
+.line:nth-child(3) {
+  width: 17.5px;
+  transform: translateX(50%);
+}
+
 /* Hamburger Transformations */
 .hamburger.active .line:nth-child(1) {
   transform: rotate(-135deg) translateY(-240%);
@@ -366,38 +403,36 @@ header {
 }
 
 /* ===========================
-   Sidebar (left-based; below both bars; no scroll; footer at bottom)
+   Sidebar (structure & polish)
    =========================== */
 .sidebar {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;                    /* no space-between */
+  justify-content: space-between;
   position: fixed;
-  top: var(--sidebar-top);                        /* starts below both bars */
-  left: 100%;                                     /* off-screen to the RIGHT */
-  width: 70vw;                                    /* keep your width */
-  max-width: 300px;                               /* cap */
-  height: auto;
-  min-height: calc(100svh - var(--sidebar-top));  /* full remaining height */
+  top: var(--sidebar-top);
+  left: 100%;
+  width: 70vw;
+  max-width: 300px;
+  min-height: calc(100svh - var(--sidebar-top)); /* ensures extra space exists */
   max-height: calc(100svh - var(--sidebar-top));
-  box-sizing: border-box;
-
   background: #ffffff;
-  color: #333 !important;                         /* readable */
-  border-radius: 0;
-  overflow: hidden;                               /* no internal scroll */
-  z-index: 10000;
+  color: white;
+  overflow: hidden;
+  z-index: 999;
   pointer-events: auto;
   transition: left 0.3s ease;
   box-shadow: 0 8px 28px rgba(0,0,0,0.12);
   padding: 0;
-  margin: 0;                                      /* remove negative margins */
+  margin:0;
 }
 
+/* (You had two .sidebar.open earlier; the one below is the effective one) */
 /* fully visible: 100% - width */
-.sidebar.open {
+.sidebar.open { 
   left: calc(100% - min(70vw, 300px));
 }
+
 
 /* header */
 .sidebar-header {
@@ -436,8 +471,8 @@ header {
   font-size: 1.2rem; cursor: pointer;
 }
 
-/* nav - normal flow (not flexible, not scrollable) */
-.sidebar-nav { flex: 0 0 auto; overflow: visible; }
+/* nav */
+.sidebar-nav { flex-grow: 1; overflow-y: auto; }
 .sidebar-nav ul { list-style: none; margin: 0; padding: 1rem; }
 .sidebar-nav li {
   display: flex;
@@ -456,13 +491,11 @@ header {
 }
 .sidebar-nav li span { font-size: 1rem; color: #333; font-weight: 600; }
 
-/* footer – sits at the bottom without sticky/scroll */
+/* footer */
 .sidebar-footer {
-  margin-top: auto;                             /* pushes it down */
   padding: 1rem;
   border-top: 1px solid #f0f0f0;
   text-align: center;
-  background: #fff;
 }
 .sidebar-footer button {
   display: inline-flex;
@@ -499,7 +532,10 @@ header {
 }
 
 @media (max-width: 885px) {
-  #navbar { width: 85%; padding: 0.5rem 0.8rem; }
+  #navbar {
+    width: 85%;
+    padding: 0.5rem 0.8rem;
+  }
   .part-1 { font-size: 1.2rem; }
   .part-2 { gap: 1rem; }
   .nav-links { gap: 1.5rem; }
@@ -526,7 +562,7 @@ header {
   #navbar {
     width: 100%;
     padding: 0;
-    background-color: white;  /* fixed broken line */
+    background-color: white;  
     margin-top: 0px;
     border-radius: 0px;
     border-bottom: 1px solid #eee;
