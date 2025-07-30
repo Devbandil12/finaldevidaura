@@ -213,71 +213,29 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // =======================
   // =======================
-// GSAP: Sidebar stagger (left-based; no transform used)
+// =======================
+// GSAP: Sidebar stagger (start immediately)
 // =======================
 useEffect(() => {
+  if (!isOpen) return;
+
   const prefersReduced =
     window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   if (prefersReduced) return;
 
-  if (!isOpen) return;
-
   const ctx = gsap.context(() => {
-    const sidebarEl =
-      sidebarScopeRef.current?.querySelector(".sidebar") ||
-      document.querySelector(".sidebar");
-    if (!sidebarEl) return;
-
     const headerSel = ".sidebar-header";
-    const itemsSel  = ".sidebar-nav li";
+    const itemsSel = ".sidebar-nav li";
     const footerSel = ".sidebar-footer";
 
-    // Clear any leftover inline styles from a previous run
+    // Reset any leftover styles
     gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
 
-    let ran = false;
-    const runStagger = () => {
-      if (ran) return;
-      ran = true;
-
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      // Subtle motion only — keep content visible (no opacity 0)
-      tl.from(headerSel, { y: -8, duration: 0.22 })
-        .from(itemsSel,  { y:  8, duration: 0.20, stagger: 0.05 }, "-=0.04")
-        .from(footerSel, { y:  6, duration: 0.16 }, "-=0.08");
-    };
-
-    const onEnd = (e) => {
-      // We only care about the 'left' transition finishing
-      if (e.propertyName !== "left") return;
-      sidebarEl.removeEventListener("transitionend", onEnd);
-      runStagger();
-    };
-
-    // If it's already open (no transition happening), run immediately
-    const computedLeft = parseFloat(getComputedStyle(sidebarEl).left || "0");
-    const openLeft = window.innerWidth - Math.min(window.innerWidth * 0.8, 340);
-    const approxOpenLeft = Math.round(openLeft);
-    const approxCurrentLeft = Math.round(computedLeft);
-
-    if (approxCurrentLeft === approxOpenLeft) {
-      runStagger();
-    } else {
-      sidebarEl.addEventListener("transitionend", onEnd);
-      // Fallback in case transitionend is missed
-      const t = setTimeout(runStagger, 360);
-      // Cleanup
-      return () => {
-        sidebarEl.removeEventListener("transitionend", onEnd);
-        clearTimeout(t);
-        gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-      };
-    }
-
-    // Cleanup if we ran immediately
-    return () => {
-      gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-    };
+    // Start stagger *immediately* when sidebar opens
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
+      .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
+      .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
   }, sidebarScopeRef);
 
   return () => ctx.revert();
