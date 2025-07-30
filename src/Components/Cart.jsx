@@ -29,133 +29,67 @@ const location = useLocation();
 
 
 // Initialize state *once* from that stored value:
-// Decide Buy‑Now from URL synchronously (prevents flicker/race)
-const isBuyNowURLInitial =
-  new URLSearchParams(window.location.search).get("mode") === "buynow";
-
-const initialBuyNowItem = (() => {
-  if (isBuyNowURLInitial) {
-    const raw = sessionStorage.getItem("buyNowItem");
-    if (raw) {
-      try { return JSON.parse(raw); } catch { /* ignore */ }
-    }
-  }
-  return null;
-})();
-
-const [isBuyNowActive, setIsBuyNowActive] = useState(Boolean(initialBuyNowItem));
-const [buyNowCart, setBuyNowCart] = useState(
-  initialBuyNowItem ? [initialBuyNowItem] : []
-);
-
-
-const [cartFetched, setCartFetched] = useState(false);
+const [buyNowCart, setBuyNowCart] = useState([]);
+const [isBuyNowActive, setIsBuyNowActive] = useState(false);
 
   // === Coupon state ===
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
 
-  // Decide temp-cart from URL: /cart?mode=buynow => temp cart; /cart => main cart
-useEffect(() => {
-  const isBuyNowURL = new URLSearchParams(location.search).get("mode") === "buynow";
 
-  if (isBuyNowURL) {
-    const raw = sessionStorage.getItem("buyNowItem");
-    if (raw) {
-      try {
-        const item = JSON.parse(raw);
-        setBuyNowCart([item]);
-        setIsBuyNowActive(true);
-      } catch {
-        sessionStorage.removeItem("buyNowItem");
-        setIsBuyNowActive(false);
-      }
-    } else {
-      // No payload -> fallback to main cart
+
+  // Hydrate temp cart from localStorage once
+  useEffect(() => {
+  const active = localStorage.getItem("buyNowActive") === "true";
+  const item = localStorage.getItem("buyNowItem");
+  if (active && item) {
+    try {
+      setBuyNowCart([JSON.parse(item)]);
+      setIsBuyNowActive(true);
+    } catch {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
+      
       setIsBuyNowActive(false);
     }
   } else {
-    // Visiting /cart WITHOUT buynow flag => always show main cart
-    sessionStorage.removeItem("buyNowItem");
     setIsBuyNowActive(false);
-  }
-}, [location.search]);
-
-
-
-  // Clear temp cart when leaving both /cart and /checkout
-useEffect(() => {
-  const path = location.pathname.replace(/\/+$/, ""); // trim trailing slashes
-  if (path !== "/cart" && path !== "/checkout") {
-    sessionStorage.removeItem("buyNowItem");
-    setIsBuyNowActive(false);
-  }
-}, [location.pathname]);
-
-
-
-  // Seed a safe back target after a hard refresh (robust across devices)
-useEffect(() => {
-  const nav = performance.getEntriesByType("navigation")[0];
-  const reloaded = nav && nav.type === "reload";
-
-  if ((reloaded || document.referrer === "") && window.history.length <= 1) {
-    const current = window.location.pathname + window.location.search;
-    window.history.replaceState({ __seed__: true }, "", "/products");
-    window.history.pushState({ __cart__: true }, "", current); // keeps ?mode=buynow
   }
 }, []);
 
 
-
-// Fallback: intercept back to avoid tab-close when history is thin
-useEffect(() => {
-  const onPop = (e) => {
-    // If history is too short and we’re still on /cart, send user to a safe page
-    if (window.history.length <= 1 && window.location.pathname === "/cart") {
-      e.preventDefault?.();
-      navigate("/products", { replace: true });
-    }
-  };
-  window.addEventListener("popstate", onPop);
-  return () => window.removeEventListener("popstate", onPop);
-}, [navigate]);
-
-
-
+  // Ensure stale buyNowItem is cleared once temp mode turns off
   useEffect(() => {
-  let cancelled = false;
+   // Only fetch the *main* cart when NOT in Buy Now mode:
+   if (!isBuyNowActive && userdetails?.id) {
+     getCartitems();
+   }
+   // coupons still always load:
+   if (userdetails?.id) {
+     loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+   }
+ }, [isBuyNowActive, userdetails?.id]);
 
-  const run = async () => {
-    // Always try to load coupons for the user
-    if (userdetails?.id) {
-      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
-    }
 
-    // Fetch main cart only when NOT in Buy Now mode
-    if (!isBuyNowActive && userdetails?.id) {
-      try {
-        await getCartitems();
-      } finally {
-        if (!cancelled) setCartFetched(true);
-      }
-    } else {
-      // In Buy Now mode (or no user), we consider the cart "fetched"
-      if (!cancelled) setCartFetched(true);
+useEffect(() => {
+  return () => {
+    // cleanup when navigating away from /cart
+    if (location.pathname !== "/cart") {
+      localStorage.removeItem("buyNowItem");
+      localStorage.removeItem("buyNowActive");
     }
   };
-
-  // reset fetched while dependencies change
-  setCartFetched(false);
-  run();
-
-  return () => { cancelled = true; };
-}, [isBuyNowActive, userdetails?.id]);
+}, [location.pathname]);
 
 
 
-
-
+// ② Whenever we turn OFF temp mode internally, also clear the flag:
+useEffect(() => {
+  if (!isBuyNowActive) {
+    localStorage.removeItem("buyNowItem");
+    localStorage.removeItem("buyNowActive");
+  }
+}, [isBuyNowActive]);
 
 
 
@@ -195,9 +129,11 @@ useEffect(() => {
 
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
-    
-    navigate(isBuyNowActive ? "/checkout?mode=buynow" : "/checkout");
-
+    if (isBuyNowActive) {
+      localStorage.removeItem("buyNowItem");
+localStorage.removeItem("buyNowActive");
+    }
+    navigate("/checkout");
   };
 
   // Update quantity
@@ -348,10 +284,9 @@ useEffect(() => {
   }, [activeCart, appliedCoupon, isCouponValid]);
 
   // Show loader if main cart is loading
- if (!isBuyNowActive && !cartFetched) {
-  return <Loader text="Loading cart..." />;
-}
-
+ if (!isBuyNowActive && cart.length === 0) {
+ return <Loader text="Loading cart..." />;
+ }
 
 
   return (
@@ -510,7 +445,6 @@ useEffect(() => {
           <div id="remaining-products">{renderRemainingProducts()}</div>
         </div>
       )}
-
     </>
   );
 };
