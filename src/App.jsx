@@ -32,13 +32,30 @@ import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
+
+
 const App = () => {
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
-  // Upsert new users into your DB
+ const { isLoaded, isSignedIn } = useUser();
+
+useEffect(() => {
+  if (!isLoaded || !isSignedIn) return;
+
+  // If we previously set a "return here after login" path, go there now
+  const target = sessionStorage.getItem("post_login_redirect");
+  if (target) {
+    sessionStorage.removeItem("post_login_redirect");
+    if (location.pathname !== target) {
+      navigate(target, { replace: true });
+    }
+  }
+}, [isLoaded, isSignedIn, location.pathname, navigate]);
+
+ // Upsert new users into your DB
   const isNewUser = useCallback(async () => {
     if (!user) return;
 
