@@ -1,711 +1,426 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  useRef,
-} from "react";
+import React, { createContext, useState, useEffect, useContext, useRef } from "react";
 import { db } from "../../configs";
-import {
-  addToCartTable,
-  productsTable,
-  wishlistTable,
-} from "../../configs/schema";
+import { addToCartTable, productsTable, wishlistTable } from "../../configs/schema";
 import { and, eq } from "drizzle-orm";
 import { UserContext } from "./UserContext";
 
+// ==== Storage keys for guest data ====
+const GUEST_CART_KEY = "guest_cart_v1";
+const GUEST_WISHLIST_KEY = "guest_wishlist_v1";
+
 export const CartContext = createContext();
 
-// ---------- LocalStorage keys for guest mode ----------
-const LS_CART_KEY = "guest_cart";
-const LS_WISHLIST_KEY = "guest_wishlist";
-
-// ---------- Small helpers ----------
-const uuid = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-const readLS = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-const writeLS = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
-};
-
 export const CartProvider = ({ children }) => {
-  // State shapes match your components’ expectations
-  const [cart, setCart] = useState([]); // [{ product, quantity, cartId, userId }]
-  const [wishlist, setWishlist] = useState([]); // [{ product, productId, wishlistId, userId }]
-
-  // Loader flags (only for signed-in DB operations)
-  const [isCartLoading, setIsCartLoading] = useState(false);
-  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-
-  // Kept for compatibility (your app references these)
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [selectedItems, setSelectedItems] = useState([]);
-
   const { userdetails } = useContext(UserContext);
-  const isSignedIn = !!userdetails?.id;
 
-  // Guard so merges run once per sign-in (avoid Strict Mode double-run)
-  const mergedOnceRef = useRef(false);
+  // Unified state used by both guest & logged-in flows
+  const [cart, setCart] = useState([]);         // [{ product, quantity, cartId?, userId? }]
+  const [wishlist, setWishlist] = useState([]); // [{ product, productId?, wishlistId?, userId? }]
+  const [isCartLoading, setIsCartLoading] = useState(true);
 
-  // =========================
-  // Fetchers
-  // =========================
+  // Track previous userId to detect transitions guest -> logged-in, and avoid double-merge
+  const prevUserIdRef = useRef(null);
 
-  // Cart
-  const getCartitems = useCallback(async () => {
-    if (!isSignedIn) {
-      // Guest: hydrate from LS, no loader
-      const guest = readLS(LS_CART_KEY, []);
-      const normalized = guest.map((i) => ({
-        product: i.product,
-        quantity: i.quantity || 1,
-        cartId: i.cartId || uuid(),
-        userId: null,
-      }));
-      setCart(normalized);
+  // ---------- Helpers: guest storage ----------
+  const readGuestCart = () => {
+    try {
+      const raw = localStorage.getItem(GUEST_CART_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveGuestCart = (items) => {
+    try {
+      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+    } catch {}
+  };
+
+  const clearGuestCart = () => {
+    localStorage.removeItem(GUEST_CART_KEY);
+  };
+
+  const readGuestWishlist = () => {
+    try {
+      const raw = localStorage.getItem(GUEST_WISHLIST_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveGuestWishlist = (items) => {
+    try {
+      localStorage.setItem(GUEST_WISHLIST_KEY, JSON.stringify(items));
+    } catch {}
+  };
+
+  const clearGuestWishlist = () => {
+    localStorage.removeItem(GUEST_WISHLIST_KEY);
+  };
+
+  // ---------- DB hydration ----------
+  const getCartitems = async () => {
+    if (!userdetails?.id) {
+      // Guest: hydrate from localStorage
+      const guest = readGuestCart();
+      setCart(guest);
+      return;
+    }
+    // Logged-in: hydrate from DB
+    const res = await db
+      .select({
+        product: productsTable,
+        userId: addToCartTable.userId,
+        cartId: addToCartTable.id,
+        quantity: addToCartTable.quantity,
+      })
+      .from(addToCartTable)
+      .innerJoin(productsTable, eq(addToCartTable.productId, productsTable.id))
+      .where(eq(addToCartTable.userId, userdetails.id));
+
+    setCart(res);
+  };
+
+  const getwishlist = async () => {
+    if (!userdetails?.id) {
+      // Guest: hydrate from localStorage
+      const guest = readGuestWishlist();
+      setWishlist(guest);
       return;
     }
 
-    // Signed-in: fetch from DB with loader
-    setIsCartLoading(true);
-    try {
-      const rows = await db
-        .select({
-          product: productsTable,
-          userId: addToCartTable.userId,
-          cartId: addToCartTable.id,
-          quantity: addToCartTable.quantity,
-        })
+    const res = await db
+      .select({
+        product: productsTable,
+        wishlistId: wishlistTable.id,
+        userId: wishlistTable.userId,
+        productId: wishlistTable.productId,
+      })
+      .from(wishlistTable)
+      .innerJoin(productsTable, eq(wishlistTable.productId, productsTable.id))
+      .where(eq(wishlistTable.userId, userdetails.id));
+
+    setWishlist(res);
+  };
+
+  // ---------- Merge guest -> user on first login ----------
+  const mergeGuestDataOnLogin = async () => {
+    // Only when we have a new logged-in user and there is guest data
+    const guestCart = readGuestCart();
+    const guestWishlist = readGuestWishlist();
+
+    if ((!guestCart || guestCart.length === 0) && (!guestWishlist || guestWishlist.length === 0)) {
+      return;
+    }
+
+    // Merge Cart: add quantities for duplicates; insert otherwise
+    for (const item of guestCart) {
+      const pid = item.product?.id;
+      const qty = Number(item.quantity || 1);
+      if (!pid || qty <= 0) continue;
+
+      // Check if already in DB
+      const existing = await db
+        .select({ id: addToCartTable.id, quantity: addToCartTable.quantity })
         .from(addToCartTable)
-        .innerJoin(
-          productsTable,
-          eq(addToCartTable.productId, productsTable.id)
-        )
-        .where(eq(addToCartTable.userId, userdetails.id));
+        .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, pid)));
 
-      setCart(rows);
-    } catch (e) {
-      console.error("getCartitems error:", e);
-    } finally {
-      setIsCartLoading(false);
-    }
-  }, [isSignedIn, userdetails?.id]);
-
-  // Wishlist
-  const getwishlist = useCallback(async () => {
-    if (!isSignedIn) {
-      // Guest: hydrate from LS, no loader
-      const guest = readLS(LS_WISHLIST_KEY, []);
-      const normalized = guest.map((w) => ({
-        product: w.product,
-        productId: w.productId ?? w.product?.id,
-        wishlistId: w.wishlistId || uuid(),
-        userId: null,
-      }));
-      setWishlist(normalized);
-      return;
-    }
-
-    // Signed-in: fetch from DB with loader
-    setIsWishlistLoading(true);
-    try {
-      const rows = await db
-        .select({
-          product: productsTable,
-          wishlistId: wishlistTable.id,
-          userId: wishlistTable.userId,
-          productId: wishlistTable.productId,
-        })
-        .from(wishlistTable)
-        .innerJoin(
-          productsTable,
-          eq(wishlistTable.productId, productsTable.id)
-        )
-        .where(eq(wishlistTable.userId, userdetails.id));
-
-      setWishlist(rows);
-    } catch (e) {
-      console.error("getwishlist error:", e);
-    } finally {
-      setIsWishlistLoading(false);
-    }
-  }, [isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Cart mutations
-  // =========================
-
-  const addToCart = useCallback(
-    async (product, quantity = 1) => {
-      if (!product) return false;
-
-      if (!isSignedIn) {
-        // Guest: state + LS
-        const existing = cart.find((i) => i.product?.id === product.id);
-        const next = existing
-          ? cart.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: (i.quantity || 1) + quantity }
-                : i
-            )
-          : [...cart, { product, quantity, cartId: uuid(), userId: null }];
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
-      }
-
-      // Signed-in: optimistic update + DB
-      const existing = cart.find((i) => i.product?.id === product.id);
-      const tempId = existing ? null : uuid();
-
-      setCart((prev) =>
-        existing
-          ? prev.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: (i.quantity || 1) + quantity }
-                : i
-            )
-          : [
-              ...prev,
-              {
-                product,
-                quantity,
-                cartId: tempId,
-                userId: userdetails.id,
-              },
-            ]
-      );
-
-      try {
-        if (existing) {
-          const newQty = (existing.quantity || 1) + quantity;
-          await db
-            .update(addToCartTable)
-            .set({ quantity: newQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, product.id)
-              )
-            );
-        } else {
-          const [row] = await db
-            .insert(addToCartTable)
-            .values({
-              productId: product.id,
-              userId: userdetails.id,
-              quantity,
-            })
-            .returning({
-              cartId: addToCartTable.id,
-              userId: addToCartTable.userId,
-              quantity: addToCartTable.quantity,
-            });
-
-          setCart((prev) =>
-            prev.map((i) =>
-              i.cartId === tempId
-                ? { ...i, cartId: row.cartId, quantity: row.quantity }
-                : i
-            )
-          );
-        }
-        return true;
-      } catch (e) {
-        console.error("addToCart error:", e);
-        // rollback
-        setCart((prev) => {
-          if (existing) {
-            return prev.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: existing.quantity }
-                : i
-            );
-          }
-          return prev.filter((i) => i.cartId !== tempId);
-        });
-        return false;
-      }
-    },
-    [cart, isSignedIn, userdetails?.id]
-  );
-
-  const removeFromCart = useCallback(
-    async (productId) => {
-      if (productId === undefined || productId === null) return false;
-
-      if (!isSignedIn) {
-        const next = cart.filter((i) => i.product?.id !== productId);
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
-      }
-
-      const backup = cart;
-      setCart((prev) => prev.filter((i) => i.product?.id !== productId));
-      try {
+      if (existing.length > 0) {
+        const newQty = Number(existing[0].quantity || 0) + qty;
         await db
-          .delete(addToCartTable)
-          .where(
-            and(
-              eq(addToCartTable.userId, userdetails.id),
-              eq(addToCartTable.productId, productId)
-            )
-          );
-        return true;
-      } catch (e) {
-        console.error("removeFromCart error:", e);
-        setCart(backup);
-        return false;
+          .update(addToCartTable)
+          .set({ quantity: newQty })
+          .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, pid)));
+      } else {
+        await db.insert(addToCartTable).values({
+          userId: userdetails.id,
+          productId: pid,
+          quantity: qty,
+        });
       }
-    },
-    [cart, isSignedIn, userdetails?.id]
-  );
+    }
 
-  const changeCartQuantity = useCallback(
-    async (productId, delta) => {
-      if (!delta) return false;
-      const existing = cart.find((i) => i.product?.id === productId);
-      if (!existing) return false;
+    // Merge Wishlist: insert if not exists
+    for (const w of guestWishlist) {
+      const pid = w.product?.id ?? w.productId;
+      if (!pid) continue;
 
-      const current = existing.quantity || 1;
-      const nextQty = Math.max(0, current + delta);
+      const exists = await db
+        .select({ id: wishlistTable.id })
+        .from(wishlistTable)
+        .where(and(eq(wishlistTable.userId, userdetails.id), eq(wishlistTable.productId, pid)));
 
-      if (!isSignedIn) {
-        const next =
-          nextQty === 0
-            ? cart.filter((i) => i.product?.id !== productId)
-            : cart.map((i) =>
-                i.product?.id === productId
-                  ? { ...i, quantity: nextQty }
-                  : i
-              );
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
+      if (exists.length === 0) {
+        await db.insert(wishlistTable).values({
+          userId: userdetails.id,
+          productId: pid,
+        });
       }
+    }
 
-      const backup = cart;
-      setCart((prev) =>
-        nextQty === 0
-          ? prev.filter((i) => i.product?.id !== productId)
-          : prev.map((i) =>
-              i.product?.id === productId ? { ...i, quantity: nextQty } : i
-            )
-      );
+    // Clear guest storage after successful merge
+    clearGuestCart();
+    clearGuestWishlist();
+  };
 
-      try {
-        if (nextQty === 0) {
-          await db
-            .delete(addToCartTable)
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
-        } else {
-          await db
-            .update(addToCartTable)
-            .set({ quantity: nextQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
+  // ---------- Mutations ----------
+  const addToCart = async (product, quantity = 1) => {
+    if (!product?.id) return false;
+
+    if (!userdetails?.id) {
+      // Guest: keep full product object to avoid extra fetches
+      const next = (() => {
+        const current = readGuestCart();
+        const idx = current.findIndex((i) => i.product?.id === product.id);
+        if (idx >= 0) {
+          const copy = [...current];
+          copy[idx] = {
+            ...copy[idx],
+            quantity: Number(copy[idx].quantity || 1) + Number(quantity || 1),
+          };
+          return copy;
         }
-        return true;
-      } catch (e) {
-        console.error("changeCartQuantity error:", e);
-        setCart(backup);
-        return false;
-      }
-    },
-    [cart, isSignedIn, userdetails?.id]
-  );
-
-  const clearCart = useCallback(async () => {
-    if (!isSignedIn) {
-      setCart([]);
-      writeLS(LS_CART_KEY, []);
-      return true;
-    }
-
-    const backup = cart;
-    setCart([]);
-    try {
-      await db
-        .delete(addToCartTable)
-        .where(eq(addToCartTable.userId, userdetails.id));
-      return true;
-    } catch (e) {
-      console.error("clearCart error:", e);
-      setCart(backup);
-      return false;
-    }
-  }, [cart, isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Wishlist mutations
-  // =========================
-
-  const addToWishlist = useCallback(
-    async (product) => {
-      if (!product) return false;
-
-      if (!isSignedIn) {
-        const exists = wishlist.some(
-          (w) => (w.productId ?? w.product?.id) === product.id
-        );
-        if (exists) return true;
-
-        const next = [
-          ...wishlist,
+        return [
+          ...current,
           {
             product,
-            productId: product.id,
-            wishlistId: uuid(),
-            userId: null,
+            quantity: Number(quantity || 1),
+            cartId: `g-${product.id}-${Date.now()}`,
           },
         ];
-        setWishlist(next);
-        writeLS(LS_WISHLIST_KEY, next);
-        return true;
-      }
+      })();
 
-      // Signed-in: optimistic + DB
-      const tempId = uuid();
-      setWishlist((prev) => [
-        ...prev,
-        {
-          product,
-          productId: product.id,
-          wishlistId: tempId,
-          userId: userdetails.id,
-        },
-      ]);
-
-      try {
-        const [row] = await db
-          .insert(wishlistTable)
-          .values({ userId: userdetails.id, productId: product.id })
-          .returning({
-            wishlistId: wishlistTable.id,
-            productId: wishlistTable.productId,
-            userId: wishlistTable.userId,
-          });
-
-        setWishlist((prev) =>
-          prev.map((w) =>
-            w.wishlistId === tempId ? { ...w, wishlistId: row.wishlistId } : w
-          )
-        );
-        return true;
-      } catch (e) {
-        console.error("addToWishlist error:", e);
-        setWishlist((prev) => prev.filter((w) => w.wishlistId !== tempId));
-        return false;
-      }
-    },
-    [wishlist, isSignedIn, userdetails?.id]
-  );
-
-  const removeFromWishlist = useCallback(
-    async (productId) => {
-      if (!isSignedIn) {
-        const next = wishlist.filter(
-          (w) => (w.productId ?? w.product?.id) !== productId
-        );
-        setWishlist(next);
-        writeLS(LS_WISHLIST_KEY, next);
-        return true;
-      }
-
-      const backup = wishlist;
-      setWishlist((prev) => prev.filter((w) => w.productId !== productId));
-      try {
-        await db
-          .delete(wishlistTable)
-          .where(
-            and(
-              eq(wishlistTable.userId, userdetails.id),
-              eq(wishlistTable.productId, productId)
-            )
-          );
-        return true;
-      } catch (e) {
-        console.error("removeFromWishlist error:", e);
-        setWishlist(backup);
-        return false;
-      }
-    },
-    [wishlist, isSignedIn, userdetails?.id]
-  );
-
-  const toggleWishlist = useCallback(
-    async (product) => {
-      const exists = wishlist.some(
-        (w) => (w.productId ?? w.product?.id) === product.id
-      );
-      if (exists) return removeFromWishlist(product.id);
-      return addToWishlist(product);
-    },
-    [wishlist, addToWishlist, removeFromWishlist]
-  );
-
-  // =========================
-  // Buy Now helpers (localStorage)
-  // =========================
-
-  const startBuyNow = useCallback(
-    (product, quantity = 1) => {
-      const temp = {
-        product,
-        quantity,
-        cartId: uuid(),
-        userId: isSignedIn ? userdetails.id : null,
-      };
-      try {
-        localStorage.setItem("buyNowItem", JSON.stringify(temp));
-        localStorage.setItem("buyNowActive", "true");
-        return true;
-      } catch (e) {
-        console.error("startBuyNow error:", e);
-        return false;
-      }
-    },
-    [isSignedIn, userdetails?.id]
-  );
-
-  const clearBuyNow = useCallback(() => {
-    try {
-      localStorage.removeItem("buyNowItem");
-      localStorage.removeItem("buyNowActive");
+      saveGuestCart(next);
+      setCart(next);
       return true;
-    } catch {
-      return false;
     }
-  }, []);
 
-  // =========================
-  // Merge guest ➜ user on login
-  // =========================
-
-  /** Merge guest cart (localStorage) into the signed-in user's DB cart. */
-  const mergeGuestCartIntoDB = useCallback(async () => {
-    if (!isSignedIn) return;
-
-    const guestCart = readLS(LS_CART_KEY, []);
-    if (!guestCart.length) return;
+    // Logged-in: optimistic update
+    const optimistic = [
+      ...cart,
+      {
+        product,
+        quantity: Number(quantity || 1),
+        cartId: `t-${product.id}-${Date.now()}`,
+        userId: userdetails.id,
+      },
+    ];
+    setCart(optimistic);
 
     try {
-      // Ensure we know current DB state (cart state already loaded by getCartitems)
-      const existingMap = new Map(
-        cart.map((i) => [i.product?.id, i]) // productId -> cart row
-      );
+      // Upsert: if exists, increase qty; else insert
+      const existing = await db
+        .select({ id: addToCartTable.id, quantity: addToCartTable.quantity })
+        .from(addToCartTable)
+        .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, product.id)));
 
-      for (const g of guestCart) {
-        const productId = g?.product?.id;
-        if (!productId) continue;
-
-        const guestQty = Math.max(1, Number(g.quantity || 1));
-        const existing = existingMap.get(productId);
-
-        if (existing) {
-          // Update quantity (sum)
-          const newQty = Math.max(1, Number(existing.quantity || 1) + guestQty);
-          await db
-            .update(addToCartTable)
-            .set({ quantity: newQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
-        } else {
-          // Insert as new row
-          await db
-            .insert(addToCartTable)
-            .values({
-              userId: userdetails.id,
-              productId,
-              quantity: guestQty,
-            });
-        }
+      if (existing.length > 0) {
+        const newQty = Number(existing[0].quantity || 0) + Number(quantity || 1);
+        await db
+          .update(addToCartTable)
+          .set({ quantity: newQty })
+          .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, product.id)));
+      } else {
+        await db.insert(addToCartTable).values({
+          userId: userdetails.id,
+          productId: product.id,
+          quantity: Number(quantity || 1),
+        });
       }
 
-      // Clear guest cart now that it's merged
-      writeLS(LS_CART_KEY, []);
-
-      // Refresh DB cart state
       await getCartitems();
       return true;
     } catch (e) {
-      console.error("mergeGuestCartIntoDB error:", e);
-      // Do NOT clear guest LS on failure
+      // rollback optimistic
+      setCart((prev) => prev.filter((i) => !String(i.cartId).startsWith("t-")));
       return false;
     }
-  }, [isSignedIn, userdetails?.id, cart, getCartitems]);
+  };
 
-  /** Merge guest wishlist (localStorage) into the signed-in user's DB wishlist. */
-  const mergeGuestWishlistIntoDB = useCallback(async () => {
-    if (!isSignedIn) return;
+  const changeCartQuantity = async (productId, delta) => {
+    if (!productId) return;
 
-    const guestWish = readLS(LS_WISHLIST_KEY, []);
-    if (!guestWish.length) return;
+    if (!userdetails?.id) {
+      const next = readGuestCart().map((i) =>
+        i.product?.id === productId
+          ? { ...i, quantity: Math.max(1, Number(i.quantity || 1) + Number(delta)) }
+          : i
+      );
+      saveGuestCart(next);
+      setCart(next);
+      return;
+    }
+
+    // Logged in
+    const row = cart.find((i) => i.product?.id === productId);
+    if (!row) return;
+    const newQty = Math.max(1, Number(row.quantity || 1) + Number(delta));
 
     try {
-      const existingIds = new Set(
-        wishlist.map((w) => w.productId ?? w.product?.id)
+      await db
+        .update(addToCartTable)
+        .set({ quantity: newQty })
+        .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, productId)));
+
+      setCart((prev) =>
+        prev.map((i) => (i.product?.id === productId ? { ...i, quantity: newQty } : i))
       );
+    } catch (e) {
+      // noop
+    }
+  };
 
-      for (const gw of guestWish) {
-        const productId = gw?.productId ?? gw?.product?.id;
-        if (!productId) continue;
-        if (existingIds.has(productId)) continue; // already in DB
+  const removeFromCart = async (productId) => {
+    if (!productId) return false;
 
-        await db
-          .insert(wishlistTable)
-          .values({ userId: userdetails.id, productId });
+    if (!userdetails?.id) {
+      const next = readGuestCart().filter((i) => i.product?.id !== productId);
+      saveGuestCart(next);
+      setCart(next);
+      return true;
+    }
+
+    const backup = [...cart];
+    setCart((prev) => prev.filter((i) => i.product?.id !== productId));
+
+    try {
+      await db
+        .delete(addToCartTable)
+        .where(and(eq(addToCartTable.userId, userdetails.id), eq(addToCartTable.productId, productId)));
+      return true;
+    } catch (e) {
+      setCart(backup); // rollback
+      return false;
+    }
+  };
+
+  const clearCart = async () => {
+    if (!userdetails?.id) {
+      clearGuestCart();
+      setCart([]);
+      return;
+    }
+    const backup = [...cart];
+    setCart([]);
+    try {
+      await db.delete(addToCartTable).where(eq(addToCartTable.userId, userdetails.id));
+    } catch (e) {
+      setCart(backup);
+    }
+  };
+
+  const addToWishlist = async (product) => {
+    if (!product?.id) return false;
+
+    if (!userdetails?.id) {
+      const current = readGuestWishlist();
+      if (current.some((w) => (w.product?.id ?? w.productId) === product.id)) {
+        setWishlist(current);
+        return true;
       }
+      const next = [
+        ...current,
+        {
+          product,
+          productId: product.id,
+          wishlistId: `g-${product.id}-${Date.now()}`,
+        },
+      ];
+      saveGuestWishlist(next);
+      setWishlist(next);
+      return true;
+    }
 
-      // Clear guest wishlist after merge
-      writeLS(LS_WISHLIST_KEY, []);
+    // Logged in: optimistic
+    if (wishlist.some((w) => (w.product?.id ?? w.productId) === product.id)) {
+      return true;
+    }
 
-      // Refresh DB wishlist state
+    const optimistic = [
+      ...wishlist,
+      {
+        product,
+        productId: product.id,
+        wishlistId: `t-${product.id}-${Date.now()}`,
+        userId: userdetails.id,
+      },
+    ];
+    setWishlist(optimistic);
+
+    try {
+      // Insert if not exists
+      const exists = await db
+        .select({ id: wishlistTable.id })
+        .from(wishlistTable)
+        .where(and(eq(wishlistTable.userId, userdetails.id), eq(wishlistTable.productId, product.id)));
+      if (exists.length === 0) {
+        await db.insert(wishlistTable).values({
+          userId: userdetails.id,
+          productId: product.id,
+        });
+      }
       await getwishlist();
       return true;
     } catch (e) {
-      console.error("mergeGuestWishlistIntoDB error:", e);
+      setWishlist((prev) => prev.filter((i) => !String(i.wishlistId).startsWith("t-")));
       return false;
     }
-  }, [isSignedIn, userdetails?.id, wishlist, getwishlist]);
+  };
 
-  // =========================
-  // Initialize on auth changes (and merge once on login)
-  // =========================
-
+  // ---------- Effects: hydrate & merge flows ----------
+  // Hydrate on first mount and whenever auth changes
   useEffect(() => {
-    (async () => {
-      if (isSignedIn) {
-        // 1) Load user's current DB state first
-        await getCartitems();
-        await getwishlist();
+    let mounted = true;
 
-        // 2) Merge guest -> DB ONCE per sign-in (guarded for Strict Mode)
-        if (!mergedOnceRef.current) {
-          mergedOnceRef.current = true;
-          await mergeGuestCartIntoDB();
-          await mergeGuestWishlistIntoDB();
+    const hydrate = async () => {
+      setIsCartLoading(true);
+      try {
+        // Detect transition guest -> logged-in
+        const prevUserId = prevUserIdRef.current;
+        const currentUserId = userdetails?.id ?? null;
+
+        // If just logged in, first merge guest data into DB
+        if (!prevUserId && currentUserId) {
+          await mergeGuestDataOnLogin();
         }
-      } else {
-        // Reset guard when user signs out
-        mergedOnceRef.current = false;
 
-        // Guest: hydrate both from LS (no loaders)
-        const gCart = readLS(LS_CART_KEY, []);
-        setCart(
-          gCart.map((i) => ({
-            product: i.product,
-            quantity: i.quantity || 1,
-            cartId: i.cartId || uuid(),
-            userId: null,
-          }))
-        );
+        // Hydrate from the correct source
+        await Promise.all([getCartitems(), getwishlist()]);
 
-        const gWish = readLS(LS_WISHLIST_KEY, []);
-        setWishlist(
-          gWish.map((w) => ({
-            product: w.product,
-            productId: w.productId ?? w.product?.id,
-            wishlistId: w.wishlistId || uuid(),
-            userId: null,
-          }))
-        );
+        // Update prev ref
+        prevUserIdRef.current = currentUserId;
+      } finally {
+        if (mounted) setIsCartLoading(false);
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, userdetails?.id]);
+    };
 
-  // =========================
-  // Provider
-  // =========================
+    hydrate();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userdetails?.id]);
+
   return (
     <CartContext.Provider
       value={{
         // state
         cart,
-        setCart,
         wishlist,
-        setWishlist,
-
-        // loaders
         isCartLoading,
-        isWishlistLoading,
-
-        // compatibility fields
-        selectedCoupon,
-        setSelectedCoupon,
-        couponDiscount,
-        setCouponDiscount,
-        selectedItems,
-        setSelectedItems,
-
-        // fetchers
+        // mutations
+        setCart,          // keep exposed for legacy usage
+        setWishlist,      // keep exposed for legacy usage
+        addToCart,
+        changeCartQuantity,
+        removeFromCart,
+        clearCart,
+        addToWishlist,
+        // queries
         getCartitems,
         getwishlist,
-
-        // cart ops
-        addToCart,
-        removeFromCart,
-        changeCartQuantity,
-        clearCart,
-
-        // wishlist ops
-        toggleWishlist,
-        addToWishlist,
-        removeFromWishlist,
-
-        // buy now
-        startBuyNow,
-        clearBuyNow,
       }}
     >
       {children}
