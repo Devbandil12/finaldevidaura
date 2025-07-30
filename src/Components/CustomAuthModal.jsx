@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import MiniLoader from "./MiniLoader";
 import "../style/CustomAuthModal.css";
@@ -20,11 +20,9 @@ export default function CustomAuthPage() {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
 
-  const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
-  const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn();
+  const { signUp, setActive: setSignUpActive } = useSignUp();
+  const { signIn, setActive: setSignInActive } = useSignIn();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const redirect = params.get("redirect") || "/";
 
   const fieldsRef = useRef();
   const imageRef = useRef();
@@ -67,11 +65,9 @@ export default function CustomAuthPage() {
     setSendingOtp(true);
     try {
       if (isSignUp) {
-        if (!isSignUpLoaded) return;
         await signUp.create({ emailAddress: email, firstName, lastName });
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       } else {
-        if (!isSignInLoaded) return;
         await signIn.create({ identifier: email, strategy: "email_code" });
       }
       setOtpSent(true);
@@ -96,20 +92,18 @@ export default function CustomAuthPage() {
     setFormLoading(true);
     try {
       if (isSignUp) {
-        if (!isSignUpLoaded) return;
         const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
-          navigate(redirect, { replace: true }); // <- go back to intended page
+          navigate("/");
         } else {
           throw new Error("Verification incomplete.");
         }
       } else {
-        if (!isSignInLoaded) return;
         const result = await signIn.attemptFirstFactor({ strategy: "email_code", code: otpCode });
         if (result.status === "complete") {
           await setSignInActive({ session: result.createdSessionId });
-          navigate(redirect, { replace: true }); // <- go back to intended page
+          navigate("/");
         } else {
           throw new Error("Verification incomplete.");
         }
@@ -124,17 +118,9 @@ export default function CustomAuthPage() {
   const handleGoogle = async () => {
     setError("");
     try {
-      // For OAuth redirect-based flow
       const strategy = "oauth_google";
       const action = isSignUp ? signUp : signIn;
-      const base = window.location.origin;
-      await action.authenticateWithRedirect({
-        strategy,
-        // Clerk will redirect back to this page to finish the flow:
-        redirectUrl: `/login?redirect=${encodeURIComponent(redirect)}`,
-        // After the session is created, send user to final destination:
-        redirectUrlComplete: redirect,
-      });
+      await action.authenticateWithRedirect({ strategy });
     } catch (err) {
       setError(err.errors?.[0]?.message || "Google auth failed");
     }
@@ -146,7 +132,7 @@ export default function CustomAuthPage() {
         <div className="auth-fields" ref={fieldsRef}>
           <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
 
-          {/* Google button */}
+          {/* ← Google button restored here */}
           <button className="google-btn" onClick={handleGoogle}>
             {isSignUp ? "Sign in with Google" : "Sign in with Google"}
           </button>
