@@ -406,7 +406,7 @@ padding-left:10px;
 .sidebar {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   position: fixed;
   top: var(--sidebar-top);
   left: 100%;
@@ -415,7 +415,7 @@ padding-left:10px;
   max-height: calc(100svh - var(--sidebar-top)); 
   background: #ffffff;
   color: white;
-  overflow: hidden;
+  overflow: visible;
   z-index: 999;
   pointer-events: auto;
   transition: left 0.3s ease;
@@ -490,7 +490,7 @@ padding-left:10px;
 
 /* footer */
 .sidebar-footer {
- position: static;
+margin-top: auto;
   padding: 1rem;
   border-top: 1px solid #f0f0f0;
   text-align: center;
