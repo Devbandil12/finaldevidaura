@@ -115,9 +115,6 @@ const Wishlist = () => {
 
       setWishlist((prev) => prev.filter((_, i) => i !== index));
     } catch (error) {
-      
-      
-
       // 🔹 Restore wishlist item if DB operation fails
       setWishlistitems((prevWishlist) => [...prevWishlist, item]);
 
@@ -146,85 +143,21 @@ const Wishlist = () => {
       // Update state: remove the item from both local and context states
       setWishlist((prev) => prev.filter((_, i) => i !== index));
       setWishlistitems((prev) => prev.filter((_, i) => i !== index));
-
     } catch (error) {
       console.error("Error removing item from wishlist:", error);
-      
     }
   };
 
   return (
     <div className="wishlist-main-container">
-      <div className="absolute">
-      </div>
-      
+      <div className="absolute"></div>
 
       {wishlistitems.length === 0 ? (
         <div id="empty-wishlistitems-message">Your Wishlist is empty.</div>
       ) : (
         <>
-          {/* Desktop Table View */}
-          <div className="wishlist-table-container">
-            <table className="wishlist-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Name</th>
-                  <th>Size</th>
-                  <th>Price</th>
-                  <th>Discount</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {wishlistitems.map((wishlisti, index) => {
-                  const item = wishlisti.product || {};
-                  const discountedPrice = Math.trunc(
-                    item.oprice - (item.oprice * item.discount) / 100
-                  );
-
-                  return (
-                    <tr key={item?.id}>
-                      <td>
-                        <img
-                          src={item.imageurl}
-                          alt={item.name}
-                          className="wishlist-product-img"
-                        />
-                      </td>
-                      <td>{item.name}</td>
-                      <td>{item.size}ml</td>
-                      <td>
-                        <strong style={{ color: "green" }}>
-                          ₹{discountedPrice}
-                        </strong>
-                        <br />
-                        <del style={{ color: "gray" }}>₹{item.oprice}</del>
-                      </td>
-                      <td style={{ color: "blue" }}>{item.discount}%</td>
-                      <td>
-                        <button
-                          className="action-btn add"
-                          onClick={() => moveToCart(wishlisti, index)}
-                        >
-                          Add to Cart
-                        </button>
-                        <button
-                          className="action-btn remove"
-                          onClick={() => removeWishlistItem(wishlisti, index)}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="wishlist-mobile-list">
+          {/* ========= Myntra-style Card Grid (replaces table + mobile list) ========= */}
+          <div className="wishlist-grid">
             {wishlistitems.map((wishlisti, index) => {
               const item = wishlisti.product || {};
               const discountedPrice = Math.trunc(
@@ -232,35 +165,69 @@ const Wishlist = () => {
               );
 
               return (
-                <div className="wishlist-mobile-card">
-                  <div className="wishlist-mobile-left">
-                    <img src={item.imageurl} alt={item.name} />
-                    <div className="title">{item.name}</div>
+                <article className="wl-card" key={item?.id}>
+                  {/* Image with badges + close */}
+                  <div className="wl-img-wrap">
+                    {item.discount > 0 && (
+                      <span className="wl-badge">{item.discount}% OFF</span>
+                    )}
+                    <button
+                      className="wl-remove-icon"
+                      aria-label="Remove from wishlist"
+                      onClick={() => removeWishlistItem(wishlisti, index)}
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                    <img
+                      src={item.imageurl}
+                      alt={item.name}
+                      className="wishlist-product-img"
+                      loading="lazy"
+                    />
                   </div>
-                  <div className="wishlist-mobile-right">
-                    <div className="wishlist-price-discount">
-                      <strong>₹{discountedPrice}</strong>
-                      <span className="discount">{item.discount}% Off</span>
+
+                  {/* Meta */}
+                  <div className="wl-meta">
+                    <div className="wl-brand">{item.brand || "Brand"}</div>
+                    <div className="wl-name" title={item.name}>
+                      {item.name}
                     </div>
-                    <div className="wishlist-mobile-actions">
+
+                    {item.size && (
+                      <div className="wl-size">
+                        Size: <span className="wl-size-chip">{item.size}ml</span>
+                      </div>
+                    )}
+
+                    <div className="wl-price-line">
+                      <span className="wl-price">₹{discountedPrice}</span>
+                      <span className="wl-mrp">₹{item.oprice}</span>
+                      {item.discount > 0 && (
+                        <span className="wl-off">{item.discount}% OFF</span>
+                      )}
+                    </div>
+
+                    <div className="wl-actions">
                       <button
-                        className="action-btn add"
+                        className="wl-btn primary"
                         onClick={() => moveToCart(wishlisti, index)}
                       >
-                        Add to Cart
+                        Move to Bag
                       </button>
                       <button
-                        className="action-btn remove"
+                        className="wl-btn ghost"
                         onClick={() => removeWishlistItem(wishlisti, index)}
                       >
                         Remove
                       </button>
                     </div>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
+          {/* ========= /Myntra-style Card Grid ========= */}
         </>
       )}
     </div>
