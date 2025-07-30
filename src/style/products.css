@@ -110,3 +110,33 @@
 
 /* Utilities */
 .w-9\/10{ width: 90%; }
+
+
+
+/* ===== Fly-to-cart clone ===== */
+.fly-clone{
+  border-radius: 12px;
+  background: #fff;
+  will-change: transform, opacity, box-shadow;
+  animation: fly-to-cart 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* Nice soft shadow while it flies */
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+
+/* Curved path using mid-way lift; --tx / --ty set from JS */
+@keyframes fly-to-cart{
+  0%{
+    transform: translate3d(0,0,0) scale(1);
+    opacity: 1;
+  }
+  45%{
+    /* halfway with a slight lift for a graceful arc */
+    transform: translate3d(calc(var(--tx) * 0.5), calc(var(--ty) * 0.5 - 60px), 0) scale(0.7);
+    opacity: 0.95;
+  }
+  100%{
+    transform: translate3d(var(--tx), var(--ty), 0) scale(0.2);
+    opacity: 0;
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+}
