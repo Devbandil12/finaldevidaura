@@ -1,5 +1,6 @@
 // src/pages/ShoppingCart.jsx
 import React, { useState, useEffect, useContext } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../style/cart.css";
 
@@ -14,7 +15,7 @@ import Loader from "./Loader";
 const ShoppingCart = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
+ const { isSignedIn } = useUser();
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
 
@@ -126,7 +127,15 @@ const ShoppingCart = () => {
       localStorage.removeItem("buyNowItem");
       localStorage.removeItem("buyNowActive");
     }
-    navigate("/checkout");
+
+  if (!isSignedIn) {
+    // Guest → go log in, then return to CART (not checkout)
+    navigate(`/login?redirect=${encodeURIComponent("/cart")}`, { replace: true });
+    return;
+  }
+
+    sessionStorage.setItem("checkout_intent", JSON.stringify({ ts: Date.now() }));
+  navigate("/checkout");
   };
 
   // Update quantity
