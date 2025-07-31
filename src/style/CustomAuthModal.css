@@ -55,7 +55,6 @@
   margin-bottom: 0;
 }
 
-
 .floating-group {
   position: relative;
   margin-bottom: 20px;
@@ -100,6 +99,7 @@
   left: 10px;
   font-size: 0.75rem;
   color: #000;
+  transform: none;
 }
 
 .google-btn,
@@ -115,23 +115,20 @@
 }
 
 .google-btn {
- 
   background: #fff;
   color: #000;
   margin-bottom: 16px;
   border: 1px solid #000;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
-
 
 .google-icon {
-  width: 20px;
-  height: 20px;
+  width: 20px;
+  height: 20px;
 }
-
 
 .google-btn:hover {
   background: #222;
@@ -141,7 +138,6 @@
   background: #000 !important;
   color: #fff;
   margin-top: 30px;
-
 }
 
 .action-btn:hover {
@@ -245,7 +241,7 @@
 
 .otp-row .floating-group {
   width: 60%;
-  margin-bottom:0;
+  margin-bottom: 0;
 }
 
 .otp-row input {
@@ -279,8 +275,6 @@
   color: #eee;
   cursor: not-allowed;
 }
-
-
 
 @media (max-width: 650px) {
   .auth-modal-container {
