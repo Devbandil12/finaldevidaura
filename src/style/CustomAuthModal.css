@@ -282,7 +282,7 @@
     flex-direction: column;
     width: 90%;
     min-height: 90vh;
-    margin: 100px 0 50px 0;
+    margin: 100px 0 10px 0;
   }
 
   .auth-image {
