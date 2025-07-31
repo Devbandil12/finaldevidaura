@@ -88,7 +88,7 @@
   color: #888;
   font-size: 0.95rem;
   pointer-events: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   background: #fff;
   padding: 0 4px;
 }
@@ -99,7 +99,7 @@
   left: 10px;
   font-size: 0.75rem;
   color: #000;
-  transform: none;
+  
 }
 
 .google-btn,
