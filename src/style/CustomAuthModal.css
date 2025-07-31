@@ -223,7 +223,6 @@ order:1;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin: 14px 0;
 }
 
 .otp-row .floating-group {
@@ -233,7 +232,7 @@ order:1;
 
 .otp-row input {
   height: 42px;
-  padding: 10px 12px 6px;
+  padding: 10px 12px ;
   box-sizing: border-box;
 }
 
