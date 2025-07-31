@@ -115,18 +115,16 @@
 }
 
 .google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   background: #fff;
   color: #000;
   margin-bottom: 16px;
   border: 1px solid #000
 }
 
-.google-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
 
 .google-icon {
   width: 20px;
