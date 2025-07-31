@@ -130,9 +130,7 @@ const Navbar = ({ onVisibilityChange }) => {
   // ===========================================================
   const updateSidebarOffset = useCallback(() => {
     const mainBar = document.getElementById("navbar"); // top fixed bar
-    const secondBar =
-      document.getElementById("mobile-back-bar") ||
-      document.querySelector(".mobile-back-bar"); // MobileBackBar
+    
 
     const visibleHeight = (el) => {
       if (!el) return 0;
@@ -142,7 +140,7 @@ const Navbar = ({ onVisibilityChange }) => {
       return Math.max(0, bottom - top);
     };
 
-    const offset = visibleHeight(mainBar) + visibleHeight(secondBar);
+    const offset = visibleHeight(mainBar);
     document.documentElement.style.setProperty(
       "--sidebar-top",
       `${offset}px`
@@ -158,9 +156,9 @@ const Navbar = ({ onVisibilityChange }) => {
 
     const ro = new ResizeObserver(updateSidebarOffset);
     const mainBar = document.getElementById("navbar");
-    const secondBar = document.getElementById("mobile-back-bar");
+    
     if (mainBar) ro.observe(mainBar);
-    if (secondBar) ro.observe(secondBar);
+    
 
     return () => {
       window.removeEventListener("resize", onRes);
