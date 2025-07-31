@@ -236,15 +236,19 @@ order:1;
 
 .otp-row .floating-group {
   width: 60%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  position: relative;
+}
+
+.otp-row input {
+  height: 42px;
+  padding: 10px 12px 6px;
+  box-sizing: border-box;
 }
 
 .send-otp-btn {
   width: 40%;
-  height: 100%; /* ensures it aligns with input height */
-  padding: 10px 16px;
+  height: 42px;
+  padding: 0 16px;
   font-size: 0.85rem;
   background-color: #000;
   color: white;
@@ -256,6 +260,7 @@ order:1;
   align-items: center;
   justify-content: center;
 }
+
 
 
 
