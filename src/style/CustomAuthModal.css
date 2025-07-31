@@ -345,3 +345,85 @@
     left: 12px;
   }
 }
+
+
+.auth-fields form input,
+.otp-row input {
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  transition: border 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+  box-shadow: inset 0 0 0 transparent;
+}
+
+.auth-fields form input:focus,
+.otp-row input:focus {
+  border-color: #6c63ff;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(108, 99, 255, 0.3);
+  transform: scale(1.02);
+}
+
+
+
+.action-btn,
+.send-otp-btn,
+.google-btn {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: scale(1);
+}
+
+.action-btn:hover,
+.send-otp-btn:hover,
+.google-btn:hover {
+  background-color: #333;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.action-btn:active,
+.send-otp-btn:active,
+.google-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+
+.google-btn {
+  background: white;
+  color: #444;
+  border: 1px solid #ddd;
+  font-weight: 600;
+}
+
+.google-btn:hover {
+  background: #f5f5f5;
+  color: #111;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+
+
+input {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+
+
+@keyframes fade-slide {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-fields {
+  animation: fade-slide 0.6s ease forwards;
+}
