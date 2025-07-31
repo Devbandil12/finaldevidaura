@@ -8,6 +8,9 @@ import MiniLoader from "./MiniLoader";
 import "../style/CustomAuthModal.css";
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
+import GoogleIcon from "../assets/images/google.png";
+
+
 
 export default function CustomAuthPage() {
   const [isSignUp, setIsSignUp] = useState(true);
@@ -132,9 +135,11 @@ export default function CustomAuthPage() {
         <div className="auth-fields" ref={fieldsRef}>
           <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
 
-          <button className="google-btn" onClick={handleGoogle}>
-            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
-          </button>
+         <button className="google-btn" onClick={handleGoogle}>
+  <img src={GoogleIcon} alt="Google" className="google-icon" />
+  {isSignUp ? "Sign up with Google" : "Sign in with Google"}
+</button>
+
 
           <div className="divider"><span>OR</span></div>
 
