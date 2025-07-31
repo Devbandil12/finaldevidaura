@@ -217,6 +217,7 @@
 
 .otp-row .floating-group {
   width: 60%;
+  margin-bottom:0;
 }
 
 .otp-row input {
