@@ -96,7 +96,7 @@
 
 .floating-group input:focus + label,
 .floating-group input:not(:placeholder-shown) + label {
-  top: -8px;
+  top: 0px;
   left: 10px;
   font-size: 0.75rem;
   color: #000;
