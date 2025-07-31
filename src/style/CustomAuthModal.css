@@ -118,6 +118,7 @@
   background: #fff;
   color: #000;
   margin-bottom: 16px;
+  border: 1px solid #000
 }
 
 .google-btn:hover {
@@ -128,6 +129,7 @@
   background: #000 !important;
   color: #fff;
   margin-top: 30px;
+
 }
 
 .action-btn:hover {
