@@ -127,6 +127,7 @@ order:2;
   white-space: nowrap;
   font-size: 0.85rem;
   transition: all 0.3s ease;
+  margin-top: 0px;
 }
 
 .send-otp-btn:hover {
