@@ -53,7 +53,7 @@ order:2;
 
 .floating-group input {
   width: 100%;
-  padding: 16px 12px 10px;
+  padding: 10px 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
   background: #fff;
@@ -90,10 +90,9 @@ order:2;
 
 /* Buttons */
 .google-btn,
-.action-btn,
-.send-otp-btn {
+.action-btn, {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -165,14 +164,6 @@ order:2;
   padding: 0 10px;
   color: #999;
   font-size: 0.9rem;
-}
-
-/* OTP Row */
-.otp-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 12px;
 }
 
 /* Toggle Text */
