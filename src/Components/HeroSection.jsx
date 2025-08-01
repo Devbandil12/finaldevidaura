@@ -5,122 +5,99 @@ import "../style/herosection.css";
 import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 const HeroSection = () => {
-  const titleRef = useRef(null);
-  const sloganRef = useRef(null);
-  const buttonRef = useRef(null);
-  const imageRef = useRef(null);
+  const titleRef = useRef(null);
+  const sloganRef = useRef(null);
+  const buttonRef = useRef(null);
+  const imageRef = useRef(null);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
 
-      // Title animation
-      tl.fromTo(
-        titleRef.current,
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
-      );
+      tl.fromTo(titleRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.6 });
 
-      // Typing slogan after title
-      tl.add(() => {
-        typeSlogan();
-      }, "+=0.2");
+      tl.add(() => typeSlogan(), "+=0.3");
 
-      // Button animation
-      tl.fromTo(
-        buttonRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-        "+=2.4" // enough delay for typing to finish
-      );
+      tl.fromTo(buttonRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 }, "+=2.5");
 
-      // Image animation
-      tl.fromTo(
-        imageRef.current,
-        { opacity: 0, y: 20, rotate: -3 },
-        {
-          opacity: 1,
-          y: 0,
-          rotate: 0,
-          duration: 0.8,
-          ease: "power2.out",
-        },
-        "-=0.3"
-      );
-    });
+      tl.fromTo(
+        imageRef.current,
+        { opacity: 0, scale: 0.95 },
+        { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
+        "-=0.3"
+      );
+    });
 
-    return () => ctx.revert();
-  }, []);
+    return () => ctx.revert();
+  }, []);
 
-  const typeSlogan = () => {
-    const sloganElement = sloganRef.current;
+  const typeSlogan = () => {
+    const sloganElement = sloganRef.current;
 
-    const rawParts = [
-      "Not seen, not heard — only ",
-      "<span class='highlight'>felt</span>",
-      "<br/>",
-      "In every breath he ",
-      "<span class='highlight'>leaves</span>",
-      " behind.",
-    ];
+    const parts = [
+      { text: "Not seen, not heard — only ", html: false },
+      { text: "<span class='highlight'>felt</span>", html: true },
+      { text: "<br/>", html: true },
+      { text: "In every breath he ", html: false },
+      { text: "<span class='highlight'>leaves</span>", html: true },
+      { text: " behind.", html: false },
+    ];
 
-    let finalHTML = "";
-    let index = 0;
+    let currentHTML = "";
+    let partIndex = 0;
 
-    const typeNext = () => {
-      if (index < rawParts.length) {
-        const part = rawParts[index];
-        if (part.startsWith("<")) {
-          finalHTML += part;
-        } else {
-          const chars = part.split("");
-          let charIdx = 0;
-          const typeChar = () => {
-            if (charIdx < chars.length) {
-              finalHTML += chars[charIdx++];
-              sloganElement.innerHTML = finalHTML;
-              setTimeout(typeChar, 30);
-            } else {
-              index++;
-              typeNext();
-            }
-          };
-          typeChar();
-          return;
-        }
-        // Delay before adding next non-typing part
-        sloganElement.innerHTML = finalHTML;
-        index++;
-        setTimeout(typeNext, 100);
-      }
-    };
+    const typeNextPart = () => {
+      if (partIndex >= parts.length) return;
 
-    typeNext();
-  };
+      const part = parts[partIndex];
+      if (part.html) {
+        currentHTML += part.text;
+        sloganElement.innerHTML = currentHTML;
+        partIndex++;
+        setTimeout(typeNextPart, 150);
+      } else {
+        let i = 0;
+        const typeChar = () => {
+          if (i < part.text.length) {
+            currentHTML += part.text[i++];
+            sloganElement.innerHTML = currentHTML;
+            requestAnimationFrame(typeChar);
+          } else {
+            partIndex++;
+            setTimeout(typeNextPart, 150);
+          }
+        };
+        requestAnimationFrame(typeChar);
+      }
+    };
 
-  return (
-    <section className="hero-section">
-      <div className="hero-content">
-        <h2 className="hero-title" ref={titleRef}>
-          DEVIDAURA
-        </h2>
+    typeNextPart();
+  };
 
-        <p className="hero-slogan" ref={sloganRef}></p>
+  return (
+    <section className="hero-section">
+      <div className="hero-content">
+        <h1 className="hero-title" ref={titleRef}>
+          DEVIDAURA
+        </h1>
 
-        <div className="hero-cta" ref={buttonRef}>
-          <button className="shop-btn">Explore Collection</button>
-        </div>
-      </div>
+        <p className="hero-slogan" ref={sloganRef}></p>
 
-      <div className="hero-image-wrapper" ref={imageRef}>
-        <img
-          src={BottleImage}
-          alt="Perfume Bottle"
-          className="perfume-image"
-        />
-      </div>
-    </section>
-  );
+        <div className="hero-cta" ref={buttonRef}>
+          <button className="shop-btn">Explore Collection</button>
+        </div>
+      </div>
+
+      <div className="hero-image-wrapper" ref={imageRef}>
+        <img
+          src={BottleImage}
+          alt="Perfume Bottle"
+          className="perfume-image"
+          loading="lazy"
+        />
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;
