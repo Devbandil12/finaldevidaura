@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import BottleImage from "../assets/New folder/Adobe Express - file.png";
-import BackgroundImage from "../assets/right-arrow-svgrepo-com.svg";
 import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
 import "../style/style.css";
 import { gsap } from "gsap";
@@ -9,12 +7,11 @@ import { gsap } from "gsap";
 const HeroSection = () => {
   const navigate = useNavigate();
 
-  // Refs for GSAP animations
   const titleRef = useRef(null);
   const subtitleRef = useRef(null);
   const sloganRef = useRef(null);
   const buttonRef = useRef(null);
-  const imageRef = useRef(null);
+  const orbRef = useRef(null);
 
   useEffect(() => {
     const tl = gsap.timeline({ delay: 0.2 });
@@ -25,32 +22,43 @@ const HeroSection = () => {
       duration: 1,
       ease: "power3.out",
     })
-      .from(subtitleRef.current, {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power2.out",
-      }, "-=0.6")
-      .from(sloganRef.current, {
-        y: 30,
-        opacity: 0,
-        duration: 1.2,
-        ease: "power2.out",
-      }, "-=0.8")
-      .from(buttonRef.current, {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        ease: "power2.out",
-      }, "-=1");
+      .from(
+        subtitleRef.current,
+        {
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
+          ease: "power2.out",
+        },
+        "-=0.6"
+      )
+      .from(
+        sloganRef.current,
+        {
+          y: 30,
+          opacity: 0,
+          duration: 1.2,
+          ease: "power2.out",
+        },
+        "-=0.8"
+      )
+      .from(
+        buttonRef.current,
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.6,
+          ease: "power2.out",
+        },
+        "-=1"
+      );
 
-    // Bottle tilt on hover
-    const bottle = imageRef.current;
+    const orb = orbRef.current;
     const handleMouseMove = (e) => {
-      const { left, top, width, height } = bottle.getBoundingClientRect();
+      const { left, top, width, height } = orb.getBoundingClientRect();
       const x = (e.clientX - left - width / 2) / 20;
       const y = (e.clientY - top - height / 2) / 20;
-      gsap.to(bottle, {
+      gsap.to(orb, {
         rotationY: x,
         rotationX: -y,
         ease: "power2.out",
@@ -58,27 +66,20 @@ const HeroSection = () => {
       });
     };
     const resetTilt = () => {
-      gsap.to(bottle, { rotationX: 0, rotationY: 0, duration: 0.4 });
+      gsap.to(orb, { rotationX: 0, rotationY: 0, duration: 0.4 });
     };
 
-    bottle.addEventListener("mousemove", handleMouseMove);
-    bottle.addEventListener("mouseleave", resetTilt);
+    orb.addEventListener("mousemove", handleMouseMove);
+    orb.addEventListener("mouseleave", resetTilt);
 
     return () => {
-      bottle.removeEventListener("mousemove", handleMouseMove);
-      bottle.removeEventListener("mouseleave", resetTilt);
+      orb.removeEventListener("mousemove", handleMouseMove);
+      orb.removeEventListener("mouseleave", resetTilt);
     };
   }, []);
 
   return (
     <section className="hero">
-      {/* background layer */}
-      <div
-        className="hero__bg"
-        style={{ backgroundImage: `url(${BackgroundImage})` }}
-      />
-
-      {/* content + image */}
       <div className="hero__content-container">
         <div className="hero__content">
           <h1 className="hero__title" ref={titleRef}>
@@ -112,13 +113,9 @@ const HeroSection = () => {
           </div>
         </div>
 
-        <div className="hero__image-container">
-          <img
-            src={BottleImage}
-            alt="Perfume"
-            className="hero__image"
-            ref={imageRef}
-          />
+        {/* Abstract 3D Visual */}
+        <div className="hero__visual-container">
+          <div className="hero__orb" ref={orbRef}></div>
         </div>
       </div>
     </section>
