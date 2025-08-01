@@ -4,13 +4,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 80px 10%;
+  padding: 100px 10% 50px 10%;
   min-height: 100vh;
   background: #fdfdfd;
   position: relative;
   overflow: hidden;
   gap: 40px;
   box-sizing: border-box;
+
 }
 
 /* ---------- Left Side: Content ---------- */
