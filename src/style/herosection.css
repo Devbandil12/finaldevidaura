@@ -1,128 +1,134 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Crimson+Text&family=Parisienne&display=swap');
+/* src/style/hero.css */
 
-:root {
-  --brand-font: 'Cormorant Garamond', serif;
-  --slogan-font: 'Crimson Text', serif;
-  --highlight-font: 'Parisienne', cursive;
-
-  --text-color: #1a1a1a;
-  --accent-color: #000;
-  --bg-color: #fdfdfc;
-}
-
-.hero {
+.hero-section {
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
-  background: var(--bg-color);
-  padding: 5rem 8%;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 2rem;
-}
-
-.hero__left {
-  flex: 1;
-  min-width: 300px;
-}
-
-.hero__brand {
-  font-family: var(--brand-font);
-  font-size: 4.5rem;
-  color: var(--accent-color);
-  margin-bottom: 1rem;
-  letter-spacing: 0.04em;
-}
-
-.hero__slogan {
-  font-family: var(--slogan-font);
-  font-size: 1.6rem;
-  line-height: 1.9;
-  color: var(--text-color);
-  margin-bottom: 2.5rem;
-  white-space: pre-line;
-}
-
-.hero__slogan .emphasis {
-  font-family: var(--highlight-font);
-  color: #000;
-  font-size: 1.8rem;
-  font-style: normal;
-  display: inline-block;
-  margin: 0 0.2rem;
-  transition: opacity 0.3s ease;
-}
-
-.hero__cta {
-  font-family: var(--slogan-font);
-  font-size: 1rem;
-  padding: 0.8rem 1.8rem;
-  background-color: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.hero__cta:hover {
-  background-color: #222;
-}
-
-.hero__cta-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.hero__right {
-  flex: 1;
-  min-width: 300px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.hero__image-wrapper {
-  width: 100%;
-  max-width: 300px;
-height:350px;
-  aspect-ratio: 3 / 4;
-  background: #f6f6f6;
-  border-radius: 2rem;
+  padding: 80px 10%;
+  min-height: 100vh;
+  background: #fdfdfd;
+  position: relative;
   overflow: hidden;
-  transform: rotate(-2deg);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  gap: 40px;
+  box-sizing: border-box;
+}
+
+/* ---------- Left Side: Content ---------- */
+.hero-content {
+  flex: 1;
+  max-width: 600px;
+  z-index: 2;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  font-family: "Playfair Display", serif;
+  color: #222;
+  margin-bottom: 20px;
+}
+
+.hero-slogan {
+  font-size: 1.35rem;
+  line-height: 1.6;
+  white-space: pre-line;
+  font-family: "Cormorant Garamond", serif;
+  color: #444;
+  min-height: 4.5em;
+  overflow: hidden;
+}
+
+/* CTA Button */
+.hero-cta {
+  margin-top: 30px;
+}
+
+.shop-btn {
+  background-color: #111;
+  color: #fff;
+  font-size: 1rem;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.shop-btn:hover {
+  background-color: #333;
+}
+
+/* ---------- Right Side: Image ---------- */
+.hero-image-wrapper {
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.hero__bottle {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+.perfume-image {
+  width: 360px;
+  max-width: 100%;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .hero {
+/* ------------------ Responsive ------------------ */
+
+/* Tablets */
+@media screen and (max-width: 1024px) {
+  .hero-section {
     flex-direction: column;
-    padding: 3rem 1.5rem;
+    padding: 60px 6%;
+    text-align: center;
   }
 
-  .hero__brand {
-    font-size: 3.2rem;
+  .hero-content {
+    max-width: 90%;
   }
 
-  .hero__slogan {
-    font-size: 1.4rem;
+  .hero-title {
+    font-size: 3rem;
   }
 
-  .hero__slogan .emphasis {
-    font-size: 1.6rem;
+  .hero-slogan {
+    font-size: 1.2rem;
+    min-height: 4em;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 40px;
+  }
+
+  .perfume-image {
+    width: 280px;
+  }
+}
+
+/* Mobile */
+@media screen and (max-width: 600px) {
+  .hero-section {
+    padding: 50px 5%;
+    gap: 20px;
+  }
+
+  .hero-title {
+    font-size: 2.4rem;
+  }
+
+  .hero-slogan {
+    font-size: 1.1rem;
+    min-height: 3.5em;
+  }
+
+  .shop-btn {
+    font-size: 0.95rem;
+    padding: 10px 22px;
+  }
+
+  .perfume-image {
+    width: 240px;
   }
 }
