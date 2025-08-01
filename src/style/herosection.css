@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #0c0c0c;
+  color: #ffffff;
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #0c0c0c 100%);
+  overflow: hidden;
+}
+
+/* Layout */
+.hero__content-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  padding: 6rem 5%;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 4rem;
+}
+
+/* Left: Text */
+.hero__content {
+  flex: 1 1 500px;
+  z-index: 2;
+}
+
+.hero__title {
+  font-family: 'Playfair Display', serif;
+  font-size: 4.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.hero__title .italic {
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.hero__subtitle {
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: #bcbcbc;
+}
+
+.hero__copy {
+  margin-top: 2rem;
+  font-size: 1.2rem;
+  line-height: 1.9;
+  max-width: 520px;
+  color: #dddddd;
+}
+
+.slogan-text .italic {
+  font-style: italic;
+}
+.slogan-text .bold {
+  font-weight: 600;
+}
+.slogan-text .caps {
+  text-transform: uppercase;
+}
+.slogan-text .spaced {
+  letter-spacing: 2px;
+}
+.slogan-text .thin {
+  font-weight: 300;
+}
+
+.hero__cta {
+  margin-top: 2rem;
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: #ffffff;
+  color: #0c0c0c;
+  border: none;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.hero__cta:hover {
+  background-color: #e0e0e0;
+}
+
+.hero__cta-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+/* Right: CSS-Based Visual */
+.hero__visual-container {
+  flex: 1 1 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+}
+
+.hero__orb {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.1),
+              inset 0 0 30px rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s ease;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* Responsive */
+@media screen and (max-width: 1024px) {
+  .hero__content-container {
+    flex-direction: column;
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .hero__title {
+    font-size: 3.5rem;
+  }
+
+  .hero__visual-container {
+    margin-top: 3rem;
+  }
+
+  .hero__orb {
+    width: 220px;
+    height: 220px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .hero__title {
+    font-size: 2.5rem;
+  }
+
+  .hero__copy {
+    font-size: 1rem;
+  }
+
+  .hero__orb {
+    width: 180px;
+    height: 180px;
+  }
+}
