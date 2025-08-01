@@ -14,7 +14,6 @@ const HeroSection = () => {
       setAnimationStarted(true);
     };
 
-    // Wait for navbar to finish animating
     window.addEventListener("navbarAnimationComplete", handleNavbarDone);
     return () => window.removeEventListener("navbarAnimationComplete", handleNavbarDone);
   }, []);
@@ -56,7 +55,7 @@ const HeroSection = () => {
         </div>
       </div>
       <div className="hero-image-wrapper">
-        <img src={perfumeBottle} alt="Perfume Bottle" ref={imageRef} className="perfume-image" />
+        <img src={BottleImage} alt="Perfume Bottle" ref={imageRef} className="perfume-image" />
       </div>
     </section>
   );
