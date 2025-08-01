@@ -9,20 +9,21 @@ const HeroSection = () => {
   const imageRef = useRef(null);
   const [animationStarted, setAnimationStarted] = useState(false);
 
+  // ⏱️ Delay hero animation by 650ms after mount
   useEffect(() => {
-    const handleNavbarDone = () => {
+    const timer = setTimeout(() => {
       setAnimationStarted(true);
-    };
+    }, 650); // Adjusted to match your navbar GSAP animation timing
 
-    window.addEventListener("navbarAnimationComplete", handleNavbarDone);
-    return () => window.removeEventListener("navbarAnimationComplete", handleNavbarDone);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (!animationStarted) return;
 
     const sloganElement = sloganRef.current;
-    const fullText = "Not seen, not heard — only felt\nIn every breath he leaves behind.";
+    const fullText =
+      "Not seen, not heard — only felt\nIn every breath he leaves behind.";
     sloganElement.innerText = "";
 
     let charIndex = 0;
@@ -33,7 +34,7 @@ const HeroSection = () => {
       } else {
         clearInterval(interval);
 
-        // After typing finishes, animate bottle
+        // Animate bottle image after typing
         gsap.fromTo(
           imageRef.current,
           { opacity: 0, y: 50 },
@@ -55,7 +56,12 @@ const HeroSection = () => {
         </div>
       </div>
       <div className="hero-image-wrapper">
-        <img src={BottleImage} alt="Perfume Bottle" ref={imageRef} className="perfume-image" />
+        <img
+          src={BottleImage}
+          alt="Perfume Bottle"
+          ref={imageRef}
+          className="perfume-image"
+        />
       </div>
     </section>
   );
