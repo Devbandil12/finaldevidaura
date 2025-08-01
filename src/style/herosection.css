@@ -87,7 +87,8 @@
 
 .hero__image-wrapper {
   width: 100%;
-  max-width: 420px;
+  max-width: 300px;
+height:350px;
   aspect-ratio: 3 / 4;
   background: #f6f6f6;
   border-radius: 2rem;
