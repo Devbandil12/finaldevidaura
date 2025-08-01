@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
-import BottleImage from "../assets/devidaura_bottle.png";
+import BottleImage from "../assets/New folder/Adobe Express - file.png";
 import "../style/herosection.css";
 import { gsap } from "gsap";
 
