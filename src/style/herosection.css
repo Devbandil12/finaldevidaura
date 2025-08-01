@@ -27,9 +27,8 @@
 
 .hero-slogan {
   font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
   font-style: italic;
-  font-weight: 400;
+  font-size: 1.5rem;
   line-height: 1.7;
   min-height: 6rem;
   white-space: pre-wrap;
@@ -79,7 +78,7 @@
   transform: scale(1.03);
 }
 
-/* ✅ Responsive Design */
+/* Responsive Design */
 
 @media (max-width: 1024px) {
   .hero-section {
