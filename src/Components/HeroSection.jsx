@@ -1,121 +1,62 @@
-import React, { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
-import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
-import "../style/herosection.css";
-import { gsap } from "gsap";
+// src/Components/HeroSection.jsx
+import React, { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import "../style/hero.css";
+import perfumeBottle from "../assets/images/perfume-bottle.png"; // adjust to your asset
 
 const HeroSection = () => {
-  const navigate = useNavigate();
-  const brandRef = useRef();
-  const sloganRef = useRef();
-  const bottleRef = useRef();
-  const ctaRef = useRef();
+  const sloganRef = useRef(null);
+  const imageRef = useRef(null);
+  const [animationStarted, setAnimationStarted] = useState(false);
 
   useEffect(() => {
-    // Animate brand fade-in
-    gsap.from(brandRef.current, {
-      opacity: 0,
-      y: -30,
-      duration: 1.2,
-      ease: "power2.out",
-      delay: 0.2,
-    });
+    const handleNavbarDone = () => {
+      setAnimationStarted(true);
+    };
 
-    // Typing effect for slogan
-    const sloganEl = sloganRef.current;
-    const fullText =
-      "Not seen, not heard — only felt.\nIn every breath he leaves behind.";
-    let index = 0;
-    sloganEl.innerHTML = "";
+    // Wait for navbar to finish animating
+    window.addEventListener("navbarAnimationComplete", handleNavbarDone);
+    return () => window.removeEventListener("navbarAnimationComplete", handleNavbarDone);
+  }, []);
 
-    const typeInterval = setInterval(() => {
-      if (index < fullText.length) {
-        const char = fullText[index];
-        sloganEl.innerHTML += char === "\n" ? "<br/>" : char;
-        index++;
+  useEffect(() => {
+    if (!animationStarted) return;
+
+    const sloganElement = sloganRef.current;
+    const fullText = "Not seen, not heard — only felt\nIn every breath he leaves behind.";
+    sloganElement.innerText = "";
+
+    let charIndex = 0;
+    const interval = setInterval(() => {
+      if (charIndex < fullText.length) {
+        sloganElement.innerText += fullText.charAt(charIndex);
+        charIndex++;
       } else {
-        clearInterval(typeInterval);
-        // Emphasize words after typing
-        emphasizeWords();
+        clearInterval(interval);
+
+        // After typing finishes, animate bottle
+        gsap.fromTo(
+          imageRef.current,
+          { opacity: 0, y: 50 },
+          { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
+        );
       }
     }, 50);
 
-    // CTA fade in
-    gsap.from(ctaRef.current, {
-      opacity: 0,
-      y: 20,
-      duration: 1,
-      delay: 3,
-      ease: "power2.out",
-    });
-
-    // Bottle float
-    gsap.to(bottleRef.current, {
-      y: -15,
-      duration: 3,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-
-    // Tilt effect
-    const bottle = bottleRef.current;
-    const handleMove = (e) => {
-      const rect = bottle.getBoundingClientRect();
-      const x = (e.clientX - rect.left - rect.width / 2) / 15;
-      const y = (e.clientY - rect.top - rect.height / 2) / 15;
-      gsap.to(bottle, { rotationY: x, rotationX: -y, duration: 0.3 });
-    };
-    const resetTilt = () => {
-      gsap.to(bottle, { rotationX: 0, rotationY: 0, duration: 0.4 });
-    };
-    bottle.addEventListener("mousemove", handleMove);
-    bottle.addEventListener("mouseleave", resetTilt);
-
-    return () => {
-      bottle.removeEventListener("mousemove", handleMove);
-      bottle.removeEventListener("mouseleave", resetTilt);
-    };
-  }, []);
-
-  // After typing, highlight key words
-  const emphasizeWords = () => {
-    const el = sloganRef.current;
-    el.innerHTML = el.innerHTML
-      .replace("felt", `<span class="emphasis">felt</span>`)
-      .replace("leaves", `<span class="emphasis">leaves</span>`);
-  };
+    return () => clearInterval(interval);
+  }, [animationStarted]);
 
   return (
-    <section className="hero">
-      <div className="hero__left">
-        <h1 className="hero__brand" ref={brandRef}>
-          DEVIDAURA
-        </h1>
-        <p className="hero__slogan" ref={sloganRef}></p>
-        <button
-          className="hero__cta"
-          ref={ctaRef}
-          onClick={() =>
-            document
-              .getElementById("shop-section")
-              .scrollIntoView({ behavior: "smooth" })
-          }
-        >
-          Shop Now <img src={RightArrowIcon} alt="→" className="hero__cta-icon" />
-        </button>
-      </div>
-
-      <div className="hero__right">
-        <div className="hero__image-wrapper">
-          <img
-            src={BottleImage}
-            alt="Perfume Bottle"
-            className="hero__bottle"
-            ref={bottleRef}
-          />
+    <section className="hero-section">
+      <div className="hero-content">
+        <h2 className="hero-title">DEVIDAURA</h2>
+        <p className="hero-slogan" ref={sloganRef}></p>
+        <div className="hero-cta">
+          <button className="shop-btn">Explore Collection</button>
         </div>
+      </div>
+      <div className="hero-image-wrapper">
+        <img src={perfumeBottle} alt="Perfume Bottle" ref={imageRef} className="perfume-image" />
       </div>
     </section>
   );
