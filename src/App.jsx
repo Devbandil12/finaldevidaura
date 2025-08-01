@@ -44,6 +44,8 @@ function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
+const [heroStart, setHeroStart] = useState(false);
+
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -102,11 +104,13 @@ const App = () => {
                   <ScrollToTop />
                   <PostLoginRedirector /> {/* NEW: global watcher */}
 
-                  <Navbar
-                    cartCount={cart.length}
-                    wishlistCount={wishlist.length}
-                    onVisibilityChange={setNavbarVisible}
-                  />
+                 <Navbar
+  cartCount={cart.length}
+  wishlistCount={wishlist.length}
+  onVisibilityChange={setNavbarVisible}
+  onNavAnimationComplete={() => setHeroStart(true)} // ✅ this triggers hero animation
+/>
+
 
                   <MobileBackBar isNavbarVisible={isNavbarVisible} />
 
@@ -116,7 +120,8 @@ const App = () => {
                       path="/"
                       element={
                         <>
-                          <HeroSection />
+                         <HeroSection animate={heroStart} />
+
                           <Products
                             cart={cart}
                             setCart={setCart}
