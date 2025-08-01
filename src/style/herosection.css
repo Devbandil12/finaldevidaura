@@ -10,6 +10,8 @@
   font-family: 'Inter', sans-serif;
   color: #1f1f1f;
   gap: 3rem;
+  min-height:100vh;
+  padding-top:100px;
 }
 
 .hero-content {
@@ -51,13 +53,13 @@
   color: #000;
   border: 1px solid #f8f8f8;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(164, 19, 60, 0.25);
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .hero-cta .shop-btn:hover {
-  background-color: #800f2f;
+  background-color: #000;
+  color:#fff;
   transform: scale(1.03);
 }
 
