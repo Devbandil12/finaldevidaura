@@ -1,12 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=EB+Garamond&family=Parisienne&family=Playfair+Display:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Crimson+Text&family=Parisienne&display=swap');
 
 :root {
-  --brand-font: 'Playfair Display', serif;
-  --slogan-font: 'EB Garamond', serif;
+  --brand-font: 'Cormorant Garamond', serif;
+  --slogan-font: 'Crimson Text', serif;
   --highlight-font: 'Parisienne', cursive;
-  --text-color: #111;
+
+  --text-color: #1a1a1a;
   --accent-color: #000;
-  --bg-color: #fff;
+  --bg-color: #fdfdfc;
 }
 
 .hero {
@@ -14,10 +15,10 @@
   flex-direction: row;
   justify-content: space-between;
   background: var(--bg-color);
-  padding: 4rem 6%;
+  padding: 5rem 8%;
   align-items: center;
-  gap: 2rem;
   flex-wrap: wrap;
+  gap: 2rem;
 }
 
 .hero__left {
@@ -27,41 +28,44 @@
 
 .hero__brand {
   font-family: var(--brand-font);
-  font-size: 4rem;
+  font-size: 4.5rem;
   color: var(--accent-color);
   margin-bottom: 1rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .hero__slogan {
   font-family: var(--slogan-font);
   font-size: 1.6rem;
-  line-height: 1.8;
+  line-height: 1.9;
   color: var(--text-color);
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  white-space: pre-line;
 }
 
 .hero__slogan .emphasis {
   font-family: var(--highlight-font);
+  color: #000;
   font-size: 1.8rem;
+  font-style: normal;
   display: inline-block;
-  margin: 0 0.3rem;
-  color: var(--accent-color);
+  margin: 0 0.2rem;
+  transition: opacity 0.3s ease;
 }
 
 .hero__cta {
-  font-family: var(--brand-font);
+  font-family: var(--slogan-font);
   font-size: 1rem;
-  padding: 0.8rem 1.6rem;
+  padding: 0.8rem 1.8rem;
   background-color: var(--accent-color);
   color: white;
   border: none;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 2px;
+  transition: background 0.3s ease;
 }
 
 .hero__cta:hover {
@@ -85,14 +89,14 @@
   width: 100%;
   max-width: 420px;
   aspect-ratio: 3 / 4;
-  background: #f5f5f5;
+  background: #f6f6f6;
   border-radius: 2rem;
   overflow: hidden;
   transform: rotate(-2deg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
   display: flex;
-  align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  align-items: center;
 }
 
 .hero__bottle {
@@ -102,6 +106,7 @@
   transition: transform 0.3s ease;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .hero {
     flex-direction: column;
@@ -109,7 +114,7 @@
   }
 
   .hero__brand {
-    font-size: 3rem;
+    font-size: 3.2rem;
   }
 
   .hero__slogan {
