@@ -272,6 +272,18 @@
   color: #111;
 }
 
+.add-to-cart {
+  background: #111;
+  color: #fff;
+  border: none;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+.add-to-cart:hover {
+  background-color: #000;
+  transform: translateY(-2px);
+}
+
+
 /* === Desktop fixed widths === */
 @media screen and (min-width: 1024px) {
   .cart-item-summary-container {
