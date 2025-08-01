@@ -1,7 +1,7 @@
 // src/Components/HeroSection.jsx
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import "../style/hero.css";
+import "../style/herosection.css";
 import perfumeBottle from "../assets/images/perfume-bottle.png"; // adjust to your asset
 
 const HeroSection = () => {
