@@ -44,7 +44,6 @@ function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
-const [heroStart, setHeroStart] = useState(false);
 
 
   useEffect(() => {
@@ -67,6 +66,8 @@ const App = () => {
   const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
+const [heroStart, setHeroStart] = useState(false);
+
 
   // Upsert new users into your DB
   const isNewUser = useCallback(async () => {
