@@ -66,7 +66,7 @@ const App = () => {
   const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
-const [heroStart, setHeroStart] = useState(false);
+
 
 
   // Upsert new users into your DB
@@ -109,7 +109,6 @@ const [heroStart, setHeroStart] = useState(false);
   cartCount={cart.length}
   wishlistCount={wishlist.length}
   onVisibilityChange={setNavbarVisible}
-  onNavAnimationComplete={() => setHeroStart(true)} // ✅ this triggers hero animation
 />
 
 
@@ -121,7 +120,7 @@ const [heroStart, setHeroStart] = useState(false);
                       path="/"
                       element={
                         <>
-                         <HeroSection animate={heroStart} />
+                         <HeroSection />
 
                           <Products
                             cart={cart}
