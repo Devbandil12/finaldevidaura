@@ -14,64 +14,73 @@ const HeroSection = () => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
 
-      tl.fromTo(titleRef.current, { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.6 });
+      // Animate Title
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: -30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
 
-      tl.add(() => typeSlogan(), "+=0.3");
+      // Start typing effect
+      tl.add(() => typeSlogan(), "+=0.4");
 
-      tl.fromTo(buttonRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6 }, "+=2.5");
+      // Button
+      tl.fromTo(
+        buttonRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+        "+=2.5"
+      );
 
+      // Image
       tl.fromTo(
         imageRef.current,
         { opacity: 0, scale: 0.95 },
         { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
-        "-=0.3"
+        "-=0.4"
       );
     });
 
     return () => ctx.revert();
   }, []);
 
+  // Typing effect using GSAP only
   const typeSlogan = () => {
-    const sloganElement = sloganRef.current;
-
+    const element = sloganRef.current;
     const parts = [
-      { text: "Not seen, not heard — only ", html: false },
-      { text: "<span class='highlight'>felt</span>", html: true },
-      { text: "<br/>", html: true },
-      { text: "In every breath he ", html: false },
-      { text: "<span class='highlight'>leaves</span>", html: true },
-      { text: " behind.", html: false },
+      "Not seen, not heard — only ",
+      "<span class='highlight'>felt</span>",
+      "<br/>",
+      "In every breath he ",
+      "<span class='highlight'>leaves</span>",
+      " behind.",
     ];
 
-    let currentHTML = "";
+    let current = "";
     let partIndex = 0;
+    const timeline = gsap.timeline();
 
-    const typeNextPart = () => {
-      if (partIndex >= parts.length) return;
-
-      const part = parts[partIndex];
-      if (part.html) {
-        currentHTML += part.text;
-        sloganElement.innerHTML = currentHTML;
-        partIndex++;
-        setTimeout(typeNextPart, 150);
+    const typeChars = (text, delay = 0) => {
+      const isHTML = text.startsWith("<");
+      if (isHTML) {
+        current += text;
+        timeline.add(() => {
+          element.innerHTML = current;
+        }, `+=${delay}`);
       } else {
-        let i = 0;
-        const typeChar = () => {
-          if (i < part.text.length) {
-            currentHTML += part.text[i++];
-            sloganElement.innerHTML = currentHTML;
-            requestAnimationFrame(typeChar);
-          } else {
-            partIndex++;
-            setTimeout(typeNextPart, 150);
-          }
-        };
-        requestAnimationFrame(typeChar);
+        const chars = text.split("");
+        chars.forEach((char) => {
+          timeline.add(() => {
+            current += char;
+            element.innerHTML = current;
+          }, "+=0.03");
+        });
       }
     };
 
-    typeNextPart();
+    while (partIndex < parts.length) {
+      typeChars(parts[partIndex++]);
+    }
   };
 
   return (
