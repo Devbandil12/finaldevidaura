@@ -1,111 +1,133 @@
-/* === Base === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@1,400;1,600&display=swap');
+
 .hero-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2rem;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  background: #fefdf9;
-  min-height: 100vh;
-  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5rem 10%;
+  background: linear-gradient(to bottom, #fafafa, #f5f3ff);
+  font-family: 'Inter', sans-serif;
+  color: #1f1f1f;
+  gap: 3rem;
 }
 
 .hero-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 1rem;
+  flex: 1;
+  max-width: 600px;
 }
 
 .hero-title {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #1a1a1a;
-  opacity: 0;
-  transform: translateY(-20px);
-  will-change: opacity, transform;
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #111827;
+  text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.04);
 }
 
 .hero-slogan {
-  font-size: 1.2rem;
-  color: #444;
-  line-height: 1.6;
-  white-space: pre-line;
-  opacity: 0;
-  min-height: 4.8em; /* ensures slogan space is preserved */
-  font-family: 'Georgia', serif;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.7;
+  min-height: 6rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #444;
+  margin-bottom: 2rem;
 }
 
-.hero-slogan .highlight {
-  color: #bfa14a; /* Gold */
-  font-weight: 600;
+.highlight {
+  color: #7c3aed;
+  font-weight: 600;
 }
 
-/* Button */
-.hero-cta {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-  will-change: opacity, transform;
+.hero-cta .shop-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background-color: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.shop-btn {
-  padding: 0.8rem 2rem;
-  font-size: 1rem;
-  background-color: #1a1a1a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+.hero-cta .shop-btn:hover {
+  background-color: #5b21b6;
+  transform: scale(1.03);
 }
 
-.shop-btn:hover {
-  background-color: #333;
-}
-
-/* Image */
 .hero-image-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-  will-change: transform, opacity;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .perfume-image {
-  max-width: 100%;
-  height: auto;
-  transform: rotate(-8deg); /* Tilted */
-  filter: drop-shadow(0px 12px 20px rgba(0, 0, 0, 0.15)); /* Soft shadow */
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.1));
+  transition: transform 0.4s ease;
 }
 
-/* === Responsive Adjustments === */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.2rem;
-  }
+.perfume-image:hover {
+  transform: scale(1.03);
+}
 
-  .hero-slogan {
-    font-size: 1rem;
-  }
+/* ✅ Responsive Design */
 
-  .shop-btn {
-    width: 100%;
-    padding: 0.9rem 1rem;
-  }
+@media (max-width: 1024px) {
+  .hero-section {
+    flex-direction: column;
+    padding: 4rem 6%;
+  }
 
-  .hero-section {
-    padding: 2rem 1rem;
-    grid-template-columns: 1fr;
-  }
+  .hero-title {
+    font-size: 2.75rem;
+    text-align: center;
+  }
 
-  .hero-content {
-    align-items: center;
-    text-align: center;
-  }
+  .hero-slogan {
+    font-size: 1.3rem;
+    text-align: center;
+    min-height: 5rem;
+  }
+
+  .hero-cta {
+    text-align: center;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-section {
+    padding: 3rem 5%;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-slogan {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    min-height: 4rem;
+  }
+
+  .shop-btn {
+    font-size: 0.95rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .perfume-image {
+    max-width: 90%;
+  }
 }
