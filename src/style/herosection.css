@@ -20,6 +20,12 @@
   z-index: 2;
 }
 
+
+.hero-section {
+  padding-top: 70px; /* match your navbar height */
+}
+
+
 .hero-title {
   font-size: 3.5rem;
   font-weight: bold;
