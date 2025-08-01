@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
-import "../style/style.css";
+import "../style/herosection.css";
 import { gsap } from "gsap";
 
 const HeroSection = () => {
