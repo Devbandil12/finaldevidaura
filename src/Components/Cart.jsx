@@ -232,7 +232,7 @@ const ShoppingCart = () => {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <button onClick={() => addToCart(product, 1)}>
+            <button classname="add-to-cart" onClick={() => addToCart(product, 1)}>
               Add to Cart
             </button>
           </div>
