@@ -203,7 +203,7 @@ const Navbar = ({ onVisibilityChange }) => {
         gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
           willChange: "auto",
         });
-      );
+     
   }, navRef);
 
   return () => ctx.revert();
