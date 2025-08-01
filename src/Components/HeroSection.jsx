@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
 import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
@@ -9,85 +9,86 @@ const HeroSection = () => {
   const buttonRef = useRef(null);
   const imageRef = useRef(null);
 
-  const [sloganHTML, setSloganHTML] = useState("");
-  const [showTyping, setShowTyping] = useState(false);
-
   useEffect(() => {
-    // Set initial visibility to preserve layout
-    gsap.set([titleRef.current, buttonRef.current, imageRef.current], {
-      opacity: 0,
-      visibility: "hidden",
-    });
+    const sloganHTML = `Not seen, not heard — only <span class="highlight">felt</span><br>
+    In every breath he <span class="highlight">leaves</span> behind.`;
 
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    // Animate Title
+    gsap.fromTo(titleRef.current,
+      { y: 20, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.6,
+        ease: "power2.out",
+        onComplete: () => {
+          // Typing Effect
+          typeSlogan(sloganHTML, sloganRef.current, () => {
+            // Animate Button
+            gsap.to(buttonRef.current, {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              ease: "power2.out",
+            });
 
-    // Animate title
-    tl.to(titleRef.current, {
-      opacity: 1,
-      visibility: "visible",
-      y: 0,
-      duration: 0.6,
-    });
+            // Animate Image
+            gsap.to(imageRef.current, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              delay: 0.2,
+              ease: "power2.out",
+            });
+          });
+        },
+      });
 
-    // Trigger slogan typing
-    tl.add(() => setShowTyping(true));
+    function typeSlogan(html, container, onComplete) {
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      const nodes = Array.from(div.childNodes);
 
-    // Animate button after typing
-    tl.to(buttonRef.current, {
-      opacity: 1,
-      visibility: "visible",
-      y: 0,
-      duration: 0.4,
-    });
+      container.innerHTML = "";
+      let index = 0;
 
-    // Animate image
-    tl.to(imageRef.current, {
-      opacity: 1,
-      visibility: "visible",
-      y: 0,
-      duration: 0.6,
-    });
+      function typeNext() {
+        if (index >= nodes.length) {
+          onComplete();
+          return;
+        }
+
+        const node = nodes[index];
+        container.appendChild(node.cloneNode(true));
+        index++;
+        setTimeout(typeNext, 100);
+      }
+
+      typeNext();
+    }
   }, []);
-
-  useEffect(() => {
-    if (!showTyping) return;
-
-    const fullText =
-      'Not seen, not heard — only <span class="highlight">felt</span><br>In every breath he <span class="highlight">leaves</span> behind.';
-    let current = "";
-    let index = 0;
-
-    const interval = setInterval(() => {
-      current += fullText[index];
-      setSloganHTML(current);
-      index++;
-
-      if (index >= fullText.length) clearInterval(interval);
-    }, 25);
-
-    return () => clearInterval(interval);
-  }, [showTyping]);
 
   return (
     <section className="hero-bento">
       <div className="hero-left">
-        <h2 className="hero-title" ref={titleRef}>
-          DEVIDAURA
-        </h2>
-
-        <p
-          className="hero-slogan"
-          ref={sloganRef}
-          dangerouslySetInnerHTML={{ __html: sloganHTML }}
-        ></p>
-
-        <button className="shop-btn" ref={buttonRef}>
-          Explore Collection
-        </button>
+        <h1 className="hero-title" ref={titleRef}>DEVIDAURA</h1>
+        <p className="hero-slogan" ref={sloganRef}>
+          {/* slogan will be typed here */}
+        </p>
+        <div>
+          <button className="shop-btn" ref={buttonRef}>
+            Explore Collection
+          </button>
+        </div>
       </div>
 
-      <div className="hero-right" ref={imageRef}>
-        <img src={BottleImage} alt="Perfume Bottle" className="perfume-image" />
+      <div className="hero-right">
+        <img
+          src={BottleImage}
+          alt="Perfume Bottle"
+          className="perfume-image"
+          ref={imageRef}
+        />
       </div>
     </section>
   );
