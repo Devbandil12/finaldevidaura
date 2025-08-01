@@ -32,7 +32,7 @@ import { UserContext } from "../contexts/UserContext";
 // GSAP
 import { gsap } from "gsap";
 
-const Navbar = ({ onVisibilityChange }) => {
+const Navbar = ({ onVisibilityChange,onNavAnimationComplete }) => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
 
@@ -176,40 +176,44 @@ const Navbar = ({ onVisibilityChange }) => {
   // GSAP: Page-load stagger
   // =======================
   useLayoutEffect(() => {
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
+  const prefersReduced =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (prefersReduced) return;
 
-    const ctx = gsap.context(() => {
-      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-        willChange: "transform, opacity",
-        force3D: true,
+  const ctx = gsap.context(() => {
+    gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+      willChange: "transform, opacity",
+      force3D: true,
+    });
+
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+    tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
+      .from(
+        ".nav-links li",
+        { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+        "-=0.06"
+      )
+      .from(
+        ".icons > *",
+        { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+        "-=0.1"
+      )
+      .add(() => {
+        gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+          willChange: "auto",
+        });
+
+        // Safely call callback after nav animation
+        if (typeof onNavAnimationComplete === "function") {
+          onNavAnimationComplete();
+        }
       });
+  }, navRef);
 
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+  return () => ctx.revert();
+}, [onNavAnimationComplete]);
 
-      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
-        .from(
-          ".nav-links li",
-          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
-          "-=0.06"
-        )
-        .from(
-          ".icons > *",
-          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
-          "-=0.1"
-        )
-        .add(() =>
-          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-            willChange: "auto",
-          });
-if (typeof onNavAnimationComplete === "function") {
-      onNavAnimationComplete();
-        );
-    }, navRef);
-
-    return () => ctx.revert();
-  }, []);
 
   // =======================
   // =======================
