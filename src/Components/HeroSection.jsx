@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import RightArrowIcon from "../assets/right-arrow-svgrepo-com.svg";
 import BottleImage from "../assets/devidaura_bottle.png";
-import "../style/hero.css";
+import "../style/herosection.css";
 import { gsap } from "gsap";
 
 const HeroSection = () => {
