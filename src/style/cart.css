@@ -157,7 +157,6 @@
   border-radius: 8px;
   height: fit-content;
   padding:0px 10px;
-  border: 1px solid #111;
   gap:10px;
 }
 .quantity-controls button {
