@@ -32,7 +32,7 @@ import { UserContext } from "../contexts/UserContext";
 // GSAP
 import { gsap } from "gsap";
 
-const Navbar = ({ onVisibilityChange,onNavAnimationComplete }) => {
+const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
 
@@ -203,16 +203,11 @@ const Navbar = ({ onVisibilityChange,onNavAnimationComplete }) => {
         gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
           willChange: "auto",
         });
-
-        // Safely call callback after nav animation
-        if (typeof onNavAnimationComplete === "function") {
-          onNavAnimationComplete();
-        }
-      });
+      );
   }, navRef);
 
   return () => ctx.revert();
-}, [onNavAnimationComplete]);
+}, []);
 
 
   // =======================
