@@ -1,4 +1,3 @@
-// src/Components/HeroSection.jsx
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
@@ -7,55 +6,67 @@ import BottleImage from "../assets/images/bottle-perfume-isolated-white-backgrou
 const HeroSection = () => {
   const sloganRef = useRef(null);
   const imageRef = useRef(null);
+  const titleRef = useRef(null);
+  const buttonRef = useRef(null);
   const [animationStarted, setAnimationStarted] = useState(false);
 
-  // ⏱️ Delay hero animation by 650ms after mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimationStarted(true);
-    }, 650); // Adjusted to match your navbar GSAP animation timing
-
-    return () => clearTimeout(timer);
+    // Delay matches navbar animation time
+    const timeout = setTimeout(() => setAnimationStarted(true), 900);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
     if (!animationStarted) return;
 
-    const sloganElement = sloganRef.current;
     const fullText =
-      "Not seen, not heard — only felt\nIn every breath he leaves behind.";
-    sloganElement.innerText = "";
+      'Not seen, not heard — only <span class="highlight">felt</span><br>' +
+      'In every breath he <span class="highlight">leaves</span> behind.';
+
+    const sloganEl = sloganRef.current;
+    sloganEl.innerHTML = "";
 
     let charIndex = 0;
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = fullText;
+    const characters = Array.from(tempDiv.textContent || "");
+
     const interval = setInterval(() => {
-      if (charIndex < fullText.length) {
-        sloganElement.innerText += fullText.charAt(charIndex);
+      if (charIndex < characters.length) {
+        sloganEl.innerHTML += fullText.charAt(charIndex);
         charIndex++;
       } else {
         clearInterval(interval);
-
-        // Animate bottle image after typing
         gsap.fromTo(
           imageRef.current,
-          { opacity: 0, y: 50 },
+          { opacity: 0, y: 40 },
           { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
         );
+        gsap.fromTo(
+          buttonRef.current,
+          { opacity: 0, scale: 0.95 },
+          { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out", delay: 0.3 }
+        );
       }
-    }, 50);
+    }, 40);
+
+    gsap.fromTo(
+      titleRef.current,
+      { y: -10, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" }
+    );
 
     return () => clearInterval(interval);
   }, [animationStarted]);
 
   return (
-    <section className="hero-section">
-      <div className="hero-content">
-        <h2 className="hero-title">DEVIDAURA</h2>
+    <section className="hero-bento">
+      <div className="hero-left">
+        <h1 className="hero-title" ref={titleRef}>DEVIDAURA</h1>
         <p className="hero-slogan" ref={sloganRef}></p>
-        <div className="hero-cta">
-          <button className="shop-btn">Explore Collection</button>
-        </div>
+        <button className="shop-btn" ref={buttonRef}>Explore Collection</button>
       </div>
-      <div className="hero-image-wrapper">
+      <div className="hero-right">
         <img
           src={BottleImage}
           alt="Perfume Bottle"
