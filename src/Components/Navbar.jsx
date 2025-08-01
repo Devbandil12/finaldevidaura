@@ -202,7 +202,9 @@ const Navbar = ({ onVisibilityChange }) => {
         .add(() =>
           gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
             willChange: "auto",
-          })
+          });
+if (typeof onNavAnimationComplete === "function") {
+      onNavAnimationComplete();
         );
     }, navRef);
 
