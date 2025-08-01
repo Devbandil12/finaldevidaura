@@ -20,6 +20,7 @@
   gap: 20px;
   align-items: stretch;
   width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 /* === Toasts Wrapper === */
@@ -68,7 +69,7 @@
   background-color: #fff;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   min-height: 260px;
   display: flex;
   flex-direction: column;
@@ -92,7 +93,7 @@
   background: #fff;
   padding: 10px;
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   margin-bottom: 16px;
   gap: 20px;
   border: 1px solid #cccccc36;
@@ -124,6 +125,7 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .cart-item img {
@@ -132,6 +134,7 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid rgb(243, 242, 242);
+ box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 /* === Product Info === */
@@ -161,6 +164,7 @@
   border-radius: 4px;
   background-color: #fff;
   height: fit-content;
+ box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 .quantity-controls button {
   background: none;
@@ -204,20 +208,16 @@
   cursor: pointer;
   font-size: 0.9rem;
   color: #555;
+ box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
-.remove:hover,
-.move-to-wishlist:hover {
-  color: #ffffff;
-  background-color: black;
-  border: 1px solid #000000;
-}
+
 
 /* === Cart Summary Column === */
 .cart-summary {
   background: #fff;
   padding: 24px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -235,14 +235,15 @@
   width: 100%;
   padding: 14px 0;
   font-size: 1rem;
-  border-radius: 4px;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 #clear-cart {
   background: #fff;
   color: #111;
-  border: 1px solid #ccc;
+  
 }
 #clear-cart:hover {
   background-color: #eee;
@@ -301,8 +302,9 @@
 /* === Remaining Products Section === */
 #remaining-products-container {
   margin-bottom: 30px;
+ 
+box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
-
 #remaining-products-container > h3 {
   font-size: 2rem;
   margin-top: 80px;
@@ -332,7 +334,7 @@
   border-radius: 12px;
   overflow: hidden;
   padding: 5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .remaining-product-item:hover {
