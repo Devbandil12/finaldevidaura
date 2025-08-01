@@ -155,11 +155,11 @@
   display: inline-flex;
   align-items: center;
   border-radius: 8px;
-  background-color: #fff;
+  background-color: #f8f8f8;
   height: fit-content;
   padding:3px 10px;
-  border: 1px solid #f8f8f8;
-  gap:5px;
+  border: 1px solid #eee;
+  gap:10px;
 }
 .quantity-controls button {
   background: none;
@@ -457,7 +457,7 @@
   }
 
   .quantity-controls {
-    padding: 3px 5px;
+    padding: 5px 15px;
    border-radius: 6px;
   }
 
