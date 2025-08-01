@@ -46,42 +46,51 @@ const HeroSection = () => {
 
   // Typing effect using GSAP only
   const typeSlogan = () => {
-    const element = sloganRef.current;
-    const parts = [
-      "Not seen, not heard — only ",
-      "<span class='highlight'>felt</span>",
-      "<br/>",
-      "In every breath he ",
-      "<span class='highlight'>leaves</span>",
-      " behind.",
-    ];
+  const sloganElement = sloganRef.current;
 
-    let current = "";
-    let partIndex = 0;
-    const timeline = gsap.timeline();
+  const parts = [
+    { text: "Not seen, not heard — only ", isHTML: false },
+    { text: "<span class='highlight'>felt</span>", isHTML: true },
+    { text: "<br/>", isHTML: true },
+    { text: "In every breath he ", isHTML: false },
+    { text: "<span class='highlight'>leaves</span>", isHTML: true },
+    { text: " behind.", isHTML: false },
+  ];
 
-    const typeChars = (text, delay = 0) => {
-      const isHTML = text.startsWith("<");
-      if (isHTML) {
-        current += text;
-        timeline.add(() => {
-          element.innerHTML = current;
-        }, `+=${delay}`);
-      } else {
-        const chars = text.split("");
-        chars.forEach((char) => {
-          timeline.add(() => {
-            current += char;
-            element.innerHTML = current;
-          }, "+=0.03");
-        });
-      }
-    };
+  let currentHTML = "";
+  let partIndex = 0;
 
-    while (partIndex < parts.length) {
-      typeChars(parts[partIndex++]);
+  const typePart = () => {
+    if (partIndex >= parts.length) return;
+
+    const part = parts[partIndex];
+
+    if (part.isHTML) {
+      // Append HTML as a block (after text is typed)
+      currentHTML += part.text;
+      sloganElement.innerHTML = currentHTML;
+      partIndex++;
+      setTimeout(typePart, 300); // Delay before next part
+    } else {
+      let i = 0;
+
+      const typeChar = () => {
+        if (i < part.text.length) {
+          currentHTML += part.text[i++];
+          sloganElement.innerHTML = currentHTML;
+          setTimeout(typeChar, 30);
+        } else {
+          partIndex++;
+          setTimeout(typePart, 100);
+        }
+      };
+
+      typeChar();
     }
   };
+
+  typePart();
+};
 
   return (
     <section className="hero-section">
