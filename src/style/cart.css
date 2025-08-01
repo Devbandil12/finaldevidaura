@@ -155,7 +155,6 @@
   display: inline-flex;
   align-items: center;
   border-radius: 8px;
-  background-color: #f8f8f8;
   height: fit-content;
   padding:3px 10px;
   border: 1px solid #eee;
@@ -197,7 +196,7 @@
 .remove,
 .move-to-wishlist {
   background: white;
- background: #f8f8f8;
+  border: 1px solid #f8f8f8;
   padding: 5px 10px;
   border-radius: 5px;
   cursor: pointer;
@@ -457,7 +456,7 @@
   }
 
   .quantity-controls {
-    padding: 5px 15px;
+    padding: 3px 10px;
    border-radius: 6px;
   }
 
