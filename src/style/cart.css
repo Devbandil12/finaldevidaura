@@ -159,6 +159,7 @@
   height: fit-content;
   padding:3px 10px;
   border: 1px solid #f8f8f8;
+  gap:5px;
 }
 .quantity-controls button {
   background: none;
