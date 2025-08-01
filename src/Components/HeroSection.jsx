@@ -1,3 +1,4 @@
+// src/Components/HeroSection.jsx
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
@@ -10,86 +11,84 @@ const HeroSection = () => {
   const imageRef = useRef(null);
 
   useEffect(() => {
-    const timeline = gsap.timeline({ defaults: { ease: "power2.out" } });
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
 
-    // Step 1: Animate title
-    timeline.fromTo(
-      titleRef.current,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 }
-    );
+      // 1. Title Animation
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
+      );
 
-    // Step 2: Typing effect for slogan (after title)
-    const fullText =
-      "Not seen, not heard — only <span class='highlight'>felt</span>\nIn every breath he <span class='highlight'>leaves</span> behind.";
+      // 2. Typing effect for slogan (after title)
+      tl.add(() => {
+        typeSlogan(sloganRef.current);
+      }, "+=0.1");
 
-    const typeSlogan = async () => {
-      sloganRef.current.innerHTML = ""; // Clear existing content
+      // 3. Button Animation
+      tl.to(
+        buttonRef.current,
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+        "+=2.2" // delay to allow typing
+      );
 
-      const container = sloganRef.current;
-      let i = 0;
-      const chars = fullText.split("");
+      // 4. Image Animation
+      tl.to(
+        imageRef.current,
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
+        "-=0.3"
+      );
+    });
 
-      while (i < chars.length) {
-        if (chars[i] === "<") {
-          // If it's a span tag, extract the whole tag
-          const end = fullText.indexOf(">", i);
-          const tag = fullText.slice(i, end + 1);
-          const closing = fullText.indexOf("</span>", end);
-          const word = fullText.slice(end + 1, closing);
-          const closeTag = "</span>";
+    return () => ctx.revert();
+  }, []);
 
-          container.innerHTML += tag + word + closeTag;
-          i = closing + closeTag.length;
-        } else if (chars[i] === "\n") {
-          container.innerHTML += "<br />";
-          i++;
-        } else {
-          container.innerHTML += chars[i];
-          i++;
-        }
+  const typeSlogan = (element) => {
+    const fullHTML =
+      'Not seen, not heard — only <span class="highlight">felt</span>\nIn every breath he <span class="highlight">leaves</span> behind.';
+    const plainText = fullHTML.replace(/<[^>]+>/g, ""); // for spacing
+    element.innerHTML = ""; // clear first
 
-        await new Promise((r) => setTimeout(r, 35));
+    let i = 0;
+    const typeSpeed = 30;
+
+    const type = () => {
+      if (i <= plainText.length) {
+        const visibleText = fullHTML.slice(0, i);
+        const sanitized = visibleText
+          .replace(/\n/g, "<br/>")
+          .replace(/<[^>]+>/g, (match) =>
+            match.includes("highlight") ? match : ""
+          ); // Keep <span class="highlight">
+        element.innerHTML = sanitized;
+        i++;
+        setTimeout(type, typeSpeed);
       }
     };
 
-    timeline.call(typeSlogan);
-
-    // Step 3: Button fade in
-    timeline.fromTo(
-      buttonRef.current,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6 },
-      "+=1"
-    );
-
-    // Step 4: Bottle Image fade + slide in
-    timeline.fromTo(
-      imageRef.current,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 1 },
-      "-=0.4"
-    );
-  }, []);
+    type();
+  };
 
   return (
-    <section className="hero-bento">
-      <div className="hero-left">
-        <h1 className="hero-title" ref={titleRef}>
+    <section className="hero-section">
+      <div className="hero-content">
+        <h2 className="hero-title" ref={titleRef}>
           DEVIDAURA
-        </h1>
+        </h2>
+
         <p className="hero-slogan" ref={sloganRef}></p>
-        <button className="shop-btn" ref={buttonRef}>
-          Explore Collection
-        </button>
+
+        <div className="hero-cta" ref={buttonRef}>
+          <button className="shop-btn">Explore Collection</button>
+        </div>
       </div>
 
-      <div className="hero-right">
+      <div className="hero-image-wrapper" ref={imageRef}>
         <img
           src={BottleImage}
           alt="Perfume Bottle"
           className="perfume-image"
-          ref={imageRef}
         />
       </div>
     </section>
