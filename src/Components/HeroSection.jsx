@@ -11,7 +11,7 @@ const HeroSection = () => {
   const [animationStarted, setAnimationStarted] = useState(false);
 
   useEffect(() => {
-    // Delay matches navbar animation time
+    // Delay after navbar completes (~900ms)
     const timeout = setTimeout(() => setAnimationStarted(true), 900);
     return () => clearTimeout(timeout);
   }, []);
@@ -19,44 +19,61 @@ const HeroSection = () => {
   useEffect(() => {
     if (!animationStarted) return;
 
-    const fullText =
-      'Not seen, not heard — only <span class="highlight">felt</span><br>' +
-      'In every breath he <span class="highlight">leaves</span> behind.';
-
-    const sloganEl = sloganRef.current;
-    sloganEl.innerHTML = "";
-
-    let charIndex = 0;
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = fullText;
-    const characters = Array.from(tempDiv.textContent || "");
-
-    const interval = setInterval(() => {
-      if (charIndex < characters.length) {
-        sloganEl.innerHTML += fullText.charAt(charIndex);
-        charIndex++;
-      } else {
-        clearInterval(interval);
-        gsap.fromTo(
-          imageRef.current,
-          { opacity: 0, y: 40 },
-          { opacity: 1, y: 0, duration: 1, ease: "power2.out" }
-        );
-        gsap.fromTo(
-          buttonRef.current,
-          { opacity: 0, scale: 0.95 },
-          { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out", delay: 0.3 }
-        );
-      }
-    }, 40);
-
+    // Animate Title
     gsap.fromTo(
       titleRef.current,
-      { y: -10, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" }
+      { opacity: 0, y: -20 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: "power2.out",
+        onComplete: animateSlogan,
+      }
     );
 
-    return () => clearInterval(interval);
+    function animateSlogan() {
+      const fullText =
+        'Not seen, not heard — only <span class="highlight">felt</span><br>' +
+        'In every breath he <span class="highlight">leaves</span> behind.';
+      const target = sloganRef.current;
+      target.innerHTML = "";
+
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < fullText.length) {
+          target.innerHTML += fullText[i];
+          i++;
+        } else {
+          clearInterval(interval);
+          // Animate Button
+          gsap.fromTo(
+            buttonRef.current,
+            { opacity: 0, y: 10 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              ease: "power2.out",
+              delay: 0.3,
+              onComplete: () => {
+                // Animate Image
+                gsap.fromTo(
+                  imageRef.current,
+                  { opacity: 0, y: 30 },
+                  {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power2.out",
+                  }
+                );
+              },
+            }
+          );
+        }
+      }, 35);
+    }
   }, [animationStarted]);
 
   return (
