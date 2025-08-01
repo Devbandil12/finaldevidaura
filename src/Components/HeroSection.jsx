@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
-import perfumeBottle from "../assets/images/perfume-bottle.png"; // adjust to your asset
+import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 const HeroSection = () => {
   const sloganRef = useRef(null);
