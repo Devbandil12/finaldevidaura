@@ -4,95 +4,85 @@ import "../style/herosection.css";
 import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 const HeroSection = () => {
-  const sloganRef = useRef(null);
-  const imageRef = useRef(null);
-  const titleRef = useRef(null);
-  const buttonRef = useRef(null);
-  const [animationStarted, setAnimationStarted] = useState(false);
+  const titleRef = useRef(null);
+  const sloganRef = useRef(null);
+  const buttonRef = useRef(null);
+  const imageRef = useRef(null);
 
-  useEffect(() => {
-    // Delay after navbar completes (~900ms)
-    const timeout = setTimeout(() => setAnimationStarted(true), 900);
-    return () => clearTimeout(timeout);
-  }, []);
+  const [showSlogan, setShowSlogan] = useState(false);
+  const [sloganHTML, setSloganHTML] = useState("");
 
-  useEffect(() => {
-    if (!animationStarted) return;
+  useEffect(() => {
+    const timeline = gsap.timeline({ defaults: { ease: "power2.out" } });
 
-    // Animate Title
-    gsap.fromTo(
-      titleRef.current,
-      { opacity: 0, y: -20 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out",
-        onComplete: animateSlogan,
-      }
-    );
+    // Animate title
+    timeline.from(titleRef.current, {
+      y: -20,
+      autoAlpha: 0,
+      duration: 0.6,
+    });
 
-    function animateSlogan() {
-      const fullText =
-        'Not seen, not heard — only <span class="highlight">felt</span><br>' +
-        'In every breath he <span class="highlight">leaves</span> behind.';
-      const target = sloganRef.current;
-      target.innerHTML = "";
+    // After title animation complete, show slogan typing
+    timeline.add(() => setShowSlogan(true));
 
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i < fullText.length) {
-          target.innerHTML += fullText[i];
-          i++;
-        } else {
-          clearInterval(interval);
-          // Animate Button
-          gsap.fromTo(
-            buttonRef.current,
-            { opacity: 0, y: 10 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.6,
-              ease: "power2.out",
-              delay: 0.3,
-              onComplete: () => {
-                // Animate Image
-                gsap.fromTo(
-                  imageRef.current,
-                  { opacity: 0, y: 30 },
-                  {
-                    opacity: 1,
-                    y: 0,
-                    duration: 1,
-                    ease: "power2.out",
-                  }
-                );
-              },
-            }
-          );
-        }
-      }, 35);
-    }
-  }, [animationStarted]);
+    // Animate button
+    timeline.from(buttonRef.current, {
+      y: 10,
+      autoAlpha: 0,
+      duration: 0.4,
+    });
 
-  return (
-    <section className="hero-bento">
-      <div className="hero-left">
-        <h1 className="hero-title" ref={titleRef}>DEVIDAURA</h1>
-        <p className="hero-slogan" ref={sloganRef}></p>
-        <button className="shop-btn" ref={buttonRef}>Explore Collection</button>
-      </div>
-      <div className="hero-right">
-        <img
-          src={BottleImage}
-          alt="Perfume Bottle"
-          ref={imageRef}
-          className="perfume-image"
-        />
-      </div>
-    </section>
-  );
+    // Animate image
+    timeline.from(imageRef.current, {
+      y: 30,
+      autoAlpha: 0,
+      duration: 0.6,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!showSlogan) return;
+
+    const fullText = `Not seen, not heard — only <span class="highlight">felt</span><br>In every breath he <span class="highlight">leaves</span> behind.`;
+    let current = "";
+    let i = 0;
+    const typingInterval = setInterval(() => {
+      current += fullText[i];
+      setSloganHTML(current);
+      i++;
+      if (i === fullText.length) clearInterval(typingInterval);
+    }, 25);
+
+    return () => clearInterval(typingInterval);
+  }, [showSlogan]);
+
+  return (
+    <section className="hero-bento">
+      <div className="hero-left">
+        <h2 className="hero-title" ref={titleRef}>
+          DEVIDAURA
+        </h2>
+
+        <p
+          className="hero-slogan"
+          ref={sloganRef}
+          dangerouslySetInnerHTML={{ __html: sloganHTML }}
+        ></p>
+
+        <button className="shop-btn" ref={buttonRef}>
+          Explore Collection
+        </button>
+      </div>
+
+      <div className="hero-right" ref={imageRef}>
+        <img
+          src={BottleImage}
+          alt="Perfume Bottle"
+          className="perfume-image"
+        />
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;
