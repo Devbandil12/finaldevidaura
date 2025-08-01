@@ -48,49 +48,60 @@ const HeroSection = () => {
   const typeSlogan = () => {
   const sloganElement = sloganRef.current;
 
-  const parts = [
-    { text: "Not seen, not heard — only ", isHTML: false },
-    { text: "<span class='highlight'>felt</span>", isHTML: true },
-    { text: "<br/>", isHTML: true },
-    { text: "In every breath he ", isHTML: false },
-    { text: "<span class='highlight'>leaves</span>", isHTML: true },
-    { text: " behind.", isHTML: false },
+  const rawParts = [
+    { text: "Not seen, not heard — only ", highlight: false },
+    { text: "felt", highlight: true },
+    { text: "\n", highlight: false },
+    { text: "In every breath he ", highlight: false },
+    { text: "leaves", highlight: true },
+    { text: " behind.", highlight: false },
   ];
 
-  let currentHTML = "";
+  let finalHTML = "";
   let partIndex = 0;
 
-  const typePart = () => {
-    if (partIndex >= parts.length) return;
+  const typeNextPart = () => {
+    if (partIndex >= rawParts.length) return;
 
-    const part = parts[partIndex];
+    const { text, highlight } = rawParts[partIndex];
+    const chars = text.split("");
+    let charIndex = 0;
+    let buffer = "";
 
-    if (part.isHTML) {
-      // Append HTML as a block (after text is typed)
-      currentHTML += part.text;
-      sloganElement.innerHTML = currentHTML;
-      partIndex++;
-      setTimeout(typePart, 300); // Delay before next part
-    } else {
-      let i = 0;
-
-      const typeChar = () => {
-        if (i < part.text.length) {
-          currentHTML += part.text[i++];
-          sloganElement.innerHTML = currentHTML;
-          setTimeout(typeChar, 30);
+    const typeChar = () => {
+      if (charIndex < chars.length) {
+        const char = chars[charIndex++];
+        if (char === "\n") {
+          buffer += "<br/>";
         } else {
-          partIndex++;
-          setTimeout(typePart, 100);
+          buffer += char;
         }
-      };
 
-      typeChar();
-    }
+        if (highlight) {
+          sloganElement.innerHTML = finalHTML + `<span class='highlight'>${buffer}</span>`;
+        } else {
+          sloganElement.innerHTML = finalHTML + buffer;
+        }
+
+        setTimeout(typeChar, 30);
+      } else {
+        if (highlight) {
+          finalHTML += `<span class='highlight'>${buffer}</span>`;
+        } else {
+          finalHTML += buffer;
+        }
+
+        partIndex++;
+        setTimeout(typeNextPart, 150);
+      }
+    };
+
+    typeChar();
   };
 
-  typePart();
+  typeNextPart();
 };
+
 
   return (
     <section className="hero-section">
