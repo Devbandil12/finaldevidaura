@@ -141,8 +141,8 @@
 }
 
 .product-title h3 {
-  font-size: 1.15rem;
-  color: #111;
+  font-size: 1.25rem;
+  color: #000;
 }
 
 .product-title span {
@@ -429,8 +429,8 @@
   }
 
   .product-title h3 {
-    font-size: 0.8rem;
-    color: #111;
+    font-size: 0.9rem;
+    color: #000;
     font-weight: 600;
   }
   
