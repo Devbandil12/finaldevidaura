@@ -14,29 +14,37 @@ const HeroSection = () => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline();
 
-      // 1. Title Animation
+      // Title animation
       tl.fromTo(
         titleRef.current,
         { opacity: 0, y: -20 },
         { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
       );
 
-      // 2. Typing effect for slogan (after title)
+      // Typing slogan after title
       tl.add(() => {
-        typeSlogan(sloganRef.current);
-      }, "+=0.1");
+        typeSlogan();
+      }, "+=0.2");
 
-      // 3. Button Animation
-      tl.to(
+      // Button animation
+      tl.fromTo(
         buttonRef.current,
+        { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-        "+=2.2" // delay to allow typing
+        "+=2.4" // enough delay for typing to finish
       );
 
-      // 4. Image Animation
-      tl.to(
+      // Image animation
+      tl.fromTo(
         imageRef.current,
-        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" },
+        { opacity: 0, y: 20, rotate: -3 },
+        {
+          opacity: 1,
+          y: 0,
+          rotate: 0,
+          duration: 0.8,
+          ease: "power2.out",
+        },
         "-=0.3"
       );
     });
@@ -44,30 +52,50 @@ const HeroSection = () => {
     return () => ctx.revert();
   }, []);
 
-  const typeSlogan = (element) => {
-    const fullHTML =
-      'Not seen, not heard — only <span class="highlight">felt</span>\nIn every breath he <span class="highlight">leaves</span> behind.';
-    const plainText = fullHTML.replace(/<[^>]+>/g, ""); // for spacing
-    element.innerHTML = ""; // clear first
+  const typeSlogan = () => {
+    const sloganElement = sloganRef.current;
 
-    let i = 0;
-    const typeSpeed = 30;
+    const rawParts = [
+      "Not seen, not heard — only ",
+      "<span class='highlight'>felt</span>",
+      "<br/>",
+      "In every breath he ",
+      "<span class='highlight'>leaves</span>",
+      " behind.",
+    ];
 
-    const type = () => {
-      if (i <= plainText.length) {
-        const visibleText = fullHTML.slice(0, i);
-        const sanitized = visibleText
-          .replace(/\n/g, "<br/>")
-          .replace(/<[^>]+>/g, (match) =>
-            match.includes("highlight") ? match : ""
-          ); // Keep <span class="highlight">
-        element.innerHTML = sanitized;
-        i++;
-        setTimeout(type, typeSpeed);
+    let finalHTML = "";
+    let index = 0;
+
+    const typeNext = () => {
+      if (index < rawParts.length) {
+        const part = rawParts[index];
+        if (part.startsWith("<")) {
+          finalHTML += part;
+        } else {
+          const chars = part.split("");
+          let charIdx = 0;
+          const typeChar = () => {
+            if (charIdx < chars.length) {
+              finalHTML += chars[charIdx++];
+              sloganElement.innerHTML = finalHTML;
+              setTimeout(typeChar, 30);
+            } else {
+              index++;
+              typeNext();
+            }
+          };
+          typeChar();
+          return;
+        }
+        // Delay before adding next non-typing part
+        sloganElement.innerHTML = finalHTML;
+        index++;
+        setTimeout(typeNext, 100);
       }
     };
 
-    type();
+    typeNext();
   };
 
   return (
