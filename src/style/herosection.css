@@ -1,116 +1,111 @@
-/* Base Section Layout */
-.hero-bento {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4rem 2rem;
-  min-height: 100vh;
-  background: #fff;
-  font-family: 'Poppins', sans-serif;
-  flex-wrap: wrap;
+/* === Base === */
+.hero-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
-  position: relative;
-}
-
-/* Left Column */
-.hero-left {
-  flex: 1;
-  min-width: 300px;
-}
-
-/* Right Column (Image) */
-.hero-right {
-  flex: 1;
-  min-width: 300px;
-  display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: #fefdf9;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
-/* Title */
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
 .hero-title {
   font-size: 3rem;
-  font-weight: 800;
-  color: #111;
-  margin-bottom: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
   opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.5s ease-in-out;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  transform: translateY(-20px);
+  will-change: opacity, transform;
 }
 
-/* Slogan Text */
 .hero-slogan {
-  font-size: 1.25rem;
-  line-height: 1.8;
+  font-size: 1.2rem;
   color: #444;
-  margin-bottom: 2rem;
-  white-space: pre-wrap;
-  min-height: 4.5rem; /* reserve space for slogan */
-  transition: all 0.4s ease-in-out;
+  line-height: 1.6;
+  white-space: pre-line;
+  opacity: 0;
+  min-height: 4.8em; /* ensures slogan space is preserved */
+  font-family: 'Georgia', serif;
 }
 
-/* Highlighted Words */
-.highlight {
-  color: #d4af37; /* gold */
-  font-weight: bold;
+.hero-slogan .highlight {
+  color: #bfa14a; /* Gold */
+  font-weight: 600;
 }
 
-/* Call to Action Button */
-.shop-btn {
-  padding: 0.9rem 2rem;
-  font-size: 1rem;
-  font-weight: 500;
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  cursor: pointer;
+/* Button */
+.hero-cta {
   opacity: 0;
   transform: translateY(20px);
-  transition: background 0.3s ease, transform 0.4s ease, opacity 0.4s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  will-change: opacity, transform;
+}
+
+.shop-btn {
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  background-color: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .shop-btn:hover {
-  background: #222;
+  background-color: #333;
 }
 
-/* Image Styling */
-.perfume-image {
-  width: 100%;
-  max-width: 320px;
-  height: auto;
+/* Image */
+.hero-image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.1));
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  will-change: transform, opacity;
 }
 
-/* Responsive: Mobile First */
+.perfume-image {
+  max-width: 100%;
+  height: auto;
+  transform: rotate(-8deg); /* Tilted */
+  filter: drop-shadow(0px 12px 20px rgba(0, 0, 0, 0.15)); /* Soft shadow */
+}
+
+/* === Responsive Adjustments === */
 @media (max-width: 768px) {
-  .hero-bento {
-    flex-direction: column;
-    text-align: center;
-    padding: 2rem 1rem;
-  }
-
-  .hero-left,
-  .hero-right {
-    width: 100%;
-  }
-
   .hero-title {
-    font-size: 2.4rem;
+    font-size: 2.2rem;
   }
 
   .hero-slogan {
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
+    font-size: 1rem;
   }
 
-  .perfume-image {
-    margin-top: 2rem;
-    max-width: 250px;
+  .shop-btn {
+    width: 100%;
+    padding: 0.9rem 1rem;
+  }
+
+  .hero-section {
+    padding: 2rem 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content {
+    align-items: center;
+    text-align: center;
   }
 }
