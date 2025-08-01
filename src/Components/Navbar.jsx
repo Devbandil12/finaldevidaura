@@ -203,11 +203,12 @@ const Navbar = ({ onVisibilityChange }) => {
         gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
           willChange: "auto",
         });
-     
+      }); // ✅ ← This closing parenthesis was missing
   }, navRef);
 
   return () => ctx.revert();
 }, []);
+
 
 
   // =======================
