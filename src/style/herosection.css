@@ -1,10 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Didot&family=Bodoni+Moda:ital,wght@1,400&family=Allura&family=Great+Vibes&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond&family=Parisienne&family=Playfair+Display:wght@500&display=swap');
 
 :root {
-  --brand-font: 'Didot', serif;
-  --tagline-font: 'Bodoni Moda', serif;
-  --slogan-font: 'Allura', cursive;
-  --highlight-font: 'Great Vibes', cursive;
+  --brand-font: 'Playfair Display', serif;
+  --slogan-font: 'EB Garamond', serif;
+  --highlight-font: 'Parisienne', cursive;
   --text-color: #111;
   --accent-color: #000;
   --bg-color: #fff;
@@ -28,39 +27,30 @@
 
 .hero__brand {
   font-family: var(--brand-font);
-  font-size: 3.5rem;
+  font-size: 4rem;
   color: var(--accent-color);
-  letter-spacing: 0.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.hero__tagline {
-  font-family: var(--tagline-font);
-  font-size: 1.3rem;
-  font-style: italic;
-  margin-bottom: 1.5rem;
-  color: #333;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
 }
 
 .hero__slogan {
   font-family: var(--slogan-font);
-  font-size: 1.5rem;
-  line-height: 2;
+  font-size: 1.6rem;
+  line-height: 1.8;
   color: var(--text-color);
   margin-bottom: 2rem;
 }
 
 .hero__slogan .emphasis {
   font-family: var(--highlight-font);
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   display: inline-block;
-  margin: 0 0.25rem;
-  transform: translateY(-1px);
+  margin: 0 0.3rem;
   color: var(--accent-color);
 }
 
 .hero__cta {
-  font-family: var(--tagline-font);
+  font-family: var(--brand-font);
   font-size: 1rem;
   padding: 0.8rem 1.6rem;
   background-color: var(--accent-color);
@@ -70,7 +60,8 @@
   align-items: center;
   gap: 0.6rem;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  border-radius: 2px;
 }
 
 .hero__cta:hover {
@@ -108,9 +99,9 @@
   width: 100%;
   height: auto;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-/* Mobile */
 @media (max-width: 768px) {
   .hero {
     flex-direction: column;
@@ -118,14 +109,14 @@
   }
 
   .hero__brand {
-    font-size: 2.8rem;
+    font-size: 3rem;
   }
 
   .hero__slogan {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
   }
 
   .hero__slogan .emphasis {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
   }
 }
