@@ -9,52 +9,64 @@ const HeroSection = () => {
   const buttonRef = useRef(null);
   const imageRef = useRef(null);
 
-  const [showSlogan, setShowSlogan] = useState(false);
   const [sloganHTML, setSloganHTML] = useState("");
+  const [showTyping, setShowTyping] = useState(false);
 
   useEffect(() => {
-    const timeline = gsap.timeline({ defaults: { ease: "power2.out" } });
+    // Set initial visibility to preserve layout
+    gsap.set([titleRef.current, buttonRef.current, imageRef.current], {
+      opacity: 0,
+      visibility: "hidden",
+    });
+
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
 
     // Animate title
-    timeline.from(titleRef.current, {
-      y: -20,
-      autoAlpha: 0,
+    tl.to(titleRef.current, {
+      opacity: 1,
+      visibility: "visible",
+      y: 0,
       duration: 0.6,
     });
 
-    // After title animation complete, show slogan typing
-    timeline.add(() => setShowSlogan(true));
+    // Trigger slogan typing
+    tl.add(() => setShowTyping(true));
 
-    // Animate button
-    timeline.from(buttonRef.current, {
-      y: 10,
-      autoAlpha: 0,
+    // Animate button after typing
+    tl.to(buttonRef.current, {
+      opacity: 1,
+      visibility: "visible",
+      y: 0,
       duration: 0.4,
     });
 
     // Animate image
-    timeline.from(imageRef.current, {
-      y: 30,
-      autoAlpha: 0,
+    tl.to(imageRef.current, {
+      opacity: 1,
+      visibility: "visible",
+      y: 0,
       duration: 0.6,
     });
   }, []);
 
   useEffect(() => {
-    if (!showSlogan) return;
+    if (!showTyping) return;
 
-    const fullText = `Not seen, not heard — only <span class="highlight">felt</span><br>In every breath he <span class="highlight">leaves</span> behind.`;
+    const fullText =
+      'Not seen, not heard — only <span class="highlight">felt</span><br>In every breath he <span class="highlight">leaves</span> behind.';
     let current = "";
-    let i = 0;
-    const typingInterval = setInterval(() => {
-      current += fullText[i];
+    let index = 0;
+
+    const interval = setInterval(() => {
+      current += fullText[index];
       setSloganHTML(current);
-      i++;
-      if (i === fullText.length) clearInterval(typingInterval);
+      index++;
+
+      if (index >= fullText.length) clearInterval(interval);
     }, 25);
 
-    return () => clearInterval(typingInterval);
-  }, [showSlogan]);
+    return () => clearInterval(interval);
+  }, [showTyping]);
 
   return (
     <section className="hero-bento">
@@ -75,11 +87,7 @@ const HeroSection = () => {
       </div>
 
       <div className="hero-right" ref={imageRef}>
-        <img
-          src={BottleImage}
-          alt="Perfume Bottle"
-          className="perfume-image"
-        />
+        <img src={BottleImage} alt="Perfume Bottle" className="perfume-image" />
       </div>
     </section>
   );
