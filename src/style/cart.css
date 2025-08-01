@@ -157,7 +157,7 @@
   border-radius: 12px;
   height: fit-content;
   padding:0px 10px;
-  border: 1px solid #eee;
+  border: 1px solid #000;
   gap:10px;
 }
 .quantity-controls button {
@@ -196,7 +196,7 @@
 .remove,
 .move-to-wishlist {
   background: white;
-  border: 1px solid #eee;
+  border: 1px solid #000;
   padding: 5px 10px;
   border-radius: 12px;
   cursor: pointer;
@@ -429,7 +429,7 @@
   }
 
   .product-title h3 {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: #000;
     font-weight: 600;
   }
