@@ -1,104 +1,63 @@
 .hero-bento {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  padding: 4rem clamp(1rem, 5vw, 6rem);
-  gap: 3rem;
-  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4rem 2rem;
+  min-height: 100vh;
 }
 
 .hero-left {
-  display: flex;
-  flex-direction: column;
-  gap: 1.6rem;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-title {
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  font-weight: 800;
-  font-family: "Georgia", serif;
-  color: #111;
-  min-height: 5.5rem;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.hero-slogan {
-  font-size: clamp(1rem, 2.5vw, 1.5rem);
-  line-height: 1.6;
-  color: #444;
-  min-height: 4.2rem;
-}
-
-.hero-slogan .highlight {
-  color: #d4af37; /* Gold */
-  font-weight: 600;
-}
-
-.shop-btn {
-  padding: 0.9rem 1.8rem;
-  font-size: 1rem;
-  font-weight: 500;
-  background-color: #111;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  width: fit-content;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  opacity: 0;
-  transform: translateY(10px);
+  flex: 1;
+  min-width: 300px;
 }
 
 .hero-right {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  transform: translateY(30px);
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  opacity: 0;
+}
+
+.hero-slogan {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  min-height: 3.5rem; /* reserves space */
+  margin-bottom: 1.5rem;
+  white-space: pre-wrap;
+}
+
+.shop-btn {
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transition: background 0.3s ease;
+  opacity: 0;
+}
+
+.shop-btn:hover {
+  background: #222;
 }
 
 .perfume-image {
-  max-width: 100%;
-  height: auto;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  opacity: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .hero-bento {
-    grid-template-columns: 1fr;
-    text-align: center;
-    padding: 3rem 1.2rem;
-  }
-
-  .hero-left {
-    align-items: center;
-  }
-
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .hero-slogan {
-    font-size: 1.1rem;
-    min-height: 5rem;
-  }
-
-  .shop-btn {
-    font-size: 1rem;
-    padding: 0.8rem 1.5rem;
-  }
-
-  .hero-right {
-    margin-top: 2rem;
-  }
-
-  .perfume-image {
-    width: 80%;
-    max-width: 300px;
-  }
+.highlight {
+  color: #d4af37;
+  font-weight: bold;
 }
