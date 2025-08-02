@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { ProductContext } from "../contexts/ProductContext";
+import { ProductContext } from "../contexts/productContext";
 import "../style/ProductSwipeShowcase.css";
 
 const ProductSwipeShowcase = () => {
