@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { useProductContext } from "../contexts/productContext";
 
-import "./ProductSwipeShowcase.css"; // you’ll create this next
+import "../style/ProductSwipeShowcase.css"; // you’ll create this next
 
 const ProductSwipeShowcase = () => {
   const { products } = useProductContext();
