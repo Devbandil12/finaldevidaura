@@ -122,7 +122,7 @@ const App = () => {
                       element={
                         <>
                          <HeroSection />
-<Route path="/showcase" element={<ProductShowcaseCarousel />} />
+. <ProductShowcaseCarousel />
 
                           <Products
                             cart={cart}
