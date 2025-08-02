@@ -50,19 +50,19 @@ const scentDetails = {
     ]
   }
 };
-
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const cardRef = useRef(null);
+  const imageRef = useRef(null);
   const containerRef = useRef(null);
   const touchStartX = useRef(0);
 
   const normalize = (str) => str?.trim().toUpperCase();
-  const scent = scentDetails[normalize(products[currentIndex]?.name)];
+  const product = products[currentIndex];
+  const scent = scentDetails[normalize(product.name)];
 
-  const animateCard = (direction, onComplete) => {
-    const el = cardRef.current;
+  const animateImage = (direction, onComplete) => {
+    const el = imageRef.current;
     if (!el) return;
 
     gsap.to(el, {
@@ -84,7 +84,7 @@ const ProductSwipeShowcase = () => {
   const goTo = (newIndex) => {
     if (newIndex === currentIndex) return;
     const direction = newIndex > currentIndex ? -1 : 1;
-    animateCard(direction, () => setCurrentIndex(newIndex));
+    animateImage(direction, () => setCurrentIndex(newIndex));
   };
 
   const nextCard = () => goTo((currentIndex + 1) % products.length);
@@ -110,25 +110,21 @@ const ProductSwipeShowcase = () => {
     };
   }, [currentIndex]);
 
-  const product = products[currentIndex];
-
   return (
-    <section
-      className="showcase-product-section"
-      ref={containerRef}
-    >
+    <section className="showcase-product-section" ref={containerRef}>
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
-      <div className="showcase-product-container relative">
-        <div
-          ref={cardRef}
-          className="showcase-product-card active"
-        >
-          <img
-            src={product.imageurl}
-            alt={product.name}
-            className="showcase-product-image"
-          />
+      <div className="showcase-product-container">
+        <div className="showcase-product-card">
+          <div className="showcase-image-container">
+            <img
+              ref={imageRef}
+              src={product.imageurl}
+              alt={product.name}
+              className="showcase-product-image"
+            />
+          </div>
+
           <div className="showcase-card-info">
             <h3>{product.name}</h3>
             {scent ? (
