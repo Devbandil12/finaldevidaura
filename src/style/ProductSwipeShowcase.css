@@ -47,6 +47,13 @@
   transition: transform 0.3s ease;
 }
 
+.infinite-carousel-card {
+  min-width: 880px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+
 /* Image inside card */
 .showcase-product-image {
   width: 100%;
