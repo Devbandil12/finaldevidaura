@@ -126,26 +126,21 @@ const ProductSwipeShowcase = () => {
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
       <div className="showcase-product-container">
-        {/* 🖼️ Tilted image swiper */}
+        {/* 🎴 Image carousel */}
         <div className="showcase-image-carousel">
           {products.map((product, i) => {
             const isActive = i === currentIndex;
-            const offset = i - currentIndex;
+            const isPrev = i === (currentIndex - 1 + total) % total;
+            const isNext = i === (currentIndex + 1) % total;
 
             return (
               <div
                 key={product.id}
-                className={`carousel-image-wrapper ${isActive ? "active" : ""}`}
+                className={`carousel-image-wrapper
+                  ${isActive ? "active" : ""}
+                  ${isPrev ? "prev" : ""}
+                  ${isNext ? "next" : ""}`}
                 ref={(el) => (imageRefs.current[i] = el)}
-                style={{
-                  zIndex: total - Math.abs(offset),
-                  transform: `
-                    translateX(${offset * 30}px)
-                    rotate(${isActive ? "-6deg" : "0deg"})
-                    scale(${isActive ? 1 : 0.9})
-                  `,
-                  opacity: isActive ? 1 : 0.4,
-                }}
               >
                 <img
                   src={product.imageurl}
@@ -185,7 +180,7 @@ const ProductSwipeShowcase = () => {
         </div>
       </div>
 
-      {/* ↔️ Navigation */}
+      {/* Navigation */}
       <div className="showcase-nav-controls">
         <button onClick={prevCard}>&larr;</button>
         <div className="showcase-dots">
