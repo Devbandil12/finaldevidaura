@@ -2,7 +2,7 @@
 .showcase-product-section {
   padding: 2rem 1rem;
   max-width: 1024px;
-height: fit-content;
+height: 100vh;
   margin: 0 auto;
 }
 
