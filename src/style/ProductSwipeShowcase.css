@@ -2,9 +2,9 @@
   padding: 4rem 1rem;
   max-width: 1200px;
   margin: auto;
-  position: relative;
   background: #fff;
   overflow: hidden;
+  position: relative;
 }
 
 .showcase-product-heading {
@@ -17,67 +17,57 @@
 }
 
 .showcase-product-container {
-  position: relative;
-  width: 100%;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.showcase-card-stack {
+.showcase-image-carousel {
   position: relative;
+  width: 360px;
+  height: 500px;
+  perspective: 1200px;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 560px;
-  perspective: 1200px;
 }
 
-.showcase-product-card {
+.carousel-image-wrapper {
   position: absolute;
-  width: 90%;
-  max-width: 880px;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  background: #ffffff;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  pointer-events: none;
+  transform: rotateY(0deg) scale(0.95);
+  transition: all 0.5s ease;
   opacity: 0;
+  pointer-events: none;
   z-index: 0;
-  transition: transform 0.5s ease, opacity 0.4s ease;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  left: 0;
-  right: 0;
-  margin: auto;
 }
 
-.showcase-product-card.active {
+.carousel-image-wrapper.active {
   opacity: 1;
+  transform: rotateY(-8deg) scale(1);
   pointer-events: auto;
   z-index: 5;
 }
 
-.showcase-product-image {
+.carousel-image {
   width: 100%;
   max-width: 320px;
   height: auto;
   border-radius: 1rem;
   object-fit: cover;
-  transform: rotate(-5deg); /* Tilt left */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
-.showcase-card-info {
+.showcase-content-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 1rem;
-  max-width: 500px;
+  max-width: 600px;
 }
 
-.showcase-card-info h3 {
+.showcase-content-info h3 {
   font-size: 1.8rem;
   font-weight: 600;
   color: #1d1d1d;
@@ -125,7 +115,7 @@
 }
 
 .showcase-nav-controls {
-  margin-top: 2rem;
+  margin-top: 3rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -170,21 +160,20 @@
 }
 
 @media (max-width: 768px) {
-  .showcase-product-card {
+  .showcase-product-container {
     flex-direction: column;
     align-items: center;
-    text-align: center;
-    padding: 1.5rem;
+    gap: 2.5rem;
   }
 
-  .showcase-product-image {
-    max-width: 100%;
-    transform: rotate(0deg);
+  .showcase-image-carousel {
+    width: 100%;
+    height: 400px;
   }
 
-  .showcase-card-info {
+  .showcase-content-info {
     max-width: 100%;
-    padding-top: 1rem;
+    padding: 0 1rem;
   }
 
   .showcase-product-heading {
