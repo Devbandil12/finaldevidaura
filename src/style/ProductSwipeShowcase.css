@@ -16,64 +16,46 @@
   letter-spacing: -0.5px;
 }
 
-.showcase-product-container {
-  position: relative;
-  width: 100%;
-}
-
-.showcase-card-stack {
-  position: relative;
+.showcase-layout {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 540px;
-  perspective: 1200px;
-}
-
-.showcase-product-card {
-  position: absolute;
-  width: 90%;
-  max-width: 880px;
-  padding: 2rem;
-  border-radius: 1.25rem;
-  background: #ffffff;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
-  display: flex;
+  flex-wrap: wrap;
   gap: 2rem;
-  align-items: center;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 0;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  transition: transform 0.5s ease, opacity 0.4s ease;
+  align-items: flex-start;
 }
 
-.showcase-product-card.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 5;
-}
-
-.showcase-product-image {
+.image-stack {
+  position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 420px;
+  min-height: 440px;
+  flex: 1 1 40%;
+}
+
+.skipper-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  max-width: 100%;
   height: auto;
   border-radius: 1rem;
   object-fit: cover;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+  user-select: none;
 }
 
-.showcase-card-info {
-  flex: 1;
+.content-part {
+  flex: 1 1 55%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 1rem;
-  max-width: 500px;
+  justify-content: flex-start;
+  gap: 1.25rem;
+  max-width: 600px;
 }
 
-.showcase-card-info h3 {
+.content-part h3 {
   font-size: 1.8rem;
   font-weight: 600;
   color: #1d1d1d;
@@ -120,6 +102,7 @@
   transform: scale(1.05);
 }
 
+/* Navigation controls below content */
 .showcase-nav-controls {
   margin-top: 2rem;
   display: flex;
@@ -165,24 +148,40 @@
   background-color: #333;
 }
 
+/* Responsive Styles */
 @media (max-width: 768px) {
-  .showcase-product-card {
+  .showcase-layout {
     flex-direction: column;
     align-items: center;
+  }
+
+  .image-stack {
+    width: 100%;
+    max-width: 100%;
+    min-height: 360px;
+  }
+
+  .content-part {
+    width: 100%;
+    padding-top: 1.5rem;
     text-align: center;
-    padding: 1.5rem;
-  }
-
-  .showcase-product-image {
-    max-width: 100%;
-  }
-
-  .showcase-card-info {
-    max-width: 100%;
-    padding-top: 1rem;
+    align-items: center;
   }
 
   .showcase-product-heading {
     font-size: 2rem;
+  }
+
+  .content-part h3 {
+    font-size: 1.6rem;
+  }
+
+  .showcase-slogan {
+    font-size: 1rem;
+  }
+
+  .showcase-story,
+  .showcase-description {
+    font-size: 0.9rem;
   }
 }
