@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ProductContext } from "../contexts/productContext";
 import "../style/ProductSwipeShowcase.css";
 
-// Scent metadata
+// Combined scent metadata
 const scentDetails = {
   SHADOW: {
     slogan: "Where silence lingers longer than light.",
@@ -53,75 +53,123 @@ const scentDetails = {
 
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
-  const trackRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const cardRefs = useRef([]);
+  const containerRef = useRef(null);
+  const touchStartX = useRef(null);
+  const autoplayRef = useRef(null);
+
+  const nextCard = () => setCurrentIndex((i) => (i + 1) % products.length);
+  const prevCard = () => setCurrentIndex((i) => (i === 0 ? products.length - 1 : i - 1));
+
+  const onTouchStart = (e) => (touchStartX.current = e.touches[0].clientX);
+  const onTouchEnd = (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx > 50) prevCard();
+    else if (dx < -50) nextCard();
+    touchStartX.current = null;
+  };
 
   useEffect(() => {
-    if (!products.length) return;
-
-    const track = trackRef.current;
-    const cards = track.children;
-    const cardWidth = cards[0].offsetWidth;
-    const totalCards = cards.length;
-
-    gsap.set(cards, {
-      x: (_, i) => i * (cardWidth + 32), // 32 = gap (2rem)
+    gsap.set(cardRefs.current, { zIndex: (_, i) => products.length - i });
+    cardRefs.current.forEach((card, i) => {
+      const offset = i - currentIndex;
+      gsap.to(card, {
+        x: offset * 20,
+        scale: offset === 0 ? 1 : 0.95,
+        rotation: offset * 1.2,
+        opacity: offset < -2 || offset > 2 ? 0 : 1,
+        duration: 0.4,
+        ease: "power3.out",
+      });
     });
 
-    const tl = gsap.timeline({ repeat: -1, defaults: { ease: "none" } });
+    const contentEls = cardRefs.current[currentIndex]?.querySelectorAll(".showcase-card-info > *");
+    gsap.fromTo(
+      contentEls,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, stagger: 0.15, duration: 0.6, ease: "power2.out" }
+    );
+  }, [currentIndex, products]);
 
-    tl.to(cards, {
-      x: `-=${cardWidth + 32}`,
-      duration: 2.5,
-      modifiers: {
-        x: gsap.utils.unitize((x) => {
-          const wrapped = (parseFloat(x) + (cardWidth + 32) * totalCards) % ((cardWidth + 32) * totalCards);
-          return wrapped;
-        }),
-      },
-      stagger: 0,
-    });
-
-    return () => tl.kill();
-  }, [products]);
-
-  const doubledProducts = [...products, ...products]; // For seamless looping
+  useEffect(() => {
+    const start = () => (autoplayRef.current = setInterval(nextCard, 5000));
+    const stop = () => clearInterval(autoplayRef.current);
+    const el = containerRef.current;
+    el.addEventListener("mouseenter", stop);
+    el.addEventListener("mouseleave", start);
+    start();
+    return () => {
+      stop();
+      el.removeEventListener("mouseenter", stop);
+      el.removeEventListener("mouseleave", start);
+    };
+  }, []);
 
   return (
-    <section className="showcase-product-section">
+    <section
+      className="showcase-product-section"
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
-      <div className="infinite-carousel-viewport">
-        <div className="infinite-carousel-track" ref={trackRef}>
-          {doubledProducts.map((product, index) => {
-            const name = product.name?.toUpperCase();
-            const details = scentDetails[name];
+      <div className="showcase-product-container">
+        <div className="showcase-card-stack">
+          {products.map((product, i) => {
+            const isActive = i === currentIndex;
+            const name = product.name?.toUpperCase() || "";
+            const scent = scentDetails[name];
 
             return (
-              <div className="infinite-carousel-card" key={index}>
-                <img
-                  src={product.imageurl}
-                  alt={product.name}
-                  className="showcase-product-image"
-                />
+              <div
+                key={product.id}
+                className={`showcase-product-card ${isActive ? "active" : ""}`}
+                ref={(el) => (cardRefs.current[i] = el)}
+              >
+                <img src={product.imageurl} alt={product.name} className="showcase-product-image" />
                 <div className="showcase-card-info">
                   <h3>{product.name}</h3>
-                  {details && (
+                  {scent ? (
                     <>
-                      <p className="showcase-slogan">“{details.slogan}”</p>
-                      <p className="showcase-story">{details.story}</p>
+                      <p className="showcase-slogan">“{scent.slogan}”</p>
+                      <p className="showcase-story">{scent.story}</p>
                       <div className="showcase-notes-pills">
-                        {details.notes.map((note, idx) => (
-                          <span key={idx} className="note-pill">{note}</span>
+                        {scent.notes.map((n, idx) => (
+                          <span key={idx} className="note-pill">{n}</span>
                         ))}
                       </div>
                     </>
-                  )}
-                  {!details && (
-                    <p className="showcase-description">{product.description}</p>
+                  ) : (
+                    <>
+                      <p className="showcase-description">{product.description}</p>
+                      {product.fragranceNotes && (
+                        <div className="showcase-notes-pills">
+                          {product.fragranceNotes.split(",").map((note, idx) => (
+                            <span key={idx} className="note-pill">{note.trim()}</span>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        <div className="showcase-nav-controls">
+          <button onClick={prevCard}>&larr;</button>
+          <div className="showcase-dots">
+            {products.map((_, i) => (
+              <span
+                key={i}
+                className={`showcase-dot ${i === currentIndex ? "active" : ""}`}
+                onClick={() => setCurrentIndex(i)}
+              />
+            ))}
+          </div>
+          <button onClick={nextCard}>&rarr;</button>
         </div>
       </div>
     </section>
