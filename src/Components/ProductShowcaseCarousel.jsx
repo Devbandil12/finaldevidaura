@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { ProductContext } from "../contexts/productContext";
 import "../style/ProductSwipeShowcase.css";
 
-// Combined scent metadata
+// Scent metadata
 const scentDetails = {
   SHADOW: {
     slogan: "Where silence lingers longer than light.",
@@ -11,9 +11,8 @@ const scentDetails = {
     It begins with a crisp, cooling rush of peppermint and lavender, stirring curiosity. As it unfolds, earthy oakmoss and sensual sandalwood emerge, grounding the fragrance in sophistication. A warm finish of amber and musk cloaks the wearer like midnight silk.
     Best worn in evening hours, when the world slows and presence becomes power.`,
     notes: [
-      "Peppermint", "Lavender Burst",
-      "Oakmoss", "Geranium", "Sandalwood",
-      "Amber", "Musk Facets"
+      "Peppermint", "Lavender Burst", "Oakmoss",
+      "Geranium", "Sandalwood", "Amber", "Musk Facets"
     ]
   },
   SUNSET: {
@@ -50,18 +49,30 @@ const scentDetails = {
     ]
   }
 };
+
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const imageRefs = useRef([]);
   const containerRef = useRef(null);
   const touchStartX = useRef(null);
   const total = products.length;
 
-  const nextCard = () => setCurrentIndex((i) => (i + 1) % total);
-  const prevCard = () => setCurrentIndex((i) => (i - 1 + total) % total);
+  const nextCard = () => {
+    if (!hasInteracted) setHasInteracted(true);
+    setCurrentIndex((i) => (i + 1) % total);
+  };
 
-  const onTouchStart = (e) => (touchStartX.current = e.touches[0].clientX);
+  const prevCard = () => {
+    if (!hasInteracted) setHasInteracted(true);
+    setCurrentIndex((i) => (i - 1 + total) % total);
+  };
+
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
   const onTouchEnd = (e) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (dx > 50) prevCard();
@@ -70,6 +81,7 @@ const ProductSwipeShowcase = () => {
   };
 
   useEffect(() => {
+    if (!hasInteracted) return;
     const container = containerRef.current;
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -79,7 +91,7 @@ const ProductSwipeShowcase = () => {
     );
     if (container) observer.observe(container);
     return () => observer.disconnect();
-  }, [currentIndex]);
+  }, [currentIndex, hasInteracted]);
 
   const animateCurrent = () => {
     const imageEl = imageRefs.current[currentIndex];
@@ -107,8 +119,8 @@ const ProductSwipeShowcase = () => {
     );
   };
 
-  const activeProduct = products[currentIndex];
   const normalize = (str) => str?.trim().toUpperCase();
+  const activeProduct = products[currentIndex];
   const activeScent = scentDetails[normalize(activeProduct.name)];
 
   return (
@@ -121,19 +133,17 @@ const ProductSwipeShowcase = () => {
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
       <div className="showcase-product-container">
-        {/* 🖼️ Skipper-style image swiper */}
+        {/* 🖼️ Image Carousel */}
         <div className="showcase-image-carousel">
           {products.map((product, i) => {
-            const isActive = i === currentIndex;
             const offset = i - currentIndex;
+            if (Math.abs(offset) > 2) return null;
 
-            const tilt = isActive
-              ? "rotate(0deg)"
-              : offset < 0
-              ? "rotate(-10deg)"
-              : "rotate(10deg)";
-
-            const translateX = offset * 50;
+            const isActive = offset === 0;
+            const xOffset = offset * 50;
+            const scale = isActive ? 1 : 0.9;
+            const rotate = offset * -3;
+            const zIndex = 100 - Math.abs(offset);
 
             return (
               <div
@@ -141,58 +151,73 @@ const ProductSwipeShowcase = () => {
                 className={`carousel-image-wrapper ${isActive ? "active" : ""}`}
                 ref={(el) => (imageRefs.current[i] = el)}
                 style={{
-                  transform: `translateX(${translateX}px) ${tilt} scale(${isActive ? 1 : 0.9})`,
-                  zIndex: isActive ? 2 : 1,
-                  opacity: isActive ? 1 : 0.5,
+                  transform: `translateX(${xOffset}px) scale(${scale}) rotateY(${rotate}deg)`,
+                  zIndex,
+                  opacity: 1,
                 }}
               >
-                <img src={product.imageurl} alt={product.name} className="carousel-image" />
+                <img
+                  src={product.imageurl}
+                  alt={product.name}
+                  className="carousel-image"
+                  loading="lazy"
+                />
               </div>
             );
           })}
         </div>
 
-        {/* 📄 Content */}
+        {/* 📄 Creative Right Side Content */}
         <div className="showcase-content-info">
-          <h3>{activeProduct.name}</h3>
+          <h3 className="product-title">{activeProduct.name}</h3>
           {activeScent ? (
             <>
-              <p className="showcase-slogan">“{activeScent.slogan}”</p>
-              <p className="showcase-story">{activeScent.story}</p>
-              <div className="showcase-notes-pills">
-                {activeScent.notes.map((note, idx) => (
-                  <span key={idx} className="note-pill">{note}</span>
-                ))}
+              <blockquote className="product-slogan">“{activeScent.slogan}”</blockquote>
+              <div className="product-story-box">
+                <p className="product-story">{activeScent.story}</p>
+              </div>
+              <div className="showcase-notes-section">
+                <h4 className="notes-heading">Fragrance Notes</h4>
+                <div className="showcase-notes-pills">
+                  {activeScent.notes.map((note, idx) => (
+                    <span key={idx} className="note-pill">
+                      {note}
+                    </span>
+                  ))}
+                </div>
               </div>
             </>
           ) : (
-            <>
-              <p className="showcase-description">{activeProduct.description}</p>
-              {activeProduct.fragranceNotes && (
-                <div className="showcase-notes-pills">
-                  {activeProduct.fragranceNotes.split(",").map((note, idx) => (
-                    <span key={idx} className="note-pill">{note.trim()}</span>
-                  ))}
-                </div>
-              )}
-            </>
+            <p>{activeProduct.description}</p>
           )}
         </div>
       </div>
 
       {/* ↔️ Navigation */}
       <div className="showcase-nav-controls">
-        <button onClick={prevCard}>&larr;</button>
+        <button onClick={prevCard} aria-label="Previous product">&larr;</button>
         <div className="showcase-dots">
           {products.map((_, i) => (
             <span
               key={i}
               className={`showcase-dot ${i === currentIndex ? "active" : ""}`}
-              onClick={() => setCurrentIndex(i)}
+              onClick={() => {
+                setHasInteracted(true);
+                setCurrentIndex(i);
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setHasInteracted(true);
+                  setCurrentIndex(i);
+                }
+              }}
+              aria-label={`Go to ${products[i].name}`}
             />
           ))}
         </div>
-        <button onClick={nextCard}>&rarr;</button>
+        <button onClick={nextCard} aria-label="Next product">&rarr;</button>
       </div>
     </section>
   );
