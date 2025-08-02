@@ -16,6 +16,7 @@ import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
+import MyOrder from "./Components/ProductShowcaseCarousel";
 
 // Styles
 import "./style/adminPanel.css";
@@ -121,6 +122,7 @@ const App = () => {
                       element={
                         <>
                          <HeroSection />
+<Route path="/showcase" element={<ProductShowcaseCarousel />} />
 
                           <Products
                             cart={cart}
