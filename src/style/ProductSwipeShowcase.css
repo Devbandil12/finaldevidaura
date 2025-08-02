@@ -1,139 +1,124 @@
-.showcase-product-section {
+.showcase-wrapper {
   padding: 4rem 1rem;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.showcase-heading {
+  font-size: 2.2rem;
   text-align: center;
-  background-color: #fff;
+  margin-bottom: 3rem;
+  font-weight: bold;
 }
 
-.showcase-product-heading {
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 2rem;
-  color: #111;
-}
-
-.showcase-product-container {
+.showcase-carousel {
   position: relative;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
-.showcase-card-stack {
-  position: relative;
-  height: 460px;
-}
-
-.showcase-product-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 1.5rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
+.showcase-card {
+  display: none;
+  gap: 2rem;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
-.showcase-product-image {
-  height: 180px;
-  width: auto;
-  object-fit: contain;
-  margin-bottom: 1.2rem;
+.showcase-card.active {
+  display: flex;
 }
 
-.showcase-card-info {
-  text-align: left;
-  width: 100%;
+.showcase-image {
+  flex: 1;
+  text-align: center;
 }
 
-.showcase-card-info h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+.showcase-image img {
+  max-width: 320px;
+  transform: rotate(-4deg);
+  transition: transform 0.4s ease;
+}
+
+.showcase-content {
+  flex: 1;
+  padding: 1rem;
+}
+
+.product-name {
+  font-size: 1.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.slogan {
+  font-style: italic;
+  color: #555;
+  margin-bottom: 0.8rem;
+}
+
+.story {
+  margin-bottom: 1rem;
   color: #333;
 }
 
-.showcase-description {
-  font-size: 0.9rem;
+.description {
   margin-bottom: 1rem;
-  color: #555;
+  color: #666;
 }
 
-.showcase-notes {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.notes-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.showcase-notes li {
+.note-pill {
+  background-color: #f3f3f3;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
   font-size: 0.85rem;
-  margin-bottom: 0.4rem;
-  color: #444;
+  color: #333;
+  border: 1px solid #ccc;
 }
 
-.showcase-notes strong {
-  font-weight: 600;
-  color: #222;
-}
-
-/* Navigation Controls */
-.showcase-nav-controls {
+.carousel-controls {
+  margin-top: 2rem;
   display: flex;
   justify-content: center;
+  gap: 2rem;
   align-items: center;
-  margin-top: 2rem;
-  gap: 1.5rem;
 }
 
-.showcase-nav-controls button {
+.carousel-controls button {
   background: none;
-  border: 2px solid #000;
-  padding: 0.4rem 0.8rem;
-  font-size: 1.25rem;
+  border: none;
+  font-size: 1.5rem;
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s ease;
 }
 
-.showcase-nav-controls button:hover {
-  background: #000;
-  color: #fff;
-}
-
-/* Dots */
-.showcase-dots {
+.carousel-dots {
   display: flex;
-  gap: 6px;
+  gap: 0.4rem;
 }
 
-.showcase-dot {
+.carousel-dots .dot {
   width: 10px;
   height: 10px;
-  background: #bbb;
+  background-color: #ccc;
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.3s ease;
 }
 
-.showcase-dot.active {
-  background: #000;
+.carousel-dots .dot.active {
+  background-color: #222;
 }
 
-/* Responsive */
-@media screen and (max-width: 640px) {
-  .showcase-product-card {
-    padding: 1rem;
+@media (max-width: 768px) {
+  .showcase-card {
+    flex-direction: column;
+    text-align: center;
   }
 
-  .showcase-card-info h3 {
-    font-size: 1.1rem;
-  }
-
-  .showcase-description,
-  .showcase-notes li {
-    font-size: 0.8rem;
+  .showcase-image img {
+    max-width: 100%;
+    transform: none;
   }
 }
