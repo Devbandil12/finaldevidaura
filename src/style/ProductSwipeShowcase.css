@@ -1,11 +1,13 @@
+/* Main section layout */
 .showcase-product-section {
   padding: 4rem 1rem;
   max-width: 1200px;
   margin: auto;
-  position: relative;
   background: #fff;
+  position: relative;
 }
 
+/* Heading */
 .showcase-product-heading {
   font-size: 2.2rem;
   text-align: center;
@@ -14,42 +16,38 @@
   color: #1f1f1f;
 }
 
-.showcase-product-container {
-  position: relative;
+/* Carousel container */
+.infinite-carousel-viewport {
+  overflow: hidden;
   width: 100%;
-}
-
-.showcase-card-stack {
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 540px;
+  height: 540px;
+  padding-bottom: 2rem;
 }
 
-.showcase-product-card {
+/* Card track that moves */
+.infinite-carousel-track {
+  display: flex;
   position: absolute;
-  opacity: 0;
-  width: 90%;
-  max-width: 880px;
+  left: 0;
+  top: 0;
+  gap: 2rem; /* spacing between cards */
+}
+
+/* Individual card */
+.infinite-carousel-card {
+  min-width: 880px;
+  flex-shrink: 0;
   padding: 2rem;
-  border-radius: 1.25rem;
-  background: #ffffff;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
   display: flex;
-  gap: 2rem;
   align-items: center;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: 0;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+  border-radius: 1.25rem;
+  transition: transform 0.3s ease;
 }
 
-.showcase-product-card.active {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 5;
-}
-
+/* Image inside card */
 .showcase-product-image {
   width: 100%;
   max-width: 320px;
@@ -58,6 +56,7 @@
   object-fit: cover;
 }
 
+/* Card content container */
 .showcase-card-info {
   flex: 1;
   display: flex;
@@ -65,31 +64,38 @@
   justify-content: center;
   gap: 1rem;
   max-width: 500px;
+  padding-left: 2rem;
 }
 
+/* Scent name */
 .showcase-card-info h3 {
   font-size: 1.8rem;
   font-weight: 600;
   color: #1d1d1d;
 }
 
+/* Slogan (italic tagline) */
 .showcase-slogan {
   font-style: italic;
   font-size: 1.05rem;
   color: #555;
 }
 
+/* Story / long description */
 .showcase-story {
   font-size: 0.95rem;
   line-height: 1.6;
   color: #444;
+  white-space: pre-line;
 }
 
+/* If no scentDetails match, fall back */
 .showcase-description {
   font-size: 0.9rem;
   color: #666;
 }
 
+/* Note pills */
 .showcase-notes-pills {
   display: flex;
   flex-wrap: wrap;
@@ -108,49 +114,27 @@
   transition: background-color 0.3s ease;
 }
 
-.showcase-nav-controls {
-  margin-top: 2rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1.2rem;
+/* Optional hover effect */
+.infinite-carousel-card:hover {
+  transform: scale(1.01);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
 }
 
-.showcase-nav-controls button {
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #333;
-  transition: color 0.3s ease;
-}
+/* Responsive layout */
+@media (max-width: 1024px) {
+  .infinite-carousel-card {
+    min-width: 720px;
+  }
 
-.showcase-nav-controls button:hover {
-  color: #000;
-}
-
-.showcase-dots {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.showcase-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #ccc;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.showcase-dot.active {
-  background-color: #333;
+  .showcase-card-info {
+    padding-left: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .showcase-product-card {
+  .infinite-carousel-card {
     flex-direction: column;
-    align-items: center;
+    min-width: 90%;
     text-align: center;
     padding: 1.5rem;
   }
@@ -160,6 +144,7 @@
   }
 
   .showcase-card-info {
+    padding-left: 0;
     max-width: 100%;
     padding-top: 1rem;
   }
