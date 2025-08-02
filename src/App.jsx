@@ -16,7 +16,7 @@ import Checkout from "./Components/Checkout";
 import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
-import MyOrder from "./Components/ProductShowcaseCarousel";
+import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 
 // Styles
 import "./style/adminPanel.css";
