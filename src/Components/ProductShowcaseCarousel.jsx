@@ -118,9 +118,10 @@ const ProductSwipeShowcase = () => {
         <div className="showcase-card-stack">
           {products.map((product, i) => {
             const isActive = i === currentIndex;
-            const name = product.name?.toUpperCase() || "";
-            const scent = scentDetails[name];
+  const normalize = (str) => str?.trim().toUpperCase();
+  const scent = scentDetails[normalize(product.name)];
 
+            
             return (
               <div
                 key={product.id}
