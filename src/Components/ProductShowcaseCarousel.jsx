@@ -1,9 +1,7 @@
-// src/Components/ProductSwipeShowcase.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { ProductContext } from "../contexts/productContext";
-
-import "../style/ProductSwipeShowcase.css"; // you’ll create this next
+import { ProductContext } from "../contexts/ProductContext";
+import "../style/ProductSwipeShowcase.css";
 
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
@@ -18,8 +16,8 @@ const ProductSwipeShowcase = () => {
         const offset = i - currentIndex;
         gsap.to(card, {
           x: offset * 20,
-          scale: offset === 0 ? 1 : 0.9,
-          rotation: offset * 1.5,
+          scale: offset === 0 ? 1 : 0.95,
+          rotation: offset * 1.2,
           duration: 0.4,
           ease: "power3.out",
           opacity: offset < -2 || offset > 2 ? 0 : 1,
@@ -43,6 +41,8 @@ const ProductSwipeShowcase = () => {
 
   return (
     <section className="swipe-showcase">
+      <h2 className="showcase-heading">Discover Our Scents</h2>
+
       <div className="swipe-container">
         <div className="card-stack">
           {products.map((product, i) => (
@@ -51,14 +51,20 @@ const ProductSwipeShowcase = () => {
               className="product-card"
               ref={(el) => (cardRefs.current[i] = el)}
             >
-              <img src={product.image} alt={product.name} />
+              <img
+                src={product.img}
+                alt={product.name}
+                className="product-image"
+              />
+
               <div className="card-info">
-                <h2>{product.name}</h2>
-                <p>{product.description}</p>
+                <h3>{product.name}</h3>
+                <p className="description">{product.description}</p>
+
                 <ul className="notes">
-                  <li><strong>Top:</strong> {product.topNotes}</li>
-                  <li><strong>Heart:</strong> {product.heartNotes}</li>
-                  <li><strong>Base:</strong> {product.baseNotes}</li>
+                  <li><strong>Top Notes:</strong> {product.composition}</li>
+                  <li><strong>Heart Notes:</strong> {product.fragranceNotes}</li>
+                  <li><strong>Base Notes:</strong> {product.fragrance}</li>
                 </ul>
               </div>
             </div>
@@ -67,6 +73,7 @@ const ProductSwipeShowcase = () => {
 
         <div className="nav-controls">
           <button onClick={prevCard}>&larr;</button>
+
           <div className="dots">
             {products.map((_, i) => (
               <span
@@ -76,6 +83,7 @@ const ProductSwipeShowcase = () => {
               />
             ))}
           </div>
+
           <button onClick={nextCard}>&rarr;</button>
         </div>
       </div>
