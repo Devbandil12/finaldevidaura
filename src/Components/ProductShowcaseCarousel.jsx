@@ -1,12 +1,12 @@
 // src/Components/ProductSwipeShowcase.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { useProductContext } from "../contexts/productContext";
+import { ProductContext } from "../contexts/productContext";
 
 import "../style/ProductSwipeShowcase.css"; // you’ll create this next
 
 const ProductSwipeShowcase = () => {
-  const { products } = useProductContext();
+  const { products } = useContext(ProductContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const cardRefs = useRef([]);
 
