@@ -3,8 +3,6 @@ import { gsap } from "gsap";
 import { ProductContext } from "../contexts/productContext";
 import "../style/ProductSwipeShowcase.css";
 
-
-
 // Combined scent metadata
 const scentDetails = {
   SHADOW: {
@@ -52,9 +50,6 @@ const scentDetails = {
     ]
   }
 };
-
-
-
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -94,8 +89,8 @@ const ProductSwipeShowcase = () => {
 
     gsap.fromTo(
       imageEl,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+      { opacity: 0, y: 40, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }
     );
 
     gsap.fromTo(
@@ -126,27 +121,32 @@ const ProductSwipeShowcase = () => {
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
       <div className="showcase-product-container">
-        {/* 🎴 Image carousel */}
+        {/* 🖼️ Skipper-style image swiper */}
         <div className="showcase-image-carousel">
           {products.map((product, i) => {
             const isActive = i === currentIndex;
-            const isPrev = i === (currentIndex - 1 + total) % total;
-            const isNext = i === (currentIndex + 1) % total;
+            const offset = i - currentIndex;
+
+            const tilt = isActive
+              ? "rotate(0deg)"
+              : offset < 0
+              ? "rotate(-10deg)"
+              : "rotate(10deg)";
+
+            const translateX = offset * 50;
 
             return (
               <div
                 key={product.id}
-                className={`carousel-image-wrapper
-                  ${isActive ? "active" : ""}
-                  ${isPrev ? "prev" : ""}
-                  ${isNext ? "next" : ""}`}
+                className={`carousel-image-wrapper ${isActive ? "active" : ""}`}
                 ref={(el) => (imageRefs.current[i] = el)}
+                style={{
+                  transform: `translateX(${translateX}px) ${tilt} scale(${isActive ? 1 : 0.9})`,
+                  zIndex: isActive ? 2 : 1,
+                  opacity: isActive ? 1 : 0.5,
+                }}
               >
-                <img
-                  src={product.imageurl}
-                  alt={product.name}
-                  className="carousel-image"
-                />
+                <img src={product.imageurl} alt={product.name} className="carousel-image" />
               </div>
             );
           })}
@@ -180,7 +180,7 @@ const ProductSwipeShowcase = () => {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* ↔️ Navigation */}
       <div className="showcase-nav-controls">
         <button onClick={prevCard}>&larr;</button>
         <div className="showcase-dots">
