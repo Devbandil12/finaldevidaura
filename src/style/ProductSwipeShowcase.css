@@ -1,0 +1,95 @@
+.swipe-showcase {
+  padding: 60px 20px;
+  background: #fefefe;
+  display: flex;
+  justify-content: center;
+}
+
+.swipe-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
+.card-stack {
+  position: relative;
+  height: 420px;
+}
+
+.product-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.product-card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.card-info {
+  padding: 12px 0;
+}
+
+.card-info h2 {
+  margin: 10px 0 5px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.card-info p {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.notes {
+  list-style: none;
+  padding: 0;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.nav-controls {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-controls button {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #333;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  background: #222;
+  transform: scale(1.3);
+}
