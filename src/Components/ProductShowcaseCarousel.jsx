@@ -1,94 +1,134 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
 import { ProductContext } from "../contexts/productContext";
+import { gsap } from "gsap";
 import "../style/ProductSwipeShowcase.css";
 
+const slogans = {
+  SHADOW: "Where silence lingers longer than light.",
+  SUNSET: "Where golden light melts into longing.",
+  VIGOR: "Where boldness breaks like sunrise.",
+  "OUD HORIZON": "Where tropics meet twilight — bold, bright, unforgettable.",
+};
+
+const stories = {
+  SHADOW:
+    "Crafted for those who speak softly and leave echoes. SHADOW is the fragrance of quiet strength — the scent of velvet evenings, of mysteries half-told...",
+  SUNSET:
+    "SUNSET is the perfume of tender transitions — from heat to hush, from glance to embrace...",
+  VIGOR:
+    "VIGOR is a surge of momentum — a scent for those who lead with presence and move with purpose...",
+  "OUD HORIZON":
+    "OUD HORIZON is an exploration in contrast — where sunlit fruits meet deep, grounding woods...",
+};
+
 const ProductSwipeShowcase = () => {
-  const { products } = useContext(ProductContext);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const cardRefs = useRef([]);
+  const { products } = useContext(ProductContext);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const cardRefs = useRef([]);
+  const containerRef = useRef(null);
+  const autoplayRef = useRef(null);
 
-  useEffect(() => {
-    gsap.set(cardRefs.current, { zIndex: (i) => products.length - i });
+  const nextCard = () => {
+    setCurrentIndex((prev) => (prev + 1) % products.length);
+  };
 
-    const animateStack = () => {
-      cardRefs.current.forEach((card, i) => {
-        const offset = i - currentIndex;
-        gsap.to(card, {
-          x: offset * 20,
-          scale: offset === 0 ? 1 : 0.95,
-          rotation: offset * 1.2,
-          duration: 0.4,
-          ease: "power3.out",
-          opacity: offset < -2 || offset > 2 ? 0 : 1,
-          zIndex: products.length - Math.abs(offset),
-        });
-      });
-    };
+  const prevCard = () => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? products.length - 1 : prev - 1
+    );
+  };
 
-    animateStack();
-  }, [currentIndex, products]);
+  useEffect(() => {
+    gsap.fromTo(
+      cardRefs.current[currentIndex]?.querySelectorAll(".showcase-content > *"),
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1,
+        y: 0,
+        stagger: 0.15,
+        duration: 0.6,
+        ease: "power2.out",
+      }
+    );
+  }, [currentIndex]);
 
-  const nextCard = () => {
-    setCurrentIndex((prev) => (prev + 1) % products.length);
-  };
+  useEffect(() => {
+    const play = () => {
+      autoplayRef.current = setInterval(nextCard, 5000);
+    };
+    const stop = () => clearInterval(autoplayRef.current);
 
-  const prevCard = () => {
-    setCurrentIndex((prev) =>
-      prev === 0 ? products.length - 1 : prev - 1
-    );
-  };
+    const el = containerRef.current;
+    el.addEventListener("mouseenter", stop);
+    el.addEventListener("mouseleave", play);
 
-  return (
-    <section className="showcase-product-section">
-      <h2 className="showcase-product-heading">Discover Our Scents</h2>
+    play(); // Start autoplay
 
-      <div className="showcase-product-container">
-        <div className="showcase-card-stack">
-          {products.map((product, i) => (
-            <div
-              key={product.id}
-              className="showcase-product-card"
-              ref={(el) => (cardRefs.current[i] = el)}
-            >
-              <img
-                src={product.img}
-                alt={product.name}
-                className="showcase-product-image"
-              />
+    return () => {
+      stop();
+      el.removeEventListener("mouseenter", stop);
+      el.removeEventListener("mouseleave", play);
+    };
+  }, []);
 
-              <div className="showcase-card-info">
-                <h3>{product.name}</h3>
-                <p className="showcase-description">{product.description}</p>
+  return (
+    <section className="showcase-wrapper" ref={containerRef}>
+      <div className="showcase-heading">Discover the Collection</div>
+      <div className="showcase-carousel">
+        {products.map((product, i) => {
+          const isActive = i === currentIndex;
+          const noteList = product.fragranceNotes?.split(",") || [];
 
-                <ul className="showcase-notes">
-                  <li><strong>Top Notes:</strong> {product.composition}</li>
-                  <li><strong>Heart Notes:</strong> {product.fragranceNotes}</li>
-                  <li><strong>Base Notes:</strong> {product.fragrance}</li>
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
+          return (
+            <div
+              className={`showcase-card ${isActive ? "active" : ""}`}
+              key={product.id}
+              ref={(el) => (cardRefs.current[i] = el)}
+            >
+              <div className="showcase-image">
+                <img src={product.img} alt={product.name} />
+              </div>
+              <div className="showcase-content">
+                <h2 className="product-name">{product.name}</h2>
 
-        <div className="showcase-nav-controls">
-          <button onClick={prevCard}>&larr;</button>
+                {slogans[product.name] && (
+                  <p className="slogan">“{slogans[product.name]}”</p>
+                )}
 
-          <div className="showcase-dots">
-            {products.map((_, i) => (
-              <span
-                key={i}
-                className={`showcase-dot ${i === currentIndex ? "active" : ""}`}
-                onClick={() => setCurrentIndex(i)}
-              />
-            ))}
-          </div>
+                {stories[product.name] && (
+                  <p className="story">{stories[product.name]}</p>
+                )}
 
-          <button onClick={nextCard}>&rarr;</button>
-        </div>
-      </div>
-    </section>
-  );
+                <p className="description">{product.description}</p>
+
+                <div className="notes-section">
+                  {noteList.map((note, index) => (
+                    <span className="note-pill" key={index}>
+                      {note.trim()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="carousel-controls">
+        <button onClick={prevCard}>&larr;</button>
+        <div className="carousel-dots">
+          {products.map((_, i) => (
+            <span
+              key={i}
+              className={`dot ${i === currentIndex ? "active" : ""}`}
+              onClick={() => setCurrentIndex(i)}
+            />
+          ))}
+        </div>
+        <button onClick={nextCard}>&rarr;</button>
+      </div>
+    </section>
+  );
 };
 
 export default ProductSwipeShowcase;
