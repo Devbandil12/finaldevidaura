@@ -50,121 +50,138 @@ const scentDetails = {
     ]
   }
 };
+
 const ProductSwipeShowcase = () => {
   const { products } = useContext(ProductContext);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const imageRef = useRef(null);
-  const containerRef = useRef(null);
+  const normalize = (str) => str?.trim().toUpperCase();
+
+  const loopedProducts = [
+    products[products.length - 1],
+    ...products,
+    products[0],
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const sliderRef = useRef(null);
+  const imageWidth = useRef(0);
   const touchStartX = useRef(0);
 
-  const normalize = (str) => str?.trim().toUpperCase();
-  const product = products[currentIndex];
-  const scent = scentDetails[normalize(product.name)];
-
-  const animateImage = (direction, onComplete) => {
-    const el = imageRef.current;
-    if (!el) return;
-
-    gsap.to(el, {
-      x: direction * -window.innerWidth,
-      opacity: 0,
-      duration: 0.4,
+  const slideTo = (index, instant = false) => {
+    if (!sliderRef.current) return;
+    const distance = -index * imageWidth.current;
+    gsap.to(sliderRef.current, {
+      x: distance,
+      duration: instant ? 0 : 0.5,
       ease: "power2.inOut",
       onComplete: () => {
-        onComplete?.();
-        gsap.fromTo(
-          el,
-          { x: direction * window.innerWidth, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.4, ease: "power2.out" }
-        );
+        if (index === 0) {
+          setCurrentIndex(products.length);
+          gsap.set(sliderRef.current, {
+            x: -products.length * imageWidth.current
+          });
+        } else if (index === products.length + 1) {
+          setCurrentIndex(1);
+          gsap.set(sliderRef.current, {
+            x: -imageWidth.current
+          });
+        }
       }
     });
   };
 
-  const goTo = (newIndex) => {
-    if (newIndex === currentIndex) return;
-    const direction = newIndex > currentIndex ? -1 : 1;
-    animateImage(direction, () => setCurrentIndex(newIndex));
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      if (!sliderRef.current) return;
+      const totalWidth = sliderRef.current.offsetWidth;
+      imageWidth.current = totalWidth / loopedProducts.length;
+      slideTo(currentIndex, true);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [products.length]);
 
-  const nextCard = () => goTo((currentIndex + 1) % products.length);
-  const prevCard = () => goTo((currentIndex - 1 + products.length) % products.length);
+  useEffect(() => {
+    slideTo(currentIndex);
+  }, [currentIndex]);
 
-  const onTouchStart = (e) => {
+  const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
   };
 
-  const onTouchEnd = (e) => {
+  const handleTouchEnd = (e) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (dx < -50) nextCard();
-    else if (dx > 50) prevCard();
+    if (dx < -50) setCurrentIndex((i) => i + 1);
+    else if (dx > 50) setCurrentIndex((i) => i - 1);
   };
 
-  useEffect(() => {
-    const el = containerRef.current;
-    el.addEventListener("touchstart", onTouchStart);
-    el.addEventListener("touchend", onTouchEnd);
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [currentIndex]);
+  const currentProduct = products[(currentIndex - 1 + products.length) % products.length];
+  const scent = scentDetails[normalize(currentProduct.name)];
 
   return (
-    <section className="showcase-product-section" ref={containerRef}>
+    <section className="showcase-product-section">
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
       <div className="showcase-product-container">
-        <div className="showcase-product-card">
-          <div className="showcase-image-container">
-            <img
-              ref={imageRef}
-              src={product.imageurl}
-              alt={product.name}
-              className="showcase-product-image"
-            />
-          </div>
-
-          <div className="showcase-card-info">
-            <h3>{product.name}</h3>
-            {scent ? (
-              <>
-                <p className="showcase-slogan">“{scent.slogan}”</p>
-                <p className="showcase-story">{scent.story}</p>
-                <div className="showcase-notes-pills">
-                  {scent.notes.map((n, idx) => (
-                    <span key={idx} className="note-pill">{n}</span>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="showcase-description">{product.description}</p>
-                {product.fragranceNotes && (
-                  <div className="showcase-notes-pills">
-                    {product.fragranceNotes.split(",").map((note, idx) => (
-                      <span key={idx} className="note-pill">{note.trim()}</span>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="showcase-nav-controls">
-          <button onClick={prevCard}>&larr;</button>
-          <div className="showcase-dots">
-            {products.map((_, i) => (
-              <span
+        {/* IMAGE SLIDER */}
+        <div
+          className="showcase-image-wrapper"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="showcase-slider" ref={sliderRef}>
+            {loopedProducts.map((p, i) => (
+              <img
                 key={i}
-                className={`showcase-dot ${i === currentIndex ? "active" : ""}`}
-                onClick={() => goTo(i)}
+                src={p.imageurl}
+                alt={p.name}
+                className="showcase-slider-image"
               />
             ))}
           </div>
-          <button onClick={nextCard}>&rarr;</button>
         </div>
+
+        {/* TEXT */}
+        <div className="showcase-card-info">
+          <h3>{currentProduct.name}</h3>
+          {scent ? (
+            <>
+              <p className="showcase-slogan">“{scent.slogan}”</p>
+              <p className="showcase-story">{scent.story}</p>
+              <div className="showcase-notes-pills">
+                {scent.notes.map((n, idx) => (
+                  <span key={idx} className="note-pill">{n}</span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="showcase-description">{currentProduct.description}</p>
+              {currentProduct.fragranceNotes && (
+                <div className="showcase-notes-pills">
+                  {currentProduct.fragranceNotes.split(",").map((note, idx) => (
+                    <span key={idx} className="note-pill">{note.trim()}</span>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* NAVIGATION */}
+      <div className="showcase-nav-controls">
+        <button onClick={() => setCurrentIndex((i) => i - 1)}>&larr;</button>
+        <div className="showcase-dots">
+          {products.map((_, i) => (
+            <span
+              key={i}
+              className={`showcase-dot ${i === (currentIndex - 1 + products.length) % products.length ? 'active' : ''}`}
+              onClick={() => setCurrentIndex(i + 1)}
+            />
+          ))}
+        </div>
+        <button onClick={() => setCurrentIndex((i) => i + 1)}>&rarr;</button>
       </div>
     </section>
   );
