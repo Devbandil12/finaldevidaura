@@ -127,3 +127,122 @@
     margin-bottom: 2rem;
   }
 }
+
+
+.showcase-product-section {
+  padding: 3rem 1rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.showcase-product-heading {
+  text-align: center;
+  font-size: 2.2rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.showcase-product-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .showcase-product-container {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 3rem;
+  }
+}
+
+.showcase-image-carousel {
+  position: relative;
+  width: 250px;
+  height: 350px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel-image-wrapper {
+  position: absolute;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+  will-change: transform, opacity;
+}
+
+.carousel-image-wrapper img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.showcase-content-info {
+  max-width: 600px;
+}
+
+.showcase-content-info h3 {
+  font-size: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.showcase-slogan {
+  font-style: italic;
+  margin-bottom: 1rem;
+  color: #5e5e5e;
+}
+
+.showcase-story {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.showcase-notes-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.note-pill {
+  background-color: #f0f0f0;
+  padding: 0.4rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.showcase-nav-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+.showcase-nav-controls button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  padding: 0.5rem 1rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.showcase-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.showcase-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #bbb;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.showcase-dot.active {
+  background-color: #333;
+}
