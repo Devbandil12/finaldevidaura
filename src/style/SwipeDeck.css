@@ -1,3 +1,4 @@
+/* Container with perspective and sizing */
 .swipe-deck-container {
   position: relative;
   width: 100%;
@@ -8,15 +9,7 @@
   overflow: visible;
 }
 
-.swipe-deck {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  transform: translateX(0%);
-  will-change: transform;
-}
-
+/* Each swipeable card */
 .swipe-card {
   position: absolute;
   top: 0;
@@ -29,36 +22,49 @@
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
   user-select: none;
   touch-action: pan-y;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.35s ease, opacity 0.35s ease;
   will-change: transform, opacity;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  pointer-events: none;
 }
 
+/* The image inside each card */
 .swipe-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none;
+  border-radius: inherit;
 }
 
-/* Peek effect - mimic stacked Skipper UI cards */
-.swipe-card:nth-child(n+2) {
-  transform: rotate(-3deg) scale(0.96) translateY(8px);
-  z-index: 0;
-  opacity: 0.85;
-}
-.swipe-card:nth-child(n+3) {
-  transform: rotate(3deg) scale(0.92) translateY(16px);
-  z-index: -1;
-  opacity: 0.7;
-}
-
-/* Optional: active card styling */
+/* The topmost card (active) is interactable */
 .swipe-card.active {
-  z-index: 2;
+  pointer-events: auto;
+  z-index: 3;
   transform: rotate(0deg) scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* 2nd card in stack (slightly rotated/peek) */
+.swipe-card:nth-child(n+2) {
+  z-index: 2;
+  transform: rotate(-3deg) scale(0.96) translateY(10px);
+  opacity: 0.9;
+}
+
+/* 3rd card in stack (more peeked) */
+.swipe-card:nth-child(n+3) {
+  z-index: 1;
+  transform: rotate(3deg) scale(0.92) translateY(20px);
+  opacity: 0.75;
+}
+
+/* Hide any card beyond 4th from display */
+.swipe-card:nth-child(n+4) {
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
 }
