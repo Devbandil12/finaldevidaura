@@ -17,6 +17,7 @@ import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
+import DualMarquee from "./components/DualMarquee";
 
 // Styles
 import "./style/adminPanel.css";
@@ -122,6 +123,7 @@ const App = () => {
                       element={
                         <>
                          <HeroSection />
+<DualMarquee />
 . <ProductShowcaseCarousel />
 
                           <Products
