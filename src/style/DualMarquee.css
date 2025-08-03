@@ -1,0 +1,59 @@
+.dual-marquee-container {
+  background-color: white;
+  padding: 1.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #2d2d2d;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.marquee-wrapper {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-content {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+}
+
+.marquee-content.reverse {
+  flex-direction: row-reverse;
+}
+
+.marquee-line {
+  padding: 0.25rem 1rem;
+}
+
+/* Highlight styles */
+.highlight-red {
+  background-color: #dc2626;
+  color: white;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+}
+
+.highlight-green {
+  background-color: #16a34a;
+  color: white;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+}
+
+.highlight-purple {
+  background-color: #7c3aed;
+  color: white;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+}
+
+.highlight-yellow {
+  background-color: #facc15;
+  color: black;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+}
