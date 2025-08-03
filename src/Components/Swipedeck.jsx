@@ -80,7 +80,10 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
     >
       {items.map((item, i) => {
         const realIdx = getRealIndex(i);
-        const offset = getRealIndex(i - current);
+        let offset = getRealIndex(i - current);
+if (offset > Math.floor(items.length / 2)) {
+  offset = offset - items.length; // handle backward wrap
+}
         const isTop = i === current;
 
         let style = {
