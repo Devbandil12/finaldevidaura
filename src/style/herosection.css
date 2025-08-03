@@ -50,9 +50,8 @@
 .hero-cta .shop-btn {
   padding: 0.75rem 1.6rem;
   font-size: 1rem;
-  background-color: #fff; /* deep red */
-  color: #000;
-  border: 1px solid #f8f8f8;
+  background-color: #000;
+  color:#fff;
   border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease;
