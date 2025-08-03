@@ -1,4 +1,3 @@
-/* Container with perspective and sizing */
 .swipe-deck-container {
   position: relative;
   width: 100%;
@@ -9,7 +8,6 @@
   overflow: visible;
 }
 
-/* Each swipeable card */
 .swipe-card {
   position: absolute;
   top: 0;
@@ -27,10 +25,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
 }
 
-/* The image inside each card */
 .swipe-card img {
   width: 100%;
   height: 100%;
@@ -38,33 +34,4 @@
   display: block;
   pointer-events: none;
   border-radius: inherit;
-}
-
-/* The topmost card (active) is interactable */
-.swipe-card.active {
-  pointer-events: auto;
-  z-index: 3;
-  transform: rotate(0deg) scale(1) translateY(0);
-  opacity: 1;
-}
-
-/* 2nd card in stack (slightly rotated/peek) */
-.swipe-card:nth-child(n+2) {
-  z-index: 2;
-  transform: rotate(-3deg) scale(0.96) translateY(10px);
-  opacity: 0.9;
-}
-
-/* 3rd card in stack (more peeked) */
-.swipe-card:nth-child(n+3) {
-  z-index: 1;
-  transform: rotate(3deg) scale(0.92) translateY(20px);
-  opacity: 0.75;
-}
-
-/* Hide any card beyond 4th from display */
-.swipe-card:nth-child(n+4) {
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
 }
