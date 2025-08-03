@@ -47,7 +47,7 @@ export default function DualMarquee() {
     });
 
     bottomTween.current = gsap.to(bottomEl, {
-      x: bottomWidth / 2,
+      x: -bottomWidth / 2,
       duration: 30,
       ease: "linear",
       repeat: -1,
