@@ -46,15 +46,17 @@ export default function DualMarquee() {
       repeat: -1,
     });
 
-    bottomTween.current = gsap.to(bottomEl,
-     { x: -bottomWidth / 2 },
-      {
-      x: bottomWidth / 2,
-      duration: 30,
-      ease: "linear",
-      repeat: -1,
-    }
-  );
+    bottomTween.current = gsap.fromTo(
+  bottomEl,
+  { x: -bottomWidth / 2 }, // Start from off-screen left
+  {
+    x: bottomWidth / 2,    // Move to off-screen right
+    duration: 30,
+    ease: "linear",
+    repeat: -1,
+  }
+);
+
 
     return () => {
       topTween.current?.kill();
