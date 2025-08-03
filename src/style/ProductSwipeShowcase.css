@@ -19,16 +19,23 @@
   gap: 32px;
 }
 
+.swipe-deck-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 420px;
+  height: 520px;
+  perspective: 1200px;
+  overflow: visible;
+}
+
+
 @media (min-width: 768px) {
   .showcase-product-container {
     flex-direction: row;
     align-items: flex-start;
     justify-content: center;
   }
-}
-
-.showcase-deck-wrapper {
-  flex-shrink: 0;
 }
 
 .showcase-card-info {
