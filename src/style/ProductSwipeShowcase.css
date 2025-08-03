@@ -1,113 +1,123 @@
-/* SECTION STYLES */
 .showcase-product-section {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: auto;
+  padding: 40px 20px;
+  background: #f8f8f8;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
 }
 
 .showcase-product-heading {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  font-size: 2rem;
+  margin-bottom: 32px;
+  color: #222;
 }
 
-/* LAYOUT */
 .showcase-product-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
 }
 
 @media (min-width: 768px) {
-  .showcase-product-container {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .showcase-deck-wrapper,
-  .showcase-card-info {
-    flex: 1;
-  }
+  .showcase-product-container {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+  }
 }
 
-/* SWIPE DECK WRAPPER */
 .showcase-deck-wrapper {
-  max-width: 420px;
-  margin: 0 auto;
-  position: relative;
+  flex-shrink: 0;
 }
 
-/* TEXT BLOCK */
 .showcase-card-info {
-  padding: 1rem;
+  max-width: 500px;
+  text-align: left;
+  color: #333;
+}
+
+.showcase-card-info h3 {
+  font-size: 1.75rem;
+  margin-bottom: 12px;
 }
 
 .showcase-slogan {
-  font-style: italic;
-  margin-bottom: 1rem;
+  font-style: italic;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 16px;
 }
 
 .showcase-story {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  color: #444;
+}
+
+.showcase-description {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.showcase-notes-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .note-pill {
-  display: inline-block;
-  padding: 0.3rem 0.6rem;
-  background: #eee;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  margin: 0.25rem;
+  background-color: #eee;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
-/* NAVIGATION */
 .showcase-nav-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1.5rem;
-  gap: 1rem;
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .showcase-nav-controls button {
-  background: none;
-  border: 1px solid #ccc;
-  padding: 0.5rem 1rem;
-  font-size: 1.25rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background: #333;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.3s ease;
 }
 
 .showcase-nav-controls button:hover {
-  background-color: #f2f2f2;
+  background: #000;
 }
 
-/* DOTS */
 .showcase-dots {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .showcase-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background-color: #bbb;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ccc;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
 }
 
 .showcase-dot.active {
-  background-color: #333;
-}
-
-/* HIDE BUTTONS ON MOBILE */
-@media (max-width: 768px) {
-  .showcase-nav-controls button {
-    display: none;
-  }
+  background-color: #000;
 }
