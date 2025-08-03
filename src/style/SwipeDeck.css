@@ -19,7 +19,7 @@
   will-change: transform, opacity;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
   background: white;
   transition: transform 0.4s ease, opacity 0.4s ease; /* 👈 Must be here */
   touch-action: pan-y;
