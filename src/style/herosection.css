@@ -11,6 +11,7 @@
   color: #1f1f1f;
   gap: 50px;
   padding-top:100px;
+  min-height:550px;
 }
 
 .hero-content {
@@ -86,6 +87,9 @@
   .hero-section {
     flex-direction: column;
     padding: 4rem 6%;
+    padding6:100px;
+    align-items:center;
+    
   }
 
   .hero-title {
