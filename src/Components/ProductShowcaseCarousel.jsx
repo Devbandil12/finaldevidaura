@@ -1,7 +1,7 @@
 // ProductSwipeShowcase.jsx
 import React, { useContext, useRef, useState } from "react";
 import { ProductContext } from "../contexts/productContext";
-import SwipeDeck from "./SwipeDeck";
+import SwipeDeck from "./Swipedeck";
 import "../style/ProductSwipeShowcase.css";
 
 // Combined scent metadata
