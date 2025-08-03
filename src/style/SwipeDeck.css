@@ -1,5 +1,3 @@
-/* SwipeDeck.css */
-
 .swipe-deck {
   position: relative;
   width: 100%;
@@ -21,7 +19,7 @@
   overflow: hidden;
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
   background: white;
-  transition: transform 0.4s ease, opacity 0.4s ease; /* 👈 Must be here */
+  transition: transform 0.4s ease, opacity 0.4s ease;
   touch-action: pan-y;
   user-select: none;
 }
@@ -34,11 +32,11 @@
   pointer-events: none;
 }
 
-/* Optional: Animate depth for visible cards */
 .swipe-card:nth-child(n+2) {
   transform: scale(0.95) translateY(10px);
   opacity: 0.9;
 }
+
 .swipe-card:nth-child(n+3) {
   transform: scale
 (0.9) translateY(20px);
