@@ -17,7 +17,7 @@ import Adminpannel from "./Components/Adminpanel";
 import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
-import DualMarquee from "./components/DualMarquee";
+import DualMarquee from "./Components/DualMarquee";
 
 // Styles
 import "./style/adminPanel.css";
