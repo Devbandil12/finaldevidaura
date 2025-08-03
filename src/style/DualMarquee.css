@@ -1,7 +1,7 @@
 .dual-marquee-container {
   background-color: white;
   padding: 1.5rem 0;
-  font-size: 1.875rem; /* base font size */
+  font-size: 1.5rem; /* base font size */
   font-weight: 500;
   color: #2d2d2d;
   user-select: none;
@@ -52,27 +52,27 @@
 .highlight-red {
   background-color: #dc2626;
   color: white;
-  padding: 0 0.25rem;
+  padding: 2px 10px ;
   border-radius: 9999px;
 }
 
 .highlight-green {
   background-color: #16a34a;
   color: white;
-  padding: 0 0.25rem;
+  padding: 2px 10px ;
   border-radius: 9999px;
 }
 
 .highlight-purple {
   background-color: #7c3aed;
   color: white;
-  padding: 0 0.25rem;
+  padding: 2px 10px ;
   border-radius: 9999px;
 }
 
 .highlight-yellow {
   background-color: #facc15;
   color: black;
-  padding: 0 0.25rem;
+  padding: 2px 10px ;
   border-radius: 9999px;
 }
