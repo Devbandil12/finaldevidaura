@@ -13,19 +13,19 @@
 /* Responsive font sizes */
 @media (min-width: 640px) {
   .dual-marquee-container {
-    font-size: 1rem; /* sm+ */
+    font-size: 2rem; /* sm+ */
   }
 }
 
 @media (min-width: 768px) {
   .dual-marquee-container {
-    font-size: 1.125rem; /* md+ */
+    font-size: 2.125rem; /* md+ */
   }
 }
 
 @media (min-width: 1024px) {
   .dual-marquee-container {
-    font-size: 1.25rem; /* lg+ */
+    font-size: 2.5rem; /* lg+ */
   }
 }
 
