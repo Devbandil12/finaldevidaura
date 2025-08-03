@@ -1,7 +1,7 @@
 // SwipeDeck.jsx
 import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from "react";
 import { gsap } from "gsap";
-import "./SwipeDeck.css";
+import "../style/SwipeDeck.css";
 
 const SwipeDeck = forwardRef(({ items, onChange }, ref) => {
   const [stack, setStack] = useState(items);
