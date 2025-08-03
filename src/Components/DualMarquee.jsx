@@ -46,16 +46,12 @@ export default function DualMarquee() {
       repeat: -1,
     });
 
-    bottomTween.current = gsap.fromTo(
-  bottomEl,
-  { x: -bottomWidth / 2 }, // Start from off-screen left
-  {
-    x: bottomWidth / 2,    // Move to off-screen right
-    duration: 90,
-    ease: "linear",
-    repeat: -1,
-  }
-);
+    bottomTween.current = gsap.to(bottomEl, {
+  x: -bottomWidth / 2,
+  duration: 45, // same speed as top
+  ease: "linear",
+  repeat: -1,
+});
 
 
     return () => {
@@ -114,8 +110,8 @@ export default function DualMarquee() {
         onTouchEnd={resumeBottom}
         onTouchCancel={resumeBottom}
       >
-        <div ref={bottomRef} className="marquee-content reverse">
-          {[...marqueeLines, ...marqueeLines].map((line, idx) => (
+        <div ref={bottomRef} className="marquee-content ">
+          {[...marqueeLines, ...marqueeLines].reverse().map((line, idx) => (
             <div key={`bottom-${idx}`} className="marquee-line">
               {renderLine(line)}
             </div>
