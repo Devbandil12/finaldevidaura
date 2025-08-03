@@ -23,8 +23,8 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  max-width: 420px;
-  height: 520px;
+  max-width: 250px;
+  height: 320px;
   perspective: 1200px;
   overflow: visible;
 }
