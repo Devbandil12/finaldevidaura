@@ -110,7 +110,7 @@ export default function DualMarquee() {
         onTouchCancel={resumeBottom}
       >
         <div ref={bottomRef} className="marquee-content">
-          {[...marqueeLines, ...marqueeLines].map((line, idx) => (
+          {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
             <div key={`bottom-${idx}`} className="marquee-line">
               {renderLine(line)}
             </div>
