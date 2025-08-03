@@ -88,6 +88,7 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
           transform: `scale(${1 - offset * 0.05}) translateY(${offset * 10}px) rotate(${offset * 2}deg)`,
           opacity: offset > 2 ? 0 : 1,
           pointerEvents: isTop ? "auto" : "none",
+position: 'absolute'
         };
 
         return (
