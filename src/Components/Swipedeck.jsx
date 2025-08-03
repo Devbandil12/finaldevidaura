@@ -9,52 +9,67 @@ import { gsap } from "gsap";
 import "../style/SwipeDeck.css";
 
 const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
-  const [current, setCurrent] = useState(1); // start on real first
-  const deck = useRef();
+  const [current, setCurrent] = useState(0);
+  const cardRefs = useRef([]);
   const isAnimating = useRef(false);
-  const transitionTime = 0.4;
 
-  const extended = [items[items.length - 1], ...items, items[0]];
-
+  // Expose controls to parent
   useImperativeHandle(ref, () => ({
-    swipeLeft: () => slideTo(current + 1),
-    swipeRight: () => slideTo(current - 1),
-    goToIndex: (i) => slideTo(i + 1),
+    swipeLeft: () => handleSwipe("left"),
+    swipeRight: () => handleSwipe("right"),
+    goToIndex: (i) => jumpTo(i),
   }));
 
   useEffect(() => {
-    if (onChange) onChange(toRealIndex(current));
+    if (onChange) onChange(current);
   }, [current]);
 
-  const toRealIndex = (i) =>
-    i === 0 ? items.length - 1 : i === items.length + 1 ? 0 : i - 1;
+  const getRealIndex = (index) =>
+    ((index % items.length) + items.length) % items.length;
 
-  const slideTo = (target) => {
-    if (isAnimating.current) return;
+  const handleSwipe = (dir) => {
+    if (isAnimating.current || items.length <= 1) return;
+
+    const isLeft = dir === "left";
+    const nextIdx = getRealIndex(current + (isLeft ? 1 : -1));
+    const card = cardRefs.current[current];
+
+    if (!card) return;
+
     isAnimating.current = true;
 
-    gsap.to(deck.current, {
-      x: `-${target * 100}%`,
-      duration: transitionTime,
-      ease: "power3.inOut",
+    gsap.to(card, {
+      x: isLeft ? -window.innerWidth * 1.2 : window.innerWidth * 1.2,
+      y: -30,
+      rotation: isLeft ? -15 : 15,
+      duration: 0.45,
+      ease: "power3.in",
       onComplete: () => {
-        let idx = target;
-        if (target === 0) idx = items.length;
-        if (target === items.length + 1) idx = 1;
-        setCurrent(idx);
-        gsap.set(deck.current, { x: `-${idx * 100}%`, clearProps: "transition" });
+        gsap.set(card, {
+          x: 0,
+          y: 0,
+          rotation: 0,
+        });
+        setCurrent(nextIdx);
         isAnimating.current = false;
       },
     });
   };
 
-  // Touch swipe support
+  const jumpTo = (index) => {
+    if (index === current || isAnimating.current) return;
+    const direction = index > current ? "left" : "right";
+    handleSwipe(direction);
+    setTimeout(() => setCurrent(index), 450);
+  };
+
+  // Touch handling
   const startX = useRef(0);
   const handleTouchStart = (e) => (startX.current = e.touches[0].clientX);
   const handleTouchEnd = (e) => {
     const dx = e.changedTouches[0].clientX - startX.current;
-    if (dx < -50) slideTo(current + 1);
-    else if (dx > 50) slideTo(current - 1);
+    if (dx < -50) handleSwipe("left");
+    else if (dx > 50) handleSwipe("right");
   };
 
   return (
@@ -63,16 +78,28 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div
-        className="swipe-deck"
-        ref={deck}
-        style={{ x: `-${current * 100}%` }}
-      >
-        {extended.map((item, idx) => (
-          <div className="swipe-card" key={idx}>
+      {items.map((item, i) => {
+        const realIdx = getRealIndex(i);
+        const offset = getRealIndex(i - current);
+        const isTop = i === current;
+
+        let style = {
+          zIndex: items.length - offset,
+          transform: `scale(${1 - offset * 0.05}) translateY(${offset * 10}px) rotate(${offset * 2}deg)`,
+          opacity: offset > 2 ? 0 : 1,
+          pointerEvents: isTop ? "auto" : "none",
+        };
+
+        return (
+          <div
+            key={i}
+            className="swipe-card"
+            ref={(el) => (cardRefs.current[i] = el)}
+            style={style}
+          >
             <img
               src={item.imageurl}
-              alt={item.name || "Product Image"}
+              alt={item.name || "Fragrance Image"}
               className="swipe-card-image"
               loading="lazy"
               onError={(e) => {
@@ -81,8 +108,8 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
               }}
             />
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 });
