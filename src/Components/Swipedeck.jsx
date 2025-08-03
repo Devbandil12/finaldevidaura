@@ -74,7 +74,7 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
 
   return (
     <div
-      className="swipe-deck-container"
+      className="swipe-deck"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
