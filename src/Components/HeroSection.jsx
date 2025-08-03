@@ -108,24 +108,13 @@ const HeroSection = () => {
   return (
     <section className="hero-section">
       <div className="hero-content">
-        <h1 className="hero-title" ref={titleRef}>
-          DEVIDAURA
-        </h1>
+     
 
-        <p className="hero-slogan" ref={sloganRef}></p>
+        <h1 className="hero-slogan" ref={sloganRef}></h1>
 
         <div className="hero-cta" ref={buttonRef}>
           <button className="shop-btn">Explore Collection</button>
         </div>
-      </div>
-
-      <div className="hero-image-wrapper" ref={imageRef}>
-        <img
-          src={BottleImage}
-          alt="Perfume Bottle"
-          className="perfume-image"
-          loading="lazy"
-        />
       </div>
     </section>
   );
