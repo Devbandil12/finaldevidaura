@@ -46,6 +46,7 @@
 
 .marquee-line {
   padding: 0.25rem 1rem;
+  word-spacing: 0.5rem;
 }
 
 /* Highlight styles */
