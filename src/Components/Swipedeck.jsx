@@ -78,42 +78,45 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {items.map((item, i) => {
-        const realIdx = getRealIndex(i);
-        let offset = getRealIndex(i - current);
-if (offset > Math.floor(items.length / 2)) {
-  offset = offset - items.length; // handle backward wrap
-}
-        const isTop = i === current;
+     {items.map((item, i) => {
+  const offset = (() => {
+    let raw = i - current;
+    if (raw > items.length / 2) return raw - items.length;
+    if (raw < -items.length / 2) return raw + items.length;
+    return raw;
+  })();
 
-        let style = {
-          zIndex: items.length - offset,
-          transform: `scale(${1 - offset * 0.05}) translateY(${offset * 10}px) rotate(${offset * 2}deg)`,
-          opacity: offset > 2 ? 0 : 1,
-          pointerEvents: isTop ? "auto" : "none",
-position: 'absolute'
-        };
+  const isTop = i === current;
 
-        return (
-          <div
-            key={i}
-            className="swipe-card"
-            ref={(el) => (cardRefs.current[i] = el)}
-            style={style}
-          >
-            <img
-              src={item.imageurl}
-              alt={item.name || "Fragrance Image"}
-              className="swipe-card-image"
-              loading="lazy"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/placeholder.jpg";
-              }}
-            />
-          </div>
-        );
-      })}
+  const style = {
+    zIndex: items.length - Math.abs(offset),
+    transform: `scale(${1 - Math.abs(offset) * 0.05}) translateY(${Math.abs(offset) * 10}px) rotate(${offset * 2}deg)`,
+    opacity: Math.abs(offset) > 2 ? 0 : 1,
+    pointerEvents: isTop ? "auto" : "none",
+    position: "absolute",
+  };
+
+  return (
+    <div
+      key={i}
+      className={`swipe-card ${isTop ? "active" : ""}`}
+      ref={(el) => (cardRefs.current[i] = el)}
+      style={style}
+    >
+      <img
+        src={item.imageurl}
+        alt={item.name || "Fragrance Image"}
+        className="swipe-card-image"
+        loading="lazy"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = "/placeholder.jpg";
+        }}
+      />
+    </div>
+  );
+})}
+
     </div>
   );
 });
