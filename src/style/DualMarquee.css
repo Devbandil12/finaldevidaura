@@ -45,7 +45,7 @@
 }
 
 .marquee-content.reverse {
-  flex-direction: row;
+  flex-direction: row-reverse;
 }
 
 .marquee-line {
