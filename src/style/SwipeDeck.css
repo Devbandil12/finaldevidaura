@@ -1,10 +1,6 @@
-/* SwipeDeck.css */
+* SwipeDeck.css */
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-.swipe-deck-container {
+.swipe-deck {
   position: relative;
   width: 100%;
   max-width: 420px;
@@ -12,13 +8,6 @@
   margin: 0 auto;
   perspective: 1200px;
   overflow: visible;
-}
-
-@media (max-width: 768px) {
-  .swipe-deck-container {
-    height: 400px;
-    max-width: 100%;
-  }
 }
 
 .swipe-card {
@@ -30,20 +19,11 @@
   will-change: transform, opacity;
   border-radius: 18px;
   overflow: hidden;
-  background-color: white;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  transition: transform 0.35s ease, opacity 0.35s ease;
+  background: white;
+  transition: box-shadow 0.3s ease;
   touch-action: pan-y;
   user-select: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  transform-origin: center;
-}
-
-.swipe-card.active {
-  pointer-events: auto;
 }
 
 .swipe-card img {
@@ -52,5 +32,16 @@
   object-fit: cover;
   display: block;
   pointer-events: none;
-  border-radius: inherit;
 }
+
+/* Optional: Animate depth for visible cards */
+.swipe-card:nth-child(n+2) {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0.9;
+}
+.swipe-card:nth-child(n+3) {
+  transform: scale(0.9) translateY(20px);
+  opacity: 0.8;
+}
+
+
