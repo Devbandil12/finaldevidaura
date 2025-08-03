@@ -1,7 +1,6 @@
-// ProductSwipeShowcase.jsx
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { ProductContext } from "../contexts/productContext";
-import SwipeDeck from "./Swipedeck";
+import SwipeDeck from "./SwipeDeck";
 import "../style/ProductSwipeShowcase.css";
 
 // Combined scent metadata
@@ -51,44 +50,51 @@ const scentDetails = {
     ]
   }
 };
+
 const normalize = (str) => str?.trim().toUpperCase();
 
 export default function ProductSwipeShowcase() {
   const { products } = useContext(ProductContext);
   const deckRef = useRef();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  const currentProduct = products[activeIndex];
-  const scent = scentDetails[normalize(currentProduct.name)];
+  const product = products[activeIdx];
+  const scent = scentDetails[normalize(product.name)];
 
-  const isMobile = window.innerWidth <= 768;
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   return (
     <section className="showcase-product-section">
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
-
-      <SwipeDeck items={products} onChange={setActiveIndex} ref={deckRef} />
-
-      <div className="showcase-product-info">
-        <h3>{currentProduct.name}</h3>
-        {scent ? (
-          <>
-            <p className="showcase-slogan">“{scent.slogan}”</p>
-            <p className="showcase-story">{scent.story}</p>
-            <div className="showcase-notes-pills">
-              {scent.notes.map((n, i) => <span key={i} className="note-pill">{n}</span>)}
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="showcase-description">{currentProduct.description}</p>
-            <div className="showcase-notes-pills">
-              {(currentProduct.fragranceNotes || "").split(",").map((n, i) => (
-                <span key={i} className="note-pill">{n.trim()}</span>
-              ))}
-            </div>
-          </>
-        )}
+      <div className="showcase-product-container">
+        <div className="showcase-deck-wrapper">
+          <SwipeDeck
+            items={products}
+            onChange={setActiveIdx}
+            ref={deckRef}
+          />
+        </div>
+        <div className="showcase-card-info">
+          <h3>{product.name}</h3>
+          {scent ? (
+            <>
+              <p className="showcase-slogan">“{scent.slogan}”</p>
+              <p className="showcase-story">{scent.story}</p>
+              <div className="showcase-notes-pills">
+                {scent.notes.map((n, i) => (
+                  <span key={i} className="note-pill">{n}</span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="showcase-description">{product.description}</p>
+          )}
+        </div>
       </div>
 
       <div className="showcase-nav-controls">
@@ -99,7 +105,7 @@ export default function ProductSwipeShowcase() {
               {products.map((_, i) => (
                 <span
                   key={i}
-                  className={`showcase-dot ${i === activeIndex ? 'active' : ''}`}
+                  className={`showcase-dot ${i === activeIdx ? "active" : ""}`}
                   onClick={() => deckRef.current.goToIndex(i)}
                 />
               ))}
@@ -112,7 +118,7 @@ export default function ProductSwipeShowcase() {
             {products.map((_, i) => (
               <span
                 key={i}
-                className={`showcase-dot ${i === activeIndex ? 'active' : ''}`}
+                className={`showcase-dot ${i === activeIdx ? "active" : ""}`}
                 onClick={() => deckRef.current.goToIndex(i)}
               />
             ))}
