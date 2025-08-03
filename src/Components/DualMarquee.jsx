@@ -51,7 +51,7 @@ export default function DualMarquee() {
   { x: -bottomWidth / 2 }, // Start from off-screen left
   {
     x: bottomWidth / 2,    // Move to off-screen right
-    duration: 30,
+    duration: 40,
     ease: "linear",
     repeat: -1,
   }
