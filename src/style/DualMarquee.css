@@ -1,13 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap');
+
+
 .dual-marquee-container {
   background-color: white;
   padding: 1.5rem 0;
-  font-size: 1.5rem; /* base font size */
-  font-weight: 600;
+  font-size: 1.7rem; /* base font size */
+  font-weight: 700;
   color: #2d2d2d;
   user-select: none;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  font-family: 'Dancing Script', cursive;
 }
 
 /* Responsive font sizes */
