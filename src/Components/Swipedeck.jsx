@@ -1,69 +1,88 @@
-// SwipeDeck.jsx
-import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
 import { gsap } from "gsap";
 import "../style/SwipeDeck.css";
 
-const SwipeDeck = forwardRef(({ items, onChange }, ref) => {
-  const [stack, setStack] = useState(items);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const cardRefs = useRef([]);
+const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
+  const [current, setCurrent] = useState(1); // start on real first
+  const deck = useRef();
+  const isAnimating = useRef(false);
+  const transitionTime = 0.4;
+
+  const extended = [items[items.length - 1], ...items, items[0]];
 
   useImperativeHandle(ref, () => ({
-    swipeLeft: () => handleSwipe("left"),
-    swipeRight: () => handleSwipe("right"),
-    goToIndex: (index) => handleGoTo(index),
+    swipeLeft: () => slideTo(current + 1),
+    swipeRight: () => slideTo(current - 1),
+    goToIndex: (i) => slideTo(i + 1),
   }));
 
   useEffect(() => {
-    if (onChange) onChange(currentIndex);
-  }, [currentIndex]);
+    if (onChange) onChange(toRealIndex(current));
+  }, [current]);
 
-  const handleSwipe = (direction) => {
-    if (currentIndex >= stack.length || currentIndex < 0) return;
+  const toRealIndex = (i) =>
+    i === 0 ? items.length - 1 : i === items.length + 1 ? 0 : i - 1;
 
-    const card = cardRefs.current[currentIndex];
-    if (!card) return;
+  const slideTo = (target) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
 
-    const xOffset = direction === "left" ? -window.innerWidth : window.innerWidth;
-
-    gsap.to(card, {
-      x: xOffset,
-      rotation: direction === "left" ? -15 : 15,
-      duration: 0.5,
-      ease: "power3.in",
+    gsap.to(deck.current, {
+      x: `-${target * 100}%`,
+      duration: transitionTime,
+      ease: "power3.inOut",
       onComplete: () => {
-        const newIndex = direction === "left" ? currentIndex + 1 : currentIndex - 1;
-        setCurrentIndex(Math.max(0, Math.min(newIndex, stack.length - 1)));
-        gsap.set(card, { x: 0, rotation: 0 });
+        let idx = target;
+        if (target === 0) idx = items.length;
+        if (target === items.length + 1) idx = 1;
+        setCurrent(idx);
+        gsap.set(deck.current, { x: `-${idx * 100}%`, clearProps: "transition" });
+        isAnimating.current = false;
       },
     });
   };
 
-  const handleGoTo = (index) => {
-    if (index >= 0 && index < stack.length) {
-      setCurrentIndex(index);
-    }
-  };
-
-  const handleTouchStart = useRef(0);
+  // Touch swipe support
+  const startX = useRef(0);
+  const handleTouchStart = (e) => (startX.current = e.touches[0].clientX);
   const handleTouchEnd = (e) => {
-    const dx = e.changedTouches[0].clientX - handleTouchStart.current;
-    if (dx < -50) handleSwipe("left");
-    else if (dx > 50) handleSwipe("right");
+    const dx = e.changedTouches[0].clientX - startX.current;
+    if (dx < -50) slideTo(current + 1);
+    else if (dx > 50) slideTo(current - 1);
   };
 
   return (
-    <div className="swipe-deck" onTouchStart={(e) => handleTouchStart.current = e.touches[0].clientX} onTouchEnd={handleTouchEnd}>
-      {stack.map((item, i) => (
-        <div
-          key={i}
-          className="swipe-card"
-          ref={el => cardRefs.current[i] = el}
-          style={{ zIndex: stack.length - i, opacity: i < currentIndex ? 0 : 1 }}
-        >
-          <img src={item.imageurl} alt={item.name} />
-        </div>
-      ))}
+    <div
+      className="swipe-deck-container"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div
+        className="swipe-deck"
+        ref={deck}
+        style={{ x: `-${current * 100}%` }}
+      >
+        {extended.map((item, idx) => (
+          <div className="swipe-card" key={idx}>
+            <img
+              src={item.imageurl}
+              alt={item.name || "Product Image"}
+              className="swipe-card-image"
+              loading="lazy"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/placeholder.jpg";
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 });
