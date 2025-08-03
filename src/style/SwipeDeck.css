@@ -9,19 +9,19 @@
 }
 
 .swipe-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 80%;
-  height: 50%;
-  will-change: transform, opacity;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-  background: white;
-  transition: transform 0.4s ease, opacity 0.4s ease;
-  touch-action: pan-y;
-  user-select: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80%;
+  height: 50%;
+  will-change: transform, opacity;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  background: white;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .swipe-card img {
