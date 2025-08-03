@@ -38,7 +38,6 @@
 }
 
 .swipe-card:nth-child(n+3) {
-  transform: scale
-(0.9) translateY(20px);
+  transform: scale(0.9) translateY(20px);
   opacity: 0.8;
 }
