@@ -179,7 +179,7 @@ const Products = () => {
 
   return (
     <>
-      <section className="py-20 flex flex-col items-center">
+      <section className="py-20 flex flex-col items-center bg-white">
         <h1 id="shop-section" className="product-heading">Shop The Luxury</h1>
 
         {/* Products Container */}
