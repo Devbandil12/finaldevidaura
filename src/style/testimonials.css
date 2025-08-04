@@ -130,14 +130,14 @@
 }
 
 .feedback {
-  font-style: italic;
-  color: #333;
-  margin-top: 0.3rem;
-  line-height: 1.4;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  font-style: italic;
+  color: #333;
+  margin-top: 0.3rem;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
 }
 
 
