@@ -4,7 +4,8 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Quote, Star, StarOff } from "lucide-react";
 
-const API_URL = "https://your-render-app.onrender.com/api/testimonials";
+
+const API_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
 
 gsap.registerPlugin(ScrollTrigger);
 
