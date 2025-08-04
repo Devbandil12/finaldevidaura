@@ -436,7 +436,7 @@ const AdminPanel = () => {
                           />
                         </td>
                         <td>{product.name}</td>
-                        <td>â‚¹{product.oprice}</td>
+                        <td>₹{product.oprice}</td>
                         <td>{product.discount}</td>
                         <td>{product.size}</td>
                         <td>
@@ -560,7 +560,7 @@ const AdminPanel = () => {
                 className="admin-btn add-btn"
                 onClick={() =>
                   setEditingCoupon({
-                    // no id â†’ new coupon
+                    // no id → new coupon
                     code: "",
                     discountType: "percent",
                     discountValue: 0,
@@ -584,7 +584,7 @@ const AdminPanel = () => {
                     <th>Code</th>
                     <th>Type</th>
                     <th>Value</th>
-                    <th>Min â‚¹</th>
+                    <th>Min ₹</th>
                     <th>Min Items</th>
                     <th>Description</th>
                     <th>Max Usage/User</th>
@@ -623,7 +623,7 @@ const AdminPanel = () => {
                       <td>
                         <input
                           type="number"
-                          placeholder="Min â‚¹"
+                          placeholder="Min ₹"
                           value={editingCoupon.minOrderValue ?? 0}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
                         />
@@ -685,13 +685,13 @@ const AdminPanel = () => {
                       <td>
                         {c.discountType === "percent"
                           ? `${c.discountValue}%`
-                          : `â‚¹${c.discountValue}`}
+                          : `₹${c.discountValue}`}
                       </td>
-                      <td>â‚¹{c.minOrderValue}</td>
+                      <td>₹{c.minOrderValue}</td>
                       <td>{c.minItemCount}</td>
                       <td>{c.description}</td>
-                      <td>{c.maxUsagePerUser ?? "âˆž"}</td>
-                      <td>{c.firstOrderOnly ? "âœ…" : "âŒ"}</td>
+                      <td>{c.maxUsagePerUser ?? "∞"}</td>
+                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
                       <td>
                         <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
                           Edit
@@ -753,7 +753,7 @@ const AdminPanel = () => {
                   <div key={order.orderId} className="order-card-admin">
                     <h3>Order #{order.orderId}</h3>
                     <p><strong>Date:</strong> {order.createdAt}</p>
-                    <p><strong>Total:</strong> â‚¹{order.totalAmount}</p>
+                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
                     <p><strong>Current Status:</strong></p>
 
                     {order.status === "Order Cancelled" ? (
@@ -839,7 +839,7 @@ const AdminPanel = () => {
                         {user.orders.map((order) => (
                           <div key={order.orderId} className="user-order">
                             <span>
-                              Order #{order.orderId} - â‚¹{order.totalAmount} -{" "}
+                              Order #{order.orderId} - ₹{order.totalAmount} -{" "}
                               {order.status}
                             </span>
                           </div>
@@ -910,13 +910,13 @@ const OrderDetailsPopup = ({ order, onClose }) => {
   return (
     <div className="modal-overlay-chamkila">
       <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">Ã—</button>
+        <button onClick={onClose} className="close-btn-tata">×</button>
         <h2>Order Details (#{order.orderId})</h2>
         <p><strong>User Name:</strong> {order.userName}</p>
         <p><strong>Phone:</strong> {order.phone}</p>
         <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> â‚¹{order.totalAmount}</p>
+        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
         <p><strong>Status:</strong> {order.status}</p>
         <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
         <p><strong>Products:</strong></p>
@@ -924,7 +924,7 @@ const OrderDetailsPopup = ({ order, onClose }) => {
           {(order.products || []).map(p => (
             <li key={p.productId}>
               <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - â‚¹{p.price}
+              {p.productName} (x{p.quantity}) - ₹{p.price}
             </li>
           ))}
         </ul>
@@ -933,7 +933,7 @@ const OrderDetailsPopup = ({ order, onClose }) => {
           <div>
             <h3>Refund Details</h3>
             <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
             <p><strong>Refund Status:</strong> {order.refund.status}</p>
             <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
             <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
