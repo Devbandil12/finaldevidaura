@@ -18,7 +18,7 @@ import ContactUs from "./Components/ContactUs";
 import CheckoutGuard from "./CheckoutGuard";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
-
+import TestimonialsSection from "./Components/TestimonialsSection";
 // Styles
 import "./style/adminPanel.css";
 
@@ -132,6 +132,7 @@ const App = () => {
                             wishlist={wishlist}
                             setWishlist={setWishlist}
                           />
+<TestimonialsSection />
                         </>
                       }
                     />
