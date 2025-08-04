@@ -78,14 +78,23 @@ export default function TestimonialsSection() {
   };
 
   const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, avatar: reader.result }));
-    };
-    reader.readAsDataURL(file);
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // 💡 Check size (in bytes) — 2MB limit here
+  const maxSize = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxSize) {
+    alert("Image is too large. Please upload an image under 2MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setForm((prev) => ({ ...prev, avatar: reader.result }));
   };
+  reader.readAsDataURL(file);
+};
+
 
   return (
     <section className="testimonial-section">
