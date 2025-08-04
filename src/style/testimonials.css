@@ -19,7 +19,6 @@
   overflow: hidden;
   width: 100%;
   margin: 2rem 0;
-  position: relative;
 }
 
 .marquee-track {
@@ -77,12 +76,10 @@
   height: 300px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 0.75rem;
   transition: transform 0.3s ease;
-  word-break: break-word;
-  white-space: normal;
-  overflow: hidden;
+  word-break: break-word;     
+  white-space: normal;     
 }
 
 .testimonial-card:hover {
@@ -134,10 +131,6 @@
   overflow-wrap: break-word;
   white-space: normal;
   max-width: 100%;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* === Feedback Form === */
@@ -191,6 +184,36 @@
   resize: vertical;
 }
 
+.star-selector span {
+  font-size: 1.5rem;
+  color: #facc15;
+  cursor: pointer;
+}
+
+.submit-button {
+  background: #008080;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #006666;
+}
+
+.char-counter {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.25rem;
+  align-self: flex-end;
+  padding-right: 0.5rem;
+}
+
+
 /* === Star Selector === */
 .star-selector {
   display: flex;
@@ -198,21 +221,6 @@
   justify-content: center;
   align-items: center;
   margin-top: 0.5rem;
-}
-
-.star-selector span {
-  font-size: 1.5rem;
-  color: #facc15;
-  cursor: pointer;
-}
-
-/* === Character Counter === */
-.char-counter {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 0.25rem;
-  align-self: flex-end;
-  padding-right: 0.5rem;
 }
 
 /* === Image Upload === */
@@ -234,7 +242,16 @@
   font-size: 0.9rem;
 }
 
-.file-upload input[type="file"]::-webkit-file-upload-button,
+.file-upload input[type="file"]::-webkit-file-upload-button {
+  background: #008080;
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
 .file-upload input[type="file"]::file-selector-button {
   background: #008080;
   color: white;
@@ -245,47 +262,11 @@
   font-weight: 500;
 }
 
-/* === Thank You Popup === */
-.thank-you-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  padding: 1.5rem 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #008080;
-  z-index: 10000;
-}
-
-/* === Submit Button === */
-.submit-button {
-  background: #008080;
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.submit-button:hover {
-  background: #006666;
-}
-
 /* === Responsive === */
 @media (max-width: 768px) {
+
   .feedback-form input,
   .feedback-form textarea {
     max-width: 90%;
-  }
-
-  .testimonial-card {
-    width: 250px;
-    height: 300px;
   }
 }
