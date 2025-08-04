@@ -171,3 +171,17 @@
     max-width: 90%;
   }
 }
+
+.marquee-row {
+  display: flex;
+  flex-direction: row;     /* Ensure it's row-wise */
+  flex-wrap: nowrap;       /* Prevent wrapping to column */
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 1rem 0;
+  opacity: 1;
+  transform: none;
+  transition: all 0.6s ease-out;
+  white-space: nowrap;     /* Force horizontal layout */
+}
