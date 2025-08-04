@@ -88,7 +88,7 @@ export default function TestimonialsSection() {
     reader.readAsDataURL(file);
   };
 
-  const maxTextLength = 240;
+  const maxTextLength = 220;
 
   return (
     <section className="testimonial-section">
