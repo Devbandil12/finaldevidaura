@@ -1047,15 +1047,16 @@ const AdminPanel = () => {
                 )}
               </div>
 
-              {/* Order Details Modal */}
+              
+            </div>
+          )}
+{/* Order Details Modal */}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
                   onClose={() => setSelectedOrder(null)}
                 />
               )}
-            </div>
-          )}
 
           {/* Users Tab */}
           {activeTab === "users" && (
