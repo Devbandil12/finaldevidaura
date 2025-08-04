@@ -1,3 +1,6 @@
+/* ============================
+   Testimonial Section Layout
+============================ */
 .testimonial-section {
   background: #fefefe;
   padding: 4rem 1rem;
@@ -18,7 +21,9 @@
   color: #222;
 }
 
-/* Marquee Row Animation */
+/* ============================
+   Marquee Row Animation
+============================ */
 .marquee-row {
   display: flex;
   flex-direction: row;
@@ -28,15 +33,18 @@
   scroll-behavior: smooth;
   white-space: nowrap;
   padding: 1rem 0;
-  opacity: 0;
-  transform: translateY(50px);
+  opacity: 0; /* used for fade-in effect */
+  transform: translateY(50px); /* used for slide-up animation */
   transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
 
 .marquee-row:hover {
-  animation-play-state: paused;
+  animation-play-state: paused; /* Pause animation on hover */
 }
 
+/* ============================
+   Testimonial Card Styles
+============================ */
 .testimonial-card {
   flex: 0 0 auto;
   min-width: 280px;
@@ -50,7 +58,7 @@
 }
 
 .testimonial-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px); /* subtle lift effect */
 }
 
 .avatar {
@@ -74,12 +82,12 @@
 }
 
 .star-rating span {
-  color: #facc15;
+  color: #facc15; /* yellow for filled stars */
   font-size: 1.1rem;
 }
 
 .star-rating .empty {
-  color: #ddd;
+  color: #ddd; /* light gray for empty stars */
 }
 
 .testimonial-name {
@@ -93,7 +101,9 @@
   color: #888;
 }
 
-/* Feedback button and form */
+/* ============================
+   Feedback Button and Form
+============================ */
 .feedback-button {
   margin-top: 2rem;
   background: #111;
@@ -118,7 +128,7 @@
 
 .feedback-form-wrapper.slide-down {
   max-height: 1000px;
-  padding-top: 1.5rem;
+  padding-top: 1.5rem; /* slide-down effect */
 }
 
 .feedback-form {
@@ -164,15 +174,16 @@
   background: #006666;
 }
 
-/* Responsive Styles */
+/* ============================
+   Responsive Styles
+============================ */
 @media (max-width: 768px) {
   .testimonial-card {
-    min-width: 80%;
+    min-width: 80%; /* take most of the screen on mobile */
   }
 
   .feedback-form input,
   .feedback-form textarea {
-    max-width: 90%;
+    max-width: 90%; /* better fit on small screens */
   }
 }
-
