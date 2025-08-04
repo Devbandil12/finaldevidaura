@@ -110,13 +110,14 @@ export default function DualMarquee() {
         onTouchEnd={resumeBottom}
         onTouchCancel={resumeBottom}
       >
-        <div ref={bottomRef} className="marquee-content reverse">
-          {[...marqueeLines, ...marqueeLines].reverse().map((line, idx) => (
-            <div key={`bottom-${idx}`} className="marquee-line">
-              {renderLine(line)}
-            </div>
-          ))}
-        </div>
+        <div ref={bottomRef} className="marquee-content mirrored">
+  {[...marqueeLines, ...marqueeLines].map((line, idx) => (
+    <div key={`bottom-${idx}`} className="marquee-line unmirrored">
+      {renderLine(line)}
+    </div>
+  ))}
+</div>
+
       </div>
     </div>
   );
