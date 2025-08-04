@@ -1,161 +1,126 @@
+// src/Components/HeroSection.jsx
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
+import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 const HeroSection = () => {
-  const heroRef = useRef(null);
-  const titleRef = useRef(null);
-  const subtitleRef = useRef(null);
-  const ctaRef = useRef(null);
-  const floatingElementsRef = useRef([]);
+  const titleRef = useRef(null);
+  const sloganRef = useRef(null);
+  const buttonRef = useRef(null);
+  const imageRef = useRef(null);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Set initial states
-      gsap.set([titleRef.current, subtitleRef.current, ctaRef.current], {
-        opacity: 0,
-        y: 50
-      });
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
 
-      // Main timeline
-      const tl = gsap.timeline();
+      // Animate Title
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: -30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
 
-      // Animate background gradient
-      tl.to(heroRef.current, {
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
-        duration: 2,
-        ease: "power2.inOut"
-      });
+      // Start typing effect
+      tl.add(() => typeSlogan(), "+=0.4");
 
-      // Animate title with typewriter effect
-      tl.to(titleRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power3.out"
-      }, "-=1.5");
+      // Button
+      tl.fromTo(
+        buttonRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+        "+=2.5"
+      );
 
-      // Add character-by-character animation
-      tl.from(titleRef.current.querySelectorAll(".char"), {
-        opacity: 0,
-        y: 20,
-        rotationX: -90,
-        stagger: 0.05,
-        duration: 0.8,
-        ease: "back.out(1.7)"
-      }, "-=0.8");
+      // Image
+      tl.fromTo(
+        imageRef.current,
+        { opacity: 0, scale: 0.95 },
+        { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
+        "-=0.4"
+      );
+    });
 
-      // Animate subtitle
-      tl.to(subtitleRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "power2.out"
-      }, "-=0.4");
+    return () => ctx.revert();
+  }, []);
 
-      // Animate CTA button
-      tl.to(ctaRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.6,
-        ease: "back.out(1.7)"
-      }, "-=0.2");
+  // Typing effect using GSAP only
+  const typeSlogan = () => {
+  const sloganElement = sloganRef.current;
 
-      // Floating elements animation
-      floatingElementsRef.current.forEach((el, index) => {
-        if (el) {
-          gsap.to(el, {
-            y: "random(-20, 20)",
-            x: "random(-15, 15)",
-            rotation: "random(-15, 15)",
-            duration: "random(2, 4)",
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-            delay: index * 0.2
-          });
-        }
-      });
+  const rawParts = [
+    { text: "Not seen, not heard — only ", highlight: false },
+    { text: "felt", highlight: true },
+    { text: "\n", highlight: false },
+    { text: "In every breath he ", highlight: false },
+    { text: "leaves", highlight: true },
+    { text: " behind.", highlight: false },
+  ];
 
-      // Continuous background animation
-      gsap.to(heroRef.current, {
-        backgroundPosition: "200% 200%",
-        duration: 10,
-        repeat: -1,
-        ease: "none"
-      });
+  let finalHTML = "";
+  let partIndex = 0;
 
-    });
+  const typeNextPart = () => {
+    if (partIndex >= rawParts.length) return;
 
-    return () => ctx.revert();
-  }, []);
+    const { text, highlight } = rawParts[partIndex];
+    const chars = text.split("");
+    let charIndex = 0;
+    let buffer = "";
 
-  // Split text into characters for animation
-  const splitText = (text) => {
-    return text.split('').map((char, index) => (
-      <span key={index} className="char" style={{ display: 'inline-block' }}>
-        {char === ' ' ? '\u00A0' : char}
-      </span>
-    ));
-  };
+    const typeChar = () => {
+      if (charIndex < chars.length) {
+        const char = chars[charIndex++];
+        if (char === "\n") {
+          buffer += "<br/>";
+        } else {
+          buffer += char;
+        }
 
-  const addToRefs = (el) => {
-    if (el && !floatingElementsRef.current.includes(el)) {
-      floatingElementsRef.current.push(el);
-    }
-  };
+        if (highlight) {
+          sloganElement.innerHTML = finalHTML + `<span class='highlight'>${buffer}</span>`;
+        } else {
+          sloganElement.innerHTML = finalHTML + buffer;
+        }
 
-  return (
-    <section ref={heroRef} className="hero-section">
-      {/* Floating decorative elements */}
-      <div className="floating-elements">
-        <div ref={addToRefs} className="floating-element element-1">✨</div>
-        <div ref={addToRefs} className="floating-element element-2">💫</div>
-        <div ref={addToRefs} className="floating-element element-3">🌟</div>
-        <div ref={addToRefs} className="floating-element element-4">✦</div>
-        <div ref={addToRefs} className="floating-element element-5">⭐</div>
-      </div>
+        setTimeout(typeChar, 30);
+      } else {
+        if (highlight) {
+          finalHTML += `<span class='highlight'>${buffer}</span>`;
+        } else {
+          finalHTML += buffer;
+        }
 
-      {/* Animated background particles */}
-      <div className="particles">
-        {Array.from({ length: 50 }, (_, i) => (
-          <div key={i} className={`particle particle-${i % 5}`}></div>
-        ))}
-      </div>
+        partIndex++;
+        setTimeout(typeNextPart, 150);
+      }
+    };
 
-      <div className="hero-content">
-        <h1 ref={titleRef} className="hero-title">
-          {splitText("Scent of Confidence")}
-        </h1>
-        
-        <p ref={subtitleRef} className="hero-subtitle">
-          Discover fragrances that define your essence.<br />
-          <span className="highlight-text">Bold. Memorable. Uniquely You.</span>
-        </p>
-        
-        <div ref={ctaRef} className="hero-cta">
-          <button className="cta-button primary">
-            <span>Explore Collection</span>
-            <div className="button-glow"></div>
-          </button>
-          <button className="cta-button secondary">
-            <span>Watch Story</span>
-          </button>
-        </div>
-      </div>
+    typeChar();
+  };
 
-      {/* Animated waves */}
-      <div className="waves">
-        <svg className="wave" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,50 C150,120 350,0 500,50 C650,100 850,0 1000,50 C1150,100 1200,50 1200,50 L1200,120 L0,120 Z"></path>
-        </svg>
-        <svg className="wave wave-2" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,70 C200,20 400,120 600,70 C800,20 1000,120 1200,70 L1200,120 L0,120 Z"></path>
-        </svg>
-      </div>
-    </section>
-  );
+  typeNextPart();
+};
+
+
+
+
+  return (
+    <section className="hero-section">
+      <div className="hero-content">
+     
+
+        <h1 className="hero-slogan" ref={sloganRef}></h1>
+
+        <div className="hero-cta" ref={buttonRef}>
+          <button className="shop-btn">Explore Collection</button>
+        </div>
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;
+
+
+
