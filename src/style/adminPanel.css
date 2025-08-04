@@ -345,6 +345,461 @@
   z-index: 10000;
 }
 
+/* ================================================================== */
+/*                          Analytics Styles                          */
+/* ================================================================== */
+
+.analytics-tab {
+  padding: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card h3 {
+  margin: 0 0 10px;
+  color: #666;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #000;
+  margin: 0;
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+}
+
+.chart-container {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h3 {
+  margin: 0 0 20px;
+  color: #333;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+}
+
+/* Status Chart */
+.status-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-label {
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.status-progress {
+  flex: 1;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.status-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.status-count {
+  min-width: 30px;
+  text-align: right;
+  font-weight: bold;
+}
+
+/* Top Products */
+.top-products {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-item {
+  display: grid;
+  grid-template-columns: 30px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.product-rank {
+  font-weight: bold;
+  color: #666;
+}
+
+.product-name {
+  font-weight: 500;
+}
+
+.product-quantity {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.product-revenue {
+  font-weight: bold;
+  color: #10b981;
+}
+
+/* Revenue Chart */
+.revenue-chart, .orders-chart {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  height: 200px;
+  padding: 20px 0;
+}
+
+.month-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.revenue-bar, .orders-bar {
+  width: 30px;
+  background: linear-gradient(to top, #000, #666);
+  border-radius: 3px 3px 0 0;
+  margin-bottom: 10px;
+  min-height: 5px;
+}
+
+.orders-bar {
+  background: linear-gradient(to top, #3b82f6, #93c5fd);
+}
+
+.month-label {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.revenue-value, .orders-value {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Refund Stats */
+.refund-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.refund-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+/* ================================================================== */
+/*                     Enhanced Order Styles                          */
+/* ================================================================== */
+
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.order-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.order-tabs button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.order-tabs button.active {
+  background: #000;
+  color: #fff;
+}
+
+.order-search input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 250px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card-admin {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.order-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.order-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-order-placed {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-processing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-shipped {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-delivered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-order-cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.order-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.order-details p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.refund-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.refund-info h4 {
+  margin: 0 0 10px;
+  color: #374151;
+}
+
+.refund-status {
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.order-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.status-update label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-update select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.view-details-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.view-details-btn:hover {
+  background: #2563eb;
+}
+
+.refund-btn {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.refund-btn:hover {
+  background: #dc2626;
+}
+
+.refund-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Modal Styles for Order Details */
+.modal-overlay-chamkila {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+}
+
+.modal-content-badshah {
+  background: #fff;
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 800px;
+  max-height: 90vh;
+  width: 90%;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-btn-tata {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.order-info-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.order-info-section:last-child {
+  border-bottom: none;
+}
+
+.order-info-section h3 {
+  margin: 0 0 15px;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.products-list .product-item {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.products-list .product-details {
+  flex: 1;
+}
+
+.products-list .product-details p {
+  margin: 2px 0;
+  color: #666;
+}
+
+/* Navigation Active State */
+.admin-nav button.active {
+  background-color: #333;
+  color: #fff;
+}
+
 /* Modal container styling */
 .modal {
   background-color: #fff;
@@ -661,7 +1116,7 @@
 .coupon-table th:nth-child(4),
 .coupon-table td:nth-child(4),
 .coupon-table th:nth-child(5),
-.coupon-table td:nth-child(5) { /* Min ₹ & Min Items */
+.coupon-table td:nth-child(5) { /* Min â‚¹ & Min Items */
   width: 10%;
   text-align: center;
 }
