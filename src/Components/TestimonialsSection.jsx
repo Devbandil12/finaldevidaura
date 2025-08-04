@@ -84,6 +84,9 @@ export default function TestimonialsSection() {
     reader.readAsDataURL(file);
   };
 
+
+const maxTextLength = 240;
+
   return (
     <section className="testimonial-section">
       <h2 className="testimonial-heading">What Our Customers Say</h2>
@@ -137,12 +140,17 @@ export default function TestimonialsSection() {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
-            <textarea
-              placeholder="Your Feedback"
-              value={form.text}
-              onChange={(e) => setForm({ ...form, text: e.target.value })}
-              required
-            />
+           <textarea
+  placeholder="Your Feedback"
+  value={form.text}
+  maxLength={maxTextLength}
+  onChange={(e) => setForm({ ...form, text: e.target.value })}
+  required
+/>
+<p className="char-counter">
+  {form.text.length}/{maxTextLength} characters
+</p>
+
             <div className="star-selector">
               {Array.from({ length: 5 }, (_, i) => (
                 <span
