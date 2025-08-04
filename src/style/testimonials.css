@@ -1,6 +1,4 @@
-/* ============================
-   Testimonial Section Layout
-============================ */
+/* === Section Wrapper === */
 .testimonial-section {
   background: #fefefe;
   padding: 4rem 1rem;
@@ -8,52 +6,77 @@
   position: relative;
 }
 
-.testimonial-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  text-align: center;
-}
-
 .testimonial-heading {
   font-size: 2rem;
   margin-bottom: 2rem;
   font-weight: bold;
   color: #222;
+  text-align: center;
 }
 
-/* ============================
-   Marquee Row Animation
-============================ */
-.marquee-row {
+/* === Marquee Wrapper === */
+.marquee-wrapper {
+  overflow: hidden;
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.marquee-track {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
   gap: 1.5rem;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  white-space: nowrap;
-  padding: 1rem 0;
-  opacity: 0;
-  transform: translateY(50px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  width: max-content;
+  align-items: center;
+  will-change: transform;
 }
 
-.marquee-row:hover {
+.scroll-left {
+  animation: scroll-left 25s linear infinite;
+}
+
+.scroll-right {
+  animation: scroll-right 25s linear infinite;
+}
+
+.marquee-track:hover {
   animation-play-state: paused;
 }
 
-/* ============================
-   Testimonial Card Styles
-============================ */
+.centered {
+  margin: 0 auto;
+  justify-content: center;
+}
+
+/* === Marquee Animations === */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* === Testimonial Card === */
 .testimonial-card {
   flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 320px;
   background: #fff;
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
-  text-align: left;
+  min-width: 280px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   transition: transform 0.3s ease;
 }
 
@@ -61,51 +84,52 @@
   transform: translateY(-5px);
 }
 
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .avatar {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 1rem;
 }
 
-.quote-icon {
-  font-size: 2rem;
-  color: #aaa;
-}
-
-.testimonial-text {
-  font-size: 1rem;
-  color: #444;
-  margin-bottom: 1rem;
-  min-height: 60px;
-}
-
-.star-rating span {
-  color: #facc15;
-  font-size: 1.1rem;
-}
-
-.star-rating .empty {
-  color: #ddd;
-}
-
-.testimonial-name {
+.name {
   font-weight: 600;
-  margin-top: 0.5rem;
-  color: #333;
+  color: #222;
+  font-size: 1rem;
 }
 
-.testimonial-title {
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rating-number {
   font-size: 0.85rem;
-  color: #888;
+  color: #444;
+  margin-left: 0.25rem;
 }
 
-/* ============================
-   Feedback Button and Form
-============================ */
+.title {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.feedback {
+  font-style: italic;
+  color: #333;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* === Feedback Form === */
 .feedback-button {
-  margin-top: 2rem;
+  margin: 2rem auto 1rem;
   background: #111;
   color: #fff;
   padding: 0.75rem 1.5rem;
@@ -114,6 +138,7 @@
   cursor: pointer;
   font-weight: 500;
   transition: background 0.3s ease;
+  display: block;
 }
 
 .feedback-button:hover {
@@ -174,9 +199,7 @@
   background: #006666;
 }
 
-/* ============================
-   Responsive Styles
-============================ */
+/* === Responsive === */
 @media (max-width: 768px) {
   .testimonial-card {
     min-width: 80%;
