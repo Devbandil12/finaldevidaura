@@ -21,6 +21,74 @@ import { UserContext } from "../contexts/UserContext";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 
+// OrderDetailsPopup component
+const OrderDetailsPopup = ({ order, onClose }) => {
+  return (
+    <div className="modal-overlay-chamkila">
+      <div className="modal-content-badshah">
+        <button onClick={onClose} className="close-btn-tata">Ã—</button>
+        <h2>Order Details (#{order.orderId})</h2>
+        
+        <div className="order-info-section">
+          <h3>Customer Information</h3>
+          <p><strong>Name:</strong> {order.userName}</p>
+          <p><strong>Phone:</strong> {order.phone}</p>
+          <p><strong>Email:</strong> {order.userEmail}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Order Information</h3>
+          <p><strong>Order ID:</strong> {order.orderId}</p>
+          <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
+          <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
+          <p><strong>Total Amount:</strong> â‚¹{order.totalAmount}</p>
+          <p><strong>Status:</strong> {order.status}</p>
+          <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Shipping Address</h3>
+          <p>{order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Products Ordered</h3>
+          <div className="products-list">
+            {(order.products || []).map(p => (
+              <div key={p.productId} className="product-item">
+                <img src={p.img} alt={p.productName} width="60" height="60" />
+                <div className="product-details">
+                  <p><strong>{p.productName}</strong></p>
+                  <p>Size: {p.size}ml</p>
+                  <p>Quantity: {p.quantity}</p>
+                  <p>Price: â‚¹{p.price} each</p>
+                  <p>Total: â‚¹{p.totalPrice}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {order.refund?.id && (
+          <div className="order-info-section">
+            <h3>Refund Information</h3>
+            <p><strong>Refund ID:</strong> {order.refund.id}</p>
+            <p><strong>Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Status:</strong> {order.refund.status}</p>
+            <p><strong>Speed:</strong> {order.refund.speedProcessed || order.refund.speed}</p>
+            {order.refund.created_at && (
+              <p><strong>Initiated:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
+            )}
+            {order.refund.processed_at && (
+              <p><strong>Completed:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("analytics");
   const [openModal, setOpenModal] = useState(false);
@@ -55,7 +123,18 @@ const AdminPanel = () => {
     ordersByMonth: [],
     revenueByMonth: [],
     orderStatusBreakdown: {},
-    refundStats: { total: 0, amount: 0, rate: 0 }
+    refundStats: { total: 0, amount: 0, rate: 0 },
+    paymentMethodStats: {},
+    conversionRate: 0,
+    recentActivity: [],
+    growthMetrics: {
+      revenueGrowth: 0,
+      orderGrowth: 0,
+      userGrowth: 0
+    },
+    topCustomers: [],
+    lowStockProducts: [],
+    popularSizes: {}
   });
 
   // Instead of dummy users, fetch users from the database
@@ -96,8 +175,16 @@ const AdminPanel = () => {
       return acc;
     }, {});
 
+    // Payment method statistics
+    const paymentMethodStats = orders.reduce((acc, order) => {
+      const method = order.paymentMode || 'Unknown';
+      acc[method] = (acc[method] || 0) + 1;
+      return acc;
+    }, {});
+
     // Top products by quantity sold
     const productSales = {};
+    const sizeSales = {};
     orders.forEach(order => {
       order.items?.forEach(item => {
         if (!productSales[item.productId]) {
@@ -109,6 +196,10 @@ const AdminPanel = () => {
         }
         productSales[item.productId].quantity += item.quantity;
         productSales[item.productId].revenue += item.totalPrice || (item.price * item.quantity);
+
+        // Size tracking
+        const size = item.size || 'Unknown';
+        sizeSales[size] = (sizeSales[size] || 0) + item.quantity;
       });
     });
 
@@ -116,7 +207,29 @@ const AdminPanel = () => {
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5);
 
-    // Monthly data
+    // Top customers by total spent
+    const customerSpending = {};
+    usersWithOrders.forEach(user => {
+      const totalSpent = user.orders.reduce((sum, order) => 
+        order.paymentStatus === 'paid' ? sum + order.totalAmount : sum, 0);
+      if (totalSpent > 0) {
+        customerSpending[user.id] = {
+          name: user.name,
+          email: user.email,
+          totalSpent,
+          orderCount: user.orders.length
+        };
+      }
+    });
+
+    const topCustomers = Object.values(customerSpending)
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 5);
+
+    // Low stock products (assuming stock < 10 is low)
+    const lowStockProducts = products.filter(p => p.quantity < 10);
+
+    // Monthly data with growth calculation
     const monthlyData = {};
     paidOrders.forEach(order => {
       const date = new Date(order.createdAt);
@@ -139,6 +252,28 @@ const AdminPanel = () => {
       revenue: monthlyData[month].revenue
     }));
 
+    // Growth metrics (current vs previous month)
+    const currentMonth = sortedMonths[sortedMonths.length - 1];
+    const previousMonth = sortedMonths[sortedMonths.length - 2];
+    
+    const growthMetrics = {
+      revenueGrowth: 0,
+      orderGrowth: 0,
+      userGrowth: 0
+    };
+
+    if (currentMonth && previousMonth && monthlyData[currentMonth] && monthlyData[previousMonth]) {
+      const currentRevenue = monthlyData[currentMonth].revenue;
+      const previousRevenue = monthlyData[previousMonth].revenue;
+      const currentOrders = monthlyData[currentMonth].orders;
+      const previousOrders = monthlyData[previousMonth].orders;
+
+      growthMetrics.revenueGrowth = previousRevenue > 0 ? 
+        ((currentRevenue - previousRevenue) / previousRevenue * 100) : 0;
+      growthMetrics.orderGrowth = previousOrders > 0 ? 
+        ((currentOrders - previousOrders) / previousOrders * 100) : 0;
+    }
+
     // Refund statistics
     const refundedOrders = orders.filter(o => o.refund?.id);
     const refundStats = {
@@ -146,6 +281,21 @@ const AdminPanel = () => {
       amount: refundedOrders.reduce((sum, order) => sum + (order.refund?.amount || 0) / 100, 0),
       rate: orders.length > 0 ? (refundedOrders.length / orders.length * 100) : 0
     };
+
+    // Recent activity (last 10 orders)
+    const recentActivity = orders
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10)
+      .map(order => ({
+        id: order.orderId,
+        type: 'Order',
+        description: `Order #${order.orderId} - â‚¹${order.totalAmount}`,
+        time: new Date(order.createdAt).toLocaleString(),
+        status: order.status
+      }));
+
+    // Conversion rate (orders vs total users)
+    const conversionRate = totalUsers > 0 ? (totalOrders / totalUsers * 100) : 0;
 
     setAnalyticsData({
       totalRevenue,
@@ -157,7 +307,14 @@ const AdminPanel = () => {
       ordersByMonth,
       revenueByMonth,
       orderStatusBreakdown,
-      refundStats
+      refundStats,
+      paymentMethodStats,
+      conversionRate,
+      recentActivity,
+      growthMetrics,
+      topCustomers,
+      lowStockProducts,
+      popularSizes: sizeSales
     });
   };
 
@@ -497,17 +654,25 @@ const AdminPanel = () => {
           {/* Analytics Tab */}
           {activeTab === "analytics" && (
             <div className="analytics-tab">
-              <h2>Business Analytics</h2>
+              <h2>Business Analytics Dashboard</h2>
               
               {/* Key Metrics */}
               <div className="metrics-grid">
-                <div className="metric-card">
+                <div className="metric-card revenue-card">
                   <h3>Total Revenue</h3>
                   <p className="metric-value">â‚¹{analyticsData.totalRevenue.toFixed(2)}</p>
+                  <span className="growth-indicator">
+                    {analyticsData.growthMetrics.revenueGrowth >= 0 ? 'â†—ï¸' : 'â†˜ï¸'} 
+                    {Math.abs(analyticsData.growthMetrics.revenueGrowth).toFixed(1)}%
+                  </span>
                 </div>
-                <div className="metric-card">
+                <div className="metric-card orders-card">
                   <h3>Total Orders</h3>
                   <p className="metric-value">{analyticsData.totalOrders}</p>
+                  <span className="growth-indicator">
+                    {analyticsData.growthMetrics.orderGrowth >= 0 ? 'â†—ï¸' : 'â†˜ï¸'} 
+                    {Math.abs(analyticsData.growthMetrics.orderGrowth).toFixed(1)}%
+                  </span>
                 </div>
                 <div className="metric-card">
                   <h3>Total Users</h3>
@@ -522,13 +687,40 @@ const AdminPanel = () => {
                   <p className="metric-value">â‚¹{analyticsData.averageOrderValue.toFixed(2)}</p>
                 </div>
                 <div className="metric-card">
+                  <h3>Conversion Rate</h3>
+                  <p className="metric-value">{analyticsData.conversionRate.toFixed(1)}%</p>
+                </div>
+                <div className="metric-card refund-card">
                   <h3>Refund Rate</h3>
                   <p className="metric-value">{analyticsData.refundStats.rate.toFixed(1)}%</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Low Stock Items</h3>
+                  <p className="metric-value">{analyticsData.lowStockProducts.length}</p>
                 </div>
               </div>
 
               {/* Charts Section */}
               <div className="charts-section">
+                {/* Recent Activity */}
+                <div className="chart-container activity-container">
+                  <h3>Recent Activity</h3>
+                  <div className="activity-list">
+                    {analyticsData.recentActivity.map((activity, index) => (
+                      <div key={index} className="activity-item">
+                        <div className="activity-icon">ðŸ“¦</div>
+                        <div className="activity-details">
+                          <p className="activity-description">{activity.description}</p>
+                          <span className="activity-time">{activity.time}</span>
+                        </div>
+                        <span className={`activity-status status-${activity.status?.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {activity.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Order Status Breakdown */}
                 <div className="chart-container">
                   <h3>Order Status Breakdown</h3>
@@ -553,6 +745,22 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
+                {/* Payment Methods */}
+                <div className="chart-container">
+                  <h3>Payment Methods</h3>
+                  <div className="payment-methods">
+                    {Object.entries(analyticsData.paymentMethodStats).map(([method, count]) => (
+                      <div key={method} className="payment-item">
+                        <span className="payment-label">{method}</span>
+                        <span className="payment-count">{count} orders</span>
+                        <span className="payment-percentage">
+                          {((count / analyticsData.totalOrders) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Top Products */}
                 <div className="chart-container">
                   <h3>Top Selling Products</h3>
@@ -568,8 +776,48 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
-                {/* Monthly Revenue Chart */}
+                {/* Top Customers */}
                 <div className="chart-container">
+                  <h3>Top Customers</h3>
+                  <div className="top-customers">
+                    {analyticsData.topCustomers.map((customer, index) => (
+                      <div key={index} className="customer-item">
+                        <span className="customer-rank">#{index + 1}</span>
+                        <div className="customer-details">
+                          <span className="customer-name">{customer.name}</span>
+                          <span className="customer-email">{customer.email}</span>
+                        </div>
+                        <span className="customer-orders">{customer.orderCount} orders</span>
+                        <span className="customer-spent">â‚¹{customer.totalSpent.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Popular Sizes */}
+                <div className="chart-container">
+                  <h3>Popular Product Sizes</h3>
+                  <div className="size-chart">
+                    {Object.entries(analyticsData.popularSizes).map(([size, count]) => (
+                      <div key={size} className="size-bar">
+                        <span className="size-label">{size}ml</span>
+                        <div className="size-progress">
+                          <div 
+                            className="size-fill" 
+                            style={{ 
+                              width: `${(count / Math.max(...Object.values(analyticsData.popularSizes))) * 100}%`,
+                              backgroundColor: '#8b5cf6'
+                            }}
+                          ></div>
+                        </div>
+                        <span className="size-count">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Monthly Revenue Chart */}
+                <div className="chart-container full-width">
                   <h3>Monthly Revenue Trend</h3>
                   <div className="revenue-chart">
                     {analyticsData.revenueByMonth.map((month, index) => (
@@ -577,7 +825,7 @@ const AdminPanel = () => {
                         <div 
                           className="revenue-bar" 
                           style={{ 
-                            height: `${(month.revenue / Math.max(...analyticsData.revenueByMonth.map(m => m.revenue))) * 100}%` 
+                            height: `${analyticsData.revenueByMonth.length > 0 ? (month.revenue / Math.max(...analyticsData.revenueByMonth.map(m => m.revenue))) * 100 : 0}%` 
                           }}
                         ></div>
                         <span className="month-label">{month.month}</span>
@@ -588,7 +836,7 @@ const AdminPanel = () => {
                 </div>
 
                 {/* Monthly Orders Chart */}
-                <div className="chart-container">
+                <div className="chart-container full-width">
                   <h3>Monthly Orders Trend</h3>
                   <div className="orders-chart">
                     {analyticsData.ordersByMonth.map((month, index) => (
@@ -596,7 +844,7 @@ const AdminPanel = () => {
                         <div 
                           className="orders-bar" 
                           style={{ 
-                            height: `${(month.orders / Math.max(...analyticsData.ordersByMonth.map(m => m.orders))) * 100}%` 
+                            height: `${analyticsData.ordersByMonth.length > 0 ? (month.orders / Math.max(...analyticsData.ordersByMonth.map(m => m.orders))) * 100 : 0}%` 
                           }}
                         ></div>
                         <span className="month-label">{month.month}</span>
@@ -605,6 +853,21 @@ const AdminPanel = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* Low Stock Alert */}
+                {analyticsData.lowStockProducts.length > 0 && (
+                  <div className="chart-container alert-container">
+                    <h3>âš ï¸ Low Stock Alert</h3>
+                    <div className="low-stock-list">
+                      {analyticsData.lowStockProducts.map((product, index) => (
+                        <div key={index} className="low-stock-item">
+                          <span className="product-name">{product.name}</span>
+                          <span className="stock-level">Only {product.quantity} left</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Refund Statistics */}
                 <div className="chart-container">
@@ -1047,16 +1310,15 @@ const AdminPanel = () => {
                 )}
               </div>
 
-              
-            </div>
-          )}
-{/* Order Details Modal */}
+              {/* Order Details Modal */}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
                   onClose={() => setSelectedOrder(null)}
                 />
               )}
+            </div>
+          )}
 
           {/* Users Tab */}
           {activeTab === "users" && (
@@ -1142,70 +1404,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-
-const OrderDetailsPopup = ({ order, onClose }) => {
-  return (
-    <div className="modal-overlay-chamkila">
-      <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">Ã—</button>
-        <h2>Order Details (#{order.orderId})</h2>
-        
-        <div className="order-info-section">
-          <h3>Customer Information</h3>
-          <p><strong>Name:</strong> {order.userName}</p>
-          <p><strong>Phone:</strong> {order.phone}</p>
-          <p><strong>Email:</strong> {order.userEmail}</p>
-        </div>
-
-        <div className="order-info-section">
-          <h3>Order Information</h3>
-          <p><strong>Order ID:</strong> {order.orderId}</p>
-          <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-          <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-          <p><strong>Total Amount:</strong> â‚¹{order.totalAmount}</p>
-          <p><strong>Status:</strong> {order.status}</p>
-          <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-        </div>
-
-        <div className="order-info-section">
-          <h3>Shipping Address</h3>
-          <p>{order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
-        </div>
-
-        <div className="order-info-section">
-          <h3>Products Ordered</h3>
-          <div className="products-list">
-            {(order.products || []).map(p => (
-              <div key={p.productId} className="product-item">
-                <img src={p.img} alt={p.productName} width="60" height="60" />
-                <div className="product-details">
-                  <p><strong>{p.productName}</strong></p>
-                  <p>Size: {p.size}ml</p>
-                  <p>Quantity: {p.quantity}</p>
-                  <p>Price: â‚¹{p.price} each</p>
-                  <p>Total: â‚¹{p.totalPrice}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {order.refund?.id && (
-          <div className="order-info-section">
-            <h3>Refund Information</h3>
-            <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
-            <p><strong>Status:</strong> {order.refund.status}</p>
-            <p><strong>Speed:</strong> {order.refund.speedProcessed || order.refund.speed}</p>
-            {order.refund.created_at && (
-              <p><strong>Initiated:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
-            )}
-            {order.refund.processed_at && (
-              <p><strong>Completed:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
