@@ -1,3 +1,4 @@
+
 // src/Components/Adminpanel.js
 import React, { useState, useContext, useEffect } from "react";
 import "../style/adminPanel.css";
@@ -21,7 +22,7 @@ import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("analytics");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -37,10 +38,25 @@ const AdminPanel = () => {
   const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
+  const [refundProcessing, setRefundProcessing] = useState({});
 
   const { getquery } = useContext(ContactContext);
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalUsers: 0,
+    totalProducts: 0,
+    averageOrderValue: 0,
+    topProducts: [],
+    ordersByMonth: [],
+    revenueByMonth: [],
+    orderStatusBreakdown: {},
+    refundStats: { total: 0, amount: 0, rate: 0 }
+  });
 
   // Instead of dummy users, fetch users from the database
   const [usersList, setUsersList] = useState([]);
@@ -57,7 +73,94 @@ const AdminPanel = () => {
     fetchUsers();
     getquery();
   }, []);
-  // console.log(userkiDetails);
+
+  // Calculate analytics data
+  useEffect(() => {
+    if (orders.length > 0 && products.length > 0 && usersList.length > 0) {
+      calculateAnalytics();
+    }
+  }, [orders, products, usersList]);
+
+  const calculateAnalytics = () => {
+    const paidOrders = orders.filter(o => o.paymentStatus === 'paid' || o.paymentStatus === 'refunded');
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalOrders = orders.length;
+    const totalUsers = usersList.length;
+    const totalProducts = products.length;
+    const averageOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
+
+    // Order status breakdown
+    const orderStatusBreakdown = orders.reduce((acc, order) => {
+      const status = order.status || 'Unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Top products by quantity sold
+    const productSales = {};
+    orders.forEach(order => {
+      order.items?.forEach(item => {
+        if (!productSales[item.productId]) {
+          productSales[item.productId] = {
+            name: item.productName || products.find(p => p.id === item.productId)?.name || 'Unknown',
+            quantity: 0,
+            revenue: 0
+          };
+        }
+        productSales[item.productId].quantity += item.quantity;
+        productSales[item.productId].revenue += item.totalPrice || (item.price * item.quantity);
+      });
+    });
+
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+
+    // Monthly data
+    const monthlyData = {};
+    paidOrders.forEach(order => {
+      const date = new Date(order.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { orders: 0, revenue: 0 };
+      }
+      monthlyData[monthKey].orders += 1;
+      monthlyData[monthKey].revenue += order.totalAmount;
+    });
+
+    const sortedMonths = Object.keys(monthlyData).sort();
+    const ordersByMonth = sortedMonths.map(month => ({
+      month,
+      orders: monthlyData[month].orders
+    }));
+    const revenueByMonth = sortedMonths.map(month => ({
+      month,
+      revenue: monthlyData[month].revenue
+    }));
+
+    // Refund statistics
+    const refundedOrders = orders.filter(o => o.refund?.id);
+    const refundStats = {
+      total: refundedOrders.length,
+      amount: refundedOrders.reduce((sum, order) => sum + (order.refund?.amount || 0) / 100, 0),
+      rate: orders.length > 0 ? (refundedOrders.length / orders.length * 100) : 0
+    };
+
+    setAnalyticsData({
+      totalRevenue,
+      totalOrders,
+      totalUsers,
+      totalProducts,
+      averageOrderValue,
+      topProducts,
+      ordersByMonth,
+      revenueByMonth,
+      orderStatusBreakdown,
+      refundStats
+    });
+  };
+
   // Enrich users with orders from context
   const usersWithOrders = usersList.map((user) => ({
     ...user,
@@ -98,7 +201,6 @@ const AdminPanel = () => {
     getorders();
   }, []);
 
-
   const {
     coupons,
     editingCoupon,
@@ -111,7 +213,6 @@ const AdminPanel = () => {
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
-
 
   // --- Product Functions ---
   const handleProductUpdate = async (updatedProduct) => {
@@ -129,7 +230,7 @@ const AdminPanel = () => {
         })
         .where(eq(productsTable.id, updatedProduct.id))
         .returning(productsTable);
-      toast.success("Product added Successfully");
+      toast.success("Product updated successfully");
     } catch (error) {
       const { message } = error;
       toast.error(message);
@@ -168,10 +269,6 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
-
-
-
-
 
   // Save the editingCoupon to the DB (insert if new, update if existing)
   const handleCouponSave = async () => {
@@ -218,8 +315,6 @@ const AdminPanel = () => {
     }
   };
 
-
-
   const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
     try {
       await db
@@ -236,27 +331,27 @@ const AdminPanel = () => {
   const sortedOrders = orders
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
   const statusFilteredOrders = (() => {
     if (orderStatusTab === "All") return sortedOrders;
     if (orderStatusTab === "Cancelled") {
       return sortedOrders.filter(o => o.status === "Order Cancelled");
     }
-    // for all other statuses
     return sortedOrders.filter(
-      o => o.status.trim().toLowerCase() === orderStatusTab.trim().toLowerCase()
+      o => o.status?.trim().toLowerCase() === orderStatusTab.trim().toLowerCase()
     );
   })();
 
   const searchedOrders = statusFilteredOrders.filter(
     (order) =>
-      order.orderId.toString().includes(orderSearchQuery) ||
-      order.createdAt.includes(orderSearchQuery)
+      order.orderId?.toString().includes(orderSearchQuery) ||
+      order.createdAt?.includes(orderSearchQuery)
   );
 
   const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
     updateorderstatus(orderId, newStatus, newProgressStep);
     const updatedOrders = orders.map((order) =>
-      order.id === orderId
+      order.orderId === orderId
         ? { ...order, status: newStatus, progressStep: newProgressStep }
         : order
     );
@@ -271,11 +366,12 @@ const AdminPanel = () => {
           productId: orderItemsTable.productId,
           quantity: orderItemsTable.quantity,
           price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
+          totalPrice: orderItemsTable.totalPrice,
+          productName: orderItemsTable.productName,
+          img: orderItemsTable.img,
+          size: orderItemsTable.size
         })
         .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
         .where(eq(orderItemsTable.orderId, order.orderId));
 
       setSelectedOrder({
@@ -290,7 +386,63 @@ const AdminPanel = () => {
     }
   };
 
+  // Refund handling
+  const handleRefund = async (order) => {
+    if (!window.confirm(`Are you sure you want to refund Order #${order.orderId}? This will refund â‚¹${order.totalAmount} with a 5% processing fee.`)) {
+      return;
+    }
 
+    setRefundProcessing(prev => ({ ...prev, [order.orderId]: true }));
+
+    try {
+      const response = await fetch(`${BASE}/api/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.orderId,
+          amount: order.totalAmount
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Refund initiated successfully');
+        getorders(); // Refresh orders to show refund status
+      } else {
+        toast.error(data.error || 'Refund failed');
+      }
+    } catch (error) {
+      console.error('Refund error:', error);
+      toast.error('Failed to process refund');
+    } finally {
+      setRefundProcessing(prev => ({ ...prev, [order.orderId]: false }));
+    }
+  };
+
+  const getRefundStatusColor = (status) => {
+    switch (status) {
+      case 'processed': return '#10b981';
+      case 'failed': return '#ef4444';
+      case 'pending':
+      case 'created':
+      case 'queued':
+      case 'in_progress': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
+
+  const formatRefundStatus = (status) => {
+    switch (status) {
+      case 'processed': return 'Completed';
+      case 'failed': return 'Failed';
+      case 'pending': return 'Pending';
+      case 'created': return 'Created';
+      case 'queued': return 'Queued';
+      case 'in_progress': return 'Processing';
+      default: return status;
+    }
+  };
 
   return (
     user &&
@@ -301,15 +453,180 @@ const AdminPanel = () => {
         </div>
         
         <nav className="admin-nav">
-          <button onClick={() => setActiveTab("products")}>Products</button>
-          <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
-          <button onClick={() => setActiveTab("orders")}>Orders</button>
-          <button onClick={() => setActiveTab("users")}>Users</button>
-          <button onClick={() => setActiveTab("queries")}>Queries</button>
+          <button 
+            className={activeTab === "analytics" ? "active" : ""}
+            onClick={() => setActiveTab("analytics")}
+          >
+            Analytics
+          </button>
+          <button 
+            className={activeTab === "products" ? "active" : ""}
+            onClick={() => setActiveTab("products")}
+          >
+            Products
+          </button>
+          <button 
+            className={activeTab === "coupons" ? "active" : ""}
+            onClick={() => setActiveTab("coupons")}
+          >
+            Coupon Codes
+          </button>
+          <button 
+            className={activeTab === "orders" ? "active" : ""}
+            onClick={() => setActiveTab("orders")}
+          >
+            Orders
+          </button>
+          <button 
+            className={activeTab === "users" ? "active" : ""}
+            onClick={() => setActiveTab("users")}
+          >
+            Users
+          </button>
+          <button 
+            className={activeTab === "queries" ? "active" : ""}
+            onClick={() => setActiveTab("queries")}
+          >
+            Queries
+          </button>
         </nav>
 
         <div className="admin-content">
           {openModal && <ImageUploadModal isopen={openModal} />}
+
+          {/* Analytics Tab */}
+          {activeTab === "analytics" && (
+            <div className="analytics-tab">
+              <h2>Business Analytics</h2>
+              
+              {/* Key Metrics */}
+              <div className="metrics-grid">
+                <div className="metric-card">
+                  <h3>Total Revenue</h3>
+                  <p className="metric-value">â‚¹{analyticsData.totalRevenue.toFixed(2)}</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Total Orders</h3>
+                  <p className="metric-value">{analyticsData.totalOrders}</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Total Users</h3>
+                  <p className="metric-value">{analyticsData.totalUsers}</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Total Products</h3>
+                  <p className="metric-value">{analyticsData.totalProducts}</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Avg Order Value</h3>
+                  <p className="metric-value">â‚¹{analyticsData.averageOrderValue.toFixed(2)}</p>
+                </div>
+                <div className="metric-card">
+                  <h3>Refund Rate</h3>
+                  <p className="metric-value">{analyticsData.refundStats.rate.toFixed(1)}%</p>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="charts-section">
+                {/* Order Status Breakdown */}
+                <div className="chart-container">
+                  <h3>Order Status Breakdown</h3>
+                  <div className="status-chart">
+                    {Object.entries(analyticsData.orderStatusBreakdown).map(([status, count]) => (
+                      <div key={status} className="status-bar">
+                        <span className="status-label">{status}</span>
+                        <div className="status-progress">
+                          <div 
+                            className="status-fill" 
+                            style={{ 
+                              width: `${(count / analyticsData.totalOrders) * 100}%`,
+                              backgroundColor: status === 'Order Cancelled' ? '#ef4444' : 
+                                             status === 'Delivered' ? '#10b981' : 
+                                             status === 'Shipped' ? '#3b82f6' : '#f59e0b'
+                            }}
+                          ></div>
+                        </div>
+                        <span className="status-count">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Top Products */}
+                <div className="chart-container">
+                  <h3>Top Selling Products</h3>
+                  <div className="top-products">
+                    {analyticsData.topProducts.map((product, index) => (
+                      <div key={index} className="product-item">
+                        <span className="product-rank">#{index + 1}</span>
+                        <span className="product-name">{product.name}</span>
+                        <span className="product-quantity">{product.quantity} sold</span>
+                        <span className="product-revenue">â‚¹{product.revenue.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Monthly Revenue Chart */}
+                <div className="chart-container">
+                  <h3>Monthly Revenue Trend</h3>
+                  <div className="revenue-chart">
+                    {analyticsData.revenueByMonth.map((month, index) => (
+                      <div key={month.month} className="month-bar">
+                        <div 
+                          className="revenue-bar" 
+                          style={{ 
+                            height: `${(month.revenue / Math.max(...analyticsData.revenueByMonth.map(m => m.revenue))) * 100}%` 
+                          }}
+                        ></div>
+                        <span className="month-label">{month.month}</span>
+                        <span className="revenue-value">â‚¹{month.revenue.toFixed(0)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Monthly Orders Chart */}
+                <div className="chart-container">
+                  <h3>Monthly Orders Trend</h3>
+                  <div className="orders-chart">
+                    {analyticsData.ordersByMonth.map((month, index) => (
+                      <div key={month.month} className="month-bar">
+                        <div 
+                          className="orders-bar" 
+                          style={{ 
+                            height: `${(month.orders / Math.max(...analyticsData.ordersByMonth.map(m => m.orders))) * 100}%` 
+                          }}
+                        ></div>
+                        <span className="month-label">{month.month}</span>
+                        <span className="orders-value">{month.orders}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Refund Statistics */}
+                <div className="chart-container">
+                  <h3>Refund Statistics</h3>
+                  <div className="refund-stats">
+                    <div className="refund-item">
+                      <span>Total Refunds</span>
+                      <span>{analyticsData.refundStats.total}</span>
+                    </div>
+                    <div className="refund-item">
+                      <span>Refund Amount</span>
+                      <span>â‚¹{analyticsData.refundStats.amount.toFixed(2)}</span>
+                    </div>
+                    <div className="refund-item">
+                      <span>Refund Rate</span>
+                      <span>{analyticsData.refundStats.rate.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Products Tab */}
           {activeTab === "products" && (
@@ -436,7 +753,7 @@ const AdminPanel = () => {
                           />
                         </td>
                         <td>{product.name}</td>
-                        <td>₹{product.oprice}</td>
+                        <td>â‚¹{product.oprice}</td>
                         <td>{product.discount}</td>
                         <td>{product.size}</td>
                         <td>
@@ -456,97 +773,6 @@ const AdminPanel = () => {
                       </tr>
                     )
                   )}
-                  {editingProduct &&
-                    !products.find((p) => p.id === editingProduct.id) && (
-                      <tr key={editingProduct.id}>
-                        <td>{editingProduct.id}</td>
-                        <td>
-                          <img
-                            src={editingProduct.imageurl}
-                            alt={editingProduct.name}
-                            width="50"
-                            height="50"
-                          />
-                          <br />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  imageurl: imageUrl,
-                                });
-                              }
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingProduct.name}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
                 </tbody>
               </table>
             </div>
@@ -560,7 +786,6 @@ const AdminPanel = () => {
                 className="admin-btn add-btn"
                 onClick={() =>
                   setEditingCoupon({
-                    // no id → new coupon
                     code: "",
                     discountType: "percent",
                     discountValue: 0,
@@ -570,8 +795,7 @@ const AdminPanel = () => {
                     validFrom: "",
                     validUntil: "",
                     firstOrderOnly: false,
-                    id: c.id  // keep id so it updates
-
+                    maxUsagePerUser: 1
                   })
                 }
               >
@@ -584,7 +808,7 @@ const AdminPanel = () => {
                     <th>Code</th>
                     <th>Type</th>
                     <th>Value</th>
-                    <th>Min ₹</th>
+                    <th>Min â‚¹</th>
                     <th>Min Items</th>
                     <th>Description</th>
                     <th>Max Usage/User</th>
@@ -593,7 +817,6 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Inline form */}
                   {editingCoupon && (
                     <tr>
                       <td>
@@ -623,7 +846,7 @@ const AdminPanel = () => {
                       <td>
                         <input
                           type="number"
-                          placeholder="Min ₹"
+                          placeholder="Min â‚¹"
                           value={editingCoupon.minOrderValue ?? 0}
                           onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
                         />
@@ -677,7 +900,6 @@ const AdminPanel = () => {
                     </tr>
                   )}
 
-                  {/* Existing coupons */}
                   {coupons.map(c => (
                     <tr key={c.id}>
                       <td>{c.code}</td>
@@ -685,13 +907,13 @@ const AdminPanel = () => {
                       <td>
                         {c.discountType === "percent"
                           ? `${c.discountValue}%`
-                          : `₹${c.discountValue}`}
+                          : `â‚¹${c.discountValue}`}
                       </td>
-                      <td>₹{c.minOrderValue}</td>
+                      <td>â‚¹{c.minOrderValue}</td>
                       <td>{c.minItemCount}</td>
                       <td>{c.description}</td>
-                      <td>{c.maxUsagePerUser ?? "∞"}</td>
-                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
+                      <td>{c.maxUsagePerUser ?? "âˆž"}</td>
+                      <td>{c.firstOrderOnly ? "âœ…" : "âŒ"}</td>
                       <td>
                         <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
                           Edit
@@ -707,13 +929,10 @@ const AdminPanel = () => {
             </div>
           )}
 
-
           {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-tab">
-              <h2>
-                {orderStatusTab === "Cancelled" ? "Cancelled Orders" : "Manage Orders"}
-              </h2>
+              <h2>Manage Orders</h2>
 
               <div className="orders-header">
                 <span>Total Orders: {orders.length}</span>
@@ -740,70 +959,95 @@ const AdminPanel = () => {
                 </div>
               </div>
 
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                )
-                .map((order) => (
-                  <div key={order.orderId} className="order-card-admin">
-                    <h3>Order #{order.orderId}</h3>
-                    <p><strong>Date:</strong> {order.createdAt}</p>
-                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                    <p><strong>Current Status:</strong></p>
-
-                    {order.status === "Order Cancelled" ? (
-                      <span className="status-badge status-ordercancelled">
-                        Order Cancelled
-                      </span>
-                    ) : (
-                      <div>
-                        <label>
-                          Update Status:
-                          <select
-                            value={order.status}
-                            onChange={(e) =>
-                              handleOrderStatusUpdate(
-                                order.orderId,
-                                e.target.value,
-                                order.progressStep
-                              )
-                            }
-                          >
-                            <option value="Order Placed">Order Placed</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                          </select>
-                        </label>
+              <div className="orders-list">
+                {searchedOrders.length === 0 ? (
+                  <p>No orders found.</p>
+                ) : (
+                  searchedOrders.map((order) => (
+                    <div key={order.orderId} className="order-card-admin">
+                      <div className="order-header">
+                        <h3>Order #{order.orderId}</h3>
+                        <span className={`order-status status-${order.status?.toLowerCase().replace(/\s+/g, '-')}`}>
+                          {order.status}
+                        </span>
                       </div>
-                    )}
+                      
+                      <div className="order-details">
+                        <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</p>
+                        <p><strong>Customer:</strong> {order.userName} ({order.phone})</p>
+                        <p><strong>Total:</strong> â‚¹{order.totalAmount}</p>
+                        <p><strong>Payment:</strong> {order.paymentMode} - {order.paymentStatus}</p>
+                        <p><strong>Items:</strong> {order.items?.length || 0} items</p>
+                      </div>
 
-                    <button
-                      className="view-details-btn-dhamaal"
-                      onClick={() => handleorderdetails(order)}
-                    >
-                      See More Details
-                    </button>
-                  </div>
-                ))}
+                      {/* Refund Information */}
+                      {order.refund?.id && (
+                        <div className="refund-info">
+                          <h4>Refund Details</h4>
+                          <p><strong>Refund ID:</strong> {order.refund.id}</p>
+                          <p><strong>Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
+                          <p>
+                            <strong>Status:</strong> 
+                            <span 
+                              className="refund-status" 
+                              style={{ color: getRefundStatusColor(order.refund.status) }}
+                            >
+                              {formatRefundStatus(order.refund.status)}
+                            </span>
+                          </p>
+                          <p><strong>Speed:</strong> {order.refund.speedProcessed || order.refund.speed}</p>
+                        </div>
+                      )}
 
+                      <div className="order-actions">
+                        {order.status !== "Order Cancelled" && (
+                          <div className="status-update">
+                            <label>
+                              Update Status:
+                              <select
+                                value={order.status}
+                                onChange={(e) =>
+                                  handleOrderStatusUpdate(
+                                    order.orderId,
+                                    e.target.value,
+                                    order.progressStep
+                                  )
+                                }
+                              >
+                                <option value="Order Placed">Order Placed</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                              </select>
+                            </label>
+                          </div>
+                        )}
 
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                ).length === 0 && <p>No orders found.</p>}
+                        <button
+                          className="admin-btn view-details-btn"
+                          onClick={() => handleorderdetails(order)}
+                          disabled={detailsLoading}
+                        >
+                          {detailsLoading ? "Loading..." : "View Details"}
+                        </button>
 
-              {/* Popup is here globally */}
+                        {/* Refund Button */}
+                        {order.paymentStatus === 'paid' && !order.refund?.id && order.status !== "Order Cancelled" && (
+                          <button
+                            className="admin-btn refund-btn"
+                            onClick={() => handleRefund(order)}
+                            disabled={refundProcessing[order.orderId]}
+                          >
+                            {refundProcessing[order.orderId] ? "Processing..." : "Issue Refund"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Order Details Modal */}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
@@ -812,8 +1056,6 @@ const AdminPanel = () => {
               )}
             </div>
           )}
-
-
 
           {/* Users Tab */}
           {activeTab === "users" && (
@@ -831,16 +1073,17 @@ const AdminPanel = () => {
                 filteredUsers.map((user) => (
                   <div key={user.id} className="user-card">
                     <h3>{user.name}</h3>
+                    <p>Email: {user.email}</p>
                     <p>Phone: {user.phone}</p>
                     <p>Total Orders: {user.orders.length}</p>
+                    <p>Total Spent: â‚¹{user.orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2)}</p>
                     {user.orders.length > 0 && (
                       <div className="user-orders">
-                        <h4>Orders:</h4>
-                        {user.orders.map((order) => (
+                        <h4>Recent Orders:</h4>
+                        {user.orders.slice(0, 3).map((order) => (
                           <div key={order.orderId} className="user-order">
                             <span>
-                              Order #{order.orderId} - ₹{order.totalAmount} -{" "}
-                              {order.status}
+                              Order #{order.orderId} - â‚¹{order.totalAmount} - {order.status}
                             </span>
                           </div>
                         ))}
@@ -869,27 +1112,20 @@ const AdminPanel = () => {
               {(() => {
                 const filteredQueries = queries.filter(
                   (q) =>
-                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                    q.phone.includes(querySearch) ||
-                    (q.date && q.date.includes(querySearch))
+                    q.email?.toLowerCase().includes(querySearch.toLowerCase()) ||
+                    q.phone?.includes(querySearch) ||
+                    (q.createdAt && q.createdAt.includes(querySearch))
                 );
                 return filteredQueries.length > 0 ? (
                   filteredQueries.map((query, index) => (
                     <div key={index} className="query-card">
-                      <p>
-                        <strong>Email:</strong> {query.email}
-                      </p>
-                      <p>
-                        <strong>Phone:</strong> {query.phone}
-                      </p>
-                      {query.date && (
-                        <p>
-                          <strong>Date:</strong> {query.date}
-                        </p>
+                      <p><strong>Name:</strong> {query.name}</p>
+                      <p><strong>Email:</strong> {query.email}</p>
+                      <p><strong>Phone:</strong> {query.phone}</p>
+                      {query.createdAt && (
+                        <p><strong>Date:</strong> {new Date(query.createdAt).toLocaleDateString()}</p>
                       )}
-                      <p>
-                        <strong>Message:</strong> {query.message}
-                      </p>
+                      <p><strong>Message:</strong> {query.message}</p>
                     </div>
                   ))
                 ) : (
@@ -910,35 +1146,61 @@ const OrderDetailsPopup = ({ order, onClose }) => {
   return (
     <div className="modal-overlay-chamkila">
       <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">×</button>
+        <button onClick={onClose} className="close-btn-tata">Ã—</button>
         <h2>Order Details (#{order.orderId})</h2>
-        <p><strong>User Name:</strong> {order.userName}</p>
-        <p><strong>Phone:</strong> {order.phone}</p>
-        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-        <p><strong>Status:</strong> {order.status}</p>
-        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
-        <p><strong>Products:</strong></p>
-        <ul>
-          {(order.products || []).map(p => (
-            <li key={p.productId}>
-              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - ₹{p.price}
-            </li>
-          ))}
-        </ul>
-        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        
+        <div className="order-info-section">
+          <h3>Customer Information</h3>
+          <p><strong>Name:</strong> {order.userName}</p>
+          <p><strong>Phone:</strong> {order.phone}</p>
+          <p><strong>Email:</strong> {order.userEmail}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Order Information</h3>
+          <p><strong>Order ID:</strong> {order.orderId}</p>
+          <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
+          <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
+          <p><strong>Total Amount:</strong> â‚¹{order.totalAmount}</p>
+          <p><strong>Status:</strong> {order.status}</p>
+          <p><strong>Created:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Shipping Address</h3>
+          <p>{order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
+        </div>
+
+        <div className="order-info-section">
+          <h3>Products Ordered</h3>
+          <div className="products-list">
+            {(order.products || []).map(p => (
+              <div key={p.productId} className="product-item">
+                <img src={p.img} alt={p.productName} width="60" height="60" />
+                <div className="product-details">
+                  <p><strong>{p.productName}</strong></p>
+                  <p>Size: {p.size}ml</p>
+                  <p>Quantity: {p.quantity}</p>
+                  <p>Price: â‚¹{p.price} each</p>
+                  <p>Total: â‚¹{p.totalPrice}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {order.refund?.id && (
-          <div>
-            <h3>Refund Details</h3>
+          <div className="order-info-section">
+            <h3>Refund Information</h3>
             <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
-            <p><strong>Refund Status:</strong> {order.refund.status}</p>
-            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
-            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
+            <p><strong>Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Status:</strong> {order.refund.status}</p>
+            <p><strong>Speed:</strong> {order.refund.speedProcessed || order.refund.speed}</p>
+            {order.refund.created_at && (
+              <p><strong>Initiated:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
+            )}
             {order.refund.processed_at && (
-              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
+              <p><strong>Completed:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
             )}
           </div>
         )}
