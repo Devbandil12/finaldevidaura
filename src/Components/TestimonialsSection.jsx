@@ -3,7 +3,8 @@ import "../style/testimonials.css";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_URL = `${import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "")}/api/testimonials`;
+// Use your actual backend env variable here
+const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
 
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState([]);
@@ -18,18 +19,20 @@ export default function TestimonialsSection() {
   });
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(API_URL);
-        if (res.ok) {
-          const data = await res.json();
-          setTestimonials(data);
-        }
-      } catch (err) {
-        console.error("Error loading testimonials:", err);
-      }
-    })();
+    fetchTestimonials();
   }, []);
+
+  const fetchTestimonials = async () => {
+    try {
+      const res = await fetch(API_URL);
+      if (res.ok) {
+        const data = await res.json();
+        setTestimonials(data);
+      }
+    } catch (err) {
+      console.error("Error loading testimonials:", err);
+    }
+  };
 
   const filteredTestimonials = useMemo(() => {
     return testimonials.filter((t) => t.rating >= 3);
@@ -38,8 +41,10 @@ export default function TestimonialsSection() {
   const splitIntoChunks = (arr) => {
     const MIN = 6;
     if (arr.length < MIN) return [arr];
+
     const first = arr.slice(0, MIN);
     const second = arr.length >= 12 ? arr.slice(MIN, MIN * 2) : [];
+
     return [first, second];
   };
 
@@ -87,16 +92,16 @@ export default function TestimonialsSection() {
     <section className="testimonial-section">
       <h2 className="testimonial-heading">What Our Customers Say</h2>
 
-      <Marquee direction="left" alwaysShow>
-        {(chunks[0] || []).map((t, i) => (
-          <TestimonialCard key={`chunk0-${i}`} data={t} />
+      <Marquee direction="left">
+        {chunks[0]?.map((t, i) => (
+          <TestimonialCard key={i} data={t} />
         ))}
       </Marquee>
 
       {chunks[1] && (
         <Marquee direction="right">
           {chunks[1].map((t, i) => (
-            <TestimonialCard key={`chunk1-${i}`} data={t} />
+            <TestimonialCard key={i} data={t} />
           ))}
         </Marquee>
       )}
@@ -140,10 +145,7 @@ export default function TestimonialsSection() {
 
             <div className="star-selector">
               {Array.from({ length: 5 }, (_, i) => (
-                <span
-                  key={i}
-                  onClick={() => setForm({ ...form, rating: i + 1 })}
-                >
+                <span key={i} onClick={() => setForm({ ...form, rating: i + 1 })}>
                   {form.rating > i ? (
                     <Star size={20} fill="#facc15" stroke="none" />
                   ) : (
@@ -153,16 +155,9 @@ export default function TestimonialsSection() {
               ))}
             </div>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              required
-            />
+            <input type="file" accept="image/*" onChange={handleAvatarUpload} required />
 
-            <button type="submit" className="submit-button">
-              Submit Feedback
-            </button>
+            <button type="submit" className="submit-button">Submit Feedback</button>
           </motion.form>
         )}
       </AnimatePresence>
@@ -184,38 +179,43 @@ export default function TestimonialsSection() {
   );
 }
 
-function Marquee({ children, direction = "left", alwaysShow = false }) {
+function Marquee({ children, direction = "left" }) {
   const wrapperRef = useRef();
   const contentRef = useRef();
-  const [duplicatedChildren, setDuplicatedChildren] = useState([]);
+  const [copies, setCopies] = useState(1);
+  const [shouldScroll, setShouldScroll] = useState(false);
 
   useEffect(() => {
-    if (!wrapperRef.current || !contentRef.current) return;
+    const update = () => {
+      if (!wrapperRef.current || !contentRef.current) return;
 
-    const wrapperWidth = wrapperRef.current.offsetWidth;
-    const contentWidth = contentRef.current.scrollWidth;
+      const wrapperWidth = wrapperRef.current.offsetWidth;
+      const contentWidth = contentRef.current.scrollWidth;
 
-    if (contentWidth === 0 || React.Children.count(children) === 0) {
-      setDuplicatedChildren([]);
-      return;
-    }
+      if (contentWidth > wrapperWidth) {
+        const minCopies = Math.ceil(wrapperWidth / contentWidth) + 1;
+        setCopies(minCopies);
+        setShouldScroll(true);
+      } else {
+        setCopies(1);
+        setShouldScroll(false);
+      }
+    };
 
-    const copies = Math.ceil(wrapperWidth / contentWidth) + 1;
-    const fullSet = Array.from({ length: copies }, () => React.Children.toArray(children)).flat();
-
-    setDuplicatedChildren(fullSet);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, [children]);
 
   return (
-    <div
-      className="marquee-wrapper"
-      ref={wrapperRef}
-    >
+    <div className="marquee-wrapper" ref={wrapperRef}>
       <div
-        className={`marquee-track scroll-${direction} ${duplicatedChildren.length === 0 && alwaysShow ? "centered" : ""}`}
+        className={`marquee-track ${shouldScroll ? `scroll-${direction}` : "centered"}`}
         ref={contentRef}
       >
-        {duplicatedChildren}
+        {Array.from({ length: copies }, () =>
+          React.Children.map(children, (child, i) => React.cloneElement(child, { key: i + Math.random() }))
+        )}
       </div>
     </div>
   );
