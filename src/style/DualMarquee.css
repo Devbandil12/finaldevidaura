@@ -81,3 +81,14 @@
   padding: 2px 10px ;
   border-radius: 9999px;
 }
+
+
+/* Flip whole content container */
+.marquee-content.mirrored {
+  transform: scaleX(-1);
+}
+
+/* Flip back each line so it's readable */
+.marquee-line.unmirrored {
+  transform: scaleX(-1);
+}
