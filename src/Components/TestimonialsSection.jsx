@@ -3,7 +3,6 @@ import "../style/testimonials.css";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Use your actual backend env variable here
 const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
 
 export default function TestimonialsSection() {
@@ -40,12 +39,18 @@ export default function TestimonialsSection() {
 
   const splitIntoChunks = (arr) => {
     const MIN = 6;
-    if (arr.length < MIN) return [arr];
-
+    if (arr.length <= MIN) return [arr];
     const first = arr.slice(0, MIN);
-    const second = arr.length >= 12 ? arr.slice(MIN, MIN * 2) : [];
-
+    const second = arr.slice(MIN);
     return [first, second];
+  };
+
+  const duplicateCardsToFit = (cards, minLength = 8) => {
+    let duplicated = [...cards];
+    while (duplicated.length < minLength) {
+      duplicated = duplicated.concat(cards.slice(0, minLength - duplicated.length));
+    }
+    return duplicated;
   };
 
   const chunks = useMemo(() => splitIntoChunks(filteredTestimonials), [filteredTestimonials]);
@@ -92,15 +97,15 @@ export default function TestimonialsSection() {
     <section className="testimonial-section">
       <h2 className="testimonial-heading">What Our Customers Say</h2>
 
-      <Marquee direction="left">
-        {chunks[0]?.map((t, i) => (
+      <Marquee direction="left" alwaysShow>
+        {duplicateCardsToFit(chunks[0] || []).map((t, i) => (
           <TestimonialCard key={i} data={t} />
         ))}
       </Marquee>
 
-      {chunks[1] && (
+      {chunks[1]?.length > 0 && (
         <Marquee direction="right">
-          {chunks[1].map((t, i) => (
+          {duplicateCardsToFit(chunks[1] || []).map((t, i) => (
             <TestimonialCard key={i} data={t} />
           ))}
         </Marquee>
@@ -145,7 +150,10 @@ export default function TestimonialsSection() {
 
             <div className="star-selector">
               {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} onClick={() => setForm({ ...form, rating: i + 1 })}>
+                <span
+                  key={i}
+                  onClick={() => setForm({ ...form, rating: i + 1 })}
+                >
                   {form.rating > i ? (
                     <Star size={20} fill="#facc15" stroke="none" />
                   ) : (
@@ -155,9 +163,16 @@ export default function TestimonialsSection() {
               ))}
             </div>
 
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} required />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              required
+            />
 
-            <button type="submit" className="submit-button">Submit Feedback</button>
+            <button type="submit" className="submit-button">
+              Submit Feedback
+            </button>
           </motion.form>
         )}
       </AnimatePresence>
@@ -179,43 +194,37 @@ export default function TestimonialsSection() {
   );
 }
 
-function Marquee({ children, direction = "left" }) {
+function Marquee({ children, direction = "left", alwaysShow = false }) {
   const wrapperRef = useRef();
-  const contentRef = useRef();
-  const [copies, setCopies] = useState(1);
   const [shouldScroll, setShouldScroll] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    const update = () => {
-      if (!wrapperRef.current || !contentRef.current) return;
-
-      const wrapperWidth = wrapperRef.current.offsetWidth;
-      const contentWidth = contentRef.current.scrollWidth;
-
-      if (contentWidth > wrapperWidth) {
-        const minCopies = Math.ceil(wrapperWidth / contentWidth) + 1;
-        setCopies(minCopies);
-        setShouldScroll(true);
-      } else {
-        setCopies(1);
-        setShouldScroll(false);
-      }
+    const el = wrapperRef.current;
+    const check = () => {
+      if (!el) return;
+      setShouldScroll(el.scrollWidth > el.clientWidth + 1); // consider overflow even by 1px
     };
 
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [children]);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="marquee-wrapper" ref={wrapperRef}>
+    <div
+      className="marquee-wrapper"
+      ref={wrapperRef}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <div
-        className={`marquee-track ${shouldScroll ? `scroll-${direction}` : "centered"}`}
-        ref={contentRef}
+        className={`marquee-track scroll-${shouldScroll ? direction : ""} 
+          ${!shouldScroll && alwaysShow ? "centered" : ""} 
+          ${paused ? "paused" : ""}`}
       >
-        {Array.from({ length: copies }, () =>
-          React.Children.map(children, (child, i) => React.cloneElement(child, { key: i + Math.random() }))
-        )}
+        {children}
       </div>
     </div>
   );
