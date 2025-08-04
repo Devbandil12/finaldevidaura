@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../style/DualMarquee.css";
@@ -16,50 +17,63 @@ const marqueeLines = [
   "• Luxury in a bottle. Honesty in every transaction."
 ];
 
-// Highlight styles
+// Highlight styles mapping
 const highlightStyles = {
+  refunds: "highlight-red",
   refund: "highlight-red",
   trusted: "highlight-green",
   luxury: "highlight-purple",
   success: "highlight-yellow",
+  confidence: "highlight-blue",
+  expensive: "highlight-gold",
+  power: "highlight-dark"
 };
 
 export default function DualMarquee() {
   const topRef = useRef(null);
   const bottomRef = useRef(null);
-
   const topTween = useRef(null);
   const bottomTween = useRef(null);
 
-  // Animate leftward
-  const createLeftMarquee = (element, width, duration = 45) => {
-    return gsap.to(element, {
-      x: -width / 2,
-      duration,
-      ease: "linear",
-      repeat: -1,
-    });
+  // Create left-moving marquee
+  const createLeftMarquee = (element, width, duration = 50) => {
+    return gsap.fromTo(element, 
+      { x: 0 },
+      {
+        x: -width / 2,
+        duration,
+        ease: "none",
+        repeat: -1,
+      }
+    );
   };
 
-  // Animate rightward (visually reversed)
-  const createRightMarquee = (element, width, duration = 45) => {
-    return gsap.to(element, {
-      x: -width / 2,
-      duration,
-      ease: "linear",
-      repeat: -1,
-    });
+  // Create right-moving marquee (opposite direction)
+  const createRightMarquee = (element, width, duration = 50) => {
+    return gsap.fromTo(element,
+      { x: -width / 2 },
+      {
+        x: 0,
+        duration,
+        ease: "none",
+        repeat: -1,
+      }
+    );
   };
 
   useEffect(() => {
     const topEl = topRef.current;
     const bottomEl = bottomRef.current;
 
+    if (!topEl || !bottomEl) return;
+
     const topWidth = topEl.scrollWidth;
     const bottomWidth = bottomEl.scrollWidth;
 
-    topTween.current = createLeftMarquee(topEl, topWidth, 45);
-    bottomTween.current = createRightMarquee(bottomEl, bottomWidth, 45);
+    // Top marquee moves left
+    topTween.current = createLeftMarquee(topEl, topWidth, 60);
+    // Bottom marquee moves right
+    bottomTween.current = createRightMarquee(bottomEl, bottomWidth, 60);
 
     return () => {
       topTween.current?.kill();
@@ -90,7 +104,7 @@ export default function DualMarquee() {
 
   return (
     <div className="dual-marquee-container">
-      {/* Top Marquee */}
+      {/* Top Marquee - Moving Left */}
       <div
         className="marquee-wrapper"
         onMouseEnter={pauseTop}
@@ -100,7 +114,7 @@ export default function DualMarquee() {
         onTouchCancel={resumeTop}
       >
         <div ref={topRef} className="marquee-content">
-          {[...marqueeLines, ...marqueeLines].map((line, idx) => (
+          {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
             <div key={`top-${idx}`} className="marquee-line">
               {renderLine(line)}
             </div>
@@ -108,18 +122,18 @@ export default function DualMarquee() {
         </div>
       </div>
 
-      {/* Bottom Marquee (reversed visually) */}
+      {/* Bottom Marquee - Moving Right */}
       <div
-        className="marquee-wrapper"
+        className="marquee-wrapper bottom-marquee"
         onMouseEnter={pauseBottom}
         onMouseLeave={resumeBottom}
         onTouchStart={pauseBottom}
         onTouchEnd={resumeBottom}
         onTouchCancel={resumeBottom}
       >
-        <div ref={bottomRef} className="marquee-content reverse-scroll">
-          {[...marqueeLines, ...marqueeLines].map((line, idx) => (
-            <div key={`bottom-${idx}`} className="marquee-line reverse-text">
+        <div ref={bottomRef} className="marquee-content reverse-direction">
+          {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
+            <div key={`bottom-${idx}`} className="marquee-line">
               {renderLine(line)}
             </div>
           ))}
