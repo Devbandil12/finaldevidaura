@@ -78,8 +78,8 @@
   flex-direction: column;
   gap: 0.75rem;
   transition: transform 0.3s ease;
-  word-break: break-word;     
-  white-space: normal;     
+  word-break: break-word;     
+  white-space: normal;     
 }
 
 .testimonial-card:hover {
@@ -128,9 +128,9 @@
   margin-top: 0.5rem;
   line-height: 1.4;
   word-wrap: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-  max-width: 100%;
+  overflow-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
 }
 
 /* === Feedback Form === */
