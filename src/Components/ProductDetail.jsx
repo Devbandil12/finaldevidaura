@@ -296,7 +296,7 @@ const ProductDetail = ({
         </div>
       </div>
    <div className="mt-10">
-  <ReviewSection productId={fullProduct.id} />
+ <ReviewComponent productId={product.id} user={user} />
 </div>
     </div>
   );
