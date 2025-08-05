@@ -1,16 +1,16 @@
+// src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { db } from "../../configs";
 import {
   usersTable,
   addressTable,
+  UserAddressTable,
   ordersTable,
   orderItemsTable,
   productsTable,
-  addToCartTable,
-  UserAddressTable,
 } from "../../configs/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Create the context
 export const UserContext = createContext();
@@ -43,33 +43,33 @@ export const UserProvider = ({ children }) => {
       if (res.length > 0) {
         const dbUser = res[0];
 
-        // ✅ Update missing clerk_id
-        if (!dbUser.clerk_id) {
+        // ✅ Update missing clerkId
+        if (!dbUser.clerkId) {
           await db
             .update(usersTable)
-            .set({ clerk_id: clerkId })
+            .set({ clerkId })
             .where(eq(usersTable.id, dbUser.id));
 
-          dbUser.clerk_id = clerkId;
+          dbUser.clerkId = clerkId;
           console.log("🛠️ Added missing Clerk ID to user.");
         }
 
         setUserdetails(dbUser);
       } else {
         // 🆕 New user insert
-        const newUser = await db
+        const [newUser] = await db
           .insert(usersTable)
           .values({
             name,
             email,
             role: "user",
-            cart_length: 0,
-            clerk_id: clerkId,
+            cartLength: 0,
+            clerkId,
           })
           .returning();
 
         console.log("✅ New user inserted into DB");
-        setUserdetails(newUser[0]);
+        setUserdetails(newUser);
       }
     } catch (err) {
       console.error("❌ Error getting/creating user:", err);
@@ -130,29 +130,26 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 🏠 Get address (old version, optional)
+  // 🏠 Get legacy address (optional)
   const getAddress = async () => {
     try {
       const res = await db
         .select()
         .from(addressTable)
         .where(eq(addressTable.userId, userdetails?.id));
-
-      // Optional: if you want to store this too
       console.log("🏠 Address (legacy):", res);
     } catch (error) {
       console.error("❌ Failed to get address:", error);
     }
   };
 
-  // 🏠 UserAddress Table
+  // 🏠 Get user addresses
   const getUserAddress = async () => {
     try {
       const res = await db
         .select()
         .from(UserAddressTable)
         .where(eq(UserAddressTable.userId, userdetails?.id));
-
       setAddress(res);
     } catch (error) {
       console.error("❌ Failed to get user address:", error);
