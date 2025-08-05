@@ -29,6 +29,11 @@
   will-change: transform;
 }
 
+.marquee-item {
+  flex: 0 0 auto;
+  margin: 0 1rem;
+}
+
 .scroll-left {
   animation: scroll-left 25s linear infinite;
 }
