@@ -2,175 +2,172 @@ import { useUser } from "@clerk/clerk-react";
 import React, { createContext, useState, useEffect } from "react";
 import { db } from "../../configs";
 import {
-  orderItemsTable,
-  ordersTable,
-  usersTable,
-  productsTable,
-  addressTable,
-  addToCartTable,
-  UserAddressTable,
+  orderItemsTable,
+  ordersTable,
+  usersTable,
+  productsTable,
+  addressTable,
+  addToCartTable,
+  UserAddressTable,
 } from "../../configs/schema";
 import { eq } from "drizzle-orm";
 
 // Create the context
 export const UserContext = createContext();
 
-// Provider component
 export const UserProvider = ({ children }) => {
-  const [userdetails, setUserdetails] = useState();
-  const [address, setAddress] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const { user } = useUser();
+  const [userdetails, setUserdetails] = useState();
+  const [address, setAddress] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const { user } = useUser();
 
-  // 🔄 Fetch user from DB by email
-  const getUserDetail = async () => {
-    try {
-      if (!user?.primaryEmailAddress?.emailAddress) return;
+  const getUserDetail = async () => {
+    try {
+      if (!user?.primaryEmailAddress?.emailAddress) return;
 
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user.primaryEmailAddress.emailAddress));
+      const email = user.primaryEmailAddress.emailAddress;
+      const clerkId = user.id;
+      const name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
 
-      if (res.length > 0) {
-        setUserdetails(res[0]);
-      } else {
-        // 🆕 Create user if not exists
-        const newUser = {
-          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
-          email: user.primaryEmailAddress.emailAddress,
-          role: "user",
-          cart_length: 0,
-          clerk_id: user.id,
-        };
+      const res = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, email));
 
-        const inserted = await db.insert(usersTable).values(newUser).returning();
-        setUserdetails(inserted[0]);
-      }
-    } catch (error) {
-      console.error("❌ Failed to get or create user:", error);
-    }
-  };
+      if (res.length > 0) {
+        const dbUser = res[0];
 
-  // ✅ Sync Clerk ID to existing user if not set
-  const syncClerkIdToUser = async () => {
-    if (!user || !userdetails || userdetails.clerk_id) return;
+        // ✅ Update clerk_id if it's missing
+        if (!dbUser.clerk_id) {
+          await db
+            .update(usersTable)
+            .set({ clerk_id: clerkId })
+            .where(eq(usersTable.id, dbUser.id));
+          dbUser.clerk_id = clerkId;
+          console.log("✅ Clerk ID added to existing user");
+        }
 
-    try {
-      await db
-        .update(usersTable)
-        .set({ clerk_id: user.id })
-        .where(eq(usersTable.id, userdetails.id));
-      setUserdetails((prev) => ({ ...prev, clerk_id: user.id }));
-      console.log("✅ Clerk ID synced to user");
-    } catch (error) {
-      console.error("❌ Failed to sync Clerk ID:", error);
-    }
-  };
+        setUserdetails(dbUser);
+      } else {
+        // 🆕 New user, insert into DB
+        const newUser = await db
+          .insert(usersTable)
+          .values({
+            name,
+            email,
+            role: "user",
+            cart_length: 0,
+            clerk_id: clerkId,
+          })
+          .returning();
 
-  // 🛒 Get all orders with products
-  const getMyOrders = async () => {
-    try {
-      if (!userdetails?.id) return;
+        setUserdetails(newUser[0]);
+        console.log("✅ New user inserted into DB");
+      }
+    } catch (error) {
+      console.error("❌ Failed to get or create user:", error);
+    }
+  };
 
-      const res = await db
-        .select({
-          orderId: ordersTable.id,
-          totalAmount: ordersTable.totalAmount,
-          status: ordersTable.status,
-          paymentMode: ordersTable.paymentMode,
-          paymentStatus: ordersTable.paymentStatus,
-          createdAt: ordersTable.createdAt,
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          productImage: productsTable.imageurl,
-        })
-        .from(ordersTable)
-        .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(ordersTable.userId, userdetails.id))
-        .orderBy(ordersTable.createdAt);
+  const getMyOrders = async () => {
+    try {
+      if (!userdetails?.id) return;
 
-      const groupedOrders = res.reduce((acc, item) => {
-        const orderId = item.orderId;
-        if (!acc[orderId]) {
-          acc[orderId] = {
-            orderId: item.orderId,
-            totalAmount: item.totalAmount,
-            status: item.status,
-            createdAt: item.createdAt,
-            paymentStatus: item.paymentStatus,
-            paymentMode: item.paymentMode,
-            items: [],
-          };
-        }
-        acc[orderId].items.push({
-          productId: item.productId,
-          productName: item.productName,
-          productImage: item.productImage,
-          quantity: item.quantity,
-          price: item.price,
-        });
-        return acc;
-      }, {});
+      const res = await db
+        .select({
+          orderId: ordersTable.id,
+          totalAmount: ordersTable.totalAmount,
+          status: ordersTable.status,
+          paymentMode: ordersTable.paymentMode,
+          paymentStatus: ordersTable.paymentStatus,
+          createdAt: ordersTable.createdAt,
+          productId: orderItemsTable.productId,
+          quantity: orderItemsTable.quantity,
+          price: orderItemsTable.price,
+          productName: productsTable.name,
+          productImage: productsTable.imageurl,
+        })
+        .from(ordersTable)
+        .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
+        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
+        .where(eq(ordersTable.userId, userdetails.id))
+        .orderBy(ordersTable.createdAt);
 
-      setOrders(Object.values(groupedOrders));
-    } catch (error) {
-      console.error("❌ Failed to get orders:", error);
-    }
-  };
+      const groupedOrders = res.reduce((acc, item) => {
+        const orderId = item.orderId;
+        if (!acc[orderId]) {
+          acc[orderId] = {
+            orderId: item.orderId,
+            totalAmount: item.totalAmount,
+            status: item.status,
+            createdAt: item.createdAt,
+            paymentStatus: item.paymentStatus,
+            paymentMode: item.paymentMode,
+            items: [],
+          };
+        }
+        acc[orderId].items.push({
+          productId: item.productId,
+          productName: item.productName,
+          productImage: item.productImage,
+          quantity: item.quantity,
+          price: item.price,
+        });
+        return acc;
+      }, {});
 
-  const getAddress = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(addressTable)
-        .where(eq(addressTable.userId, userdetails?.id));
-    } catch (error) {
-      console.error("❌ Failed to get address:", error);
-    }
-  };
+      setOrders(Object.values(groupedOrders));
+    } catch (error) {
+      console.error("❌ Failed to get orders:", error);
+    }
+  };
 
-  const getUserAddress = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(UserAddressTable)
-        .where(eq(UserAddressTable.userId, userdetails?.id));
-      setAddress(res);
-    } catch (error) {
-      console.error("❌ Failed to get user address:", error);
-    }
-  };
+  const getAddress = async () => {
+    try {
+      const res = await db
+        .select()
+        .from(addressTable)
+        .where(eq(addressTable.userId, userdetails?.id));
+    } catch (error) {
+      console.error("❌ Failed to get address:", error);
+    }
+  };
 
-  // 🔁 When user loads
-  useEffect(() => {
-    if (user) getUserDetail();
-  }, [user]);
+  const getUserAddress = async () => {
+    try {
+      const res = await db
+        .select()
+        .from(UserAddressTable)
+        .where(eq(UserAddressTable.userId, userdetails?.id));
+      setAddress(res);
+    } catch (error) {
+      console.error("❌ Failed to get user address:", error);
+    }
+  };
 
-  // 🔁 When userdetails loads
-  useEffect(() => {
-    if (userdetails) {
-      getMyOrders();
-      getAddress();
-      getUserAddress();
-      syncClerkIdToUser();
-    }
-  }, [userdetails]);
+  useEffect(() => {
+    if (user) getUserDetail();
+  }, [user]);
 
-  return (
-    <UserContext.Provider
-      value={{
-        userdetails,
-        setUserdetails,
-        orders,
-        address,
-        setAddress,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
+  useEffect(() => {
+    if (userdetails) {
+      getMyOrders();
+      getAddress();
+      getUserAddress();
+    }
+  }, [userdetails]);
+
+  return (
+    <UserContext.Provider
+      value={{
+        userdetails,
+        setUserdetails,
+        orders,
+        address,
+        setAddress,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
 };
