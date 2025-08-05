@@ -205,17 +205,14 @@ function Marquee({ children, direction = "left", alwaysShow = false }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-     <div
+    <div
   className={`marquee-track ${
     shouldScroll ? `scroll-${direction}` : ""
   } ${!shouldScroll && alwaysShow ? "centered" : ""} ${paused ? "paused" : ""}`}
 >
-  {[...children, ...children].map((child, i) => (
-    <div className="marquee-item" key={i}>
-      {child}
-    </div>
-  ))}
+  {children}
 </div>
+
 
     </div>
   );
