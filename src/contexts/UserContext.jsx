@@ -11,37 +11,67 @@ import {
   UserAddressTable,
 } from "../../configs/schema";
 import { eq } from "drizzle-orm";
-// import { object } from "framer-motion/client";
 
 // Create the context
 export const UserContext = createContext();
 
-// Create a provider component
+// Provider component
 export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState();
   const [address, setAddress] = useState([]);
-  // const [cartitem, setCartitem] = useState([]);
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-  // Fetch user details from DB
-  const getuserdetail = async () => {
+  // 🔄 Fetch user from DB by email
+  const getUserDetail = async () => {
     try {
+      if (!user?.primaryEmailAddress?.emailAddress) return;
+
       const res = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress.emailAddress));
+        .where(eq(usersTable.email, user.primaryEmailAddress.emailAddress));
 
       if (res.length > 0) {
         setUserdetails(res[0]);
+      } else {
+        // 🆕 Create user if not exists
+        const newUser = {
+          name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+          email: user.primaryEmailAddress.emailAddress,
+          role: "user",
+          cart_length: 0,
+          clerk_id: user.id,
+        };
+
+        const inserted = await db.insert(usersTable).values(newUser).returning();
+        setUserdetails(inserted[0]);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("❌ Failed to get or create user:", error);
+    }
   };
 
-  // Fetch user's orders with order items and product details
+  // ✅ Sync Clerk ID to existing user if not set
+  const syncClerkIdToUser = async () => {
+    if (!user || !userdetails || userdetails.clerk_id) return;
+
+    try {
+      await db
+        .update(usersTable)
+        .set({ clerk_id: user.id })
+        .where(eq(usersTable.id, userdetails.id));
+      setUserdetails((prev) => ({ ...prev, clerk_id: user.id }));
+      console.log("✅ Clerk ID synced to user");
+    } catch (error) {
+      console.error("❌ Failed to sync Clerk ID:", error);
+    }
+  };
+
+  // 🛒 Get all orders with products
   const getMyOrders = async () => {
     try {
-      if (!userdetails) return; // Prevent running if userdetails is not set
+      if (!userdetails?.id) return;
 
       const res = await db
         .select({
@@ -59,10 +89,7 @@ export const UserProvider = ({ children }) => {
         })
         .from(ordersTable)
         .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
-        .innerJoin(
-          productsTable,
-          eq(orderItemsTable.productId, productsTable.id)
-        )
+        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
         .where(eq(ordersTable.userId, userdetails.id))
         .orderBy(ordersTable.createdAt);
 
@@ -76,7 +103,7 @@ export const UserProvider = ({ children }) => {
             createdAt: item.createdAt,
             paymentStatus: item.paymentStatus,
             paymentMode: item.paymentMode,
-            items: [], // Store products inside each order
+            items: [],
           };
         }
         acc[orderId].items.push({
@@ -85,46 +112,51 @@ export const UserProvider = ({ children }) => {
           productImage: item.productImage,
           quantity: item.quantity,
           price: item.price,
-          paymentStatus: item.paymentStatus,
-          paymentMode: item.paymentMode,
         });
         return acc;
       }, {});
-      setOrders(Object.values(groupedOrders));
 
-      // setOrders(res);
-    } catch (error) {}
+      setOrders(Object.values(groupedOrders));
+    } catch (error) {
+      console.error("❌ Failed to get orders:", error);
+    }
   };
 
-  const getaddress = async () => {
+  const getAddress = async () => {
     try {
       const res = await db
         .select()
         .from(addressTable)
         .where(eq(addressTable.userId, userdetails?.id));
-      // setUserAddress(res);
-    } catch (error) {}
+    } catch (error) {
+      console.error("❌ Failed to get address:", error);
+    }
   };
-  const userAddres = async () => {
+
+  const getUserAddress = async () => {
     try {
       const res = await db
         .select()
         .from(UserAddressTable)
-        .where(eq(UserAddressTable.userId, userdetails.id));
+        .where(eq(UserAddressTable.userId, userdetails?.id));
       setAddress(res);
-    } catch (error) {}
+    } catch (error) {
+      console.error("❌ Failed to get user address:", error);
+    }
   };
-  // Fetch user details when user changes
+
+  // 🔁 When user loads
   useEffect(() => {
-    if (user) getuserdetail();
+    if (user) getUserDetail();
   }, [user]);
 
-  // Fetch orders when userdetails is available
+  // 🔁 When userdetails loads
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
-      getaddress();
-      userAddres();
+      getAddress();
+      getUserAddress();
+      syncClerkIdToUser();
     }
   }, [userdetails]);
 
