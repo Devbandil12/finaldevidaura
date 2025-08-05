@@ -156,3 +156,67 @@
     width: 220px;
   }
 }
+
+
+/* === Marquee Container === */
+.marquee-wrapper {
+  overflow: hidden;
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.marquee-track {
+  display: flex;
+  flex-direction: row;
+  width: max-content;
+  will-change: transform;
+}
+
+/* Marquee Direction Animations */
+.scroll-left {
+  animation: marquee-left 25s linear infinite;
+}
+
+.scroll-right {
+  animation: marquee-right 25s linear infinite;
+}
+
+/* Pause on hover */
+.paused {
+  animation-play-state: paused !important;
+}
+
+/* Marquee Item (Card wrapper) */
+.marquee-item {
+  flex: 0 0 auto;
+  margin: 0 1rem;
+  animation: floatWave 3s ease-in-out infinite alternate;
+}
+
+/* Keyframes */
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes floatWave {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-15px);
+  }
+}
