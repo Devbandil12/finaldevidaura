@@ -12,7 +12,7 @@ import {
 } from "../../configs/schema";
 import { eq } from "drizzle-orm";
 
-// Create the context
+// Create context
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -21,58 +21,60 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-  // 🔍 Get or Create user in DB
+  // ✅ Get or create user
   const getUserDetail = async () => {
     try {
-      const email   = user?.primaryEmailAddress?.emailAddress;
+      const email = user?.primaryEmailAddress?.emailAddress;
       const clerkId = user?.id;
-      const name    = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
       if (!email || !clerkId) {
         console.warn("❌ Missing email or clerkId", { email, clerkId });
         return;
       }
 
-      console.log("🔍 Looking up user in DB by email:", email);
-      const res = await db
+      // 🔍 Try fetching user by clerkId
+      let res = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.email, email));
+        .where(eq(usersTable.clerkId, clerkId));
+
+      // 🔁 Fallback to email if not found
+      if (res.length === 0) {
+        res = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, email));
+      }
 
       if (res.length > 0) {
         const dbUser = res[0];
-        console.log("⌛ Found user:", dbUser);
 
-        // ✅ Update missing clerkId
+        // ✏️ Update missing clerkId if needed
         if (!dbUser.clerkId) {
-          console.log("➡️ About to UPDATE clerkId on user", dbUser.id, "→", clerkId);
           const [updatedUser] = await db
             .update(usersTable)
             .set({ clerkId })
             .where(eq(usersTable.id, dbUser.id))
-            .returning();    // ← ensure full row is returned
-
-          console.log("✅ UPDATE returned:", updatedUser);
+            .returning();
           setUserdetails(updatedUser);
           return;
         }
 
+        // ✅ Set userdetails
         setUserdetails(dbUser);
       } else {
-        // 🆕 New user insert
-        console.log("➕ Inserting new user with clerkId:", clerkId);
+        // ➕ Insert new user
         const [newUser] = await db
           .insert(usersTable)
           .values({
             name,
             email,
-            role: "user",
+            role: "user", // Default role
             cartLength: 0,
             clerkId,
           })
-          .returning();    // ← ensure full row is returned
-
-        console.log("✅ INSERT returned:", newUser);
+          .returning();
         setUserdetails(newUser);
       }
     } catch (err) {
@@ -80,10 +82,9 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 📦 Get user's orders
+  // 📦 Get user orders
   const getMyOrders = async () => {
     if (!userdetails?.id) return;
-
     try {
       const res = await db
         .select({
@@ -133,7 +134,7 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 🏠 Get legacy address (optional logging)
+  // 🏠 Get legacy address
   const getAddress = async () => {
     try {
       const res = await db
@@ -146,7 +147,7 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 🏠 Get user addresses
+  // 🏠 Get user address
   const getUserAddress = async () => {
     try {
       const res = await db
@@ -159,12 +160,12 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // ⏳ Run on Clerk load
+  // 🔁 On Clerk user load
   useEffect(() => {
     if (user) getUserDetail();
   }, [user]);
 
-  // ⏳ Run once userdetails is set
+  // 🔁 On user details loaded
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
