@@ -37,8 +37,7 @@ export const UserProvider = ({ children }) => {
       const res = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.email,email).
-);
+        .where(eq(usersTable.email, email));
 
       if (res.length > 0) {
         const dbUser = res[0];
