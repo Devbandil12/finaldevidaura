@@ -10,7 +10,7 @@ const ReviewComponent = ({ productId, user }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
-  const [name, setName] = useState(user?.name || "");
+  const [name, setName] = useState(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
   const [previewImageIndex, setPreviewImageIndex] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
   const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
@@ -145,7 +145,8 @@ const ReviewComponent = ({ productId, user }) => {
           <div key={i} className="review-card">
             <div className="review-header">
               <strong>{r.name}</strong>
-              {r.isVerified && <span className="badge">Verified Purchase</span>}
+              {r.isVerifiedBuyer && <span className="badge">Verified Purchase</span>}
+
               {user?.id === r.userId && (
                 <button className="edit-btn" onClick={() => handleEdit(r)}>
                   Edit
