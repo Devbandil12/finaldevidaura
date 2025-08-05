@@ -1,4 +1,3 @@
-// src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { db } from "../../configs";
@@ -10,9 +9,8 @@ import {
   orderItemsTable,
   productsTable,
 } from "../../configs/schema";
-import { eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
-// Create context
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -21,42 +19,24 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-  // 🔍 Get or Create user in DB
   const getUserDetail = async () => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
-      const clerkId = user?.id;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
-      if (!email || !clerkId) {
-        console.warn("❌ Missing email or clerkId", { email, clerkId });
+      if (!email) {
+        console.warn("❌ Email not found from Clerk");
         return;
       }
 
-      console.log("🔍 Searching by clerkId or email");
       const res = await db
         .select()
         .from(usersTable)
         .where(eq(usersTable.email, email));
 
       if (res.length > 0) {
-        const dbUser = res[0];
-
-        // ✅ Update missing clerkId if needed
-        if (!dbUser.clerkId) {
-          const [updatedUser] = await db
-            .update(usersTable)
-            .set({ clerkId })
-            .where(eq(usersTable.id, dbUser.id))
-            .returning();
-
-          setUserdetails(updatedUser);
-          return;
-        }
-
-        setUserdetails(dbUser);
+        setUserdetails(res[0]);
       } else {
-        // 🆕 New user insert
         const [newUser] = await db
           .insert(usersTable)
           .values({
@@ -64,10 +44,8 @@ export const UserProvider = ({ children }) => {
             email,
             role: "user",
             cartLength: 0,
-            clerkId,
           })
           .returning();
-
         setUserdetails(newUser);
       }
     } catch (err) {
@@ -75,7 +53,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 📦 Get user orders
   const getMyOrders = async () => {
     if (!userdetails?.id) return;
 
@@ -128,20 +105,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // 🏠 Get legacy address (optional logging)
-  const getAddress = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(addressTable)
-        .where(eq(addressTable.userId, userdetails?.id));
-      console.log("🏠 Address (legacy):", res);
-    } catch (error) {
-      console.error("❌ Failed to get legacy address:", error);
-    }
-  };
-
-  // 🏠 Get user addresses
   const getUserAddress = async () => {
     try {
       const res = await db
@@ -154,16 +117,13 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // Run on Clerk load
   useEffect(() => {
     if (user) getUserDetail();
   }, [user]);
 
-  // Run once userdetails is set
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
-      getAddress();
       getUserAddress();
     }
   }, [userdetails]);
