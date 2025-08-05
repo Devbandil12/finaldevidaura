@@ -239,7 +239,6 @@ function TestimonialCard({ data }) {
             stroke={i < data.rating ? "none" : "#ccc"}
           />
         ))}
-        <span className="rating-number">{parseInt(data.rating)}</span>
       </div>
 
       {data.title && <div className="title">{data.title}</div>}
