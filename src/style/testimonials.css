@@ -83,7 +83,7 @@
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
   width: 260px;
-  max-height: 300px;
+  max-height: 320px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
