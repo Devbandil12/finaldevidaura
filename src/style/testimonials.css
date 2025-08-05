@@ -17,26 +17,29 @@
 /* === Unified Marquee === */
 .marquee-unified-wrapper {
   overflow: hidden;
-  position: relative;
   width: 100%;
   margin: 1rem 0;
-  height: auto;
 }
 
 .marquee-unified-track {
   display: flex;
-  flex-wrap: nowrap;
-  animation: marquee-scroll 40s linear infinite;
+  width: max-content;
+}
+
+/* Top marquee scrolls left */
+.scroll-left {
+  animation: marquee-left 20s linear infinite;
+}
+
+/* Bottom marquee scrolls right */
+.scroll-right {
+  animation: marquee-right 20s linear infinite;
 }
 
 .marquee-item {
   flex: 0 0 auto;
   margin: 0 1rem;
-  animation: floatMove 3s ease-in-out infinite alternate;
-}
-
-.marquee-item.top {
-  align-self: flex-start;
+  animation: floatWave 3s ease-in-out infinite alternate;
 }
 
 .marquee-item.bottom {
@@ -44,7 +47,7 @@
   animation-delay: 1.5s;
 }
 
-@keyframes marquee-scroll {
+@keyframes marquee-left {
   0% {
     transform: translateX(0%);
   }
@@ -53,36 +56,44 @@
   }
 }
 
-@keyframes floatMove {
+@keyframes marquee-right {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes floatWave {
   0% {
     transform: translateY(0px);
   }
   100% {
-    transform: translateY(-20px);
+    transform: translateY(-15px);
   }
 }
 
 /* === Testimonial Card === */
 .testimonial-card {
-  flex: 0 0 auto;
   background: #fff;
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
   width: 260px;
-  max-height: 300px;
+  max-height: none; /* use none instead of 'max-content' for cross-browser support */
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   transition: transform 0.3s ease;
   word-break: break-word;
-  white-space: normal;
 }
 
 .testimonial-card:hover {
   transform: translateY(-5px);
 }
 
+/* === Avatar Row === */
 .avatar-row {
   display: flex;
   align-items: center;
@@ -105,6 +116,7 @@
   text-overflow: ellipsis;
 }
 
+/* === Rating === */
 .rating {
   display: flex;
   align-items: center;
@@ -117,189 +129,30 @@
   margin-left: 0.25rem;
 }
 
+/* === Title === */
 .title {
   font-size: 0.85rem;
   color: #666;
 }
 
+/* === Feedback Text === */
 .feedback {
   font-style: italic;
   color: #333;
-  margin-top: 0.3rem;
   line-height: 1.4;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;
-  max-width: 100%;
+  max-height: 8.4em; /* line-height (1.4) * 6 lines = 8.4em */
   overflow: hidden;
+  text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
-/* === Feedback Button === */
-.feedback-button {
-  margin: 2rem auto 1rem;
-  background: #111;
-  color: #fff;
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 2rem;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.3s ease;
-  display: block;
-}
-
-.feedback-button:hover {
-  background: #333;
-}
-
-/* === Feedback Form === */
-.feedback-form-wrapper {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.5s ease, padding 0.5s ease;
-}
-
-.feedback-form-wrapper.slide-down {
-  max-height: 1000px;
-  padding-top: 1.5rem;
-}
-
-.feedback-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: center;
-}
-
-.feedback-form input,
-.feedback-form textarea {
-  width: 100%;
-  max-width: 500px;
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 1rem;
-  font-size: 1rem;
-}
-
-.feedback-form textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-/* === Star Selector === */
-.star-selector {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  align-items: center;
-  margin-top: 0.5rem;
-}
-
-.star-selector span {
-  font-size: 1.5rem;
-  color: #facc15;
-  cursor: pointer;
-}
-
-/* === Character Counter === */
-.char-counter {
-  font-size: 0.85rem;
-  color: #666;
-  margin-top: 0.25rem;
-  align-self: flex-end;
-  padding-right: 0.5rem;
-}
-
-/* === Submit Button === */
-.submit-button {
-  background: #008080;
-  color: #fff;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.submit-button:hover {
-  background: #006666;
-}
-
-/* === Image Upload === */
-.file-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #444;
-}
-
-.file-upload input[type="file"] {
-  background: #f5f5f5;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  border: 1px solid #ccc;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.file-upload input[type="file"]::-webkit-file-upload-button,
-.file-upload input[type="file"]::file-selector-button {
-  background: #008080;
-  color: white;
-  border: none;
-  border-radius: 1rem;
-  padding: 0.4rem 1rem;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-/* === Modal === */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 1rem;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-}
-
-.modal-content button {
-  margin-top: 1rem;
-  background: #008080;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.modal-content button:hover {
-  background: #006666;
-}
-
-/* === Responsive === */
+/* === Responsive Adjustments === */
 @media (max-width: 768px) {
-  .feedback-form input,
-  .feedback-form textarea {
-    max-width: 90%;
+  .testimonial-card {
+    width: 220px;
   }
 }
