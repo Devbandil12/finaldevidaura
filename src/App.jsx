@@ -71,30 +71,7 @@ const App = () => {
 
 
 
-  // Upsert new users into your DB
-  const isNewUser = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const existing = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user.primaryEmailAddress.emailAddress));
-
-      if (existing.length === 0) {
-        await db.insert(usersTable).values({
-          name: user.fullName,
-          email: user.primaryEmailAddress.emailAddress,
-        });
-      }
-    } catch (err) {
-      console.error("Error checking new user:", err);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    isNewUser();
-  }, [user, isNewUser]);
+  
 
   return (
     <UserProvider>
