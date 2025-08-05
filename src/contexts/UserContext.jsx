@@ -1,91 +1,48 @@
-// src/contexts/UserContext.jsx
-import React, { createContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
+import React, { createContext, useState, useEffect } from "react";
 import { db } from "../../configs";
 import {
-  usersTable,
-  addressTable,
-  UserAddressTable,
-  ordersTable,
   orderItemsTable,
+  ordersTable,
+  usersTable,
   productsTable,
+  addressTable,
+  addToCartTable,
+  UserAddressTable,
 } from "../../configs/schema";
 import { eq } from "drizzle-orm";
+// import { object } from "framer-motion/client";
 
-// Create context
+// Create the context
 export const UserContext = createContext();
 
+// Create a provider component
 export const UserProvider = ({ children }) => {
-  const [userdetails, setUserdetails] = useState(null);
+  const [userdetails, setUserdetails] = useState();
   const [address, setAddress] = useState([]);
+  // const [cartitem, setCartitem] = useState([]);
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-  // ✅ Get or create user
-  const getUserDetail = async () => {
+  // Fetch user details from DB
+  const getuserdetail = async () => {
     try {
-      const email = user?.primaryEmailAddress?.emailAddress;
-      const clerkId = user?.id;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-
-      if (!email || !clerkId) {
-        console.warn("❌ Missing email or clerkId", { email, clerkId });
-        return;
-      }
-
-      // 🔍 Try fetching user by clerkId
-      let res = await db
+      const res = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.clerkId, clerkId));
-
-      // 🔁 Fallback to email if not found
-      if (res.length === 0) {
-        res = await db
-          .select()
-          .from(usersTable)
-          .where(eq(usersTable.email, email));
-      }
+        .where(eq(usersTable.email, user?.primaryEmailAddress.emailAddress));
 
       if (res.length > 0) {
-        const dbUser = res[0];
-
-        // ✏️ Update missing clerkId if needed
-        if (!dbUser.clerkId) {
-          const [updatedUser] = await db
-            .update(usersTable)
-            .set({ clerkId })
-            .where(eq(usersTable.id, dbUser.id))
-            .returning();
-          setUserdetails(updatedUser);
-          return;
-        }
-
-        // ✅ Set userdetails
-        setUserdetails(dbUser);
-      } else {
-        // ➕ Insert new user
-        const [newUser] = await db
-          .insert(usersTable)
-          .values({
-            name,
-            email,
-            role: "user", // Default role
-            cartLength: 0,
-            clerkId,
-          })
-          .returning();
-        setUserdetails(newUser);
+        setUserdetails(res[0]);
       }
-    } catch (err) {
-      console.error("❌ Error in getUserDetail:", err);
-    }
+    } catch (error) {}
   };
 
-  // 📦 Get user orders
+  // Fetch user's orders with order items and product details
   const getMyOrders = async () => {
-    if (!userdetails?.id) return;
     try {
+      if (!userdetails) return; // Prevent running if userdetails is not set
+
       const res = await db
         .select({
           orderId: ordersTable.id,
@@ -102,75 +59,72 @@ export const UserProvider = ({ children }) => {
         })
         .from(ordersTable)
         .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
+        .innerJoin(
+          productsTable,
+          eq(orderItemsTable.productId, productsTable.id)
+        )
         .where(eq(ordersTable.userId, userdetails.id))
         .orderBy(ordersTable.createdAt);
 
-      const grouped = res.reduce((acc, item) => {
-        if (!acc[item.orderId]) {
-          acc[item.orderId] = {
+      const groupedOrders = res.reduce((acc, item) => {
+        const orderId = item.orderId;
+        if (!acc[orderId]) {
+          acc[orderId] = {
             orderId: item.orderId,
             totalAmount: item.totalAmount,
             status: item.status,
             createdAt: item.createdAt,
             paymentStatus: item.paymentStatus,
             paymentMode: item.paymentMode,
-            items: [],
+            items: [], // Store products inside each order
           };
         }
-        acc[item.orderId].items.push({
+        acc[orderId].items.push({
           productId: item.productId,
           productName: item.productName,
           productImage: item.productImage,
           quantity: item.quantity,
           price: item.price,
+          paymentStatus: item.paymentStatus,
+          paymentMode: item.paymentMode,
         });
         return acc;
       }, {});
+      setOrders(Object.values(groupedOrders));
 
-      setOrders(Object.values(grouped));
-    } catch (error) {
-      console.error("❌ Failed to get orders:", error);
-    }
+      // setOrders(res);
+    } catch (error) {}
   };
 
-  // 🏠 Get legacy address
-  const getAddress = async () => {
+  const getaddress = async () => {
     try {
       const res = await db
         .select()
         .from(addressTable)
         .where(eq(addressTable.userId, userdetails?.id));
-      console.log("🏠 Address (legacy):", res);
-    } catch (error) {
-      console.error("❌ Failed to get legacy address:", error);
-    }
+      // setUserAddress(res);
+    } catch (error) {}
   };
-
-  // 🏠 Get user address
-  const getUserAddress = async () => {
+  const userAddres = async () => {
     try {
       const res = await db
         .select()
         .from(UserAddressTable)
-        .where(eq(UserAddressTable.userId, userdetails?.id));
+        .where(eq(UserAddressTable.userId, userdetails.id));
       setAddress(res);
-    } catch (error) {
-      console.error("❌ Failed to get user addresses:", error);
-    }
+    } catch (error) {}
   };
-
-  // 🔁 On Clerk user load
+  // Fetch user details when user changes
   useEffect(() => {
-    if (user) getUserDetail();
+    if (user) getuserdetail();
   }, [user]);
 
-  // 🔁 On user details loaded
+  // Fetch orders when userdetails is available
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
-      getAddress();
-      getUserAddress();
+      getaddress();
+      userAddres();
     }
   }, [userdetails]);
 
