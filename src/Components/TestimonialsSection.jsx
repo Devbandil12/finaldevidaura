@@ -94,16 +94,16 @@ export default function TestimonialsSection() {
     <section className="testimonial-section">
       <h2 className="testimonial-heading">What Our Customers Say</h2>
 
-      <Marquee direction="left">
+      <Marquee direction="left" alwaysShow>
         {chunks[0]?.map((t, i) => (
-          <TestimonialCard key={i} data={t} index={i} />
+          <TestimonialCard key={i} data={t} />
         ))}
       </Marquee>
 
       {chunks[1] && chunks[1].length > 0 && (
         <Marquee direction="right">
           {chunks[1].map((t, i) => (
-            <TestimonialCard key={i} data={t} index={i} />
+            <TestimonialCard key={i} data={t} />
           ))}
       </Marquee>
       )}
@@ -180,9 +180,23 @@ export default function TestimonialsSection() {
   );
 }
 
-function Marquee({ children, direction = "left" }) {
+function Marquee({ children, direction = "left", alwaysShow = false }) {
   const wrapperRef = useRef();
+  const [shouldScroll, setShouldScroll] = useState(false);
   const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    const check = () => {
+      if (!el) return;
+      setShouldScroll(el.scrollWidth > el.clientWidth);
+    };
+
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -192,30 +206,19 @@ function Marquee({ children, direction = "left" }) {
       onMouseLeave={() => setPaused(false)}
     >
       <div
-        className={`marquee-track scroll-${direction} ${paused ? "paused" : ""}`}
+        className={`marquee-track ${
+          shouldScroll ? `scroll-${direction}` : ""
+        } ${!shouldScroll && alwaysShow ? "centered" : ""} ${paused ? "paused" : ""}`}
       >
-        {[...children, ...children].map((child, i) => (
-          <div key={i}>{child}</div>
-        ))}
+        {children}
       </div>
     </div>
   );
 }
 
-function TestimonialCard({ data, index }) {
+function TestimonialCard({ data }) {
   return (
-    <motion.div
-      className="testimonial-card"
-      animate={{
-        y: [0, index % 2 === 0 ? -10 : 10, 0],
-      }}
-      transition={{
-        duration: 5,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: index * 0.2,
-      }}
-    >
+    <div className="testimonial-card">
       <div className="avatar-row">
         {data.avatar && <img src={data.avatar} className="avatar" alt={data.name} />}
         <div className="name">{data.name}</div>
@@ -235,6 +238,9 @@ function TestimonialCard({ data, index }) {
 
       {data.title && <div className="title">{data.title}</div>}
       <div className="feedback">"{data.text}"</div>
-    </motion.div>
+    </div>
   );
 }
+
+
+
