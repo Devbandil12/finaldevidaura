@@ -10,7 +10,7 @@ import {
   orderItemsTable,
   productsTable,
 } from "../../configs/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // Create the context
 export const UserContext = createContext();
