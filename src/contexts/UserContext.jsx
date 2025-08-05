@@ -1,48 +1,87 @@
-import { useUser } from "@clerk/clerk-react";
+// src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
 import { db } from "../../configs";
 import {
-  orderItemsTable,
-  ordersTable,
   usersTable,
-  productsTable,
   addressTable,
-  addToCartTable,
   UserAddressTable,
+  ordersTable,
+  orderItemsTable,
+  productsTable,
 } from "../../configs/schema";
-import { eq } from "drizzle-orm";
-// import { object } from "framer-motion/client";
+import { eq, or } from "drizzle-orm";
 
-// Create the context
+// Create context
 export const UserContext = createContext();
 
-// Create a provider component
 export const UserProvider = ({ children }) => {
-  const [userdetails, setUserdetails] = useState();
+  const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
-  // const [cartitem, setCartitem] = useState([]);
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-  // Fetch user details from DB
-  const getuserdetail = async () => {
+  // 🔍 Get or Create user in DB
+  const getUserDetail = async () => {
     try {
+      const email = user?.primaryEmailAddress?.emailAddress;
+      const clerkId = user?.id;
+      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+      if (!email || !clerkId) {
+        console.warn("❌ Missing email or clerkId", { email, clerkId });
+        return;
+      }
+
+      console.log("🔍 Searching by clerkId or email");
       const res = await db
         .select()
         .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress.emailAddress));
+        .where(
+          or(eq(usersTable.clerkId, clerkId), eq(usersTable.email, email))
+        );
 
       if (res.length > 0) {
-        setUserdetails(res[0]);
+        const dbUser = res[0];
+
+        // ✅ Update missing clerkId if needed
+        if (!dbUser.clerkId) {
+          const [updatedUser] = await db
+            .update(usersTable)
+            .set({ clerkId })
+            .where(eq(usersTable.id, dbUser.id))
+            .returning();
+
+          setUserdetails(updatedUser);
+          return;
+        }
+
+        setUserdetails(dbUser);
+      } else {
+        // 🆕 New user insert
+        const [newUser] = await db
+          .insert(usersTable)
+          .values({
+            name,
+            email,
+            role: "user",
+            cartLength: 0,
+            clerkId,
+          })
+          .returning();
+
+        setUserdetails(newUser);
       }
-    } catch (error) {}
+    } catch (err) {
+      console.error("❌ Error in getUserDetail:", err);
+    }
   };
 
-  // Fetch user's orders with order items and product details
+  // 📦 Get user orders
   const getMyOrders = async () => {
-    try {
-      if (!userdetails) return; // Prevent running if userdetails is not set
+    if (!userdetails?.id) return;
 
+    try {
       const res = await db
         .select({
           orderId: ordersTable.id,
@@ -59,72 +98,75 @@ export const UserProvider = ({ children }) => {
         })
         .from(ordersTable)
         .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
-        .innerJoin(
-          productsTable,
-          eq(orderItemsTable.productId, productsTable.id)
-        )
+        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
         .where(eq(ordersTable.userId, userdetails.id))
         .orderBy(ordersTable.createdAt);
 
-      const groupedOrders = res.reduce((acc, item) => {
-        const orderId = item.orderId;
-        if (!acc[orderId]) {
-          acc[orderId] = {
+      const grouped = res.reduce((acc, item) => {
+        if (!acc[item.orderId]) {
+          acc[item.orderId] = {
             orderId: item.orderId,
             totalAmount: item.totalAmount,
             status: item.status,
             createdAt: item.createdAt,
             paymentStatus: item.paymentStatus,
             paymentMode: item.paymentMode,
-            items: [], // Store products inside each order
+            items: [],
           };
         }
-        acc[orderId].items.push({
+        acc[item.orderId].items.push({
           productId: item.productId,
           productName: item.productName,
           productImage: item.productImage,
           quantity: item.quantity,
           price: item.price,
-          paymentStatus: item.paymentStatus,
-          paymentMode: item.paymentMode,
         });
         return acc;
       }, {});
-      setOrders(Object.values(groupedOrders));
 
-      // setOrders(res);
-    } catch (error) {}
+      setOrders(Object.values(grouped));
+    } catch (error) {
+      console.error("❌ Failed to get orders:", error);
+    }
   };
 
-  const getaddress = async () => {
+  // 🏠 Get legacy address (optional logging)
+  const getAddress = async () => {
     try {
       const res = await db
         .select()
         .from(addressTable)
         .where(eq(addressTable.userId, userdetails?.id));
-      // setUserAddress(res);
-    } catch (error) {}
+      console.log("🏠 Address (legacy):", res);
+    } catch (error) {
+      console.error("❌ Failed to get legacy address:", error);
+    }
   };
-  const userAddres = async () => {
+
+  // 🏠 Get user addresses
+  const getUserAddress = async () => {
     try {
       const res = await db
         .select()
         .from(UserAddressTable)
-        .where(eq(UserAddressTable.userId, userdetails.id));
+        .where(eq(UserAddressTable.userId, userdetails?.id));
       setAddress(res);
-    } catch (error) {}
+    } catch (error) {
+      console.error("❌ Failed to get user addresses:", error);
+    }
   };
-  // Fetch user details when user changes
+
+  // Run on Clerk load
   useEffect(() => {
-    if (user) getuserdetail();
+    if (user) getUserDetail();
   }, [user]);
 
-  // Fetch orders when userdetails is available
+  // Run once userdetails is set
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
-      getaddress();
-      userAddres();
+      getAddress();
+      getUserAddress();
     }
   }, [userdetails]);
 
