@@ -6,6 +6,10 @@ import { CartContext } from "../contexts/CartContext";
 
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg";        // outline
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
+import ReviewComponent from "./ReviewComponent";
+
+
+
 
 const ProductDetail = ({
   product,
@@ -291,6 +295,9 @@ const ProductDetail = ({
           </div>
         </div>
       </div>
+   <div className="mt-10">
+  <ReviewSection productId={fullProduct.id} />
+</div>
     </div>
   );
 };
