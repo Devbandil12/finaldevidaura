@@ -38,7 +38,7 @@ export const UserProvider = ({ children }) => {
         .select()
         .from(usersTable)
         .where(
-          or(eq(usersTable.clerkId, clerkId), eq(usersTable.email, email))
+          or(eq(usersTable.email, email), eq(usersTable.clerkId, clerkId) )
         );
 
       if (res.length > 0) {
