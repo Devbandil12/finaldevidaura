@@ -126,7 +126,8 @@ const ProductDetail = ({
 
   return (
     <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-hidden">
-      <div className="bg-white max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-xl flex flex-col md:flex-row overflow-y-auto">
+      <div className="bg-white max-w-4xl w-full max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-y-auto">
+<div className="flex flex-col md:flex-row">
         {/* Left Image Section */}
         <div className="w-full md:w-1/2 bg-gray-100 p-4 relative flex flex-col items-center">
           <button
@@ -294,6 +295,7 @@ const ProductDetail = ({
             </button>
           </div>
         </div>
+</div>
  <div className="p-6 border-t mt-4">
     <ReviewComponent productId={product.id} user={user} />
   </div>
