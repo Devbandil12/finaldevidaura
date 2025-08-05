@@ -49,7 +49,7 @@ const ReviewComponent = ({ productId, user }) => {
         rating,
         comment,
         name: user?.name || name,
-        userId: user?.id || null,
+        userId: user?.userDetails?.id || null,
         photoUrls: images,
       };
 
