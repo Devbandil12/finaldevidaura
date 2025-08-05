@@ -452,7 +452,7 @@ useEffect(() => {
                       <img src={UserIcon} alt="User" />
                       {isLoggedIn ? (
                         <div className="sidebar-user">
-                          <h4>{user?.fullName}</h4>
+                          <h4>{user?.name}</h4>
                           <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
                         </div>
                       ) : (
