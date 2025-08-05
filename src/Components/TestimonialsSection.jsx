@@ -239,7 +239,8 @@ function TestimonialCard({ data }) {
             stroke={i < data.rating ? "none" : "#ccc"}
           />
         ))}
-<span className="rating-number"> { data.rating}</span>
+<span className="rating-number">{data.rating.toFixed(1)}</span>
+
       </div>
 
       {data.title && <div className="title">{data.title}</div>}
