@@ -23,6 +23,7 @@
 
 .marquee-track {
   display: flex;
+  gap: 10px;
   width: max-content;
   align-items: center;
   will-change: transform;
