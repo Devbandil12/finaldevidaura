@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import axios from "axios";
-import "./style/ReviewComponent.css";
+import "../style/ReviewComponent.css";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
