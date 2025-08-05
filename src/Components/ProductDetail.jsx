@@ -294,10 +294,11 @@ const ProductDetail = ({
             </button>
           </div>
         </div>
-      </div>
-   <div className="p-6 border-t mt-4">
+ <div className="p-6 border-t mt-4">
     <ReviewComponent productId={product.id} user={user} />
   </div>
+      </div>
+  
     </div>
   );
 };
