@@ -8,8 +8,7 @@ import WishlistImage from "../assets/wishlist-svgrepo-com.svg";        // outlin
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
 import ReviewComponent from "./ReviewComponent";
 
-
-
+import { useUser } from "@clerk/clerk-react";
 
 const ProductDetail = ({
   product,
@@ -22,6 +21,7 @@ const ProductDetail = ({
   inCart,
 }) => {
   const navigate = useNavigate();
+  const { user } = useUser();
 
   // Contexts
   const { products } = useContext(ProductContext);
