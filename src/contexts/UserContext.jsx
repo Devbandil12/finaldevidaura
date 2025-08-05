@@ -10,7 +10,7 @@ import {
   orderItemsTable,
   productsTable,
 } from "../../configs/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Create the context
 export const UserContext = createContext();
@@ -24,17 +24,16 @@ export const UserProvider = ({ children }) => {
   // 🔍 Get or Create user in DB
   const getUserDetail = async () => {
     try {
-      const email = user?.primaryEmailAddress?.emailAddress;
+      const email   = user?.primaryEmailAddress?.emailAddress;
       const clerkId = user?.id;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+      const name    = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
       if (!email || !clerkId) {
-        console.warn("❌ Clerk user missing email or ID");
+        console.warn("❌ Missing email or clerkId", { email, clerkId });
         return;
       }
 
-      console.log("🔍 Checking for user in DB:", email);
-
+      console.log("🔍 Looking up user in DB by email:", email);
       const res = await db
         .select()
         .from(usersTable)
@@ -42,21 +41,26 @@ export const UserProvider = ({ children }) => {
 
       if (res.length > 0) {
         const dbUser = res[0];
+        console.log("⌛ Found user:", dbUser);
 
         // ✅ Update missing clerkId
         if (!dbUser.clerkId) {
-          await db
+          console.log("➡️ About to UPDATE clerkId on user", dbUser.id, "→", clerkId);
+          const [updatedUser] = await db
             .update(usersTable)
             .set({ clerkId })
-            .where(eq(usersTable.id, dbUser.id));
+            .where(eq(usersTable.id, dbUser.id))
+            .returning();    // ← ensure full row is returned
 
-          dbUser.clerkId = clerkId;
-          console.log("🛠️ Added missing Clerk ID to user.");
+          console.log("✅ UPDATE returned:", updatedUser);
+          setUserdetails(updatedUser);
+          return;
         }
 
         setUserdetails(dbUser);
       } else {
         // 🆕 New user insert
+        console.log("➕ Inserting new user with clerkId:", clerkId);
         const [newUser] = await db
           .insert(usersTable)
           .values({
@@ -66,13 +70,13 @@ export const UserProvider = ({ children }) => {
             cartLength: 0,
             clerkId,
           })
-          .returning();
+          .returning();    // ← ensure full row is returned
 
-        console.log("✅ New user inserted into DB");
+        console.log("✅ INSERT returned:", newUser);
         setUserdetails(newUser);
       }
     } catch (err) {
-      console.error("❌ Error getting/creating user:", err);
+      console.error("❌ Error in getUserDetail:", err);
     }
   };
 
@@ -101,10 +105,9 @@ export const UserProvider = ({ children }) => {
         .where(eq(ordersTable.userId, userdetails.id))
         .orderBy(ordersTable.createdAt);
 
-      const groupedOrders = res.reduce((acc, item) => {
-        const orderId = item.orderId;
-        if (!acc[orderId]) {
-          acc[orderId] = {
+      const grouped = res.reduce((acc, item) => {
+        if (!acc[item.orderId]) {
+          acc[item.orderId] = {
             orderId: item.orderId,
             totalAmount: item.totalAmount,
             status: item.status,
@@ -114,7 +117,7 @@ export const UserProvider = ({ children }) => {
             items: [],
           };
         }
-        acc[orderId].items.push({
+        acc[item.orderId].items.push({
           productId: item.productId,
           productName: item.productName,
           productImage: item.productImage,
@@ -124,13 +127,13 @@ export const UserProvider = ({ children }) => {
         return acc;
       }, {});
 
-      setOrders(Object.values(groupedOrders));
+      setOrders(Object.values(grouped));
     } catch (error) {
       console.error("❌ Failed to get orders:", error);
     }
   };
 
-  // 🏠 Get legacy address (optional)
+  // 🏠 Get legacy address (optional logging)
   const getAddress = async () => {
     try {
       const res = await db
@@ -139,7 +142,7 @@ export const UserProvider = ({ children }) => {
         .where(eq(addressTable.userId, userdetails?.id));
       console.log("🏠 Address (legacy):", res);
     } catch (error) {
-      console.error("❌ Failed to get address:", error);
+      console.error("❌ Failed to get legacy address:", error);
     }
   };
 
@@ -152,7 +155,7 @@ export const UserProvider = ({ children }) => {
         .where(eq(UserAddressTable.userId, userdetails?.id));
       setAddress(res);
     } catch (error) {
-      console.error("❌ Failed to get user address:", error);
+      console.error("❌ Failed to get user addresses:", error);
     }
   };
 
