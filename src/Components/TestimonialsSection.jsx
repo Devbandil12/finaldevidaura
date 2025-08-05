@@ -210,7 +210,11 @@ function Marquee({ children, direction = "left", alwaysShow = false }) {
     shouldScroll ? `scroll-${direction}` : ""
   } ${!shouldScroll && alwaysShow ? "centered" : ""} ${paused ? "paused" : ""}`}
 >
-  {children}
+  {[...children, ...children].map((child, i) => (
+    <div className="marquee-item" key={i}>
+      {child}
+    </div>
+  ))}
 </div>
 
 
