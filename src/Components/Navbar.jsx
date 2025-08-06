@@ -449,8 +449,10 @@ useEffect(() => {
                   {/* Sidebar */}
                   <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
                     <header className="sidebar-header">
+ <div className="sidebar-user-avt-img">
                       <img src={UserIcon} alt="User" />
 <h4>{userdetails?.name}</h4>
+</div>
                       {isLoggedIn ? (
                         <div className="sidebar-user">
                           <h4>{userdetails?.name}</h4>
