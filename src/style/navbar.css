@@ -465,7 +465,7 @@ padding-left:10px;
 
 .sidebar-user-avt-img {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: left;
   gap: 15px;
   color: #000;
