@@ -1,10 +1,3 @@
-/* ==============================
-   ReviewComponent.css
-   “Pro‐grade” e‐commerce styling
-   with updated summary layout
-   ============================== */
-
-/* —— CSS Variables & Reset —— */
 :root {
   --font-sans: 'Inter', sans-serif;
   --color-bg: #ffffff;
@@ -19,9 +12,6 @@
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-
-
-/* —— Container Centering —— */
 .rc-review-component {
   font-family: var(--font-sans);
   max-width: 900px;
@@ -29,284 +19,7 @@
   background: var(--color-bg);
 }
 
-/* —— Filter Controls —— */
-.rc-filter-stars {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.rc-filter-stars button {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-light);
-  color: var(--color-dark);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.rc-filter-stars button:hover {
-  background: var(--color-border);
-}
-
-.rc-filter-stars button.active {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-}
-
-
-
-/* ==== Summary Section ==== */
-/* Use CSS Grid for auto-responsive columns */
-.rc-review-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2.5rem;
-  align-items: start;
-}
-
-/* —— Left side: always column —— */
-.rc-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;  
-  padding-left: 30px;
-  
-}
-
-.rc-avg-rating {
-  font-size: 3rem;
-  font-weight: bold;
-}
-
-.rc-star-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: var(--color-accent);
-}
-
-/* ← KEEP ORIGINAL “total reviews” STYLE → */
-.rc-total-reviews {
-  margin-top: 0.25rem;
-  color: #6b7280;    /* unchanged */
-  font-size: 0.9rem; /* unchanged */
-}
-
-/* —— Right side: stacks progress lines vertically —— */
-.rc-right {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* ← KEEP ORIGINAL progress‐bar STYLES → */
-.rc-progress-line {
-  display: grid;
-  grid-template-columns: 30px 1fr 30px;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.rc-progress {
-  background-color: #e5e7eb;  /* old */
-  height: 8px;                /* old */
-  border-radius: 9999px;      /* old */
-  position: relative;
-  overflow: hidden;
-}
-
-.rc-fill {
-  background-color: #facc15;  /* old */
-  height: 100%;               /* old */
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-/* —— Reviews List —— */
-.rc-review-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.rc-review-card {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  background: var(--color-bg);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s;
-}
-.rc-review-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* — Header — */
-.rc-review-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.rc-review-header strong {
-  font-size: 1rem;
-}
-
-.rc-badge {
-  background: #10b981;
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius);
-}
-
-.rc-edit-btn {
-  background: var(--color-light);
-  color: var(--color-dark);
-  font-size: 0.75rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.rc-edit-btn:hover {
-  background: var(--color-border);
-}
-
-/* — Images — */
-.rc-review-images {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.rc-review-images img,
-.rc-extra-img {
-  width: 70px;
-  height: 70px;
-  border-radius: var(--radius);
-  object-fit: cover;
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-.rc-extra-img {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  font-weight: bold;
-}
-
-/* — Comment & Date — */
-.rc-review-card p {
-  font-size: 0.95rem;
-  color: var(--color-dark);
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-}
-
-.rc-review-card small {
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-/* —— Image Preview Overlay —— */
-.rc-preview-overlay {
-  position: fixed;
-  top:0; left:0;
-  width:100vw; height:100vh;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.rc-preview-img {
-  max-width: 90vw;
-  max-height: 90vh;
-  border-radius: var(--radius);
-}
-
-.rc-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  padding: 1rem;
-  font-size: 2rem;
-  color: #fff;
-  cursor: pointer;
-  user-select: none;
-}
-.rc-nav.rc-left { left: 2rem; }
-.rc-nav.rc-right { right: 2rem; }
-
-/* —— Review Form —— */
-.rc-review-form {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--color-border);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.rc-review-form h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.rc-review-form input[type="text"],
-.rc-review-form select,
-.rc-review-form textarea,
-.rc-review-form input[type="file"] {
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 0.95rem;
-  width: 100%;
-}
-
-.rc-preview-thumbs {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.rc-preview-thumbs img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-}
-
-/* — Submit Button — */
-.rc-review-form button[type="submit"] {
-  background: var(--color-primary);
-  color: #fff;
-  padding: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.rc-review-form button[type="submit"]:hover {
-  background: #374151;
-}
-
-
+/* — Filter Dropdown — */
 .rc-dropdown-wrapper {
   position: relative;
   margin-bottom: 1rem;
@@ -356,10 +69,213 @@
   background: #f3f4f6;
 }
 
+/* ==== Summary Section ==== */
+.rc-review-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  align-items: start;
+}
 
+.rc-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;  
+  padding-left: 30px;
+}
 
+.rc-avg-rating {
+  font-size: 3rem;
+  font-weight: bold;
+}
 
+.rc-star-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-accent);
+}
 
+.rc-total-reviews {
+  margin-top: 0.25rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.rc-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rc-progress-line {
+  display: grid;
+  grid-template-columns: 30px 1fr 30px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rc-progress {
+  background-color: #e5e7eb;
+  height: 8px;
+  border-radius: 9999px;
+  position: relative;
+  overflow: hidden;
+}
+
+.rc-fill {
+  background-color: #facc15;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* —— Reviews List —— */
+.rc-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.rc-review-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.rc-review-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.rc-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.rc-review-header strong {
+  font-size: 1rem;
+}
+
+.rc-badge {
+  background: #10b981;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+}
+
+.rc-edit-btn {
+  background: var(--color-light);
+  color: var(--color-dark);
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.rc-edit-btn:hover {
+  background: var(--color-border);
+}
+
+.rc-review-images {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rc-review-images img,
+.rc-extra-img {
+  width: 70px;
+  height: 70px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.rc-extra-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  font-weight: bold;
+}
+
+.rc-review-card p {
+  font-size: 0.95rem;
+  color: var(--color-dark);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.rc-review-card small {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* —— Review Form —— */
+.rc-review-form {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.rc-review-form h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.rc-review-form input[type="text"],
+.rc-review-form select,
+.rc-review-form textarea,
+.rc-review-form input[type="file"] {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  width: 100%;
+}
+
+.rc-preview-thumbs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rc-preview-thumbs img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.rc-review-form button[type="submit"] {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.rc-review-form button[type="submit"]:hover {
+  background: #374151;
+}
+
+/* —— Pagination —— */
 .rc-pagination {
   display: flex;
   justify-content: center;
@@ -374,29 +290,12 @@
   background: #fff;
   cursor: pointer;
 }
-
 .rc-pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-
-
-
-/* —— Responsive Tweaks —— */
-@media (min-width: 768px) {
-  .rc-review-form {
-    grid-template-columns: repeat(2, 1fr);
-    grid-column-gap: 1rem;
-  }
-  .rc-review-form h3,
-  .rc-review-form button[type="submit"] {
-    grid-column: span 2;
-  }
-}
-
-
-
+/* —— Modal Preview —— */
 .rc-modal-backdrop {
   position: fixed;
   top: 0;
@@ -431,7 +330,14 @@
   margin-top: 10px;
 }
 
-.rc-filter-dropdown {
-  margin-bottom: 1rem;
+/* —— Responsive —— */
+@media (min-width: 768px) {
+  .rc-review-form {
+    grid-template-columns: repeat(2, 1fr);
+    grid-column-gap: 1rem;
+  }
+  .rc-review-form h3,
+  .rc-review-form button[type="submit"] {
+    grid-column: span 2;
+  }
 }
-
