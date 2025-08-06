@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Star, ChevronDown } from "lucide-react";
+import { Star } from "lucide-react";
 import axios from "axios";
-import "../style/reviewcomponent.css"; // You'll add dropdown styles here
+import { motion, AnimatePresence } from "framer-motion";
+import "../style/reviewcomponent.css";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
@@ -11,8 +12,8 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalReviews, setTotalReviews] = useState(0);
   const REVIEWS_PER_PAGE = 3;
+  const [totalReviews, setTotalReviews] = useState(0);
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -21,39 +22,39 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [editingReviewId, setEditingReviewId] = useState(null);
 
   const [starFilter, setStarFilter] = useState(null);
-  const [preview, setPreview] = useState({ images: [], index: null });
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [preview, setPreview] = useState({ images: [], index: null });
 
   useEffect(() => {
-    fetchReviews();
+    fetchReviews(starFilter);
   }, [productId, starFilter, currentPage]);
 
-  useEffect(() => {
-    fetchStats();
-  }, [productId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = async (filter) => {
     try {
-      const params = {
-        page: currentPage,
-        limit: REVIEWS_PER_PAGE,
-        ...(starFilter && { rating: starFilter }),
-      };
-      const res = await axios.get(`${API_BASE}/${productId}`, { params });
-      setReviews(res.data.reviews);
-      setTotalReviews(res.data.total);
+      const url = filter ? `${API_BASE}/${productId}?rating=${filter}` : `${API_BASE}/${productId}`;
+      const res = await axios.get(url);
+      const data = res.data;
+      const startIdx = (currentPage - 1) * REVIEWS_PER_PAGE;
+      const endIdx = startIdx + REVIEWS_PER_PAGE;
+      setReviews(data.slice(startIdx, endIdx));
+      setTotalReviews(data.length);
+
+      if (!filter) {
+        const total = data.length;
+        if (total > 0) {
+          const sum = data.reduce((acc, r) => acc + r.rating, 0);
+          setAverageRating((sum / total).toFixed(1));
+          const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+          data.forEach((r) => stats[r.rating]++);
+          setRatingStats(stats);
+        } else {
+          setAverageRating(0);
+          setRatingStats({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+        }
+      }
     } catch (err) {
       console.error("Failed to fetch reviews", err);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/stats/${productId}`);
-      setAverageRating(res.data.averageRating.toFixed(1));
-      setRatingStats(res.data.ratingStats);
-    } catch (err) {
-      console.error("Failed to fetch stats", err);
     }
   };
 
@@ -80,8 +81,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
       resetForm();
       setCurrentPage(1);
-      fetchReviews();
-      fetchStats();
+      fetchReviews(starFilter);
     } catch (err) {
       console.error("Review submission failed", err);
     }
@@ -93,6 +93,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setImages([]);
     setName(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
     setEditingReviewId(null);
+    setShowForm(false);
   };
 
   const handleEdit = (review) => {
@@ -101,6 +102,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setImages(review.photoUrls || []);
     setEditingReviewId(review.id);
     setName(review.name);
+    setShowForm(true);
   };
 
   const handleImageUpload = (e) => {
@@ -120,6 +122,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const openImagePreview = (idx, photoUrls) => {
     setPreview({ images: photoUrls, index: idx });
   };
+
   const closePreview = () => setPreview({ images: [], index: null });
 
   const handleImgError = (e) => {
@@ -146,7 +149,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   );
 
   const getPercent = (count) => {
-    const total = totalReviews || 1;
+    const total = reviews.length || 1;
     return ((count / total) * 100).toFixed(0);
   };
 
@@ -154,30 +157,24 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     <div className="rc-review-component">
       {/* Star Filter Dropdown */}
       <div className="rc-dropdown-wrapper">
-        <button
-          className="rc-dropdown-toggle"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-        >
-          {starFilter ? `${starFilter} Star` : "All Ratings"}
-          <ChevronDown size={18} />
-        </button>
-        <div className={`rc-dropdown ${dropdownOpen ? "open" : ""}`}>
-          <div onClick={() => { setStarFilter(null); setCurrentPage(1); setDropdownOpen(false); }}>
-            All Ratings
-          </div>
-          {[5, 4, 3, 2, 1].map((s) => (
-            <div
-              key={s}
-              onClick={() => {
-                setStarFilter(s);
-                setCurrentPage(1);
-                setDropdownOpen(false);
-              }}
-            >
-              {s} Stars
-            </div>
-          ))}
+        <div className="rc-dropdown-header" onClick={() => setDropdownOpen((p) => !p)}>
+          Filter by Rating {starFilter ? `: ${starFilter}★` : ""}
         </div>
+        <AnimatePresence>
+          {dropdownOpen && (
+            <motion.ul
+              className="rc-dropdown"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <li onClick={() => { setStarFilter(null); setDropdownOpen(false); }}>All</li>
+              {[5, 4, 3, 2, 1].map((s) => (
+                <li key={s} onClick={() => { setStarFilter(s); setDropdownOpen(false); }}>{s} Stars</li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Summary */}
@@ -205,22 +202,19 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         </div>
       )}
 
-      {/* Reviews */}
+      {/* Review List */}
       <div className="rc-review-list">
         {reviews.map((r) => (
           <div key={r.id} className="rc-review-card">
             <div className="rc-review-header">
               <strong>{r.name}</strong>
-              {r.isVerifiedBuyer && (
-                <span className="rc-badge">Verified Purchase</span>
-              )}
+              {r.isVerifiedBuyer && <span className="rc-badge">Verified Purchase</span>}
               {user?.userDetails?.id === r.userId && (
-                <button className="rc-edit-btn" onClick={() => handleEdit(r)}>
-                  Edit
-                </button>
+                <button className="rc-edit-btn" onClick={() => handleEdit(r)}>Edit</button>
               )}
             </div>
 
+            {/* Thumbnails */}
             {r.photoUrls?.length > 0 && (
               <div className="rc-review-images">
                 {r.photoUrls.slice(0, 4).map((src, idx) => (
@@ -232,16 +226,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
                     onError={handleImgError}
                   />
                 ))}
-                {r.photoUrls.length > 4 && (
-                  <div
-                    className="rc-extra-img"
-                    onClick={() => openImagePreview(4, r.photoUrls)}
-                  >
-                    +{r.photoUrls.length - 4}
-                  </div>
-                )}
               </div>
             )}
+
             <p>{r.comment}</p>
             {renderStars(r.rating)}
             <small>{new Date(r.createdAt).toLocaleDateString()}</small>
@@ -249,39 +236,31 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         ))}
       </div>
 
-      {/* Image Preview */}
+      {/* Lightbox Preview */}
       {preview.index !== null && (
         <div className="rc-preview-overlay" onClick={closePreview}>
-          <img
-            src={preview.images[preview.index]}
-            alt="preview"
-            className="rc-preview-img"
-            onError={handleImgError}
-          />
-          <button
-            className="rc-nav rc-left"
-            onClick={(e) => {
+          <div className="rc-lightbox">
+            <img
+              src={preview.images[preview.index]}
+              alt="preview"
+              className="rc-preview-img"
+              onError={handleImgError}
+            />
+            <button className="rc-nav rc-left" onClick={(e) => {
               e.stopPropagation();
               setPreview((p) => ({
-                images: p.images,
+                ...p,
                 index: p.index > 0 ? p.index - 1 : p.images.length - 1,
               }));
-            }}
-          >
-            ◀
-          </button>
-          <button
-            className="rc-nav rc-right"
-            onClick={(e) => {
+            }}>◀</button>
+            <button className="rc-nav rc-right" onClick={(e) => {
               e.stopPropagation();
               setPreview((p) => ({
-                images: p.images,
+                ...p,
                 index: p.index < p.images.length - 1 ? p.index + 1 : 0,
               }));
-            }}
-          >
-            ▶
-          </button>
+            }}>▶</button>
+          </div>
         </div>
       )}
 
@@ -304,51 +283,60 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         </button>
       </div>
 
-      {/* Form */}
-      <form className="rc-review-form" onSubmit={handleSubmit}>
-        <h3>{editingReviewId ? "Edit Your Review" : "Leave a Review"}</h3>
-        {!user && (
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            required
-          />
+      {/* Toggle Form Button */}
+      <button className="rc-toggle-form-btn" onClick={() => setShowForm((prev) => !prev)}>
+        {editingReviewId ? "Edit Your Review" : showForm ? "Cancel" : "Write a Review"}
+      </button>
+
+      {/* Review Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.form
+            className="rc-review-form"
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {!user && (
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                required
+              />
+            )}
+            <select value={rating} onChange={(e) => setRating(Number(e.target.value))} required>
+              <option value="">Rating</option>
+              {[5, 4, 3, 2, 1].map((s) => (
+                <option key={s} value={s}>{s} Stars</option>
+              ))}
+            </select>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Write your review"
+              required
+            />
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <div className="rc-preview-thumbs">
+              {images.map((src, i) => (
+                <img key={i} src={src} alt="preview" onError={handleImgError} />
+              ))}
+            </div>
+            <button type="submit">
+              {editingReviewId ? "Update Review" : "Submit Review"}
+            </button>
+          </motion.form>
         )}
-        <select
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-          required
-        >
-          <option value="">Rating</option>
-          {[5, 4, 3, 2, 1].map((s) => (
-            <option key={s} value={s}>
-              {s} Stars
-            </option>
-          ))}
-        </select>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Write your review"
-          required
-        />
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageUpload}
-        />
-        <div className="rc-preview-thumbs">
-          {images.map((src, i) => (
-            <img key={i} src={src} alt="preview" onError={handleImgError} />
-          ))}
-        </div>
-        <button type="submit">
-          {editingReviewId ? "Update Review" : "Submit Review"}
-        </button>
-      </form>
+      </AnimatePresence>
     </div>
   );
 };
