@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
+import { UserContext } from "../contexts/UserContext";
 
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
@@ -30,6 +31,9 @@ const Products = () => {
     startBuyNow,
     // Optional: isCartLoading,
   } = useContext(CartContext);
+
+   const { userdetails } = useContext(UserContext);
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -291,6 +295,7 @@ const Products = () => {
               ...modalProduct,
               images: modalProduct.images || [modalProduct.imageurl],
             }}
+           userdetails={userdetails}
             onClose={closeModal}
             // Keep backward-compatible props:
             onAddToCart={(product, quantity, isBuyNow) =>
