@@ -94,7 +94,6 @@ useEffect(() => {
       }
 
       resetForm();
-      setCurrentPage(1);
       fetchReviews(starFilter);
     } catch (err) {
       console.error("Review submission failed", err);
