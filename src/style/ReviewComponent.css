@@ -1,9 +1,11 @@
+/* ReviewComponent.css */
+
 /* ===============================
    Unified Review Component Styles
-   =============================== */
+   ================================ */
 
 /* === Root Container === */
-.review-component {
+.rc-review-component {
   padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
   margin-top: 2rem;
@@ -12,7 +14,7 @@
 }
 
 /* === Summary Section (Top) === */
-.review-summary {
+.rc-review-summary {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
@@ -21,12 +23,12 @@
 }
 
 /* === Left Summary: Average Rating === */
-.review-summary .left {
+.rc-review-summary .rc-left {
   flex: 1;
   min-width: 200px;
 }
 
-.review-summary .left h2 {
+.rc-review-summary .rc-left h2 {
   font-size: 2.5rem;
   font-weight: bold;
   display: flex;
@@ -35,7 +37,7 @@
   margin: 0;
 }
 
-.star-row {
+.rc-star-row {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -44,19 +46,19 @@
 }
 
 /* === Right Summary: Rating Distribution === */
-.review-summary .right {
+.rc-review-summary .rc-right {
   flex: 2;
   min-width: 200px;
 }
 
-.progress-bar-wrapper {
+.rc-progress-bar-wrapper {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin: 0.25rem 0;
 }
 
-.progress-bar {
+.rc-progress-bar {
   background-color: #e5e7eb;
   height: 8px;
   border-radius: 9999px;
@@ -65,7 +67,7 @@
   overflow: hidden;
 }
 
-.progress-bar-fill {
+.rc-progress-bar-fill {
   background-color: #facc15;
   height: 100%;
   position: absolute;
@@ -74,13 +76,13 @@
 }
 
 /* === Review List & Cards === */
-.review-list {
+.rc-review-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.review-card {
+.rc-review-card {
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   padding: 1rem;
@@ -90,7 +92,7 @@
 }
 
 /* === Review Header: User Info === */
-.review-header {
+.rc-review-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -99,11 +101,11 @@
   gap: 0.5rem;
 }
 
-.review-header strong {
+.rc-review-header strong {
   font-weight: 600;
 }
 
-.verified-badge {
+.rc-verified-badge {
   background: #10b981;
   color: white;
   font-size: 0.75rem;
@@ -113,14 +115,14 @@
 }
 
 /* === Review Actions === */
-.review-actions {
+.rc-review-actions {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
 
-.review-actions button,
-.edit-btn {
+.rc-review-actions button,
+.rc-edit-btn {
   background: #f3f4f6;
   color: #111827;
   font-size: 0.75rem;
@@ -131,20 +133,20 @@
   transition: background 0.2s;
 }
 
-.review-actions button:hover,
-.edit-btn:hover {
+.rc-review-actions button:hover,
+.rc-edit-btn:hover {
   background: #e5e7eb;
 }
 
 /* === Review Images === */
-.review-images {
+.rc-review-images {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-bottom: 0.5rem;
 }
 
-.review-images img {
+.rc-review-images img {
   width: 70px;
   height: 70px;
   object-fit: cover;
@@ -154,7 +156,7 @@
 }
 
 /* === Image Overlay for "+X more" === */
-.overlay {
+.rc-overlay {
   position: relative;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
@@ -165,53 +167,47 @@
   justify-content: center;
 }
 
-.overlay::after {
+.rc-overlay::after {
   content: attr(data-overlay);
   position: absolute;
 }
 
 /* === Review Text === */
-.review-text {
+.rc-review-text {
   font-size: 0.95rem;
   color: #374151;
   line-height: 1.4;
 }
 
-.review-date {
+.rc-review-date {
   font-size: 0.75rem;
   color: #6b7280;
   margin-top: 0.25rem;
 }
 
 /* === Review Form === */
-.review-form {
+.rc-review-form {
   margin-top: 3rem;
   padding-top: 2rem;
   border-top: 1px solid #e5e7eb;
 }
 
-.review-form h3 {
+.rc-review-form h3 {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 1rem;
 }
 
-.review-form form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.review-form input,
-.review-form textarea,
-.review-form select {
+.rc-review-form input,
+.rc-review-form textarea,
+.rc-review-form select {
   padding: 0.75rem;
   border-radius: 0.375rem;
   border: 1px solid #d1d5db;
   font-size: 0.9rem;
 }
 
-.review-form button {
+.rc-review-form button {
   background: #111827;
   color: white;
   padding: 0.75rem;
@@ -222,28 +218,28 @@
   border: none;
 }
 
-.review-form button:hover {
+.rc-review-form button:hover {
   background: #1f2937;
 }
 
-.cancel-edit {
+.rc-cancel-edit {
   background: #f3f4f6;
   color: #374151;
   margin-left: 0.5rem;
 }
 
-.cancel-edit:hover {
+.rc-cancel-edit:hover {
   background: #e5e7eb;
 }
 
 /* === Preview Thumbnails === */
-.preview-thumbs {
+.rc-preview-thumbs {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-.preview-thumbs img {
+.rc-preview-thumbs img {
   width: 60px;
   height: 60px;
   object-fit: cover;
@@ -252,7 +248,7 @@
 }
 
 /* === Modal for Image Preview === */
-.preview-overlay {
+.rc-preview-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -265,13 +261,13 @@
   z-index: 1000;
 }
 
-.preview-img {
+.rc-preview-img {
   max-height: 90vh;
   max-width: 90vw;
   border-radius: 0.5rem;
 }
 
-.nav {
+.rc-nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -283,32 +279,32 @@
   padding: 1rem;
 }
 
-.nav.left {
+.rc-nav.rc-left {
   left: 2rem;
 }
 
-.nav.right {
+.rc-nav.rc-right {
   right: 2rem;
 }
 
-/* === Responsive === */
+/* === Responsive == */
 @media screen and (max-width: 640px) {
-  .review-summary {
+  .rc-review-summary {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .review-images img {
+  .rc-review-images img {
     width: 60px;
     height: 60px;
   }
 
-  .nav {
+  .rc-nav {
     padding: 0.5rem;
     font-size: 1.5rem;
   }
 
-  .review-form button {
+  .rc-review-form button {
     width: 100%;
   }
 }
