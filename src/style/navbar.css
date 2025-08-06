@@ -466,11 +466,14 @@ padding-left:10px;
 .sidebar-user-avt-img {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: left;
+  gap: 15px;
   color: #000;
   width: 100% ;
   padding: 5px;
   margin-bottom: 10px;
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
 /* close button */
