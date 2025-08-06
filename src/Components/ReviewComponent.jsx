@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
 import "../style/reviewcomponent.css";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
@@ -14,17 +14,20 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const REVIEWS_PER_PAGE = 3;
   const [totalReviews, setTotalReviews] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
   const [name, setName] = useState(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
   const [editingReviewId, setEditingReviewId] = useState(null);
-
   const [starFilter, setStarFilter] = useState(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [showForm, setShowForm] = useState(false);
   const [preview, setPreview] = useState({ images: [], index: null });
+  const [formOpen, setFormOpen] = useState(false);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset page on filter change
+  }, [starFilter]);
 
   useEffect(() => {
     fetchReviews(starFilter);
@@ -32,21 +35,23 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
   const fetchReviews = async (filter) => {
     try {
-      const url = filter ? `${API_BASE}/${productId}?rating=${filter}` : `${API_BASE}/${productId}`;
+      const url = `${API_BASE}/${productId}?page=${currentPage}&limit=${REVIEWS_PER_PAGE}` +
+        (filter ? `&rating=${filter}` : "");
       const res = await axios.get(url);
-      const data = res.data;
-      const startIdx = (currentPage - 1) * REVIEWS_PER_PAGE;
-      const endIdx = startIdx + REVIEWS_PER_PAGE;
-      setReviews(data.slice(startIdx, endIdx));
-      setTotalReviews(data.length);
+      const { reviews, totalPages, totalReviews } = res.data;
 
+      setReviews(reviews);
+      setTotalReviews(totalReviews);
+      setTotalPages(totalPages);
+
+      // Stats only calculated on no filter
       if (!filter) {
-        const total = data.length;
+        const total = totalReviews;
         if (total > 0) {
-          const sum = data.reduce((acc, r) => acc + r.rating, 0);
+          const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
           setAverageRating((sum / total).toFixed(1));
           const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-          data.forEach((r) => stats[r.rating]++);
+          reviews.forEach((r) => stats[r.rating]++);
           setRatingStats(stats);
         } else {
           setAverageRating(0);
@@ -93,7 +98,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setImages([]);
     setName(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
     setEditingReviewId(null);
-    setShowForm(false);
+    setFormOpen(false);
   };
 
   const handleEdit = (review) => {
@@ -102,7 +107,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setImages(review.photoUrls || []);
     setEditingReviewId(review.id);
     setName(review.name);
-    setShowForm(true);
+    setFormOpen(true);
   };
 
   const handleImageUpload = (e) => {
@@ -122,7 +127,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const openImagePreview = (idx, photoUrls) => {
     setPreview({ images: photoUrls, index: idx });
   };
-
   const closePreview = () => setPreview({ images: [], index: null });
 
   const handleImgError = (e) => {
@@ -134,13 +138,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
       {[...Array(5)].map((_, i) => (
         <Star
           key={i}
-          fill={
-            i < Math.floor(value)
-              ? "#facc15"
-              : i < value
-              ? "url(#halfStar)"
-              : "none"
-          }
+          fill={i < Math.floor(value) ? "#facc15" : "none"}
           stroke="#facc15"
           size={18}
         />
@@ -149,32 +147,26 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   );
 
   const getPercent = (count) => {
-    const total = reviews.length || 1;
+    const total = totalReviews || 1;
     return ((count / total) * 100).toFixed(0);
   };
 
   return (
     <div className="rc-review-component">
       {/* Star Filter Dropdown */}
-      <div className="rc-dropdown-wrapper">
-        <div className="rc-dropdown-header" onClick={() => setDropdownOpen((p) => !p)}>
-          Filter by Rating {starFilter ? `: ${starFilter}★` : ""}
-        </div>
-        <AnimatePresence>
-          {dropdownOpen && (
-            <motion.ul
-              className="rc-dropdown"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-            >
-              <li onClick={() => { setStarFilter(null); setDropdownOpen(false); }}>All</li>
-              {[5, 4, 3, 2, 1].map((s) => (
-                <li key={s} onClick={() => { setStarFilter(s); setDropdownOpen(false); }}>{s} Stars</li>
-              ))}
-            </motion.ul>
-          )}
-        </AnimatePresence>
+      <div className="rc-filter-dropdown">
+        <label>Filter by Rating: </label>
+        <select
+          value={starFilter ?? ""}
+          onChange={(e) => setStarFilter(e.target.value ? parseInt(e.target.value) : null)}
+        >
+          <option value="">All Ratings</option>
+          {[5, 4, 3, 2, 1].map((s) => (
+            <option key={s} value={s}>
+              {s} Stars
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Summary */}
@@ -208,9 +200,13 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           <div key={r.id} className="rc-review-card">
             <div className="rc-review-header">
               <strong>{r.name}</strong>
-              {r.isVerifiedBuyer && <span className="rc-badge">Verified Purchase</span>}
+              {r.isVerifiedBuyer && (
+                <span className="rc-badge">Verified Purchase</span>
+              )}
               {user?.userDetails?.id === r.userId && (
-                <button className="rc-edit-btn" onClick={() => handleEdit(r)}>Edit</button>
+                <button className="rc-edit-btn" onClick={() => handleEdit(r)}>
+                  Edit
+                </button>
               )}
             </div>
 
@@ -226,6 +222,14 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
                     onError={handleImgError}
                   />
                 ))}
+                {r.photoUrls.length > 4 && (
+                  <div
+                    className="rc-extra-img"
+                    onClick={() => openImagePreview(4, r.photoUrls)}
+                  >
+                    +{r.photoUrls.length - 4}
+                  </div>
+                )}
               </div>
             )}
 
@@ -236,69 +240,66 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         ))}
       </div>
 
-      {/* Lightbox Preview */}
-      {preview.index !== null && (
-        <div className="rc-preview-overlay" onClick={closePreview}>
-          <div className="rc-lightbox">
-            <img
-              src={preview.images[preview.index]}
-              alt="preview"
-              className="rc-preview-img"
-              onError={handleImgError}
-            />
-            <button className="rc-nav rc-left" onClick={(e) => {
-              e.stopPropagation();
-              setPreview((p) => ({
-                ...p,
-                index: p.index > 0 ? p.index - 1 : p.images.length - 1,
-              }));
-            }}>◀</button>
-            <button className="rc-nav rc-right" onClick={(e) => {
-              e.stopPropagation();
-              setPreview((p) => ({
-                ...p,
-                index: p.index < p.images.length - 1 ? p.index + 1 : 0,
-              }));
-            }}>▶</button>
-          </div>
-        </div>
-      )}
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {preview.index !== null && (
+          <motion.div
+            className="rc-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closePreview}
+          >
+            <motion.div
+              className="rc-modal"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={preview.images[preview.index]}
+                alt="preview"
+                className="rc-preview-img"
+                onError={handleImgError}
+              />
+              <div className="rc-modal-nav">
+                <button onClick={() => setPreview(p => ({ ...p, index: (p.index > 0 ? p.index - 1 : p.images.length - 1) }))}>◀</button>
+                <button onClick={() => setPreview(p => ({ ...p, index: (p.index < p.images.length - 1 ? p.index + 1 : 0) }))}>▶</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Pagination */}
       <div className="rc-pagination">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage(currentPage - 1)}
-        >
+        <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
           Previous
         </button>
-        <span>
-          Page {currentPage} of {Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
-        </span>
-        <button
-          disabled={currentPage === Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
-          onClick={() => setCurrentPage(currentPage + 1)}
-        >
+        <span>Page {currentPage} of {totalPages}</span>
+        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
           Next
         </button>
       </div>
 
-      {/* Toggle Form Button */}
-      <button className="rc-toggle-form-btn" onClick={() => setShowForm((prev) => !prev)}>
-        {editingReviewId ? "Edit Your Review" : showForm ? "Cancel" : "Write a Review"}
+      {/* Toggle Button */}
+      <button onClick={() => setFormOpen(!formOpen)} className="rc-toggle-form">
+        {formOpen ? "Close Form" : "Write a Review"}
       </button>
 
-      {/* Review Form */}
+      {/* Review Form with Animation */}
       <AnimatePresence>
-        {showForm && (
+        {formOpen && (
           <motion.form
             className="rc-review-form"
             onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
+            <h3>{editingReviewId ? "Edit Your Review" : "Leave a Review"}</h3>
             {!user && (
               <input
                 type="text"
@@ -308,10 +309,16 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
                 required
               />
             )}
-            <select value={rating} onChange={(e) => setRating(Number(e.target.value))} required>
+            <select
+              value={rating}
+              onChange={(e) => setRating(Number(e.target.value))}
+              required
+            >
               <option value="">Rating</option>
               {[5, 4, 3, 2, 1].map((s) => (
-                <option key={s} value={s}>{s} Stars</option>
+                <option key={s} value={s}>
+                  {s} Stars
+                </option>
               ))}
             </select>
             <textarea
