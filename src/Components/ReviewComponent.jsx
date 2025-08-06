@@ -1,70 +1,61 @@
-// ReviewComponent.jsx
 import React, { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { Star, ChevronDown } from "lucide-react";
 import axios from "axios";
-import "../style/reviewcomponent.css";
+import "../style/reviewcomponent.css"; // You'll add dropdown styles here
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
 const ReviewComponent = ({ productId, user, userdetails }) => {
-  // review list + stats
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
-const [currentPage, setCurrentPage] = useState(1);
-const REVIEWS_PER_PAGE = 3;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const REVIEWS_PER_PAGE = 3;
 
-
-const [totalReviews, setTotalReviews] = useState(0);
-
-  // form state
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
   const [name, setName] = useState(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
   const [editingReviewId, setEditingReviewId] = useState(null);
 
-  // filtering & preview state
   const [starFilter, setStarFilter] = useState(null);
   const [preview, setPreview] = useState({ images: [], index: null });
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // fetch on mount & when productId or starFilter changes
   useEffect(() => {
-  fetchReviews(starFilter);
-}, [productId, starFilter, currentPage]);
+    fetchReviews();
+  }, [productId, starFilter, currentPage]);
 
+  useEffect(() => {
+    fetchStats();
+  }, [productId]);
 
-  const fetchReviews = async (filter) => {
-  try {
-    const url = `${API_BASE}/${productId}?page=${currentPage}&limit=${REVIEWS_PER_PAGE}${
-      filter ? `&rating=${filter}` : ""
-    }`;
+  const fetchReviews = async () => {
+    try {
+      const params = {
+        page: currentPage,
+        limit: REVIEWS_PER_PAGE,
+        ...(starFilter && { rating: starFilter }),
+      };
+      const res = await axios.get(`${API_BASE}/${productId}`, { params });
+      setReviews(res.data.reviews);
+      setTotalReviews(res.data.total);
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    }
+  };
 
-    const res = await axios.get(url);
-    const { reviews: data, totalReviews: total, totalPages, currentPage: returnedPage } = res.data;
-
-    setReviews(data);
-    setTotalReviews(total);
-    setCurrentPage(returnedPage); // ensure sync
-
-    if (!filter) {
-      if (total > 0) {
-        const sum = data.reduce((acc, r) => acc + r.rating, 0);
-        setAverageRating((sum / total).toFixed(1));
-        const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        data.forEach((r) => stats[r.rating]++);
-        setRatingStats(stats);
-      } else {
-        setAverageRating(0);
-        setRatingStats({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
-      }
-    }
-  } catch (err) {
-    console.error("Failed to fetch reviews", err);
-  }
-};
-
+  const fetchStats = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/stats/${productId}`);
+      setAverageRating(res.data.averageRating.toFixed(1));
+      setRatingStats(res.data.ratingStats);
+    } catch (err) {
+      console.error("Failed to fetch stats", err);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,7 +67,7 @@ const [totalReviews, setTotalReviews] = useState(0);
         rating,
         comment,
         name: user?.name || name,
-        userId: userdetails?.id, 
+        userId: userdetails?.id,
         clerkId: user?.id,
         photoUrls: images,
       };
@@ -86,9 +77,11 @@ const [totalReviews, setTotalReviews] = useState(0);
       } else {
         await axios.post(API_BASE, payload);
       }
+
       resetForm();
       setCurrentPage(1);
-      fetchReviews(starFilter);
+      fetchReviews();
+      fetchStats();
     } catch (err) {
       console.error("Review submission failed", err);
     }
@@ -153,38 +146,47 @@ const [totalReviews, setTotalReviews] = useState(0);
   );
 
   const getPercent = (count) => {
-    const total = reviews.length || 1;
+    const total = totalReviews || 1;
     return ((count / total) * 100).toFixed(0);
   };
 
   return (
     <div className="rc-review-component">
-      {/* Filter Controls */}
-      <div className="rc-filter-stars">
+      {/* Star Filter Dropdown */}
+      <div className="rc-dropdown-wrapper">
         <button
-          className={starFilter === null ? "active" : ""}
-          onClick={() => setStarFilter(null)}
+          className="rc-dropdown-toggle"
+          onClick={() => setDropdownOpen(!dropdownOpen)}
         >
-          All
+          {starFilter ? `${starFilter} Star` : "All Ratings"}
+          <ChevronDown size={18} />
         </button>
-        {[5, 4, 3, 2, 1].map((s) => (
-          <button
-            key={s}
-            className={starFilter === s ? "active" : ""}
-            onClick={() => setStarFilter(starFilter === s ? null : s)}
-          >
-            {s}★
-          </button>
-        ))}
+        <div className={`rc-dropdown ${dropdownOpen ? "open" : ""}`}>
+          <div onClick={() => { setStarFilter(null); setCurrentPage(1); setDropdownOpen(false); }}>
+            All Ratings
+          </div>
+          {[5, 4, 3, 2, 1].map((s) => (
+            <div
+              key={s}
+              onClick={() => {
+                setStarFilter(s);
+                setCurrentPage(1);
+                setDropdownOpen(false);
+              }}
+            >
+              {s} Stars
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Summary (only when no filter) */}
+      {/* Summary */}
       {starFilter === null && (
         <div className="rc-review-summary">
           <div className="rc-left">
             <div className="rc-avg-rating">{averageRating}</div>
             {renderStars(averageRating)}
-            <div className="rc-total-reviews">{reviews.length} reviews</div>
+            <div className="rc-total-reviews">{totalReviews} reviews</div>
           </div>
           <div className="rc-right">
             {[5, 4, 3, 2, 1].map((star) => (
@@ -203,7 +205,7 @@ const [totalReviews, setTotalReviews] = useState(0);
         </div>
       )}
 
-      {/* Review List */}
+      {/* Reviews */}
       <div className="rc-review-list">
         {reviews.map((r) => (
           <div key={r.id} className="rc-review-card">
@@ -219,7 +221,6 @@ const [totalReviews, setTotalReviews] = useState(0);
               )}
             </div>
 
-            {/* Thumbnails */}
             {r.photoUrls?.length > 0 && (
               <div className="rc-review-images">
                 {r.photoUrls.slice(0, 4).map((src, idx) => (
@@ -241,7 +242,6 @@ const [totalReviews, setTotalReviews] = useState(0);
                 )}
               </div>
             )}
-
             <p>{r.comment}</p>
             {renderStars(r.rating)}
             <small>{new Date(r.createdAt).toLocaleDateString()}</small>
@@ -249,7 +249,7 @@ const [totalReviews, setTotalReviews] = useState(0);
         ))}
       </div>
 
-      {/* Image Preview Overlay */}
+      {/* Image Preview */}
       {preview.index !== null && (
         <div className="rc-preview-overlay" onClick={closePreview}>
           <img
@@ -285,26 +285,26 @@ const [totalReviews, setTotalReviews] = useState(0);
         </div>
       )}
 
-<div className="rc-pagination">
-  <button
-    disabled={currentPage === 1}
-    onClick={() => setCurrentPage(currentPage - 1)}
-  >
-    Previous
-  </button>
-  <span>
-    Page {currentPage} of {Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
-  </span>
-  <button
-    disabled={currentPage === Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
-    onClick={() => setCurrentPage(currentPage + 1)}
-  >
-    Next
-  </button>
-</div>
+      {/* Pagination */}
+      <div className="rc-pagination">
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
+        </span>
+        <button
+          disabled={currentPage === Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
+          onClick={() => setCurrentPage(currentPage + 1)}
+        >
+          Next
+        </button>
+      </div>
 
-
-      {/* Review Form */}
+      {/* Form */}
       <form className="rc-review-form" onSubmit={handleSubmit}>
         <h3>{editingReviewId ? "Edit Your Review" : "Leave a Review"}</h3>
         {!user && (
