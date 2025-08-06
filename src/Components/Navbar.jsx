@@ -370,7 +370,7 @@ useEffect(() => {
                         id="mob-profile-img"
                       />
                       <div className="user-data">
-                        <h3 id="profile-name">{user?.fullName}</h3>
+                        <h3 id="profile-name">{userdetails?.name}</h3>
                         <p id="profile-email">
                           {user?.primaryEmailAddress?.emailAddress || "N/A"}
                         </p>
