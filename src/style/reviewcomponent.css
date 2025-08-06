@@ -29,6 +29,36 @@
   background: var(--color-bg);
 }
 
+/* —— Filter Controls —— */
+.rc-filter-stars {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rc-filter-stars button {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-light);
+  color: var(--color-dark);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.rc-filter-stars button:hover {
+  background: var(--color-border);
+}
+
+.rc-filter-stars button.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+
+
 /* ==== Summary Section ==== */
 /* Use CSS Grid for auto-responsive columns */
 .rc-review-summary {
