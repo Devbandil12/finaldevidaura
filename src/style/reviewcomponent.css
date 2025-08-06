@@ -36,7 +36,6 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 3rem;
   margin-bottom: 2.5rem;
 }
 
@@ -70,7 +69,6 @@
 /* —— Rating Distribution —— */
 .rc-right {
   flex: 1;
-  min-width: 300px;
   max-width: 450px;
 }
 
