@@ -9,7 +9,7 @@ const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/rev
 const ReviewComponent = ({ productId, user, userdetails }) => {
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
-  const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
   const [currentPage, setCurrentPage] = useState(1);
   const REVIEWS_PER_PAGE = 3;
@@ -17,7 +17,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] =  useState("");
   const [images, setImages] = useState([]);
   const [name, setName] = useState(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
   const [editingReviewId, setEditingReviewId] = useState(null);
@@ -43,21 +43,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
       setReviews(reviews);
       setTotalReviews(totalReviews);
       setTotalPages(totalPages);
-
-      // Stats only calculated on no filter
-      if (!filter) {
-        const total = totalReviews;
-        if (total > 0) {
-          const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
-          setAverageRating((sum / total).toFixed(1));
-          const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-          reviews.forEach((r) => stats[r.rating]++);
-          setRatingStats(stats);
-        } else {
-          setAverageRating(0);
-          setRatingStats({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
-        }
-      }
+setAverageRating(res.data.averageRating);
+setRatingCounts(res.data.ratingCounts);
+      
     } catch (err) {
       console.error("Failed to fetch reviews", err);
     }
@@ -147,9 +135,10 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   );
 
   const getPercent = (count) => {
-    const total = totalReviews || 1;
-    return ((count / total) * 100).toFixed(0);
-  };
+  const total = Object.values(ratingCounts).reduce((a, b) => a + b, 0) || 1;
+  return ((count / total) * 100).toFixed(0);
+};
+
 
   return (
     <div className="rc-review-component">
@@ -179,17 +168,18 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           </div>
           <div className="rc-right">
             {[5, 4, 3, 2, 1].map((star) => (
-              <div key={star} className="rc-progress-line">
-                <span>{star}</span>
-                <div className="rc-progress">
-                  <div
-                    className="rc-fill"
-                    style={{ width: `${getPercent(ratingStats[star])}%` }}
-                  />
-                </div>
-                <span>{ratingStats[star]}</span>
-              </div>
-            ))}
+  <div key={star} className="rc-progress-line">
+    <span>{star}</span>
+    <div className="rc-progress">
+      <div
+        className="rc-fill"
+        style={{ width: `${getPercent(ratingCounts[star])}%` }}
+      />
+    </div>
+    <span>{ratingCounts[star]}</span>
+  </div>
+))}
+
           </div>
         </div>
       )}
