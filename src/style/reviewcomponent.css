@@ -142,9 +142,6 @@
 }
 
 .rc-review-card {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
   background: var(--color-bg);
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
