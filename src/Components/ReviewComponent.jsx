@@ -34,9 +34,7 @@ const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState({ images: [], index: null });
   const [formOpen, setFormOpen] = useState(false);
 
-  useEffect(() => {
-    setCurrentPage(1); // Reset page on filter change
-  }, [starFilter]);
+  
 
   const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
 
