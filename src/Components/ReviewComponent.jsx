@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import {
+  Star,
+  ArrowDown,
+  ArrowUp,
+  Edit3,
+  Filter,
+  Loader2
+} from "lucide-react";
+
 import axios from "axios";
 import "../style/reviewcomponent.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,14 +15,15 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
 const ReviewComponent = ({ productId, user, userdetails }) => {
-  const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
 const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
-  const [currentPage, setCurrentPage] = useState(1);
   const REVIEWS_PER_PAGE = 3;
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+const [reviews, setReviews] = useState([]);
+const [cursor, setCursor] = useState(null);
+const [hasMore, setHasMore] = useState(true);
+const [isLoading, setIsLoading] = useState(false);
+
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] =  useState("");
@@ -29,27 +38,41 @@ const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 
     setCurrentPage(1); // Reset page on filter change
   }, [starFilter]);
 
-  useEffect(() => {
-    fetchReviews(starFilter);
-  }, [productId, starFilter, currentPage]);
+  const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
 
-  const fetchReviews = async (filter) => {
-    try {
-      const url = `${API_BASE}/${productId}?page=${currentPage}&limit=${REVIEWS_PER_PAGE}` +
-        (filter ? `&rating=${filter}` : "");
-      const res = await axios.get(url);
-      const { reviews, totalPages, totalReviews } = res.data;
+useEffect(() => {
+  const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
+  return () => clearTimeout(t);
+}, [starFilter]);
 
-      setReviews(reviews);
-      setTotalReviews(totalReviews);
-      setTotalPages(totalPages);
-setAverageRating(res.data.averageRating);
-setRatingCounts(res.data.ratingCounts);
-      
-    } catch (err) {
-      console.error("Failed to fetch reviews", err);
-    }
-  };
+useEffect(() => {
+  setCursor(null); // reset pagination on filter change
+  fetchReviews(true); // fetch fresh set
+}, [productId, debouncedFilter]);
+
+
+  const fetchReviews = async (initial = false) => {
+  try {
+    setIsLoading(true);
+    const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
+      (starFilter ? `&rating=${starFilter}` : "") +
+      (cursor && !initial ? `&cursor=${cursor}` : "");
+
+    const res = await axios.get(url);
+    const { reviews: newReviews, nextCursor, hasMore, averageRating, ratingCounts } = res.data;
+
+    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+    setCursor(nextCursor);
+    setHasMore(hasMore);
+    setAverageRating(averageRating);
+    setRatingCounts(ratingCounts);
+  } catch (err) {
+    console.error("Failed to fetch reviews", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -134,6 +157,9 @@ setRatingCounts(res.data.ratingCounts);
     </div>
   );
 
+const totalReviews = Object.values(ratingCounts).reduce((a, b) => a + b, 0);
+
+
   const getPercent = (count) => {
   const total = Object.values(ratingCounts).reduce((a, b) => a + b, 0) || 1;
   return ((count / total) * 100).toFixed(0);
@@ -144,7 +170,11 @@ setRatingCounts(res.data.ratingCounts);
     <div className="rc-review-component">
       {/* Star Filter Dropdown */}
       <div className="rc-filter-dropdown">
-        <label>Filter by Rating: </label>
+       <label className="rc-filter-label">
+  <Filter size={14} className="mr-1" />
+  Filter by Rating:
+</label>
+
         <select
           value={starFilter ?? ""}
           onChange={(e) => setStarFilter(e.target.value ? parseInt(e.target.value) : null)}
@@ -185,51 +215,67 @@ setRatingCounts(res.data.ratingCounts);
       )}
 
       {/* Review List */}
-      <div className="rc-review-list">
-        {reviews.map((r) => (
-          <div key={r.id} className="rc-review-card">
-            <div className="rc-review-header">
-              <strong>{r.name}</strong>
-              {r.isVerifiedBuyer && (
-                <span className="rc-badge">Verified Purchase</span>
-              )}
-              {user?.userDetails?.id === r.userId && (
-                <button className="rc-edit-btn" onClick={() => handleEdit(r)}>
-                  Edit
-                </button>
-              )}
-            </div>
-   {renderStars(r.rating)}
-            <small>{new Date(r.createdAt).toLocaleDateString()}</small>
+      
+<div className="rc-review-list">
+  <AnimatePresence>
+    {reviews.map((r) => (
+      <motion.div
+        key={r.id}
+        className="rc-review-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="rc-review-header">
+          <strong>{r.name}</strong>
+          {r.isVerifiedBuyer && (
+            <span className="rc-badge">Verified Purchase</span>
+          )}
+          {user?.userDetails?.id === r.userId && (
+            <button
+              className="rc-edit-btn"
+              onClick={() => handleEdit(r)}
+              title="Edit Review"
+            >
+              <Edit3 size={16} />
+            </button>
+          )}
+        </div>
 
-            {/* Thumbnails */}
-            {r.photoUrls?.length > 0 && (
-              <div className="rc-review-images">
-                {r.photoUrls.slice(0, 4).map((src, idx) => (
-                  <img
-                    key={idx}
-                    src={src}
-                    alt="review"
-                    onClick={() => openImagePreview(idx, r.photoUrls)}
-                    onError={handleImgError}
-                  />
-                ))}
-                {r.photoUrls.length > 4 && (
-                  <div
-                    className="rc-extra-img"
-                    onClick={() => openImagePreview(4, r.photoUrls)}
-                  >
-                    +{r.photoUrls.length - 4}
-                  </div>
-                )}
-              </div>
-            )}
+        {renderStars(r.rating)}
+        <small>{new Date(r.createdAt).toLocaleDateString()}</small>
 
-            <p>{r.comment}</p>
-            
-          </div>
-        ))}
-      </div>
+        {/* Review Images */}
+        {r.photoUrls?.length > 0 && (
+          <div className="rc-review-images">
+            {r.photoUrls.slice(0, 4).map((src, idx) => (
+              <img
+                key={idx}
+                src={src}
+                alt="review"
+                onClick={() => openImagePreview(idx, r.photoUrls)}
+                onError={handleImgError}
+              />
+            ))}
+            {r.photoUrls.length > 4 && (
+              <div
+                className="rc-extra-img"
+                onClick={() => openImagePreview(4, r.photoUrls)}
+              >
+                +{r.photoUrls.length - 4}
+              </div>
+            )}
+          </div>
+        )}
+
+        <p>{r.comment}</p>
+      </motion.div>
+    ))}
+  </AnimatePresence>
+</div>
+
+
 
       {/* Image Preview Modal */}
       <AnimatePresence>
@@ -264,15 +310,25 @@ setRatingCounts(res.data.ratingCounts);
       </AnimatePresence>
 
       {/* Pagination */}
-      <div className="rc-pagination">
-        <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
-          Previous
-        </button>
-        <span>Page {currentPage} of {totalPages}</span>
-        <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
-          Next
-        </button>
-      </div>
+     <div className="rc-pagination">
+  {hasMore && !isLoading && (
+    <button onClick={() => fetchReviews(false)}>
+  <ArrowDown size={16} className="mr-1" />
+  
+</button>
+
+  )}
+  {reviews.length > REVIEWS_PER_PAGE && (
+    <button onClick={() => {
+  setCursor(null);
+  fetchReviews(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}}>
+  <ArrowUp size={16} className="mr-1" />
+</button>
+
+  )}
+</div>
 
       {/* Toggle Button */}
       <button onClick={() => setFormOpen(!formOpen)} className="rc-toggle-form">
