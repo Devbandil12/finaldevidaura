@@ -199,6 +199,8 @@ setRatingCounts(res.data.ratingCounts);
                 </button>
               )}
             </div>
+   {renderStars(r.rating)}
+            <small>{new Date(r.createdAt).toLocaleDateString()}</small>
 
             {/* Thumbnails */}
             {r.photoUrls?.length > 0 && (
@@ -224,8 +226,7 @@ setRatingCounts(res.data.ratingCounts);
             )}
 
             <p>{r.comment}</p>
-            {renderStars(r.rating)}
-            <small>{new Date(r.createdAt).toLocaleDateString()}</small>
+            
           </div>
         ))}
       </div>
