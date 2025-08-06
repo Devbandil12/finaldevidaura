@@ -1,22 +1,22 @@
 /* ==============================
    ReviewComponent.css
-   “Pro-grade” e-commerce styling
+   “Pro‐grade” e‐commerce styling
    ============================== */
 
-/* —— Vars & Base —— */
 :root {
   --font-sans: 'Inter', sans-serif;
   --color-bg: #ffffff;
   --color-light: #f3f4f6;
   --color-muted: #6b7280;
   --color-dark: #111827;
-  --color-primary: #1f2937;    /* button background */
-  --color-accent: #f59e0b;     /* star & highlights */
+  --color-primary: #1f2937;
+  --color-accent: #f59e0b;
   --color-border: #e5e7eb;
   --radius: 0.375rem;
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
 }
+
 
 /* —— Container Centering —— */
 .rc-review-component {
@@ -57,10 +57,11 @@
   color: var(--color-accent);
 }
 
+/* ← KEEP ORIGINAL “total reviews” STYLE → */
 .rc-total-reviews {
-  font-size: 0.9rem;
-  color: var(--color-muted);
   margin-top: 0.25rem;
+  color: #6b7280;      /* same as old */
+  font-size: 0.9rem;   /* same as old */
 }
 
 /* —— Rating Distribution —— */
@@ -77,17 +78,22 @@
   margin: 0.5rem 0;
 }
 
+/* ← KEEP ORIGINAL progress‐bar STYLES → */
 .rc-progress {
-  background: var(--color-light);
-  height: 8px;
-  border-radius: var(--radius);
+  background-color: #e5e7eb;  /* old */
+  height: 8px;                /* old */
+  border-radius: 9999px;      /* old */
+  flex: 1;
+  position: relative;
   overflow: hidden;
 }
 
 .rc-fill {
-  background: var(--color-accent);
-  width: 0; /* inline width from JSX */
-  height: 100%;
+  background-color: #facc15;  /* old */
+  height: 100%;               /* old */
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 /* —— Reviews List —— */
@@ -273,7 +279,6 @@
     grid-template-columns: repeat(2, 1fr);
     grid-column-gap: 1rem;
   }
-  /* span full width */
   .rc-review-form h3,
   .rc-review-form button[type="submit"] {
     grid-column: span 2;
