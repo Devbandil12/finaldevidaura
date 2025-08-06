@@ -339,10 +339,9 @@
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  margin-top: 15px;
+  margin: 15px auto 1.5rem auto;
   align-self: center;
   transition: background-color 0.3s ease;
-  margin-bottom: 1.5rem;
 }
 
 .rc-toggle-form:hover {
