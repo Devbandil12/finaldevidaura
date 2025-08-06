@@ -36,36 +36,35 @@ const [totalReviews, setTotalReviews] = useState(0);
 
 
   const fetchReviews = async (filter) => {
-    try {
-      const url = filter
-        ? `${API_BASE}/${productId}?rating=${filter}`
-        : `${API_BASE}/${productId}`;
-      const res = await axios.get(url);
-      const data = res.data;
-      const startIdx = (currentPage - 1) * REVIEWS_PER_PAGE;
-const endIdx = startIdx + REVIEWS_PER_PAGE;
-setReviews(data.slice(startIdx, endIdx));
-setTotalReviews(data.length); // we'll add this state next
+  try {
+    const url = `${API_BASE}/${productId}?page=${currentPage}&limit=${REVIEWS_PER_PAGE}${
+      filter ? `&rating=${filter}` : ""
+    }`;
 
+    const res = await axios.get(url);
+    const { reviews: data, totalReviews: total, totalPages, currentPage: returnedPage } = res.data;
 
-      // recalc stats if no filter
-      if (!filter) {
-        const total = data.length;
-        if (total > 0) {
-          const sum = data.reduce((acc, r) => acc + r.rating, 0);
-          setAverageRating((sum / total).toFixed(1));
-          const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-          data.forEach((r) => stats[r.rating]++);
-          setRatingStats(stats);
-        } else {
-          setAverageRating(0);
-          setRatingStats({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch reviews", err);
-    }
-  };
+    setReviews(data);
+    setTotalReviews(total);
+    setCurrentPage(returnedPage); // ensure sync
+
+    if (!filter) {
+      if (total > 0) {
+        const sum = data.reduce((acc, r) => acc + r.rating, 0);
+        setAverageRating((sum / total).toFixed(1));
+        const stats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        data.forEach((r) => stats[r.rating]++);
+        setRatingStats(stats);
+      } else {
+        setAverageRating(0);
+        setRatingStats({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+      }
+    }
+  } catch (err) {
+    console.error("Failed to fetch reviews", err);
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
