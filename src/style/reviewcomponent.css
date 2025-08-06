@@ -143,11 +143,7 @@
 
 .rc-review-card {
   background: var(--color-bg);
-  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
-}
-.rc-review-card:hover {
-  box-shadow: var(--shadow-md);
 }
 
 .rc-review-header {
