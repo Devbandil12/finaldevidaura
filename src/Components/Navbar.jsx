@@ -451,11 +451,11 @@ useEffect(() => {
                     <header className="sidebar-header">
  <div className="sidebar-user-avt-img">
                       <img src={UserIcon} alt="User" />
-<h4>{userdetails?.name}</h4>
+<h4>{userdetails?.name || "Guest"}</h4>
 </div>
                       {isLoggedIn ? (
                         <div className="sidebar-user">
-                          <h4>{userdetails?.name}</h4>
+ 
                           <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
                         </div>
                       ) : (
