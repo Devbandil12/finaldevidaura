@@ -13,7 +13,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
 const [currentPage, setCurrentPage] = useState(1);
-const REVIEWS_PER_PAGE = 10;
+const REVIEWS_PER_PAGE = 3;
 
 
 const [totalReviews, setTotalReviews] = useState(0);
