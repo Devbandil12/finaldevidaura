@@ -6,7 +6,7 @@ import "../style/reviewcomponent.css";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 
-const ReviewComponent = ({ productId, user }) => {
+const ReviewComponent = ({ productId, user, userdetails }) => {
   // review list + stats
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
