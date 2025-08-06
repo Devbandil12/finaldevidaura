@@ -12,6 +12,12 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [averageRating, setAverageRating] = useState(0);
   const [ratingStats, setRatingStats] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
 
+const [currentPage, setCurrentPage] = useState(1);
+const REVIEWS_PER_PAGE = 10;
+
+
+const [totalReviews, setTotalReviews] = useState(0);
+
   // form state
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -25,8 +31,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
   // fetch on mount & when productId or starFilter changes
   useEffect(() => {
-    fetchReviews(starFilter);
-  }, [productId, starFilter]);
+  fetchReviews(starFilter);
+}, [productId, starFilter, currentPage]);
+
 
   const fetchReviews = async (filter) => {
     try {
@@ -35,7 +42,11 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         : `${API_BASE}/${productId}`;
       const res = await axios.get(url);
       const data = res.data;
-      setReviews(data);
+      const startIdx = (currentPage - 1) * REVIEWS_PER_PAGE;
+const endIdx = startIdx + REVIEWS_PER_PAGE;
+setReviews(data.slice(startIdx, endIdx));
+setTotalReviews(data.length); // we'll add this state next
+
 
       // recalc stats if no filter
       if (!filter) {
@@ -77,6 +88,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         await axios.post(API_BASE, payload);
       }
       resetForm();
+      setCurrentPage(1);
       fetchReviews(starFilter);
     } catch (err) {
       console.error("Review submission failed", err);
@@ -273,6 +285,25 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           </button>
         </div>
       )}
+
+<div className="rc-pagination">
+  <button
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(currentPage - 1)}
+  >
+    Previous
+  </button>
+  <span>
+    Page {currentPage} of {Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
+  </span>
+  <button
+    disabled={currentPage === Math.ceil(totalReviews / REVIEWS_PER_PAGE)}
+    onClick={() => setCurrentPage(currentPage + 1)}
+  >
+    Next
+  </button>
+</div>
+
 
       {/* Review Form */}
       <form className="rc-review-form" onSubmit={handleSubmit}>
