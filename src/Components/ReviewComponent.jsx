@@ -139,7 +139,7 @@ const ReviewComponent = ({ productId, user }) => {
         <div className="rc-right">
           {[5, 4, 3, 2, 1].map((star) => (
             <div key={star} className="rc-progress-line">
-              <span>{star}</span>
+              <span>{star} Stars</span>
               <div className="rc-progress">
                 <div
                   className="rc-fill"
