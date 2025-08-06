@@ -87,7 +87,7 @@
   background-color: #e5e7eb;  /* old */
   height: 8px;                /* old */
   border-radius: 9999px;      /* old */
-  flex: 1;
+  width: 60%;
   position: relative;
   overflow: hidden;
 }
