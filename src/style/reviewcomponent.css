@@ -306,6 +306,29 @@
   background: #374151;
 }
 
+
+.rc-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+.rc-pagination button {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.rc-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
 /* —— Responsive Tweaks —— */
 @media (min-width: 768px) {
   .rc-review-form {
