@@ -71,7 +71,7 @@
 .rc-right {
   flex: 1;
   min-width: 300px;
-  max-width: 650px;
+  max-width: 450px;
 }
 
 .rc-progress-line {
@@ -87,7 +87,7 @@
   background-color: #e5e7eb;  /* old */
   height: 8px;                /* old */
   border-radius: 9999px;      /* old */
-  width: 60%;
+  flex: 1;
   position: relative;
   overflow: hidden;
 }
