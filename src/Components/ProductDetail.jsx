@@ -12,6 +12,7 @@ import { useUser } from "@clerk/clerk-react";
 
 const ProductDetail = ({
   product,
+  userdetails,
   onClose,
 
   // Optional legacy props (component works without them):
@@ -297,7 +298,7 @@ const ProductDetail = ({
         </div>
 </div>
  <div className="p-6 border-t mt-4">
-    <ReviewComponent productId={product.id} user={user} />
+    <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
   </div>
       </div>
   
