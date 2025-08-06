@@ -339,6 +339,8 @@
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
+  margin-top: 15px;
+  align-self: center;
   transition: background-color 0.3s ease;
   margin-bottom: 1.5rem;
 }
@@ -368,6 +370,45 @@
   border-radius: var(--radius);
   background: white;
   cursor: pointer;
+}
+
+
+/* —— Pagination Controls —— */
+.rc-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.rc-pagination button {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-light);
+  color: var(--color-dark);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.rc-pagination button:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+.rc-pagination button.active {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.rc-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 
