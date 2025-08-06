@@ -44,7 +44,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.5rem;   /* vertical spacing between avg, stars, total */
+  gap: 0.5rem;  
+  padding-left: 30px;
+  
 }
 
 .rc-avg-rating {
