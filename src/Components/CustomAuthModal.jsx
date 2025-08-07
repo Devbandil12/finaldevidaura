@@ -202,15 +202,20 @@ export default function CustomAuthPage() {
           <div className="otp-row">
             <div className="otp-boxes">
               {[0, 1, 2, 3, 4, 5].map((_, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  maxLength={1}
-                  ref={el => (otpRefs.current[i] = el)}
-                  value={otp[i]}
-                  onChange={e => handleOtpChange(e.target.value, i)}
-                  className={`otp-input ${verified ? "otp-verified" : ""}`}
-                />
+               <input
+  key={i}
+  type="tel"
+  inputMode="numeric"
+  pattern="\d{1}"
+  maxLength={1}
+  ref={el => (otpRefs.current[i] = el)}
+  value={otp[i]}
+  onChange={e => handleOtpChange(e.target.value, i)}
+  className={`otp-input ${verified ? "otp-verified" : ""}`}
+  autoComplete="one-time-code"
+  aria-label={`OTP digit ${i + 1}`}
+/>
+
               ))}
             </div>
             <button
