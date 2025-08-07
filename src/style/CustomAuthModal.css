@@ -94,7 +94,6 @@
   color: #000;
 }
 
-/* Autofill fix */
 .floating-group input:-webkit-autofill + label {
   top: 0px;
   left: 10px;
@@ -159,20 +158,70 @@
   background: #222;
 }
 
-/* ===== OTP Send Button ===== */
+/* ===== OTP Row ===== */
+.otp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+/* ===== OTP Input Boxes ===== */
+.otp-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.otp-input {
+  width: 48px;
+  height: 56px;
+  font-size: 24px;
+  text-align: center;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.otp-input:focus {
+  border-color: #000;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.otp-input.otp-verified {
+  border-color: #4CAF50;
+  background-color: #e6f4ea;
+  animation: otp-glow 1.2s ease-in-out infinite alternate;
+}
+
+/* ===== OTP Glow Animation ===== */
+@keyframes otp-glow {
+  0% {
+    box-shadow: 0 0 4px 2px rgba(76, 175, 80, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 10px 4px rgba(76, 175, 80, 0.4);
+  }
+}
+
+/* ===== Send OTP Button ===== */
 .send-otp-btn {
-  width: 40%;
+  align-self: center;
+  min-width: 150px;
   height: 42px;
   padding: 0 16px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: #000;
   color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-align: center;
+  border: none;
 }
 
 .send-otp-btn:hover {
@@ -267,58 +316,6 @@
   font-size: 0.9rem;
 }
 
-/* ===== OTP Row ===== */
-.otp-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.otp-row .floating-group {
-  width: 60%;
-  margin-bottom: 0;
-}
-
-.otp-row input {
-  height: 42px;
-  padding: 0 12px;
-  box-sizing: border-box;
-  line-height: 42px;
-}
-
-/* ===== OTP Box Inputs ===== */
-.otp-box-container {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.otp-input-box {
-  width: 48px;
-  height: 56px;
-  font-size: 22px;
-  font-weight: 600;
-  text-align: center;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  background: #fff;
-  transition: all 0.2s ease-in-out;
-}
-
-.otp-input-box:focus {
-  border-color: #000;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-  outline: none;
-}
-
-.otp-box-container.success .otp-input-box {
-  border-color: #4CAF50 !important;
-  background-color: #e6f4ea !important;
-}
-
 /* ===== Responsive Styles ===== */
 @media (max-width: 650px) {
   .auth-modal-container {
@@ -345,5 +342,15 @@
     font-size: 1rem;
     bottom: 12px;
     left: 12px;
+  }
+
+  .otp-boxes {
+    gap: 8px;
+  }
+
+  .otp-input {
+    width: 42px;
+    height: 50px;
+    font-size: 20px;
   }
 }
