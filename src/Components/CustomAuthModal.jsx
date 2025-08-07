@@ -1,27 +1,25 @@
-// src/components/CustomAuthPage.jsx
-
 import React, { useState, useRef, useEffect } from "react";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 import MiniLoader from "./MiniLoader";
+import OtpInput from "./OtpInput";
 import "../style/CustomAuthModal.css";
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 import GoogleIcon from "../assets/images/google.png";
 
-
-
 export default function CustomAuthPage() {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [otpArray, setOtpArray] = useState(new Array(6).fill(""));
   const [otpSent, setOtpSent] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [otpSuccess, setOtpSuccess] = useState(false);
 
   const { signUp, setActive: setSignUpActive } = useSignUp();
   const { signIn, setActive: setSignInActive } = useSignIn();
@@ -55,11 +53,12 @@ export default function CustomAuthPage() {
       tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
       tl.add(() => setIsSignUp(prev => !prev), 0.3);
     }
-    setOtpCode("");
+    setOtpArray(new Array(6).fill(""));
     setOtpSent(false);
     setError("");
     setSendingOtp(false);
     setFormLoading(false);
+    setOtpSuccess(false);
   };
 
   const handleSendOtp = async () => {
@@ -81,24 +80,18 @@ export default function CustomAuthPage() {
     }
   };
 
-  const handleContinue = async (e) => {
-    e.preventDefault();
+  const handleOtpComplete = async (codeArray) => {
     setError("");
-    if (!otpSent) {
-      setError("Please send OTP first.");
-      return;
-    }
-    if (!otpCode) {
-      setError("Please enter the OTP.");
-      return;
-    }
     setFormLoading(true);
+    const otpCode = codeArray.join("");
+
     try {
       if (isSignUp) {
         const result = await signUp.attemptEmailAddressVerification({ code: otpCode });
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
-          navigate("/");
+          setOtpSuccess(true);
+          setTimeout(() => navigate("/"), 1500);
         } else {
           throw new Error("Verification incomplete.");
         }
@@ -106,13 +99,15 @@ export default function CustomAuthPage() {
         const result = await signIn.attemptFirstFactor({ strategy: "email_code", code: otpCode });
         if (result.status === "complete") {
           await setSignInActive({ session: result.createdSessionId });
-          navigate("/");
+          setOtpSuccess(true);
+          setTimeout(() => navigate("/"), 1500);
         } else {
           throw new Error("Verification incomplete.");
         }
       }
     } catch (err) {
       setError(err.errors?.[0]?.message || "OTP verification failed.");
+      setOtpArray(new Array(6).fill(""));
     } finally {
       setFormLoading(false);
     }
@@ -135,15 +130,14 @@ export default function CustomAuthPage() {
         <div className="auth-fields" ref={fieldsRef}>
           <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
 
-         <button className="google-btn" onClick={handleGoogle}>
-  <img src={GoogleIcon} alt="Google" className="google-icon" />
-  {isSignUp ? "Sign up with Google" : "Sign in with Google"}
-</button>
-
+          <button className="google-btn" onClick={handleGoogle}>
+            <img src={GoogleIcon} alt="Google" className="google-icon" />
+            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
+          </button>
 
           <div className="divider"><span>OR</span></div>
 
-          <form onSubmit={handleContinue}>
+          <form onSubmit={(e) => e.preventDefault()}>
             {isSignUp && (
               <div className="name-row">
                 <div className="floating-group">
@@ -184,16 +178,6 @@ export default function CustomAuthPage() {
             </div>
 
             <div className="otp-row">
-              <div className="floating-group" style={{ flex: 1 }}>
-                <input
-                  id="otp"
-                  type="text"
-                  placeholder="OTP"
-                  value={otpCode}
-                  onChange={e => setOtpCode(e.target.value)}
-                />
-                <label htmlFor="otp">OTP Code</label>
-              </div>
               <button
                 type="button"
                 className="send-otp-btn"
@@ -208,21 +192,18 @@ export default function CustomAuthPage() {
               </button>
             </div>
 
+            {otpSent && (
+              <OtpInput
+                otp={otpArray}
+                setOtp={setOtpArray}
+                onComplete={handleOtpComplete}
+                isSuccess={otpSuccess}
+              />
+            )}
+
             {error && <div className="error">{error}</div>}
 
-            <button
-              type="submit"
-              className="action-btn"
-              disabled={formLoading}
-            >
-              {formLoading
-                ? isSignUp
-                  ? "Signing Up..."
-                  : "Signing In..."
-                : isSignUp
-                ? "Sign Up"
-                : "Sign In"}
-            </button>
+            {formLoading && <MiniLoader />}
           </form>
 
           <p className="toggle-text">
