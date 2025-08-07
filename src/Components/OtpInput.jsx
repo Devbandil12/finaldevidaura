@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import "./OtpInput.css";
+import "../style/OtpInput.css";
 
 export default function OtpInput({ otp, setOtp, length = 6, onComplete, isSuccess }) {
   const inputsRef = useRef([]);
