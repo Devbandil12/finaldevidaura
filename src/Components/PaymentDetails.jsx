@@ -20,7 +20,7 @@ export default function PaymentDetails({
   handlePlaceOrder
 }) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // shared loading for both buttons
   const { user } = useUser();
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function PaymentDetails({
 
   const handleRazorpayPayment = async () => {
     try {
-      setLoading(true);
+      setLoading(true); // ✅ disable double-tap
 
       const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
         method: "POST",
@@ -65,12 +65,14 @@ export default function PaymentDetails({
         const errorText = await orderResponse.text();
         console.error("Order creation failed:", errorText);
         toast.error("Could not create order. Try again.");
+        setLoading(false);
         return;
       }
 
       const responseText = await orderResponse.text();
       if (!responseText) {
         toast.error("Empty order response");
+        setLoading(false);
         return;
       }
 
@@ -80,11 +82,13 @@ export default function PaymentDetails({
       } catch (err) {
         console.error("Error parsing order JSON:", err);
         toast.error("Invalid server response.");
+        setLoading(false);
         return;
       }
 
-      if (!orderData.orderId) {
-        toast.error("Order not created. Missing order ID.");
+      if (!orderData.razorpayOrderId) {
+        toast.error("Order not created. Missing Razorpay order ID.");
+        setLoading(false);
         return;
       }
 
@@ -94,7 +98,7 @@ export default function PaymentDetails({
         currency: "INR",
         name: "DevidAura",
         description: "Order Payment",
-        order_id: orderData.orderId,
+        order_id: orderData.razorpayOrderId,
         prefill: {
           name: userdetails?.name || "",
           email: userdetails?.email || "",
@@ -110,11 +114,26 @@ export default function PaymentDetails({
               razorpay_order_id,
               razorpay_payment_id,
               razorpay_signature,
+
+              // ✅ pass extra fields for DB insertion during verification
+              user: {
+                id: userdetails.id,
+                fullName: userdetails.name,
+                email: userdetails.email,
+              },
+              phone: selectedAddress.phone,
+              cartItems: selectedItems.map(item => ({
+                id: item.product.id,
+                quantity: item.quantity,
+              })),
+              couponCode: appliedCoupon?.code,
+              orderId: orderData.orderId,
             }),
           });
 
+          setLoading(false); // ✅ reset loading before checking result
+
           if (!verifyRes.ok) {
-            setLoading(false);
             toast.error("Verification failed. Try again.");
             return;
           }
@@ -125,14 +144,13 @@ export default function PaymentDetails({
             onPaymentVerified(true);
             toast.success("Payment successful!");
             onRazorpaySuccess();
-            setLoading(false);
           } else {
-            setLoading(false);
             toast.error("Invalid payment. Please contact support.");
           }
         },
         modal: {
           ondismiss: function () {
+            setLoading(false); // ✅ reset if Razorpay modal is closed
             toast.error("Payment cancelled.");
           },
         },
@@ -143,6 +161,7 @@ export default function PaymentDetails({
     } catch (err) {
       console.error("Payment error:", err);
       toast.error("Payment failed. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -200,7 +219,7 @@ export default function PaymentDetails({
             <button
               onClick={handleRazorpayPayment}
               className="btn btn-primary"
-              disabled={loading}
+              disabled={loading} // ✅ disable on loading
             >
               {loading ? "Processing..." : "Pay Now"}
             </button>
@@ -215,8 +234,9 @@ export default function PaymentDetails({
               <button
                 onClick={handlePlaceOrder}
                 className="btn btn-success"
+                disabled={loading} // ✅ disable COD button too
               >
-                Place Order
+                {loading ? "Placing Order..." : "Place Order"}
               </button>
             </div>
           )}
