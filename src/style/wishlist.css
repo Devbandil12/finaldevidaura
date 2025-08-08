@@ -188,7 +188,7 @@ body {
 }
 
 .wl-size-chip {
-  background: var(--soft);
+  background: var(--brand);
   padding: 2px 8px;
   border-radius: 999px;
   margin-left: 6px;
@@ -206,7 +206,7 @@ body {
 
 .wl-price {
   font-weight: 700;
-  color: var(--text);
+  color: var(--brand);
 }
 
 .wl-mrp {
@@ -231,7 +231,6 @@ body {
 .wl-btn {
   flex: 1 1 auto;
   padding: 10px 12px;
-  height: 38px;
   border-radius: 8px;
   border: 1px solid var(--brand);
   background: #fff;
@@ -253,19 +252,14 @@ body {
 
 .wl-btn.primary {
   background: var(--brand);
-  border-color: var(--text);
   color: var(--text);
+  border: 1px solid var(--brand);
 }
 
 .wl-btn.primary:hover {
   filter: brightness(0.97);
 }
 
-/* Accessibility */
-.wl-btn:focus,
-.wl-remove-icon:focus {
-  outline: 2px solid #a6c8ff;
-  outline-offset: 2px;
 }
 
 /* --------- Responsive: Mobile */
