@@ -95,6 +95,7 @@ body {
   overflow: hidden;
   background: #fff;
   box-shadow: var(--shadow);
+  padding: 15px;
 }
 
 /* Image Area */
@@ -156,7 +157,7 @@ body {
 
 /* Meta Info */
 .wl-meta {
-  padding: 10px 12px 12px;
+  padding: 10px 0px;
 }
 
 .wl-brand {
