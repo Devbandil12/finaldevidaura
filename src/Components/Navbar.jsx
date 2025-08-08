@@ -424,13 +424,12 @@ useEffect(() => {
                 </div>
               </div>
             ) : (
-              <SignInButton>
-                <div id="loginSignupButtons" className="desktop-login-signup">
-                  <button id="loginButton">
-                    <span className="btn-text">Sign Up</span>
-                  </button>
-                </div>
-              </SignInButton>
+            <div id="loginSignupButtons" className="desktop-login-signup">
+  <button id="loginButton" onClick={() => navigate("/login")}>
+    <span className="btn-text">Sign Up</span>
+  </button>
+</div>
+
             )}
 
             {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
@@ -459,9 +458,10 @@ useEffect(() => {
                           <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
                         </div>
                       ) : (
-                        <SignInButton>
-                          <button className="sidebar-signin">Login / Sign Up</button>
-                        </SignInButton>
+                       <button className="sidebar-signin" onClick={() => navigate("/login")}>
+  Login / Sign Up
+</button>
+
                       )}
                       <button className="sidebar-close" onClick={toggleSidebar}>
                         ✕
