@@ -53,7 +53,7 @@ const [loadingOrders, setLoadingOrders] = useState(true);
           refundCompletedAt: ordersTable.refund_completed_at,
         })
         .from(ordersTable)
-.where(inArray(ordersTable.paymentStatus, ["paid", "refunded"]))
+.where(inArray(ordersTable.paymentStatus, ["paid", "refunded", "pending"]))
 
         .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
         .leftJoin(addressTable, eq(addressTable.userId, ordersTable.userId));
