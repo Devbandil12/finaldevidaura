@@ -182,7 +182,7 @@ const Wishlist = () => {
 
                   {/* Meta */}
                   <div className="wl-meta">
-                    <div className="wl-brand">{item.brand || "Brand"}</div>
+                  
                     <div className="wl-name" title={item.name}>
                       {item.name}
                     </div>
