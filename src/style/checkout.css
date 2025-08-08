@@ -218,7 +218,7 @@ body {
   border-radius: 10px;
 }
 .section-card {
-  
+  border: 1px solid #ddd;
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 20px;
