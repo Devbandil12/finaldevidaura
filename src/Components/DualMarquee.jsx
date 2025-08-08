@@ -27,7 +27,7 @@ const highlightStyles = {
   confidence: "highlight-blue",
   expensive: "highlight-gold",
   power: "highlight-dark",
-  Long-lasting: "highlight-gold",
+  Long-lasting: "highlight-gold"
 };
 
 export default function DualMarquee() {
