@@ -26,7 +26,7 @@ const highlightStyles = {
   success: "highlight-yellow",
   confidence: "highlight-blue",
   expensive: "highlight-gold",
-  power: "highlight-dark"
+  power: "highlight-dark",
   Long-lasting: "highlight-gold",
 };
 
