@@ -5,16 +5,16 @@ import "../style/DualMarquee.css";
 
 // Marquee lines
 const marqueeLines = [
-  "• Built for confidence. Made to last.",
-  "• For him. For her. For anyone who smells success.",
-  "• Smell expensive. Pay less.",
-  "• Tested. Trusted. Refunds, no drama.",
-  "• Long-lasting scents. Instant refunds. Zero stress.",
-  "• Where bold scent meets smart tech.",
-  "• Masculine. Memorable. Made right.",
-  "• Smell like power. Stay all day.",
-  "• Verified by Razorpay. Approved by noses everywhere.",
-  "• Luxury in a bottle. Honesty in every transaction."
+  "• Built for confidence Made to last",
+  "• For him For her For anyone who smells success",
+  "• Smell expensive Pay less.",
+  "• Tested Trusted Refunds no drama",
+  "• Long-lasting scents Instant refunds Zero stress",
+  "• Where bold scent meets smart tech",
+  "• Masculine. Memorable Made right",
+  "• Smell like power Stay all day",
+  "• Verified by Razorpay Approved by noses everywhere",
+  "• Luxury in a bottle Honesty in every transaction"
 ];
 
 // Highlight styles mapping
@@ -27,6 +27,7 @@ const highlightStyles = {
   confidence: "highlight-blue",
   expensive: "highlight-gold",
   power: "highlight-dark"
+  Long-lasting: "highlight-gold",
 };
 
 export default function DualMarquee() {
