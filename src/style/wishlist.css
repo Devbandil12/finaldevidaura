@@ -253,8 +253,7 @@ body {
 /* --------- Responsive: Mobile */
 @media (max-width: 700px) {
   .wishlist-main-container {
-    margin-top: 100px;
-    padding-top: 60px;
+    padding-top: 30px;
   }
 
   .wishlist-grid {
