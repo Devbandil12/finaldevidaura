@@ -233,10 +233,10 @@ body {
   padding: 10px 12px;
   height: 38px;
   border-radius: 8px;
-  border: 1px solid var(--text);
+  border: 1px solid var(--brand)
   background: #fff;
-  color: var(--text);
-  font-weight: 700;
+  color: var(--brand);
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
@@ -244,6 +244,7 @@ body {
 
 .wl-btn:hover {
   background: var(--soft);
+  
 }
 
 .wl-btn:active {
