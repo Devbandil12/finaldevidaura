@@ -233,7 +233,7 @@ body {
   padding: 10px 12px;
   height: 38px;
   border-radius: 8px;
-  border: 1px solid var(--brand)
+  border: 1px solid var(--brand);
   background: #fff;
   color: var(--brand);
   font-weight: 600;
