@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
+import { CreditCard, IndianRupee, Truck } from "lucide-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -16,7 +17,7 @@ export default function PaymentDetails({
   onRazorpaySuccess,
   appliedCoupon,
   loadingPrices,
-  handlePlaceOrder // 🔹 COD button uses this
+  handlePlaceOrder
 }) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -123,18 +124,7 @@ export default function PaymentDetails({
             setTransactionId(razorpay_payment_id);
             onPaymentVerified(true);
             toast.success("Payment successful!");
-
-            const newOrder = {
-              id: Date.now(),
-              date: new Date().toISOString().split("T")[0],
-              amount: breakdown.total,
-              status: "Order Placed",
-              progressStep: 1,
-              verified: true,
-              items: selectedItems,
-              transactionId: razorpay_payment_id,
-            };
-            onRazorpaySuccess(newOrder);
+            onRazorpaySuccess();
             setLoading(false);
           } else {
             setLoading(false);
@@ -157,82 +147,80 @@ export default function PaymentDetails({
   };
 
   return (
-    <div className="payment-details">
-      <div className="payment-summary">
-        <div
-          className="summary-header"
-          onClick={() => setSummaryExpanded(!summaryExpanded)}
-        >
-          <span className="payment-total-price">
-            Total Price: ₹{breakdown.total}
-          </span>
+    <div className="payment-details payment-section">
+      <div className="section-card">
+        <div className="summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
+          <IndianRupee size={18} />
+          <span className="payment-total-price">Total: ₹{breakdown.total}</span>
           <span className="toggle-icon">{summaryExpanded ? "▲" : "▼"}</span>
         </div>
+
         {summaryExpanded && (
           <div className="summary-details">
-            <p>Please review your price details below:</p>
             {loadingPrices ? (
               <p>Loading breakdown...</p>
             ) : (
-              <>
-                <p><strong>Original Price:</strong> ₹{breakdown.originalTotal}</p>
-                <p><strong>Product Discount:</strong> -₹{breakdown.originalTotal - breakdown.productTotal}</p>
+              <ul className="price-list">
+                <li><strong>Original:</strong> ₹{breakdown.originalTotal}</li>
+                <li><strong>Discount:</strong> -₹{breakdown.originalTotal - breakdown.productTotal}</li>
                 {appliedCoupon && (
-                  <p style={{ color: "green", fontWeight: 600 }}>
+                  <li style={{ color: "green", fontWeight: 600 }}>
                     <strong>Coupon ({appliedCoupon.code}):</strong> -₹{breakdown.discountAmount}
-                  </p>
+                  </li>
                 )}
-                <p><strong>Delivery Charge:</strong> ₹{breakdown.deliveryCharge}</p>
-                <p className="total-price-display"><strong>Total Price:</strong> ₹{breakdown.total}</p>
-              </>
+                <li><strong>Delivery:</strong> ₹{breakdown.deliveryCharge}</li>
+                <li className="total-line">
+                  <strong>Total:</strong> ₹{breakdown.total}
+                </li>
+              </ul>
             )}
           </div>
         )}
       </div>
 
-      <h2>Payment Options</h2>
-      <div className="payment-method-selection">
-        {availablePaymentMethods.map((method) => (
-          <label key={method} className="payment-option">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value={method}
-              checked={paymentMethod === method}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-            />
-            {method}
-          </label>
-        ))}
-      </div>
+      <div className="section-card payment-methods">
+        <h3><CreditCard size={18} /> Choose Payment Method</h3>
+        <div className="payment-method-selection">
+          {availablePaymentMethods.map((method) => (
+            <label key={method} className="payment-option">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value={method}
+                checked={paymentMethod === method}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+              />
+              {method}
+            </label>
+          ))}
+        </div>
 
-      <div className="payment-method-content">
-        {paymentMethod === "Razorpay" && (
-          <div className="razorpay-payment-content">
+        <div className="payment-action">
+          {paymentMethod === "Razorpay" && (
             <button
               onClick={handleRazorpayPayment}
-              className="razorpay-pay-btn btn btn-outline-primary"
+              className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? "Loading..." : "Pay Now"}
+              {loading ? "Processing..." : "Pay Now"}
             </button>
-          </div>
-        )}
+          )}
 
-        {paymentMethod === "Cash on Delivery" && (
-          <div className="cod-payment-content">
-            <p>
-              You have selected Cash on Delivery. No online payment is required.
-              Please prepare the exact amount for the delivery agent.
-            </p>
-            <button
-              className="btn btn-primary"
-              onClick={handlePlaceOrder}
-            >
-              Place Order
-            </button>
-          </div>
-        )}
+          {paymentMethod === "Cash on Delivery" && (
+            <div className="cod-content">
+              <p>
+                <Truck size={16} style={{ marginRight: "6px" }} />
+                Cash on Delivery selected. Please have exact change ready.
+              </p>
+              <button
+                onClick={handlePlaceOrder}
+                className="btn btn-success"
+              >
+                Place Order
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
