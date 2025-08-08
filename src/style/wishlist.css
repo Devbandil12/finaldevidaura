@@ -4,8 +4,8 @@
 :root {
   --text: #070D0D;             /* Shadow Ink */
   --muted: #5a5a5a;
-  --soft: #EFEDE4;             /* Soft Oat background */
-  --brand: #EFEDE4;            /* Soft Oat as brand */
+  --soft: #F1EAD8;             /* Soft Oat background */
+  --brand: #242D4C;            /* Soft Oat as brand */
   --ok: #2e7d32;
   --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
