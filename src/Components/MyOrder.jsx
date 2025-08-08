@@ -214,7 +214,8 @@ setTimeout(() => {
         )}
 
       <div className="myorders">
-        {sortedOrders.length === 0 && <p>No orders found.</p>}
+        {!loadingOrders && sortedOrders.length === 0 && <p>No orders found.</p>}
+
 
         {sortedOrders.map((order) => {
           const totalItems = order.items.reduce(
