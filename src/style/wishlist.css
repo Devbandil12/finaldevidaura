@@ -57,7 +57,12 @@
 
 @media (min-width: 600px){
   .wishlist-grid{ grid-template-columns: repeat(2, 1fr); }
+.wishlist-main-container{
+  margin-top: 100px;
 }
+
+}
+
 @media (min-width: 900px){
   .wishlist-grid{ grid-template-columns: repeat(3, 1fr); gap: 20px; }
 }
