@@ -261,7 +261,7 @@ body {
   }
 
   .wl-name {
-    font-size: 14px;
+    font-size: 1.5rem;
   }
 
   .wl-price-line {
@@ -275,7 +275,7 @@ body {
   }
 
   .wl-btn {
-    height: 40px;
+    
     font-size: 14px;
   }
 }
