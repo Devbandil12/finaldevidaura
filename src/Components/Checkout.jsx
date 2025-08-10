@@ -31,25 +31,14 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { orders, setOrders, getorders } = useContext(OrderContext);
   const { setCart } = useContext(CartContext);
-  const { userdetails, address } = useContext(UserContext);
+  const { userdetails } = useContext(UserContext);
 
   const [step, setStep] = useState(1);
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState(null);
-  const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [newAddress, setNewAddress] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    state: "",
-    country: "",
-  });
-  const [editingIndex, setEditingIndex] = useState(null);
-  const addressFieldsOrder = ["name", "phone", "address", "postalCode", "city", "state", "country"];
-
+  
   const [selectedItems, setSelectedItems] = useState([]);
+
+
   useEffect(() => {
     const items = localStorage.getItem("selectedItems");
     if (items) {
@@ -105,114 +94,10 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  const handlePincodeBlur = async () => {
-    const { postalCode } = newAddress;
-    if (postalCode.length !== 6) {
-      alert("Pincode must be 6 digits.");
-      return;
-    }
-    try {
-      const response = await fetch(`https://api.postalpincode.in/pincode/${postalCode}`);
-      const data = await response.json();
-      if (data[0].Status === "Success" && data[0].PostOffice.length > 0) {
-        const location = data[0].PostOffice[0];
-        setNewAddress((prev) => ({
-          ...prev,
-          city: location.District,
-          state: location.State,
-          country: location.Country,
-        }));
-      } else {
-        alert("Invalid Pincode or no location data found.");
-      }
-    } catch (error) {
-      console.error("Error fetching location:", error);
-      alert("Failed to fetch location from pincode.");
-    }
-  };
+  
 
-  const saveAddressToBackend = async (address) => {
-    await fetch(`${BACKEND}/api/address/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: userdetails.id, address }),
-    });
-  };
+  
 
-  const handleSaveAddress = async () => {
-    const requiredFields = ["name", "phone", "address", "city", "postalCode", "state", "country"];
-    const isEmptyField = requiredFields.some(
-      (field) => !newAddress[field] || newAddress[field].trim() === ""
-    );
-
-    if (isEmptyField) {
-      alert("Please fill in all the required fields before saving the address.");
-      return;
-    }
-
-    if (editingIndex !== null) {
-      const updatedAddresses = [...addresses];
-      updatedAddresses[editingIndex] = newAddress;
-      setAddresses(updatedAddresses);
-      setSelectedAddress(newAddress);
-      await saveAddressToBackend(newAddress);
-    } else if (selectedAddress) {
-      const index = addresses.findIndex(
-        (addr) => addr.postalCode === selectedAddress.postalCode
-      );
-      if (index !== -1) {
-        const updatedAddresses = [...addresses];
-        updatedAddresses[index] = newAddress;
-        setAddresses(updatedAddresses);
-        await saveAddressToBackend(newAddress);
-      } else {
-        setAddresses([...addresses, newAddress]);
-        await saveAddressToBackend(newAddress);
-      }
-    } else {
-      setAddresses([...addresses, newAddress]);
-      await saveAddressToBackend(newAddress);
-    }
-    setNewAddress({
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-      postalCode: "",
-      state: "",
-      country: "",
-    });
-  };
-
-  const handleEditAddress = (index) => {
-    setNewAddress(addresses[index]);
-    setEditingIndex(index);
-  };
-
-  const handleDeleteAddress = async (index) => {
-    const addressToDelete = addresses[index];
-    try {
-      await fetch(`${BACKEND}/api/address/delete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userdetails.id,
-          postalCode: addressToDelete.postalCode,
-        }),
-      });
-
-      const updatedAddresses = addresses.filter((_, i) => i !== index);
-      setAddresses(updatedAddresses);
-
-      if (selectedAddress && addressToDelete.postalCode === selectedAddress.postalCode) {
-        setSelectedAddress(null);
-      }
-      toast.success("Address deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting address:", error);
-      toast.error("Failed to delete address. Please try again.");
-    }
-  };
 
   const handleRazorpaySuccess = async () => {
     localStorage.removeItem("selectedItems");
@@ -238,25 +123,15 @@ export default function Checkout() {
   };
 
   const handleNext = () => {
-    if (step === 1 && !selectedAddress) {
-      if (newAddress.name && newAddress.address && newAddress.postalCode) {
-        setSelectedAddress(newAddress);
-        setNewAddress({
-          name: "",
-          phone: "",
-          address: "",
-          city: "",
-          postalCode: "",
-          state: "",
-          country: "",
-        });
-      } else {
-        alert("Please select or enter a valid address.");
-        return;
-      }
+  if (step === 1) {
+    if (!selectedAddress) {
+      alert("Please select a delivery address before proceeding.");
+      return; // Prevent going to next step
     }
-    setStep((prev) => Math.min(prev + 1, 3));
-  };
+  }
+  setStep((prev) => Math.min(prev + 1, 3));
+};
+
 
   const handlePrev = () => {
     if (step === 1) {
@@ -268,9 +143,7 @@ export default function Checkout() {
 
   const resetCheckout = () => setStep(1);
 
-  useEffect(() => {
-    setAddresses(address);
-  }, [address]);
+  
 
   return (
     <div className="checkout-wrapper">
@@ -295,29 +168,8 @@ export default function Checkout() {
         <div className="checkout-main">
           {step === 1 && (
             <AddressSelection
-              addresses={addresses}
-              selectedAddress={selectedAddress}
-              setSelectedAddress={setSelectedAddress}
-              selectedAddressIndex={selectedAddressIndex}
-              setSelectedAddressIndex={setSelectedAddressIndex}
-              newAddress={newAddress}
-              setNewAddress={setNewAddress}
-              handleSaveAddress={handleSaveAddress}
-              handlePincodeBlur={handlePincodeBlur}
-              handleEditAddress={handleEditAddress}
-              handleDeleteAddress={handleDeleteAddress}
-              addressFieldsOrder={addressFieldsOrder}
-              editingIndex={editingIndex}
-              setEditingIndex={setEditingIndex}
-              emptyAddress={{
-                name: "",
-                phone: "",
-                address: "",
-                city: "",
-                postalCode: "",
-                state: "",
-                country: "",
-              }}
+              userId={userdetails?.id}
+    onSelect={setSelectedAddress}
             />
           )}
 
