@@ -343,3 +343,73 @@ body {
     width: 100%;
   }
 }
+
+
+/* ────────────── Address Fields Styling ────────────── */
+
+.address-form__fields label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #242D4C;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.address-form__fields input,
+.address-form__fields select,
+.address-form__fields textarea {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #070D0D;
+  transition: border-color 0.2s;
+  outline-offset: 2px;
+  outline-color: transparent;
+}
+
+.address-form__fields input:focus,
+.address-form__fields select:focus,
+.address-form__fields textarea:focus {
+  border-color: #242D4C;
+  outline-color: #242D4C;
+}
+
+.address-form__fields input[disabled],
+.address-form__fields select[disabled] {
+  background-color: #f9f9f9;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.address-form__checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: #242D4C;
+  cursor: pointer;
+}
+
+.address-form__checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #242D4C;
+}
+
+/* Error message styling if you want to show validation errors */
+.address-form__error {
+  color: #d93025;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Responsive tweaks for smaller devices */
+@media (max-width: 600px) {
+  .address-form__fields {
+    grid-template-columns: 1fr !important;
+  }
+}
