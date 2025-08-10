@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import "../style/checkout.css";
 
 /* Fix default icon paths for many bundlers */
 delete L.Icon.Default.prototype._getIconUrl;
