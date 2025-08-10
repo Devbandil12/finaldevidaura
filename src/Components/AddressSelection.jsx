@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 
-const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/address`;
+const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address";
 
 export default function AddressSelection({ userId, onSelect }) {
-  // Addresses loaded from backend
   const [addresses, setAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
 
-  // Form state for adding/editing address
   const emptyAddress = {
     name: "",
     phone: "",
-    altPhone: "",
+    altPhone: null,
     address: "",
     city: "",
     state: "",
@@ -21,9 +19,9 @@ export default function AddressSelection({ userId, onSelect }) {
     deliveryInstructions: "",
     addressType: "Home",
     label: "",
-    latitude: "",
-    longitude: "",
-    geoAccuracy: "",
+    latitude: null,
+    longitude: null,
+    geoAccuracy: null,
     isDefault: false,
     isVerified: false,
   };
@@ -37,28 +35,34 @@ export default function AddressSelection({ userId, onSelect }) {
   // Load addresses for user
   useEffect(() => {
     if (!userId) return;
-    fetch(`${API_BASE}/list/${userId}`)
-      .then((res) => res.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/user/${userId}`);
+        const data = await res.json();
         if (data.success) {
-          setAddresses(data.data);
-          // Select default address automatically
-          const defaultIdx = data.data.findIndex((a) => a.isDefault);
+          setAddresses(data.data || []);
+          const defaultIdx = (data.data || []).findIndex((a) => a.isDefault);
           if (defaultIdx >= 0) {
             setSelectedIndex(defaultIdx);
             onSelect?.(data.data[defaultIdx]);
+          } else if ((data.data || []).length > 0) {
+            setSelectedIndex(0);
+            onSelect?.(data.data[0]);
           }
+        } else {
+          console.error("Failed to load addresses", data.msg);
         }
-      });
+      } catch (err) {
+        console.error("Error fetching addresses:", err);
+      }
+    })();
   }, [userId]);
 
-  // Handle selecting address
   function selectAddress(idx) {
     setSelectedIndex(idx);
     onSelect?.(addresses[idx]);
   }
 
-  // Open form for new address
   function addNew() {
     setFormAddress(emptyAddress);
     setIsEditing(false);
@@ -66,7 +70,6 @@ export default function AddressSelection({ userId, onSelect }) {
     setShowForm(true);
   }
 
-  // Open form for editing existing address
   function editAddress(idx) {
     setFormAddress(addresses[idx]);
     setIsEditing(true);
@@ -74,86 +77,107 @@ export default function AddressSelection({ userId, onSelect }) {
     setShowForm(true);
   }
 
-  // Delete address (soft delete)
   async function deleteAddress(idx) {
     const toDelete = addresses[idx];
     if (!toDelete) return alert("Address not found");
     if (!window.confirm("Are you sure you want to delete this address?")) return;
 
-    const res = await fetch(`${API_BASE}/soft-delete/${toDelete.id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (data.success) {
-      // Refresh list after deletion
-      const filtered = addresses.filter((a) => a.id !== toDelete.id);
-      setAddresses(filtered);
-      setSelectedIndex(null);
-      onSelect?.(null);
-      setShowForm(false);
-    } else {
-      alert(data.msg || "Failed to delete address");
+    try {
+      const res = await fetch(`${API_BASE}/${toDelete.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        const filtered = addresses.filter((a) => a.id !== toDelete.id);
+        setAddresses(filtered);
+        setSelectedIndex(null);
+        onSelect?.(null);
+        setShowForm(false);
+      } else {
+        alert(data.msg || "Failed to delete address");
+      }
+    } catch (err) {
+      console.error("deleteAddress error:", err);
+      alert("Network error while deleting address");
     }
   }
 
-  // Set default address
   async function setDefaultAddress(idx) {
     const addr = addresses[idx];
     if (!addr) return;
-    const res = await fetch(`${API_BASE}/set-default/${addr.id}`, { method: "PUT" });
-    const data = await res.json();
-    if (data.success) {
-      // Update local state to mark default
-      setAddresses((prev) =>
-        prev.map((a, i) => ({
-          ...a,
-          isDefault: i === idx,
-        }))
-      );
-      setSelectedIndex(idx);
-      onSelect?.(addr);
-    } else {
-      alert(data.msg || "Failed to set default");
+    try {
+      const res = await fetch(`${API_BASE}/${addr.id}/default`, { method: "PUT" });
+      const data = await res.json();
+      if (data.success) {
+        setAddresses((prev) =>
+          prev.map((a) => ({ ...a, isDefault: a.id === addr.id }))
+        );
+        setSelectedIndex(idx);
+        onSelect?.(addr);
+      } else {
+        alert(data.msg || "Failed to set default");
+      }
+    } catch (err) {
+      console.error("setDefaultAddress error:", err);
+      alert("Network error while setting default");
     }
   }
 
-  // Save or update address form
   async function saveAddress() {
-    // Basic validation
+    if (!userId) {
+      return alert("User ID missing — please login or wait for user data to load.");
+    }
+
+    // Basic required validation
     if (!formAddress.name || !formAddress.phone || !formAddress.address || !formAddress.city || !formAddress.state || !formAddress.postalCode) {
       return alert("Please fill all required fields");
     }
 
-    const url = isEditing ? `${API_BASE}/update/${editingId}` : `${API_BASE}/save`;
-    const method = isEditing ? "PUT" : "POST";
+    setLoading(true);
+    try {
+      const url = isEditing ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
+      const method = isEditing ? "PUT" : "POST";
 
-    const payload = { ...formAddress, userId };
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
+      const payload = { ...formAddress, userId };
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (data.success) {
-      // Refresh address list after save
-      fetch(`${API_BASE}/list/${userId}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.success) {
-            setAddresses(d.data);
-            setShowForm(false);
-            // Select default or first address after saving
-            const defaultAddr = d.data.find((a) => a.isDefault) || d.data[0];
-            const defaultIdx = d.data.findIndex((a) => a.id === defaultAddr.id);
-            setSelectedIndex(defaultIdx);
-            onSelect?.(defaultAddr);
+      const data = await res.json();
+      if (data.success) {
+        // Prefer using returned `data` from server if available
+        if (data.data) {
+          // If POST returned new item, insert/update locally
+          if (isEditing) {
+            setAddresses((prev) => prev.map((a) => (a.id === data.data.id ? data.data : a)));
+          } else {
+            setAddresses((prev) => [data.data, ...prev]);
           }
-        });
-    } else {
-      alert(data.msg || "Failed to save address");
+          // Choose default or first
+          const defaultAddr = (isEditing ? data.data : data.data) || addresses[0];
+          const defaultIdx = (addresses.findIndex?.((a) => a.id === defaultAddr?.id)) ?? 0;
+          setSelectedIndex(defaultIdx);
+          onSelect?.(defaultAddr);
+        } else {
+          // Fallback: re-fetch whole list
+          const r = await fetch(`${API_BASE}/user/${userId}`);
+          const d = await r.json();
+          if (d.success) setAddresses(d.data || []);
+        }
+        setShowForm(false);
+        setIsEditing(false);
+        setEditingId(null);
+      } else {
+        alert(data.msg || "Failed to save address");
+      }
+    } catch (err) {
+      console.error("saveAddress error:", err);
+      alert("Network error while saving address");
+    } finally {
+      setLoading(false);
     }
   }
 
-  // Use browser geolocation + reverse geocode to fill address form (without showing lat/lon fields)
   function useCurrentLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
@@ -174,11 +198,11 @@ export default function AddressSelection({ userId, onSelect }) {
             const addr = data.address;
             setFormAddress((prev) => ({
               ...prev,
-              address: addr.road || addr.pedestrian || addr.house_number || "",
+              address: (addr.road || addr.pedestrian || addr.house_number || "").trim(),
               city: addr.city || addr.town || addr.village || "",
               state: addr.state || "",
               postalCode: addr.postcode || "",
-              country: addr.country || "",
+              country: addr.country || "India",
               latitude,
               longitude,
               geoAccuracy: accuracy,
@@ -204,15 +228,12 @@ export default function AddressSelection({ userId, onSelect }) {
     <div className="address-selection">
       <h2>Select or Add Delivery Address</h2>
 
-      <button onClick={addNew} className="add-new-btn">
-        + Add New Address
-      </button>
-
-      <button onClick={useCurrentLocation} className="use-location-btn" style={{ marginLeft: "10px" }}>
+      <button onClick={addNew} className="add-new-btn">+ Add New Address</button>
+      <button onClick={useCurrentLocation} className="use-location-btn" style={{ marginLeft: 10 }}>
         Use My Current Location
       </button>
 
-      <div className="address-list" style={{ marginTop: "15px" }}>
+      <div className="address-list" style={{ marginTop: 15 }}>
         {addresses.map((addr, i) => (
           <div
             key={addr.id}
@@ -254,13 +275,11 @@ export default function AddressSelection({ userId, onSelect }) {
               </div>
             </div>
             <p>
-              {addr.address}, {addr.landmark ? `${addr.landmark}, ` : ""}
-              {addr.city}, {addr.state} - {addr.postalCode}
+              {addr.address}{addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}
             </p>
             <p>{addr.country}</p>
             <p>
-              Phone: {addr.phone}
-              {addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
+              Phone: {addr.phone}{addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
             </p>
             {addr.deliveryInstructions && <p>Delivery Instructions: {addr.deliveryInstructions}</p>}
             <p>Address Type: {addr.addressType}</p>
@@ -287,10 +306,6 @@ export default function AddressSelection({ userId, onSelect }) {
               { label: "Delivery Instructions", field: "deliveryInstructions" },
               { label: "Address Type", field: "addressType" },
               { label: "Label", field: "label" },
-              // Removed lat/lng fields from UI
-              // { label: "Latitude", field: "latitude" },
-              // { label: "Longitude", field: "longitude" },
-              // { label: "Geo Accuracy", field: "geoAccuracy" },
               { label: "Is Default", field: "isDefault", type: "checkbox" },
               { label: "Is Verified", field: "isVerified", type: "checkbox", disabled: true },
             ].map(({ label, field, required, type = "text", disabled = false }) => (
@@ -302,17 +317,13 @@ export default function AddressSelection({ userId, onSelect }) {
                     type="checkbox"
                     checked={!!formAddress[field]}
                     disabled={disabled}
-                    onChange={(e) =>
-                      setFormAddress({ ...formAddress, [field]: e.target.checked })
-                    }
+                    onChange={(e) => setFormAddress({ ...formAddress, [field]: e.target.checked })}
                   />
                 ) : (
                   <input
                     type={type}
                     value={formAddress[field] || ""}
-                    onChange={(e) =>
-                      setFormAddress({ ...formAddress, [field]: e.target.value })
-                    }
+                    onChange={(e) => setFormAddress({ ...formAddress, [field]: e.target.value })}
                   />
                 )}
               </label>
@@ -320,14 +331,12 @@ export default function AddressSelection({ userId, onSelect }) {
           </div>
 
           <div className="form-actions">
-            <button
-              onClick={() => {
-                saveAddress();
-              }}
-            >
-              Save Address
+            <button onClick={saveAddress} disabled={loading}>
+              {loading ? "Saving..." : "Save Address"}
             </button>
-            <button onClick={() => setShowForm(false)}>Cancel</button>
+            <button onClick={() => { setShowForm(false); setIsEditing(false); setEditingId(null); }}>
+              Cancel
+            </button>
           </div>
         </div>
       )}
