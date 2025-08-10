@@ -14,7 +14,6 @@ L.Icon.Default.mergeOptions({
 const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address";
 
 function ClickableMap({ center, marker, setMarker }) {
-  // a small component to capture clicks and update marker
   useMapEvents({
     click(e) {
       setMarker(e.latlng);
@@ -58,6 +57,9 @@ export default function AddressSelection({ userId, onSelect }) {
   const [mapMarker, setMapMarker] = useState(null);
   const mapRef = useRef();
 
+  // For controlling custom address type input
+  const [customAddressType, setCustomAddressType] = useState("");
+
   // Load addresses
   useEffect(() => {
     if (!userId) return;
@@ -82,6 +84,33 @@ export default function AddressSelection({ userId, onSelect }) {
     })();
   }, [userId]);
 
+  // When opening the map modal, set marker to current location if available
+  useEffect(() => {
+    if (showMap) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const currentPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            setMapMarker(currentPos);
+            if (mapRef.current) {
+              mapRef.current.setView(currentPos, 15);
+            }
+          },
+          (err) => {
+            console.warn("Geolocation failed or denied, using previous marker or default", err);
+            if (!mapMarker) {
+              setMapMarker({ lat: 20.5937, lng: 78.9629 }); // Default India
+            }
+          }
+        );
+      } else {
+        if (!mapMarker) {
+          setMapMarker({ lat: 20.5937, lng: 78.9629 });
+        }
+      }
+    }
+  }, [showMap]);
+
   function selectAddress(idx) {
     setSelectedIndex(idx);
     onSelect?.(addresses[idx]);
@@ -89,20 +118,21 @@ export default function AddressSelection({ userId, onSelect }) {
 
   function addNew() {
     setFormAddress(emptyAddress);
+    setCustomAddressType("");
     setIsEditing(false);
     setEditingId(null);
     setShowForm(true);
   }
 
   function editAddress(idx) {
-    setFormAddress(addresses[idx]);
+    const addr = addresses[idx];
+    setFormAddress(addr);
     setIsEditing(true);
-    setEditingId(addresses[idx].id);
+    setEditingId(addr.id);
     setShowForm(true);
+    setCustomAddressType(addr.addressType && !["Home", "Work", "Other"].includes(addr.addressType) ? addr.addressType : "");
   }
 
-  // DELETE and set default keep same as prior; omitted for brevity here but
-  // assume you keep previous deleteAddress and setDefaultAddress implementations.
   async function deleteAddress(idx) {
     const toDelete = addresses[idx];
     if (!toDelete) return alert("Address not found");
@@ -145,25 +175,43 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
-  // Save / Update
   async function saveAddress() {
     if (!userId) {
       return alert("User ID missing — please login or wait for user data to load.");
     }
     // required fields
-    if (!formAddress.name || !formAddress.phone || !formAddress.address || !formAddress.city || !formAddress.state || !formAddress.postalCode) {
+    if (
+      !formAddress.name ||
+      !formAddress.phone ||
+      !formAddress.address ||
+      !formAddress.city ||
+      !formAddress.state ||
+      !formAddress.postalCode
+    ) {
       return alert("Please fill all required fields");
+    }
+
+    // Compose addressType properly
+    let finalAddressType = formAddress.addressType;
+    if (finalAddressType === "Other") {
+      if (!customAddressType.trim()) {
+        return alert("Please specify the custom address type.");
+      }
+      finalAddressType = customAddressType.trim();
     }
 
     setLoading(true);
     try {
       const url = isEditing ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
       const method = isEditing ? "PUT" : "POST";
-      const payload = { ...formAddress, userId };
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const payload = { ...formAddress, addressType: finalAddressType, userId };
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json();
       if (data.success) {
-        // update local list
         if (isEditing) {
           setAddresses((prev) => prev.map((a) => (a.id === data.data.id ? data.data : a)));
         } else {
@@ -172,7 +220,6 @@ export default function AddressSelection({ userId, onSelect }) {
         setShowForm(false);
         setIsEditing(false);
         setEditingId(null);
-        // select newly saved
         const idx = (addresses.findIndex?.((a) => a.id === data.data.id)) ?? 0;
         setSelectedIndex(idx);
         onSelect?.(data.data);
@@ -187,16 +234,10 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
-  /* --------------------------
-     Postal-code -> autofill
-     - If 6-digit numeric (India) -> use api.postalpincode.in
-     - else fallback to Nominatim search
-     -------------------------- */
+  // Postal code lookup as before
   async function lookupPostalCode(pc) {
     if (!pc) return;
-    // quick trim
     const postal = String(pc).trim();
-    // India fast path: 6 digits
     if (/^\d{6}$/.test(postal)) {
       try {
         const r = await fetch(`https://api.postalpincode.in/pincode/${postal}`);
@@ -215,15 +256,13 @@ export default function AddressSelection({ userId, onSelect }) {
         console.warn("postalpincode lookup failed", e);
       }
     }
-
-    // fallback to Nominatim (works for many countries)
+    // fallback to Nominatim
     try {
       const q = encodeURIComponent(postal);
       const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${q}&limit=1`);
       const j2 = await r2.json();
       if (Array.isArray(j2) && j2.length > 0) {
         const first = j2[0];
-        // Parse address if present
         if (first.address) {
           setFormAddress((prev) => ({
             ...prev,
@@ -234,7 +273,6 @@ export default function AddressSelection({ userId, onSelect }) {
             longitude: first.lon || prev.longitude,
           }));
         } else {
-          // set lat/lon if available, but not address components
           setFormAddress((prev) => ({
             ...prev,
             latitude: first.lat || prev.latitude,
@@ -247,14 +285,15 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
-  // Use browser geolocation and reverse-geocode to fill form (button inside form)
   function useCurrentLocationInForm() {
     if (!navigator.geolocation) return alert("Geolocation is not supported by your browser.");
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+          );
           const data = await response.json();
           if (data) {
             const addr = data.address || {};
@@ -284,14 +323,12 @@ export default function AddressSelection({ userId, onSelect }) {
     );
   }
 
-  // When postal code field loses focus, try lookup
   function onPostalBlur() {
     const pc = formAddress.postalCode;
     if (!pc) return;
     lookupPostalCode(pc);
   }
 
-  // Map modal save: uses mapMarker to set lat/lon and reverse geocode
   async function applyMapMarker() {
     if (!mapMarker) {
       alert("Please pick a location on the map.");
@@ -322,30 +359,75 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
+  // Helper to update formAddress with changes, including addressType management
+  function updateFormAddress(field, value) {
+    if (field === "addressType") {
+      setFormAddress((prev) => ({ ...prev, addressType: value }));
+      if (value !== "Other") setCustomAddressType("");
+    } else {
+      setFormAddress((prev) => ({ ...prev, [field]: value }));
+    }
+  }
+
   return (
     <div className="address-selection">
       <h2>Select or Add Delivery Address</h2>
 
-      <button onClick={addNew} className="add-new-btn">+ Add New Address</button>
+      <button onClick={addNew} className="add-new-btn">
+        + Add New Address
+      </button>
 
       <div className="address-list" style={{ marginTop: 15 }}>
         {addresses.map((addr, i) => (
-          <div key={addr.id} className={`address-card ${selectedIndex === i ? "active" : ""}`} onClick={() => selectAddress(i)}>
+          <div
+            key={addr.id}
+            className={`address-card ${selectedIndex === i ? "active" : ""}`}
+            onClick={() => selectAddress(i)}
+          >
             <div className="address-header">
-              <strong>{addr.name} {addr.isVerified ? "✔️" : ""}</strong>
+              <strong>
+                {addr.name} {addr.isVerified ? "✔️" : ""}
+              </strong>
               <div className="address-actions">
-                <button onClick={(e) => { e.stopPropagation(); editAddress(i); }}>✎</button>
-                <button onClick={(e) => { e.stopPropagation(); deleteAddress(i); }}>🗑</button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    editAddress(i);
+                  }}
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteAddress(i);
+                  }}
+                >
+                  🗑
+                </button>
                 {!addr.isDefault ? (
-                  <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(i); }}>Set Default</button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDefaultAddress(i);
+                    }}
+                  >
+                    Set Default
+                  </button>
                 ) : (
                   <span className="default-label">Default</span>
                 )}
               </div>
             </div>
-            <p>{addr.address}{addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}</p>
+            <p>
+              {addr.address}
+              {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}
+            </p>
             <p>{addr.country}</p>
-            <p>Phone: {addr.phone}{addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}</p>
+            <p>
+              Phone: {addr.phone}
+              {addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
+            </p>
             {addr.deliveryInstructions && <p>Delivery Instructions: {addr.deliveryInstructions}</p>}
             <p>Address Type: {addr.addressType}</p>
             {addr.label && <p>Label: {addr.label}</p>}
@@ -358,115 +440,235 @@ export default function AddressSelection({ userId, onSelect }) {
           <h3>{isEditing ? "Edit Address" : "Add New Address"}</h3>
 
           <div className="form-grid">
-            {/* Basic fields */}
-            <label className="form-label">Name<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.name} onChange={(e) => setFormAddress({ ...formAddress, name: e.target.value })} />
+            {/* Name */}
+            <label className="form-label">
+              Name<span style={{ color: "red" }}>*</span>
+              <input
+                value={formAddress.name}
+                onChange={(e) => updateFormAddress("name", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Phone<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.phone} onChange={(e) => setFormAddress({ ...formAddress, phone: e.target.value })} />
+            {/* Phone */}
+            <label className="form-label">
+              Phone<span style={{ color: "red" }}>*</span>
+              <input
+                value={formAddress.phone}
+                onChange={(e) => updateFormAddress("phone", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Alt Phone
-              <input value={formAddress.altPhone || ""} onChange={(e) => setFormAddress({ ...formAddress, altPhone: e.target.value })} />
+            {/* Alt Phone */}
+            <label className="form-label">
+              Alt Phone
+              <input
+                value={formAddress.altPhone || ""}
+                onChange={(e) => updateFormAddress("altPhone", e.target.value)}
+              />
             </label>
 
-            {/* Postal code now above city */}
-            <label className="form-label">Postal Code<span style={{ color: "red" }}>*</span>
+            {/* Address (moved above postal code) */}
+            <label className="form-label">
+              Address<span style={{ color: "red" }}>*</span>
+              <input
+                value={formAddress.address || ""}
+                onChange={(e) => updateFormAddress("address", e.target.value)}
+              />
+            </label>
+
+            {/* Landmark (above postal code) */}
+            <label className="form-label">
+              Landmark
+              <input
+                value={formAddress.landmark || ""}
+                onChange={(e) => updateFormAddress("landmark", e.target.value)}
+              />
+            </label>
+
+            {/* Postal Code */}
+            <label className="form-label">
+              Postal Code<span style={{ color: "red" }}>*</span>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={formAddress.postalCode || ""}
-                  onChange={(e) => setFormAddress({ ...formAddress, postalCode: e.target.value })}
+                  onChange={(e) => updateFormAddress("postalCode", e.target.value)}
                   onBlur={onPostalBlur}
                   style={{ flex: 1 }}
                 />
-                <button type="button" onClick={useCurrentLocationInForm}>Use my location</button>
-                <button type="button" onClick={() => { setShowMap(true); /* open map modal */ }}>Pick on map</button>
+                <button type="button" onClick={useCurrentLocationInForm}>
+                  Use my location
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMap(true);
+                  }}
+                >
+                  Pick on map
+                </button>
               </div>
             </label>
 
-            <label className="form-label">City<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.city || ""} onChange={(e) => setFormAddress({ ...formAddress, city: e.target.value })} />
+            {/* City */}
+            <label className="form-label">
+              City<span style={{ color: "red" }}>*</span>
+              <input
+                value={formAddress.city || ""}
+                onChange={(e) => updateFormAddress("city", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">State<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.state || ""} onChange={(e) => setFormAddress({ ...formAddress, state: e.target.value })} />
+            {/* State */}
+            <label className="form-label">
+              State<span style={{ color: "red" }}>*</span>
+              <input
+                value={formAddress.state || ""}
+                onChange={(e) => updateFormAddress("state", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Country<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.country || ""} onChange={(e) => setFormAddress({ ...formAddress, country: e.target.value })} />
+            {/* Country */}
+            <label className="form-label">
+              Country
+              <input
+                value={formAddress.country || "India"}
+                disabled
+                onChange={(e) => updateFormAddress("country", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Address<span style={{ color: "red" }}>*</span>
-              <input value={formAddress.address || ""} onChange={(e) => setFormAddress({ ...formAddress, address: e.target.value })} />
+            {/* Delivery Instructions */}
+            <label className="form-label">
+              Delivery Instructions
+              <textarea
+                value={formAddress.deliveryInstructions || ""}
+                onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Landmark
-              <input value={formAddress.landmark || ""} onChange={(e) => setFormAddress({ ...formAddress, landmark: e.target.value })} />
+            {/* Address Type radios */}
+            <fieldset className="form-label">
+              <legend>Address Type</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="addressType"
+                  value="Home"
+                  checked={formAddress.addressType === "Home"}
+                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
+                />
+                Home
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="addressType"
+                  value="Work"
+                  checked={formAddress.addressType === "Work"}
+                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
+                />
+                Work
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="addressType"
+                  value="Other"
+                  checked={formAddress.addressType === "Other"}
+                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
+                />
+                Other
+              </label>
+              {formAddress.addressType === "Other" && (
+                <input
+                  type="text"
+                  placeholder="Enter custom address type"
+                  value={customAddressType}
+                  onChange={(e) => setCustomAddressType(e.target.value)}
+                />
+              )}
+            </fieldset>
+
+            {/* Label */}
+            <label className="form-label">
+              Label
+              <input
+                value={formAddress.label || ""}
+                onChange={(e) => updateFormAddress("label", e.target.value)}
+              />
             </label>
 
-            <label className="form-label">Delivery Instructions
-              <input value={formAddress.deliveryInstructions || ""} onChange={(e) => setFormAddress({ ...formAddress, deliveryInstructions: e.target.value })} />
-            </label>
+            {/* Verified label (hidden checkbox, show verified label instead) */}
+            <div className="form-label" style={{ marginTop: 12 }}>
+              <label>
+                Status: <strong style={{ color: "green" }}>Verified</strong>
+              </label>
+            </div>
 
-            <label className="form-label">Address Type
-              <input value={formAddress.addressType || ""} onChange={(e) => setFormAddress({ ...formAddress, addressType: e.target.value })} />
-            </label>
+            {/* Hidden latitude and longitude in state only */}
+            {/* Not rendered in UI */}
 
-            <label className="form-label">Label
-              <input value={formAddress.label || ""} onChange={(e) => setFormAddress({ ...formAddress, label: e.target.value })} />
-            </label>
-
-            <label className="form-label">Latitude
-              <input value={formAddress.latitude || ""} onChange={(e) => setFormAddress({ ...formAddress, latitude: e.target.value })} />
-            </label>
-
-            <label className="form-label">Longitude
-              <input value={formAddress.longitude || ""} onChange={(e) => setFormAddress({ ...formAddress, longitude: e.target.value })} />
-            </label>
-
-            <label className="form-label">Is Default
-              <input type="checkbox" checked={!!formAddress.isDefault} onChange={(e) => setFormAddress({ ...formAddress, isDefault: e.target.checked })} />
-            </label>
-
-            <label className="form-label">Is Verified
-              <input type="checkbox" checked={!!formAddress.isVerified} disabled />
-            </label>
-          </div>
-
-          <div className="form-actions">
-            <button onClick={saveAddress} disabled={loading}>
-              {loading ? "Saving..." : "Save Address"}
-            </button>
-            <button onClick={() => { setShowForm(false); setIsEditing(false); setEditingId(null); }}>Cancel</button>
+            <div className="form-buttons" style={{ marginTop: 15 }}>
+              <button type="button" onClick={() => setShowForm(false)} disabled={loading}>
+                Cancel
+              </button>
+              <button type="button" onClick={saveAddress} disabled={loading}>
+                {loading ? "Saving..." : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Map modal */}
+      {/* Map Modal */}
       {showMap && (
-        <div className="map-modal" style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex",
-          alignItems: "center", justifyContent: "center", zIndex: 9999
-        }}>
-          <div style={{ width: "90%", maxWidth: 900, height: 500, background: "#fff", borderRadius: 8, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong>Pick exact location on map</strong>
-              <div>
-                <button onClick={() => setShowMap(false)} style={{ marginRight: 8 }}>Close</button>
-                <button onClick={applyMapMarker}>Use this location</button>
-              </div>
-            </div>
+        <div
+          className="map-modal"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: 10,
+              borderRadius: 8,
+              width: "90%",
+              maxWidth: 600,
+              height: 400,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <MapContainer
+              center={mapMarker || [20.5937, 78.9629]}
+              zoom={15}
+              style={{ flex: 1 }}
+              whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
+            </MapContainer>
 
-            <div style={{ flex: 1 }}>
-              <MapContainer center={mapMarker || [20.5937, 78.9629]} zoom={5} style={{ height: "100%", width: "100%" }} whenCreated={(m) => (mapRef.current = m)}>
-                <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
-                {mapMarker && <Marker position={mapMarker} />}
-              </MapContainer>
-            </div>
-            <div style={{ padding: 8, textAlign: "center" }}>
-              <small>Click anywhere on the map to place a marker. Zoom/pan to refine the position.</small>
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between" }}>
+              <button type="button" onClick={() => setShowMap(false)}>
+                Cancel
+              </button>
+              <button type="button" onClick={applyMapMarker}>
+                Select Location
+              </button>
             </div>
           </div>
         </div>
