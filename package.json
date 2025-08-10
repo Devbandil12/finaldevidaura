@@ -56,7 +56,7 @@
     "swiper": "^11.2.10",
     "three": "^0.165.0",
     "typed.js": "^2.1.0",
-    "wavesurfer.js": "^7.7.7"
+    "wavesurfer.js": "^7.7.7",
     "aos": "^2.3.4"
     
   },
