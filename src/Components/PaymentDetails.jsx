@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
 import { CreditCard, IndianRupee, Truck } from "lucide-react";
+import "../style/paymentDetails.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
