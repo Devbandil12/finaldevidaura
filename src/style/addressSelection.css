@@ -248,10 +248,14 @@
   margin-bottom: 10px;
 }
 
-/* Radio options container */
+/* Radio options container - always row */
 .address-selection .address-form fieldset .radio-group {
   display: flex;
-  gap: 10px;
+  flex-direction: row; /* always horizontal */
+  gap: 20px;
+  align-items: center;
+  white-space: nowrap; /* prevent breaking */
+  overflow-x: auto; /* allow scroll if screen is too small */
 }
 
 /* Each radio + label pair */
@@ -262,10 +266,11 @@
   font-weight: 500;
   font-size: 0.95rem;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
+  flex-shrink: 0; /* prevent shrinking on small screens */
 }
 
 /* Checked state highlight */
@@ -274,12 +279,15 @@
   font-weight: 600;
 }
 
-/* Radio hidden but accessible */
+/* Radio button style */
 .address-selection .address-form fieldset input[type="radio"] {
-  accent-color: #242D4C; /* modern browsers */
+  accent-color: #242D4C;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 
-/* Optional hover effect */
+/* Hover effect */
 .address-selection .address-form fieldset label:hover {
   background: #f2f2f2;
 }
@@ -288,7 +296,7 @@
 .address-selection .address-form .custom-address-input {
   width: 100%;
   padding: 10px 12px;
-  margin-top: 8px;
+  margin-top: 12px; /* space above input */
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 0.95rem;
