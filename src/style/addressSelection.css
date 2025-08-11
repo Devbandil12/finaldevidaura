@@ -3,6 +3,8 @@
   background: #fff;
   font-family: 'Inter', system-ui, sans-serif;
   color: #070D0D;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 /* Heading */
@@ -37,13 +39,6 @@
   flex-direction: column;
   gap: 14px;
 }
-.address-selection .address-list::-webkit-scrollbar {
-  width: 8px;
-}
-.address-selection .address-list::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
 .address-selection .address-card {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -62,6 +57,7 @@
   margin-top: 30px;
   background: #f9f9f9;
   border-radius: 10px;
+  padding: 20px;
 }
 
 /* Form Heading */
@@ -72,17 +68,17 @@
   color: #242D4C;
 }
 
-/* Form Grid */
+/* Remove auto grid — manual grouping from JSX handles layout */
 .address-selection .form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
 /* Input Group - For floating labels */
 .address-selection .input-group {
   position: relative;
-  margin-bottom: 20px;
+  flex: 1;
 }
 
 .address-selection .input-group input,
@@ -94,7 +90,6 @@
   font-size: 0.95rem;
   background: #fff;
   outline-offset: 2px;
-  outline-color: transparent;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -130,10 +125,11 @@
   color: #242D4C;
 }
 
-/* Row for side-by-side inputs */
+/* Row for grouped inputs */
 .address-selection .row {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap; /* Prevent overflow on small screens */
 }
 
 /* Postal Code row */
@@ -141,6 +137,11 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+.address-selection .postal-row .input-group {
+  flex: 1;
+  min-width: 180px;
 }
 .address-selection .postal-row button {
   background: #242D4C;
@@ -151,7 +152,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
-  flex-shrink: 0;
 }
 .address-selection .postal-row button:hover {
   background: #1c223d;
@@ -162,7 +162,6 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 12px 16px;
-  margin-top: 20px;
 }
 .address-selection .address-form fieldset legend {
   font-weight: 700;
@@ -183,7 +182,6 @@
 
 /* Form Actions */
 .address-selection .form-buttons {
-  margin-top: 28px;
   display: flex;
   justify-content: flex-end;
   gap: 16px;
@@ -214,23 +212,25 @@
   font-size: 0.85rem;
 }
 
-/* ───────────── Responsive ───────────── */
+/* Scrollbar hidden */
+.address-selection .address-list {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.address-selection .address-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile tweaks */
 @media (max-width: 768px) {
-  .address-selection .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .address-selection .address-list {
-    max-height: 250px;
-  }
+  .address-selection .row,
   .address-selection .postal-row {
     flex-direction: column;
-    align-items: stretch;
   }
   .address-selection .postal-row button {
     width: 100%;
   }
 }
-
 
 
 
