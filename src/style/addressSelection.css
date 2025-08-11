@@ -1,9 +1,6 @@
 /* ───────────── AddressSelection Component Styles ───────────── */
 .address-selection {
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
   font-family: 'Inter', system-ui, sans-serif;
   color: #070D0D;
 }
