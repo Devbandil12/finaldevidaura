@@ -221,17 +221,6 @@
   display: none;
 }
 
-/* Mobile tweaks */
-@media (max-width: 768px) {
-  .address-selection .row,
-  .address-selection .postal-row {
-    flex-direction: column;
-  }
-  .address-selection .postal-row button {
-    width: 100%;
-  }
-}
-
 
 
 
