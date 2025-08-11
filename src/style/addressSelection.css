@@ -3,7 +3,7 @@
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 10px;
-  padding: 20px;
+  padding: 10px;
   font-family: 'Inter', system-ui, sans-serif;
   color: #070D0D;
 }
@@ -65,8 +65,6 @@
   margin-top: 30px;
   background: #f9f9f9;
   border-radius: 10px;
-  border: 1px solid #ddd;
-  padding: 24px;
 }
 
 /* Form Heading */
@@ -130,7 +128,7 @@
 .address-selection .input-group input:not(:placeholder-shown) + label,
 .address-selection .input-group textarea:focus + label,
 .address-selection .input-group textarea:not(:placeholder-shown) + label {
-  top: -5px;
+  top: 0px;
   font-size: 0.75rem;
   color: #242D4C;
 }
