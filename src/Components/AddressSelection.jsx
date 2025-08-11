@@ -178,7 +178,7 @@ export default function AddressSelection({ userId, onSelect }) {
 
   async function saveAddress() {
     if (!userId) {
-      return alert("User ID missing â€” please login or wait for user data to load.");
+      return alert("User ID missing — please login or wait for user data to load.");
     }
     // required fields
     if (
@@ -387,7 +387,7 @@ export default function AddressSelection({ userId, onSelect }) {
           >
             <div className="address-header">
               <strong>
-                {addr.name} {addr.isVerified ? "âœ”ï¸" : ""}
+                {addr.name} {addr.isVerified ? "✔️" : ""}
               </strong>
               <div className="address-actions">
                 <button
@@ -396,7 +396,7 @@ export default function AddressSelection({ userId, onSelect }) {
                     editAddress(i);
                   }}
                 >
-                  âœŽ
+                  ✎
                 </button>
                 <button
                   onClick={(e) => {
@@ -404,7 +404,7 @@ export default function AddressSelection({ userId, onSelect }) {
                     deleteAddress(i);
                   }}
                 >
-                  ðŸ—‘
+                  🗑
                 </button>
                 {!addr.isDefault ? (
                   <button
