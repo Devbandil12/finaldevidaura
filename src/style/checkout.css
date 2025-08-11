@@ -1,32 +1,15 @@
-/* =========================================================
-   GLOBAL BASE STYLES
-   ========================================================= */
-
-body {
+/************************************************************
+  GENERAL UTILS
+************************************************************/
+.checkout-wrapper, 
+.address-selection,
+.order-summary-card,
+.payment-section,
+.confirmation {
   font-family: 'Inter', sans-serif;
-  
-}
-
-h1, h2, h3, h4, h5, h6 {
-  color: #242D4C;
-  font-weight: 600;
-}
-
-p, label, span, li, input, textarea, button {
-  font-size: 14px;
   color: #070D0D;
 }
 
-a {
-  color: #242D4C;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-/* Buttons */
 .btn {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
@@ -45,17 +28,6 @@ a:hover {
   background-color: #1c2440;
 }
 
-.btn-secondary {
-  background-color: transparent;
-  color: #242D4C;
-  border: 2px solid #242D4C;
-}
-
-.btn-secondary:hover {
-  background-color: #242D4C;
-  color: #F1EAD8;
-}
-
 .btn-outline {
   background: transparent;
   border: 2px solid #242D4C;
@@ -67,28 +39,18 @@ a:hover {
   color: #F1EAD8;
 }
 
-/* Form Elements */
-input, textarea, select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1.5px solid #ccc;
-  border-radius: 6px;
-  transition: border-color 0.2s ease;
-  font-size: 14px;
+.btn-success {
+  background-color: #28a745;
+  color: #fff;
 }
 
-input:focus, textarea:focus, select:focus {
-  border-color: #242D4C;
-  outline: none;
+.btn-success:hover {
+  background-color: #218838;
 }
 
-textarea {
-  resize: vertical;
-}
-
-/* =========================================================
-   1. CHECKOUT COMPONENT
-   ========================================================= */
+/************************************************************
+  CHECKOUT COMPONENT
+************************************************************/
 .checkout-wrapper {
   max-width: 1200px;
   margin: auto;
@@ -122,7 +84,7 @@ textarea {
   margin-top: 1.5rem;
 }
 
-/* Progress Indicator */
+/* Progress indicator */
 .progress-indicator {
   display: flex;
   justify-content: space-between;
@@ -149,11 +111,12 @@ textarea {
   color: #F1EAD8;
 }
 
-/* =========================================================
-   2. ADDRESSSELECTION COMPONENT
-   ========================================================= */
+/************************************************************
+  ADDRESS SELECTION COMPONENT
+************************************************************/
 .address-selection h2 {
   margin-bottom: 1rem;
+  color: #242D4C;
 }
 
 .add-new-btn {
@@ -203,7 +166,6 @@ textarea {
   cursor: pointer;
 }
 
-/* Address Form */
 .address-form {
   background: #fff;
   padding: 1rem;
@@ -225,12 +187,28 @@ textarea {
   font-weight: 500;
 }
 
+.form-label input,
+.form-label textarea {
+  padding: 0.5rem;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.form-label input:focus,
+.form-label textarea:focus {
+  border-color: #242D4C;
+  outline: none;
+}
+
 .form-buttons {
   display: flex;
   gap: 1rem;
+  margin-top: 1rem;
 }
 
-/* Map Modal */
+/* Map modal */
 .map-modal {
   background: rgba(0,0,0,0.7);
 }
@@ -251,9 +229,9 @@ textarea {
   background: #1c2440;
 }
 
-/* =========================================================
-   3. ORDERSUMMARY COMPONENT
-   ========================================================= */
+/************************************************************
+  ORDER SUMMARY COMPONENT
+************************************************************/
 .order-summary-card {
   background: #fff;
   padding: 1.2rem;
@@ -296,9 +274,9 @@ textarea {
   font-size: 1.1rem;
 }
 
-/* =========================================================
-   4. PAYMENTDETAILS COMPONENT
-   ========================================================= */
+/************************************************************
+  PAYMENT DETAILS COMPONENT
+************************************************************/
 .payment-section {
   display: flex;
   flex-direction: column;
@@ -341,15 +319,16 @@ textarea {
   gap: 0.4rem;
 }
 
-/* =========================================================
-   5. CONFIRMATION COMPONENT
-   ========================================================= */
+/************************************************************
+  CONFIRMATION COMPONENT
+************************************************************/
 .confirmation {
   text-align: center;
   padding: 2rem;
 }
 
 .confirmation-title {
+  color: #242D4C;
   margin-bottom: 0.5rem;
 }
 
@@ -363,14 +342,30 @@ textarea {
   gap: 1rem;
 }
 
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-@media (max-width: 768px) {
+/************************************************************
+  RESPONSIVE STYLES
+************************************************************/
+@media (max-width: 992px) {
   .checkout-body {
     flex-direction: column;
   }
-  .checkout-main, .checkout-summary {
+
+  .checkout-main,
+  .checkout-summary {
     flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .progress-step span {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .confirmation-actions {
+    flex-direction: column;
   }
 }
