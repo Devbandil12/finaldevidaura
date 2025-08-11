@@ -80,27 +80,21 @@
 /* Form Grid */
 .address-selection .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
 }
 
-/* For grouping inputs in same row */
-.address-selection .row-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-/* Floating Labels */
+/* Floating Label Container */
 .address-selection .form-label {
   position: relative;
   font-size: 0.95rem;
   font-weight: 500;
   color: #555;
-  flex: 1;
-  min-width: 0; /* prevent flexbox overflow */
+  display: flex;
+  flex-direction: column;
 }
 
+/* Inputs & Textareas */
 .address-selection .form-label input,
 .address-selection .form-label textarea {
   width: 100%;
@@ -110,15 +104,18 @@
   font-size: 0.95rem;
   background: #fff;
   outline: none;
+  /* Important for floating label */
+  placeholder-shown: true;
 }
 
-/* Hide native placeholders */
+/* Placeholder empty but present to trigger :placeholder-shown */
 .address-selection .form-label input::placeholder,
 .address-selection .form-label textarea::placeholder {
   color: transparent;
+  user-select: none;
 }
 
-/* Label acts as placeholder initially */
+/* Floating Label */
 .address-selection .form-label label {
   position: absolute;
   top: 50%;
@@ -131,28 +128,17 @@
   pointer-events: none;
   font-size: 0.95rem;
   font-weight: 500;
-  user-select: none;
-  white-space: nowrap;
 }
 
-/* When input focused or filled - label moves up */
+/* When input is focused or has text */
 .address-selection .form-label input:focus + label,
-.address-selection .form-label input:not(:placeholder-shown) + label,
 .address-selection .form-label textarea:focus + label,
+.address-selection .form-label input:not(:placeholder-shown) + label,
 .address-selection .form-label textarea:not(:placeholder-shown) + label {
   top: -8px;
-  left: 8px;
   font-size: 0.75rem;
   color: #242D4C;
   font-weight: 700;
-  transform: none;
-}
-
-/* Required star styling inside label */
-.address-selection .form-label label span.required {
-  color: red;
-  margin-left: 4px;
-  font-weight: bold;
 }
 
 /* Focus Styles */
@@ -162,35 +148,33 @@
   box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
 }
 
-/* Phone and Alt Phone in same row */
-.address-selection .phone-group {
+/* Required asterisk */
+.address-selection .required {
+  color: red;
+  margin-left: 4px;
+  font-weight: bold;
+}
+
+/* Grouped inputs same row (Phone & Alt Phone) */
+.address-selection .phone-group,
+.address-selection .landmark-city-group,
+.address-selection .postal-group,
+.address-selection .state-country-group {
   display: flex;
   gap: 16px;
-  flex-wrap: nowrap;
 }
-.address-selection .phone-group .form-label {
+
+/* Inputs in groups fill space equally */
+.address-selection .phone-group .form-label,
+.address-selection .landmark-city-group .form-label,
+.address-selection .postal-group .form-label,
+.address-selection .state-country-group .form-label {
   flex: 1;
 }
 
-/* Landmark and City in same row */
-.address-selection .landmark-city-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: nowrap;
-}
-.address-selection .landmark-city-group .form-label {
-  flex: 1;
-}
-
-/* Postal code and location buttons in same row */
+/* Postal Group buttons next to input */
 .address-selection .postal-group {
-  display: flex;
-  gap: 8px;
   align-items: center;
-  flex-wrap: nowrap;
-}
-.address-selection .postal-group input {
-  flex: 1;
 }
 .address-selection .postal-group button {
   flex-shrink: 0;
@@ -201,19 +185,11 @@
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.2s ease;
 }
 .address-selection .postal-group button:hover {
   background: #1c223d;
-}
-
-/* State and Country in same row */
-.address-selection .state-country-group {
-  display: flex;
-  gap: 16px;
-  flex-wrap: nowrap;
-}
-.address-selection .state-country-group .form-label {
-  flex: 1;
 }
 
 /* Address Type Radio Buttons */
@@ -263,7 +239,17 @@
   color: #333;
 }
 
-/* ───────────── Responsive ───────────── */
+/* Default Label Style */
+.address-selection .default-label {
+  background: #242D4C;
+  color: #F1EAD8;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .address-selection .form-grid {
     grid-template-columns: 1fr;
@@ -271,17 +257,38 @@
   .address-selection .address-list {
     max-height: 250px;
   }
-  .address-selection .postal-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .address-selection .postal-group input,
-  .address-selection .postal-group button {
-    width: 100%;
-  }
   .address-selection .phone-group,
   .address-selection .landmark-city-group,
+  .address-selection .postal-group,
   .address-selection .state-country-group {
     flex-direction: column;
   }
+  .address-selection .postal-group button {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+}
+
+/* Map Modal (optional - kept from your code) */
+.map-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.map-modal > div {
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
 }
