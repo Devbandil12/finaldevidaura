@@ -625,23 +625,6 @@ export default function AddressSelection({ userId, onSelect }) {
             )}
           </fieldset>
 
-          {/* Label */}
-          <div className="input-group">
-            <input
-              id="label"
-              value={formAddress.label || ""}
-              onChange={(e) => updateFormAddress("label", e.target.value)}
-              placeholder=" "
-            />
-            <label htmlFor="label">Label</label>
-          </div>
-
-          {/* Verified status shown as label text (not editable) */}
-          <div className="form-label" style={{ marginTop: 12 }}>
-            <label>
-              Status: <strong style={{ color: "green" }}>Verified</strong>
-            </label>
-          </div>
 
           <div className="form-buttons" style={{ marginTop: 15 }}>
             <button type="button" onClick={() => setShowForm(false)} disabled={loading}>
