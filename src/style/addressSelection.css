@@ -1,3 +1,4 @@
+/* ───────────── AddressSelection Component Styles ───────────── */
 .address-selection {
   background: #fff;
   border: 1px solid #ddd;
@@ -7,6 +8,7 @@
   color: #070D0D;
 }
 
+/* Heading */
 .address-selection h2 {
   font-size: 1.5rem;
   color: #242D4C;
@@ -14,6 +16,7 @@
   font-weight: 700;
 }
 
+/* Add New Button */
 .address-selection .add-new-btn {
   background: #242D4C;
   color: #F1EAD8;
@@ -28,10 +31,11 @@
   background: #1c223d;
 }
 
+/* Address List */
 .address-selection .address-list {
   max-height: 300px;
   overflow-y: auto;
-  margin-top: 15px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -56,6 +60,7 @@
   box-shadow: 0 0 6px rgba(36, 45, 76, 0.3);
 }
 
+/* ───────────── Form Styles ───────────── */
 .address-selection .address-form {
   margin-top: 30px;
   background: #f9f9f9;
@@ -64,6 +69,7 @@
   padding: 24px;
 }
 
+/* Form Heading */
 .address-selection .address-form h3 {
   font-size: 1.25rem;
   font-weight: 700;
@@ -71,22 +77,17 @@
   color: #242D4C;
 }
 
+/* Form Grid */
 .address-selection .form-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
 }
 
-.address-selection .row,
-.address-selection .postal-row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
+/* Input Group - For floating labels */
 .address-selection .input-group {
   position: relative;
-  flex: 1;
+  margin-bottom: 20px;
 }
 
 .address-selection .input-group input,
@@ -102,31 +103,29 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.address-selection .input-group input[disabled] {
-  background: #eee;
-  cursor: not-allowed;
+.address-selection .input-group input:focus,
+.address-selection .input-group textarea:focus {
+  border-color: #242D4C;
+  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
 }
 
+/* Label for floating */
 .address-selection .input-group label {
   position: absolute;
   top: 50%;
   left: 12px;
   transform: translateY(-50%);
-  background: #f9f9f9;
+  background: #fff;
   padding: 0 4px;
-  transition: all 0.2s ease;
   color: #777;
-  pointer-events: none;
+  font-size: 1rem;
   font-weight: 500;
-  font-size: 0.95rem;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 1;
 }
 
-.address-selection .input-group label span {
-  color: red;
-  margin-left: 4px;
-  font-weight: bold;
-}
-
+/* Floating label on focus or filled */
 .address-selection .input-group input:focus + label,
 .address-selection .input-group input:not(:placeholder-shown) + label,
 .address-selection .input-group textarea:focus + label,
@@ -136,43 +135,46 @@
   color: #242D4C;
 }
 
-.address-selection .input-group input:focus,
-.address-selection .input-group textarea:focus {
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
+/* Row for side-by-side inputs */
+.address-selection .row {
+  display: flex;
+  gap: 20px;
 }
 
+/* Postal Code row */
+.address-selection .postal-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 .address-selection .postal-row button {
-  flex-shrink: 0;
   background: #242D4C;
   color: #F1EAD8;
-  padding: 10px 18px;
+  padding: 8px 12px;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
-  height: 42px;
-  align-self: center;
+  flex-shrink: 0;
 }
 .address-selection .postal-row button:hover {
   background: #1c223d;
 }
 
-.address-selection fieldset {
+/* Address Type Radio Buttons */
+.address-selection .address-form fieldset {
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 12px 16px;
   margin-top: 20px;
 }
-
-.address-selection fieldset legend {
+.address-selection .address-form fieldset legend {
   font-weight: 700;
   color: #242D4C;
   margin-bottom: 10px;
 }
-
-.address-selection fieldset label {
+.address-selection .address-form fieldset label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -180,29 +182,17 @@
   margin-right: 20px;
   cursor: pointer;
 }
-
-.address-selection fieldset input[type="radio"] {
+.address-selection .address-form fieldset input[type="radio"] {
   margin: 0;
-  cursor: pointer;
 }
 
-.address-selection fieldset input[type="text"] {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 300px;
-  font-size: 0.95rem;
-}
-
+/* Form Actions */
 .address-selection .form-buttons {
   margin-top: 28px;
   display: flex;
   justify-content: flex-end;
   gap: 16px;
 }
-
 .address-selection .form-buttons button {
   padding: 10px 20px;
   font-weight: 600;
@@ -210,41 +200,51 @@
   border: none;
   cursor: pointer;
 }
-
+.address-selection .form-buttons button:last-child {
+  background: #242D4C;
+  color: #F1EAD8;
+}
 .address-selection .form-buttons button:first-child {
   background: #ccc;
   color: #333;
 }
 
-.address-selection .form-buttons button:last-child {
-  background: #242D4C;
-  color: #F1EAD8;
+/* Default label style */
+.address-selection .default-label {
+  font-weight: 600;
+  color: #242D4C;
+  padding: 2px 8px;
+  border: 1px solid #242D4C;
+  border-radius: 6px;
+  font-size: 0.85rem;
 }
 
-@media (min-width: 600px) {
+/* ───────────── Responsive ───────────── */
+@media (max-width: 768px) {
   .address-selection .form-grid {
     grid-template-columns: 1fr;
   }
-  .address-selection .row {
-    flex-wrap: nowrap;
+  .address-selection .address-list {
+    max-height: 250px;
   }
-  .address-selection .postal-row {
-    flex-wrap: nowrap;
-  }
-}
-
-@media (max-width: 768px) {
-  .address-selection .row,
   .address-selection .postal-row {
     flex-direction: column;
+    align-items: stretch;
   }
   .address-selection .postal-row button {
     width: 100%;
   }
 }
 
-.address-selection .default-label {
-  font-weight: 600;
-  color: green;
-  margin-left: 8px;
+
+
+
+
+.address-selection .address-list {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.address-selection .address-list::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
