@@ -371,309 +371,343 @@ export default function AddressSelection({ userId, onSelect }) {
   }
 
   return (
-    <div className="address-selection">
-      <h2>Select or Add Delivery Address</h2>
+  <div className="address-selection">
+    <h2>Select or Add Delivery Address</h2>
 
-      <button onClick={addNew} className="add-new-btn">
-        + Add New Address
-      </button>
+    <button onClick={addNew} className="add-new-btn">
+      + Add New Address
+    </button>
 
-      <div className="address-list" style={{ marginTop: 15 }}>
-        {addresses.map((addr, i) => (
-          <div
-            key={addr.id}
-            className={`address-card ${selectedIndex === i ? "active" : ""}`}
-            onClick={() => selectAddress(i)}
-          >
-            <div className="address-header">
-              <strong>
-                {addr.name} {addr.isVerified ? "✔️" : ""}
-              </strong>
-              <div className="address-actions">
+    <div className="address-list" style={{ marginTop: 15 }}>
+      {addresses.map((addr, i) => (
+        <div
+          key={addr.id}
+          className={`address-card ${selectedIndex === i ? "active" : ""}`}
+          onClick={() => selectAddress(i)}
+        >
+          <div className="address-header">
+            <strong>
+              {addr.name} {addr.isVerified ? "✔️" : ""}
+            </strong>
+            <div className="address-actions">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  editAddress(i);
+                }}
+              >
+                ✎
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteAddress(i);
+                }}
+              >
+                🗑
+              </button>
+              {!addr.isDefault ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    editAddress(i);
+                    setDefaultAddress(i);
                   }}
                 >
-                  ✎
+                  Set Default
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteAddress(i);
-                  }}
-                >
-                  🗑
-                </button>
-                {!addr.isDefault ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDefaultAddress(i);
-                    }}
-                  >
-                    Set Default
-                  </button>
-                ) : (
-                  <span className="default-label">Default</span>
-                )}
-              </div>
+              ) : (
+                <span className="default-label">Default</span>
+              )}
             </div>
-            <p>
-              {addr.address}
-              {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}
-            </p>
-            <p>{addr.country}</p>
-            <p>
-              Phone: {addr.phone}
-              {addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
-            </p>
-            {addr.deliveryInstructions && <p>Delivery Instructions: {addr.deliveryInstructions}</p>}
-            <p>Address Type: {addr.addressType}</p>
-            {addr.label && <p>Label: {addr.label}</p>}
           </div>
-        ))}
-      </div>
+          <p>
+            {addr.address}
+            {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}
+          </p>
+          <p>{addr.country}</p>
+          <p>
+            Phone: {addr.phone}
+            {addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
+          </p>
+          {addr.deliveryInstructions && <p>Delivery Instructions: {addr.deliveryInstructions}</p>}
+          <p>Address Type: {addr.addressType}</p>
+          {addr.label && <p>Label: {addr.label}</p>}
+        </div>
+      ))}
+    </div>
 
-      {showForm && (
-        <div className="address-form">
-          <h3>{isEditing ? "Edit Address" : "Add New Address"}</h3>
+    {showForm && (
+      <div className="address-form">
+        <h3>{isEditing ? "Edit Address" : "Add New Address"}</h3>
 
-          <div className="form-grid">
-            {/* Name */}
-            <label className="form-label">
+        <div className="form-grid">
+          {/* Name */}
+          <div className="input-group">
+            <input
+              id="name"
+              value={formAddress.name}
+              onChange={(e) => updateFormAddress("name", e.target.value)}
+              placeholder=" "
+              required
+            />
+            <label htmlFor="name">
               Name<span style={{ color: "red" }}>*</span>
-              <input
-                value={formAddress.name}
-                onChange={(e) => updateFormAddress("name", e.target.value)}
-              />
             </label>
+          </div>
 
-            {/* Phone */}
-            <label className="form-label">
-              Phone<span style={{ color: "red" }}>*</span>
+          {/* Phone and Alt Phone in same row */}
+          <div className="row">
+            <div className="input-group">
               <input
+                id="phone"
+                type="tel"
                 value={formAddress.phone}
                 onChange={(e) => updateFormAddress("phone", e.target.value)}
+                placeholder=" "
+                required
               />
-            </label>
-
-            {/* Alt Phone */}
-            <label className="form-label">
-              Alt Phone
+              <label htmlFor="phone">
+                Phone<span style={{ color: "red" }}>*</span>
+              </label>
+            </div>
+            <div className="input-group">
               <input
+                id="altPhone"
+                type="tel"
                 value={formAddress.altPhone || ""}
                 onChange={(e) => updateFormAddress("altPhone", e.target.value)}
+                placeholder=" "
               />
-            </label>
+              <label htmlFor="altPhone">Alt Phone</label>
+            </div>
+          </div>
 
-            {/* Address (moved above postal code) */}
-            <label className="form-label">
+          {/* Address */}
+          <div className="input-group">
+            <input
+              id="address"
+              value={formAddress.address || ""}
+              onChange={(e) => updateFormAddress("address", e.target.value)}
+              placeholder=" "
+              required
+            />
+            <label htmlFor="address">
               Address<span style={{ color: "red" }}>*</span>
-              <input
-                value={formAddress.address || ""}
-                onChange={(e) => updateFormAddress("address", e.target.value)}
-              />
             </label>
+          </div>
 
-            {/* Landmark (above postal code) */}
-            <label className="form-label">
-              Landmark
+          {/* Landmark and City in same row */}
+          <div className="row">
+            <div className="input-group">
               <input
+                id="landmark"
                 value={formAddress.landmark || ""}
                 onChange={(e) => updateFormAddress("landmark", e.target.value)}
+                placeholder=" "
               />
-            </label>
-
-            {/* Postal Code */}
-            <label className="form-label">
-              Postal Code<span style={{ color: "red" }}>*</span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  value={formAddress.postalCode || ""}
-                  onChange={(e) => updateFormAddress("postalCode", e.target.value)}
-                  onBlur={onPostalBlur}
-                  style={{ flex: 1 }}
-                />
-                <button type="button" onClick={useCurrentLocationInForm}>
-                  Use my location
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMap(true);
-                  }}
-                >
-                  Pick on map
-                </button>
-              </div>
-            </label>
-
-            {/* City */}
-            <label className="form-label">
-              City<span style={{ color: "red" }}>*</span>
+              <label htmlFor="landmark">Landmark</label>
+            </div>
+            <div className="input-group">
               <input
+                id="city"
                 value={formAddress.city || ""}
                 onChange={(e) => updateFormAddress("city", e.target.value)}
+                placeholder=" "
+                required
               />
-            </label>
+              <label htmlFor="city">
+                City<span style={{ color: "red" }}>*</span>
+              </label>
+            </div>
+          </div>
 
-            {/* State */}
-            <label className="form-label">
-              State<span style={{ color: "red" }}>*</span>
+          {/* Postal Code with buttons in same row */}
+          <div className="postal-row">
+            <div className="input-group" style={{ flex: 1 }}>
               <input
+                id="postalCode"
+                value={formAddress.postalCode || ""}
+                onChange={(e) => updateFormAddress("postalCode", e.target.value)}
+                onBlur={onPostalBlur}
+                placeholder=" "
+                required
+              />
+              <label htmlFor="postalCode">
+                Postal Code<span style={{ color: "red" }}>*</span>
+              </label>
+            </div>
+            <button type="button" onClick={useCurrentLocationInForm}>
+              Use my location
+            </button>
+            <button type="button" onClick={() => setShowMap(true)}>
+              Pick on map
+            </button>
+          </div>
+
+          {/* State and Country in same row */}
+          <div className="row">
+            <div className="input-group">
+              <input
+                id="state"
                 value={formAddress.state || ""}
                 onChange={(e) => updateFormAddress("state", e.target.value)}
+                placeholder=" "
+                required
               />
-            </label>
-
-            {/* Country */}
-            <label className="form-label">
-              Country
+              <label htmlFor="state">
+                State<span style={{ color: "red" }}>*</span>
+              </label>
+            </div>
+            <div className="input-group">
               <input
+                id="country"
                 value={formAddress.country || "India"}
                 disabled
+                placeholder=" "
                 onChange={(e) => updateFormAddress("country", e.target.value)}
               />
-            </label>
-
-            {/* Delivery Instructions */}
-            <label className="form-label">
-              Delivery Instructions
-              <textarea
-                value={formAddress.deliveryInstructions || ""}
-                onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)}
-              />
-            </label>
-
-            {/* Address Type radios */}
-            <fieldset className="form-label">
-              <legend>Address Type</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="Home"
-                  checked={formAddress.addressType === "Home"}
-                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
-                />
-                Home
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="Work"
-                  checked={formAddress.addressType === "Work"}
-                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
-                />
-                Work
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="Other"
-                  checked={formAddress.addressType === "Other"}
-                  onChange={(e) => updateFormAddress("addressType", e.target.value)}
-                />
-                Other
-              </label>
-              {formAddress.addressType === "Other" && (
-                <input
-                  type="text"
-                  placeholder="Enter custom address type"
-                  value={customAddressType}
-                  onChange={(e) => setCustomAddressType(e.target.value)}
-                />
-              )}
-            </fieldset>
-
-            {/* Label */}
-            <label className="form-label">
-              Label
-              <input
-                value={formAddress.label || ""}
-                onChange={(e) => updateFormAddress("label", e.target.value)}
-              />
-            </label>
-
-            {/* Verified label (hidden checkbox, show verified label instead) */}
-            <div className="form-label" style={{ marginTop: 12 }}>
-              <label>
-                Status: <strong style={{ color: "green" }}>Verified</strong>
-              </label>
-            </div>
-
-            {/* Hidden latitude and longitude in state only */}
-            {/* Not rendered in UI */}
-
-            <div className="form-buttons" style={{ marginTop: 15 }}>
-              <button type="button" onClick={() => setShowForm(false)} disabled={loading}>
-                Cancel
-              </button>
-              <button type="button" onClick={saveAddress} disabled={loading}>
-                {loading ? "Saving..." : "Save"}
-              </button>
+              <label htmlFor="country">Country</label>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Map Modal */}
-      {showMap && (
+          {/* Delivery Instructions */}
+          <div className="input-group">
+            <textarea
+              id="deliveryInstructions"
+              value={formAddress.deliveryInstructions || ""}
+              onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)}
+              placeholder=" "
+              rows={3}
+            />
+            <label htmlFor="deliveryInstructions">Delivery Instructions</label>
+          </div>
+
+          {/* Address Type radios */}
+          <fieldset className="form-label">
+            <legend>Address Type</legend>
+            <label>
+              <input
+                type="radio"
+                name="addressType"
+                value="Home"
+                checked={formAddress.addressType === "Home"}
+                onChange={(e) => updateFormAddress("addressType", e.target.value)}
+              />
+              Home
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="addressType"
+                value="Work"
+                checked={formAddress.addressType === "Work"}
+                onChange={(e) => updateFormAddress("addressType", e.target.value)}
+              />
+              Work
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="addressType"
+                value="Other"
+                checked={formAddress.addressType === "Other"}
+                onChange={(e) => updateFormAddress("addressType", e.target.value)}
+              />
+              Other
+            </label>
+            {formAddress.addressType === "Other" && (
+              <input
+                type="text"
+                placeholder="Enter custom address type"
+                value={customAddressType}
+                onChange={(e) => setCustomAddressType(e.target.value)}
+              />
+            )}
+          </fieldset>
+
+          {/* Label */}
+          <div className="input-group">
+            <input
+              id="label"
+              value={formAddress.label || ""}
+              onChange={(e) => updateFormAddress("label", e.target.value)}
+              placeholder=" "
+            />
+            <label htmlFor="label">Label</label>
+          </div>
+
+          {/* Verified status shown as label text (not editable) */}
+          <div className="form-label" style={{ marginTop: 12 }}>
+            <label>
+              Status: <strong style={{ color: "green" }}>Verified</strong>
+            </label>
+          </div>
+
+          <div className="form-buttons" style={{ marginTop: 15 }}>
+            <button type="button" onClick={() => setShowForm(false)} disabled={loading}>
+              Cancel
+            </button>
+            <button type="button" onClick={saveAddress} disabled={loading}>
+              {loading ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Map Modal */}
+    {showMap && (
+      <div
+        className="map-modal"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0,0,0,0.7)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 9999,
+        }}
+      >
         <div
-          className="map-modal"
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.7)",
+            background: "#fff",
+            padding: 10,
+            borderRadius: 8,
+            width: "90%",
+            maxWidth: 600,
+            height: 400,
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 9999,
+            flexDirection: "column",
           }}
         >
-          <div
-            style={{
-              background: "#fff",
-              padding: 10,
-              borderRadius: 8,
-              width: "90%",
-              maxWidth: 600,
-              height: 400,
-              display: "flex",
-              flexDirection: "column",
-            }}
+          <MapContainer
+            center={mapMarker || [20.5937, 78.9629]}
+            zoom={15}
+            style={{ flex: 1 }}
+            whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
           >
-            <MapContainer
-              center={mapMarker || [20.5937, 78.9629]}
-              zoom={15}
-              style={{ flex: 1 }}
-              whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
-            </MapContainer>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
+          </MapContainer>
 
-            <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between" }}>
-              <button type="button" onClick={() => setShowMap(false)}>
-                Cancel
-              </button>
-              <button type="button" onClick={applyMapMarker}>
-                Select Location
-              </button>
-            </div>
+          <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between" }}>
+            <button type="button" onClick={() => setShowMap(false)}>
+              Cancel
+            </button>
+            <button type="button" onClick={applyMapMarker}>
+              Select Location
+            </button>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }
