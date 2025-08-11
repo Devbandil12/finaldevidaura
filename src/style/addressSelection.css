@@ -231,47 +231,8 @@
 }
 
 
-/* Address Type Section */
-.address-selection .address-form fieldset {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin-top: 20px;
-  background: #fff;
-}
 
-/* Legend styling */
-.address-selection .address-form fieldset legend {
-  font-weight: 700;
-  color: #242D4C;
-  font-size: 1rem;
-  margin-bottom: 10px;
-}
 
-/* Radio options container - always row */
-.address-selection .address-form fieldset .radio-group {
-  display: flex;
-  flex-direction: row; /* always horizontal */
-  gap: 20px;
-  align-items: center;
-  white-space: nowrap; /* prevent breaking */
-  overflow-x: auto; /* allow scroll if screen is too small */
-}
-
-/* Each radio + label pair */
-.address-selection .address-form fieldset label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  font-size: 0.95rem;
-  cursor: pointer;
-  padding: 4px 8px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-  flex-shrink: 0; /* prevent shrinking on small screens */
-}
 
 /* Checked state highlight */
 .address-selection .address-form fieldset input[type="radio"]:checked + span {
@@ -287,10 +248,6 @@
   height: 18px;
 }
 
-/* Hover effect */
-.address-selection .address-form fieldset label:hover {
-  background: #f2f2f2;
-}
 
 /* Custom Address Type Input */
 .address-selection .address-form .custom-address-input {
