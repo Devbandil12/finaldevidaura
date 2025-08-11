@@ -1,5 +1,7 @@
 import React from "react";
 
+import "../style/orderSummary.css";
+
 // Helper: formatAddress
 const formatAddress = (address) => {
   if (!address) return "";
