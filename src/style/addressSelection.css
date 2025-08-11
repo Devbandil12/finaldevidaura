@@ -80,8 +80,15 @@
 /* Form Grid */
 .address-selection .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
+}
+
+/* For grouping inputs in same row */
+.address-selection .row-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 /* Floating Labels */
@@ -90,7 +97,10 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: #555;
+  flex: 1;
+  min-width: 0; /* prevent flexbox overflow */
 }
+
 .address-selection .form-label input,
 .address-selection .form-label textarea {
   width: 100%;
@@ -99,31 +109,50 @@
   border-radius: 6px;
   font-size: 0.95rem;
   background: #fff;
+  outline: none;
 }
+
+/* Hide native placeholders */
+.address-selection .form-label input::placeholder,
+.address-selection .form-label textarea::placeholder {
+  color: transparent;
+}
+
+/* Label acts as placeholder initially */
 .address-selection .form-label label {
   position: absolute;
   top: 50%;
   left: 12px;
   transform: translateY(-50%);
-  background: #fff;
+  background: #f9f9f9;
   padding: 0 4px;
   transition: all 0.2s ease;
   color: #777;
   pointer-events: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  user-select: none;
+  white-space: nowrap;
 }
-.address-selection .form-label span.required {
-  color: red;
-  margin-left: 4px;
-  font-weight: bold;
-}
-/* Floating effect when focused or filled */
+
+/* When input focused or filled - label moves up */
 .address-selection .form-label input:focus + label,
 .address-selection .form-label input:not(:placeholder-shown) + label,
 .address-selection .form-label textarea:focus + label,
 .address-selection .form-label textarea:not(:placeholder-shown) + label {
   top: -8px;
+  left: 8px;
   font-size: 0.75rem;
   color: #242D4C;
+  font-weight: 700;
+  transform: none;
+}
+
+/* Required star styling inside label */
+.address-selection .form-label label span.required {
+  color: red;
+  margin-left: 4px;
+  font-weight: bold;
 }
 
 /* Focus Styles */
@@ -133,14 +162,35 @@
   box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
 }
 
-/* Postal Code with Button */
+/* Phone and Alt Phone in same row */
+.address-selection .phone-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+.address-selection .phone-group .form-label {
+  flex: 1;
+}
+
+/* Landmark and City in same row */
+.address-selection .landmark-city-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+.address-selection .landmark-city-group .form-label {
+  flex: 1;
+}
+
+/* Postal code and location buttons in same row */
 .address-selection .postal-group {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 .address-selection .postal-group input {
-  flex: 0 0 140px;
+  flex: 1;
 }
 .address-selection .postal-group button {
   flex-shrink: 0;
@@ -154,6 +204,16 @@
 }
 .address-selection .postal-group button:hover {
   background: #1c223d;
+}
+
+/* State and Country in same row */
+.address-selection .state-country-group {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+.address-selection .state-country-group .form-label {
+  flex: 1;
 }
 
 /* Address Type Radio Buttons */
@@ -215,8 +275,13 @@
     flex-direction: column;
     align-items: stretch;
   }
-  .address-selection .postal-group input {
-    flex: 1;
+  .address-selection .postal-group input,
+  .address-selection .postal-group button {
     width: 100%;
+  }
+  .address-selection .phone-group,
+  .address-selection .landmark-city-group,
+  .address-selection .state-country-group {
+    flex-direction: column;
   }
 }
