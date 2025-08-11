@@ -243,3 +243,137 @@
 .address-selection .address-list::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
+
+
+/* make sizing predictable */
+.address-selection,
+.address-selection * {
+  box-sizing: border-box;
+}
+
+/* container width + centering for medium/desktop */
+.address-selection {
+  max-width: 1100px;      /* adjust to taste */
+  margin: 0 auto;
+  padding: 24px;
+  background: #fff;
+}
+
+/* form grid: mobile 1 column (keeps your mobile layout),
+   medium: 2 columns, large: 3 columns */
+.address-selection .form-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* mobile default */
+  gap: 20px;
+}
+
+/* medium screens: 2 columns */
+@media (min-width: 769px) {
+  .address-selection .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* large screens: 3 columns if you want (optional) */
+@media (min-width: 1200px) {
+  .address-selection .form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* make certain rows span full width so buttons don't collide */
+.address-selection .postal-row,
+.address-selection .address-form fieldset,
+.address-selection .form-buttons,
+.address-selection .input-group textarea {
+  grid-column: 1 / -1; /* span entire grid */
+}
+
+/* postal-row layout improvements */
+.address-selection .postal-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+/* allow input to expand; buttons keep reasonable size */
+.address-selection .postal-row > .input-group {
+  flex: 1 1 auto;
+  min-width: 240px;
+}
+
+.address-selection .postal-row button {
+  flex: 0 0 200px; /* make buttons fixed-ish on desktop */
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+/* ensure rows that contain side-by-side inputs fill their container */
+.address-selection .row {
+  display: flex;
+  gap: 20px;
+}
+.address-selection .row .input-group {
+  flex: 1 1 0;
+  min-width: 0; /* important for flex children to shrink properly */
+}
+
+/* form buttons: keep them on new line and responsive */
+.address-selection .form-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 8px;
+}
+
+/* ensure inputs behave nicely */
+.address-selection .input-group input,
+.address-selection .input-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* optional: show address-list at left and form at right on wide screens */
+@media (min-width: 1000px) {
+  .address-selection {
+    display: grid;
+    grid-template-columns: 420px 1fr; /* left column for address list, right for form */
+    gap: 28px;
+    align-items: start;
+  }
+  .address-selection .address-list {
+    max-height: none;
+    overflow: visible;
+  }
+  /* when placing side by side, ensure form area keeps its inner padding */
+  .address-selection .address-form {
+    margin-top: 0;
+  }
+}
+
+/* visual polish for desktop: larger inputs/labels */
+@media (min-width: 769px) {
+  .address-selection .input-group input,
+  .address-selection .input-group textarea {
+    padding: 14px 14px;
+    font-size: 1rem;
+  }
+  .address-selection h2 {
+    font-size: 1.75rem;
+  }
+  .address-selection .address-form h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* keep your hidden scrollbar behaviour if you want */
+.address-selection .address-list {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.address-selection .address-list::-webkit-scrollbar {
+  display: none;
+}
