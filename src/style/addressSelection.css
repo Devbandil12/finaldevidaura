@@ -1,15 +1,13 @@
-/* Root container */
+/* AddressSelection Component Scoped Styles */
 .address-selection {
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 10px;
   padding: 20px;
-  margin-bottom: 24px;
   font-family: 'Inter', system-ui, sans-serif;
   color: #070D0D;
 }
 
-/* Heading */
 .address-selection h2 {
   font-size: 1.5rem;
   color: #242D4C;
@@ -17,7 +15,6 @@
   font-weight: 700;
 }
 
-/* Add New Button */
 .address-selection .add-new-btn {
   background: #242D4C;
   color: #F1EAD8;
@@ -32,7 +29,6 @@
   background: #1c223d;
 }
 
-/* Address List */
 .address-selection .address-list {
   max-height: 300px;
   overflow-y: auto;
@@ -41,18 +37,6 @@
   flex-direction: column;
   gap: 14px;
 }
-.address-selection .address-list::-webkit-scrollbar {
-  width: 8px;
-}
-.address-selection .address-list::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-.address-selection .address-list::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-
-/* Address Card */
 .address-selection .address-card {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -60,73 +44,13 @@
   cursor: pointer;
   background: #fff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
-  user-select: none;
 }
-.address-selection .address-card:hover,
 .address-selection .address-card.active {
   border-color: #242D4C;
   box-shadow: 0 0 6px rgba(36, 45, 76, 0.3);
 }
 
-/* Address Header */
-.address-selection .address-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 700;
-  color: #242D4C;
-  margin-bottom: 8px;
-  font-size: 1rem;
-}
-
-/* Verified Tick */
-.address-selection .address-header strong {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
-.address-selection .address-header strong svg,
-.address-selection .address-header strong span {
-  color: green;
-  font-weight: 700;
-}
-
-/* Card Action Buttons */
-.address-selection .address-actions button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  color: #555;
-  margin-left: 10px;
-  padding: 2px 6px;
-  transition: color 0.2s ease;
-}
-.address-selection .address-actions button:hover {
-  color: #242D4C;
-}
-
-/* Default Label */
-.address-selection .default-label {
-  background: #242D4C;
-  color: #F1EAD8;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  border-radius: 12px;
-  user-select: none;
-}
-
-/* Address Paragraphs */
-.address-selection .address-card p {
-  margin: 4px 0;
-  font-size: 0.9rem;
-  color: #070D0D;
-  line-height: 1.3;
-}
-
-/* Form Container */
+/* Form Styles */
 .address-selection .address-form {
   margin-top: 30px;
   background: #f9f9f9;
@@ -135,7 +59,6 @@
   padding: 24px;
 }
 
-/* Form Heading */
 .address-selection .address-form h3 {
   font-size: 1.25rem;
   font-weight: 700;
@@ -143,14 +66,12 @@
   color: #242D4C;
 }
 
-/* Form Grid */
 .address-selection .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
 }
 
-/* Form Labels */
 .address-selection .form-label {
   display: flex;
   flex-direction: column;
@@ -159,35 +80,21 @@
   font-size: 1rem;
 }
 
-/* Inputs & Textarea */
-.address-selection .form-label input[type="text"],
-.address-selection .form-label input[type="tel"],
-.address-selection .form-label input[type="number"],
-.address-selection .form-label input[type="email"],
+.address-selection .form-label input,
 .address-selection .form-label textarea {
   margin-top: 6px;
   padding: 10px 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 1rem;
-  outline-offset: 2px;
   transition: border-color 0.2s ease;
-  resize: vertical;
-  font-family: 'Inter', system-ui, sans-serif;
 }
 .address-selection .form-label input:focus,
 .address-selection .form-label textarea:focus {
   border-color: #242D4C;
 }
 
-/* Disabled Inputs */
-.address-selection .form-label input[disabled] {
-  background: #eee;
-  color: #666;
-  cursor: not-allowed;
-}
-
-/* Postal Code Button */
+/* Buttons inside postal code field */
 .address-selection .form-label > div > button {
   background: #242D4C;
   color: #F1EAD8;
@@ -202,70 +109,25 @@
   background: #1c223d;
 }
 
-/* Form Actions */
-.address-selection .form-actions {
-  margin-top: 28px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-}
-.address-selection .form-actions button {
-  padding: 12px 28px;
-  font-weight: 700;
-  font-size: 1rem;
-  border-radius: 8px;
+/* Form action buttons */
+.address-selection .form-buttons button {
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
-  transition: background 0.2s ease;
+  margin-right: 10px;
 }
-.address-selection .form-actions button:first-child {
+.address-selection .form-buttons button:last-child {
   background: #242D4C;
   color: #F1EAD8;
 }
-.address-selection .form-actions button:first-child:hover {
-  background: #1c223d;
-}
-.address-selection .form-actions button:last-child {
+.address-selection .form-buttons button:first-child {
   background: #ccc;
   color: #333;
 }
-.address-selection .form-actions button:last-child:hover {
-  background: #bbb;
-}
 
-/* Radio Fieldset */
-.address-selection .address-form fieldset {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-top: 20px;
-}
-.address-selection .address-form fieldset legend {
-  font-weight: 700;
-  color: #242D4C;
-  margin-bottom: 10px;
-}
-.address-selection .address-form fieldset label {
-  font-weight: 500;
-  margin-right: 20px;
-  cursor: pointer;
-}
-.address-selection .address-form fieldset input[type="radio"] {
-  margin-right: 6px;
-  cursor: pointer;
-}
-
-/* Custom Address Type */
-.address-selection .address-form input[type="text"][placeholder="Enter custom address type"] {
-  margin-top: 12px;
-  padding: 8px 10px;
-  width: 100%;
-  max-width: 300px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-/* Responsive Tweaks */
+/* Responsive tweaks */
 @media (max-width: 768px) {
   .address-selection .form-grid {
     grid-template-columns: 1fr;
