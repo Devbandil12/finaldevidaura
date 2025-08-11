@@ -1,0 +1,86 @@
+/* order-summary.css */
+
+.order-summary {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.order-summary .order-summary-card__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.order-summary .order-summary-card__address p {
+  font-size: 0.9rem;
+  color: #070D0D;
+}
+
+.order-summary .order-summary-card__items summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.order-summary .order-summary-card__items ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.order-summary .order-summary-item-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.order-summary .order-summary-item-details img {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.order-summary .item-info {
+  flex: 1;
+}
+
+.order-summary .item-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.order-summary .item-qty {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.order-summary .item-price {
+  font-weight: 600;
+}
+
+.order-summary .order-summary-card__breakdown {
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  font-size: 0.9rem;
+}
+
+.order-summary .order-summary-card__breakdown div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.order-summary .order-summary-card__total {
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-top: 1px solid #ccc;
+  padding-top: 8px;
+}
+
+.order-summary .text-danger {
+  color: red;
+}
