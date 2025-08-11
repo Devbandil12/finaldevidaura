@@ -96,6 +96,39 @@
   color: #F1EAD8;
 }
 
+
+/* Buttons inside checkout */
+.checkout-wrapper .btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.checkout-wrapper .btn-primary {
+  background: #242D4C;
+  color: #F1EAD8;
+}
+
+.checkout-wrapper .btn-primary:hover {
+  background: #1c223d;
+}
+
+.checkout-wrapper .btn-outline {
+  background: transparent;
+  border: 1px solid #242D4C;
+  color: #242D4C;
+}
+
+.checkout-wrapper .btn-outline:hover {
+  background: #242D4C;
+  color: #F1EAD8;
+}
+
+
 /* Responsive */
 @media (max-width: 900px) {
   .checkout-wrapper .checkout-body {
