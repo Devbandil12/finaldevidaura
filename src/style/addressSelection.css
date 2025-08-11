@@ -175,12 +175,13 @@
 }
 .address-selection .address-form fieldset input[type="radio"] {
   margin: 0;
+  margin-bottom: 15px;
 }
 
 /* Form Actions */
 .address-selection .form-buttons {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 16px;
 }
 .address-selection .form-buttons button {
