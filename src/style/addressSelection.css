@@ -16,6 +16,7 @@
   font-weight: 700;
 }
 
+/* Add New Button */
 .address-selection .add-new-btn {
   background: #242D4C;
   color: #F1EAD8;
@@ -31,6 +32,7 @@
   background: #1c223d;
 }
 
+/* Address List */
 .address-selection .address-list {
   max-height: 300px;
   overflow-y: auto;
@@ -53,6 +55,7 @@
   background: #999;
 }
 
+/* Address Card */
 .address-selection .address-card {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -68,6 +71,7 @@
   box-shadow: 0 0 6px rgba(36, 45, 76, 0.3);
 }
 
+/* Card Header */
 .address-selection .address-header {
   display: flex;
   justify-content: space-between;
@@ -101,12 +105,14 @@
   border-radius: 12px;
 }
 
+/* Address Text */
 .address-selection .address-card p {
   margin: 4px 0;
   font-size: 0.9rem;
   line-height: 1.3;
 }
 
+/* Address Form */
 .address-selection .address-form {
   margin-top: 30px;
   background: #f9f9f9;
