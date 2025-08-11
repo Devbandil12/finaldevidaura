@@ -3,6 +3,10 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "../style/addressSelection.css";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLocationArrow, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+
+
 
 /* Fix default icon paths for many bundlers */
 delete L.Icon.Default.prototype._getIconUrl;
@@ -537,10 +541,10 @@ export default function AddressSelection({ userId, onSelect }) {
               </label>
             </div>
             <button type="button" onClick={useCurrentLocationInForm}>
-              Use my location
+            <FontAwesomeIcon icon={faLocationArrow} style={{ marginRight: '6px' }} />  Locate Me
             </button>
             <button type="button" onClick={() => setShowMap(true)}>
-              Pick on map
+             <FontAwesomeIcon icon={faMapMarkerAlt} style={{ marginRight: '6px' }} /> Pin on Map
             </button>
           </div>
 
