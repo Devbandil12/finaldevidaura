@@ -1,0 +1,97 @@
+/* payment-details.css */
+
+.payment-details {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 24px;
+  border-radius: 10px;
+}
+
+.payment-details .section-card {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.payment-details .summary-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #242D4C;
+  cursor: pointer;
+}
+
+.payment-details .price-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+
+.payment-details .price-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.payment-details .total-line {
+  border-top: 1px solid #ccc;
+  padding-top: 6px;
+  font-weight: bold;
+}
+
+.payment-details .payment-methods h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #242D4C;
+}
+
+.payment-details .payment-method-selection {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.payment-details .payment-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.payment-details .payment-action {
+  margin-top: 1rem;
+}
+
+.payment-details .btn {
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.payment-details .btn-primary,
+.payment-details .btn-success {
+  background: #242D4C;
+  color: #F1EAD8;
+}
+
+.payment-details .btn-primary:hover,
+.payment-details .btn-success:hover {
+  background: #1c223d;
+}
+
+.payment-details .cod-content {
+  background: #f9f9f9;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.payment-details .cod-content p {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
