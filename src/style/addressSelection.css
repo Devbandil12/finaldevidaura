@@ -130,7 +130,7 @@
 .address-selection .input-group input:not(:placeholder-shown) + label,
 .address-selection .input-group textarea:focus + label,
 .address-selection .input-group textarea:not(:placeholder-shown) + label {
-  top: -8px;
+  top: -5px;
   font-size: 0.75rem;
   color: #242D4C;
 }
