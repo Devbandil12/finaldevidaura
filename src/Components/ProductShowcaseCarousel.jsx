@@ -1,7 +1,7 @@
 // src/components/ProductSwipeShowcase.jsx
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { ProductContext } from "../contexts/productContext";
-import SwipeDeck from "./SwipeDeck";
+import SwipeDeck from "./Swipedeck";
 import "../style/ProductSwipeShowcase.css";
 
 /* -------- scentDetails (use your original content) -------- */
