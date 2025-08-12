@@ -22,6 +22,16 @@
   gap: 52px;
 }
 
+.swipe-deck-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 250px; /* keep your chosen size */
+  height: 320px;
+  perspective: 1200px;
+  overflow: visible;
+}
+
 
 @media (min-width: 768px) {
   .showcase-product-container {
