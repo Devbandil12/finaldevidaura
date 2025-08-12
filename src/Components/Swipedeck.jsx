@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { motion, useMotionValue } from "framer-motion";
 import { gsap } from "gsap";
-import "./SwipeDeck.css";
+import "../style/SwipeDeck.css";
 
 /**
  * Props:
