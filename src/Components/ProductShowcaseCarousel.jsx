@@ -4,7 +4,7 @@ import { ProductContext } from "../contexts/productContext";
 import SwipeDeck from "./Swipedeck";
 import "../style/ProductSwipeShowcase.css";
 
-/* -------- scentDetails (use your original content) -------- */
+/* -------- scentDetails (your original content) -------- */
 const scentDetails = {
   SHADOW: {
     slogan: "Where silence lingers longer than light.",
@@ -153,6 +153,8 @@ export default function ProductSwipeShowcase() {
 
   // story expand/collapse
   const [storyExpanded, setStoryExpanded] = useState(false);
+  const storyRef = useRef(null);
+  const collapsedHeightRef = useRef(0);
 
   useEffect(() => {
     const resize = () => setIsMobile(window.innerWidth <= 768);
@@ -163,12 +165,77 @@ export default function ProductSwipeShowcase() {
   // reset when active card changes
   useEffect(() => {
     setStoryExpanded(false);
+    // small delay to let DOM update and then set collapsed height
+    setTimeout(() => updateCollapsedHeight(), 50);
   }, [activeIdx]);
 
   // ensure activeIdx stays in range when products change
   useEffect(() => {
     if (products.length && activeIdx >= products.length) setActiveIdx(0);
   }, [products, activeIdx]);
+
+  // recompute collapsedHeight on mount and when window resizes or font changes
+  useEffect(() => {
+    updateCollapsedHeight();
+    const onResize = () => updateCollapsedHeight();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  function updateCollapsedHeight() {
+    const el = storyRef.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const lineHeightRaw = cs.lineHeight;
+    let lineHeightPx = 0;
+    if (lineHeightRaw.endsWith("px")) {
+      lineHeightPx = parseFloat(lineHeightRaw);
+    } else {
+      // fallback: compute from font-size * line-height factor
+      const fontSize = parseFloat(cs.fontSize) || 16;
+      const lineHeightFactor = parseFloat(cs.lineHeight) || 1.6;
+      lineHeightPx = fontSize * lineHeightFactor;
+    }
+    const collapsed = Math.round(lineHeightPx * 3); // 3 lines
+    collapsedHeightRef.current = collapsed;
+    // Apply initial max-height depending on expanded state
+    el.style.maxHeight = storyExpanded ? `${el.scrollHeight}px` : `${collapsed}px`;
+  }
+
+  // toggle with measured animation
+  function toggleStoryExpand() {
+    const el = storyRef.current;
+    if (!el) {
+      setStoryExpanded((s) => !s);
+      return;
+    }
+
+    const collapsed = collapsedHeightRef.current || 60; // fallback
+    if (!storyExpanded) {
+      // expanding: from collapsed -> full scrollHeight
+      el.style.maxHeight = `${collapsed}px`; // ensure starting point
+      // force reflow to ensure transition
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.offsetHeight;
+      el.style.maxHeight = `${el.scrollHeight}px`;
+      setStoryExpanded(true);
+      // after transition, set to 'none' so content can grow naturally (optional)
+      const clean = () => {
+        el.style.maxHeight = "none";
+        el.removeEventListener("transitionend", clean);
+      };
+      el.addEventListener("transitionend", clean);
+    } else {
+      // collapsing: set maxHeight to current height then to collapsed
+      const currentH = el.scrollHeight;
+      el.style.maxHeight = `${currentH}px`;
+      // force reflow
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.offsetHeight;
+      el.style.maxHeight = `${collapsed}px`;
+      setStoryExpanded(false);
+    }
+  }
 
   if (!products || products.length === 0) {
     return (
@@ -204,7 +271,8 @@ export default function ProductSwipeShowcase() {
 
               <p
                 id="scent-story"
-                className={`showcase-story ${storyExpanded ? "expanded" : "clamped"}`}
+                ref={storyRef}
+                className={`showcase-story ${storyExpanded ? "is-expanded" : "is-collapsed"}`}
                 aria-expanded={storyExpanded}
                 aria-controls="scent-story"
               >
@@ -214,7 +282,7 @@ export default function ProductSwipeShowcase() {
               {isLongStory && (
                 <button
                   className="read-more-btn"
-                  onClick={() => setStoryExpanded((s) => !s)}
+                  onClick={toggleStoryExpand}
                   aria-expanded={storyExpanded}
                   aria-controls="scent-story"
                 >
@@ -237,7 +305,8 @@ export default function ProductSwipeShowcase() {
             <>
               <p
                 id="scent-story"
-                className={`showcase-story ${storyExpanded ? "expanded" : "clamped"}`}
+                ref={storyRef}
+                className={`showcase-story ${storyExpanded ? "is-expanded" : "is-collapsed"}`}
                 aria-expanded={storyExpanded}
                 aria-controls="scent-story"
               >
@@ -247,7 +316,7 @@ export default function ProductSwipeShowcase() {
               {isLongStory && (
                 <button
                   className="read-more-btn"
-                  onClick={() => setStoryExpanded((s) => !s)}
+                  onClick={toggleStoryExpand}
                   aria-expanded={storyExpanded}
                   aria-controls="scent-story"
                 >
