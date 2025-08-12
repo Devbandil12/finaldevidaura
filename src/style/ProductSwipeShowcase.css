@@ -22,15 +22,6 @@
   gap: 52px;
 }
 
-.swipe-deck-wrapper {
-  position: relative;
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 250px; /* keep your chosen size */
-  height: 320px;
-  perspective: 1200px;
-  overflow: visible;
-}
 
 @media (min-width: 768px) {
   .showcase-product-container {
@@ -141,45 +132,6 @@
   display: inline-block;
 }
 
-/* Swipe deck basics (keep in SwipeDeck.css if you prefer) */
-.swipe-deck-container {
-  position: relative;
-  width: 100%;
-  max-width: 250px;
-  height: 320px;
-  margin: 0 auto;
-  touch-action: pan-y;
-  user-select: none;
-}
-
-.swipe-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 12px 30px rgba(12, 12, 20, 0.12);
-  background: #fff;
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  will-change: transform, opacity;
-}
-
-.swipe-card-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* subtle transform for the active card if you want */
-.swipe-card.active {
-  /* optional: emphasize top card slightly */
-  /* transform: translateZ(20px); */
-}
 
 /* Navigation & dots */
 .showcase-nav-controls {
