@@ -1,43 +1,71 @@
-.swipe-deck {
-  position: relative;
+/* SwipeDeck.css - Skiper-like stacked card visuals */
+
+.sd-deck-outer {
   width: 100%;
-  max-width: 420px;
-  height: 520px;
+  max-width: 420px; /* tweak as needed */
   margin: 0 auto;
-  perspective: 1200px;
-  overflow: visible;
+  position: relative;
+  perspective: 1400px;
+  height: 520px; /* adjust for your image aspect */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.swipe-card {
+.sd-deck-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* each card absolutely stacked */
+.sd-card {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  will-change: transform, opacity;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-  background: white;
-  transition: transform 0.4s ease, opacity 0.4s ease;
-  touch-action: pan-y;
+  background: #fff;
+  will-change: transform, opacity;
+  cursor: grab;
   user-select: none;
+  touch-action: pan-y;
 }
 
-.swipe-card img {
+/* active top grab cursor while dragging */
+.sd-card:active {
+  cursor: grabbing;
+}
+
+/* image fill */
+.sd-card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   pointer-events: none;
 }
-
-.swipe-card:nth-child(n+2) {
-  transform: scale(0.95) translateY(10px);
-  opacity: 0.9;
+ 
+/* small nav controls (optional) */
+.sd-controls {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  pointer-events: none; /* so they don't block drag gestures */
 }
-
-.swipe-card:nth-child(n+3) {
-  transform: scale(0.9) translateY(20px);
-  opacity: 0.8;
+.sd-control {
+  pointer-events: all;
+  border: none;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
 }
+.sd-control-left { margin-right: 8px; }
