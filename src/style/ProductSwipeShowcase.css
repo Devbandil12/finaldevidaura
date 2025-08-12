@@ -26,7 +26,7 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  max-width: 250px; /* keep your chosen size */
+  max-width: 300px; /* keep your chosen size */
   height: 320px;
   perspective: 1200px;
   overflow: visible;
