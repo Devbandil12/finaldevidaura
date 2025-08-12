@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.25.5",
