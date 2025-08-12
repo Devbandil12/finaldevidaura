@@ -246,3 +246,31 @@
   }
   .showcase-product-heading { font-size: 1.5rem; }
 }
+
+
+
+/* story animation: use max-height transition to animate expand/collapse */
+.showcase-story {
+  overflow: hidden;
+  transition: max-height 360ms cubic-bezier(.2,.9,.2,1), opacity 200ms ease;
+  /* keep text style */
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444;
+  margin-bottom: 8px;
+  text-align: justify;
+}
+
+/* small helpers (not strictly required but useful for theme) */
+.showcase-story.is-collapsed {
+  /* max-height will be set dynamically via JS to 3 lines' height */
+  opacity: 1;
+}
+
+.showcase-story.is-expanded {
+  /* when expanded, JS sets max-height to 'none' after transition ends for natural growth */
+  opacity: 1;
+}
+
+/* Read more button looks the same as before */
+.read-more-btn { /* existing rules kept */ }
