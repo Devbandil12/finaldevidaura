@@ -1,9 +1,11 @@
+/* ProductSwipeShowcase.css (merged + additions) */
+
 .showcase-product-section {
   padding: 40px 20px;
   background: #f8f8f8;
   text-align: center;
   font-family: 'Inter', sans-serif;
-background:white;
+  background: white;
 }
 
 .showcase-product-heading {
@@ -24,19 +26,18 @@ background:white;
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  max-width: 250px;
+  max-width: 250px; /* keep your chosen size */
   height: 320px;
   perspective: 1200px;
   overflow: visible;
 }
-
 
 @media (min-width: 768px) {
   .showcase-product-container {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding:0 50px;
+    padding: 0 50px;
   }
 }
 
@@ -58,20 +59,55 @@ background:white;
   margin-bottom: 16px;
 }
 
+/* STORY — clamp to 3 lines when .clamped */
 .showcase-story {
   font-size: 0.95rem;
   line-height: 1.6;
   margin-bottom: 16px;
-  text-align:justify;
+  text-align: justify;
   color: #444;
+  max-width: 100%;
 }
 
+/* collapsed look: 3-line clamp */
+.showcase-story.clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+/* expanded shows full text */
+.showcase-story.expanded {
+  display: block;
+}
+
+/* Read more / Show less button */
+.read-more-btn {
+  display: inline-block;
+  margin-top: 8px;
+  background: transparent;
+  border: none;
+  color: #1a73e8; /* tweak to match your brand */
+  cursor: pointer;
+  font-weight: 600;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.read-more-btn:focus {
+  outline: 2px solid rgba(26,115,232,0.18);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* fallback product description style */
 .showcase-description {
   font-size: 0.95rem;
   line-height: 1.5;
   color: #555;
 }
 
+/* Notes pills */
 .showcase-notes-pills {
   display: flex;
   flex-wrap: wrap;
@@ -79,6 +115,7 @@ background:white;
   margin-top: 12px;
 }
 
+/* pill layout — includes emoji and text */
 .note-pill {
   background-color: #eee;
   color: #333;
@@ -86,12 +123,69 @@ background:white;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* emoji within pill */
+.note-emoji {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(1px); /* visually center emoji with text */
+}
+
+/* small note text (keeps consistent spacing) */
+.note-text {
+  display: inline-block;
+}
+
+/* Swipe deck basics (keep in SwipeDeck.css if you prefer) */
+.swipe-deck-container {
+  position: relative;
+  width: 100%;
+  max-width: 250px;
+  height: 320px;
+  margin: 0 auto;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.swipe-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(12, 12, 20, 0.12);
+  background: #fff;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  will-change: transform, opacity;
+}
+
+.swipe-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* subtle transform for the active card if you want */
+.swipe-card.active {
+  /* optional: emphasize top card slightly */
+  /* transform: translateZ(20px); */
+}
+
+/* Navigation & dots */
 .showcase-nav-controls {
   margin-top: 28px;
   display: flex;
-  justify-content:center;
+  justify-content: center;
   align-items: center;
   gap: 12px;
 }
@@ -126,8 +220,29 @@ background:white;
   background-color: #ccc;
   transition: background-color 0.3s ease;
   cursor: pointer;
+  border: none;
+  padding: 0;
 }
 
 .showcase-dot.active {
   background-color: #000;
+}
+
+/* mobile small-dots style */
+.mobile-dots span,
+.showcase-dots button {
+  display: inline-block;
+}
+
+/* responsive tweaks */
+@media (max-width: 480px) {
+  .swipe-deck-wrapper {
+    max-width: 220px;
+    height: 300px;
+  }
+  .showcase-card-info {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+  .showcase-product-heading { font-size: 1.5rem; }
 }
