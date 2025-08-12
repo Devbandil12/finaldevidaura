@@ -1,62 +1,47 @@
-.skipper-wrapper {
-  position: relative;
-  width: 100%;
-  height: 420px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  perspective: 1000px; /* Gives depth */
+.swipe-deck {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 520px;
+  margin: 0 auto;
+  perspective: 1200px;
+  overflow: visible;
 }
 
-.skipper-card {
-  position: absolute;
-  width: 280px;
-  height: 380px;
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  touch-action: pan-y;
-  will-change: transform, opacity;
-  transition: transform 0.35s ease, opacity 0.35s ease;
+.swipe-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform, opacity;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  background: white;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  touch-action: pan-y;
+  user-select: none;
 }
 
-/* Top card shadow */
-.skipper-card:nth-child(1) {
-  box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
+.swipe-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
 
-/* Second card in stack */
-.skipper-card:nth-child(2) {
-  transform: scale(0.96) translateY(12px);
-  opacity: 0.95;
-  box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+.swipe-card:nth-child(n+2) {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0.9;
 }
 
-/* Third card in stack */
-.skipper-card:nth-child(3) {
-  transform: scale(0.92) translateY(24px);
-  opacity: 0.9;
-  box-shadow: 0px 6px 16px rgba(0,0,0,0.12);
+.swipe-card:nth-child(n+3) {
+  transform: scale(
+0.9) translateY(20px);
+  opacity: 0.8;
 }
 
-/* Any cards beyond third are hidden */
-.skipper-card:nth-child(n+4) {
-  opacity: 0;
-  pointer-events: none;
-}
 
-.skipper-card-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-  user-select: none;
-}
-
-/* Optional hover for desktop preview */
-@media (hover: hover) {
-  .skipper-card:nth-child(1):hover {
-    transform: scale(1.02) translateY(-4px);
-    box-shadow: 0px 14px 30px rgba(0,0,0,0.25);
-  }
-}
+ 
