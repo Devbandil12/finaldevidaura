@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node server.js",
+    "vercel-build": "npm install --legacy-peer-deps && vite build"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.25.5",
