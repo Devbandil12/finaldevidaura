@@ -5,6 +5,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  perspective: 1000px; /* Gives depth */
 }
 
 .skipper-card {
@@ -13,9 +14,35 @@
   height: 380px;
   background: white;
   border-radius: 16px;
-  box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
   overflow: hidden;
   touch-action: pan-y;
+  will-change: transform, opacity;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* Top card shadow */
+.skipper-card:nth-child(1) {
+  box-shadow: 0px 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Second card in stack */
+.skipper-card:nth-child(2) {
+  transform: scale(0.96) translateY(12px);
+  opacity: 0.95;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Third card in stack */
+.skipper-card:nth-child(3) {
+  transform: scale(0.92) translateY(24px);
+  opacity: 0.9;
+  box-shadow: 0px 6px 16px rgba(0,0,0,0.12);
+}
+
+/* Any cards beyond third are hidden */
+.skipper-card:nth-child(n+4) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .skipper-card-image {
@@ -24,4 +51,12 @@
   object-fit: cover;
   pointer-events: none;
   user-select: none;
+}
+
+/* Optional hover for desktop preview */
+@media (hover: hover) {
+  .skipper-card:nth-child(1):hover {
+    transform: scale(1.02) translateY(-4px);
+    box-shadow: 0px 14px 30px rgba(0,0,0,0.25);
+  }
 }
