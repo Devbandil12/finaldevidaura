@@ -325,7 +325,7 @@ export default function ProductSwipeShowcase() {
                 role="img"
                 aria-label={product.name || "Product image"}
                 style={{
-                  backgroundImage: product.imageurl ? `url(${product.image})` : undefined,
+                  backgroundImage: product.imageurl ? `url(${product.imageurl})` : undefined,
                 }}
               >
                 {!product.imageurl && (
