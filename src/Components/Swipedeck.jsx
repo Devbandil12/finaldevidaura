@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
-import "./SwipeDeck.css"; // adjust import path as needed
+import "../style/SwipeDeck.css"; // adjust import path as needed
 
 gsap.registerPlugin(Draggable);
 
