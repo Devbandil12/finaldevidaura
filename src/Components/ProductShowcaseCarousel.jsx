@@ -325,10 +325,10 @@ export default function ProductSwipeShowcase() {
                 role="img"
                 aria-label={product.name || "Product image"}
                 style={{
-                  backgroundImage: product.image ? `url(${product.image})` : undefined,
+                  backgroundImage: product.imageurl ? `url(${product.image})` : undefined,
                 }}
               >
-                {!product.image && (
+                {!product.imageurl && (
                   <div className="product-visual-fallback">
                     <div className="initial">{(product.name || "").slice(0, 1)}</div>
                   </div>
