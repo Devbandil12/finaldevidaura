@@ -17,7 +17,6 @@ import {
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
-import OrderDetailsPopup from "./OrderDetailsPopup"; // Assuming this is in a separate file
 import OrderChart from "./OrderChart"; // Import the new chart component
 
 const AdminPanel = () => {
