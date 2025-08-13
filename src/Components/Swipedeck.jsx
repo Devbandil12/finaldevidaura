@@ -1,129 +1,136 @@
-import React, { forwardRef, useRef, useState, useEffect, useImperativeHandle } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import "../style/SwipeDeck.css";
 
 gsap.registerPlugin(Draggable);
 
-const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
-  const [current, setCurrent] = useState(0);
+export default function SwipeDeck({ items = [] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [leftPile, setLeftPile] = useState([]);
+  const [rightPile, setRightPile] = useState([]);
   const cardRefs = useRef([]);
-  const isAnimating = useRef(false);
+  const stackSize = 4; // visible cards at once
 
-  // Duplicate deck for infinite stack
-  const visibleCards = [...items, ...items];
-
-  useImperativeHandle(ref, () => ({
-    swipeLeft: () => flingCard("left"),
-    swipeRight: () => flingCard("right"),
-  }));
+  const visibleCards = [];
+  for (let i = 0; i < stackSize; i++) {
+    visibleCards.push(items[(currentIndex + i) % items.length]);
+  }
 
   useEffect(() => {
-    if (onChange) onChange(current % items.length);
-  }, [current]);
+    initDraggable();
+  }, [currentIndex]);
 
-  useEffect(() => {
-    if (cardRefs.current[current % visibleCards.length]) {
-      makeDraggable(cardRefs.current[current % visibleCards.length]);
-    }
-  }, [current]);
+  const initDraggable = () => {
+    const topCard = cardRefs.current[0];
+    if (!topCard) return;
 
-  const flingCard = (dir) => {
-    if (isAnimating.current) return;
-    const card = cardRefs.current[current % visibleCards.length];
-    if (!card) return;
-
-    isAnimating.current = true;
-    const isLeft = dir === "left";
-    const pinnedClass = isLeft ? "left-pinned" : "right-pinned";
-
-    // Add pinned class for discard pile look
-    card.classList.add(pinnedClass);
-
-    gsap.to(card, {
-      x: isLeft ? -window.innerWidth * 0.4 : window.innerWidth * 0.4,
-      y: -20,
-      rotation: isLeft ? -10 : 10,
-      scale: 0.85,
-      opacity: 0.8,
-      duration: 0.45,
-      ease: "power3.out",
-      onComplete: () => {
-        // After short delay, remove pinned card from DOM flow
-        gsap.to(card, {
-          opacity: 0,
-          duration: 0.3,
-          delay: 0.5,
-          onComplete: () => {
-            card.classList.remove(pinnedClass);
-            gsap.set(card, { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
-          },
-        });
-
-        setCurrent((prev) => prev + 1);
-        isAnimating.current = false;
-      },
-    });
-  };
-
-  const makeDraggable = (card) => {
-    Draggable.create(card, {
+    Draggable.create(topCard, {
       type: "x,y",
       inertia: true,
       onDrag: function () {
-        gsap.set(card, { rotation: this.x / 15 });
+        const rotation = this.x / 15;
+        gsap.set(topCard, { rotation });
+        animateBackCards(this.x);
       },
       onRelease: function () {
         const threshold = window.innerWidth * 0.25;
-        if (Math.abs(this.x) > threshold) {
-          flingCard(this.x < 0 ? "left" : "right");
+        if (this.x > threshold) {
+          swipe("right");
+        } else if (this.x < -threshold) {
+          swipe("left");
         } else {
-          gsap.to(card, {
+          gsap.to(topCard, {
             x: 0,
             y: 0,
             rotation: 0,
             duration: 0.3,
-            ease: "power3.out",
+            ease: "power3.out"
           });
+          animateBackCards(0);
         }
-      },
+      }
+    });
+  };
+
+  const animateBackCards = (dragX) => {
+    for (let i = 1; i < stackSize; i++) {
+      const card = cardRefs.current[i];
+      if (!card) continue;
+      const progress = Math.min(Math.abs(dragX) / 150, 1);
+      const scale = 1 - (i - 1) * 0.05 + progress * 0.05;
+      const yOffset = -i * 10 + progress * 10;
+      const tilt = i * 4 - progress * 4;
+      gsap.to(card, {
+        scale,
+        y: yOffset,
+        rotationX: tilt,
+        duration: 0.2,
+        ease: "power1.out"
+      });
+    }
+  };
+
+  const swipe = (dir) => {
+    const topCard = cardRefs.current[0];
+    if (!topCard) return;
+
+    const isRight = dir === "right";
+    gsap.to(topCard, {
+      x: isRight ? window.innerWidth * 1 : -window.innerWidth * 1,
+      y: -20,
+      rotation: isRight ? 15 : -15,
+      duration: 0.4,
+      ease: "power3.in",
+      onComplete: () => {
+        if (isRight) {
+          setRightPile((p) => [visibleCards[0], ...p].slice(0, 3));
+        } else {
+          setLeftPile((p) => [visibleCards[0], ...p].slice(0, 3));
+        }
+        setCurrentIndex((prev) => (prev + 1) % items.length);
+      }
     });
   };
 
   return (
     <div className="swipe-deck-container">
-      {visibleCards.map((item, i) => {
-        const idx = i - current;
-        const isTop = i === current;
-        const depth = Math.min(Math.max(idx, 0), 3);
+      {/* Left discard pile */}
+      <div className="discard-pile left">
+        {leftPile.map((card, idx) => (
+          <div key={idx} className="swipe-card left-pinned">
+            <img src={card.imageurl} alt="" className="swipe-card-image" />
+          </div>
+        ))}
+      </div>
 
-        const style = {
-          zIndex: visibleCards.length - i,
-          transform: isTop
-            ? `translateY(0px) scale(1)`
-            : `perspective(1000px) rotateX(${depth * 4}deg) translateY(${depth * -10}px) scale(${1 - depth * 0.05})`,
-          opacity: idx > 3 ? 0 : 1,
-          pointerEvents: isTop ? "auto" : "none",
-          transition: isTop ? "none" : "transform 0.35s ease",
-        };
-
-        return (
+      {/* Active stack */}
+      <div className="active-stack">
+        {visibleCards.map((item, i) => (
           <div
             key={i}
-            className={`swipe-card ${isTop ? "active" : ""}`}
             ref={(el) => (cardRefs.current[i] = el)}
-            style={style}
+            className="swipe-card"
+            style={{
+              zIndex: stackSize - i,
+              transform: `perspective(1000px) rotateX(${i * 4}deg) translateY(${
+                -i * 10
+              }px) scale(${1 - i * 0.05})`
+            }}
           >
-            <img
-              src={item.imageurl}
-              alt={item.name || "Card image"}
-              className="swipe-card-image"
-            />
+            <img src={item.imageurl} alt="" className="swipe-card-image" />
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      {/* Right discard pile */}
+      <div className="discard-pile right">
+        {rightPile.map((card, idx) => (
+          <div key={idx} className="swipe-card right-pinned">
+            <img src={card.imageurl} alt="" className="swipe-card-image" />
+          </div>
+        ))}
+      </div>
     </div>
   );
-});
-
-export default SwipeDeck;
+}
