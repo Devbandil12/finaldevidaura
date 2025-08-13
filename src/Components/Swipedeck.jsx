@@ -10,7 +10,7 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
   const cardRefs = useRef([]);
   const isAnimating = useRef(false);
 
-  // Duplicate deck for infinite feel
+  // Duplicate deck for infinite stack
   const visibleCards = [...items, ...items];
 
   useImperativeHandle(ref, () => ({
@@ -35,15 +35,31 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
 
     isAnimating.current = true;
     const isLeft = dir === "left";
+    const pinnedClass = isLeft ? "left-pinned" : "right-pinned";
+
+    // Add pinned class for discard pile look
+    card.classList.add(pinnedClass);
 
     gsap.to(card, {
       x: isLeft ? -window.innerWidth * 0.4 : window.innerWidth * 0.4,
       y: -20,
       rotation: isLeft ? -10 : 10,
-      scale: 0.9,
+      scale: 0.85,
+      opacity: 0.8,
       duration: 0.45,
       ease: "power3.out",
       onComplete: () => {
+        // After short delay, remove pinned card from DOM flow
+        gsap.to(card, {
+          opacity: 0,
+          duration: 0.3,
+          delay: 0.5,
+          onComplete: () => {
+            card.classList.remove(pinnedClass);
+            gsap.set(card, { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
+          },
+        });
+
         setCurrent((prev) => prev + 1);
         isAnimating.current = false;
       },
@@ -55,7 +71,6 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
       type: "x,y",
       inertia: true,
       onDrag: function () {
-        // Rotate based on horizontal movement
         gsap.set(card, { rotation: this.x / 15 });
       },
       onRelease: function () {
@@ -63,7 +78,6 @@ const SwipeDeck = forwardRef(({ items = [], onChange }, ref) => {
         if (Math.abs(this.x) > threshold) {
           flingCard(this.x < 0 ? "left" : "right");
         } else {
-          // Snap back
           gsap.to(card, {
             x: 0,
             y: 0,
