@@ -1,8 +1,8 @@
 .swipe-deck-container {
   position: relative;
   width: 100%;
-  max-width: 420px;
-  height: 520px;
+  max-width: 320px;
+  height: 300px;
   margin: 0 auto;
   perspective: 1200px;
   display: flex;
