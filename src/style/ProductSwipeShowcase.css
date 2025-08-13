@@ -39,7 +39,7 @@
   flex-direction: column;
 }
 
-@media (min-width: 880px){
+@media (min-width: 700px){
   .showcase-product-container{
     flex-direction: row;
     align-items: center;
@@ -246,7 +246,7 @@
   padding: 6px 0;
   font-size: 14px;
 }
-.read-more-btn:focus{ outline: 3px solid rgba(0,0,0,0.06); outline-offset: 3px; border-radius: 6px; }
+
 
 /* NOTES GRID */
 .notes-grid{
@@ -272,9 +272,9 @@
 }
 
 .note-emoji{
-  font-size: 24px;
-  width: 44px;
-  height: 44px;
+  font-size: 1rem;
+  width: 22px;
+  height: 22px;
   display:flex;
   align-items:center;
   justify-content:center;
