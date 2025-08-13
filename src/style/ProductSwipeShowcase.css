@@ -1,238 +1,338 @@
-/* ProductSwipeShowcase.css (merged + additions) */
+/* src/style/ProductSwipeShowcase.css
+   Redesigned visuals for ProductSwipeShowcase component.
+   Uses CSS variables for dynamic accents (--accent-primary, --accent-color).
+*/
 
-.showcase-product-section {
-  padding: 40px 20px;
-  background: #f8f8f8;
-  text-align: center;
-  font-family: 'Inter', sans-serif;
-  background: white;
+:root {
+  --card-bg: #ffffff;
+  --muted: #6b6b6b;
+  --glass: rgba(255,255,255,0.6);
+  --radius: 14px;
 }
 
-.showcase-product-heading {
-  font-size: 2rem;
-  margin-bottom: 32px;
+/* SECTION */
+.showcase-product-section{
+  padding: 56px 20px;
+  background: linear-gradient(180deg, #faf9f8, #fff);
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   color: #222;
 }
 
-.showcase-product-container {
-  display: flex;
+.showcase-product-heading{
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 28px;
+  letter-spacing: -0.02em;
+  color: #1f1f1f;
+  font-weight: 700;
+}
+
+/* MAIN CONTAINER */
+.showcase-product-container{
+  display:flex;
+  gap: 36px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  gap: 52px;
 }
 
-.swipe-deck-wrapper {
-  position: relative;
-  flex-shrink: 0;
-  width: 100%;
-  max-width: 300px; /* keep your chosen size */
-  height: 320px;
-  perspective: 1200px;
-  overflow: visible;
-}
-
-
-@media (min-width: 768px) {
-  .showcase-product-container {
+@media (min-width: 880px){
+  .showcase-product-container{
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 50px;
   }
 }
 
-.showcase-card-info {
-  max-width: 500px;
-  text-align: left;
-  color: #333;
+/* SWIPE DECK WRAPPER */
+.swipe-deck-wrapper{
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 420px;
+  perspective: 1200px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #ffffff, #fbfbfb);
+  box-shadow: 0 10px 30px rgba(38,38,38,0.06);
+  overflow: visible;
+  flex-shrink: 0;
 }
 
-.showcase-card-info h3 {
-  font-size: 1.75rem;
+/* card container for motion */
+.carousel-card{
+  width: 320px;
+  height: 380px;
+  border-radius: 12px;
+  overflow: hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position: relative;
+  transform-origin: center;
+  background: linear-gradient(180deg, #fff, #fafafa);
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* visual (image) */
+.product-visual{
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position: relative;
+}
+
+/* fallback initial circle if no image */
+.product-visual-fallback{
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f2f2f2, #eaeaea);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.product-visual-fallback .initial{
+  font-size: 56px;
+  font-weight: 700;
+  color: #666;
+}
+
+/* subtle accent overlay */
+.visual-accent{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* overlay nav arrows on deck */
+.deck-overlay-controls{
+  position:absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display:flex;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.overlay-nav{
+  pointer-events: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 6px 18px rgba(30,30,30,0.07);
+  font-size: 22px;
+  color: #222;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.overlay-nav:hover{ transform: translateY(-2px); }
+
+/* INFO PANEL */
+.showcase-card-info{
+  width: 100%;
+  max-width: 620px;
+  text-align: left;
+  padding: 8px 6px;
+}
+
+.info-top-row{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.product-name{
+  font-size: 22px;
+  margin: 0;
+  font-weight: 700;
+  color: var(--accent-primary, #222);
+}
+
+.accent-pill{
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  margin-left: auto;
+}
+
+/* slogan */
+.showcase-slogan{
+  font-style: italic;
+  color: #666;
+  margin: 6px 0 12px 0;
+  font-size: 15px;
+}
+
+/* badges row */
+.badges-row{
+  display:flex;
+  gap: 8px;
+  flex-wrap:wrap;
   margin-bottom: 12px;
 }
 
-.showcase-slogan {
-  font-style: italic;
-  font-weight: 500;
-  color: #555;
-  margin-bottom: 16px;
+.ps-badge{
+  display:inline-block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f5f5f5;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: transform 180ms ease;
 }
+.ps-badge:hover{ transform: translateY(-4px); }
 
-/* STORY — clamp to 3 lines when .clamped */
-.showcase-story {
-  font-size: 0.95rem;
+/* STORY: clamp + expand */
+.story-wrap{ margin-top: 6px; margin-bottom: 14px; position: relative; }
+
+.showcase-story{
+  font-size: 15px;
   line-height: 1.6;
-  margin-bottom: 16px;
-  text-align: justify;
-  color: #444;
-  max-width: 100%;
+  color: #333;
+  margin: 0;
+  transition: max-height 360ms cubic-bezier(.2,.9,.2,1), opacity 160ms ease;
+  overflow: hidden;
+  text-align: left;
 }
 
-/* collapsed look: 3-line clamp */
-.showcase-story.clamped {
+/* clamp to 3 lines visually (modern browsers) */
+.showcase-story.clamped{
   display: -webkit-box;
-  -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* expanded shows full text */
-.showcase-story.expanded {
+/* when expanded, show full text */
+.showcase-story.expanded{
   display: block;
 }
 
-/* Read more / Show less button */
-.read-more-btn {
-  display: inline-block;
+/* read more button */
+.read-more-btn{
+  display:inline-block;
   margin-top: 8px;
-  background: transparent;
   border: none;
-  color: #1a73e8; /* tweak to match your brand */
+  background: transparent;
+  color: var(--accent-color, #b76e79);
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 600;
   padding: 6px 0;
   font-size: 14px;
 }
-.read-more-btn:focus {
-  outline: 2px solid rgba(26,115,232,0.18);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
+.read-more-btn:focus{ outline: 3px solid rgba(0,0,0,0.06); outline-offset: 3px; border-radius: 6px; }
 
-/* fallback product description style */
-.showcase-description {
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: #555;
-}
-
-/* Notes pills */
-.showcase-notes-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-/* pill layout — includes emoji and text */
-.note-pill {
-  background-color: #eee;
-  color: #333;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* emoji within pill */
-.note-emoji {
-  font-size: 16px;
-  line-height: 1;
-  display: inline-block;
-  transform: translateY(1px); /* visually center emoji with text */
-}
-
-/* small note text (keeps consistent spacing) */
-.note-text {
-  display: inline-block;
-}
-
-
-/* Navigation & dots */
-.showcase-nav-controls {
-  margin-top: 28px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* NOTES GRID */
+.notes-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+  margin-top: 16px;
 }
 
-.showcase-nav-controls button {
-  background: #333;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: background 0.3s ease;
+.note-card{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), #fff);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.note-card:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
 }
 
-.showcase-nav-controls button:hover {
-  background: #000;
+.note-emoji{
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.4));
+  border: 1px solid rgba(0,0,0,0.04);
 }
 
-.showcase-dots {
-  display: flex;
+.note-name{
+  font-weight: 700;
+  color: #222;
+}
+.note-kind{ font-size: 12px; color: var(--muted); }
+
+/* nav controls / dots */
+.showcase-nav-controls{
+  margin-top: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+}
+
+.showcase-dots{
+  display:flex;
   gap: 8px;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items:center;
 }
 
-.showcase-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: #ccc;
-  transition: background-color 0.3s ease;
-  cursor: pointer;
+.showcase-dot{
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #e3e3e3;
   border: none;
   padding: 0;
+  cursor: pointer;
+  transition: transform 200ms ease, background 200ms ease;
+}
+.showcase-dot.active{
+  transform: scale(1.2);
+  background: var(--accent-color, #b76e79);
 }
 
-.showcase-dot.active {
-  background-color: #000;
+/* responsive adjustments */
+@media (max-width: 880px){
+  .showcase-product-container{ gap: 22px; }
+  .swipe-deck-wrapper{ max-width: 320px; height: 360px; }
+  .carousel-card{ width: 280px; height: 340px; }
+  .notes-grid{ grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .product-name{ font-size: 18px; }
+  .showcase-product-heading{ font-size: 20px; margin-bottom: 18px; }
 }
 
-/* mobile small-dots style */
-.mobile-dots span,
-.showcase-dots button {
-  display: inline-block;
+/* small accessible focus states */
+.overlay-nav:focus, .ps-badge:focus, .read-more-btn:focus, .showcase-dot:focus{
+  outline: 3px solid rgba(0,0,0,0.06);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
-/* responsive tweaks */
-@media (max-width: 480px) {
-  .swipe-deck-wrapper {
-    max-width: 220px;
-    height: 300px;
-  }
-  .showcase-card-info {
-    max-width: 100%;
-    padding: 0 12px;
-  }
-  .showcase-product-heading { font-size: 1.5rem; }
-}
-
-
-
-/* story animation: use max-height transition to animate expand/collapse */
-.showcase-story {
-  overflow: hidden;
-  transition: max-height 360ms cubic-bezier(.2,.9,.2,1), opacity 200ms ease;
-  /* keep text style */
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #444;
-  margin-bottom: 8px;
-  text-align: justify;
-}
-
-/* small helpers (not strictly required but useful for theme) */
-.showcase-story.is-collapsed {
-  /* max-height will be set dynamically via JS to 3 lines' height */
-  opacity: 1;
-}
-
-.showcase-story.is-expanded {
-  /* when expanded, JS sets max-height to 'none' after transition ends for natural growth */
-  opacity: 1;
-}
-
-/* Read more button looks the same as before */
-.read-more-btn { /* existing rules kept */ }
+/* end of file */
