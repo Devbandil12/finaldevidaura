@@ -570,7 +570,7 @@ const AdminPanel = () => {
                     validFrom: "",
                     validUntil: "",
                     firstOrderOnly: false,
-                    id: c.id  // keep id so it updates
+                    
 
                   })
                 }
