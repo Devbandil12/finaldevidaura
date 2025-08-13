@@ -1,46 +1,46 @@
-/* Root container with perspective for top-edge tilt */
 .swipe-deck-container {
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 420px;
   height: 300px;
   margin: 0 auto;
   perspective: 1200px;
   overflow: visible;
+  display: block;
 }
 
-/* Top (active) card: straight, only rotates while dragging */
+/* Top/front card */
 .top-card {
   position: absolute;
   inset: 0;
   border-radius: 18px;
   overflow: hidden;
   background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.22) 0px 12px 26px;
+  box-shadow: rgba(0,0,0,0.22) 0px 12px 26px;
   will-change: transform;
-  touch-action: none; /* needed for Draggable on touch devices */
+  touch-action: none;
 }
 
-/* Back stack wrapper; each back-card is positioned via JS transforms */
+/* Back stack wrapper */
 .back-stack {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* Individual back cards (peeking from one side, tilted from top) */
+/* Back cards (peeking) */
 .back-card {
   position: absolute;
   inset: 0;
   border-radius: 18px;
   overflow: hidden;
   background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 8px 20px;
+  box-shadow: rgba(0,0,0,0.16) 0px 8px 20px;
   will-change: transform, opacity;
   pointer-events: none;
 }
 
-/* Discard piles on left/right, peeking from top with a fan */
+/* Discard piles at sides */
 .discard-pile {
   position: absolute;
   top: 0;
@@ -52,14 +52,10 @@
   justify-content: flex-start;
 }
 
-.discard-pile.left {
-  left: -36%;
-}
-.discard-pile.right {
-  right: -36%;
-}
+.discard-pile.left { left: -36%; }
+.discard-pile.right { right: -36%; }
 
-/* Cards in the pile are slightly smaller and inset so they read as "at the back" */
+/* Cards in the side piles */
 .pile-card {
   position: absolute;
   width: 72%;
@@ -69,11 +65,11 @@
   border-radius: 16px;
   overflow: hidden;
   background: #fff;
-  box-shadow: rgba(0, 0, 0, 0.16) 0px 8px 18px;
+  box-shadow: rgba(0,0,0,0.16) 0px 8px 18px;
   will-change: transform;
 }
 
-/* Shared image style */
+/* images */
 .swipe-card-image {
   width: 100%;
   height: 100%;
