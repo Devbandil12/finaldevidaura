@@ -1,4 +1,3 @@
-// src/Components/Adminpanel.js
 import React, { useState, useContext, useEffect } from "react";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
@@ -16,35 +15,44 @@ import {
   usersTable,
 } from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
-import { UserContext } from "../contexts/UserContext";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
+import OrderDetailsPopup from "./OrderDetailsPopup"; // Assuming this is in a separate file
+import OrderChart from "./OrderChart"; // Import the new chart component
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  
   const { products, setProducts } = useContext(ProductContext);
-  const [editingProduct, setEditingProduct] = useState(null);
-  const navigate = useNavigate();
   const { orders, setOrders, getorders } = useContext(OrderContext);
-  const { queries } = useContext(ContactContext);
+  const { queries, getquery } = useContext(ContactContext);
   const { user } = useUser();
+  
+  const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
-
-  const { getquery } = useContext(ContactContext);
-
+  const [usersList, setUsersList] = useState([]);
+  
+  const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // Instead of dummy users, fetch users from the database
-  const [usersList, setUsersList] = useState([]);
-
+  const {
+    coupons,
+    editingCoupon,
+    setEditingCoupon,
+    saveCoupon,
+    deleteCoupon,
+    refreshCoupons
+  } = useContext(CouponContext);
+  
+  // --- Data Fetching and Effects ---
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -57,21 +65,6 @@ const AdminPanel = () => {
     fetchUsers();
     getquery();
   }, []);
-  // console.log(userkiDetails);
-  // Enrich users with orders from context
-  const usersWithOrders = usersList.map((user) => ({
-    ...user,
-    orders: orders.filter((order) => order.userId === user.id),
-  }));
-
-  const filteredUsers = usersWithOrders.filter(
-    (user) =>
-      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      user?.phone?.includes(userSearchQuery)
-  );
-
-  const generateNewId = (list) =>
-    list.length > 0 ? Math.max(...list.map((item) => item.id)) + 1 : 1;
 
   const userdetails = async () => {
     try {
@@ -98,22 +91,23 @@ const AdminPanel = () => {
     getorders();
   }, []);
 
-
-  const {
-    coupons,
-    editingCoupon,
-    setEditingCoupon,
-    saveCoupon,
-    deleteCoupon,
-    refreshCoupons
-  } = useContext(CouponContext);
-
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
+  
+  // --- Analysis Data Calculation ---
+  const totalOrders = orders.length;
+  const totalProducts = products.length;
+  const totalUsers = usersList.length;
+  const totalQueries = queries.length;
 
+  const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
+  const cancelledOrders = orders.filter(o => o.status === "Order Cancelled").length;
+  const processingOrders = orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length;
+  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  // --- Product Functions ---
+  // --- Functions (existing) ---
   const handleProductUpdate = async (updatedProduct) => {
     console.log(updatedProduct);
     try {
@@ -134,18 +128,17 @@ const AdminPanel = () => {
       const { message } = error;
       toast.error(message);
     }
-
     setProducts((prevProducts) => {
       const exists = prevProducts.find((p) => p.id === updatedProduct.id);
       return exists
         ? prevProducts.map((p) =>
-          p.id === updatedProduct.id ? updatedProduct : p
-        )
+            p.id === updatedProduct.id ? updatedProduct : p
+          )
         : [...prevProducts, updatedProduct];
     });
     setEditingProduct(null);
   };
-
+  
   const handleProductDelete = async (productId) => {
     if (userkiDetails?.role !== "admin") return;
     setLoading(true);
@@ -168,12 +161,7 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
-
-
-
-
-
-  // Save the editingCoupon to the DB (insert if new, update if existing)
+  
   const handleCouponSave = async () => {
     const payload = {
       code: editingCoupon.code.toUpperCase(),
@@ -190,7 +178,6 @@ const AdminPanel = () => {
       ? `${BASE}/api/coupons/${editingCoupon.id}`
       : `${BASE}/api/coupons`;
     const method = editingCoupon.id ? "PUT" : "POST";
-
     try {
       const res = await fetch(url, {
         method,
@@ -205,7 +192,7 @@ const AdminPanel = () => {
       toast.error("Save failed");
     }
   };
-
+  
   const handleCouponDelete = async id => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
@@ -218,8 +205,6 @@ const AdminPanel = () => {
     }
   };
 
-
-
   const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
     try {
       await db
@@ -231,28 +216,7 @@ const AdminPanel = () => {
       console.log(error);
     }
   };
-
-  // --- Order Functions ---
-  const sortedOrders = orders
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  const statusFilteredOrders = (() => {
-    if (orderStatusTab === "All") return sortedOrders;
-    if (orderStatusTab === "Cancelled") {
-      return sortedOrders.filter(o => o.status === "Order Cancelled");
-    }
-    // for all other statuses
-    return sortedOrders.filter(
-      o => o.status.trim().toLowerCase() === orderStatusTab.trim().toLowerCase()
-    );
-  })();
-
-  const searchedOrders = statusFilteredOrders.filter(
-    (order) =>
-      order.orderId.toString().includes(orderSearchQuery) ||
-      order.createdAt.includes(orderSearchQuery)
-  );
-
+  
   const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
     updateorderstatus(orderId, newStatus, newProgressStep);
     const updatedOrders = orders.map((order) =>
@@ -262,7 +226,7 @@ const AdminPanel = () => {
     );
     setOrders(updatedOrders);
   };
-
+  
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
@@ -277,7 +241,6 @@ const AdminPanel = () => {
         .from(orderItemsTable)
         .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
         .where(eq(orderItemsTable.orderId, order.orderId));
-
       setSelectedOrder({
         ...order,
         products: items
@@ -289,18 +252,27 @@ const AdminPanel = () => {
       setDetailsLoading(false);
     }
   };
+  
+  const usersWithOrders = usersList.map((user) => ({
+    ...user,
+    orders: orders.filter((order) => order.userId === user.id),
+  }));
+  const filteredUsers = usersWithOrders.filter(
+    (user) =>
+      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      user?.phone?.includes(userSearchQuery)
+  );
 
-
-
+  // --- JSX Rendering ---
   return (
-    user &&
-    userkiDetails.role === "admin" && (
+    user && userkiDetails.role === "admin" && (
       <div className="admin-panel">
         <div className="absolute">
           <ToastContainer />
         </div>
         
         <nav className="admin-nav">
+          <button onClick={() => setActiveTab("dashboard")}>Dashboard</button>
           <button onClick={() => setActiveTab("products")}>Products</button>
           <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
           <button onClick={() => setActiveTab("orders")}>Orders</button>
@@ -309,7 +281,51 @@ const AdminPanel = () => {
         </nav>
 
         <div className="admin-content">
-          {openModal && <ImageUploadModal isopen={openModal} />}
+          {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
+
+          {/* New Dashboard Tab */}
+          {activeTab === "dashboard" && (
+            <div className="dashboard-tab">
+              <h2>Admin Dashboard</h2>
+              <div className="dashboard-cards">
+                <div className="card">
+                  <h3>Total Revenue</h3>
+                  <p>₹{totalRevenue.toFixed(2)}</p>
+                </div>
+                <div className="card">
+                  <h3>Total Orders</h3>
+                  <p>{totalOrders}</p>
+                </div>
+                <div className="card">
+                  <h3>Total Products</h3>
+                  <p>{totalProducts}</p>
+                </div>
+                <div className="card">
+                  <h3>Total Users</h3>
+                  <p>{totalUsers}</p>
+                </div>
+                <div className="card">
+                  <h3>Average Order Value</h3>
+                  <p>₹{averageOrderValue.toFixed(2)}</p>
+                </div>
+                <div className="card">
+                  <h3>Pending Queries</h3>
+                  <p>{totalQueries}</p>
+                </div>
+              </div>
+
+              <div className="dashboard-charts">
+                <div className="chart-container">
+                  <h3>Orders Status Breakdown</h3>
+                  <OrderChart
+                    delivered={deliveredOrders}
+                    pending={processingOrders}
+                    cancelled={cancelledOrders}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Products Tab */}
           {activeTab === "products" && (
@@ -340,7 +356,7 @@ const AdminPanel = () => {
                         <td>{product.id}</td>
                         <td>
                           <img
-                            src={product?.imageurl}
+                            src={editingProduct.imageurl}
                             alt={editingProduct.name}
                             width="50"
                             height="50"
@@ -560,7 +576,6 @@ const AdminPanel = () => {
                 className="admin-btn add-btn"
                 onClick={() =>
                   setEditingCoupon({
-                    // no id → new coupon
                     code: "",
                     discountType: "percent",
                     discountValue: 0,
@@ -570,8 +585,6 @@ const AdminPanel = () => {
                     validFrom: "",
                     validUntil: "",
                     firstOrderOnly: false,
-                    
-
                   })
                 }
               >
@@ -593,7 +606,6 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Inline form */}
                   {editingCoupon && (
                     <tr>
                       <td>
@@ -676,8 +688,6 @@ const AdminPanel = () => {
                       </td>
                     </tr>
                   )}
-
-                  {/* Existing coupons */}
                   {coupons.map(c => (
                     <tr key={c.id}>
                       <td>{c.code}</td>
@@ -707,17 +717,14 @@ const AdminPanel = () => {
             </div>
           )}
 
-
           {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-tab">
               <h2>
                 {orderStatusTab === "Cancelled" ? "Cancelled Orders" : "Manage Orders"}
               </h2>
-
               <div className="orders-header">
                 <span>Total Orders: {orders.length}</span>
-
                 <div className="order-tabs">
                   {["All", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
                     <button
@@ -729,7 +736,6 @@ const AdminPanel = () => {
                     </button>
                   ))}
                 </div>
-
                 <div className="order-search">
                   <input
                     type="text"
@@ -739,7 +745,6 @@ const AdminPanel = () => {
                   />
                 </div>
               </div>
-
               {orders
                 .filter((o) => {
                   if (orderStatusTab === "All") return true;
@@ -755,7 +760,6 @@ const AdminPanel = () => {
                     <p><strong>Date:</strong> {order.createdAt}</p>
                     <p><strong>Total:</strong> ₹{order.totalAmount}</p>
                     <p><strong>Current Status:</strong></p>
-
                     {order.status === "Order Cancelled" ? (
                       <span className="status-badge status-ordercancelled">
                         Order Cancelled
@@ -782,7 +786,6 @@ const AdminPanel = () => {
                         </label>
                       </div>
                     )}
-
                     <button
                       className="view-details-btn-dhamaal"
                       onClick={() => handleorderdetails(order)}
@@ -791,8 +794,6 @@ const AdminPanel = () => {
                     </button>
                   </div>
                 ))}
-
-
               {orders
                 .filter((o) => {
                   if (orderStatusTab === "All") return true;
@@ -802,8 +803,6 @@ const AdminPanel = () => {
                 .filter((o) =>
                   o.orderId.toString().includes(orderSearchQuery.trim())
                 ).length === 0 && <p>No orders found.</p>}
-
-              {/* Popup is here globally */}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
@@ -812,8 +811,6 @@ const AdminPanel = () => {
               )}
             </div>
           )}
-
-
 
           {/* Users Tab */}
           {activeTab === "users" && (
@@ -906,6 +903,8 @@ const AdminPanel = () => {
 
 export default AdminPanel;
 
+// The OrderDetailsPopup and ImageUploadModal components need to be imported
+// or defined in this file if they are not separate files.
 const OrderDetailsPopup = ({ order, onClose }) => {
   return (
     <div className="modal-overlay-chamkila">
