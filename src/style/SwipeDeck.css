@@ -1,3 +1,4 @@
+/* Root container with perspective for top-edge tilt */
 .swipe-deck-container {
   position: relative;
   width: 100%;
@@ -8,57 +9,75 @@
   overflow: visible;
 }
 
-/* Discard piles */
+/* Top (active) card: straight, only rotates while dragging */
+.top-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.22) 0px 12px 26px;
+  will-change: transform;
+  touch-action: none; /* needed for Draggable on touch devices */
+}
+
+/* Back stack wrapper; each back-card is positioned via JS transforms */
+.back-stack {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Individual back cards (peeking from one side, tilted from top) */
+.back-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 8px 20px;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+/* Discard piles on left/right, peeking from top with a fan */
 .discard-pile {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 40%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  width: 42%;
   pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .discard-pile.left {
-  left: -35%;
-  align-items: flex-end;
+  left: -36%;
 }
-
 .discard-pile.right {
-  right: -35%;
-  align-items: flex-start;
+  right: -36%;
 }
 
-/* Pinned cards in piles */
-.left-pinned {
-  transform: rotate(-8deg) scale(0.85);
-  margin-bottom: 10px;
-}
-
-.right-pinned {
-  transform: rotate(8deg) scale(0.85);
-  margin-bottom: 10px;
-}
-
-/* Active cards */
-.swipe-card {
+/* Cards in the pile are slightly smaller and inset so they read as "at the back" */
+.pile-card {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 18px;
+  width: 72%;
+  height: 82%;
+  left: 14%;
+  top: 9%;
+  border-radius: 16px;
   overflow: hidden;
-  background: white;
-  box-shadow: rgba(0, 0, 0, 0.15) 0px 8px 20px;
-  will-change: transform, opacity;
-  touch-action: none;
-  user-select: none;
+  background: #fff;
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 8px 18px;
+  will-change: transform;
 }
 
+/* Shared image style */
 .swipe-card-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
