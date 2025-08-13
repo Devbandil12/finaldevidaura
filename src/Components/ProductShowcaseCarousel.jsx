@@ -1,10 +1,18 @@
 // src/components/ProductSwipeShowcase.jsx
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ProductContext } from "../contexts/productContext";
-import SwipeDeck from "./Swipedeck";
+import { useSwipeable } from "react-swipeable";
+import { motion, AnimatePresence } from "framer-motion";
 import "../style/ProductSwipeShowcase.css";
 
-/* -------- scentDetails (your original content) -------- */
+/* ------------------ scent + emoji data (can be moved to a separate file) ------------------ */
 const scentDetails = {
   SHADOW: {
     slogan: "Where silence lingers longer than light.",
@@ -81,11 +89,7 @@ Worn to make an impression, this scent is your signature when you want to arrive
     ],
   },
 };
-/* --------------------------------------------------------- */
 
-const normalize = (str) => str?.trim().toUpperCase();
-
-/* -------- emoji mapping for notes (fuzzy matching) -------- */
 const NOTE_EMOJI = {
   PEPPERMINT: "🌿",
   SAGE: "🌿",
@@ -130,6 +134,10 @@ const NOTE_EMOJI = {
   DEFAULT: "✨",
 };
 
+function normalize(str) {
+  return String(str || "").trim().toUpperCase();
+}
+
 function getNoteEmoji(note) {
   if (!note) return NOTE_EMOJI.DEFAULT;
   const key = note.trim().toUpperCase();
@@ -145,246 +153,308 @@ function getNoteEmoji(note) {
   return NOTE_EMOJI.DEFAULT;
 }
 
+/* ------------------ accent color map for each scent (mood-driven) ------------------ */
+const ACCENT_MAP = {
+  SHADOW: { primary: "#2b2b2f", accent: "#8f8fa6" }, // charcoal / silver
+  SUNSET: { primary: "#7b3f00", accent: "#ffb366" }, // warm gold / coral
+  VIGOR: { primary: "#054a45", accent: "#00b39f" }, // teal / amber-ish
+  "OUD HORIZON": { primary: "#4b3426", accent: "#c79b59" }, // brown / gold
+  DEFAULT: { primary: "#222", accent: "#b76e79" },
+};
+
+/* ------------------ small reusable UI components ------------------ */
+function Badge({ children, color }) {
+  return (
+    <span
+      className="ps-badge"
+      style={
+        color
+          ? {
+              background: `linear-gradient(120deg, ${color}20, ${color}10)`,
+              borderColor: `${color}30`,
+              color: `${color}`,
+            }
+          : {}
+      }
+    >
+      {children}
+    </span>
+  );
+}
+
+/* ------------------ main component ------------------ */
 export default function ProductSwipeShowcase() {
   const { products = [] } = useContext(ProductContext);
-  const deckRef = useRef();
   const [activeIdx, setActiveIdx] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  // story expand/collapse
   const [storyExpanded, setStoryExpanded] = useState(false);
-  const storyRef = useRef(null);
-  const collapsedHeightRef = useRef(0);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : true
+  );
 
-  useEffect(() => {
-    const resize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
+  // refs for keyboard focus and wrapper
+  const containerRef = useRef(null);
 
-  // reset when active card changes
+  // Update isMobile on resize
   useEffect(() => {
-    setStoryExpanded(false);
-    // small delay to let DOM update and then set collapsed height
-    setTimeout(() => updateCollapsedHeight(), 50);
-  }, [activeIdx]);
-
-  // ensure activeIdx stays in range when products change
-  useEffect(() => {
-    if (products.length && activeIdx >= products.length) setActiveIdx(0);
-  }, [products, activeIdx]);
-
-  // recompute collapsedHeight on mount and when window resizes or font changes
-  useEffect(() => {
-    updateCollapsedHeight();
-    const onResize = () => updateCollapsedHeight();
+    const onResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  function updateCollapsedHeight() {
-    const el = storyRef.current;
-    if (!el) return;
-    const cs = getComputedStyle(el);
-    const lineHeightRaw = cs.lineHeight;
-    let lineHeightPx = 0;
-    if (lineHeightRaw.endsWith("px")) {
-      lineHeightPx = parseFloat(lineHeightRaw);
-    } else {
-      // fallback: compute from font-size * line-height factor
-      const fontSize = parseFloat(cs.fontSize) || 16;
-      const lineHeightFactor = parseFloat(cs.lineHeight) || 1.6;
-      lineHeightPx = fontSize * lineHeightFactor;
-    }
-    const collapsed = Math.round(lineHeightPx * 3); // 3 lines
-    collapsedHeightRef.current = collapsed;
-    // Apply initial max-height depending on expanded state
-    el.style.maxHeight = storyExpanded ? `${el.scrollHeight}px` : `${collapsed}px`;
-  }
+  // Ensure index valid when products change
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+    if (activeIdx >= products.length) setActiveIdx(0);
+  }, [products, activeIdx]);
 
-  // toggle with measured animation
-  function toggleStoryExpand() {
-    const el = storyRef.current;
-    if (!el) {
-      setStoryExpanded((s) => !s);
-      return;
-    }
+  // Swipe handlers (react-swipeable) - enables touch + mouse drag
+  const onNext = useCallback(() => {
+    setActiveIdx((i) => (products.length ? (i + 1) % products.length : 0));
+    setStoryExpanded(false);
+  }, [products.length]);
 
-    const collapsed = collapsedHeightRef.current || 60; // fallback
-    if (!storyExpanded) {
-      // expanding: from collapsed -> full scrollHeight
-      el.style.maxHeight = `${collapsed}px`; // ensure starting point
-      // force reflow to ensure transition
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      el.offsetHeight;
-      el.style.maxHeight = `${el.scrollHeight}px`;
-      setStoryExpanded(true);
-      // after transition, set to 'none' so content can grow naturally (optional)
-      const clean = () => {
-        el.style.maxHeight = "none";
-        el.removeEventListener("transitionend", clean);
-      };
-      el.addEventListener("transitionend", clean);
-    } else {
-      // collapsing: set maxHeight to current height then to collapsed
-      const currentH = el.scrollHeight;
-      el.style.maxHeight = `${currentH}px`;
-      // force reflow
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      el.offsetHeight;
-      el.style.maxHeight = `${collapsed}px`;
-      setStoryExpanded(false);
-    }
-  }
-
-  if (!products || products.length === 0) {
-    return (
-      <section className="showcase-product-section">
-        <h2 className="showcase-product-heading">Discover Our Scents</h2>
-        <p>No products available.</p>
-      </section>
+  const onPrev = useCallback(() => {
+    setActiveIdx((i) =>
+      products.length ? (i - 1 + products.length) % products.length : 0
     );
-  }
+    setStoryExpanded(false);
+  }, [products.length]);
 
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => onNext(),
+    onSwipedRight: () => onPrev(),
+    trackMouse: true,
+    trackTouch: true,
+    delta: 10,
+  });
+
+  // keyboard navigation
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "ArrowRight") onNext();
+      if (e.key === "ArrowLeft") onPrev();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onNext, onPrev]);
+
+  // Compose display data for current product
   const product = products[activeIdx] || {};
   const scent = scentDetails[normalize(product.name)];
-  const storyText = (scent && scent.story) || product.description || "";
+  const displayNotes = useMemo(() => {
+    if (scent && scent.notes) return scent.notes;
+    if (product.fragranceNotes) {
+      return product.fragranceNotes.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    return [];
+  }, [product, scent]);
 
-  const SHOW_READ_MORE_THRESHOLD = 220; // characters; tweak for your font/container
-  const isLongStory = storyText && storyText.length > SHOW_READ_MORE_THRESHOLD;
+  // Dynamic accent
+  const accent = useMemo(() => {
+    const key = normalize(product.name);
+    return ACCENT_MAP[key] || ACCENT_MAP.DEFAULT;
+  }, [product]);
+
+  const storyText = (scent && scent.story) || product.description || "";
+  const teaser = storyText.slice(0, 220).trim();
+  const isLongStory = storyText && storyText.length > 220;
+
+  // dot click
+  const goToIndex = (i) => {
+    setActiveIdx(i);
+    setStoryExpanded(false);
+  };
+
+  // small animation variants for framer-motion
+  const cardVariants = {
+    enter: (direction) => ({
+      opacity: 0,
+      x: direction > 0 ? 80 : -80,
+      scale: 0.98,
+    }),
+    center: { opacity: 1, x: 0, scale: 1 },
+    exit: (direction) => ({
+      opacity: 0,
+      x: direction > 0 ? -80 : 80,
+      scale: 0.98,
+    }),
+  };
+
+  // direction for animation based on index change
+  const prevIdxRef = useRef(activeIdx);
+  const direction =
+    activeIdx === prevIdxRef.current
+      ? 0
+      : activeIdx > prevIdxRef.current
+      ? 1
+      : -1;
+  useEffect(() => {
+    prevIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   return (
     <section className="showcase-product-section">
       <h2 className="showcase-product-heading">Discover Our Scents</h2>
 
-      <div className="showcase-product-container">
-        <div className="swipe-deck-wrapper">
-          <SwipeDeck items={products} ref={deckRef} onChange={(idx) => setActiveIdx(idx)} />
-        </div>
-
-        <div className="showcase-card-info">
-          <h3>{product.name}</h3>
-
-          {scent ? (
-            <>
-              <p className="showcase-slogan">“{scent.slogan}”</p>
-
-              <p
-                id="scent-story"
-                ref={storyRef}
-                className={`showcase-story ${storyExpanded ? "is-expanded" : "is-collapsed"}`}
-                aria-expanded={storyExpanded}
-                aria-controls="scent-story"
-              >
-                {storyText}
-              </p>
-
-              {isLongStory && (
-                <button
-                  className="read-more-btn"
-                  onClick={toggleStoryExpand}
-                  aria-expanded={storyExpanded}
-                  aria-controls="scent-story"
-                >
-                  {storyExpanded ? "Show less" : "Read more"}
-                </button>
-              )}
-
-              <div className="showcase-notes-pills">
-                {scent.notes.map((n, i) => (
-                  <span key={i} className="note-pill">
-                    <span className="note-emoji" aria-hidden>
-                      {getNoteEmoji(n)}
-                    </span>
-                    <span className="note-text">{n}</span>
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <p
-                id="scent-story"
-                ref={storyRef}
-                className={`showcase-story ${storyExpanded ? "is-expanded" : "is-collapsed"}`}
-                aria-expanded={storyExpanded}
-                aria-controls="scent-story"
-              >
-                {storyText}
-              </p>
-
-              {isLongStory && (
-                <button
-                  className="read-more-btn"
-                  onClick={toggleStoryExpand}
-                  aria-expanded={storyExpanded}
-                  aria-controls="scent-story"
-                >
-                  {storyExpanded ? "Show less" : "Read more"}
-                </button>
-              )}
-
-              <div className="showcase-notes-pills">
-                {(product.fragranceNotes || "")
-                  .split(",")
-                  .map((n) => n && n.trim())
-                  .filter(Boolean)
-                  .map((n, i) => (
-                    <span key={i} className="note-pill">
-                      <span className="note-emoji" aria-hidden>
-                        {getNoteEmoji(n)}
-                      </span>
-                      <span className="note-text">{n}</span>
-                    </span>
-                  ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="showcase-nav-controls">
-        {!isMobile && (
-          <>
-            <button
-              className="nav-btn"
-              aria-label="Previous"
-              onClick={() => deckRef.current?.swipeRight?.()}
+      <div
+        className="showcase-product-container"
+        ref={containerRef}
+        style={{ ["--accent-primary"]: accent.primary, ["--accent-color"]: accent.accent }}
+      >
+        {/* CAROUSEL / SWIPE AREA */}
+        <div
+          className="swipe-deck-wrapper"
+          {...swipeHandlers}
+          aria-roledescription="carousel"
+          aria-label="Product carousel"
+        >
+          <AnimatePresence custom={direction} initial={false} mode="wait">
+            <motion.div
+              key={product.id ?? product.name ?? activeIdx}
+              className="carousel-card"
+              variants={cardVariants}
+              custom={direction}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.45, ease: [0.2, 0.9, 0.2, 1] }}
             >
-              ←
-            </button>
+              {/* Product visual: placeholder image or product.image */}
+              <div
+                className="product-visual"
+                role="img"
+                aria-label={product.name || "Product image"}
+                style={{
+                  backgroundImage: product.image ? `url(${product.image})` : undefined,
+                }}
+              >
+                {!product.image && (
+                  <div className="product-visual-fallback">
+                    <div className="initial">{(product.name || "").slice(0, 1)}</div>
+                  </div>
+                )}
+              </div>
 
-            <div className="showcase-dots" aria-hidden>
+              {/* subtle overlay for mood / accent */}
+              <div
+                className="visual-accent"
+                style={{
+                  background: `linear-gradient(180deg, ${accent.primary}08, transparent)`,
+                }}
+                aria-hidden
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* desktop nav arrows overlay */}
+          <div className="deck-overlay-controls">
+            <button
+              className="overlay-nav prev"
+              aria-label="Previous product"
+              onClick={onPrev}
+            >
+              ‹
+            </button>
+            <button
+              className="overlay-nav next"
+              aria-label="Next product"
+              onClick={onNext}
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        {/* INFO PANEL */}
+        <div className="showcase-card-info">
+          <div className="info-top-row">
+            <h3 className="product-name">{product.name || "Untitled"}</h3>
+            <div
+              className="accent-pill"
+              style={{ borderColor: `${accent.accent}33`, color: accent.primary }}
+            >
+              {scent ? "Signature" : "Fragrance"}
+            </div>
+          </div>
+
+          {scent && <p className="showcase-slogan">“{scent.slogan}”</p>}
+
+          {/* personality badges (simple heuristics or from product.tags) */}
+          <div className="badges-row" aria-hidden>
+            {product.tags?.slice(0, 3)?.map((t, i) => (
+              <Badge key={i} color={accent.primary}>
+                {t}
+              </Badge>
+            ))}
+
+            {/* fallback badges derived from notes */}
+            {!product.tags &&
+              displayNotes.slice(0, 3).map((n, i) => (
+                <Badge key={i} color={accent.primary}>
+                  {n.split(/\s+/)[0]}
+                </Badge>
+              ))}
+          </div>
+
+          {/* story teaser + reveal */}
+          <div className="story-wrap">
+            <p
+              className={`showcase-story ${storyExpanded ? "expanded" : "clamped"}`}
+              aria-expanded={storyExpanded}
+              id="scent-story"
+            >
+              {storyExpanded ? storyText : teaser + (isLongStory ? "…" : "")}
+            </p>
+
+            {isLongStory && (
+              <button
+                className="read-more-btn"
+                onClick={() => setStoryExpanded((s) => !s)}
+                aria-expanded={storyExpanded}
+                aria-controls="scent-story"
+                style={{ color: accent.accent }}
+              >
+                {storyExpanded ? "Show less" : "Read more"}
+              </button>
+            )}
+          </div>
+
+          {/* notes grid */}
+          <div className="notes-grid" aria-hidden>
+            {displayNotes.map((n, i) => (
+              <div
+                key={i}
+                className="note-card"
+                style={{
+                  borderColor: `${accent.primary}20`,
+                  boxShadow: `0 6px 18px ${accent.primary}08`,
+                }}
+              >
+                <div className="note-emoji">{getNoteEmoji(n)}</div>
+                <div className="note-body">
+                  <div className="note-name">{n}</div>
+                  <div className="note-kind">Note</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* dots & simple nav for accessibility */}
+          <div className="showcase-nav-controls">
+            <div className="showcase-dots" role="tablist" aria-label="Select product">
               {products.map((_, i) => (
                 <button
                   key={i}
                   className={`showcase-dot ${i === activeIdx ? "active" : ""}`}
-                  onClick={() => deckRef.current?.goToIndex?.(i)}
-                  aria-label={`Go to card ${i + 1}`}
+                  onClick={() => goToIndex(i)}
+                  aria-label={`Go to ${i + 1}`}
+                  aria-selected={i === activeIdx}
+                  style={i === activeIdx ? { background: accent.accent } : {}}
                 />
               ))}
             </div>
-
-            <button
-              className="nav-btn"
-              aria-label="Next"
-              onClick={() => deckRef.current?.swipeLeft?.()}
-            >
-              →
-            </button>
-          </>
-        )}
-
-        {isMobile && (
-          <div className="mobile-dots" aria-hidden>
-            {products.map((_, i) => (
-              <span
-                key={i}
-                className={`showcase-dot ${i === activeIdx ? "active" : ""}`}
-              />
-            ))}
           </div>
-        )}
+        </div>
       </div>
     </section>
   );
