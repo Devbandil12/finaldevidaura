@@ -7,9 +7,10 @@ gsap.registerPlugin(Draggable);
 
 export default function SwipeDeck({ items = [] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [leftPile, setLeftPile] = useState([]);
+  const [rightPile, setRightPile] = useState([]);
   const cardRefs = useRef([]);
 
-  // Calculate circular offset for a card
   const getOffset = (cardIndex) => {
     const total = items.length;
     let offset = cardIndex - currentIndex;
@@ -17,7 +18,7 @@ export default function SwipeDeck({ items = [] }) {
     return offset;
   };
 
-  // Bind draggable to top card
+  // Bind draggable to the current top card
   useEffect(() => {
     const topCard = cardRefs.current[currentIndex];
     if (!topCard) return;
@@ -42,19 +43,18 @@ export default function SwipeDeck({ items = [] }) {
             y: 0,
             rotation: 0,
             duration: 0.3,
-            ease: "power3.out"
+            ease: "power3.out",
           });
           animateBackCards(0);
         }
-      }
+      },
     });
   }, [currentIndex]);
 
-  // Animate back cards dynamically while dragging
   const animateBackCards = (dragX) => {
     items.forEach((_, idx) => {
       const offset = getOffset(idx);
-      if (offset === 0) return; // skip top card
+      if (offset === 0) return;
       const card = cardRefs.current[idx];
       if (!card) return;
 
@@ -68,17 +68,18 @@ export default function SwipeDeck({ items = [] }) {
         y: yOffset,
         rotationX: tilt,
         duration: 0.2,
-        ease: "power1.out"
+        ease: "power1.out",
       });
     });
   };
 
-  // Swipe and update current index
   const swipe = (dir) => {
     const topCard = cardRefs.current[currentIndex];
     if (!topCard) return;
 
     const isRight = dir === "right";
+    const cardData = items[currentIndex];
+
     gsap.to(topCard, {
       x: isRight ? window.innerWidth * 1.2 : -window.innerWidth * 1.2,
       y: -20,
@@ -86,15 +87,29 @@ export default function SwipeDeck({ items = [] }) {
       duration: 0.4,
       ease: "power3.in",
       onComplete: () => {
-        // Move to next card in a circular manner
+        if (isRight) {
+          setRightPile((p) => [cardData, ...p].slice(0, 3));
+        } else {
+          setLeftPile((p) => [cardData, ...p].slice(0, 3));
+        }
         setCurrentIndex((prev) => (prev + 1) % items.length);
-        gsap.set(topCard, { x: 0, y: 0, rotation: 0 }); // reset for reuse
-      }
+        gsap.set(topCard, { x: 0, y: 0, rotation: 0 });
+      },
     });
   };
 
   return (
     <div className="swipe-deck-container">
+      {/* Left discard pile */}
+      <div className="discard-pile left">
+        {leftPile.map((card, idx) => (
+          <div key={`left-${idx}`} className="swipe-card left-pinned">
+            <img src={card.imageurl} alt="" className="swipe-card-image" />
+          </div>
+        ))}
+      </div>
+
+      {/* Main stack */}
       {items.map((item, idx) => {
         const offset = getOffset(idx);
         const zIndex = items.length - offset;
@@ -109,13 +124,22 @@ export default function SwipeDeck({ items = [] }) {
             className="swipe-card"
             style={{
               zIndex,
-              transform: `perspective(1000px) rotateX(${tilt}deg) translateY(${yOffset}px) scale(${scale})`
+              transform: `perspective(1000px) rotateX(${tilt}deg) translateY(${yOffset}px) scale(${scale})`,
             }}
           >
             <img src={item.imageurl} alt="" className="swipe-card-image" />
           </div>
         );
       })}
+
+      {/* Right discard pile */}
+      <div className="discard-pile right">
+        {rightPile.map((card, idx) => (
+          <div key={`right-${idx}`} className="swipe-card right-pinned">
+            <img src={card.imageurl} alt="" className="swipe-card-image" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
