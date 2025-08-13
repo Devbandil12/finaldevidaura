@@ -1,4 +1,3 @@
-/* Main deck container with perspective for 3D tilt */
 .swipe-deck-container {
   position: relative;
   width: 100%;
@@ -6,10 +5,17 @@
   height: 520px;
   margin: 0 auto;
   perspective: 1200px;
-  overflow: visible;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Base card style */
+.active-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .swipe-card {
   position: absolute;
   top: 0;
@@ -21,12 +27,10 @@
   background: white;
   box-shadow: rgba(0, 0, 0, 0.15) 0px 8px 20px;
   will-change: transform, opacity;
-  touch-action: none; /* Required for GSAP Draggable */
+  touch-action: none;
   user-select: none;
-  transition: transform 0.35s ease, opacity 0.35s ease;
 }
 
-/* Card image fill */
 .swipe-card-image {
   width: 100%;
   height: 100%;
@@ -35,36 +39,33 @@
   pointer-events: none;
 }
 
-/* Slightly stronger shadow for active top card */
-.swipe-card.active {
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 12px 24px;
-}
-
-/* Cards pinned on the left side discard pile */
-.swipe-card.left-pinned {
+.discard-pile {
   position: absolute;
-  left: -40%;
-  transform: rotate(-8deg) scale(0.85);
-  opacity: 0.8;
-  box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 15px;
-}
-
-/* Cards pinned on the right side discard pile */
-.swipe-card.right-pinned {
-  position: absolute;
-  right: -40%;
-  transform: rotate(8deg) scale(0.85);
-  opacity: 0.8;
-  box-shadow: rgba(0, 0, 0, 0.15) 0px 6px 15px;
-}
-
-/* Lower depth cards shouldn't receive pointer events */
-.swipe-card:nth-child(n+2) {
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   pointer-events: none;
 }
 
-/* Optional: subtle fade for very deep back cards */
-.swipe-card.far-back {
-  opacity: 0.5;
-  filter: blur(1px);
+.discard-pile.left {
+  left: -35%;
+  align-items: flex-end;
+}
+
+.discard-pile.right {
+  right: -35%;
+  align-items: flex-start;
+}
+
+.left-pinned {
+  transform: rotate(-8deg) scale(0.85);
+  margin-bottom: 10px;
+}
+
+.right-pinned {
+  transform: rotate(8deg) scale(0.85);
+  margin-bottom: 10px;
 }
