@@ -1,3 +1,4 @@
+// src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
@@ -5,7 +6,7 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import { useUser } from "@clerk/clerk-react";
-import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Truck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const ProductDetail = () => {
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
   const { productId } = useParams();
 
-  // --- Check for loading state first ---
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -24,18 +24,12 @@ const ProductDetail = () => {
     );
   }
 
-  // Find the product after loading is complete
   const product = useMemo(() => {
     return products.find((p) => p.id === productId);
   }, [products, productId]);
 
-  // --- Check if product was found ---
   if (!product) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Product not found.</p>
-      </div>
-    );
+    return <div className="text-center p-8">Product not found.</div>;
   }
 
   const images = Array.isArray(product.images) && product.images.length > 0
@@ -75,18 +69,28 @@ const ProductDetail = () => {
   const handleToggleWishlist = () => {
     toggleWishlist(product);
   };
-  
+
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      alert("Product link copied to clipboard!");
+    }, (err) => {
+      console.error("Could not copy text: ", err);
+      alert("Failed to copy link. Please try again.");
+    });
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="container mx-auto max-w-7xl px-4">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden lg:flex lg:p-8 p-4">
+    <div className="product-page-container bg-gray-100 min-h-screen p-4 sm:p-8">
+      <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Image Gallery */}
-          <div className="lg:w-1/2 flex flex-col items-center">
-            <div className="relative w-full aspect-square mb-4">
+          <div className="lg:w-1/2">
+            <div className="relative mb-4">
               <img
                 src={images[currentImg]}
                 alt={product.name}
-                className="w-full h-full object-contain rounded-lg shadow-md"
+                className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
               />
               {images.length > 1 && (
                 <>
@@ -99,13 +103,13 @@ const ProductDetail = () => {
                 </>
               )}
             </div>
-            <div className="flex gap-3 overflow-x-auto w-full justify-center p-2">
+            <div className="flex gap-2 overflow-x-auto p-2 justify-center">
               {images.map((img, idx) => (
                 <img
                   key={idx}
                   src={img}
                   alt={`Thumbnail ${idx + 1}`}
-                  className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-black scale-105" : "border-gray-300 opacity-70"}`}
+                  className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
                   onClick={() => setCurrentImg(idx)}
                 />
               ))}
@@ -113,10 +117,19 @@ const ProductDetail = () => {
           </div>
 
           {/* Product Info & Actions */}
-          <div className="lg:w-1/2 mt-8 lg:mt-0 lg:pl-12 flex flex-col justify-between">
+          <div className="lg:w-1/2 flex flex-col justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-lg text-gray-500 mb-4">{product.composition}</p>
+              <div className="flex justify-between items-start">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                <button
+                  onClick={handleShare}
+                  className="p-2 rounded-full text-gray-500 hover:text-black transition-colors"
+                  title="Share Product"
+                >
+                  <Share2 size={24} />
+                </button>
+              </div>
+              <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
@@ -124,38 +137,26 @@ const ProductDetail = () => {
                 {discount > 0 && (
                   <>
                     <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
-                    <span className="text-md font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full">{discount}% OFF</span>
+                    <span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>
                   </>
                 )}
               </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">Description</h2>
-                <p className="text-gray-700 leading-relaxed">{product.description}</p>
-              </div>
-
-              {/* Delivery Info */}
-              <div className="flex items-center gap-4 text-gray-700 p-4 border rounded-lg bg-gray-50 mb-6">
-                <Truck size={24} className="text-green-600" />
-                <div>
-                  <h3 className="font-semibold">Expected Delivery</h3>
-                  <p className="text-sm">Within 5-7 business days across India.</p>
-                </div>
-              </div>
+              {/* Description & Details */}
+              <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
               
               <div className="space-y-4 text-gray-800">
                 {product.fragranceNotes && (
                   <div>
                     <h3 className="font-bold text-lg">Fragrance Notes</h3>
-                    <hr className="border-t border-gray-200 my-1" />
+                    <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragranceNotes}</p>
                   </div>
                 )}
                 {product.fragrance && (
                   <div>
                     <h3 className="font-bold text-lg">Heart Notes</h3>
-                    <hr className="border-t border-gray-200 my-1" />
+                    <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragrance}</p>
                   </div>
                 )}
@@ -164,15 +165,15 @@ const ProductDetail = () => {
 
             {/* CTA buttons */}
             <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex items-center border border-gray-300 rounded-full p-2">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-lg hover:bg-gray-100 rounded-full">-</button>
+              <div className="flex items-center border border-gray-300 rounded-lg p-2">
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
                 <span className="px-4 text-lg font-semibold">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-lg hover:bg-gray-100 rounded-full">+</button>
+                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-xl">+</button>
               </div>
 
               <button
                 onClick={handleAddToCart}
-                className={`flex-1 py-3 px-6 font-semibold rounded-full transition-colors duration-200 flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${
                   isInCart
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : "bg-black text-white hover:bg-gray-800"
@@ -184,7 +185,7 @@ const ProductDetail = () => {
 
               <button
                 onClick={handleBuyNow}
-                className="flex-1 py-3 px-6 font-semibold rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
               >
                 Buy Now
               </button>
@@ -200,10 +201,8 @@ const ProductDetail = () => {
       </div>
       
       {/* Review Section */}
-      <div className="container mx-auto max-w-7xl px-4 mt-8">
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
-          <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
-        </div>
+      <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
+        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
       </div>
     </div>
   );
