@@ -186,6 +186,27 @@ body {
   height: 20px;
 }
 
+/* New button style for "View Cart" */
+.view-cart-btn {
+  background-color: #4CAF50; /* A friendly green color */
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex: 1; /* Make it fill available space */
+}
+
+.view-cart-btn:hover {
+  background-color: #45a049;
+}
+
 /* === Responsive Design === */
 @media (max-width: 640px) {
   .product-grid {
@@ -198,7 +219,7 @@ body {
     border-radius: var(--radius-sm);
   }
 
-  .add-to-cart-btn {
+  .add-to-cart-btn, .view-cart-btn {
     padding: 0.6rem 0.8rem;
   }
 }
