@@ -1,17 +1,19 @@
 // src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // <-- Import useParams
+import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
+import { UserContext } from "../contexts/UserContext"; // <-- NEW: Import UserContext
 import ReviewComponent from "./ReviewComponent";
 import { useUser } from "@clerk/clerk-react";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
 
 
-const ProductDetail = () => { // <-- No props needed
+const ProductDetail = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const { productId } = useParams(); // <-- Get productId from URL
+  const { productId } = useParams();
+  const { userdetails } = useContext(UserContext); // <-- NEW: Get userdetails from context
 
   const { products } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
@@ -19,7 +21,7 @@ const ProductDetail = () => { // <-- No props needed
   // Find the product using the productId from the URL
   const product = products.find((p) => p.id === productId);
 
-  // If product is not found, you can redirect or show a 404 message
+  // This check is crucial: if no product is found, it will prevent a crash
   if (!product) {
     return <div>Product not found.</div>;
   }
@@ -175,7 +177,7 @@ const ProductDetail = () => { // <-- No props needed
       
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
-        <ReviewComponent productId={product.id} user={user} userdetails={userDetails} />
+        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
       </div>
     </div>
   );
