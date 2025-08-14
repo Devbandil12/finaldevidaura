@@ -1,101 +1,123 @@
 // src/Components/HeroSection.jsx
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { TextPlugin } from "gsap/TextPlugin";
 import "../style/herosection.css";
-
-// Register the TextPlugin
-gsap.registerPlugin(TextPlugin);
+import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 const HeroSection = () => {
-  const sloganRef = useRef(null);
-  const buttonRef = useRef(null);
-  const imageRef = useRef(null);
+  const titleRef = useRef(null);
+  const sloganRef = useRef(null);
+  const buttonRef = useRef(null);
+  const imageRef = useRef(null);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        paused: true, // Start paused to ensure everything is set up
-        defaults: { ease: "power2.out" }
-      });
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
 
-      // Pre-select the slogan and highlighted elements
-      const sloganText = sloganRef.current;
-      const highlightSpans = sloganRef.current.querySelectorAll('.highlight');
-      const staticSpans = sloganRef.current.querySelectorAll('.static-text');
+      // Animate Title
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: -30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
 
-      // Initialize all text as empty to prepare for the typing animation
-      gsap.set(sloganText, { text: "" });
+      // Start typing effect
+      tl.add(() => typeSlogan(), "+=0.4");
 
-      // Build the timeline
-      tl.to(imageRef.current, { opacity: 1, scale: 1, duration: 1.2 }, 0)
-        .addLabel("startTyping", "-=0.5") // Label to start typing after image fade
+      // Button
+      tl.fromTo(
+        buttonRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+        "+=2.5"
+      );
 
-        // Typing effect for the slogan
-        .to(sloganText, {
-          duration: 1,
-          text: staticSpans[0].textContent,
-          ease: "none"
-        }, "startTyping")
+      // Image
+      tl.fromTo(
+        imageRef.current,
+        { opacity: 0, scale: 0.95 },
+        { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
+        "-=0.4"
+      );
+    });
 
-        .to(highlightSpans[0], {
-          duration: 0.5,
-          text: "felt",
-          ease: "none"
-        })
+    return () => ctx.revert();
+  }, []);
 
-        .to(sloganText, {
-          duration: 1,
-          text: staticSpans[0].textContent + highlightSpans[0].textContent + staticSpans[1].textContent,
-          ease: "none"
-        })
+  // Typing effect using GSAP only
+  const typeSlogan = () => {
+  const sloganElement = sloganRef.current;
 
-        .to(highlightSpans[1], {
-          duration: 0.5,
-          text: "leaves",
-          ease: "none"
-        })
+  const rawParts = [
+    { text: "Not seen, not heard — only ", highlight: false },
+    { text: "felt", highlight: true },
+    { text: "\n", highlight: false },
+    { text: "In every breath he ", highlight: false },
+    { text: "leaves", highlight: true },
+    { text: " behind.", highlight: false },
+  ];
 
-        .to(sloganText, {
-          duration: 0.5,
-          text: sloganText.textContent + staticSpans[2].textContent,
-          ease: "none"
-        })
+  let finalHTML = "";
+  let partIndex = 0;
 
-        // Animate the button after the typing is complete
-        .fromTo(
-          buttonRef.current,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6 },
-          "-=0.4"
-        );
+  const typeNextPart = () => {
+    if (partIndex >= rawParts.length) return;
 
-      tl.play(); // Play the timeline after it's fully built
-    });
+    const { text, highlight } = rawParts[partIndex];
+    const chars = text.split("");
+    let charIndex = 0;
+    let buffer = "";
 
-    return () => ctx.revert();
-  }, []);
+    const typeChar = () => {
+      if (charIndex < chars.length) {
+        const char = chars[charIndex++];
+        if (char === "\n") {
+          buffer += "<br/>";
+        } else {
+          buffer += char;
+        }
 
-  return (
-    <section className="hero-section">
-      <div className="hero-content">
-        <h1 className="hero-slogan" ref={sloganRef}>
-          <span className="static-text">Not seen, not heard — only </span>
-          <span className="highlight"></span>
-          <span className="static-text">
-            <br />
-            In every breath he 
-          </span>
-          <span className="highlight"></span>
-          <span className="static-text"> behind.</span>
-        </h1>
-        <div className="hero-cta" ref={buttonRef}>
-          <button className="shop-btn">Explore Collection</button>
-        </div>
-      </div>
-     
-    </section>
-  );
+        if (highlight) {
+          sloganElement.innerHTML = finalHTML + `<span class='highlight'>${buffer}</span>`;
+        } else {
+          sloganElement.innerHTML = finalHTML + buffer;
+        }
+
+        setTimeout(typeChar, 30);
+      } else {
+        if (highlight) {
+          finalHTML += `<span class='highlight'>${buffer}</span>`;
+        } else {
+          finalHTML += buffer;
+        }
+
+        partIndex++;
+        setTimeout(typeNextPart, 150);
+      }
+    };
+
+    typeChar();
+  };
+
+  typeNextPart();
+};
+
+
+
+
+  return (
+    <section className="hero-section">
+      <div className="hero-content">
+     
+
+        <h1 className="hero-slogan" ref={sloganRef}></h1>
+
+        <div className="hero-cta" ref={buttonRef}>
+          <button className="shop-btn">Explore Collection</button>
+        </div>
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;
