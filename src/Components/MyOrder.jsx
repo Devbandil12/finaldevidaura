@@ -12,7 +12,12 @@ import {
   FaCheckCircle,
   FaClock,
   FaTimesCircle,
+  FaShippingFast,
+  FaBox,
+  FaClipboardList,
   FaSync,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -27,14 +32,13 @@ const formatDateTime = (dateString) => {
   });
 };
 
-// This component handles the specific display logic for refund status
 const RefundStatusDisplay = ({ refund, onRefresh }) => {
-  if (!refund || !refund.status) return null; // Added a check for refund.status
+  if (!refund || !refund.status) return null;
 
   const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
-
-  let icon, message, details;
+  
+  let icon, message, details, cardClass;
 
   switch (status) {
     case "created":
@@ -50,6 +54,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
           </button>
         </>
       );
+      cardClass = "refund-card-pending";
       break;
     case "processed":
       icon = <FaCheckCircle className="icon success-icon" />;
@@ -65,6 +70,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
           </span>
         </>
       );
+      cardClass = "refund-card-success";
       break;
     case "failed":
       icon = <FaTimesCircle className="icon failed-icon" />;
@@ -75,13 +81,14 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
           <button className="contact-btn">Contact Support</button>
         </>
       );
+      cardClass = "refund-card-failed";
       break;
     default:
-      return null; // Return null if the status is unknown
+      return null;
   }
 
   return (
-    <div className="refund-card">
+    <div className={`refund-card ${cardClass}`}>
       <div className="refund-header">
         {icon}
         <h3>{message}</h3>
@@ -90,7 +97,6 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
     </div>
   );
 };
-
 
 export default function MyOrders() {
   const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } =
@@ -185,7 +191,7 @@ export default function MyOrders() {
     window.location.href = "/checkout";
   };
 
-  const trackOrder = (orderId) =>
+  const toggleTrackOrder = (orderId) =>
     setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
 
   const handleRefreshStatus = async (orderId) => {
@@ -195,8 +201,6 @@ export default function MyOrders() {
       if (!res.ok) throw new Error("Failed to refresh status");
       // Simulate a delay for the loader
       await new Promise(r => setTimeout(r, 1000));
-      // In a real application, you'd re-fetch your orders here to update the state
-      // For this example, we'll just log a success message
       console.log(`Successfully refreshed status for order ${orderId}.`);
     } catch (err) {
       console.error("Refresh failed:", err);
@@ -206,20 +210,29 @@ export default function MyOrders() {
   };
 
   const renderStepProgress = (progressStep, status) => {
-    const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
-    const final =
-      status === "Delivered" ? steps.length + 1 : progressStep || 1;
+    const steps = [
+      { label: "Order Placed", icon: <FaBox /> },
+      { label: "Processing", icon: <FaClipboardList /> },
+      { label: "Shipped", icon: <FaShippingFast /> },
+      { label: "Delivered", icon: <FaCheckCircle /> },
+    ];
+
+    const final = status === "Delivered" ? steps.length + 1 : progressStep || 1;
+
     return (
       <div className="progress-steps">
-        {steps.map((label, idx) => (
+        {steps.map((step, idx) => (
           <div key={idx} className="myorder-step-wrapper">
             <div
               className={`myorder-step ${final > idx + 1 ? "completed" : ""
                 } ${final === idx + 1 ? "current" : ""}`}
             >
-              <div className="step-number">{idx + 1}</div>
-              <div className="step-label">{label}</div>
+              <div className="step-icon">{step.icon}</div>
+              <div className="step-label">{step.label}</div>
             </div>
+            {idx < steps.length - 1 && (
+              <div className={`step-line ${final > idx + 1 ? "completed" : ""}`}></div>
+            )}
           </div>
         ))}
       </div>
@@ -275,30 +288,25 @@ export default function MyOrders() {
             0
           );
           const r = order.refund;
+          const isExpanded = expandedOrders[order.orderId];
 
           return (
             <div key={order.orderId} className="order-card">
               <div className="order-header">
-                <h3>Order #{order.orderId}</h3>
-                <span className="badge">
-                  {totalItems} {totalItems > 1 ? "items" : "item"}
-                </span>
-              </div>
-
-              <div className="order-summary">
-                <p>
-                  <strong>Date:</strong> {formatDateTime(order.createdAt)}
-                </p>
-                <p>
-                  <strong>Total Amount:</strong> ₹
-                  {order.totalAmount.toFixed(2)}
-                </p>
-                <p>
-                  <strong>Payment Mode:</strong> {order.paymentMode}
-                </p>
-                <p>
-                  <strong>Order Status:</strong> {order.status}
-                </p>
+                <div className="order-header-left">
+                  <h3>Order #{order.orderId}</h3>
+                  <span className="badge">
+                    {totalItems} {totalItems > 1 ? "items" : "item"}
+                  </span>
+                </div>
+                <div className="order-header-right">
+                  <p className="order-status-text">
+                    Status: <span className="status-highlight">{order.status}</span>
+                  </p>
+                  <p className="order-status-text">
+                    Payment: <span className="status-highlight">{order.paymentMode}</span>
+                  </p>
+                </div>
               </div>
 
               <div className="order-items">
@@ -311,16 +319,18 @@ export default function MyOrders() {
                   return (
                     <div key={i} className="order-item">
                       <img src={imgSrc} alt={item.productName} />
-                      <p className="product-name">{item.productName}</p>
-                      <div className="item-details">
-                        {item.size && (
+                      <div className="item-details-main">
+                        <p className="product-name">{item.productName}</p>
+                        <div className="item-details-sub">
+                          {item.size && (
+                            <p>
+                              Size: <span>{item.size} ml</span>
+                            </p>
+                          )}
                           <p>
-                            Size: <span>{item.size} ml</span>
+                            Qty: <span>{item.quantity}</span>
                           </p>
-                        )}
-                        <p>
-                          Qty: <span>{item.quantity}</span>
-                        </p>
+                        </div>
                       </div>
                       <div className="item-price">
                         ₹{item.price * item.quantity}
@@ -330,54 +340,62 @@ export default function MyOrders() {
                 })}
               </div>
 
-              {/* Renders the refund status card if a refund exists */}
               {r && <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />}
 
-              <div className="buttons">
-                {order.paymentStatus === "paid" && order.status === "order placed" && (
-                  cancellingOrderId === order.orderId ? (
-                    <MiniLoader text="Cancelling..." />
-                  ) : (
-                    <button
-                      className="cancel-btn"
-                      onClick={() => {
-                        setModalOrder(order);
-                        setIsModalOpen(true);
-                      }}
-                    >
-                      Cancel Order
-                    </button>
-                  )
-                )}
+              <div className="order-footer">
+                <div className="order-summary">
+                  <p>
+                    <strong>Total Amount:</strong> ₹
+                    {order.totalAmount.toFixed(2)}
+                  </p>
+                  <p>
+                    <strong>Ordered On:</strong> {formatDateTime(order.createdAt)}
+                  </p>
+                </div>
+                <div className="buttons">
+                  {order.paymentStatus === "paid" && order.status === "order placed" && !r && (
+                    cancellingOrderId === order.orderId ? (
+                      <MiniLoader text="Cancelling..." />
+                    ) : (
+                      <button
+                        className="cancel-btn"
+                        onClick={() => {
+                          setModalOrder(order);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        Cancel Order
+                      </button>
+                    )
+                  )}
 
-                {order.status === "Delivered" && (
-                  <button
-                    className="reorder-btn"
-                    onClick={() => reorder(order.orderId)}
-                  >
-                    Reorder
-                  </button>
-                )}
-                {order.status !== "Order Cancelled" && (
-                  <button
-                    className="track-btn"
-                    onClick={() => trackOrder(order.orderId)}
-                  >
-                    {expandedOrders[order.orderId]
-                      ? "Hide Tracking"
-                      : "Track Order"}
-                  </button>
-                )}
+                  {order.status === "Delivered" && (
+                    <button
+                      className="reorder-btn"
+                      onClick={() => reorder(order.orderId)}
+                    >
+                      Reorder
+                    </button>
+                  )}
+                  {order.status !== "Order Cancelled" && (
+                    <button
+                      className="track-btn"
+                      onClick={() => toggleTrackOrder(order.orderId)}
+                    >
+                      {isExpanded ? "Hide Tracking" : "Track Order"}
+                      {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {cancellationMessages[order.orderId]}
 
-              {expandedOrders[order.orderId] &&
-                order.status !== "Order Cancelled" && (
-                  <div className="order-progress">
-                    {renderStepProgress(order.progressStep, order.status)}
-                  </div>
-                )}
+              {isExpanded && order.status !== "Order Cancelled" && (
+                <div className="order-progress">
+                  {renderStepProgress(order.progressStep, order.status)}
+                </div>
+              )}
             </div>
           );
         })}
