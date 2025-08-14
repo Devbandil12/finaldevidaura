@@ -29,7 +29,7 @@ const formatDateTime = (dateString) => {
 
 // This component handles the specific display logic for refund status
 const RefundStatusDisplay = ({ refund, onRefresh }) => {
-  if (!refund) return null;
+  if (!refund || !refund.status) return null; // Added a check for refund.status
 
   const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
@@ -77,10 +77,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
       );
       break;
     default:
-      icon = <FaClock className="icon default-icon" />;
-      message = "Refund Status Unknown";
-      details = "Please contact our support team for more information.";
-      break;
+      return null; // Return null if the status is unknown
   }
 
   return (
@@ -191,7 +188,7 @@ export default function MyOrders() {
   const trackOrder = (orderId) =>
     setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
 
-  const handleRefreshStatus = async () => {
+  const handleRefreshStatus = async (orderId) => {
     setIsRefreshing(true);
     try {
       const res = await fetch(`${BACKEND}/api/poll-refunds`);
@@ -200,7 +197,7 @@ export default function MyOrders() {
       await new Promise(r => setTimeout(r, 1000));
       // In a real application, you'd re-fetch your orders here to update the state
       // For this example, we'll just log a success message
-      console.log('Successfully refreshed statuses.');
+      console.log(`Successfully refreshed status for order ${orderId}.`);
     } catch (err) {
       console.error("Refresh failed:", err);
     } finally {
@@ -286,15 +283,6 @@ export default function MyOrders() {
                 <span className="badge">
                   {totalItems} {totalItems > 1 ? "items" : "item"}
                 </span>
-                <div className="order-header-right">
-                  {r ? (
-                    <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />
-                  ) : (
-                    <span className={`payment-status ${order.paymentStatus}`}>
-                      {order.paymentStatus.toUpperCase()}
-                    </span>
-                  )}
-                </div>
               </div>
 
               <div className="order-summary">
@@ -341,6 +329,9 @@ export default function MyOrders() {
                   );
                 })}
               </div>
+
+              {/* Renders the refund status card if a refund exists */}
+              {r && <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />}
 
               <div className="buttons">
                 {order.paymentStatus === "paid" && order.status === "order placed" && (
