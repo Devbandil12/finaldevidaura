@@ -1,20 +1,163 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Star,
   ArrowDown,
   ArrowUp,
   Edit3,
-  Filter,
+  SlidersHorizontal,
   Loader2,
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
+
+// Custom Dropdown Component
+const CustomDropdown = ({ label, options, value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.value === value) || options[0];
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        type="button"
+        className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selectedOption.label}
+        {isOpen ? <ChevronUp className="-mr-1 ml-2 h-5 w-5" /> : <ChevronDown className="-mr-1 ml-2 h-5 w-5" />}
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.1 }}
+            className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+          >
+            <div className="py-1">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Custom Star Rating Dropdown for Form
+const StarRatingDropdown = ({ rating, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const renderStars = (value, size) => (
+    <div className="flex items-center gap-1 text-yellow-400">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          fill={i < value ? "#facc15" : "none"}
+          stroke="#facc15"
+          size={size || 18}
+        />
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="relative inline-block text-left w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        className="inline-flex justify-between items-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {rating > 0 ? (
+          <div className="flex items-center gap-2">
+            {renderStars(rating)}
+            <span>{rating} Stars</span>
+          </div>
+        ) : (
+          <span>Select Rating</span>
+        )}
+        {isOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.1 }}
+            className="origin-top-right absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+          >
+            <div className="py-1">
+              {[5, 4, 3, 2, 1].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    onChange(s);
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  {renderStars(s, 18)}
+                  <span>{s} Stars</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 
 const ReviewComponent = ({ productId, user, userdetails }) => {
   const [averageRating, setAverageRating] = useState(0);
@@ -88,7 +231,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
       }
 
       resetForm();
-      fetchReviews(true); // Re-fetch all reviews after submission
+      fetchReviews(true);
     } catch (err) {
       console.error("Review submission failed", err);
     }
@@ -136,14 +279,14 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     e.currentTarget.style.display = "none";
   };
 
-  const renderStars = (value) => (
+  const renderStars = (value, size) => (
     <div className="flex items-center gap-1 text-yellow-400">
       {[...Array(5)].map((_, i) => (
         <Star
           key={i}
           fill={i < Math.floor(value) ? "#facc15" : "none"}
           stroke="#facc15"
-          size={18}
+          size={size || 18}
         />
       ))}
     </div>
@@ -161,21 +304,21 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Customer Reviews</h2>
         <div className="flex items-center gap-2">
           <label className="flex items-center text-gray-700">
-            <Filter size={14} className="mr-1" />
+            <SlidersHorizontal size={16} className="mr-2" />
             Filter by Rating:
           </label>
-          <select
-            value={starFilter ?? ""}
-            onChange={(e) => setStarFilter(e.target.value ? parseInt(e.target.value) : null)}
-            className="p-2 border border-gray-300 rounded-md text-sm"
-          >
-            <option value="">All Ratings</option>
-            {[5, 4, 3, 2, 1].map((s) => (
-              <option key={s} value={s}>
-                {s} Stars
-              </option>
-            ))}
-          </select>
+          <CustomDropdown
+            value={starFilter}
+            onChange={(val) => setStarFilter(val)}
+            options={[
+              { value: null, label: "All Ratings" },
+              { value: 5, label: "5 Stars" },
+              { value: 4, label: "4 Stars" },
+              { value: 3, label: "3 Stars" },
+              { value: 2, label: "2 Stars" },
+              { value: 1, label: "1 Star" },
+            ]}
+          />
         </div>
       </div>
 
@@ -184,7 +327,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
           <div className="flex flex-col items-start gap-2">
             <div className="text-5xl font-extrabold text-gray-900">{averageRating.toFixed(1)}</div>
-            {renderStars(averageRating)}
+            {renderStars(averageRating, 24)}
             <div className="text-sm text-gray-500 mt-1">{totalReviews} reviews</div>
           </div>
           <div className="flex flex-col gap-2">
@@ -323,19 +466,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
                 className="p-3 border border-gray-300 rounded-md col-span-1 md:col-span-2"
               />
             )}
-            <select
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              required
-              className="p-3 border border-gray-300 rounded-md"
-            >
-              <option value="">Rating</option>
-              {[5, 4, 3, 2, 1].map((s) => (
-                <option key={s} value={s}>
-                  {s} Stars
-                </option>
-              ))}
-            </select>
+            <StarRatingDropdown rating={rating} onChange={setRating} />
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
