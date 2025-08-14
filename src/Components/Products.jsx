@@ -148,12 +148,21 @@ const Products = memo(() => {
                   stroke={isProductInWishlist(product.id) ? 'var(--color-primary)' : 'var(--color-text-muted)'}
                 />
               </button>
-              <button
-                className="add-to-cart-btn"
-                onClick={() => handleAdd(product, 1)}
-              >
-                <ShoppingCart size={20} />
-              </button>
+              {isProductInCart(product.id) ? (
+                <button
+                  className="view-cart-btn"
+                  onClick={() => navigate("/cart")}
+                >
+                  View Cart
+                </button>
+              ) : (
+                <button
+                  className="add-to-cart-btn"
+                  onClick={() => handleAdd(product, 1)}
+                >
+                  <ShoppingCart size={20} />
+                </button>
+              )}
             </div>
           </div>
         ))}
