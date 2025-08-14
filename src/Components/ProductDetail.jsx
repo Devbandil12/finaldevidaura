@@ -62,8 +62,12 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = async () => {
+    // Original logic: handle legacy props or use context
+    // The `onAddToCart` prop is not used in this version, so the `startBuyNow` logic is always executed
     const ok = startBuyNow(product, quantity);
-    if (ok) navigate("/checkout");
+    if (!ok) return;
+
+    navigate("/cart", { replace: true });
   };
 
   const handleToggleWishlist = () => {
@@ -93,7 +97,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="product-page-container bg-gray-100 min-h-screen">
+    <div className="product-page-container bg-gray-100 min-h-screen p-4 sm:p-8">
       <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Image Gallery */}
