@@ -1,55 +1,32 @@
 // src/pages/ProductDetail.jsx
-import React, { useState, useContext, useMemo } from "react";
+import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import ReviewComponent from "./ReviewComponent";
 import { useUser } from "@clerk/clerk-react";
-import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 
-const ProductDetail = ({
-  product,
-  userdetails,
-  onClose,
-  onToggleWishlist,
-  inWishlist,
-  onAddToCart,
-  inCart,
-}) => {
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
+import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
+import CartImage from "../assets/cart-svgrepo-com copy.svg";
+import { ChevronLeft, ChevronRight, Heart, ShoppingCart, X } from "lucide-react";
+
+
+const ProductDetail = ({ product, userdetails }) => {
   const navigate = useNavigate();
   const { user } = useUser();
 
   const { products } = useContext(ProductContext);
-  const {
-    cart,
-    wishlist,
-    addToCart,
-    removeFromCart,
-    toggleWishlist,
-    startBuyNow,
-  } = useContext(CartContext);
+  const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
-  const fullProduct =
-    products.find((p) => p.id === product.id) || product;
+  const fullProduct = products.find((p) => p.id === product.id) || product;
 
-  const images =
-    Array.isArray(fullProduct.images) && fullProduct.images.length > 0
-      ? fullProduct.images
-      : [fullProduct.imageurl];
+  const images = Array.isArray(fullProduct.images) && fullProduct.images.length > 0
+    ? fullProduct.images
+    : [fullProduct.imageurl];
 
-  const ctxInCart = useMemo(
-    () => cart?.some((i) => i.product?.id === fullProduct.id),
-    [cart, fullProduct.id]
-  );
-  const isInCart = typeof inCart === "boolean" ? inCart : !!ctxInCart;
-
-  const ctxInWishlist = useMemo(
-    () => wishlist?.some((w) => (w.productId ?? w.product?.id) === fullProduct.id),
-    [wishlist, fullProduct.id]
-  );
-  const isInWishlist =
-    typeof inWishlist === "boolean" ? inWishlist : !!ctxInWishlist;
+  const isInCart = useMemo(() => cart?.some((i) => i.product?.id === fullProduct.id), [cart, fullProduct.id]);
+  const isInWishlist = useMemo(() => wishlist?.some((w) => (w.productId ?? w.product?.id) === fullProduct.id), [wishlist, fullProduct.id]);
 
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
@@ -58,14 +35,14 @@ const ProductDetail = ({
   const discount = Math.floor(Number(fullProduct.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + images.length) % images.length);
 
-  const addToCartHandler = async () => {
-    if (onAddToCart) {
-      return onAddToCart(fullProduct, isInCart ? 0 : quantity, false);
-    }
-
+  const handleAddToCart = async () => {
     if (isInCart) {
       await removeFromCart(fullProduct.id);
     } else {
@@ -74,125 +51,128 @@ const ProductDetail = ({
   };
 
   const handleBuyNow = async () => {
-    if (onAddToCart) {
-      onAddToCart(fullProduct, quantity, true);
-    } else {
-      const ok = startBuyNow(fullProduct, quantity);
-      if (!ok) return;
-    }
-    document.body.style.overflow = "auto";
-    document.documentElement.style.overflow = "auto";
-    onClose();
-    navigate("/checkout");
+    const ok = startBuyNow(fullProduct, quantity);
+    if (ok) navigate("/checkout");
   };
 
-  const handleToggleWishlist = async () => {
-    if (onToggleWishlist) {
-      onToggleWishlist(fullProduct);
-    } else {
-      toggleWishlist(fullProduct);
-    }
+  const handleToggleWishlist = () => {
+    toggleWishlist(fullProduct);
   };
 
   return (
-    <div className="product-detail-overlay">
-      <div className="product-detail-modal">
-        <button className="close-btn" onClick={onClose}>
-          <X size={24} />
-        </button>
-
-        <div className="product-detail-content">
-          <div className="product-image-section">
-            <div className="image-carousel">
-              <AnimatePresence initial={false}>
-                <motion.img
-                  key={currentImg}
-                  src={images[currentImg]}
-                  alt={fullProduct.name}
-                  className="main-product-image"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </AnimatePresence>
+    <div className="product-page-container bg-gray-100 min-h-screen p-4 sm:p-8">
+      <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Image Gallery */}
+          <div className="lg:w-1/2">
+            <div className="relative mb-4">
+              <img
+                src={images[currentImg]}
+                alt={fullProduct.name}
+                className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
+              />
               {images.length > 1 && (
                 <>
-                  <button className="nav-btn left" onClick={() => changeImage(-1)}>
+                  <button className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10" onClick={() => changeImage(-1)}>
                     <ChevronLeft size={24} />
                   </button>
-                  <button className="nav-btn right" onClick={() => changeImage(1)}>
+                  <button className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10" onClick={() => changeImage(1)}>
                     <ChevronRight size={24} />
                   </button>
                 </>
               )}
             </div>
-            <div className="thumbnail-gallery">
+            <div className="flex gap-2 overflow-x-auto p-2">
               {images.map((img, idx) => (
                 <img
                   key={idx}
                   src={img}
                   alt={`Thumbnail ${idx + 1}`}
-                  className={`thumbnail ${currentImg === idx ? "active" : ""}`}
+                  className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 ${currentImg === idx ? "border-gray-900" : "border-transparent"}`}
                   onClick={() => setCurrentImg(idx)}
                 />
               ))}
             </div>
           </div>
 
-          <div className="product-info-section">
-            <h1 className="product-title">{fullProduct.name}</h1>
-            <p className="product-description">{fullProduct.description}</p>
-            <div className="product-price-details">
-              <span className="price">₹{discountedPrice}</span>
-              {discount > 0 && (
-                <>
-                  <span className="original-price">₹{basePrice}</span>
-                  <span className="discount-badge">{discount}% Off</span>
-                </>
-              )}
+          {/* Product Info & Actions */}
+          <div className="lg:w-1/2 flex flex-col justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{fullProduct.name}</h1>
+              <p className="text-lg font-semibold text-gray-500 mb-4">{fullProduct.composition}</p>
+
+              {/* Price & Discount */}
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>
+                {discount > 0 && (
+                  <>
+                    <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
+                    <span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>
+                  </>
+                )}
+              </div>
+
+              {/* Description & Details */}
+              <p className="text-gray-700 leading-relaxed mb-6">{fullProduct.description}</p>
+              
+              <div className="space-y-4 text-gray-800">
+                {fullProduct.fragranceNotes && (
+                  <div>
+                    <h3 className="font-bold text-lg">Fragrance Notes</h3>
+                    <hr className="border-t border-gray-300 my-1" />
+                    <p>{fullProduct.fragranceNotes}</p>
+                  </div>
+                )}
+                {fullProduct.fragrance && (
+                  <div>
+                    <h3 className="font-bold text-lg">Heart Notes</h3>
+                    <hr className="border-t border-gray-300 my-1" />
+                    <p>{fullProduct.fragrance}</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="product-actions">
-              <div className="quantity-selector">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                >
-                  -
-                </button>
-                <span>{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)}>+</button>
+            {/* CTA buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center border border-gray-300 rounded-lg p-2">
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
+                <span className="px-4 text-lg font-semibold">{quantity}</span>
+                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-xl">+</button>
               </div>
 
-              <div className="action-buttons">
-                <button
-                  className={`cart-btn ${isInCart ? "in-cart" : ""}`}
-                  onClick={addToCartHandler}
-                >
-                  <ShoppingCart size={20} />
-                  {isInCart ? "Remove from Cart" : "Add to Cart"}
-                </button>
-                <button className="buy-now-btn" onClick={handleBuyNow}>
-                  Buy Now
-                </button>
-                <button
-                  className="wishlist-btn"
-                  onClick={handleToggleWishlist}
-                >
-                  <Heart
-                    size={24}
-                    fill={isInWishlist ? 'var(--color-primary)' : 'transparent'}
-                    stroke={isInWishlist ? 'var(--color-primary)' : 'var(--color-text-muted)'}
-                  />
-                </button>
-              </div>
+              <button
+                onClick={handleAddToCart}
+                className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${
+                  isInCart
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-black text-white hover:bg-gray-800"
+                }`}
+              >
+                <ShoppingCart size={20} />
+                {isInCart ? "Remove from Cart" : "Add to Cart"}
+              </button>
+
+              <button
+                onClick={handleBuyNow}
+                className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+              >
+                Buy Now
+              </button>
+              <button
+                onClick={handleToggleWishlist}
+                className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
+              >
+                <Heart size={24} fill={isInWishlist ? 'red' : 'none'} stroke={isInWishlist ? 'red' : 'gray'} />
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="product-review-section">
-          <ReviewComponent productId={fullProduct.id} user={user} userdetails={userdetails} />
-        </div>
+      </div>
+      
+      {/* Review Section */}
+      <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
+        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
       </div>
     </div>
   );
