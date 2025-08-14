@@ -3,7 +3,7 @@ import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
-import { UserContext } from "../contexts/UserContext"; // <-- NEW: Import UserContext
+import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import { useUser } from "@clerk/clerk-react";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
@@ -12,16 +12,24 @@ import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { user } = useUser();
-  const { productId } = useParams();
-  const { userdetails } = useContext(UserContext); // <-- NEW: Get userdetails from context
-
+  const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+  const { productId } = useParams();
   
-  // Find the product using the productId from the URL
-  const product = products.find((p) => p.id === productId);
+  // --- IMPORTANT FIX: Check if products are loaded before finding the product ---
+  const product = useMemo(() => {
+    if (!products || products.length === 0) {
+      return null;
+    }
+    return products.find((p) => p.id === productId);
+  }, [products, productId]);
 
-  // This check is crucial: if no product is found, it will prevent a crash
+  // --- Handle loading and not-found states gracefully ---
+  if (!products || products.length === 0) {
+    return <div>Loading product details...</div>;
+  }
+
   if (!product) {
     return <div>Product not found.</div>;
   }
