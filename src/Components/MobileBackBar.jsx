@@ -9,8 +9,7 @@ const pageTitles = {
   "/myorder": "My Orders",
   "/checkout": "Checkout",
   "/contact": "Contact",
-  "/admin": "Admin Panel",
-  
+  "/admin": "Admin Panel", 
 };
 
 
