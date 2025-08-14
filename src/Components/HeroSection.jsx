@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { TextPlugin } from "gsap/TextPlugin";
 import "../style/herosection.css";
-import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 
 // Register the TextPlugin
 gsap.registerPlugin(TextPlugin);
@@ -15,65 +14,63 @@ const HeroSection = () => {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
+      const tl = gsap.timeline({
+        paused: true, // Start paused to ensure everything is set up
+        defaults: { ease: "power2.out" }
+      });
 
       // Pre-select the slogan and highlighted elements
       const sloganText = sloganRef.current;
       const highlightSpans = sloganRef.current.querySelectorAll('.highlight');
+      const staticSpans = sloganRef.current.querySelectorAll('.static-text');
 
-      // Initialize all text as empty
-      gsap.set([sloganText, highlightSpans], { text: "" });
+      // Initialize all text as empty to prepare for the typing animation
+      gsap.set(sloganText, { text: "" });
 
       // Build the timeline
-      tl.fromTo(
-        imageRef.current,
-        { opacity: 0, scale: 0.95 },
-        { opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" }
-      )
-      .addLabel("startTyping", "+=0.2")
+      tl.to(imageRef.current, { opacity: 1, scale: 1, duration: 1.2 }, 0)
+        .addLabel("startTyping", "-=0.5") // Label to start typing after image fade
 
-      // Type the first part of the slogan
-      .to(sloganText, {
-        duration: 1.5,
-        text: "Not seen, not heard — only ",
-        ease: "none"
-      }, "startTyping")
+        // Typing effect for the slogan
+        .to(sloganText, {
+          duration: 1,
+          text: staticSpans[0].textContent,
+          ease: "none"
+        }, "startTyping")
 
-      // Type the first highlighted word
-      .to(highlightSpans[0], {
-        duration: 0.5,
-        text: "felt",
-        ease: "none"
-      })
+        .to(highlightSpans[0], {
+          duration: 0.5,
+          text: "felt",
+          ease: "none"
+        })
 
-      // Type the second part of the slogan
-      .to(sloganText, {
-        duration: 1,
-        text: "Not seen, not heard — only felt\nIn every breath he ",
-        ease: "none"
-      })
+        .to(sloganText, {
+          duration: 1,
+          text: staticSpans[0].textContent + highlightSpans[0].textContent + staticSpans[1].textContent,
+          ease: "none"
+        })
 
-      // Type the second highlighted word
-      .to(highlightSpans[1], {
-        duration: 0.5,
-        text: "leaves",
-        ease: "none"
-      })
+        .to(highlightSpans[1], {
+          duration: 0.5,
+          text: "leaves",
+          ease: "none"
+        })
 
-      // Type the final part of the slogan
-      .to(sloganText, {
-        duration: 0.5,
-        text: "Not seen, not heard — only felt\nIn every breath he leaves behind.",
-        ease: "none"
-      })
+        .to(sloganText, {
+          duration: 0.5,
+          text: sloganText.textContent + staticSpans[2].textContent,
+          ease: "none"
+        })
 
-      // Animate the button
-      .fromTo(
-        buttonRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
-        "-=0.5"
-      );
+        // Animate the button after the typing is complete
+        .fromTo(
+          buttonRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6 },
+          "-=0.4"
+        );
+
+      tl.play(); // Play the timeline after it's fully built
     });
 
     return () => ctx.revert();
@@ -87,7 +84,7 @@ const HeroSection = () => {
           <span className="highlight"></span>
           <span className="static-text">
             <br />
-            In every breath he
+            In every breath he 
           </span>
           <span className="highlight"></span>
           <span className="static-text"> behind.</span>
@@ -96,9 +93,7 @@ const HeroSection = () => {
           <button className="shop-btn">Explore Collection</button>
         </div>
       </div>
-      <div className="hero-image" ref={imageRef}>
-        <img src={BottleImage} alt="Bottle of perfume" />
-      </div>
+     
     </section>
   );
 };
