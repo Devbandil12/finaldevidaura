@@ -6,25 +6,17 @@ import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg";        // outline
-import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg"; // filled
+import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
+import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
 import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
-// Note: ProductDetail is now a standalone page, not a modal.
-// import ProductDetail from "./ProductDetail"; // No longer needed here
-
-// Styles for overlay/card polish (keep your existing file)
 import "../style/products.css";
 
-// NEW: GSAP for smooth animation
 import { gsap } from "gsap";
 
 
 const Products = () => {
-  // const [modalProduct, setModalProduct] = useState(null); // No longer needed
   const [cartState, setCartState] = useState(null);
-
-
   const { products } = useContext(ProductContext);
   const {
     cart,
@@ -33,12 +25,8 @@ const Products = () => {
     removeFromCart,
     toggleWishlist,
     startBuyNow,
-    // Optional: isCartLoading,
   } = useContext(CartContext);
-
-   const { userdetails } = useContext(UserContext);
-
-
+  const { userdetails } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,28 +34,12 @@ const Products = () => {
     setCartState(cart);
   }, [cart]);
 
-
-  // Reset scrolling on route change
   useEffect(() => {
     document.body.style.overflow = "auto";
     document.documentElement.style.overflow = "auto";
   }, [location.pathname]);
 
-  // Lock/unlock scroll when modal toggles
-  // useEffect(() => {
-  //   if (modalProduct) {
-  //     document.body.style.overflow = "hidden";
-  //     document.documentElement.style.overflow = "hidden";
-  //   } else {
-  //     document.body.style.overflow = "auto";
-  //     document.documentElement.style.overflow = "auto";
-  //   }
-  // }, [modalProduct]);
-
-  // Changed to navigate to product page instead of opening a modal
   const handleSlideClick = (product) => navigate(`/product/${product.id}`);
-  const closeModal = () => setModalProduct(null);
-
 
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
@@ -84,7 +56,7 @@ const Products = () => {
     }
 
     await addToCart(product, quantity);
-    
+
     try {
       const productImg = document.querySelector(
         `img[data-product-id="${product.id}"]`
