@@ -70,14 +70,26 @@ const ProductDetail = () => {
     toggleWishlist(product);
   };
 
-  const handleShare = () => {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      alert("Product link copied to clipboard!");
-    }, (err) => {
-      console.error("Could not copy text: ", err);
-      alert("Failed to copy link. Please try again.");
-    });
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Check out this product: ${product.name}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error("Error sharing:", error);
+      }
+    } else {
+      // Fallback for browsers that do not support the Web Share API
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert("Product link copied to clipboard!");
+      }, (err) => {
+        console.error("Could not copy text: ", err);
+        alert("Failed to copy link. Please try again.");
+      });
+    }
   };
 
   return (
@@ -138,15 +150,15 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-              [span_0](start_span)<p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>[span_0](end_span)
+              <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
-                [span_1](start_span)<span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>[span_1](end_span)
+                <span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>
                 {discount > 0 && (
                   <>
                     <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
-                    [span_2](start_span)<span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>[span_2](end_span)
+                    <span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>
                   </>
                 )}
               </div>
@@ -154,17 +166,17 @@ const ProductDetail = () => {
               {/* Description & Details */}
               <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
               
-              [span_3](start_span)<div className="space-y-4 text-gray-800">[span_3](end_span)
+              <div className="space-y-4 text-gray-800">
                 {product.fragranceNotes && (
                   <div>
-                    [span_4](start_span)<h3 className="font-bold text-lg">Fragrance Notes</h3>[span_4](end_span)
+                    <h3 className="font-bold text-lg">Fragrance Notes</h3>
                     <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragranceNotes}</p>
                   </div>
                 )}
                 {product.fragrance && (
                   <div>
-                    [span_5](start_span)<h3 className="font-bold text-lg">Heart Notes</h3>[span_5](end_span)
+                    <h3 className="font-bold text-lg">Heart Notes</h3>
                     <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragrance}</p>
                   </div>
@@ -173,7 +185,7 @@ const ProductDetail = () => {
             </div>
 
             {/* CTA buttons */}
-            [span_6](start_span)<div className="mt-8 flex items-center gap-4 flex-wrap">[span_6](end_span)
+            <div className="mt-8 flex items-center gap-4 flex-wrap">
               <div className="flex items-center border border-gray-300 rounded-lg p-2">
                 <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
                 <span className="px-4 text-lg font-semibold">{quantity}</span>
@@ -182,14 +194,10 @@ const ProductDetail = () => {
 
               <button
                 onClick={handleAddToCart}
-                className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${
-                  isInCart
-                    ? [span_7](start_span)"bg-red-600 text-white hover:bg-red-700"[span_7](end_span)
-                    [span_8](start_span): "bg-black text-white hover:bg-gray-800"[span_8](end_span)
-                }`}
+                className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${isInCart ? "bg-red-600 text-white hover:bg-red-700" : "bg-black text-white hover:bg-gray-800"}`}
               >
                 <ShoppingCart size={20} />
-                {isInCart ? [span_9](start_span)"Remove from Cart" : "Add to Cart"}[span_9](end_span)
+                {isInCart ? "Remove from Cart" : "Add to Cart"}
               </button>
 
               <button
@@ -197,7 +205,7 @@ const ProductDetail = () => {
                 className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={20} />
-                [span_10](start_span)Buy Now[span_10](end_span)
+                Buy Now
               </button>
             </div>
           </div>
@@ -206,7 +214,7 @@ const ProductDetail = () => {
       
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
-        [span_11](start_span)<ReviewComponent productId={product.id} user={user} userdetails={userdetails} />[span_11](end_span)
+        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
       </div>
     </div>
   );
