@@ -1,6 +1,6 @@
 /* ------- Card base ------- */
 .product-card{
-  width: 18rem;           /* similar to w-72 */
+  width: 18rem;
   border: 1px solid #eee;
   box-shadow: 0 4px 20px rgba(0,0,0,.06);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -20,7 +20,7 @@
   background: #fafafa;
   overflow: hidden;
   border-bottom: 1px solid #f0f0f0;
-  position: relative; /* Ensure overlay is positioned correctly */
+  position: relative;
 }
 .product-img{
   width: 100%;
@@ -33,7 +33,6 @@
   transform: scale(1.02);
 }
 
-/* Transparent blur overlay shown on hover/focus */
 .img-overlay{
   position: absolute;
   inset: 0;
@@ -62,13 +61,13 @@
 /* ------- "Add to cart" animation ------- */
 .added-burst{
   position: absolute;
-  pointer-events: none; /* so it doesn't block the click */
+  pointer-events: none;
   color: #fff;
   font-size: 1.5rem;
   font-weight: 700;
   white-space: nowrap;
 }
-/* a little flourish */
+
 .added-burst span{
   position: absolute;
   top: -8px; left: 0;
@@ -142,4 +141,10 @@
 
 .cta-btn.bg-green-600:hover {
   background-color: #16a34a;
+}
+
+/* NEW: Style for the original price with a strikethrough */
+.line-through-price {
+  text-decoration: line-through;
+  font-size: 0.75rem; /* Equivalent to text-xs */
 }
