@@ -1,7 +1,7 @@
 // src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProductContext } from "../contexts/productContext";
+import { productContext } from "../contexts/ProductContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
@@ -119,25 +119,34 @@ const ProductDetail = () => {
           {/* Product Info & Actions */}
           <div className="lg:w-1/2 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-start">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-full text-gray-500 hover:text-black transition-colors"
-                  title="Share Product"
-                >
-                  <Share2 size={24} />
-                </button>
+              <div className="flex justify-between items-center mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleToggleWishlist}
+                    className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
+                    title="Add to Wishlist"
+                  >
+                    <Heart size={24} fill={isInWishlist ? 'red' : 'none'} stroke={isInWishlist ? 'red' : 'gray'} />
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
+                    title="Share Product"
+                  >
+                    <Share2 size={24} />
+                  </button>
+                </div>
               </div>
-              <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
+              [span_0](start_span)<p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>[span_0](end_span)
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>
+                [span_1](start_span)<span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>[span_1](end_span)
                 {discount > 0 && (
                   <>
                     <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
-                    <span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>
+                    [span_2](start_span)<span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>[span_2](end_span)
                   </>
                 )}
               </div>
@@ -145,17 +154,17 @@ const ProductDetail = () => {
               {/* Description & Details */}
               <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
               
-              <div className="space-y-4 text-gray-800">
+              [span_3](start_span)<div className="space-y-4 text-gray-800">[span_3](end_span)
                 {product.fragranceNotes && (
                   <div>
-                    <h3 className="font-bold text-lg">Fragrance Notes</h3>
+                    [span_4](start_span)<h3 className="font-bold text-lg">Fragrance Notes</h3>[span_4](end_span)
                     <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragranceNotes}</p>
                   </div>
                 )}
                 {product.fragrance && (
                   <div>
-                    <h3 className="font-bold text-lg">Heart Notes</h3>
+                    [span_5](start_span)<h3 className="font-bold text-lg">Heart Notes</h3>[span_5](end_span)
                     <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragrance}</p>
                   </div>
@@ -164,7 +173,7 @@ const ProductDetail = () => {
             </div>
 
             {/* CTA buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+            [span_6](start_span)<div className="mt-8 flex items-center gap-4 flex-wrap">[span_6](end_span)
               <div className="flex items-center border border-gray-300 rounded-lg p-2">
                 <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
                 <span className="px-4 text-lg font-semibold">{quantity}</span>
@@ -175,25 +184,20 @@ const ProductDetail = () => {
                 onClick={handleAddToCart}
                 className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${
                   isInCart
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-black text-white hover:bg-gray-800"
+                    ? [span_7](start_span)"bg-red-600 text-white hover:bg-red-700"[span_7](end_span)
+                    [span_8](start_span): "bg-black text-white hover:bg-gray-800"[span_8](end_span)
                 }`}
               >
                 <ShoppingCart size={20} />
-                {isInCart ? "Remove from Cart" : "Add to Cart"}
+                {isInCart ? [span_9](start_span)"Remove from Cart" : "Add to Cart"}[span_9](end_span)
               </button>
 
               <button
                 onClick={handleBuyNow}
-                className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+                className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
               >
-                Buy Now
-              </button>
-              <button
-                onClick={handleToggleWishlist}
-                className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
-              >
-                <Heart size={24} fill={isInWishlist ? 'red' : 'none'} stroke={isInWishlist ? 'red' : 'gray'} />
+                <ShoppingCart size={20} />
+                [span_10](start_span)Buy Now[span_10](end_span)
               </button>
             </div>
           </div>
@@ -202,7 +206,7 @@ const ProductDetail = () => {
       
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
-        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
+        [span_11](start_span)<ReviewComponent productId={product.id} user={user} userdetails={userdetails} />[span_11](end_span)
       </div>
     </div>
   );
