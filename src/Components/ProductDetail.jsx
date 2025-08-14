@@ -150,8 +150,12 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-              <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
-
+              
+              {/* Product Composition */}
+              {product.composition && (
+                <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
+              )}
+              
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>
@@ -163,10 +167,15 @@ const ProductDetail = () => {
                 )}
               </div>
 
-              {/* Description & Details */}
-              <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
-              
+              {/* Description & Other Notes */}
               <div className="space-y-4 text-gray-800">
+                {product.description && (
+                  <div>
+                    <h3 className="font-bold text-lg">Description</h3>
+                    <hr className="border-t border-gray-300 my-1" />
+                    <p className="leading-relaxed">{product.description}</p>
+                  </div>
+                )}
                 {product.fragranceNotes && (
                   <div>
                     <h3 className="font-bold text-lg">Fragrance Notes</h3>
