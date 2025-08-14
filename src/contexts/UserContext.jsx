@@ -1,15 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { db } from "../../configs";
-import {
-  usersTable,
-  addressTable,
-  UserAddressTable,
-  ordersTable,
-  orderItemsTable,
-  productsTable,
-} from "../../configs/schema";
-import { eq } from "drizzle-orm";
 
 export const UserContext = createContext();
 
@@ -19,6 +9,9 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  // Fetch or create user in DB
   const getUserDetail = async () => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
@@ -29,98 +22,57 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, email));
+      // 1. Try to get existing user
+      let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
+      let data = await res.json();
 
-      if (res.length > 0) {
-        setUserdetails(res[0]);
+      if (data) {
+        setUserdetails(data);
       } else {
-        const [newUser] = await db
-          .insert(usersTable)
-          .values({
-            name,
-            email,
-            role: "user",
-            cartLength: 0,
-          })
-          .returning();
-        setUserdetails(newUser);
+        // 2. Create new user
+        res = await fetch(`${BACKEND_URL}/api/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email }),
+        });
+        data = await res.json();
+        setUserdetails(data);
       }
     } catch (err) {
       console.error("❌ Error in getUserDetail:", err);
     }
   };
 
+  // Fetch user's orders
   const getMyOrders = async () => {
     if (!userdetails?.id) return;
-
     try {
-      const res = await db
-        .select({
-          orderId: ordersTable.id,
-          totalAmount: ordersTable.totalAmount,
-          status: ordersTable.status,
-          paymentMode: ordersTable.paymentMode,
-          paymentStatus: ordersTable.paymentStatus,
-          createdAt: ordersTable.createdAt,
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          productImage: productsTable.imageurl,
-        })
-        .from(ordersTable)
-        .innerJoin(orderItemsTable, eq(ordersTable.id, orderItemsTable.orderId))
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(ordersTable.userId, userdetails.id))
-        .orderBy(ordersTable.createdAt);
-
-      const grouped = res.reduce((acc, item) => {
-        if (!acc[item.orderId]) {
-          acc[item.orderId] = {
-            orderId: item.orderId,
-            totalAmount: item.totalAmount,
-            status: item.status,
-            createdAt: item.createdAt,
-            paymentStatus: item.paymentStatus,
-            paymentMode: item.paymentMode,
-            items: [],
-          };
-        }
-        acc[item.orderId].items.push({
-          productId: item.productId,
-          productName: item.productName,
-          productImage: item.productImage,
-          quantity: item.quantity,
-          price: item.price,
-        });
-        return acc;
-      }, {});
-
-      setOrders(Object.values(grouped));
+      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/orders`);
+      const data = await res.json();
+      setOrders(data);
     } catch (error) {
       console.error("❌ Failed to get orders:", error);
     }
   };
 
+  // Fetch user's addresses
   const getUserAddress = async () => {
+    if (!userdetails?.id) return;
     try {
-      const res = await db
-        .select()
-        .from(UserAddressTable)
-        .where(eq(UserAddressTable.userId, userdetails?.id));
-      setAddress(res);
+      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
+      const data = await res.json();
+      setAddress(data);
     } catch (error) {
       console.error("❌ Failed to get user addresses:", error);
     }
   };
 
+  // On Clerk user change → fetch or create DB user
   useEffect(() => {
     if (user) getUserDetail();
   }, [user]);
 
+  // When userdetails available → fetch orders & addresses
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
