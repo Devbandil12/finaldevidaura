@@ -9,7 +9,8 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const { user } = useUser();
 
-const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")};
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
 
   // Fetch or create user in DB
   const getUserDetail = async () => {
