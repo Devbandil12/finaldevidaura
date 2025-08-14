@@ -1,6 +1,7 @@
+// src/Components/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProductContext } from "../contexts/productContext";
+import { ProductContext } from "../contexts/ProductContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
@@ -12,12 +13,11 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { userdetails } = useContext(UserContext);
-  // Get the `loading` state from the ProductContext
   const { products, loading } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
   const { productId } = useParams();
   
-  // Add a conditional render for the loading state
+  // --- Check for loading state first ---
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -26,12 +26,12 @@ const ProductDetail = () => {
     );
   }
   
-  // Find the product once loading is complete
+  // Find the product after loading is complete
   const product = useMemo(() => {
     return products.find((p) => p.id === productId);
   }, [products, productId]);
 
-  // Add a conditional render for the "not found" state
+  // --- Check if product was found ---
   if (!product) {
     return (
       <div className="flex items-center justify-center min-h-screen">
