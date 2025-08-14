@@ -19,6 +19,7 @@ import CheckoutGuard from "./CheckoutGuard";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
+import ProductDetail from "./Components/ProductDetail";
 // Styles
 import "./style/adminPanel.css";
 
@@ -117,6 +118,7 @@ const App = () => {
                     {/* Public: Auth & other pages */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/myorder" element={<MyOrder />} />
+<Route path="/product/:productId" element={<ProductDetail />} />
                     <Route
                       path="/wishlist"
                       element={
