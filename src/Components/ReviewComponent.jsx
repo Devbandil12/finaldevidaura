@@ -1,76 +1,64 @@
-import React, { useEffect, useState } from "react";
-import {
-  Star,
-  ArrowDown,
-  ArrowUp,
-  Edit3,
-  Filter,
-  Loader2
-} from "lucide-react";
+// src/components/ReviewComponent.jsx
 
+import React, { useEffect, useState, memo } from "react";
+import { Star, ArrowDown, ArrowUp, Edit3, Filter, Loader2, Heart, ShoppingCart } from "lucide-react";
 import axios from "axios";
 import "../style/reviewcomponent.css";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
+const REVIEWS_PER_PAGE = 3;
 
-const ReviewComponent = ({ productId, user, userdetails }) => {
+const ReviewComponent = memo(({ productId, user, userdetails }) => {
   const [averageRating, setAverageRating] = useState(0);
-const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
-
-  const REVIEWS_PER_PAGE = 3;
-const [reviews, setReviews] = useState([]);
-const [cursor, setCursor] = useState(null);
-const [hasMore, setHasMore] = useState(true);
-const [isLoading, setIsLoading] = useState(false);
-
+  const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+  const [reviews, setReviews] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [rating, setRating] = useState(0);
-  const [comment, setComment] =  useState("");
+  const [comment, setComment] = useState("");
   const [images, setImages] = useState([]);
   const [name, setName] = useState(`${user?.firstName || ""} ${user?.lastName || ""}`.trim());
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [starFilter, setStarFilter] = useState(null);
+
   const [preview, setPreview] = useState({ images: [], index: null });
   const [formOpen, setFormOpen] = useState(false);
-
-  
-
   const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
 
-useEffect(() => {
-  const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
-  return () => clearTimeout(t);
-}, [starFilter]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
+    return () => clearTimeout(t);
+  }, [starFilter]);
 
-useEffect(() => {
-  setCursor(null); // reset pagination on filter change
-  fetchReviews(true); // fetch fresh set
-}, [productId, debouncedFilter]);
-
+  useEffect(() => {
+    setCursor(null); // reset pagination on filter change
+    fetchReviews(true); // fetch fresh set
+  }, [productId, debouncedFilter]);
 
   const fetchReviews = async (initial = false) => {
-  try {
-    setIsLoading(true);
-    const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-      (starFilter ? `&rating=${starFilter}` : "") +
-      (cursor && !initial ? `&cursor=${cursor}` : "");
+    try {
+      setIsLoading(true);
+      const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
+        (starFilter ? `&rating=${starFilter}` : "") +
+        (cursor && !initial ? `&cursor=${cursor}` : "");
 
-    const res = await axios.get(url);
-    const { reviews: newReviews, nextCursor, hasMore, averageRating, ratingCounts } = res.data;
+      const res = await axios.get(url);
+      const { reviews: newReviews, nextCursor, hasMore, averageRating, ratingCounts } = res.data;
 
-    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
-    setCursor(nextCursor);
-    setHasMore(hasMore);
-    setAverageRating(averageRating);
-    setRatingCounts(ratingCounts);
-  } catch (err) {
-    console.error("Failed to fetch reviews", err);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+      setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+      setCursor(nextCursor);
+      setHasMore(hasMore);
+      setAverageRating(averageRating);
+      setRatingCounts(ratingCounts);
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -94,7 +82,7 @@ useEffect(() => {
       }
 
       resetForm();
-      fetchReviews(starFilter);
+      fetchReviews(true);
     } catch (err) {
       console.error("Review submission failed", err);
     }
@@ -135,6 +123,7 @@ useEffect(() => {
   const openImagePreview = (idx, photoUrls) => {
     setPreview({ images: photoUrls, index: idx });
   };
+
   const closePreview = () => setPreview({ images: [], index: null });
 
   const handleImgError = (e) => {
@@ -146,193 +135,92 @@ useEffect(() => {
       {[...Array(5)].map((_, i) => (
         <Star
           key={i}
-          fill={i < Math.floor(value) ? "#facc15" : "none"}
-          stroke="#facc15"
-          size={18}
+          fill={i < value ? "var(--color-accent)" : "transparent"}
+          stroke={i < value ? "var(--color-accent)" : "var(--color-muted)"}
+          className="rc-star-icon"
         />
       ))}
     </div>
   );
 
-const totalReviews = Object.values(ratingCounts).reduce((a, b) => a + b, 0);
+  const starRatingInput = (
+    <div className="rc-rating-input">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          className={`rc-star-input-icon ${i < rating ? "filled" : ""}`}
+          onClick={() => setRating(i + 1)}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
+        />
+      ))}
+    </div>
+  );
 
+  const totalReviews = Object.values(ratingCounts).reduce((a, b) => a + b, 0);
 
-  const getPercent = (count) => {
-  const total = Object.values(ratingCounts).reduce((a, b) => a + b, 0) || 1;
-  return ((count / total) * 100).toFixed(0);
-};
+  const renderFilterOptions = () => (
+    <AnimatePresence>
+      <div className={`rc-dropdown ${formOpen ? "open" : ""}`}>
+        <div onClick={() => setStarFilter(null)}>
+          All ({totalReviews})
+        </div>
+        {[5, 4, 3, 2, 1].map(star => (
+          <div key={star} onClick={() => setStarFilter(star)}>
+            {star} Star ({ratingCounts[star] || 0})
+          </div>
+        ))}
+      </div>
+    </AnimatePresence>
+  );
 
+  const getReviewCountByStar = (star) => ratingCounts[star] || 0;
+
+  const getPercentage = (star) => {
+    if (totalReviews === 0) return 0;
+    return (getReviewCountByStar(star) / totalReviews) * 100;
+  };
 
   return (
     <div className="rc-review-component">
-      {/* Star Filter Dropdown */}
-      <div className="rc-filter-dropdown">
-       <label className="rc-filter-label">
-  <Filter size={14} className="mr-1" />
-  Filter by Rating:
-</label>
+      <div className="rc-review-summary">
+        <div className="rc-summary-left">
+          <p className="rc-avg-rating">{averageRating.toFixed(1)}</p>
+          {renderStars(Math.round(averageRating))}
+          <p className="rc-review-count">{totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}</p>
+        </div>
 
-        <select
-          value={starFilter ?? ""}
-          onChange={(e) => setStarFilter(e.target.value ? parseInt(e.target.value) : null)}
-        >
-          <option value="">All Ratings</option>
-          {[5, 4, 3, 2, 1].map((s) => (
-            <option key={s} value={s}>
-              {s} Stars
-            </option>
+        <div className="rc-summary-right">
+          {[5, 4, 3, 2, 1].map((star) => (
+            <div key={star} className="rc-rating-bar-item" onClick={() => setStarFilter(star)}>
+              <span className="rc-star-label">{star} Star</span>
+              <div className="rc-progress-bar">
+                <div
+                  className="rc-progress-fill"
+                  style={{ width: `${getPercentage(star)}%` }}
+                ></div>
+              </div>
+              <span className="rc-rating-count">{getReviewCountByStar(star)}</span>
+            </div>
           ))}
-        </select>
+        </div>
       </div>
 
-      {/* Summary */}
-      {starFilter === null && (
-        <div className="rc-review-summary">
-          <div className="rc-left">
-            <div className="rc-avg-rating">{averageRating}</div>
-            {renderStars(averageRating)}
-            <div className="rc-total-reviews">{totalReviews} reviews</div>
-          </div>
-          <div className="rc-right">
-            {[5, 4, 3, 2, 1].map((star) => (
-  <div key={star} className="rc-progress-line">
-    <span>{star}</span>
-    <div className="rc-progress">
-      <div
-        className="rc-fill"
-        style={{ width: `${getPercent(ratingCounts[star])}%` }}
-      />
-    </div>
-    <span>{ratingCounts[star]}</span>
-  </div>
-))}
-
-          </div>
+      <div className="rc-main-actions">
+        <div className="rc-dropdown-wrapper">
+          <button className={`rc-dropdown-toggle ${formOpen ? "active" : ""}`} onClick={() => setFormOpen(!formOpen)}>
+            <Filter size={18} />
+            <span>{starFilter ? `${starFilter} Stars` : "All Reviews"}</span>
+            {formOpen ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+          </button>
+          {formOpen && renderFilterOptions()}
         </div>
-      )}
+        <button className="rc-write-review-btn" onClick={() => setFormOpen(true)}>
+          <Edit3 size={18} />
+          Write a Review
+        </button>
+      </div>
 
-      {/* Review List */}
-      
-<div className="rc-review-list">
-  <AnimatePresence>
-    {reviews.map((r) => (
-      <motion.div
-        key={r.id}
-        className="rc-review-card"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="rc-review-header">
-          <strong>{r.name}</strong>
-          {r.isVerifiedBuyer && (
-            <span className="rc-badge">Verified Purchase</span>
-          )}
-          {user?.userDetails?.id === r.userId && (
-            <button
-              className="rc-edit-btn"
-              onClick={() => handleEdit(r)}
-              title="Edit Review"
-            >
-              <Edit3 size={16} />
-            </button>
-          )}
-        </div>
-
-        {renderStars(r.rating)}
-        <small>{new Date(r.createdAt).toLocaleDateString()}</small>
-
-        {/* Review Images */}
-        {r.photoUrls?.length > 0 && (
-          <div className="rc-review-images">
-            {r.photoUrls.slice(0, 4).map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt="review"
-                onClick={() => openImagePreview(idx, r.photoUrls)}
-                onError={handleImgError}
-              />
-            ))}
-            {r.photoUrls.length > 4 && (
-              <div
-                className="rc-extra-img"
-                onClick={() => openImagePreview(4, r.photoUrls)}
-              >
-                +{r.photoUrls.length - 4}
-              </div>
-            )}
-          </div>
-        )}
-
-        <p>{r.comment}</p>
-      </motion.div>
-    ))}
-  </AnimatePresence>
-</div>
-
-
-
-      {/* Image Preview Modal */}
-      <AnimatePresence>
-        {preview.index !== null && (
-          <motion.div
-            className="rc-modal-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closePreview}
-          >
-            <motion.div
-              className="rc-modal"
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={preview.images[preview.index]}
-                alt="preview"
-                className="rc-preview-img"
-                onError={handleImgError}
-              />
-              <div className="rc-modal-nav">
-                <button onClick={() => setPreview(p => ({ ...p, index: (p.index > 0 ? p.index - 1 : p.images.length - 1) }))}>◀</button>
-                <button onClick={() => setPreview(p => ({ ...p, index: (p.index < p.images.length - 1 ? p.index + 1 : 0) }))}>▶</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Pagination */}
-     <div className="rc-pagination">
-  {hasMore && !isLoading && (
-    <button onClick={() => fetchReviews(false)}>
-  <ArrowDown size={16} className="mr-1" />
-  
-</button>
-
-  )}
-  {reviews.length > REVIEWS_PER_PAGE && (
-    <button onClick={() => {
-  setCursor(null);
-  fetchReviews(true);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}}>
-  <ArrowUp size={16} className="mr-1" />
-</button>
-
-  )}
-</div>
-
-      {/* Toggle Button */}
-      <button onClick={() => setFormOpen(!formOpen)} className="rc-toggle-form">
-        {formOpen ? "Close Form" : "Write a Review"}
-      </button>
-
-      {/* Review Form with Animation */}
       <AnimatePresence>
         {formOpen && (
           <motion.form
@@ -343,53 +231,139 @@ const totalReviews = Object.values(ratingCounts).reduce((a, b) => a + b, 0);
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <h3>{editingReviewId ? "Edit Your Review" : "Leave a Review"}</h3>
-            {!user && (
+            {/* Form content... */}
+            <div className="rc-form-group">
+              <label className="rc-label">Your Rating</label>
+              {starRatingInput}
+            </div>
+            <div className="rc-form-group">
+              <label className="rc-label">Your Comment</label>
+              <textarea
+                className="rc-textarea"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your thoughts on the product..."
+              />
+            </div>
+            <div className="rc-form-group">
+              <label className="rc-label">Your Name</label>
               <input
+                className="rc-input"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder="Enter your name"
                 required
               />
-            )}
-            <select
-              value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
-              required
-            >
-              <option value="">Rating</option>
-              {[5, 4, 3, 2, 1].map((s) => (
-                <option key={s} value={s}>
-                  {s} Stars
-                </option>
-              ))}
-            </select>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Write your review"
-              required
-            />
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageUpload}
-            />
-            <div className="rc-preview-thumbs">
-              {images.map((src, i) => (
-                <img key={i} src={src} alt="preview" onError={handleImgError} />
-              ))}
             </div>
-            <button type="submit">
-              {editingReviewId ? "Update Review" : "Submit Review"}
-            </button>
+            <div className="rc-form-group">
+              <label className="rc-label">Add Images (max 5)</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+              />
+              <div className="rc-image-previews">
+                {images.map((img, idx) => (
+                  <div key={idx} className="rc-image-preview-item">
+                    <img src={img} alt="preview" onClick={() => openImagePreview(idx, images)} />
+                    <button
+                      type="button"
+                      onClick={() => setImages(images.filter((_, i) => i !== idx))}
+                      className="rc-remove-image-btn"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rc-form-actions">
+              <button type="submit" className="rc-submit-btn">
+                {editingReviewId ? "Update Review" : "Submit Review"}
+              </button>
+              <button type="button" onClick={resetForm} className="rc-cancel-btn">
+                Cancel
+              </button>
+            </div>
           </motion.form>
+        )}
+      </AnimatePresence>
+
+      <div className="rc-review-list">
+        {reviews.map((review) => (
+          <motion.div
+            key={review.id}
+            className="rc-review-card"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="rc-review-card-header">
+              <div className="rc-review-user-info">
+                <span className="rc-review-user-name">{review.name}</span>
+                <span className="rc-review-date">{new Date(review.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="rc-review-rating">{renderStars(review.rating)}</div>
+            </div>
+            <p className="rc-review-comment">{review.comment}</p>
+            {review.photoUrls && review.photoUrls.length > 0 && (
+              <div className="rc-review-images">
+                {review.photoUrls.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={`Review image ${idx + 1}`}
+                    className="rc-review-image"
+                    onClick={() => openImagePreview(idx, review.photoUrls)}
+                    onError={handleImgError}
+                  />
+                ))}
+              </div>
+            )}
+            {(review.userId === userdetails?.id || review.clerkId === user?.id) && (
+              <div className="rc-review-actions">
+                <button onClick={() => handleEdit(review)} className="rc-edit-btn">
+                  <Edit3 size={16} /> Edit
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ))}
+        {isLoading && <Loader2 className="rc-loading-spinner" size={24} />}
+        {!isLoading && hasMore && (
+          <button className="rc-load-more-btn" onClick={() => fetchReviews()}>
+            Load More Reviews
+          </button>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {preview.images.length > 0 && (
+          <motion.div
+            className="rc-preview-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closePreview}
+          >
+            <div className="rc-preview-content" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={preview.images[preview.index]}
+                alt="Image preview"
+                className="rc-preview-image"
+              />
+              <button className="rc-preview-close" onClick={closePreview}>&times;</button>
+              <button className="rc-preview-nav left" onClick={() => openImagePreview(preview.index - 1, preview.images)}>&lsaquo;</button>
+              <button className="rc-preview-nav right" onClick={() => openImagePreview(preview.index + 1, preview.images)}>&rsaquo;</button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-};
+});
 
 export default ReviewComponent;
