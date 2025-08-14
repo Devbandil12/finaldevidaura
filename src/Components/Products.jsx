@@ -39,6 +39,7 @@ const Products = () => {
     document.documentElement.style.overflow = "auto";
   }, [location.pathname]);
 
+  // This function now correctly navigates to the new page
   const handleSlideClick = (product) => navigate(`/product/${product.id}`);
 
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
@@ -122,6 +123,9 @@ const Products = () => {
             const inWishlist = isProductInWishlist(product.id);
             const inCart = isProductInCart(product.id);
 
+            // NEW: Calculate discounted price
+            const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
+
             return (
               <div
                 className="product-card w-72 rounded-lg bg-white overflow-hidden"
@@ -159,14 +163,16 @@ const Products = () => {
                       />
                     </div>
                   </div>
-
-                  <p className="text-sm text-gray-500 font-medium">
-                    Rs {product.oprice}
-                    <span className="text-xs text-green-600 ml-2 font-semibold">
+                  
+                  {/* NEW: Display original price with strikethrough and discounted price */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <p>Rs {discountedPrice}</p>
+                    <p className="line-through-price text-gray-400">Rs {product.oprice}</p>
+                    <span className="text-xs text-green-600 font-semibold">
                       ({product.discount}% OFF)
                     </span>
-                  </p>
-
+                  </div>
+                  
                   <p className="text-xs text-gray-400">
                     {product.description}
                   </p>
