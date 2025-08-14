@@ -27,6 +27,7 @@ const formatDateTime = (dateString) => {
   });
 };
 
+// This component handles the specific display logic for refund status
 const RefundStatusDisplay = ({ refund, onRefresh }) => {
   if (!refund) return null;
 
@@ -193,15 +194,12 @@ export default function MyOrders() {
   const handleRefreshStatus = async () => {
     setIsRefreshing(true);
     try {
-      // This calls your backend poller route to check for new refund statuses
       const res = await fetch(`${BACKEND}/api/poll-refunds`);
       if (!res.ok) throw new Error("Failed to refresh status");
-      // After a successful poll, re-fetch orders to get the updated status
-      // You'll need to pass this function from your OrderContext
-      // For now, let's just update the state
-      await new Promise(r => setTimeout(r, 1000)); // Simulate a delay
-      // For a real app, you would have a function here like 'getOrders(false)' to re-fetch data
-      // For this example, we'll assume a successful poll
+      // Simulate a delay for the loader
+      await new Promise(r => setTimeout(r, 1000));
+      // In a real application, you'd re-fetch your orders here to update the state
+      // For this example, we'll just log a success message
       console.log('Successfully refreshed statuses.');
     } catch (err) {
       console.error("Refresh failed:", err);
@@ -288,13 +286,15 @@ export default function MyOrders() {
                 <span className="badge">
                   {totalItems} {totalItems > 1 ? "items" : "item"}
                 </span>
-                {r ? (
-                  <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />
-                ) : (
-                  <span className={`payment-status ${order.paymentStatus}`}>
-                    {order.paymentStatus.toUpperCase()}
-                  </span>
-                )}
+                <div className="order-header-right">
+                  {r ? (
+                    <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />
+                  ) : (
+                    <span className={`payment-status ${order.paymentStatus}`}>
+                      {order.paymentStatus.toUpperCase()}
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="order-summary">
@@ -304,6 +304,12 @@ export default function MyOrders() {
                 <p>
                   <strong>Total Amount:</strong> ₹
                   {order.totalAmount.toFixed(2)}
+                </p>
+                <p>
+                  <strong>Payment Mode:</strong> {order.paymentMode}
+                </p>
+                <p>
+                  <strong>Order Status:</strong> {order.status}
                 </p>
               </div>
 
@@ -318,9 +324,6 @@ export default function MyOrders() {
                     <div key={i} className="order-item">
                       <img src={imgSrc} alt={item.productName} />
                       <p className="product-name">{item.productName}</p>
-                      <div className="item-price">
-                        ₹{item.price * item.quantity}
-                      </div>
                       <div className="item-details">
                         {item.size && (
                           <p>
@@ -330,6 +333,9 @@ export default function MyOrders() {
                         <p>
                           Qty: <span>{item.quantity}</span>
                         </p>
+                      </div>
+                      <div className="item-price">
+                        ₹{item.price * item.quantity}
                       </div>
                     </div>
                   );
