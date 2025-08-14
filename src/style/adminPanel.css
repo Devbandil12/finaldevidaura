@@ -1,15 +1,15 @@
 /*
- * Admin Panel Redesign CSS
- * This stylesheet is a complete, modern, and cohesive design system for your admin panel.
- * It replaces your existing styles with a new, sleek aesthetic while retaining your class names.
+ * Admin Panel Redesign CSS - SCOPED TO .admin-panel
+ *
+ * This is the same modern stylesheet, but all styles are now scoped to the
+ * .admin-panel class to prevent it from affecting other parts of your website.
  */
 
-/* ================================================================== */
-/* 1. Root Variables & Resets                 */
-/* ================================================================== */
+.admin-panel {
+  /* ================================================================== */
+  /* 1. Root Variables & Global Resets          */
+  /* ================================================================== */
 
-:root {
-  /* Colors */
   --primary-color: #4a90e2; /* Deep Blue for primary actions */
   --primary-hover-color: #357abd;
   --secondary-color: #50e3c2; /* Teal for complementary actions */
@@ -41,51 +41,39 @@
   --box-shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.05);
   --box-shadow-md: 0 4px 15px rgba(0, 0, 0, 0.08);
   --transition-speed: 0.2s;
-}
 
-/* Global resets for a cleaner look */
-* {
-  box-sizing: border-box;
-}
-body {
+  /* Basic container-level styles */
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   line-height: 1.6;
   color: var(--text-color);
   background-color: var(--background-color);
-  margin: 0;
+  
+  max-width: 1400px;
+  margin: var(--spacing-lg) auto;
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius);
 }
-h1, h2, h3, h4, h5, h6 {
+
+/* Scoped Tag Styles */
+.admin-panel h1, .admin-panel h2, .admin-panel h3, .admin-panel h4, .admin-panel h5, .admin-panel h6 {
   margin-top: 0;
   margin-bottom: var(--spacing-md);
   font-weight: 700;
   color: var(--text-color);
 }
-a {
+.admin-panel p {
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+}
+.admin-panel a {
   color: var(--primary-color);
   text-decoration: none;
   transition: color var(--transition-speed) ease;
 }
-a:hover {
+.admin-panel a:hover {
   text-decoration: underline;
   color: var(--primary-hover-color);
-}
-/* ================================================================== */
-/* 2. Admin Panel Global Styles               */
-/* ================================================================== */
-
-.admin-panel {
-  max-width: 1400px; /* Wider container for more space */
-  margin: var(--spacing-lg) auto;
-  padding: var(--spacing-lg);
-  background-color: var(--background-color);
-  border-radius: var(--border-radius);
-}
-.admin-panel h1 {
-  text-align: left;
-  margin-bottom: var(--spacing-xl);
-  font-size: 2.5rem;
-  color: var(--text-color);
 }
 .admin-panel input::placeholder {
   color: var(--text-light-color);
@@ -93,16 +81,16 @@ a:hover {
 }
 
 /* ================================================================== */
-/* 3. Navigation Styles                     */
+/* 2. Navigation Styles                     */
 /* ================================================================== */
 
-.admin-nav {
+.admin-panel .admin-nav {
   display: flex;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
 }
-.admin-nav button {
+.admin-panel .admin-nav button {
   background-color: transparent;
   color: var(--text-light-color);
   border: none;
@@ -113,36 +101,36 @@ a:hover {
   font-weight: 600;
   transition: all var(--transition-speed) ease;
 }
-.admin-nav button:hover {
+.admin-panel .admin-nav button:hover {
   background-color: transparent;
   color: var(--primary-color);
   border-bottom: 3px solid var(--primary-color);
 }
-.admin-nav button.active {
+.admin-panel .admin-nav button.active {
   background-color: transparent;
   color: var(--primary-color);
   border-bottom: 3px solid var(--primary-color);
 }
 
 /* ================================================================== */
-/* 4. Admin Content & Buttons                 */
+/* 3. Admin Content & Buttons                 */
 /* ================================================================== */
 
-.admin-content {
+.admin-panel .admin-content {
   background-color: var(--card-background-color);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-md);
   overflow-x: auto;
 }
-.admin-content h2 {
+.admin-panel .admin-content h2 {
   margin-bottom: var(--spacing-lg);
   font-size: 1.75rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: var(--spacing-sm);
 }
 
-.admin-btn {
+.admin-panel .admin-btn {
   background-color: var(--primary-color);
   color: #fff;
   padding: var(--spacing-sm) var(--spacing-md);
@@ -154,23 +142,23 @@ a:hover {
   cursor: pointer;
   font-weight: 600;
 }
-.admin-btn:hover {
+.admin-panel .admin-btn:hover {
   background-color: var(--primary-hover-color);
   color: #fff;
 }
-.admin-btn.secondary {
+.admin-panel .admin-btn.secondary {
   background-color: var(--secondary-color);
   color: #fff;
 }
-.admin-btn.secondary:hover {
+.admin-panel .admin-btn.secondary:hover {
   background-color: #40c4a9;
 }
 
 /* ================================================================== */
-/* 5. Table Styles                          */
+/* 4. Table Styles                           */
 /* ================================================================== */
 
-.admin-table, .coupon-table {
+.admin-panel .admin-table, .admin-panel .coupon-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: var(--spacing-md);
@@ -178,22 +166,22 @@ a:hover {
   border-radius: var(--border-radius);
   overflow: hidden;
 }
-.admin-table th, .admin-table td, .coupon-table th, .coupon-table td {
+.admin-panel .admin-table th, .admin-panel .admin-table td, .admin-panel .coupon-table th, .admin-panel .coupon-table td {
   border-bottom: 1px solid var(--border-color);
   padding: var(--spacing-md);
   text-align: left;
 }
-.admin-table thead th, .coupon-table thead th {
+.admin-panel .admin-table thead th, .admin-panel .coupon-table thead th {
   background-color: var(--background-color);
   color: var(--text-light-color);
   font-weight: 600;
   text-transform: uppercase;
   font-size: var(--font-size-sm);
 }
-.admin-table tbody tr:hover, .coupon-table tbody tr:hover {
+.admin-panel .admin-table tbody tr:hover, .admin-panel .coupon-table tbody tr:hover {
   background-color: var(--hover-background-color);
 }
-.coupon-table td:last-child button {
+.admin-panel .coupon-table td:last-child button {
   background-color: var(--danger-color);
   color: #fff;
   padding: 6px 12px;
@@ -202,15 +190,15 @@ a:hover {
   cursor: pointer;
   transition: background-color var(--transition-speed) ease;
 }
-.coupon-table td:last-child button:hover {
+.admin-panel .coupon-table td:last-child button:hover {
   background-color: #c0392b;
 }
 
 /* ================================================================== */
-/* 6. Card & Tab Styles                      */
+/* 5. Card & Tab Styles                     */
 /* ================================================================== */
 
-.order-card-admin, .user-card, .query-card {
+.admin-panel .order-card-admin, .admin-panel .user-card, .admin-panel .query-card {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
@@ -219,19 +207,19 @@ a:hover {
   box-shadow: var(--box-shadow-sm);
   transition: box-shadow var(--transition-speed) ease;
 }
-.order-card-admin:hover, .user-card:hover, .query-card:hover {
+.admin-panel .order-card-admin:hover, .admin-panel .user-card:hover, .admin-panel .query-card:hover {
   box-shadow: var(--box-shadow-md);
 }
-.order-card-admin h3 {
+.admin-panel .order-card-admin h3 {
   margin: 0 0 var(--spacing-sm);
   font-size: 1.25rem;
 }
-.order-card-admin p, .user-card p, .query-card p {
+.admin-panel .order-card-admin p, .admin-panel .user-card p, .admin-panel .query-card p {
   margin: 5px 0;
   font-size: var(--font-size-sm);
   color: var(--text-light-color);
 }
-.paid-status {
+.admin-panel .paid-status {
   background-color: var(--success-color);
   color: white;
   padding: 6px 10px;
@@ -241,7 +229,7 @@ a:hover {
   display: inline-block;
   font-size: var(--font-size-sm);
 }
-.view-details-btn-dhamaal {
+.admin-panel .view-details-btn-dhamaal {
   margin-top: var(--spacing-sm);
   padding: 6px 12px;
   border: none;
@@ -252,28 +240,28 @@ a:hover {
   font-weight: 600;
   transition: background var(--transition-speed) ease;
 }
-.view-details-btn-dhamaal:hover {
+.admin-panel .view-details-btn-dhamaal:hover {
   background: var(--primary-hover-color);
 }
-.orders-header {
+.admin-panel .orders-header {
   display: flex;
   flex-direction: column;
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-sm) 0;
   border-bottom: 1px solid var(--border-color);
 }
-.orders-header > span {
+.admin-panel .orders-header > span {
   font-weight: 600;
   color: var(--text-color);
   font-size: 1.1rem;
 }
-.order-tabs {
+.admin-panel .order-tabs {
   display: flex;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
   margin-top: var(--spacing-sm);
 }
-.order-tabs button {
+.admin-panel .order-tabs button {
   padding: 8px 12px;
   border: none;
   background-color: var(--hover-background-color);
@@ -283,18 +271,18 @@ a:hover {
   font-size: var(--font-size-sm);
   transition: all var(--transition-speed) ease;
 }
-.order-tabs button:hover {
+.admin-panel .order-tabs button:hover {
   background-color: var(--border-color);
 }
-.order-tabs button.active {
+.admin-panel .order-tabs button.active {
   background-color: var(--primary-color);
   color: #fff;
 }
-.order-search-bar, .order-search, .user-search, .query-search {
+.admin-panel .order-search-bar, .admin-panel .order-search, .admin-panel .user-search, .admin-panel .query-search {
   text-align: right;
   margin-bottom: var(--spacing-md);
 }
-.order-search-bar input, .order-search input, .user-search input, .query-search input {
+.admin-panel .order-search-bar input, .admin-panel .order-search input, .admin-panel .user-search input, .admin-panel .query-search input {
   width: 250px;
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
@@ -303,16 +291,16 @@ a:hover {
   outline: none;
   transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }
-.order-search-bar input:focus, .order-search input:focus, .user-search input:focus, .query-search input:focus {
+.admin-panel .order-search-bar input:focus, .admin-panel .order-search input:focus, .admin-panel .user-search input:focus, .admin-panel .query-search input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
 /* ================================================================== */
-/* 7. Progress Steps                         */
+/* 6. Progress Steps                          */
 /* ================================================================== */
 
-.progress-container-chamkila {
+.admin-panel .progress-container-chamkila {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -323,23 +311,23 @@ a:hover {
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow-sm);
 }
-.step-wrapper-biryani {
+.admin-panel .step-wrapper-biryani {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.step-line-maggi {
+.admin-panel .step-line-maggi {
   width: 50px;
   height: 5px;
   background: var(--border-color);
   transition: background 0.3s ease-in-out;
 }
-.step-samosa {
+.admin-panel .step-samosa {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.step-number-lassi {
+.admin-panel .step-number-lassi {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -351,11 +339,11 @@ a:hover {
   color: white;
   transition: all 0.3s ease-in-out;
 }
-.completed-pizza .step-number-lassi {
+.admin-panel .completed-pizza .step-number-lassi {
   background: var(--success-color);
   box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
 }
-.current-burger .step-number-lassi {
+.admin-panel .current-burger .step-number-lassi {
   background: var(--warning-color);
   box-shadow: 0 0 15px rgba(241, 196, 15, 0.7);
   animation: pulse-animation 1.5s infinite;
@@ -364,17 +352,17 @@ a:hover {
   0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(241, 196, 15, 0.7); }
   50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
 }
-.step-number-lassi {
+.admin-panel .step-number-lassi {
   background: var(--border-color);
   color: var(--text-color);
 }
-.step-label-paniPuri {
+.admin-panel .step-label-paniPuri {
   margin-top: 5px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text-light-color);
 }
-.step-jugaadu {
+.admin-panel .step-jugaadu {
   display: inline-block;
   padding: 8px 12px;
   border-radius: var(--border-radius-sm);
@@ -383,18 +371,18 @@ a:hover {
   font-weight: 600;
   color: #fff;
 }
-.completed-paisaVasool {
+.admin-panel .completed-paisaVasool {
   background: var(--success-color);
 }
-.current-dhansu {
+.admin-panel .current-dhansu {
   background: var(--warning-color);
 }
 
 /* ================================================================== */
-/* 8. Modal Styles                          */
+/* 7. Modal Styles                           */
 /* ================================================================== */
 
-.modal-overlay, .modal-overlay-chamkila {
+.admin-panel .modal-overlay, .admin-panel .modal-overlay-chamkila {
   position: fixed;
   top: 0;
   left: 0;
@@ -406,7 +394,7 @@ a:hover {
   align-items: center;
   z-index: 10000;
 }
-.modal, .modal-content-badshah {
+.admin-panel .modal, .admin-panel .modal-content-badshah {
   background-color: var(--card-background-color);
   padding: var(--spacing-lg);
   border-radius: var(--border-radius);
@@ -417,7 +405,7 @@ a:hover {
   border: none;
   z-index: 10001;
 }
-.close-btn-tata {
+.admin-panel .close-btn-tata {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
@@ -428,24 +416,24 @@ a:hover {
   color: var(--text-light-color);
   transition: color var(--transition-speed) ease;
 }
-.close-btn-tata:hover {
+.admin-panel .close-btn-tata:hover {
   color: var(--danger-color);
 }
-.modal h2 {
+.admin-panel .modal h2 {
   margin-top: 0;
   margin-bottom: var(--spacing-lg);
 }
-.modal-field {
+.admin-panel .modal-field {
   margin-bottom: var(--spacing-md);
 }
-.modal-field label {
+.admin-panel .modal-field label {
   display: block;
   margin-bottom: var(--spacing-sm);
   font-weight: 600;
   color: var(--text-light-color);
   font-size: var(--font-size-sm);
 }
-.modal-field input, .modal-field select, .modal-field textarea {
+.admin-panel .modal-field input, .admin-panel .modal-field select, .admin-panel .modal-field textarea {
   width: 100%;
   padding: var(--spacing-sm);
   border: 1px solid var(--border-color);
@@ -453,16 +441,16 @@ a:hover {
   color: var(--text-color);
   transition: border-color var(--transition-speed) ease;
 }
-.modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus {
+.admin-panel .modal-field input:focus, .admin-panel .modal-field select:focus, .admin-panel .modal-field textarea:focus {
   outline: none;
   border-color: var(--primary-color);
 }
-.modal-actions {
+.admin-panel .modal-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: var(--spacing-lg);
 }
-.modal-actions button {
+.admin-panel .modal-actions button {
   padding: 8px 16px;
   margin-left: 10px;
   border: none;
@@ -471,48 +459,48 @@ a:hover {
   font-weight: 600;
   transition: background-color var(--transition-speed) ease;
 }
-.modal-actions button[type="submit"] {
+.admin-panel .modal-actions button[type="submit"] {
   background-color: var(--primary-color);
   color: #fff;
 }
-.modal-actions button[type="submit"]:hover {
+.admin-panel .modal-actions button[type="submit"]:hover {
   background-color: var(--primary-hover-color);
 }
-.modal-actions button[type="button"] {
+.admin-panel .modal-actions button[type="button"] {
   background-color: var(--border-color);
   color: var(--text-color);
 }
-.modal-actions button[type="button"]:hover {
+.admin-panel .modal-actions button[type="button"]:hover {
   background-color: #d8dbe0;
 }
 
 /* ================================================================== */
-/* 9. Responsive Styles                     */
+/* 8. Responsive Styles                        */
 /* ================================================================== */
 
 @media (max-width: 992px) {
   .admin-panel {
     padding: var(--spacing-lg) var(--spacing-sm);
   }
-  .admin-nav {
+  .admin-panel .admin-nav {
     flex-direction: column;
     align-items: flex-start;
   }
-  .admin-nav button {
+  .admin-panel .admin-nav button {
     width: 100%;
     text-align: left;
     border-bottom: none;
     border-left: 3px solid transparent;
   }
-  .admin-nav button.active {
+  .admin-panel .admin-nav button.active {
     border-bottom: none;
     border-left: 3px solid var(--primary-color);
     background-color: var(--hover-background-color);
   }
-  .order-search-bar, .user-search, .query-search {
+  .admin-panel .order-search-bar, .admin-panel .user-search, .admin-panel .query-search {
     text-align: left;
   }
-  .order-search-bar input, .order-search input, .user-search input, .query-search input {
+  .admin-panel .order-search-bar input, .admin-panel .order-search input, .admin-panel .user-search input, .admin-panel .query-search input {
     width: 100%;
   }
 }
