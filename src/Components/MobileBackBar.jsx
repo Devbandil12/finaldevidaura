@@ -10,7 +10,10 @@ const pageTitles = {
   "/checkout": "Checkout",
   "/contact": "Contact",
   "/admin": "Admin Panel",
+  "/product/:productId": "Product",
 };
+
+
 
 const MobileBackBar = ({ isNavbarVisible }) => {
   const location = useLocation();
