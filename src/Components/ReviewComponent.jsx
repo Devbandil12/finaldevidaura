@@ -6,7 +6,9 @@ import {
   Edit3,
   Filter,
   Loader2,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -154,10 +156,10 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 md:p-8">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
-        <div className="mt-4 md:mt-0 flex items-center gap-2">
+    <div className="max-w-[900px] mx-auto p-4 sm:p-6 md:p-8 bg-white shadow-lg rounded-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Customer Reviews</h2>
+        <div className="flex items-center gap-2">
           <label className="flex items-center text-gray-700">
             <Filter size={14} className="mr-1" />
             Filter by Rating:
