@@ -1,64 +1,67 @@
 // src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // <-- Import useParams
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import ReviewComponent from "./ReviewComponent";
 import { useUser } from "@clerk/clerk-react";
-
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
-import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
-import CartImage from "../assets/cart-svgrepo-com copy.svg";
-import { ChevronLeft, ChevronRight, Heart, ShoppingCart, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, ShoppingCart } from "lucide-react";
 
 
-const ProductDetail = ({ product, userdetails }) => {
+const ProductDetail = () => { // <-- No props needed
   const navigate = useNavigate();
   const { user } = useUser();
+  const { productId } = useParams(); // <-- Get productId from URL
 
   const { products } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+  
+  // Find the product using the productId from the URL
+  const product = products.find((p) => p.id === productId);
 
-  const fullProduct = products.find((p) => p.id === product.id) || product;
+  // If product is not found, you can redirect or show a 404 message
+  if (!product) {
+    return <div>Product not found.</div>;
+  }
 
-  const images = Array.isArray(fullProduct.images) && fullProduct.images.length > 0
-    ? fullProduct.images
-    : [fullProduct.imageurl];
+  const images = Array.isArray(product.images) && product.images.length > 0
+    ? product.images
+    : [product.imageurl];
 
-  const isInCart = useMemo(() => cart?.some((i) => i.product?.id === fullProduct.id), [cart, fullProduct.id]);
-  const isInWishlist = useMemo(() => wishlist?.some((w) => (w.productId ?? w.product?.id) === fullProduct.id), [wishlist, fullProduct.id]);
+  const isInCart = useMemo(() => cart?.some((i) => i.product?.id === product.id), [cart, product.id]);
+  const isInWishlist = useMemo(() => wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id), [wishlist, product.id]);
 
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
 
-  const basePrice = Math.floor(Number(fullProduct.oprice) || 0);
-  const discount = Math.floor(Number(fullProduct.discount) || 0);
+  const basePrice = Math.floor(Number(product.oprice) || 0);
+  const discount = Math.floor(Number(product.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [productId]);
 
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + images.length) % images.length);
 
   const handleAddToCart = async () => {
     if (isInCart) {
-      await removeFromCart(fullProduct.id);
+      await removeFromCart(product.id);
     } else {
-      await addToCart(fullProduct, quantity);
+      await addToCart(product, quantity);
     }
   };
 
   const handleBuyNow = async () => {
-    const ok = startBuyNow(fullProduct, quantity);
+    const ok = startBuyNow(product, quantity);
     if (ok) navigate("/checkout");
   };
 
   const handleToggleWishlist = () => {
-    toggleWishlist(fullProduct);
+    toggleWishlist(product);
   };
-
+  
   return (
     <div className="product-page-container bg-gray-100 min-h-screen p-4 sm:p-8">
       <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8">
@@ -68,7 +71,7 @@ const ProductDetail = ({ product, userdetails }) => {
             <div className="relative mb-4">
               <img
                 src={images[currentImg]}
-                alt={fullProduct.name}
+                alt={product.name}
                 className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
               />
               {images.length > 1 && (
@@ -98,8 +101,8 @@ const ProductDetail = ({ product, userdetails }) => {
           {/* Product Info & Actions */}
           <div className="lg:w-1/2 flex flex-col justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{fullProduct.name}</h1>
-              <p className="text-lg font-semibold text-gray-500 mb-4">{fullProduct.composition}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
@@ -113,21 +116,21 @@ const ProductDetail = ({ product, userdetails }) => {
               </div>
 
               {/* Description & Details */}
-              <p className="text-gray-700 leading-relaxed mb-6">{fullProduct.description}</p>
+              <p className="text-gray-700 leading-relaxed mb-6">{product.description}</p>
               
               <div className="space-y-4 text-gray-800">
-                {fullProduct.fragranceNotes && (
+                {product.fragranceNotes && (
                   <div>
                     <h3 className="font-bold text-lg">Fragrance Notes</h3>
                     <hr className="border-t border-gray-300 my-1" />
-                    <p>{fullProduct.fragranceNotes}</p>
+                    <p>{product.fragranceNotes}</p>
                   </div>
                 )}
-                {fullProduct.fragrance && (
+                {product.fragrance && (
                   <div>
                     <h3 className="font-bold text-lg">Heart Notes</h3>
                     <hr className="border-t border-gray-300 my-1" />
-                    <p>{fullProduct.fragrance}</p>
+                    <p>{product.fragrance}</p>
                   </div>
                 )}
               </div>
@@ -172,7 +175,7 @@ const ProductDetail = ({ product, userdetails }) => {
       
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
-        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
+        <ReviewComponent productId={product.id} user={user} userdetails={userDetails} />
       </div>
     </div>
   );
