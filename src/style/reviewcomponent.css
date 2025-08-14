@@ -1,3 +1,11 @@
+/*
+  ==============================================================
+  reviewcomponent.css
+  This file contains the styles for the Review component.
+  It's designed to be clean, modern, and user-friendly.
+  ==============================================================
+*/
+
 :root {
   --font-sans: 'Inter', sans-serif;
   --color-bg: #ffffff;
@@ -8,7 +16,7 @@
   --color-accent: #f59e0b;
   --color-border: #e5e7eb;
   --radius: 0.375rem;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
 }
 
@@ -17,402 +25,505 @@
   max-width: 900px;
   margin: 2rem auto;
   background: var(--color-bg);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); /* Softer shadow */
 }
 
-/* — Filter Dropdown — */
-.rc-dropdown-wrapper {
-  position: relative;
-  margin-bottom: 1rem;
-}
-
-.rc-dropdown-toggle {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 150px;
-  transition: all 0.3s ease;
-}
-
-.rc-dropdown {
-  position: absolute;
-  top: 110%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: all 0.3s ease;
-  z-index: 100;
-}
-
-.rc-dropdown.open {
-  max-height: 200px;
-  opacity: 1;
-}
-
-.rc-dropdown > div {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.rc-dropdown > div:hover {
-  background: #f3f4f6;
-}
-
-/* ==== Summary Section ==== */
+/* === Summary Section === */
 .rc-review-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.5rem;
   margin-bottom: 2.5rem;
-  align-items: start;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.rc-left {
+.rc-summary-left {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;  
-  padding-left: 30px;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
 }
 
 .rc-avg-rating {
-  font-size: 3rem;
-  font-weight: bold;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
 }
 
 .rc-star-row {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--color-accent);
 }
 
-.rc-total-reviews {
-  margin-top: 0.25rem;
-  color: #6b7280;
-  font-size: 0.9rem;
+.rc-star-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: transparent;
+  stroke: var(--color-accent);
 }
 
-.rc-right {
+.rc-star-row .rc-star-icon {
+  stroke-width: 1.5;
+}
+
+.rc-review-count {
+  font-size: 1rem;
+  color: var(--color-muted);
+}
+
+.rc-summary-right {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.rc-progress-line {
-  display: grid;
-  grid-template-columns: 30px 1fr 30px;
+.rc-rating-bar-item {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.rc-progress {
-  background-color: #e5e7eb;
+.rc-rating-bar-item:hover {
+  transform: translateX(5px);
+}
+
+.rc-star-label {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  width: 50px;
+}
+
+.rc-progress-bar {
+  flex: 1;
   height: 8px;
+  background-color: var(--color-light);
   border-radius: 9999px;
-  position: relative;
   overflow: hidden;
 }
 
-.rc-fill {
-  background-color: #facc15;
+.rc-progress-fill {
   height: 100%;
-  position: absolute;
-  left: 0;
-  top: 0;
+  background-color: var(--color-accent);
+  border-radius: 9999px;
 }
 
-/* —— Reviews List —— */
+.rc-rating-count {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  width: 30px;
+  text-align: right;
+}
+
+/* === Main Actions & Filter === */
+.rc-main-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.rc-dropdown-wrapper {
+  position: relative;
+}
+
+.rc-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rc-dropdown-toggle:hover {
+  background-color: #e0e7f0;
+}
+
+.rc-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.rc-dropdown > div {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+}
+
+.rc-dropdown > div:hover {
+  background: var(--color-light);
+}
+
+.rc-write-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rc-write-review-btn:hover {
+  background-color: #374151;
+}
+
+/* === Review Form === */
+.rc-review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  background-color: var(--color-light);
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); /* subtle inner shadow */
+}
+
+.rc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rc-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.rc-textarea, .rc-input {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  color: var(--color-dark);
+  background-color: var(--color-bg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rc-textarea:focus, .rc-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(31, 41, 55, 0.1);
+}
+
+.rc-rating-input {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.rc-star-input-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  fill: transparent;
+  stroke: var(--color-muted);
+  transition: fill 0.2s, stroke 0.2s;
+}
+
+.rc-star-input-icon.filled,
+.rc-star-input-icon:hover,
+.rc-rating-input:hover .rc-star-input-icon {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+}
+
+.rc-image-previews {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.rc-image-preview-item {
+  position: relative;
+}
+
+.rc-image-preview-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.rc-remove-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.rc-form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.rc-submit-btn, .rc-cancel-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.rc-submit-btn {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.rc-cancel-btn {
+  background-color: #e0e7f0;
+  color: var(--color-primary);
+}
+
+/* === Review List & Cards === */
 .rc-review-list {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  margin-bottom: 2rem;
 }
 
 .rc-review-card {
-  background: var(--color-bg);
-  transition: box-shadow 0.2s;
+  padding: 1.5rem;
+  background-color: var(--color-light);
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer shadow */
 }
 
-.rc-review-header {
+.rc-review-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rc-review-user-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 5px;
+  gap: 0.75rem;
 }
 
-.rc-review-header strong {
-  font-size: 1rem;
-}
-
-.rc-badge {
-  background: #10b981;
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--radius);
-}
-
-.rc-edit-btn {
-  background: var(--color-light);
+.rc-review-user-name {
+  font-weight: 600;
   color: var(--color-dark);
-  font-size: 0.75rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  cursor: pointer;
 }
-.rc-edit-btn:hover {
-  background: var(--color-border);
+
+.rc-review-date {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.rc-review-comment {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-dark);
 }
 
 .rc-review-images {
   display: flex;
   gap: 0.5rem;
-  margin: 0.5rem 0;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
-.rc-review-images img,
-.rc-extra-img {
-  width: 70px;
-  height: 70px;
-  border-radius: var(--radius);
+.rc-review-image {
+  width: 80px;
+  height: 80px;
   object-fit: cover;
+  border-radius: var(--radius);
   border: 1px solid var(--color-border);
   cursor: pointer;
+  transition: transform 0.2s;
 }
-.rc-extra-img {
+
+.rc-review-image:hover {
+  transform: scale(1.05);
+}
+
+.rc-review-actions {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.rc-edit-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-  color: #fff;
-  font-weight: bold;
+  gap: 0.25rem;
+  transition: color 0.2s;
 }
 
-.rc-review-card p {
-  font-size: 0.95rem;
-  color: var(--color-dark);
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
+.rc-edit-btn:hover {
+  color: var(--color-accent);
 }
 
-.rc-review-card small {
-  font-size: 0.75rem;
-  color: var(--color-muted);
-}
-
-/* —— Review Form —— */
-.rc-review-form {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--color-border);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.rc-review-form h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.rc-review-form input[type="text"],
-.rc-review-form select,
-.rc-review-form textarea,
-.rc-review-form input[type="file"] {
-  padding: 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font-size: 0.95rem;
+.rc-load-more-btn {
   width: 100%;
-}
-
-.rc-preview-thumbs {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.rc-preview-thumbs img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: var(--radius);
+  padding: 1rem;
+  background-color: var(--color-light);
   border: 1px solid var(--color-border);
-}
-
-.rc-review-form button[type="submit"] {
-  background: var(--color-primary);
-  color: #fff;
-  padding: 0.75rem;
+  border-radius: var(--radius);
   font-size: 1rem;
   font-weight: 600;
-  border: none;
-  border-radius: var(--radius);
+  color: var(--color-primary);
   cursor: pointer;
-  transition: background 0.2s;
-}
-.rc-review-form button[type="submit"]:hover {
-  background: #374151;
+  transition: background-color 0.2s, color 0.2s;
 }
 
-/* —— Pagination —— */
-.rc-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1rem;
-  gap: 1rem;
+.rc-load-more-btn:hover {
+  background-color: var(--color-primary);
+  color: #fff;
 }
 
-.rc-pagination button {
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
-}
-.rc-pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.rc-loading-spinner {
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+  color: var(--color-primary);
 }
 
-/* —— Modal Preview —— */
-.rc-modal-backdrop {
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* === Image Preview Modal === */
+.rc-preview-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.9);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
 }
 
-.rc-modal {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
+.rc-preview-content {
+  position: relative;
   max-width: 90%;
   max-height: 90%;
-  position: relative;
 }
 
-.rc-modal img {
+.rc-preview-image {
   max-width: 100%;
-  max-height: 70vh;
-  border-radius: 8px;
+  max-height: 100%;
+  border-radius: 1rem;
 }
 
-.rc-modal-nav {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-/* —— Write a Review Toggle Button —— */
-.rc-toggle-form {
-  background-color: var(--color-primary);
-  color: white;
-  padding: 10px 16px;
-  font-size: 1rem;
+.rc-preview-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
   border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  margin: 15px auto 1.5rem auto;
-  align-self: center;
-  transition: background-color 0.3s ease;
-}
-
-.rc-toggle-form:hover {
-  background-color: #374151;
-}
-
-/* —— Filter Dropdown (Star Rating) —— */
-.rc-filter-dropdown {
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.rc-filter-dropdown label {
-  font-weight: 500;
-  font-size: 1rem;
-  color: var(--color-dark);
-}
-
-.rc-filter-dropdown select {
-  padding: 8px 12px;
-  font-size: 0.95rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: white;
-  cursor: pointer;
-}
-
-
-/* —— Pagination Controls —— */
-.rc-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
-}
-
-.rc-pagination button {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  border: 1px solid var(--color-border);
-  background-color: var(--color-light);
-  color: var(--color-dark);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.rc-pagination button:hover:not(:disabled) {
-  background-color: var(--color-accent);
   color: #fff;
-  border-color: var(--color-accent);
+  font-size: 2.5rem;
+  cursor: pointer;
 }
 
-.rc-pagination button.active {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
+.rc-preview-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 3rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 
-.rc-pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.rc-preview-nav:hover {
+  opacity: 1;
 }
 
+.rc-preview-nav.left { left: 1rem; }
+.rc-preview-nav.right { right: 1rem; }
 
-
-/* —— Responsive —— */
-@media (min-width: 768px) {
-  .rc-review-form {
-    grid-template-columns: repeat(2, 1fr);
-    grid-column-gap: 1rem;
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  .rc-review-component {
+    padding: 1rem;
+    margin: 1rem auto;
   }
-  .rc-review-form h3,
-  .rc-review-form button[type="submit"] {
-    grid-column: span 2;
+  .rc-review-summary {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .rc-summary-right {
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .rc-main-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rc-dropdown-wrapper {
+    width: 100%;
+  }
+  .rc-write-review-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .rc-review-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rc-review-actions {
+    top: auto;
+    bottom: 1rem;
+    right: 1rem;
   }
 }
