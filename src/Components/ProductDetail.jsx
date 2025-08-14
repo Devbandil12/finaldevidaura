@@ -1,7 +1,6 @@
-// src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ProductContext } from "../contexts/productContext";
+import { ProductContext } from "../contexts/ProductContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
@@ -13,25 +12,32 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { userdetails } = useContext(UserContext);
-  const { products } = useContext(ProductContext);
+  // Get the `loading` state from the ProductContext
+  const { products, loading } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
   const { productId } = useParams();
   
-  // --- IMPORTANT FIX: Check if products are loaded before finding the product ---
+  // Add a conditional render for the loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading product details...</p>
+      </div>
+    );
+  }
+  
+  // Find the product once loading is complete
   const product = useMemo(() => {
-    if (!products || products.length === 0) {
-      return null;
-    }
     return products.find((p) => p.id === productId);
   }, [products, productId]);
 
-  // --- Handle loading and not-found states gracefully ---
-  if (!products || products.length === 0) {
-    return <div>Loading product details...</div>;
-  }
-
+  // Add a conditional render for the "not found" state
   if (!product) {
-    return <div>Product not found.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Product not found.</p>
+      </div>
+    );
   }
 
   const images = Array.isArray(product.images) && product.images.length > 0
