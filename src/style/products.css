@@ -207,19 +207,31 @@ body {
   background-color: #45a049;
 }
 
-/* === Responsive Design === */
-@media (max-width: 640px) {
-  .product-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    padding: 1rem;
-  }
+/* === Product Detail Modal Styles === */
+/* The overlay needs to cover the entire viewport and be on top */
+.product-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow-y: auto;
+}
 
-  .product-card {
-    border-radius: var(--radius-sm);
-  }
-
-  .add-to-cart-btn, .view-cart-btn {
-    padding: 0.6rem 0.8rem;
-  }
+/* The modal itself needs to be visible within the overlay */
+.product-detail-modal {
+  background-color: white;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 1200px;
+  padding: 2rem;
+  position: relative;
+  max-height: 95vh;
+  overflow-y: auto;
 }
