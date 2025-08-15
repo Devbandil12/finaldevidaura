@@ -20,15 +20,15 @@ export const UserProvider = ({ children }) => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerk_id = user?.id; // Correctly get the user's Clerk ID
+      const clerkId = user?.id; // Correct variable name from schema
 
-      if (!email || !clerk_id) {
+      if (!email || !clerkId) {
         console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
         return;
       }
 
-      // 1. Try to get existing user
-      let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
+      // 1. Try to get existing user using clerkId for a more reliable lookup
+      let res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
       const data = await res.json();
 
       if (data) {
@@ -38,7 +38,7 @@ export const UserProvider = ({ children }) => {
         const postRes = await fetch(`${BACKEND_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, clerk_id }), // Pass clerk_id here
+          body: JSON.stringify({ name, email, clerkId }), // Use 'clerkId' to match schema
         });
         const postData = await postRes.json();
         setUserdetails(postData);
