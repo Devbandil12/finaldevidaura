@@ -1,29 +1,28 @@
 // src/contexts/ProductContext.js
 import React, { createContext, useState, useEffect } from "react";
-import { db } from "../../configs";
-import { productsTable } from "../../configs/schema";
 
 export const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  const getproducts = async () => {
+  const getProducts = async () => {
     setLoading(true);
     try {
-      const res = await db.select().from(productsTable);
-      setProducts(res);
+      const res = await fetch(`${BACKEND_URL}/api/products`);
+      const data = await res.json();
+      setProducts(data);
     } catch (error) {
-      console.error("Failed to fetch products:", error);
-      // Optional: Handle error state
+      console.error("❌ Failed to fetch products:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    getproducts();
+    getProducts();
   }, []);
 
   return (
