@@ -1,719 +1,356 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  useRef,
-} from "react";
-import { db } from "../../configs";
-import {
-  addToCartTable,
-  productsTable,
-  wishlistTable,
-} from "../../configs/schema";
-import { and, eq } from "drizzle-orm";
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
 
 export const CartContext = createContext();
 
-// ---------- LocalStorage keys for guest mode ----------
-const LS_CART_KEY = "guest_cart";
-const LS_WISHLIST_KEY = "guest_wishlist";
+const LS_CART_KEY = "guestCart";
+const LS_WISHLIST_KEY = "guestWishlist";
+const LS_BUY_NOW_KEY = "buyNowItem";
 
-// ---------- Small helpers ----------
-const uuid = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-const readLS = (key, fallback) => {
+const readLS = (key) => {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
+    const serializedState = localStorage.getItem(key);
+    if (serializedState === null) {
+      return [];
+    }
+    return JSON.parse(serializedState);
+  } catch (err) {
+    console.error("Error reading from local storage:", err);
+    return [];
   }
 };
-const writeLS = (key, value) => {
+
+const writeLS = (key, data) => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
+    const serializedState = JSON.stringify(data);
+    localStorage.setItem(key, serializedState);
+  } catch (err) {
+    console.error("Error writing to local storage:", err);
+  }
 };
 
 export const CartProvider = ({ children }) => {
-  // State shapes match components’ expectations
-  const [cart, setCart] = useState([]); // [{ product, quantity, cartId, userId }]
-  const [wishlist, setWishlist] = useState([]); // [{ product, productId, wishlistId, userId }]
+  const { userdetails, isSignedIn, getUserDetails } = useContext(UserContext);
+  const [cart, setCart] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [isCartLoading, setIsCartLoading] = useState(true);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(true);
 
-  // Loader flags (only for signed-in DB ops)
-  const [isCartLoading, setIsCartLoading] = useState(false);
-  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-
-  // Kept for compatibility
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [selectedItems, setSelectedItems] = useState([]);
-
-  const { userdetails } = useContext(UserContext);
-  const isSignedIn = !!userdetails?.id;
-
-  // Guard so merges run once per sign-in (avoid Strict Mode double-run)
-  const mergedOnceRef = useRef(false);
-
-  // =========================
-  // Fetchers
-  // =========================
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const getCartitems = useCallback(async () => {
     if (!isSignedIn) {
-      const guest = readLS(LS_CART_KEY, []);
-      const normalized = guest.map((i) => ({
-        product: i.product,
-        quantity: Number(i.quantity || 1),
-        cartId: i.cartId || uuid(),
-        userId: null,
-      }));
-      setCart(normalized);
+      const storedCart = readLS(LS_CART_KEY);
+      setCart(storedCart);
+      setIsCartLoading(false);
       return;
     }
-
+    if (!userdetails?.id) return;
     setIsCartLoading(true);
     try {
-      const rows = await db
-        .select({
-          product: productsTable,
-          userId: addToCartTable.userId,
-          cartId: addToCartTable.id,
-          quantity: addToCartTable.quantity,
-        })
-        .from(addToCartTable)
-        .innerJoin(
-          productsTable,
-          eq(addToCartTable.productId, productsTable.id)
-        )
-        .where(eq(addToCartTable.userId, userdetails.id));
-
+      const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`);
+      if (!res.ok) throw new Error("Failed to fetch cart");
+      const rows = await res.json();
       setCart(rows);
     } catch (e) {
       console.error("getCartitems error:", e);
+      setCart([]);
     } finally {
       setIsCartLoading(false);
     }
-  }, [isSignedIn, userdetails?.id]);
+  }, [isSignedIn, userdetails?.id, BACKEND_URL]);
 
   const getwishlist = useCallback(async () => {
     if (!isSignedIn) {
-      const guest = readLS(LS_WISHLIST_KEY, []);
-      const normalized = guest.map((w) => ({
-        product: w.product,
-        productId: w.productId ?? w.product?.id,
-        wishlistId: w.wishlistId || uuid(),
-        userId: null,
-      }));
-      setWishlist(normalized);
+      const storedWishlist = readLS(LS_WISHLIST_KEY);
+      setWishlist(storedWishlist);
+      setIsWishlistLoading(false);
       return;
     }
-
+    if (!userdetails?.id) return;
     setIsWishlistLoading(true);
     try {
-      const rows = await db
-        .select({
-          product: productsTable,
-          wishlistId: wishlistTable.id,
-          userId: wishlistTable.userId,
-          productId: wishlistTable.productId,
-        })
-        .from(wishlistTable)
-        .innerJoin(
-          productsTable,
-          eq(wishlistTable.productId, productsTable.id)
-        )
-        .where(eq(wishlistTable.userId, userdetails.id));
-
+      const res = await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}`);
+      if (!res.ok) throw new Error("Failed to fetch wishlist");
+      const rows = await res.json();
       setWishlist(rows);
     } catch (e) {
       console.error("getwishlist error:", e);
+      setWishlist([]);
     } finally {
       setIsWishlistLoading(false);
     }
-  }, [isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Cart mutations
-  // =========================
+  }, [isSignedIn, userdetails?.id, BACKEND_URL]);
 
   const addToCart = useCallback(
     async (product, quantity = 1) => {
-      if (!product) return false;
-      const qtyToAdd = Number(quantity || 1);
-
       if (!isSignedIn) {
-        const existing = cart.find((i) => i.product?.id === product.id);
-        const next = existing
-          ? cart.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: Number(i.quantity || 1) + qtyToAdd }
-                : i
-            )
-          : [...cart, { product, quantity: qtyToAdd, cartId: uuid(), userId: null }];
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
+        const existing = cart.find((i) => i.product.id === product.id);
+        const qtyToAdd = Number(quantity || 1);
+        let newCart;
+        if (existing) {
+          newCart = cart.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + qtyToAdd }
+              : item
+          );
+        } else {
+          newCart = [...cart, { product, quantity: qtyToAdd }];
+        }
+        setCart(newCart);
+        writeLS(LS_CART_KEY, newCart);
+        return;
+      }
+      if (!userdetails?.id) {
+        console.error("User not signed in or user ID is missing.");
+        return false;
       }
 
       // Signed-in: optimistic update + DB
       const existing = cart.find((i) => i.product?.id === product.id);
-      const tempId = existing ? null : uuid();
+      const qtyToAdd = Number(quantity || 1);
 
-      setCart((prev) =>
-        existing
-          ? prev.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: Number(i.quantity || 1) + qtyToAdd }
-                : i
-            )
-          : [
-              ...prev,
-              {
-                product,
-                quantity: qtyToAdd,
-                cartId: tempId,
-                userId: userdetails.id,
-              },
-            ]
-      );
+      const optimisticUpdate = existing
+        ? cart.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + qtyToAdd }
+              : item
+          )
+        : [...cart, { product, quantity: qtyToAdd }];
+
+      setCart(optimisticUpdate);
 
       try {
         if (existing) {
           const newQty = Number(existing.quantity || 1) + qtyToAdd;
-          await db
-            .update(addToCartTable)
-            .set({ quantity: newQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, product.id)
-              )
-            );
+          const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: newQty }),
+          });
+          if (!res.ok) throw new Error("Failed to update cart item");
         } else {
-          const [row] = await db
-            .insert(addToCartTable)
-            .values({
-              productId: product.id,
-              userId: userdetails.id,
-              quantity: qtyToAdd,
-            })
-            .returning({
-              cartId: addToCartTable.id,
-              userId: addToCartTable.userId,
-              quantity: addToCartTable.quantity,
-            });
-
-          setCart((prev) =>
-            prev.map((i) =>
-              i.cartId === tempId
-                ? { ...i, cartId: row.cartId, quantity: Number(row.quantity) }
-                : i
-            )
-          );
+          const res = await fetch(`${BACKEND_URL}/api/cart`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: userdetails.id, productId: product.id, quantity: qtyToAdd }),
+          });
+          if (!res.ok) throw new Error("Failed to add new cart item");
         }
+        await getCartitems(); // Re-fetch to sync state with DB
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
-        // rollback
-        setCart((prev) => {
-          if (existing) {
-            return prev.map((i) =>
-              i.product.id === product.id
-                ? { ...i, quantity: existing.quantity }
-                : i
-            );
-          }
-          return prev.filter((i) => i.cartId !== tempId);
-        });
+        await getCartitems(); // Rollback to original state
         return false;
       }
     },
-    [cart, isSignedIn, userdetails?.id]
+    [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]
   );
 
   const removeFromCart = useCallback(
-    async (productId) => {
-      if (productId === undefined || productId === null) return false;
-
+    async (product) => {
       if (!isSignedIn) {
-        const next = cart.filter((i) => i.product?.id !== productId);
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
+        const newCart = cart.filter((item) => item.product.id !== product.id);
+        setCart(newCart);
+        writeLS(LS_CART_KEY, newCart);
+        return;
       }
 
-      const backup = cart;
-      setCart((prev) => prev.filter((i) => i.product?.id !== productId));
+      const optimisticUpdate = cart.filter((item) => item.product?.id !== product.id);
+      setCart(optimisticUpdate);
+
       try {
-        await db
-          .delete(addToCartTable)
-          .where(
-            and(
-              eq(addToCartTable.userId, userdetails.id),
-              eq(addToCartTable.productId, productId)
-            )
-          );
-        return true;
+        const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to remove cart item");
+        await getCartitems();
       } catch (e) {
         console.error("removeFromCart error:", e);
-        setCart(backup);
-        return false;
+        await getCartitems();
       }
     },
-    [cart, isSignedIn, userdetails?.id]
+    [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]
   );
 
   const changeCartQuantity = useCallback(
-    async (productId, delta) => {
-      if (!delta) return false;
-      const existing = cart.find((i) => i.product?.id === productId);
-      if (!existing) return false;
-
-      const current = Number(existing.quantity || 1);
-      const nextQty = Math.max(0, current + Number(delta));
-
+    async (product, nextQty) => {
       if (!isSignedIn) {
-        const next =
-          nextQty === 0
-            ? cart.filter((i) => i.product?.id !== productId)
-            : cart.map((i) =>
-                i.product?.id === productId ? { ...i, quantity: nextQty } : i
-              );
-        setCart(next);
-        writeLS(
-          LS_CART_KEY,
-          next.map(({ product, quantity, cartId }) => ({
-            product,
-            quantity,
-            cartId,
-          }))
-        );
-        return true;
+        if (nextQty <= 0) {
+          removeFromCart(product);
+        } else {
+          const newCart = cart.map((item) =>
+            item.product.id === product.id ? { ...item, quantity: nextQty } : item
+          );
+          setCart(newCart);
+          writeLS(LS_CART_KEY, newCart);
+        }
+        return;
       }
 
-      const backup = cart;
-      setCart((prev) =>
-        nextQty === 0
-          ? prev.filter((i) => i.product?.id !== productId)
-          : prev.map((i) =>
-              i.product?.id === productId ? { ...i, quantity: nextQty } : i
-            )
-      );
-
-      try {
-        if (nextQty === 0) {
-          await db
-            .delete(addToCartTable)
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
-        } else {
-          await db
-            .update(addToCartTable)
-            .set({ quantity: nextQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
+      // Signed-in
+      if (nextQty <= 0) {
+        removeFromCart(product);
+      } else {
+        const optimisticUpdate = cart.map((item) =>
+          item.product?.id === product.id ? { ...item, quantity: nextQty } : item
+        );
+        setCart(optimisticUpdate);
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: nextQty }),
+          });
+          if (!res.ok) throw new Error("Failed to update cart quantity");
+          await getCartitems();
+        } catch (e) {
+          console.error("changeCartQuantity error:", e);
+          await getCartitems();
         }
-        return true;
-      } catch (e) {
-        console.error("changeCartQuantity error:", e);
-        setCart(backup);
-        return false;
       }
     },
-    [cart, isSignedIn, userdetails?.id]
+    [cart, isSignedIn, userdetails?.id, getCartitems, removeFromCart, BACKEND_URL]
   );
 
   const clearCart = useCallback(async () => {
     if (!isSignedIn) {
       setCart([]);
       writeLS(LS_CART_KEY, []);
-      return true;
+      return;
     }
-
-    const backup = cart;
-    setCart([]);
     try {
-      await db
-        .delete(addToCartTable)
-        .where(eq(addToCartTable.userId, userdetails.id));
-      return true;
+      const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to clear cart");
+      setCart([]);
     } catch (e) {
       console.error("clearCart error:", e);
-      setCart(backup);
-      return false;
+      await getCartitems();
     }
-  }, [cart, isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Wishlist mutations
-  // =========================
+  }, [isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]);
 
   const addToWishlist = useCallback(
     async (product) => {
-      if (!product) return false;
-
       if (!isSignedIn) {
-        const exists = wishlist.some(
-          (w) => (w.productId ?? w.product?.id) === product.id
-        );
-        if (exists) return true;
-
-        const next = [
-          ...wishlist,
-          {
-            product,
-            productId: product.id,
-            wishlistId: uuid(),
-            userId: null,
-          },
-        ];
-        setWishlist(next);
-        writeLS(LS_WISHLIST_KEY, next);
-        return true;
+        const existing = wishlist.some((item) => item.product.id === product.id);
+        if (existing) return;
+        const newWishlist = [...wishlist, { product, productId: product.id }];
+        setWishlist(newWishlist);
+        writeLS(LS_WISHLIST_KEY, newWishlist);
+        return;
       }
-
-      // Avoid duplicates while signed-in
-      if (
-        wishlist.some((w) => (w.productId ?? w.product?.id) === product.id)
-      ) {
-        return true;
-      }
-
-      // Signed-in: optimistic + DB
-      const tempId = uuid();
-      setWishlist((prev) => [
-        ...prev,
-        {
-          product,
-          productId: product.id,
-          wishlistId: tempId,
-          userId: userdetails.id,
-        },
-      ]);
-
+      // Signed-in
+      if (!userdetails?.id) return;
       try {
-        // Insert only if not exists
-        const exists = await db
-          .select({ id: wishlistTable.id })
-          .from(wishlistTable)
-          .where(
-            and(
-              eq(wishlistTable.userId, userdetails.id),
-              eq(wishlistTable.productId, product.id)
-            )
-          );
-
-        if (exists.length === 0) {
-          await db.insert(wishlistTable).values({
-            userId: userdetails.id,
-            productId: product.id,
-          });
-        }
-
-        // Refresh from DB to normalize ids
+        await fetch(`${BACKEND_URL}/api/wishlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
+        });
         await getwishlist();
-        return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
-        setWishlist((prev) => prev.filter((w) => w.wishlistId !== tempId));
-        return false;
+        await getwishlist();
       }
     },
-    [wishlist, isSignedIn, userdetails?.id, getwishlist]
+    [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
 
   const removeFromWishlist = useCallback(
-    async (productId) => {
+    async (product) => {
       if (!isSignedIn) {
-        const next = wishlist.filter(
-          (w) => (w.productId ?? w.product?.id) !== productId
-        );
-        setWishlist(next);
-        writeLS(LS_WISHLIST_KEY, next);
-        return true;
+        const newWishlist = wishlist.filter((item) => item.product.id !== product.id);
+        setWishlist(newWishlist);
+        writeLS(LS_WISHLIST_KEY, newWishlist);
+        return;
       }
-
-      const backup = wishlist;
-      setWishlist((prev) =>
-        prev.filter((w) => (w.productId ?? w.product?.id) !== productId)
-      );
+      if (!userdetails?.id) return;
       try {
-        await db
-          .delete(wishlistTable)
-          .where(
-            and(
-              eq(wishlistTable.userId, userdetails.id),
-              eq(wishlistTable.productId, productId)
-            )
-          );
-        return true;
+        await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}/${product.id}`, {
+          method: "DELETE",
+        });
+        await getwishlist();
       } catch (e) {
         console.error("removeFromWishlist error:", e);
-        setWishlist(backup);
-        return false;
+        await getwishlist();
       }
     },
-    [wishlist, isSignedIn, userdetails?.id]
+    [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
 
-  const toggleWishlist = useCallback(
-    async (product) => {
-      const exists = wishlist.some(
-        (w) => (w.productId ?? w.product?.id) === product.id
-      );
-      if (exists) return removeFromWishlist(product.id);
-      return addToWishlist(product);
-    },
-    [wishlist, addToWishlist, removeFromWishlist]
-  );
-
-  // =========================
-  // Buy Now helpers (localStorage)
-  // =========================
-
-  const startBuyNow = useCallback(
-    (product, quantity = 1) => {
-      const temp = {
-        product,
-        quantity: Number(quantity || 1),
-        cartId: uuid(),
-        userId: isSignedIn ? userdetails.id : null,
-      };
-      try {
-        localStorage.setItem("buyNowItem", JSON.stringify(temp));
-        localStorage.setItem("buyNowActive", "true");
-        return true;
-      } catch (e) {
-        console.error("startBuyNow error:", e);
-        return false;
-      }
-    },
-    [isSignedIn, userdetails?.id]
-  );
-
-  const clearBuyNow = useCallback(() => {
-    try {
-      localStorage.removeItem("buyNowItem");
-      localStorage.removeItem("buyNowActive");
-      return true;
-    } catch {
-      return false;
+  const mergeGuestCartIntoDB = useCallback(async () => {
+    if (!isSignedIn || !userdetails?.id) return;
+    const guestCart = readLS(LS_CART_KEY);
+    if (guestCart.length === 0) return;
+    for (const item of guestCart) {
+      await addToCart(item.product, item.quantity);
     }
+    writeLS(LS_CART_KEY, []);
+    getCartitems();
+  }, [isSignedIn, userdetails?.id, getCartitems, addToCart]);
+
+  const mergeGuestWishlistIntoDB = useCallback(async () => {
+    if (!isSignedIn || !userdetails?.id) return;
+    const guestWishlist = readLS(LS_WISHLIST_KEY);
+    if (guestWishlist.length === 0) return;
+    for (const item of guestWishlist) {
+      await addToWishlist(item.product);
+    }
+    writeLS(LS_WISHLIST_KEY, []);
+    getwishlist();
+  }, [isSignedIn, userdetails?.id, getwishlist, addToWishlist]);
+  
+  const mergedOnceRef = useRef(false);
+  useEffect(() => {
+    if (isSignedIn && !mergedOnceRef.current) {
+      mergedOnceRef.current = true;
+      (async () => {
+        await mergeGuestCartIntoDB();
+        await mergeGuestWishlistIntoDB();
+        getCartitems();
+        getwishlist();
+      })();
+    } else if (!isSignedIn) {
+      mergedOnceRef.current = false;
+      getCartitems();
+      getwishlist();
+    }
+  }, [isSignedIn, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB, getCartitems, getwishlist]);
+
+
+  const startBuyNow = useCallback((product, quantity) => {
+    writeLS(LS_BUY_NOW_KEY, { product, quantity });
   }, []);
 
-  // =========================
-  // Merge guest ➜ user on login
-  // =========================
+  const clearBuyNow = useCallback(() => {
+    localStorage.removeItem(LS_BUY_NOW_KEY);
+  }, []);
 
-  /** Merge guest cart (localStorage) into the signed-in user's DB cart. */
-  const mergeGuestCartIntoDB = useCallback(async () => {
-    if (!isSignedIn) return;
+  const getBuyNow = useCallback(() => {
+    return readLS(LS_BUY_NOW_KEY);
+  }, []);
 
-    const guestCart = readLS(LS_CART_KEY, []);
-    if (!guestCart.length) return;
-
-    try {
-      // Read existing cart rows directly from DB
-      const existingRows = await db
-        .select({
-          productId: addToCartTable.productId,
-          quantity: addToCartTable.quantity,
-        })
-        .from(addToCartTable)
-        .where(eq(addToCartTable.userId, userdetails.id));
-
-      const existingMap = new Map(
-        existingRows.map((r) => [r.productId, Number(r.quantity || 1)])
-      );
-
-      for (const g of guestCart) {
-        const productId = g?.product?.id;
-        if (!productId) continue;
-
-        const guestQty = Math.max(1, Number(g.quantity || 1));
-        const had = existingMap.get(productId);
-
-        if (had != null) {
-          const newQty = Math.max(1, had + guestQty);
-          await db
-            .update(addToCartTable)
-            .set({ quantity: newQty })
-            .where(
-              and(
-                eq(addToCartTable.userId, userdetails.id),
-                eq(addToCartTable.productId, productId)
-              )
-            );
-          existingMap.set(productId, newQty);
-        } else {
-          await db.insert(addToCartTable).values({
-            userId: userdetails.id,
-            productId,
-            quantity: guestQty,
-          });
-          existingMap.set(productId, guestQty);
-        }
-      }
-
-      // Clear guest cart after successful merge
-      writeLS(LS_CART_KEY, []);
-      return true;
-    } catch (e) {
-      console.error("mergeGuestCartIntoDB error:", e);
-      return false;
-    }
-  }, [isSignedIn, userdetails?.id]);
-
-  /** Merge guest wishlist (localStorage) into the signed-in user's DB wishlist. */
-  const mergeGuestWishlistIntoDB = useCallback(async () => {
-    if (!isSignedIn) return;
-
-    const guestWish = readLS(LS_WISHLIST_KEY, []);
-    if (!guestWish.length) return;
-
-    try {
-      // Read existing wishlist directly from DB
-      const existingRows = await db
-        .select({ productId: wishlistTable.productId })
-        .from(wishlistTable)
-        .where(eq(wishlistTable.userId, userdetails.id));
-
-      const existingIds = new Set(existingRows.map((r) => r.productId));
-
-      for (const gw of guestWish) {
-        const productId = gw?.productId ?? gw?.product?.id;
-        if (!productId) continue;
-        if (existingIds.has(productId)) continue;
-
-        await db.insert(wishlistTable).values({
-          userId: userdetails.id,
-          productId,
-        });
-        existingIds.add(productId);
-      }
-
-      // Clear guest wishlist after merge
-      writeLS(LS_WISHLIST_KEY, []);
-      return true;
-    } catch (e) {
-      console.error("mergeGuestWishlistIntoDB error:", e);
-      return false;
-    }
-  }, [isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Initialize on auth changes (merge first, then hydrate)
-  // =========================
-
-  useEffect(() => {
-    (async () => {
-      if (isSignedIn) {
-        // Merge guest -> DB ONCE per sign-in
-        if (!mergedOnceRef.current) {
-          await Promise.all([mergeGuestCartIntoDB(), mergeGuestWishlistIntoDB()]);
-          mergedOnceRef.current = true;
-        }
-        // Now hydrate from DB so UI shows merged state
-        await Promise.all([getCartitems(), getwishlist()]);
-      } else {
-        // Reset guard when user signs out & hydrate from LS
-        mergedOnceRef.current = false;
-
-        const gCart = readLS(LS_CART_KEY, []);
-        setCart(
-          gCart.map((i) => ({
-            product: i.product,
-            quantity: Number(i.quantity || 1),
-            cartId: i.cartId || uuid(),
-            userId: null,
-          }))
-        );
-
-        const gWish = readLS(LS_WISHLIST_KEY, []);
-        setWishlist(
-          gWish.map((w) => ({
-            product: w.product,
-            productId: w.productId ?? w.product?.id,
-            wishlistId: w.wishlistId || uuid(),
-            userId: null,
-          }))
-        );
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, userdetails?.id]);
-
-  // =========================
-  // Provider
-  // =========================
   return (
     <CartContext.Provider
       value={{
-        // state
         cart,
-        setCart,
         wishlist,
-        setWishlist,
-
-        // loaders
         isCartLoading,
         isWishlistLoading,
-
-        // compatibility fields
-        selectedCoupon,
-        setSelectedCoupon,
-        couponDiscount,
-        setCouponDiscount,
-        selectedItems,
-        setSelectedItems,
-
-        // fetchers
         getCartitems,
-        getwishlist,
-
-        // cart ops
         addToCart,
         removeFromCart,
         changeCartQuantity,
         clearCart,
-
-        // wishlist ops
-        toggleWishlist,
+        getwishlist,
         addToWishlist,
         removeFromWishlist,
-
-        // buy now
         startBuyNow,
         clearBuyNow,
+        getBuyNow,
       }}
     >
       {children}
