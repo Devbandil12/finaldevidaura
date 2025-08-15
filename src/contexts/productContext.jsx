@@ -8,6 +8,7 @@ export const ProductProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
+  // Fetches products from the backend API endpoint
   const getProducts = async () => {
     setLoading(true);
     try {
@@ -21,6 +22,7 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
+  // Calls the fetch function when the component mounts
   useEffect(() => {
     getProducts();
   }, []);
