@@ -13,7 +13,7 @@ export const UserProvider = ({ children }) => {
 
   // Fetch or create user in DB
   const getUserDetail = useCallback(async () => {
-    if (!isSignedIn || !isLoaded) {
+    if (!isLoaded || !isSignedIn) {
       setUserdetails(null);
       return;
     }
@@ -29,30 +29,19 @@ export const UserProvider = ({ children }) => {
 
       // 1. Try to get existing user
       let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
-      
-      // Check if the request was successful
-      if (!res.ok) {
-        throw new Error(`Failed to fetch user. Status: ${res.status}`);
-      }
+      const data = await res.json();
 
-      let data = await res.json();
-      
       if (data) {
         setUserdetails(data);
       } else {
         // 2. Create new user
-        res = await fetch(`${BACKEND_URL}/api/users`, {
+        const postRes = await fetch(`${BACKEND_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email }),
         });
-
-        if (!res.ok) {
-          throw new Error(`Failed to create new user. Status: ${res.status}`);
-        }
-        
-        data = await res.json();
-        setUserdetails(data);
+        const postData = await postRes.json();
+        setUserdetails(postData);
       }
     } catch (err) {
       console.error("❌ Error in getUserDetail:", err);
@@ -64,9 +53,6 @@ export const UserProvider = ({ children }) => {
     if (!userdetails?.id) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/orders`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch orders. Status: ${res.status}`);
-      }
       const data = await res.json();
       setOrders(data);
     } catch (error) {
@@ -79,9 +65,6 @@ export const UserProvider = ({ children }) => {
     if (!userdetails?.id) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch addresses. Status: ${res.status}`);
-      }
       const data = await res.json();
       setAddress(data);
     } catch (error) {
