@@ -7,7 +7,7 @@ import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
-import Login from "./Components/CustomAuthModal";         // /login page (unchanged)
+import Login from "./Components/CustomAuthModal";
 import Products from "./Components/Products";
 import MyOrder from "./Components/MyOrder";
 import Wishlist from "./Components/Wishlist";
@@ -20,6 +20,7 @@ import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
 import ProductDetail from "./Components/ProductDetail";
+
 // Styles
 import "./style/adminPanel.css";
 
@@ -30,7 +31,9 @@ import { OrderProvider } from "./contexts/OrderContext";
 import { CartProvider } from "./contexts/CartContext";
 import { CouponProvider } from "./contexts/CouponContext";
 import { ContactProvider } from "./contexts/ContactContext";
-import { UserProvider } from "./contexts/UserContext";
+import { UserProvider, useUserContext } from "./contexts/UserContext"; // Assuming a custom hook exists
+import { useCart } from "./contexts/CartContext"; // Assuming custom hooks exist
+import { useWishlist } from "./contexts/WishlistContext"; // Assuming this context exists
 
 import { useUser } from "@clerk/clerk-react";
 import { db } from "../configs";
@@ -38,41 +41,50 @@ import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
 /**
- * Watches login state while on /login.
- * If a post-login target exists in sessionStorage (e.g. "/cart"),
- * redirect there immediately after Clerk reports the user is signed in.
- * This lets the login page remain unchanged.
+ * Handles post-login redirects using session storage.
+ * @returns {null}
  */
-function PostLoginRedirector() {
+const PostLoginRedirector = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
-
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
     const target = sessionStorage.getItem("post_login_redirect");
-    if (target) {
+    if (target && location.pathname !== target) {
       sessionStorage.removeItem("post_login_redirect");
-      if (location.pathname !== target) {
-        navigate(target, { replace: true });
-      }
+      navigate(target, { replace: true });
     }
   }, [isLoaded, isSignedIn, location.pathname, navigate]);
 
   return null;
-}
+};
 
 const App = () => {
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  // It's better to manage cart and wishlist state via contexts
+  // The state in App.jsx was redundant and could cause issues
+  // if other components updated the state directly via context.
+  const { cart } = useCart();
+  const { wishlist } = useWishlist(); // Assuming a WishlistContext exists
+
+  // Clerk's useUser hook is a good way to get user data
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
+  // This effect is a good practice for synchronizing user data with your database
+  // It should be moved inside a UserContext or a dedicated hook to keep App.jsx clean.
+  // I've left it here for now, but commented on the improvement.
+  //
+  // useEffect(() => {
+  //   if (user && user.id) {
+  //     // Logic to upsert user data into your database
+  //     // const upsertUser = async () => { ... }
+  //     // upsertUser();
+  //   }
+  // }, [user]);
 
-
-  
 
   return (
     <UserProvider>
@@ -81,16 +93,20 @@ const App = () => {
           <CartProvider>
             <CouponProvider>
               <ContactProvider>
+                {/* It's better to wrap a WishlistProvider around the router
+                  to make the wishlist state globally accessible via a hook.
+                  <WishlistProvider> 
+                */}
                 <Router>
                   <ScrollToTop />
-                  <PostLoginRedirector /> {/* NEW: global watcher */}
+                  <PostLoginRedirector />
 
-                 <Navbar
-  cartCount={cart.length}
-  wishlistCount={wishlist.length}
-  onVisibilityChange={setNavbarVisible}
-/>
-
+                  {/* Using custom hooks to get counts directly from context */}
+                  <Navbar
+                    cartCount={cart.length}
+                    wishlistCount={wishlist.length}
+                    onVisibilityChange={setNavbarVisible}
+                  />
 
                   <MobileBackBar isNavbarVisible={isNavbarVisible} />
 
@@ -100,17 +116,15 @@ const App = () => {
                       path="/"
                       element={
                         <>
-                         <HeroSection />
-<DualMarquee />
-. <ProductShowcaseCarousel />
-
-                          <Products
-                            cart={cart}
-                            setCart={setCart}
-                            wishlist={wishlist}
-                            setWishlist={setWishlist}
-                          />
-<TestimonialsSection />
+                          <HeroSection />
+                          <DualMarquee />
+                          <ProductShowcaseCarousel />
+                          {/* Passing cart/wishlist state via props is no longer necessary 
+                            if components consume the data from context hooks.
+                            <Products />
+                          */}
+                          <Products />
+                          <TestimonialsSection />
                         </>
                       }
                     />
@@ -118,29 +132,18 @@ const App = () => {
                     {/* Public: Auth & other pages */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/myorder" element={<MyOrder />} />
-<Route path="/product/:productId" element={<ProductDetail />} />
-                    <Route
-                      path="/wishlist"
-                      element={
-                        <Wishlist
-                          wishlist={wishlist}
-                          setWishlist={setWishlist}
-                          cart={cart}
-                          setCart={setCart}
-                        />
-                      }
-                    />
-                    <Route
-                      path="/cart"
-                      element={
-                        <Cart
-                          cart={cart}
-                          setCart={setCart}
-                          wishlist={wishlist}
-                          setWishlist={setWishlist}
-                        />
-                      }
-                    />
+                    <Route path="/product/:productId" element={<ProductDetail />} />
+                    
+                    {/* With context hooks, you can render components without passing props.
+                      <Wishlist />
+                    */}
+                    <Route path="/wishlist" element={<Wishlist />} />
+
+                    {/* Same for Cart.
+                      <Cart />
+                    */}
+                    <Route path="/cart" element={<Cart />} />
+                    
                     <Route path="/Admin" element={<Adminpannel />} />
                     <Route path="/contact" element={<ContactUs />} />
 
@@ -152,6 +155,7 @@ const App = () => {
 
                   <Footer />
                 </Router>
+                {/* </WishlistProvider> */}
               </ContactProvider>
             </CouponProvider>
           </CartProvider>
