@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 
 export const UserContext = createContext();
@@ -7,13 +7,17 @@ export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
   const [orders, setOrders] = useState([]);
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
-
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // Fetch or create user in DB
-  const getUserDetail = async () => {
+  const getUserDetail = useCallback(async () => {
+    if (!isSignedIn || !isLoaded) {
+      setUserdetails(null);
+      return;
+    }
+
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
@@ -25,8 +29,14 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
       // 1. Try to get existing user
       let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
-      let data = await res.json();
+      
+      // Check if the request was successful
+      if (!res.ok) {
+        throw new Error(`Failed to fetch user. Status: ${res.status}`);
+      }
 
+      let data = await res.json();
+      
       if (data) {
         setUserdetails(data);
       } else {
@@ -36,42 +46,53 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email }),
         });
+
+        if (!res.ok) {
+          throw new Error(`Failed to create new user. Status: ${res.status}`);
+        }
+        
         data = await res.json();
         setUserdetails(data);
       }
     } catch (err) {
       console.error("❌ Error in getUserDetail:", err);
     }
-  };
+  }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
   // Fetch user's orders
-  const getMyOrders = async () => {
+  const getMyOrders = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/orders`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch orders. Status: ${res.status}`);
+      }
       const data = await res.json();
       setOrders(data);
     } catch (error) {
       console.error("❌ Failed to get orders:", error);
     }
-  };
+  }, [userdetails?.id, BACKEND_URL]);
 
   // Fetch user's addresses
-  const getUserAddress = async () => {
+  const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch addresses. Status: ${res.status}`);
+      }
       const data = await res.json();
       setAddress(data);
     } catch (error) {
       console.error("❌ Failed to get user addresses:", error);
     }
-  };
+  }, [userdetails?.id, BACKEND_URL]);
 
   // On Clerk user change → fetch or create DB user
   useEffect(() => {
-    if (user) getUserDetail();
-  }, [user]);
+    getUserDetail();
+  }, [getUserDetail]);
 
   // When userdetails available → fetch orders & addresses
   useEffect(() => {
@@ -79,7 +100,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
       getMyOrders();
       getUserAddress();
     }
-  }, [userdetails]);
+  }, [userdetails, getMyOrders, getUserAddress]);
 
   return (
     <UserContext.Provider
