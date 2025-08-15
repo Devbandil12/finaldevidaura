@@ -20,19 +20,21 @@ export const UserProvider = ({ children }) => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerk_id = user?.id; // Get the user's Clerk ID
+      const clerk_id = user?.id; // Correctly get the user's Clerk ID
 
       if (!email || !clerk_id) {
-        console.warn("❌ Email or Clerk ID not found from Clerk");
+        console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
         return;
       }
 
+      // 1. Try to get existing user
       let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
       const data = await res.json();
 
       if (data) {
         setUserdetails(data);
       } else {
+        // 2. Create new user
         const postRes = await fetch(`${BACKEND_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
