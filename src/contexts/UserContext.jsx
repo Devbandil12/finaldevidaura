@@ -11,7 +11,6 @@ export const UserProvider = ({ children }) => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // Fetch or create user in DB
   const getUserDetail = useCallback(async () => {
     if (!isLoaded || !isSignedIn) {
       setUserdetails(null);
@@ -21,24 +20,23 @@ export const UserProvider = ({ children }) => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+      const clerk_id = user?.id; // Get the user's Clerk ID
 
-      if (!email) {
-        console.warn("❌ Email not found from Clerk");
+      if (!email || !clerk_id) {
+        console.warn("❌ Email or Clerk ID not found from Clerk");
         return;
       }
 
-      // 1. Try to get existing user
       let res = await fetch(`${BACKEND_URL}/api/users?email=${email}`);
       const data = await res.json();
 
       if (data) {
         setUserdetails(data);
       } else {
-        // 2. Create new user
         const postRes = await fetch(`${BACKEND_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email }),
+          body: JSON.stringify({ name, email, clerk_id }), // Pass clerk_id here
         });
         const postData = await postRes.json();
         setUserdetails(postData);
@@ -48,7 +46,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
-  // Fetch user's orders
   const getMyOrders = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
@@ -60,7 +57,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // Fetch user's addresses
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
@@ -72,12 +68,10 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // On Clerk user change → fetch or create DB user
   useEffect(() => {
     getUserDetail();
   }, [getUserDetail]);
 
-  // When userdetails available → fetch orders & addresses
   useEffect(() => {
     if (userdetails) {
       getMyOrders();
