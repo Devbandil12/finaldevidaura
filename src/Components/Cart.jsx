@@ -22,6 +22,7 @@ const ShoppingCart = () => {
     cart,
     buyNow,
     changeCartQuantity,
+    addToCart,
     removeFromCart,
     clearCart,
     addToWishlist,
