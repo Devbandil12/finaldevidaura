@@ -1,16 +1,13 @@
 import React, { useState } from "react";
-import useCloudinary from "../utils/useCloudinary";
+import useCloudinary from "../utils/useCloudinary"; // Import custom hook
 import { db } from "../../configs";
 import { productsTable } from "../../configs/schema";
-import { toast } from "react-toastify";
 
 const ImageUploadModal = ({ isopen }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState([]); // Will hold all selected image files
-  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
-  
-  const { uploadImage, uploading, error } = useCloudinary();
+  const [image, setImage] = useState(null);
+  const { uploadImage, uploading, uploadedUrl, error } = useCloudinary();
 
   const [product, setProduct] = useState({
     name: "",
@@ -21,69 +18,51 @@ const ImageUploadModal = ({ isopen }) => {
     discount: "",
     oprice: "",
     size: "",
+    imageurl: "",
   });
 
+  // Handle input change
   const handleChange = (e) => {
     setProduct({ ...product, [e.target.name]: e.target.value });
   };
 
+  // Handle file selection
   const handleFileChange = (event) => {
-    const files = Array.from(event.target.files);
-    if (files.length > 10) {
-      toast.error("You can upload a maximum of 10 images.");
-      setImages([]);
-    } else {
-      setImages(files);
+    const file = event.target.files[0];
+    setImage(file);
+  };
+
+  // Handle image upload & move to next step
+  const handleUpload = async () => {
+    try {
+      const res = await uploadImage(image);
+
+      setProduct((prev) => ({ ...prev, imageurl: uploadedUrl }));
+      setStep(2);
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  const handleUpload = async () => {
-    if (images.length === 0) {
-      return toast.error("Please select at least one image to upload.");
-    }
-    
-    try {
-      const urls = [];
-      for (const imageFile of images) {
-        const url = await uploadImage(imageFile);
-        urls.push(url);
-      }
-      
-      setUploadedUrls(urls);
-      setStep(2);
-      toast.success("Images uploaded successfully!");
-    } catch (error) {
-      console.error("Image upload failed:", error);
-      toast.error("Image upload failed. Please try again.");
-    }
-  };
-  
   const handlesubmit = async () => {
     try {
       const res = await db
         .insert(productsTable)
-        .values({ 
-          ...product,
-          imageurl: uploadedUrls, // Correctly submits a single array
-        })
+        .values({ ...product, imageurl: uploadedUrl })
         .returning(productsTable);
-      
       console.log(res);
-      toast.success("Product added successfully!");
     } catch (error) {
-      console.error("Database insert failed:", error);
-      toast.error("Failed to add product.");
+      console.log(error);
     }
     setIsOpen(false);
   };
 
-  const isUploadDisabled = uploading || images.length === 0;
-
   return (
     <div>
       {isOpen && (
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center">
           <div className="bg-black text-white p-6 rounded-lg shadow-xl w-96 relative">
+            {/* Close Button */}
             <button
               onClick={() => setIsOpen(false)}
               className="absolute top-2 right-3 text-white hover:text-white"
@@ -91,34 +70,21 @@ const ImageUploadModal = ({ isopen }) => {
               ✖
             </button>
 
+            {/* Step 1: Upload Image */}
             {step === 1 ? (
-              <div className="text-center flex items-center justify-center flex-col">
-                <h2 className="text-lg font-semibold">Upload Product Images</h2>
-                
-                {/* Single, Multi-Image Upload Field */}
-                <div className="mt-4 w-full">
-                  <h3 className="text-md font-medium text-left mb-2">
-                    Select Images (Max 10)
-                  </h3>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="w-full cursor-pointer"
-                  />
-                  {images.length > 0 && (
-                    <p className="text-gray-400 mt-2 text-sm text-left">
-                      {images.length} images selected
-                    </p>
-                  )}
-                </div>
-
+              <div className="text-center  flex items-center justify-center flex-col">
+                <h2 className="text-lg font-semibold">Upload Product Image</h2>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="  w-full cursor-pointer "
+                />
                 <button
                   onClick={handleUpload}
-                  disabled={isUploadDisabled}
-                  className="mt-6 bg-blue-500 px-4 py-2 rounded hover:bg-blue-700 transition"
+                  disabled={uploading || !image}
+                  className="mt-4 bg-blue-500 px-4 py-2 rounded hover:bg-blue-700 transition"
                 >
-                  {uploading ? "Uploading..." : "Upload Images"}
+                  {uploading ? "Uploading..." : "Upload Image"}
                 </button>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
               </div>
@@ -126,7 +92,7 @@ const ImageUploadModal = ({ isopen }) => {
               // Step 2: Product Details
               <div>
                 <h2 className="text-lg font-semibold">Enter Product Details</h2>
-                <div className="grid gap-3 mt-4">
+                <div className="grid gap-3 mt-4 ">
                   <input
                     name="name"
                     placeholder="Product Name"
@@ -157,6 +123,7 @@ const ImageUploadModal = ({ isopen }) => {
                     onChange={handleChange}
                     className="p-2 rounded bg-white text-black"
                   />
+
                   <input
                     type="number"
                     name="discount"
@@ -179,7 +146,7 @@ const ImageUploadModal = ({ isopen }) => {
                     className="p-2 rounded bg-white text-black"
                   />
                 </div>
-                <div className="flex justify-center items-center">
+                <div className="  flex justify-center items-center ">
                   <button
                     className="mt-4 bg-black px-4 py-2 rounded transition"
                     onClick={handlesubmit}
