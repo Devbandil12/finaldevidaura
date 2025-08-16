@@ -199,8 +199,8 @@ const ShoppingCart = () => {
           <h4>Debugging Info:</h4>
           <p>Is Cart Loading: <strong>{isCartLoading ? 'True' : 'False'}</strong></p>
           <p>Cart Item Count: <strong>{cart.length}</strong></p>
+          <p>User Details ID: <strong>{userdetails?.id ? 'Available' : 'Not Available'}</strong></p>
       </div>
-
       <main className="main-container">
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
