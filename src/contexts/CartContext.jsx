@@ -1,24 +1,21 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
-import { toast } from "react-toastify";
 
 export const CartContext = createContext();
 
 const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
-const LS_BUY_NOW_KEY = "buyNowItem"; // New key for the buy now item
 
 const readLS = (key) => {
   try {
     const serializedState = localStorage.getItem(key);
     if (serializedState === null) {
-      // If the key is for buyNow, return null, otherwise return empty array
-      return key === LS_BUY_NOW_KEY ? null : [];
+      return [];
     }
     return JSON.parse(serializedState);
   } catch (err) {
     console.error("Error reading from local storage:", err);
-    return key === LS_BUY_NOW_KEY ? null : [];
+    return [];
   }
 };
 
@@ -31,22 +28,13 @@ const writeLS = (key, data) => {
   }
 };
 
-const removeLS = (key) => {
-  try {
-    localStorage.removeItem(key);
-  } catch (err) {
-    console.error("Error removing from local storage:", err);
-  }
-};
-
 export const CartProvider = ({ children }) => {
   const { userdetails, isSignedIn } = useContext(UserContext);
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
-  // Initialize buyNow state from local storage
-  const [buyNow, setBuyNow] = useState(() => readLS(LS_BUY_NOW_KEY));
+  const [buyNow, setBuyNow] = useState(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -97,10 +85,13 @@ export const CartProvider = ({ children }) => {
         }
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        toast.success("Added to Cart!");
         return true;
       }
-      
+      if (!userdetails?.id) {
+        console.error("User not signed in or user ID is missing.");
+        return false;
+      }
+
       const existing = cart.find((i) => i.product?.id === product.id);
       const qtyToAdd = Number(quantity || 1);
 
@@ -115,9 +106,6 @@ export const CartProvider = ({ children }) => {
       setCart(optimisticUpdate);
 
       try {
-        if (!userdetails?.id) {
-          throw new Error("User ID is missing.");
-        }
         if (existing) {
           const newQty = Number(existing.quantity || 1) + qtyToAdd;
           const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
@@ -135,11 +123,9 @@ export const CartProvider = ({ children }) => {
           if (!res.ok) throw new Error("Failed to add new cart item");
         }
         await getCartitems();
-        toast.success("Added to Cart!");
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
-        toast.error(e.message);
         await getCartitems();
         return false;
       }
@@ -153,7 +139,6 @@ export const CartProvider = ({ children }) => {
         const newCart = cart.filter((item) => item.product.id !== product.id);
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        toast.info("Item removed from cart.");
         return;
       }
 
@@ -161,16 +146,13 @@ export const CartProvider = ({ children }) => {
       setCart(optimisticUpdate);
 
       try {
-        if (!userdetails?.id) throw new Error("User ID is missing.");
         const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
         if (!res.ok) throw new Error("Failed to remove cart item");
         await getCartitems();
-        toast.info("Item removed from cart.");
       } catch (e) {
         console.error("removeFromCart error:", e);
-        toast.error(e.message);
         await getCartitems();
       }
     },
@@ -200,7 +182,6 @@ export const CartProvider = ({ children }) => {
         );
         setCart(optimisticUpdate);
         try {
-          if (!userdetails?.id) throw new Error("User ID is missing.");
           const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -210,7 +191,6 @@ export const CartProvider = ({ children }) => {
           await getCartitems();
         } catch (e) {
           console.error("changeCartQuantity error:", e);
-          toast.error(e.message);
           await getCartitems();
         }
       }
@@ -222,20 +202,16 @@ export const CartProvider = ({ children }) => {
     if (!isSignedIn) {
       setCart([]);
       writeLS(LS_CART_KEY, []);
-      toast.info("Cart cleared.");
       return;
     }
     try {
-      if (!userdetails?.id) throw new Error("User ID is missing.");
       const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to clear cart");
       setCart([]);
-      toast.info("Cart cleared.");
     } catch (e) {
       console.error("clearCart error:", e);
-      toast.error(e.message);
       await getCartitems();
     }
   }, [isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]);
@@ -243,43 +219,26 @@ export const CartProvider = ({ children }) => {
   const addToWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
-        const existing = wishlist.some((item) => item.product?.id === product.id);
-        if (existing) {
-          toast.info("Item is already in your wishlist!");
-          return false;
-        }
+        const existing = wishlist.some((item) => item.product.id === product.id);
+        if (existing) return false;
         const newWishlist = [...wishlist, { product, productId: product.id }];
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
-        toast.success("Added to wishlist!");
         return true;
       }
-
+      if (!userdetails?.id) return false;
       try {
-        if (!userdetails?.id) {
-          throw new Error("User ID is missing.");
-        }
-        
-        const existing = wishlist.some((item) => item.product?.id === product.id);
-        if(existing) {
-          toast.info("Item is already in your wishlist!");
-          return false;
-        }
-
         const res = await fetch(`${BACKEND_URL}/api/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
         });
-        
+        if (res.status === 409) return false; // Already in wishlist
         if (!res.ok) throw new Error("Failed to add to wishlist");
-        
         await getwishlist();
-        toast.success("Added to wishlist!");
         return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
-        toast.error(e.message);
         await getwishlist();
         return false;
       }
@@ -290,30 +249,26 @@ export const CartProvider = ({ children }) => {
   const removeFromWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
-        const newWishlist = wishlist.filter((item) => item.product?.id !== product.id);
+        const newWishlist = wishlist.filter((item) => item.product.id !== product.id);
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
-        toast.info("Item removed from wishlist.");
         return;
       }
-      
+      if (!userdetails?.id) return;
       try {
-        if (!userdetails?.id) throw new Error("User ID is missing.");
         await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
         await getwishlist();
-        toast.info("Item removed from wishlist.");
       } catch (e) {
         console.error("removeFromWishlist error:", e);
-        toast.error(e.message);
         await getwishlist();
       }
     },
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
-  
-  const toggleWishlist = useCallback(
+
+const toggleWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
         if (wishlist?.some((item) => item.product?.id === product.id)) {
@@ -342,6 +297,9 @@ export const CartProvider = ({ children }) => {
     [wishlist, isSignedIn, userdetails?.id, addToWishlist, removeFromWishlist]
   );
   
+
+
+
   const mergeGuestCartIntoDB = useCallback(async () => {
     const guestCart = readLS(LS_CART_KEY);
     if (guestCart.length === 0) return;
@@ -360,12 +318,25 @@ export const CartProvider = ({ children }) => {
     writeLS(LS_WISHLIST_KEY, []);
   }, [addToWishlist]);
 
+  // Handle guest data loading on first mount
+  useEffect(() => {
+    if (!isSignedIn) {
+      setCart(readLS(LS_CART_KEY));
+      setWishlist(readLS(LS_WISHLIST_KEY));
+      setIsCartLoading(false);
+      setIsWishlistLoading(false);
+    }
+  }, [isSignedIn]);
+
+  // Handle data fetching for signed-in users
   const mergedOnceRef = useRef(false);
   useEffect(() => {
     if (isSignedIn && userdetails?.id) {
+      // Fetch data for signed-in user
       getCartitems();
       getwishlist();
 
+      // Merge guest data only once after sign-in
       if (!mergedOnceRef.current) {
         mergedOnceRef.current = true;
         (async () => {
@@ -374,30 +345,16 @@ export const CartProvider = ({ children }) => {
         })();
       }
     } else if (!isSignedIn) {
-      setCart(readLS(LS_CART_KEY));
-      setWishlist(readLS(LS_WISHLIST_KEY));
-      setIsCartLoading(false);
-      setIsWishlistLoading(false);
       mergedOnceRef.current = false;
     }
   }, [isSignedIn, userdetails?.id, getCartitems, getwishlist, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB]);
 
-  // Update local storage when buyNow state changes
-  useEffect(() => {
-    if (buyNow) {
-      writeLS(LS_BUY_NOW_KEY, buyNow);
-    }
-  }, [buyNow]);
-
   const startBuyNow = useCallback((product, quantity) => {
-    const item = { product, quantity };
-    setBuyNow(item);
-    // The useEffect above will handle writing to local storage
+    setBuyNow({ product, quantity });
   }, []);
 
   const clearBuyNow = useCallback(() => {
     setBuyNow(null);
-    removeLS(LS_BUY_NOW_KEY); // Clear from local storage
   }, []);
 
   return (
