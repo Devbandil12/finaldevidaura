@@ -1,3 +1,4 @@
+// src/contexts/CartContext.js
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
 
@@ -5,7 +6,6 @@ export const CartContext = createContext();
 
 const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
-const LS_BUY_NOW_KEY = "buyNowItem";
 
 const readLS = (key) => {
   try {
@@ -35,6 +35,9 @@ export const CartProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([]);
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
+  
+  // NEW: Centralized state for the "Buy Now" item
+  const [buyNow, setBuyNow] = useState(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -320,17 +323,13 @@ export const CartProvider = ({ children }) => {
     }
   }, [isSignedIn, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB, getCartitems, getwishlist]);
 
-
+  // NEW: Centralized Buy Now logic
   const startBuyNow = useCallback((product, quantity) => {
-    writeLS(LS_BUY_NOW_KEY, { product, quantity });
+    setBuyNow({ product, quantity });
   }, []);
 
   const clearBuyNow = useCallback(() => {
-    localStorage.removeItem(LS_BUY_NOW_KEY);
-  }, []);
-
-  const getBuyNow = useCallback(() => {
-    return readLS(LS_BUY_NOW_KEY);
+    setBuyNow(null);
   }, []);
 
   return (
@@ -338,6 +337,7 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         wishlist,
+        buyNow, // NEW: Expose the buyNow state
         isCartLoading,
         isWishlistLoading,
         getCartitems,
@@ -350,7 +350,6 @@ export const CartProvider = ({ children }) => {
         removeFromWishlist,
         startBuyNow,
         clearBuyNow,
-        getBuyNow,
       }}
     >
       {children}
