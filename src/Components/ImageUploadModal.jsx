@@ -7,10 +7,8 @@ import { toast } from "react-toastify";
 const ImageUploadModal = ({ isopen }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [singleImage, setSingleImage] = useState(null);
-  const [multipleImages, setMultipleImages] = useState([]);
-  
-  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the single combined array
+  const [images, setImages] = useState([]); // Will hold all selected image files
+  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
   
   const { uploadImage, uploading, error } = useCloudinary();
 
@@ -29,33 +27,24 @@ const ImageUploadModal = ({ isopen }) => {
     setProduct({ ...product, [e.target.name]: e.target.value });
   };
 
-  const handleSingleFileChange = (event) => {
-    const file = event.target.files[0];
-    setSingleImage(file);
-    setMultipleImages([]); 
-  };
-
-  const handleMultipleFilesChange = (event) => {
+  const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 10) {
       toast.error("You can upload a maximum of 10 images.");
-      setMultipleImages([]);
+      setImages([]);
     } else {
-      setMultipleImages(files);
-      setSingleImage(null); 
+      setImages(files);
     }
   };
 
   const handleUpload = async () => {
-    const imagesToUpload = singleImage ? [singleImage] : multipleImages;
-
-    if (imagesToUpload.length === 0) {
+    if (images.length === 0) {
       return toast.error("Please select at least one image to upload.");
     }
     
     try {
       const urls = [];
-      for (const imageFile of imagesToUpload) {
+      for (const imageFile of images) {
         const url = await uploadImage(imageFile);
         urls.push(url);
       }
@@ -88,8 +77,7 @@ const ImageUploadModal = ({ isopen }) => {
     setIsOpen(false);
   };
 
-  const isUploadDisabled =
-    uploading || (!singleImage && multipleImages.length === 0);
+  const isUploadDisabled = uploading || images.length === 0;
 
   return (
     <div>
@@ -107,37 +95,20 @@ const ImageUploadModal = ({ isopen }) => {
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
                 
-                {/* Single Image Upload Section */}
+                {/* Single, Multi-Image Upload Field */}
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
-                    Upload a Single Image
-                  </h3>
-                  <input
-                    type="file"
-                    onChange={handleSingleFileChange}
-                    className="w-full cursor-pointer"
-                  />
-                  {singleImage && (
-                    <p className="text-gray-400 mt-2 text-sm text-left">
-                      1 image selected
-                    </p>
-                  )}
-                </div>
-
-                {/* Multiple Images Upload Section */}
-                <div className="mt-6 w-full">
-                  <h3 className="text-md font-medium text-left mb-2">
-                    Upload Multiple Images (Max 10)
+                    Select Images (Max 10)
                   </h3>
                   <input
                     type="file"
                     multiple
-                    onChange={handleMultipleFilesChange}
+                    onChange={handleFileChange}
                     className="w-full cursor-pointer"
                   />
-                  {multipleImages.length > 0 && (
+                  {images.length > 0 && (
                     <p className="text-gray-400 mt-2 text-sm text-left">
-                      {multipleImages.length} images selected
+                      {images.length} images selected
                     </p>
                   )}
                 </div>
