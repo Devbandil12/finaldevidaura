@@ -7,7 +7,7 @@ import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
-import Login from "./Components/CustomAuthModal";         // /login page (unchanged)
+import Login from "./Components/CustomAuthModal";
 import Products from "./Components/Products";
 import MyOrder from "./Components/MyOrder";
 import Wishlist from "./Components/Wishlist";
@@ -20,6 +20,7 @@ import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
 import ProductDetail from "./Components/ProductDetail";
+
 // Styles
 import "./style/adminPanel.css";
 
@@ -37,17 +38,10 @@ import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
-/**
- * Watches login state while on /login.
- * If a post-login target exists in sessionStorage (e.g. "/cart"),
- * redirect there immediately after Clerk reports the user is signed in.
- * This lets the login page remain unchanged.
- */
 function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
-
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -65,14 +59,11 @@ function PostLoginRedirector() {
 }
 
 const App = () => {
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  // REMOVED: cart and wishlist state are now managed by CartProvider
+  // const [cart, setCart] = useState([]);
+  // const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
-
-
-
-  
 
   return (
     <UserProvider>
@@ -83,15 +74,11 @@ const App = () => {
               <ContactProvider>
                 <Router>
                   <ScrollToTop />
-                  <PostLoginRedirector /> {/* NEW: global watcher */}
+                  <PostLoginRedirector />
 
-                 <Navbar
-  cartCount={cart.length}
-  wishlistCount={wishlist.length}
-  onVisibilityChange={setNavbarVisible}
-/>
-
-
+                  {/* Navbar now gets cart/wishlist from its own context consumer */}
+                  <Navbar onVisibilityChange={setNavbarVisible} />
+                  
                   <MobileBackBar isNavbarVisible={isNavbarVisible} />
 
                   <Routes>
@@ -100,17 +87,12 @@ const App = () => {
                       path="/"
                       element={
                         <>
-                         <HeroSection />
-<DualMarquee />
-. <ProductShowcaseCarousel />
-
-                          <Products
-                            cart={cart}
-                            setCart={setCart}
-                            wishlist={wishlist}
-                            setWishlist={setWishlist}
-                          />
-<TestimonialsSection />
+                          <HeroSection />
+                          <DualMarquee />
+                          <ProductShowcaseCarousel />
+                          {/* Products no longer receives props */}
+                          <Products />
+                          <TestimonialsSection />
                         </>
                       }
                     />
@@ -118,29 +100,11 @@ const App = () => {
                     {/* Public: Auth & other pages */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/myorder" element={<MyOrder />} />
-<Route path="/product/:productId" element={<ProductDetail />} />
-                    <Route
-                      path="/wishlist"
-                      element={
-                        <Wishlist
-                          wishlist={wishlist}
-                          setWishlist={setWishlist}
-                          cart={cart}
-                          setCart={setCart}
-                        />
-                      }
-                    />
-                    <Route
-                      path="/cart"
-                      element={
-                        <Cart
-                          cart={cart}
-                          setCart={setCart}
-                          wishlist={wishlist}
-                          setWishlist={setWishlist}
-                        />
-                      }
-                    />
+                    <Route path="/product/:productId" element={<ProductDetail />} />
+                    {/* Wishlist no longer receives props */}
+                    <Route path="/wishlist" element={<Wishlist />} />
+                    {/* Cart no longer receives props */}
+                    <Route path="/cart" element={<Cart />} />
                     <Route path="/Admin" element={<Adminpannel />} />
                     <Route path="/contact" element={<ContactUs />} />
 
