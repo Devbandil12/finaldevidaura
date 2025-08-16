@@ -1,5 +1,4 @@
-// src/pages/ShoppingCart.jsx
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../style/cart.css";
@@ -9,7 +8,7 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";
 
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import Loader from "./Loader";
 
 const ShoppingCart = () => {
@@ -20,8 +19,8 @@ const ShoppingCart = () => {
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const {
-    cart, // The single source of truth for the main cart
-    buyNow, // The single source of truth for the temporary buy now item
+    cart,
+    buyNow,
     changeCartQuantity,
     removeFromCart,
     clearCart,
@@ -30,35 +29,35 @@ const ShoppingCart = () => {
     startBuyNow,
     clearBuyNow,
   } = useContext(CartContext);
-  const { coupons, isCouponValid, loadAvailableCoupons } =
+  const { coupons, isCouponValid, loadAvailableCoupons, validateCoupon } =
     useContext(CouponContext);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
-  // Determine which cart to render based on the 'buyNow' state
   const isBuyNowActive = !!buyNow;
   const itemsToRender = isBuyNowActive ? [buyNow] : cart;
   
-  // Load available coupons when user details are available.
-  // This is the only fetch that needs to be triggered from this component.
+  // Load coupons when user details are available.
   useEffect(() => {
     if (userdetails?.id) {
-      loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
+      loadAvailableCoupons(userdetails.id);
     }
   }, [userdetails?.id, loadAvailableCoupons]);
 
-  // Cleanup temp buy-now on route leave
+  // Cleanup temporary buy-now state when leaving the page.
   useEffect(() => {
     return () => {
-      if (location.pathname !== "/cart" && isBuyNowActive) {
+      // Clear buy now state when the component unmounts.
+      // This is crucial for navigating away from the cart to another page.
+      if (isBuyNowActive) {
         clearBuyNow();
       }
     };
-  }, [location.pathname, isBuyNowActive, clearBuyNow]);
+  }, [isBuyNowActive, clearBuyNow]);
 
   const handleCheckout = () => {
     if (!itemsToRender.length) {
-      alert("Your cart is empty.");
+      toast.error("Your cart is empty.");
       return;
     }
 
@@ -84,15 +83,12 @@ const ShoppingCart = () => {
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
 
-    if (isBuyNowActive) {
-      clearBuyNow();
-    }
-
     if (!isSignedIn) {
       sessionStorage.setItem("post_login_redirect", "/checkout");
       navigate("/login", { replace: true });
       return;
     }
+    
     sessionStorage.setItem("checkout_intent", JSON.stringify({ ts: Date.now() }));
     navigate("/checkout");
   };
@@ -116,7 +112,6 @@ const ShoppingCart = () => {
 
   const moveToWishlist = async (entry) => {
     const product = entry.product;
-    
     const ok = await addToWishlist(product);
 
     if (ok) {
@@ -130,6 +125,17 @@ const ShoppingCart = () => {
        toast.info("Already in wishlist");
     }
   };
+
+  const handleApplyCoupon = useCallback(async (coupon) => {
+    const validated = await validateCoupon(coupon.code, userdetails?.id);
+    if (validated && isCouponValid(validated, itemsToRender)) {
+      setAppliedCoupon(validated);
+      toast.success(`Coupon ${validated.code} applied!`);
+    } else {
+      setAppliedCoupon(null);
+      toast.error("Invalid or expired coupon.");
+    }
+  }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon]);
 
   const renderRemainingProducts = () =>
     !isBuyNowActive &&
@@ -164,12 +170,12 @@ const ShoppingCart = () => {
 
   const activeCart = itemsToRender;
   const totalOriginal = activeCart.reduce(
-    (sum, i) => sum + i.product.oprice * (i.quantity || 1),
+    (sum, i) => sum + (i.product?.oprice ?? 0) * (i.quantity || 1),
     0
   );
   const totalDiscounted = activeCart.reduce((sum, i) => {
     const price = Math.floor(
-      i.product.oprice * (1 - i.product.discount / 100)
+      (i.product?.oprice ?? 0) * (1 - (i.product?.discount ?? 0) / 100)
     );
     return sum + price * (i.quantity || 1);
   }, 0);
@@ -195,12 +201,6 @@ const ShoppingCart = () => {
 
   return (
     <>
-      <div style={{ padding: '10px', backgroundColor: 'lightblue', border: '1px solid blue', margin: '100px 10px' }}>
-          <h4>Debugging Info:</h4>
-          <p>Is Cart Loading: <strong>{isCartLoading ? 'True' : 'False'}</strong></p>
-          <p>Cart Item Count: <strong>{cart.length}</strong></p>
-          <p>User Details ID: <strong>{userdetails?.id ? 'Available' : 'Not Available'}</strong></p>
-      </div>
       <main className="main-container">
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
@@ -280,21 +280,7 @@ const ShoppingCart = () => {
                         if (isSelected) {
                           setAppliedCoupon(null);
                         } else {
-                          const validated = await fetch(
-                            `${import.meta.env.VITE_BACKEND_URL}/api/coupons/validate`,
-                            {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                code: coupon.code,
-                                userId: userdetails?.id ?? null,
-                              }),
-                            }
-                          ).then((r) => r.json());
-
-                          if (validated && isCouponValid(validated, activeCart)) {
-                            setAppliedCoupon(validated);
-                          }
+                          await handleApplyCoupon(coupon);
                         }
                       }}
                     >
