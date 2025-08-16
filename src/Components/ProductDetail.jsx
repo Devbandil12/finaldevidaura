@@ -1,32 +1,36 @@
-// src/pages/ProductDetail.jsx
 import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
-import { useUser } from "@clerk/clerk-react";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
 
 const ProductDetail = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { userdetails } = useContext(UserContext);
-  const { products, loading } = useContext(ProductContext);
-  const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+  const { userdetails } = useContext(UserContext); // Use only UserContext
+  const { products, loading: productsLoading } = useContext(ProductContext);
+  const { 
+    cart, 
+    wishlist, 
+    addToCart, 
+    removeFromCart, 
+    toggleWishlist, 
+    startBuyNow 
+  } = useContext(CartContext);
+  
   const { productId } = useParams();
+  
+  // Use a simple find method, which is efficient and clear
+  const product = products.find((p) => p.id === productId);
 
-  if (loading) {
+  if (productsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading product details...</p>
       </div>
     );
   }
-
-  const product = useMemo(() => {
-    return products.find((p) => p.id === productId);
-  }, [products, productId]);
 
   if (!product) {
     return <div className="text-center p-8">Product not found.</div>;
@@ -36,8 +40,9 @@ const ProductDetail = () => {
     ? product.images
     : [product.imageurl];
 
-  const isInCart = useMemo(() => cart?.some((i) => i.product?.id === product.id), [cart, product.id]);
-  const isInWishlist = useMemo(() => wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id), [wishlist, product.id]);
+  // Directly use the context state without useMemo
+  const isInCart = cart?.some((i) => i.product?.id === product.id);
+  const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
 
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
@@ -55,18 +60,16 @@ const ProductDetail = () => {
 
   const handleAddToCart = async () => {
     if (isInCart) {
-      await removeFromCart(product.id);
+      await removeFromCart(product);
     } else {
       await addToCart(product, quantity);
     }
   };
 
   const handleBuyNow = async () => {
-    // Original logic: handle legacy props or use context
-    // The `onAddToCart` prop is not used in this version, so the `startBuyNow` logic is always executed
-    const ok = startBuyNow(product, quantity);
-    if (!ok) return;
-
+    // Correct logic: call startBuyNow, then navigate.
+    // startBuyNow doesn't return a boolean, so the check is not needed.
+    startBuyNow(product, quantity);
     navigate("/cart", { replace: true });
   };
 
@@ -86,7 +89,6 @@ const ProductDetail = () => {
         console.error("Error sharing:", error);
       }
     } else {
-      // Fallback for browsers that do not support the Web Share API
       navigator.clipboard.writeText(window.location.href).then(() => {
         alert("Product link copied to clipboard!");
       }, (err) => {
@@ -123,10 +125,10 @@ const ProductDetail = () => {
               {images.map((img, idx) => (
                 <img
                   key={idx}
-                  src={img}
-                  alt={`Thumbnail ${idx + 1}`}
-                  className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
-                  onClick={() => setCurrentImg(idx)}
+                src={img}
+                alt={`Thumbnail ${idx + 1}`}
+                className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
+                onClick={() => setCurrentImg(idx)}
                 />
               ))}
             </div>
@@ -227,7 +229,7 @@ const ProductDetail = () => {
       
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg shadow-lg max-w-7xl mx-auto mt-8 p-4 md:p-8">
-        <ReviewComponent productId={product.id} user={user} userdetails={userdetails} />
+        <ReviewComponent productId={product.id} userdetails={userdetails} />
       </div>
     </div>
   );
