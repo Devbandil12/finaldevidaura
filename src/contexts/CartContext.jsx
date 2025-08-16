@@ -1,4 +1,3 @@
-// src/contexts/CartContext.js
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
 
@@ -30,25 +29,16 @@ const writeLS = (key, data) => {
 };
 
 export const CartProvider = ({ children }) => {
-  const { userdetails, isSignedIn, getUserDetails } = useContext(UserContext);
+  const { userdetails, isSignedIn } = useContext(UserContext);
   const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
-  
-  // NEW: Centralized state for the "Buy Now" item
   const [buyNow, setBuyNow] = useState(null);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const getCartitems = useCallback(async () => {
-    if (!isSignedIn) {
-      const storedCart = readLS(LS_CART_KEY);
-      setCart(storedCart);
-      setIsCartLoading(false);
-      return;
-    }
-    if (!userdetails?.id) return;
     setIsCartLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`);
@@ -61,16 +51,9 @@ export const CartProvider = ({ children }) => {
     } finally {
       setIsCartLoading(false);
     }
-  }, [isSignedIn, userdetails?.id, BACKEND_URL]);
+  }, [userdetails?.id, BACKEND_URL]);
 
   const getwishlist = useCallback(async () => {
-    if (!isSignedIn) {
-      const storedWishlist = readLS(LS_WISHLIST_KEY);
-      setWishlist(storedWishlist);
-      setIsWishlistLoading(false);
-      return;
-    }
-    if (!userdetails?.id) return;
     setIsWishlistLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}`);
@@ -83,7 +66,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       setIsWishlistLoading(false);
     }
-  }, [isSignedIn, userdetails?.id, BACKEND_URL]);
+  }, [userdetails?.id, BACKEND_URL]);
 
   const addToCart = useCallback(
     async (product, quantity = 1) => {
@@ -102,14 +85,13 @@ export const CartProvider = ({ children }) => {
         }
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        return;
+        return true;
       }
       if (!userdetails?.id) {
         console.error("User not signed in or user ID is missing.");
         return false;
       }
 
-      // Signed-in: optimistic update + DB
       const existing = cart.find((i) => i.product?.id === product.id);
       const qtyToAdd = Number(quantity || 1);
 
@@ -140,11 +122,11 @@ export const CartProvider = ({ children }) => {
           });
           if (!res.ok) throw new Error("Failed to add new cart item");
         }
-        await getCartitems(); // Re-fetch to sync state with DB
+        await getCartitems();
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
-        await getCartitems(); // Rollback to original state
+        await getCartitems();
         return false;
       }
     },
@@ -192,7 +174,6 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
-      // Signed-in
       if (nextQty <= 0) {
         removeFromCart(product);
       } else {
@@ -239,24 +220,27 @@ export const CartProvider = ({ children }) => {
     async (product) => {
       if (!isSignedIn) {
         const existing = wishlist.some((item) => item.product.id === product.id);
-        if (existing) return;
+        if (existing) return false;
         const newWishlist = [...wishlist, { product, productId: product.id }];
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
-        return;
+        return true;
       }
-      // Signed-in
-      if (!userdetails?.id) return;
+      if (!userdetails?.id) return false;
       try {
-        await fetch(`${BACKEND_URL}/api/wishlist`, {
+        const res = await fetch(`${BACKEND_URL}/api/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
         });
+        if (res.status === 409) return false; // Already in wishlist
+        if (!res.ok) throw new Error("Failed to add to wishlist");
         await getwishlist();
+        return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
         await getwishlist();
+        return false;
       }
     },
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
@@ -285,45 +269,54 @@ export const CartProvider = ({ children }) => {
   );
 
   const mergeGuestCartIntoDB = useCallback(async () => {
-    if (!isSignedIn || !userdetails?.id) return;
     const guestCart = readLS(LS_CART_KEY);
     if (guestCart.length === 0) return;
     for (const item of guestCart) {
       await addToCart(item.product, item.quantity);
     }
     writeLS(LS_CART_KEY, []);
-    getCartitems();
-  }, [isSignedIn, userdetails?.id, getCartitems, addToCart]);
+  }, [addToCart]);
 
   const mergeGuestWishlistIntoDB = useCallback(async () => {
-    if (!isSignedIn || !userdetails?.id) return;
     const guestWishlist = readLS(LS_WISHLIST_KEY);
     if (guestWishlist.length === 0) return;
     for (const item of guestWishlist) {
       await addToWishlist(item.product);
     }
     writeLS(LS_WISHLIST_KEY, []);
-    getwishlist();
-  }, [isSignedIn, userdetails?.id, getwishlist, addToWishlist]);
-  
+  }, [addToWishlist]);
+
+  // Handle guest data loading on first mount
+  useEffect(() => {
+    if (!isSignedIn) {
+      setCart(readLS(LS_CART_KEY));
+      setWishlist(readLS(LS_WISHLIST_KEY));
+      setIsCartLoading(false);
+      setIsWishlistLoading(false);
+    }
+  }, [isSignedIn]);
+
+  // Handle data fetching for signed-in users
   const mergedOnceRef = useRef(false);
   useEffect(() => {
-    if (isSignedIn && !mergedOnceRef.current) {
-      mergedOnceRef.current = true;
-      (async () => {
-        await mergeGuestCartIntoDB();
-        await mergeGuestWishlistIntoDB();
-        getCartitems();
-        getwishlist();
-      })();
-    } else if (!isSignedIn) {
-      mergedOnceRef.current = false;
+    if (isSignedIn && userdetails?.id) {
+      // Fetch data for signed-in user
       getCartitems();
       getwishlist();
-    }
-  }, [isSignedIn, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB, getCartitems, getwishlist]);
 
-  // NEW: Centralized Buy Now logic
+      // Merge guest data only once after sign-in
+      if (!mergedOnceRef.current) {
+        mergedOnceRef.current = true;
+        (async () => {
+          await mergeGuestCartIntoDB();
+          await mergeGuestWishlistIntoDB();
+        })();
+      }
+    } else if (!isSignedIn) {
+      mergedOnceRef.current = false;
+    }
+  }, [isSignedIn, userdetails?.id, getCartitems, getwishlist, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB]);
+
   const startBuyNow = useCallback((product, quantity) => {
     setBuyNow({ product, quantity });
   }, []);
@@ -337,7 +330,7 @@ export const CartProvider = ({ children }) => {
       value={{
         cart,
         wishlist,
-        buyNow, // NEW: Expose the buyNow state
+        buyNow,
         isCartLoading,
         isWishlistLoading,
         getCartitems,
