@@ -5,14 +5,14 @@ import { productsTable } from "../../configs/schema";
 import { toast } from "react-toastify";
 import { ProductContext } from "../contexts/productContext";
 
-const ImageUploadModal = ({ isopen, onClose }) => {
+const ImageUploadModal = ({ isopen }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState([]);
-  const [uploadedUrls, setUploadedUrls] = useState([]);
+  const [images, setImages] = useState([]); // Will hold all selected image files
+  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
   
   const { uploadImage, uploading, error } = useCloudinary();
-  const { setProducts } = useContext(ProductContext);
+  const { setProducts } = useContext(ProductContext); // Use context to update product list
 
   const [product, setProduct] = useState({
     name: "",
@@ -66,35 +66,22 @@ const ImageUploadModal = ({ isopen, onClose }) => {
         .insert(productsTable)
         .values({ 
           ...product,
-          imageurl: uploadedUrls,
+          imageurl: uploadedUrls, // Correctly submits a single array
         })
         .returning(productsTable);
       
-      // Update the product list in the context
+      // THIS IS THE CRITICAL FIX: Update the parent component's state
       setProducts(prev => [...prev, res[0]]);
-
-      console.log("Product added:", res);
+      
+      console.log(res);
       toast.success("Product added successfully!");
     } catch (error) {
       console.error("Database insert failed:", error);
       toast.error("Failed to add product.");
     } finally {
-      // Close the modal and reset state in the finally block
+      // It's good practice to close the modal here to ensure it closes
+      // even if there's a problem with the database insert.
       setIsOpen(false);
-      onClose();
-      setStep(1);
-      setImages([]);
-      setUploadedUrls([]);
-      setProduct({
-        name: "",
-        composition: "",
-        description: "",
-        fragrance: "",
-        fragranceNotes: "",
-        discount: "",
-        oprice: "",
-        size: "",
-      });
     }
   };
 
@@ -106,7 +93,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
         <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center">
           <div className="bg-black text-white p-6 rounded-lg shadow-xl w-96 relative">
             <button
-              onClick={onClose}
+              onClick={() => setIsOpen(false)}
               className="absolute top-2 right-3 text-white hover:text-white"
             >
               ✖
@@ -116,6 +103,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
                 
+                {/* Single, Multi-Image Upload Field */}
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
                     Select Images (Max 10)
