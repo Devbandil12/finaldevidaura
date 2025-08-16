@@ -10,9 +10,7 @@ const ImageUploadModal = ({ isopen }) => {
   const [singleImage, setSingleImage] = useState(null);
   const [multipleImages, setMultipleImages] = useState([]);
   
-  // New state variables for uploaded URLs
-  const [uploadedSingleImageUrl, setUploadedSingleImageUrl] = useState(null);
-  const [uploadedGalleryUrls, setUploadedGalleryUrls] = useState([]);
+  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the single combined array
   
   const { uploadImage, uploading, error } = useCloudinary();
 
@@ -48,59 +46,36 @@ const ImageUploadModal = ({ isopen }) => {
     }
   };
 
-  // Upload the single image
-  const handleSingleUpload = async () => {
-    if (!singleImage) {
-      return toast.error("Please select a single image to upload.");
-    }
-    
-    try {
-      const url = await uploadImage(singleImage);
-      setUploadedSingleImageUrl(url);
-      setStep(2);
-      toast.success("Image uploaded successfully!");
-    } catch (error) {
-      console.error("Single image upload failed:", error);
-      toast.error("Single image upload failed. Please try again.");
-    }
-  };
+  const handleUpload = async () => {
+    const imagesToUpload = singleImage ? [singleImage] : multipleImages;
 
-  // Upload the multiple images
-  const handleMultipleUpload = async () => {
-    if (multipleImages.length === 0) {
+    if (imagesToUpload.length === 0) {
       return toast.error("Please select at least one image to upload.");
     }
     
     try {
       const urls = [];
-      for (const imageFile of multipleImages) {
+      for (const imageFile of imagesToUpload) {
         const url = await uploadImage(imageFile);
         urls.push(url);
       }
       
-      setUploadedGalleryUrls(urls);
+      setUploadedUrls(urls);
       setStep(2);
       toast.success("Images uploaded successfully!");
     } catch (error) {
-      console.error("Multiple images upload failed:", error);
-      toast.error("Multiple images upload failed. Please try again.");
+      console.error("Image upload failed:", error);
+      toast.error("Image upload failed. Please try again.");
     }
   };
   
   const handlesubmit = async () => {
     try {
-      const allImageUrls = [];
-      if (uploadedSingleImageUrl) {
-        allImageUrls.push(uploadedSingleImageUrl);
-      }
-      allImageUrls.push(...uploadedGalleryUrls);
-      
       const res = await db
         .insert(productsTable)
         .values({ 
           ...product,
-          imageurl: uploadedSingleImageUrl, // Submit the single image URL
-          gallery_images: allImageUrls.length > 1 ? allImageUrls : [] // Submit the combined gallery
+          imageurl: uploadedUrls, // Correctly submits a single array
         })
         .returning(productsTable);
       
@@ -147,13 +122,6 @@ const ImageUploadModal = ({ isopen }) => {
                       1 image selected
                     </p>
                   )}
-                  <button
-                    onClick={handleSingleUpload}
-                    disabled={uploading || !singleImage}
-                    className="mt-2 bg-blue-500 px-4 py-2 rounded hover:bg-blue-700 transition"
-                  >
-                    {uploading ? "Uploading..." : "Upload Single Image"}
-                  </button>
                 </div>
 
                 {/* Multiple Images Upload Section */}
@@ -172,15 +140,15 @@ const ImageUploadModal = ({ isopen }) => {
                       {multipleImages.length} images selected
                     </p>
                   )}
-                  <button
-                    onClick={handleMultipleUpload}
-                    disabled={uploading || multipleImages.length === 0}
-                    className="mt-2 bg-blue-500 px-4 py-2 rounded hover:bg-blue-700 transition"
-                  >
-                    {uploading ? "Uploading..." : "Upload Multiple Images"}
-                  </button>
                 </div>
 
+                <button
+                  onClick={handleUpload}
+                  disabled={isUploadDisabled}
+                  className="mt-6 bg-blue-500 px-4 py-2 rounded hover:bg-blue-700 transition"
+                >
+                  {uploading ? "Uploading..." : "Upload Images"}
+                </button>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
               </div>
             ) : (
