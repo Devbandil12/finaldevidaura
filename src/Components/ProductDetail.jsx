@@ -35,10 +35,14 @@ const ProductDetail = () => {
   if (!product) {
     return <div className="text-center p-8">Product not found.</div>;
   }
-
-  const images = Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : [product.imageurl];
+  
+  // =========================================================
+  // ===  CORRECTED IMAGE LOGIC FOR SINGLE + GALLERY IMAGES ===
+  // =========================================================
+  const allImages = [product.imageurl, ...(product.galleryImages || [])];
+  
+  // Use 'allImages' for the gallery and navigation
+  // =========================================================
 
   // Directly use the context state without useMemo
   const isInCart = cart?.some((i) => i.product?.id === product.id);
@@ -56,7 +60,7 @@ const ProductDetail = () => {
   }, [productId]);
 
   const changeImage = (delta) =>
-    setCurrentImg((idx) => (idx + delta + images.length) % images.length);
+    setCurrentImg((idx) => (idx + delta + allImages.length) % allImages.length);
 
   const handleAddToCart = async () => {
     if (isInCart) {
@@ -106,11 +110,11 @@ const ProductDetail = () => {
           <div className="lg:w-1/2">
             <div className="relative mb-4">
               <img
-                src={images[currentImg]}
+                src={allImages[currentImg]}
                 alt={product.name}
                 className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
               />
-              {images.length > 1 && (
+              {allImages.length > 1 && (
                 <>
                   <button className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10 hover:bg-white transition-colors" onClick={() => changeImage(-1)}>
                     <ChevronLeft size={24} />
@@ -122,7 +126,7 @@ const ProductDetail = () => {
               )}
             </div>
             <div className="flex gap-2 overflow-x-auto p-2 justify-center">
-              {images.map((img, idx) => (
+              {allImages.map((img, idx) => (
                 <img
                   key={idx}
                 src={img}
