@@ -6,13 +6,12 @@ export const CartContext = createContext();
 
 const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
-const LS_BUY_NOW_KEY = "buyNowItem"; // New key for the buy now item
+const LS_BUY_NOW_KEY = "buyNowItem";
 
 const readLS = (key) => {
   try {
     const serializedState = localStorage.getItem(key);
     if (serializedState === null) {
-      // Return null for a single item like buyNow, otherwise return an empty array
       return key === LS_BUY_NOW_KEY ? null : [];
     }
     return JSON.parse(serializedState);
@@ -45,7 +44,6 @@ export const CartProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState(() => readLS(LS_WISHLIST_KEY));
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
-  // Initialize buyNow state from local storage for persistence
   const [buyNow, setBuyNow] = useState(() => readLS(LS_BUY_NOW_KEY));
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -84,7 +82,6 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = useCallback(
     async (product, quantity = 1) => {
-      // Logic for guest users
       if (!isSignedIn) {
         const existing = cart.find((i) => i.product.id === product.id);
         const qtyToAdd = Number(quantity || 1);
@@ -104,7 +101,6 @@ export const CartProvider = ({ children }) => {
         return true;
       }
       
-      // Logic for signed-in users
       if (!userdetails?.id) {
         toast.error("Please sign in to add items to your cart.");
         return false;
@@ -384,8 +380,11 @@ export const CartProvider = ({ children }) => {
   }, [addToWishlist]);
 
   const mergedOnceRef = useRef(false);
+  
   useEffect(() => {
+    // This effect ensures the loading state is always handled.
     if (isSignedIn && userdetails?.id) {
+      // User is signed in and details are available, fetch from DB
       getCartitems();
       getwishlist();
 
@@ -397,19 +396,24 @@ export const CartProvider = ({ children }) => {
         })();
       }
     } else if (!isSignedIn) {
+      // User is not signed in, set loading to false and use local storage
+      setIsCartLoading(false);
+      setIsWishlistLoading(false);
       mergedOnceRef.current = false;
     }
+    // The case where isSignedIn is true but userdetails.id is null is handled by the initial state
+    // and this effect simply waits for userdetails.id to become available.
   }, [isSignedIn, userdetails?.id, getCartitems, getwishlist, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB]);
 
   const startBuyNow = useCallback((product, quantity) => {
     const item = { product, quantity };
     setBuyNow(item);
-    writeLS(LS_BUY_NOW_KEY, item); // Persist to local storage
+    writeLS(LS_BUY_NOW_KEY, item);
   }, []);
 
   const clearBuyNow = useCallback(() => {
     setBuyNow(null);
-    removeLS(LS_BUY_NOW_KEY); // Remove from local storage
+    removeLS(LS_BUY_NOW_KEY);
   }, []);
 
   return (
