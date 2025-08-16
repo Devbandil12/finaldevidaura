@@ -29,7 +29,7 @@ const ShoppingCart = () => {
     startBuyNow,
     clearBuyNow,
   } = useContext(CartContext);
-  const { coupons, isCouponValid, loadAvailableCoupons, validateCoupon } =
+  const { availableCoupons, isCouponValid, loadAvailableCoupons, validateCoupon } =
     useContext(CouponContext);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -126,13 +126,17 @@ const ShoppingCart = () => {
 
   const handleApplyCoupon = useCallback(async (coupon) => {
     const validated = await validateCoupon(coupon.code, userdetails?.id);
-    if (validated && isCouponValid(validated, itemsToRender)) {
-      setAppliedCoupon(validated);
-      toast.success(`Coupon ${validated.code} applied!`);
+    if (validated) {
+      if (isCouponValid(validated, itemsToRender)) {
+        setAppliedCoupon(validated);
+        toast.success(`Coupon ${validated.code} applied!`);
+      } else {
+        // isCouponValid already shows a toast, so we just clear the coupon
+        setAppliedCoupon(null);
+      }
     } else {
       setAppliedCoupon(null);
-      // The validateCoupon function already shows a toast on failure.
-      // We don't need a redundant toast here.
+      // The validateCoupon function already shows a toast on failure, so this is handled
     }
   }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon]);
 
@@ -181,10 +185,11 @@ const ShoppingCart = () => {
 
   let finalPrice = totalDiscounted;
   if (appliedCoupon) {
+    const discountValue = appliedCoupon.discountValue ?? 0;
     finalPrice =
       appliedCoupon.discountType === "percent"
-        ? Math.floor(finalPrice * (1 - appliedCoupon.discountValue / 100))
-        : Math.max(0, finalPrice - appliedCoupon.discountValue);
+        ? Math.floor(finalPrice * (1 - discountValue / 100))
+        : Math.max(0, finalPrice - discountValue);
   }
 
   useEffect(() => {
@@ -197,9 +202,6 @@ const ShoppingCart = () => {
   if (!isBuyNowActive && isCartLoading) {
     return <Loader text="Loading cart..." />;
   }
-
-  console.log("Applied Coupon:", appliedCoupon);
-  console.log("Final Price:", finalPrice);
 
   return (
     <>
@@ -271,8 +273,8 @@ const ShoppingCart = () => {
 
             <div className="cart-coupons">
               <h4>Available Coupons</h4>
-              {coupons.length > 0 ? (
-                coupons.map((coupon) => {
+              {availableCoupons.length > 0 ? (
+                availableCoupons.map((coupon) => {
                   const isSelected = appliedCoupon?.id === coupon.id;
                   return (
                     <div
