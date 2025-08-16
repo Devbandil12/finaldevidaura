@@ -1,4 +1,4 @@
-Import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
 
 export const CartContext = createContext();
