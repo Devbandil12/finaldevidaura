@@ -335,7 +335,7 @@ const Navbar = ({ onVisibilityChange }) => {
                   <img src={CartIcon} alt="Cart" />
                   {/* We now use cart.length directly */}
                   <span id="cart-count" className="badge">
-                    {cart.length > 0 ? cart.length : ""}
+                    {cart.length >= 0 ? cart.length : ""}
                   </span>
                 </button>
               </a>
