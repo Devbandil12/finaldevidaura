@@ -129,24 +129,24 @@ export const CouponProvider = ({ children }) => {
   }, []);
 
   const validateCoupon = useCallback(async (code, userId) => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, userId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.message || "Invalid coupon code");
-        return null;
-      }
-      return data;
-    } catch (err) {
-      console.error("[CouponContext] validation failed:", err);
-      toast.error("Validation failed. Please try again.");
+  try {
+    const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, userId }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.code) { // <--- Added !data.code check here
+      toast.error(data.message || "Invalid coupon code");
       return null;
     }
-  }, [BASE_URL]);
+    return data;
+  } catch (err) {
+    console.error("[CouponContext] validation failed:", err);
+    toast.error("Validation failed. Please try again.");
+    return null;
+  }
+}, [BASE_URL]);
 
   const loadAvailableCoupons = useCallback(async (userId) => {
     if (!userId) return;
