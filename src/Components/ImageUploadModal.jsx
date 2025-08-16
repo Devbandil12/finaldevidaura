@@ -8,11 +8,11 @@ import { ProductContext } from "../contexts/productContext";
 const ImageUploadModal = ({ isopen }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState([]); // Will hold all selected image files
-  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
+  const [images, setImages] = useState([]); 
+  const [uploadedUrls, setUploadedUrls] = useState([]); 
   
   const { uploadImage, uploading, error } = useCloudinary();
-  const { setProducts } = useContext(ProductContext); // Use context to update product list
+  const { setProducts } = useContext(ProductContext);
 
   const [product, setProduct] = useState({
     name: "",
@@ -26,7 +26,13 @@ const ImageUploadModal = ({ isopen }) => {
   });
 
   const handleChange = (e) => {
-    setProduct({ ...product, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Convert numeric fields to numbers immediately
+    if (name === "discount" || name === "oprice" || name === "size") {
+      setProduct({ ...product, [name]: Number(value) });
+    } else {
+      setProduct({ ...product, [name]: value });
+    }
   };
 
   const handleFileChange = (event) => {
@@ -61,27 +67,46 @@ const ImageUploadModal = ({ isopen }) => {
   };
   
   const handlesubmit = async () => {
+    // Validation check before submitting
+    const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size"];
+    for (const field of requiredFields) {
+      if (!product[field] || (typeof product[field] === 'string' && product[field].trim() === "")) {
+        return toast.error(`Please fill in the '${field}' field.`);
+      }
+    }
+
     try {
       const res = await db
         .insert(productsTable)
         .values({ 
           ...product,
-          imageurl: uploadedUrls, // Correctly submits a single array
+          imageurl: uploadedUrls,
         })
         .returning(productsTable);
       
-      // THIS IS THE CRITICAL FIX: Update the parent component's state
       setProducts(prev => [...prev, res[0]]);
       
-      console.log(res);
+      console.log("Product added:", res);
       toast.success("Product added successfully!");
     } catch (error) {
       console.error("Database insert failed:", error);
-      toast.error("Failed to add product.");
+      console.error("Drizzle ORM Error:", error.message);
+      toast.error("Failed to add product. Check console for details.");
     } finally {
-      // It's good practice to close the modal here to ensure it closes
-      // even if there's a problem with the database insert.
       setIsOpen(false);
+      setStep(1);
+      setImages([]);
+      setUploadedUrls([]);
+      setProduct({
+        name: "",
+        composition: "",
+        description: "",
+        fragrance: "",
+        fragranceNotes: "",
+        discount: "",
+        oprice: "",
+        size: "",
+      });
     }
   };
 
@@ -103,7 +128,6 @@ const ImageUploadModal = ({ isopen }) => {
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
                 
-                {/* Single, Multi-Image Upload Field */}
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
                     Select Images (Max 10)
@@ -131,7 +155,6 @@ const ImageUploadModal = ({ isopen }) => {
                 {error && <p className="text-red-500 mt-2">{error}</p>}
               </div>
             ) : (
-              // Step 2: Product Details
               <div>
                 <h2 className="text-lg font-semibold">Enter Product Details</h2>
                 <div className="grid gap-3 mt-4">
