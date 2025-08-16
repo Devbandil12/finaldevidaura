@@ -502,6 +502,17 @@
 
 }
 
+.coupon-item.applied {
+  border: 2px solid green;
+  background-color: #e6ffe6;
+}
+
+.coupon-applied {
+  color: green;
+  font-weight: bold;
+}
+
+
 .coupon-list {
   display: flex;
   flex-direction: column;
