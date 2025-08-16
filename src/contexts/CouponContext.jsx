@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 
 export const CouponContext = createContext({
@@ -9,7 +9,8 @@ export const CouponContext = createContext({
   saveCoupon: () => { },
   deleteCoupon: () => { },
   isCouponValid: () => false,
-  loadAvailableCoupons: () => { }
+  loadAvailableCoupons: () => { },
+  validateCoupon: () => null,
 });
 
 
@@ -19,8 +20,8 @@ export const CouponProvider = ({ children }) => {
   const [availableCoupons, setAvailableCoupons] = useState([]);
 
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
-  // Load coupons
-  const refreshCoupons = async () => {
+  
+  const refreshCoupons = useCallback(async () => {
     const endpoint = `${BASE_URL}/api/coupons`;
     console.log("🔍 [CouponContext] fetching coupons from:", endpoint);
     try {
@@ -28,20 +29,18 @@ export const CouponProvider = ({ children }) => {
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = await res.json();
       setCoupons(data);
-      return data;    // now this function returns a promise that resolves with the coupon list
-
+      return data;
     } catch (err) {
       console.error("[CouponContext] failed to load:", err);
       toast.error("Could not load coupons");
     }
-  };
+  }, [BASE_URL]);
 
 
   useEffect(() => {
     refreshCoupons();
-  }, []);
+  }, [refreshCoupons]);
 
-  // Save coupon (create or update)
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
       return toast.error("Code is required");
@@ -80,7 +79,6 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // Delete coupon
   const deleteCoupon = async (id) => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
@@ -95,16 +93,12 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // Validate coupon conditions (client side)
-  const isCouponValid = (coupon, cart) => {
+  const isCouponValid = useCallback((coupon, cart) => {
     const totalValue = cart.reduce(
       (acc, item) =>
         acc +
         item.quantity *
-        Math.floor(
-          item.product.oprice -
-          (item.product.discount / 100) * item.product.oprice
-        ),
+        Math.floor(item.product.oprice * (1 - item.product.discount / 100)),
       0
     );
 
@@ -132,20 +126,40 @@ export const CouponProvider = ({ children }) => {
     }
 
     return true;
-  };
+  }, []);
 
-  // Load available coupons for user
-  const loadAvailableCoupons = async (userId) => {
+  const validateCoupon = useCallback(async (code, userId) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message || "Invalid coupon code");
+        return null;
+      }
+      return data;
+    } catch (err) {
+      console.error("[CouponContext] validation failed:", err);
+      toast.error("Validation failed. Please try again.");
+      return null;
+    }
+  }, [BASE_URL]);
+
+  const loadAvailableCoupons = useCallback(async (userId) => {
     if (!userId) return;
     try {
       const res = await fetch(`${BASE_URL}/api/coupons/available?userId=${userId}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Failed to fetch available coupons");
       const data = await res.json();
       setAvailableCoupons(data);
-    } catch {
+    } catch (err) {
+      console.error("[CouponContext] failed to load available coupons:", err);
       toast.error("Could not load available coupons");
     }
-  };
+  }, [BASE_URL]);
 
   return (
     <CouponContext.Provider
@@ -159,6 +173,7 @@ export const CouponProvider = ({ children }) => {
         deleteCoupon,
         isCouponValid,
         loadAvailableCoupons,
+        validateCoupon,
       }}
     >
       {children}
