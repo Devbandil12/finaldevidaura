@@ -20,8 +20,8 @@ const useCloudinary = () => {
     formData.append("upload_preset", "freelance");
     formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
 
-    // Build the URL with transformation parameters
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload?quality=auto&format=auto`;
+    // This is the original, simple URL
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`;
 
     try {
       const response = await axios.post(uploadUrl, formData);
@@ -29,7 +29,6 @@ const useCloudinary = () => {
       const secureUrl = response.data.secure_url;
       setUploadedUrl(secureUrl);
       
-      // Return the URL for use in your component
       return secureUrl;
       
     } catch (err) {
