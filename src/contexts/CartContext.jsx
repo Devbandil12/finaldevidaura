@@ -1,21 +1,24 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
 
 export const CartContext = createContext();
 
 const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
+const LS_BUY_NOW_KEY = "buyNowItem"; // New key for the buy now item
 
 const readLS = (key) => {
   try {
     const serializedState = localStorage.getItem(key);
     if (serializedState === null) {
-      return [];
+      // Return null for a single item like buyNow, otherwise return an empty array
+      return key === LS_BUY_NOW_KEY ? null : [];
     }
     return JSON.parse(serializedState);
   } catch (err) {
     console.error("Error reading from local storage:", err);
-    return [];
+    return key === LS_BUY_NOW_KEY ? null : [];
   }
 };
 
@@ -28,13 +31,22 @@ const writeLS = (key, data) => {
   }
 };
 
+const removeLS = (key) => {
+  try {
+    localStorage.removeItem(key);
+  } catch (err) {
+    console.error("Error removing from local storage:", err);
+  }
+};
+
 export const CartProvider = ({ children }) => {
   const { userdetails, isSignedIn } = useContext(UserContext);
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const [cart, setCart] = useState(() => readLS(LS_CART_KEY));
+  const [wishlist, setWishlist] = useState(() => readLS(LS_WISHLIST_KEY));
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
-  const [buyNow, setBuyNow] = useState(null);
+  // Initialize buyNow state from local storage for persistence
+  const [buyNow, setBuyNow] = useState(() => readLS(LS_BUY_NOW_KEY));
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -47,6 +59,7 @@ export const CartProvider = ({ children }) => {
       setCart(rows);
     } catch (e) {
       console.error("getCartitems error:", e);
+      toast.error("Failed to load cart.");
       setCart([]);
     } finally {
       setIsCartLoading(false);
@@ -62,6 +75,7 @@ export const CartProvider = ({ children }) => {
       setWishlist(rows);
     } catch (e) {
       console.error("getwishlist error:", e);
+      toast.error("Failed to load wishlist.");
       setWishlist([]);
     } finally {
       setIsWishlistLoading(false);
@@ -70,6 +84,7 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = useCallback(
     async (product, quantity = 1) => {
+      // Logic for guest users
       if (!isSignedIn) {
         const existing = cart.find((i) => i.product.id === product.id);
         const qtyToAdd = Number(quantity || 1);
@@ -85,10 +100,13 @@ export const CartProvider = ({ children }) => {
         }
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
+        toast.success("Added to Cart!");
         return true;
       }
+      
+      // Logic for signed-in users
       if (!userdetails?.id) {
-        console.error("User not signed in or user ID is missing.");
+        toast.error("Please sign in to add items to your cart.");
         return false;
       }
 
@@ -123,9 +141,11 @@ export const CartProvider = ({ children }) => {
           if (!res.ok) throw new Error("Failed to add new cart item");
         }
         await getCartitems();
+        toast.success("Added to Cart!");
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
+        toast.error("Failed to add to cart.");
         await getCartitems();
         return false;
       }
@@ -139,6 +159,12 @@ export const CartProvider = ({ children }) => {
         const newCart = cart.filter((item) => item.product.id !== product.id);
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
+        toast.info("Item removed from cart.");
+        return;
+      }
+
+      if (!userdetails?.id) {
+        toast.error("Please sign in to remove items from your cart.");
         return;
       }
 
@@ -151,8 +177,10 @@ export const CartProvider = ({ children }) => {
         });
         if (!res.ok) throw new Error("Failed to remove cart item");
         await getCartitems();
+        toast.info("Item removed from cart.");
       } catch (e) {
         console.error("removeFromCart error:", e);
+        toast.error("Failed to remove from cart.");
         await getCartitems();
       }
     },
@@ -174,6 +202,11 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
+      if (!userdetails?.id) {
+        toast.error("Please sign in to update your cart.");
+        return;
+      }
+
       if (nextQty <= 0) {
         removeFromCart(product);
       } else {
@@ -191,6 +224,7 @@ export const CartProvider = ({ children }) => {
           await getCartitems();
         } catch (e) {
           console.error("changeCartQuantity error:", e);
+          toast.error("Failed to update quantity.");
           await getCartitems();
         }
       }
@@ -202,6 +236,12 @@ export const CartProvider = ({ children }) => {
     if (!isSignedIn) {
       setCart([]);
       writeLS(LS_CART_KEY, []);
+      toast.info("Cart cleared.");
+      return;
+    }
+
+    if (!userdetails?.id) {
+      toast.error("Please sign in to clear your cart.");
       return;
     }
     try {
@@ -210,8 +250,10 @@ export const CartProvider = ({ children }) => {
       });
       if (!res.ok) throw new Error("Failed to clear cart");
       setCart([]);
+      toast.info("Cart cleared.");
     } catch (e) {
       console.error("clearCart error:", e);
+      toast.error("Failed to clear cart.");
       await getCartitems();
     }
   }, [isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]);
@@ -219,26 +261,44 @@ export const CartProvider = ({ children }) => {
   const addToWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
-        const existing = wishlist.some((item) => item.product.id === product.id);
-        if (existing) return false;
+        const existing = wishlist.some((item) => item.product?.id === product.id);
+        if (existing) {
+          toast.info("Item is already in your wishlist!");
+          return false;
+        }
         const newWishlist = [...wishlist, { product, productId: product.id }];
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
+        toast.success("Added to wishlist!");
         return true;
       }
-      if (!userdetails?.id) return false;
+
+      if (!userdetails?.id) {
+        toast.error("Please sign in to add to your wishlist.");
+        return false;
+      }
+      
       try {
+        const existing = wishlist.some((item) => item.product?.id === product.id);
+        if(existing) {
+          toast.info("Item is already in your wishlist!");
+          return false;
+        }
+
         const res = await fetch(`${BACKEND_URL}/api/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
         });
-        if (res.status === 409) return false; // Already in wishlist
+        
         if (!res.ok) throw new Error("Failed to add to wishlist");
+        
         await getwishlist();
+        toast.success("Added to wishlist!");
         return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
+        toast.error("Failed to add to wishlist.");
         await getwishlist();
         return false;
       }
@@ -249,26 +309,34 @@ export const CartProvider = ({ children }) => {
   const removeFromWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
-        const newWishlist = wishlist.filter((item) => item.product.id !== product.id);
+        const newWishlist = wishlist.filter((item) => item.product?.id !== product.id);
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
+        toast.info("Item removed from wishlist.");
         return;
       }
-      if (!userdetails?.id) return;
+      
+      if (!userdetails?.id) {
+        toast.error("Please sign in to remove from your wishlist.");
+        return;
+      }
+      
       try {
         await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
         await getwishlist();
+        toast.info("Item removed from wishlist.");
       } catch (e) {
         console.error("removeFromWishlist error:", e);
+        toast.error("Failed to remove from wishlist.");
         await getwishlist();
       }
     },
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
-
-const toggleWishlist = useCallback(
+  
+  const toggleWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
         if (wishlist?.some((item) => item.product?.id === product.id)) {
@@ -297,16 +365,13 @@ const toggleWishlist = useCallback(
     [wishlist, isSignedIn, userdetails?.id, addToWishlist, removeFromWishlist]
   );
   
-
-
-
   const mergeGuestCartIntoDB = useCallback(async () => {
     const guestCart = readLS(LS_CART_KEY);
     if (guestCart.length === 0) return;
     for (const item of guestCart) {
       await addToCart(item.product, item.quantity);
     }
-    writeLS(LS_CART_KEY, []);
+    removeLS(LS_CART_KEY);
   }, [addToCart]);
 
   const mergeGuestWishlistIntoDB = useCallback(async () => {
@@ -315,28 +380,15 @@ const toggleWishlist = useCallback(
     for (const item of guestWishlist) {
       await addToWishlist(item.product);
     }
-    writeLS(LS_WISHLIST_KEY, []);
+    removeLS(LS_WISHLIST_KEY);
   }, [addToWishlist]);
 
-  // Handle guest data loading on first mount
-  useEffect(() => {
-    if (!isSignedIn) {
-      setCart(readLS(LS_CART_KEY));
-      setWishlist(readLS(LS_WISHLIST_KEY));
-      setIsCartLoading(false);
-      setIsWishlistLoading(false);
-    }
-  }, [isSignedIn]);
-
-  // Handle data fetching for signed-in users
   const mergedOnceRef = useRef(false);
   useEffect(() => {
     if (isSignedIn && userdetails?.id) {
-      // Fetch data for signed-in user
       getCartitems();
       getwishlist();
 
-      // Merge guest data only once after sign-in
       if (!mergedOnceRef.current) {
         mergedOnceRef.current = true;
         (async () => {
@@ -350,11 +402,14 @@ const toggleWishlist = useCallback(
   }, [isSignedIn, userdetails?.id, getCartitems, getwishlist, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB]);
 
   const startBuyNow = useCallback((product, quantity) => {
-    setBuyNow({ product, quantity });
+    const item = { product, quantity };
+    setBuyNow(item);
+    writeLS(LS_BUY_NOW_KEY, item); // Persist to local storage
   }, []);
 
   const clearBuyNow = useCallback(() => {
     setBuyNow(null);
+    removeLS(LS_BUY_NOW_KEY); // Remove from local storage
   }, []);
 
   return (
