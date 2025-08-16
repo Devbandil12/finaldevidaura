@@ -19,12 +19,15 @@ const useCloudinary = () => {
     formData.append("file", file);
     formData.append("upload_preset", "freelance");
     formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
-
-    // This is the original, simple URL
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`;
+    
+    // Add the image compression and format transformation here
+    formData.append("transformation", "q_auto,f_auto");
 
     try {
-      const response = await axios.post(uploadUrl, formData);
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        formData
+      );
       
       const secureUrl = response.data.secure_url;
       setUploadedUrl(secureUrl);
