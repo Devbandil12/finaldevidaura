@@ -268,6 +268,38 @@ export const CartProvider = ({ children }) => {
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
 
+const toggleWishlist = useCallback(
+    async (product) => {
+      if (!isSignedIn) {
+        if (wishlist?.some((item) => item.product?.id === product.id)) {
+          removeFromWishlist(product);
+        } else {
+          addToWishlist(product);
+        }
+        return;
+      }
+  
+      if (!userdetails?.id) {
+        toast.error("Please sign in to manage your wishlist.");
+        return;
+      }
+  
+      const isAlreadyInWishlist = wishlist?.some(
+        (item) => item.product?.id === product.id
+      );
+  
+      if (isAlreadyInWishlist) {
+        await removeFromWishlist(product);
+      } else {
+        await addToWishlist(product);
+      }
+    },
+    [wishlist, isSignedIn, userdetails?.id, addToWishlist, removeFromWishlist]
+  );
+  
+
+
+
   const mergeGuestCartIntoDB = useCallback(async () => {
     const guestCart = readLS(LS_CART_KEY);
     if (guestCart.length === 0) return;
@@ -341,6 +373,7 @@ export const CartProvider = ({ children }) => {
         getwishlist,
         addToWishlist,
         removeFromWishlist,
+        toggleWishlist,
         startBuyNow,
         clearBuyNow,
       }}
