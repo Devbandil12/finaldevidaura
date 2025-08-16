@@ -285,16 +285,15 @@ const ShoppingCart = () => {
 
             <div className="cart-coupons">
               <h4>Apply a Coupon</h4>
-
               {appliedCoupon ? (
-                <div className="applied-coupon-display">
+                <div className="coupon-box applied">
                   <span>
-                    **Coupon {appliedCoupon.code} applied!**
+                    Coupon {appliedCoupon.code} applied
                   </span>
                   <button onClick={() => setAppliedCoupon(null)}>Remove</button>
                 </div>
               ) : (
-                <div className="manual-coupon-input">
+                <div className="coupon-box manual-input">
                   <input
                     type="text"
                     placeholder="Enter coupon code"
