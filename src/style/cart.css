@@ -587,3 +587,100 @@
   font-weight: bold;
   color: black;
 }
+
+/* New Coupon Section Styles */
+.cart-coupons {
+  margin-top: 20px;
+}
+
+.cart-coupons h4 {
+  margin-bottom: 10px;
+}
+
+.manual-coupon-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.manual-coupon-input input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.manual-coupon-input button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.manual-coupon-input button:hover {
+  background-color: #0056b3;
+}
+
+.applied-coupon-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #e6ffe6;
+  border: 1px solid green;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.applied-coupon-display span {
+  font-weight: bold;
+  color: green;
+}
+
+.applied-coupon-display button {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.available-coupons-section h4 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.coupon-item {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.coupon-item:hover {
+  background-color: #f8f9fa;
+  border-color: #bbb;
+}
+
+.coupon-item.applied {
+  border: 2px solid green;
+  background-color: #e6ffe6;
+}
+
+.coupon-item small {
+  color: #777;
+}
+
+/* Ensure the discounted total is visible */
+.discounted-total.with-coupon {
+  color: green;
+  font-weight: bold;
+}
+
