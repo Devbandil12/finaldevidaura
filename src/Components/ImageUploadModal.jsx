@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import useCloudinary from "../utils/useCloudinary";
 import { db } from "../../configs";
 import { productsTable } from "../../configs/schema";
 import { toast } from "react-toastify";
+import { ProductContext } from "../contexts/productContext";
 
-const ImageUploadModal = ({ isopen }) => {
+const ImageUploadModal = ({ isopen, onClose }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState([]); // Will hold all selected image files
-  const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
+  const [images, setImages] = useState([]);
+  const [uploadedUrls, setUploadedUrls] = useState([]);
   
   const { uploadImage, uploading, error } = useCloudinary();
+  const { setProducts } = useContext(ProductContext);
 
   const [product, setProduct] = useState({
     name: "",
@@ -64,17 +66,36 @@ const ImageUploadModal = ({ isopen }) => {
         .insert(productsTable)
         .values({ 
           ...product,
-          imageurl: uploadedUrls, // Correctly submits a single array
+          imageurl: uploadedUrls,
         })
         .returning(productsTable);
       
-      console.log(res);
+      // Update the product list in the context
+      setProducts(prev => [...prev, res[0]]);
+
+      console.log("Product added:", res);
       toast.success("Product added successfully!");
     } catch (error) {
       console.error("Database insert failed:", error);
       toast.error("Failed to add product.");
+    } finally {
+      // Close the modal and reset state in the finally block
+      setIsOpen(false);
+      onClose();
+      setStep(1);
+      setImages([]);
+      setUploadedUrls([]);
+      setProduct({
+        name: "",
+        composition: "",
+        description: "",
+        fragrance: "",
+        fragranceNotes: "",
+        discount: "",
+        oprice: "",
+        size: "",
+      });
     }
-    setIsOpen(false);
   };
 
   const isUploadDisabled = uploading || images.length === 0;
@@ -85,7 +106,7 @@ const ImageUploadModal = ({ isopen }) => {
         <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center">
           <div className="bg-black text-white p-6 rounded-lg shadow-xl w-96 relative">
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={onClose}
               className="absolute top-2 right-3 text-white hover:text-white"
             >
               ✖
@@ -95,7 +116,6 @@ const ImageUploadModal = ({ isopen }) => {
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
                 
-                {/* Single, Multi-Image Upload Field */}
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
                     Select Images (Max 10)
