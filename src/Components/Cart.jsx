@@ -22,12 +22,10 @@ const ShoppingCart = () => {
   const {
     cart, // The single source of truth for the main cart
     buyNow, // The single source of truth for the temporary buy now item
-    getCartitems,
     changeCartQuantity,
     removeFromCart,
     clearCart,
     addToWishlist,
-    wishlist,
     isCartLoading,
     startBuyNow,
     clearBuyNow,
@@ -40,16 +38,14 @@ const ShoppingCart = () => {
   // Determine which cart to render based on the 'buyNow' state
   const isBuyNowActive = !!buyNow;
   const itemsToRender = isBuyNowActive ? [buyNow] : cart;
-
-  // Rehydrate main cart & coupons when NOT in Buy Now mode
+  
+  // Load available coupons when user details are available.
+  // This is the only fetch that needs to be triggered from this component.
   useEffect(() => {
-    if (!isBuyNowActive && userdetails?.id) {
-      getCartitems();
-    }
     if (userdetails?.id) {
       loadAvailableCoupons(userdetails.id, import.meta.env.VITE_BACKEND_URL);
     }
-  }, [isBuyNowActive, userdetails?.id, getCartitems, loadAvailableCoupons]);
+  }, [userdetails?.id, loadAvailableCoupons]);
 
   // Cleanup temp buy-now on route leave
   useEffect(() => {
@@ -199,7 +195,7 @@ const ShoppingCart = () => {
 
   return (
     <>
-<div style={{ padding: '10px', backgroundColor: 'lightblue', border: '1px solid blue', margin: '100px 10px' }}>
+      <div style={{ padding: '10px', backgroundColor: 'lightblue', border: '1px solid blue', margin: '100px 10px' }}>
           <h4>Debugging Info:</h4>
           <p>Is Cart Loading: <strong>{isCartLoading ? 'True' : 'False'}</strong></p>
           <p>Cart Item Count: <strong>{cart.length}</strong></p>
