@@ -100,7 +100,7 @@ const ImageUploadModal = ({ isopen }) => {
         .values({ 
           ...product,
           imageurl: uploadedSingleImageUrl, // Submit the single image URL
-          galleryImages: allImageUrls.length > 1 ? allImageUrls : [] // Submit the combined gallery
+          gallery_images: allImageUrls.length > 1 ? allImageUrls : [] // Submit the combined gallery
         })
         .returning(productsTable);
       
