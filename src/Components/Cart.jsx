@@ -47,8 +47,6 @@ const ShoppingCart = () => {
   // Cleanup temporary buy-now state when leaving the page.
   useEffect(() => {
     return () => {
-      // Clear buy now state when the component unmounts.
-      // This is crucial for navigating away from the cart to another page.
       if (isBuyNowActive) {
         clearBuyNow();
       }
@@ -133,7 +131,8 @@ const ShoppingCart = () => {
       toast.success(`Coupon ${validated.code} applied!`);
     } else {
       setAppliedCoupon(null);
-      toast.error("Invalid or expired coupon.");
+      // The validateCoupon function already shows a toast on failure.
+      // We don't need a redundant toast here.
     }
   }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon]);
 
@@ -198,6 +197,9 @@ const ShoppingCart = () => {
   if (!isBuyNowActive && isCartLoading) {
     return <Loader text="Loading cart..." />;
   }
+
+  console.log("Applied Coupon:", appliedCoupon);
+  console.log("Final Price:", finalPrice);
 
   return (
     <>
@@ -279,6 +281,7 @@ const ShoppingCart = () => {
                       onClick={async () => {
                         if (isSelected) {
                           setAppliedCoupon(null);
+                          toast.info("Coupon removed.");
                         } else {
                           await handleApplyCoupon(coupon);
                         }
