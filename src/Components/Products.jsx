@@ -1,5 +1,5 @@
 // src/pages/Products.js
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { ProductContext } from "../contexts/productContext";
@@ -16,10 +16,12 @@ import { gsap } from "gsap";
 
 
 const Products = () => {
-  const [cartState, setCartState] = useState(null);
+  // We no longer need this local state variable.
+  // const [cartState, setCartState] = useState(null);
+
   const { products } = useContext(ProductContext);
   const {
-    cart,
+    cart, // The single source of truth for the cart
     wishlist,
     addToCart,
     removeFromCart,
@@ -30,16 +32,16 @@ const Products = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    setCartState(cart);
-  }, [cart]);
+  // We can remove this useEffect as it is no longer needed.
+  // useEffect(() => {
+  //   setCartState(cart);
+  // }, [cart]);
 
   useEffect(() => {
     document.body.style.overflow = "auto";
     document.documentElement.style.overflow = "auto";
   }, [location.pathname]);
 
-  // This function now correctly navigates to the new page
   const handleSlideClick = (product) => navigate(`/product/${product.id}`);
 
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
@@ -103,8 +105,9 @@ const Products = () => {
     toggleWishlist(product);
   };
 
+  // We now check the cart from the context directly.
   const isProductInCart = (productId) =>
-    cartState?.some((item) => item.product?.id === productId);
+    cart?.some((item) => item.product?.id === productId);
 
   const isProductInWishlist = (productId) =>
     wishlist?.some((item) => (item.productId ?? item.product?.id) === productId);
@@ -123,7 +126,6 @@ const Products = () => {
             const inWishlist = isProductInWishlist(product.id);
             const inCart = isProductInCart(product.id);
 
-            // NEW: Calculate discounted price
             const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
 
             return (
@@ -164,7 +166,6 @@ const Products = () => {
                     </div>
                   </div>
                   
-                  {/* NEW: Display original price with strikethrough and discounted price */}
                   <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
                     <p>Rs {discountedPrice}</p>
                     <p className="line-through-price text-gray-400">Rs {product.oprice}</p>
