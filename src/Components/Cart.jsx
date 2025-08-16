@@ -164,7 +164,7 @@ const ShoppingCart = () => {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <button className="add-to-cart" onClick={() => handleQuantityChange({product, quantity: 0}, 1)}>
+            <button className="add-to-cart" onClick={() => addToCart({product, 1)}>
               Add to Cart
             </button>
           </div>
