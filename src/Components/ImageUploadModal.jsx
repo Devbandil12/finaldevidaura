@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import useCloudinary from "../utils/useCloudinary";
 import { db } from "../../configs";
 import { productsTable } from "../../configs/schema";
 import { toast } from "react-toastify";
+import { ProductContext } from "../contexts/productContext";
 
 const ImageUploadModal = ({ isopen }) => {
   const [isOpen, setIsOpen] = useState(isopen);
@@ -11,6 +12,7 @@ const ImageUploadModal = ({ isopen }) => {
   const [uploadedUrls, setUploadedUrls] = useState([]); // This will hold the combined array of URLs
   
   const { uploadImage, uploading, error } = useCloudinary();
+  const { setProducts } = useContext(ProductContext); // Use context to update product list
 
   const [product, setProduct] = useState({
     name: "",
@@ -68,13 +70,19 @@ const ImageUploadModal = ({ isopen }) => {
         })
         .returning(productsTable);
       
+      // THIS IS THE CRITICAL FIX: Update the parent component's state
+      setProducts(prev => [...prev, res[0]]);
+      
       console.log(res);
       toast.success("Product added successfully!");
     } catch (error) {
       console.error("Database insert failed:", error);
       toast.error("Failed to add product.");
+    } finally {
+      // It's good practice to close the modal here to ensure it closes
+      // even if there's a problem with the database insert.
+      setIsOpen(false);
     }
-    setIsOpen(false);
   };
 
   const isUploadDisabled = uploading || images.length === 0;
