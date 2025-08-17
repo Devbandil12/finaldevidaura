@@ -31,7 +31,6 @@ const AdminPanel = () => {
 
   const navigate = useNavigate();
   const { isLoaded: isClerkLoaded } = useUser();
-  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // CONTEXTS
   const { products, getProducts, updateProduct, deleteProduct, loading: productsLoading, addProduct } = useContext(ProductContext);
@@ -43,6 +42,8 @@ const AdminPanel = () => {
     coupons,
     editingCoupon,
     setEditingCoupon,
+    saveCoupon,
+    deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
 
@@ -63,52 +64,6 @@ const AdminPanel = () => {
       navigate("/");
     }
   }, [isClerkLoaded, userdetails, navigate]);
-
-  // --- Coupon Management Functions (replicated from Adminpanel.jsx (8).txt) ---
-  const saveCoupon = async () => {
-    const payload = {
-      code: editingCoupon.code.toUpperCase(),
-      discountType: editingCoupon.discountType,
-      discountValue: editingCoupon.discountValue,
-      minOrderValue: editingCoupon.minOrderValue,
-      minItemCount: editingCoupon.minItemCount,
-      description: editingCoupon.description || "",
-      validFrom: editingCoupon.validFrom || null,
-      validUntil: editingCoupon.validUntil || null,
-      usageLimit: editingCoupon.usageLimit,
-      isForNewUsers: editingCoupon.isForNewUsers,
-    };
-
-    const url = editingCoupon.id ? `${BASE}/api/coupons/${editingCoupon.id}` : `${BASE}/api/coupons`;
-    const method = editingCoupon.id ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error();
-      toast.success(editingCoupon.id ? "Updated" : "Added");
-      await refreshCoupons();
-      setEditingCoupon(null);
-    } catch {
-      toast.error("Save failed");
-    }
-  };
-
-  const deleteCoupon = async id => {
-    if (!window.confirm("Delete this coupon?")) return;
-
-    try {
-      const res = await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      toast.success("Deleted");
-      await refreshCoupons();
-    } catch {
-      toast.error("Delete failed");
-    }
-  };
 
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
@@ -224,7 +179,6 @@ const AdminPanel = () => {
       setSelectedProducts([...selectedProducts, productId]);
     }
   };
-
   // Guard clause for non-admin users or if user details are not yet loaded
   if (!isClerkLoaded || (userdetails && userdetails.role !== "admin")) {
     return <div className="p-4 text-center text-xl font-bold">Access Denied</div>;
@@ -249,6 +203,7 @@ const AdminPanel = () => {
       </div>
 
       <div className="flex-1 p-8 overflow-y-auto">
+        {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
 
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
@@ -341,7 +296,22 @@ const AdminPanel = () => {
                 {loading ? "Deleting..." : `Delete Selected (${selectedProducts.length})`}
               </button>
             </div>
-            {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
+            {/* The ImageUploadModal component is now correctly integrated here */}
+            {openModal && (
+              <ImageUploadModal
+                isopen={openModal}
+                onClose={() => setOpenModal(false)}
+                onUpload={async (payload) => {
+                  try {
+                    await addProduct(payload);
+                    setOpenModal(false);
+                    toast.success("Product added successfully!");
+                  } catch (error) {
+                    toast.error("Failed to add product.");
+                  }
+                }}
+              />
+            )}
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -363,68 +333,76 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {products?.map((product) =>
-                    editingProduct && editingProduct.id === product.id ?
-                      (
-                        <tr key={product.id}>
-                          <td className="px-6 py-4 whitespace-nowrap"></td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <img src={Array.isArray(editingProduct.imageurl) ? editingProduct.imageurl[0] : editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
-                            <br />
-                            <input type="file" accept="image/*" onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({ ...editingProduct, imageurl: imageUrl });
-                              }
-                            }} className="mt-2 text-sm" />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button className="bg-green-500 text-white px-3 py-1 rounded-md mr-2" onClick={() => handleProductUpdate(editingProduct)}>Save</button>
-                            <button className="bg-gray-500 text-white px-3 py-1 rounded-md" onClick={() => setEditingProduct(null)}>Cancel</button>
-                          </td>
-                        </tr>
-                      ) : (
-                        <tr key={product.id}>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={() => handleProductSelection(product.id)} /></td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap"><img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button className="bg-blue-500 text-white px-3 py-1 rounded-md mr-2 hover:bg-blue-600" onClick={() => setEditingProduct(product)}>Edit</button>
-                            <button className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600" onClick={() => handleProductDelete(product.id)}>{loading ? "deleting" : "delete"}</button>
-                          </td>
-                        </tr>
-                      )
-                  )}
+                  {products?.map((product) => editingProduct && editingProduct.id === product.id ? (
+                    <tr key={product.id}>
+                      <td className="px-6 py-4 whitespace-nowrap"></td>
+                      <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <img src={Array.isArray(editingProduct.imageurl) ? editingProduct.imageurl[0] : editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
+                        <br />
+                        <input type="file" accept="image/*" onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const imageUrl = URL.createObjectURL(file);
+                            setEditingProduct({ ...editingProduct, imageurl: imageUrl });
+                          }
+                        }} className="mt-2 text-sm" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1" /></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button className="bg-green-500 text-white px-3 py-1 rounded-md mr-2" onClick={() => handleProductUpdate(editingProduct)}>Save</button>
+                        <button className="bg-gray-500 text-white px-3 py-1 rounded-md" onClick={() => setEditingProduct(null)}>Cancel</button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={product.id}>
+                      <td className="px-6 py-4 whitespace-nowrap"><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={() => handleProductSelection(product.id)} /></td>
+                      <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{product.discount}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-indigo-600 hover:text-indigo-900 mr-4" onClick={() => setEditingProduct(product)}>Edit</button>
+                        <button className="text-red-600 hover:text-red-900" onClick={() => handleProductDelete(product.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
         )}
-
+        
         {/* Orders Tab */}
         {activeTab === "orders" && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">Manage Orders</h2>
-            <div className="flex space-x-2 border-b-2 border-gray-200">
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "All" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("All")}>All Orders</button>
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "Order Placed" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("Order Placed")}>Order Placed</button>
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "Processing" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("Processing")}>Processing</button>
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "Shipped" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("Shipped")}>Shipped</button>
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "Delivered" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("Delivered")}>Delivered</button>
-              <button className={`py-2 px-4 text-sm font-medium ${orderStatusTab === "Order Cancelled" ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setOrderStatusTab("Order Cancelled")}>Cancelled</button>
-            </div>
-            <div className="mb-4">
-              <input type="text" placeholder="Search by Order ID..." className="p-2 border rounded w-full" value={orderSearchQuery} onChange={(e) => setOrderSearchQuery(e.target.value)} />
+            <div className="flex items-center space-x-4 mb-4">
+              <input
+                type="text"
+                placeholder="Search by Order ID..."
+                value={orderSearchQuery}
+                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                className="border p-2 rounded-lg w-1/3"
+              />
+              <select
+                value={orderStatusTab}
+                onChange={(e) => setOrderStatusTab(e.target.value)}
+                className="border p-2 rounded-lg"
+              >
+                <option value="All">All</option>
+                <option value="Processing">Processing</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Order Cancelled">Cancelled</option>
+              </select>
             </div>
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
@@ -433,63 +411,67 @@ const AdminPanel = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => (
-                      <tr key={order.orderId}>
-                        <td className="px-6 py-4 whitespace-nowrap">{order.orderId}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{order.userId}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">₹{order.totalAmount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{new Date(order.createdAt).toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select value={order.status} onChange={(e) => handleOrderStatusUpdate(order.orderId, e.target.value)} className="border rounded px-2 py-1">
-                            <option value="Order Placed">Order Placed</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Order Cancelled">Order Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button className="bg-blue-500 text-white px-3 py-1 rounded-md" onClick={() => handleOrderDetails(order.orderId)}>View Details</button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No orders found.</td>
+                  {filteredOrders.map(order => (
+                    <tr key={order.orderId}>
+                      <td className="px-6 py-4 whitespace-nowrap">{order.orderId}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{order.userId}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">₹{order.totalAmount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                          order.status === 'Processing' || order.status === 'Shipped' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>{order.status}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleOrderDetails(order.orderId)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        >
+                          {detailsLoading && selectedOrder?.orderId === order.orderId ? "Loading..." : "Details"}
+                        </button>
+                        <select
+                          className="border p-1 rounded-md"
+                          value={order.status}
+                          onChange={(e) => handleOrderStatusUpdate(order.orderId, e.target.value)}
+                        >
+                          <option value="Processing">Processing</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Order Cancelled">Order Cancelled</option>
+                        </select>
+                      </td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
             {selectedOrder && (
-              <div className="mt-8 p-6 bg-white rounded-lg shadow space-y-4">
-                <h3 className="text-xl font-bold">Order Details: {selectedOrder.orderId}</h3>
-                {detailsLoading ? (
-                  <p>Loading...</p>
-                ) : (
-                  <>
-                    <p><strong>Payment Mode:</strong> {selectedOrder.paymentMode}</p>
-                    <p><strong>Payment Status:</strong> {selectedOrder.paymentStatus}</p>
-                    <p><strong>Address:</strong> {selectedOrder.address}, {selectedOrder.city}, {selectedOrder.state}, {selectedOrder.zip}</p>
-                    <p><strong>Products:</strong></p>
-                    <ul className="list-disc list-inside space-y-2">
-                      {selectedOrder.products && selectedOrder.products.map(p => (
-                        <li key={p.productId} className="flex items-center space-x-4">
-                          <img src={p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded-md" />
-                          <span>{p.productName} (x{p.quantity}) - ₹{p.price}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <button className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600" onClick={() => setSelectedOrder(null)}>Close</button>
+              <div className="mt-6 p-6 bg-white rounded-lg shadow-md">
+                <h3 className="text-xl font-bold mb-4">Order Details: {selectedOrder.orderId}</h3>
+                <p><strong>Customer Name:</strong> {selectedOrder.customerName}</p>
+                <p><strong>Email:</strong> {selectedOrder.customerEmail}</p>
+                <p><strong>Phone:</strong> {selectedOrder.customerPhone}</p>
+                <p><strong>Payment Mode:</strong> {selectedOrder.paymentMode}</p>
+                <p><strong>Payment Status:</strong> {selectedOrder.paymentStatus}</p>
+                <p><strong>Total:</strong> ₹{selectedOrder.totalAmount}</p>
+                <p><strong>Status:</strong> {selectedOrder.status}</p>
+                <p><strong>Address:</strong> {selectedOrder.address}, {selectedOrder.city}, {selectedOrder.state}, {selectedOrder.zip}, {selectedOrder.country}</p>
+                <p><strong>Products:</strong></p>
+                <ul>
+                  {(selectedOrder.products || []).map(p => (
+                    <li key={p.productId}>
+                      <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded-md" />
+                      {p.productName} (x{p.quantity}) - ₹{p.price}
+                    </li>
+                  ))}
+                </ul>
+                <p><strong>Created At:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
               </div>
             )}
           </div>
@@ -499,9 +481,13 @@ const AdminPanel = () => {
         {activeTab === "users" && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">Manage Users</h2>
-            <div className="mb-4">
-              <input type="text" placeholder="Search by name or email..." className="p-2 border rounded w-full" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} />
-            </div>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={userSearchQuery}
+              onChange={(e) => setUserSearchQuery(e.target.value)}
+              className="border p-2 rounded-lg w-1/3"
+            />
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -509,26 +495,22 @@ const AdminPanel = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queries</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orders Count</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Queries Count</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.orders.length}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{user.queries.length}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No users found.</td>
+                  {filteredUsers.map(user => (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.orders.length}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{user.queries.length}</td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -538,10 +520,88 @@ const AdminPanel = () => {
         {/* Coupons Tab */}
         {activeTab === "coupons" && (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-gray-800">Manage Coupon Codes</h2>
-            <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200" onClick={() => setEditingCoupon({ code: "", discountType: "percent", discountValue: 0, minOrderValue: 0, minItemCount: 0, description: "", validFrom: "", validUntil: "", usageLimit: 0, isForNewUsers: false })}>
-              Add New Coupon
-            </button>
+            <h2 className="text-3xl font-bold text-gray-800">Manage Coupons</h2>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-xl font-semibold mb-4">
+                {editingCoupon?.id ? "Edit Coupon" : "Add New Coupon"}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Code (e.g., SAVE10)"
+                  value={editingCoupon?.code || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, code: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <select
+                  value={editingCoupon?.discountType || 'percentage'}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, discountType: e.target.value })}
+                  className="p-2 border rounded"
+                >
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed Amount</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Discount Value"
+                  value={editingCoupon?.discountValue || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, discountValue: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Minimum Order Value"
+                  value={editingCoupon?.minOrderValue || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, minOrderValue: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Minimum Item Count"
+                  value={editingCoupon?.minItemCount || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, minItemCount: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={editingCoupon?.description || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, description: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="Valid From"
+                  value={editingCoupon?.validFrom || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, validFrom: e.target.value })}
+                  className="p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  placeholder="Valid Until"
+                  value={editingCoupon?.validUntil || ''}
+                  onChange={e => setEditingCoupon({ ...editingCoupon, validUntil: e.target.value })}
+                  className="p-2 border rounded"
+                />
+              </div>
+              <div className="mt-4 space-x-2">
+                <button
+                  onClick={saveCoupon}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                >
+                  {editingCoupon?.id ? "Update" : "Add Coupon"}
+                </button>
+                {editingCoupon && (
+                  <button
+                    onClick={() => setEditingCoupon(null)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+            
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -549,53 +609,24 @@ const AdminPanel = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Order ₹</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Order</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Items</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid From</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage Limit</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Users Only</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {editingCoupon && (
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap"><input placeholder="Code" value={editingCoupon.code || ""} onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))} className="border rounded px-2 py-1 w-24" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><select value={editingCoupon.discountType} onChange={e => setEditingCoupon(ec => ({ ...ec, discountType: e.target.value }))} className="border rounded px-2 py-1">
-                        <option value="percent">percent</option>
-                        <option value="flat">flat</option>
-                      </select></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" placeholder="Value" value={editingCoupon.discountValue ?? 0} onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: parseFloat(e.target.value) }))} className="border rounded px-2 py-1 w-20" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" placeholder="Min Order" value={editingCoupon.minOrderValue ?? 0} onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: parseFloat(e.target.value) }))} className="border rounded px-2 py-1 w-24" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" placeholder="Min Items" value={editingCoupon.minItemCount ?? 0} onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: parseFloat(e.target.value) }))} className="border rounded px-2 py-1 w-24" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input placeholder="Description" value={editingCoupon.description || ""} onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))} className="border rounded px-2 py-1 w-32" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="date" value={editingCoupon.validFrom || ""} onChange={e => setEditingCoupon(ec => ({ ...ec, validFrom: e.target.value }))} className="border rounded px-2 py-1 w-28" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="date" value={editingCoupon.validUntil || ""} onChange={e => setEditingCoupon(ec => ({ ...ec, validUntil: e.target.value }))} className="border rounded px-2 py-1 w-28" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="number" placeholder="Limit" value={editingCoupon.usageLimit ?? 0} onChange={e => setEditingCoupon(ec => ({ ...ec, usageLimit: parseFloat(e.target.value) }))} className="border rounded px-2 py-1 w-20" /></td>
-                      <td className="px-6 py-4 whitespace-nowrap"><input type="checkbox" checked={editingCoupon.isForNewUsers || false} onChange={e => setEditingCoupon(ec => ({ ...ec, isForNewUsers: e.target.checked }))} /></td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button className="bg-green-500 text-white px-3 py-1 rounded-md mr-2" onClick={saveCoupon}>Save</button>
-                        <button className="bg-gray-500 text-white px-3 py-1 rounded-md" onClick={() => setEditingCoupon(null)}>Cancel</button>
-                      </td>
-                    </tr>
-                  )}
-                  {coupons?.map((coupon) => (
+                  {coupons.map(coupon => (
                     <tr key={coupon.id}>
                       <td className="px-6 py-4 whitespace-nowrap">{coupon.code}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{coupon.discountType}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{coupon.discountValue}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">₹{coupon.minOrderValue}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{coupon.minOrderValue}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{coupon.minItemCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{coupon.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{coupon.validFrom}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{coupon.validUntil}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{coupon.usageLimit}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{coupon.isForNewUsers ? 'Yes' : 'No'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button className="bg-blue-500 text-white px-3 py-1 rounded-md mr-2 hover:bg-blue-600" onClick={() => setEditingCoupon(coupon)}>Edit</button>
-                        <button className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600" onClick={() => deleteCoupon(coupon.id)}>Delete</button>
+                      <td className="px-6 py-4 whitespace-nowrap">{coupon.validUntil ? new Date(coupon.validUntil).toLocaleDateString() : 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                        <button className="text-indigo-600 hover:text-indigo-900" onClick={() => setEditingCoupon(coupon)}>Edit</button>
+                        <button className="text-red-600 hover:text-red-900" onClick={() => deleteCoupon(coupon.id)}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -608,15 +639,18 @@ const AdminPanel = () => {
         {/* Queries Tab */}
         {activeTab === "queries" && (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-gray-800">Manage Queries</h2>
-            <div className="mb-4">
-              <input type="text" placeholder="Search by name or email..." className="p-2 border rounded w-full" value={querySearch} onChange={(e) => setQuerySearch(e.target.value)} />
-            </div>
+            <h2 className="text-3xl font-bold text-gray-800">User Queries</h2>
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={querySearch}
+              onChange={e => setQuerySearch(e.target.value)}
+              className="p-2 border rounded-lg w-1/3"
+            />
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
@@ -626,9 +660,8 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredQueries.map((query) => (
+                  {filteredQueries.map(query => (
                     <tr key={query.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">{query.id}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{query.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{query.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{query.subject}</td>
