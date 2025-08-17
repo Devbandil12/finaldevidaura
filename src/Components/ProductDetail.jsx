@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-r
 
 const ProductDetail = () => {
   const navigate = useNavigate();
-  const { userdetails } = useContext(UserContext); // Use only UserContext
+  const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { 
     cart, 
@@ -21,7 +21,6 @@ const ProductDetail = () => {
   
   const { productId } = useParams();
   
-  // Use a simple find method, which is efficient and clear
   const product = products.find((p) => p.id === productId);
 
   if (productsLoading) {
@@ -39,12 +38,10 @@ const ProductDetail = () => {
   // =========================================================
   // ===  CORRECTED IMAGE LOGIC FOR SINGLE + GALLERY IMAGES ===
   // =========================================================
-  const allImages = [product.imageurl, ...(product.galleryImages || [])];
+  const allImages = product.imageurl || [];
   
-  // Use 'allImages' for the gallery and navigation
   // =========================================================
 
-  // Directly use the context state without useMemo
   const isInCart = cart?.some((i) => i.product?.id === product.id);
   const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
 
@@ -71,8 +68,6 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = async () => {
-    // Correct logic: call startBuyNow, then navigate.
-    // startBuyNow doesn't return a boolean, so the check is not needed.
     startBuyNow(product, quantity);
     navigate("/cart", { replace: true });
   };
