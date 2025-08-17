@@ -35,7 +35,6 @@ export const ProductProvider = ({ children }) => {
       if (!res.ok) {
         throw new Error("Failed to update product");
       }
-      // After a successful update, refresh the product list
       getProducts();
     } catch (error) {
       console.error("❌ Error updating product:", error);
@@ -51,14 +50,12 @@ export const ProductProvider = ({ children }) => {
       if (!res.ok) {
         throw new Error("Failed to delete product");
       }
-      // After a successful deletion, refresh the product list
       getProducts();
     } catch (error) {
       console.error("❌ Error deleting product:", error);
     }
   };
 
-  // Calls the fetch function when the component mounts
   useEffect(() => {
     getProducts();
   }, []);
