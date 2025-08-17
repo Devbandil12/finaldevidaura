@@ -8,7 +8,8 @@ import { ProductContext } from "../contexts/productContext";
 const ImageUploadModal = ({ isopen, onClose, editingProduct }) => {
     const { uploadImage, uploading, error } = useCloudinary();
     const { addProduct, updateProduct, getProducts } = useContext(ProductContext);
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\\/$/, "");
+    // Corrected the regex to fix the build error
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "");
 
     const [isOpen, setIsOpen] = useState(isopen);
     const [step, setStep] = useState(1);
