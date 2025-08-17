@@ -55,7 +55,6 @@ const AdminPanel = () => {
       getquery();
       getorders(true, true);
       getProducts();
-      // NOTE: `refreshCoupons` is now called only from CouponContext to avoid redundant fetches
     }
   }, [isClerkLoaded, userdetails, getallusers, getquery, getorders, getProducts]);
 
@@ -113,7 +112,7 @@ const AdminPanel = () => {
   const newUsersThisMonth = useMemo(() => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return users.filter(user => new Date(user.createdAt) > thirtyDaysAgo).length;
+    return (users || []).filter(user => new Date(user.createdAt) > thirtyDaysAgo).length;
   }, [users]);
   
   const usersWithOrdersAndQueries = useMemo(() => {
