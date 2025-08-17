@@ -10,12 +10,20 @@ export const OrderProvider = ({ children }) => {
   const { userdetails } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  const getorders = async (showLoader = true) => {
-    if (!userdetails?.id) return;
+  // Modified getorders function to fetch all orders if isAdmin is true
+  const getorders = async (showLoader = true, isAdmin = false) => {
+    if (!isAdmin && !userdetails?.id) {
+      // If not admin and no user, do nothing
+      return;
+    }
+    
     if (showLoader) setLoadingOrders(true);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/orders/${userdetails.id}`);
+      const url = isAdmin
+        ? `${BACKEND_URL}/api/orders/`
+        : `${BACKEND_URL}/api/orders/${userdetails.id}`;
+      const res = await fetch(url);
       const data = await res.json();
       setOrders(data);
     } catch (err) {
@@ -26,7 +34,10 @@ export const OrderProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    getorders();
+    // This effect handles fetching orders for the signed-in user
+    if (userdetails) {
+      getorders();
+    }
   }, [userdetails]);
 
   return (
