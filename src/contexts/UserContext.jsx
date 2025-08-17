@@ -7,6 +7,7 @@ export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]); // New state for all users
   const { user, isLoaded, isSignedIn } = useUser();
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -70,6 +71,18 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
+  // New function to get all users for the admin panel
+  const getallusers = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/users`);
+      if (!res.ok) throw new Error("Failed to fetch all users");
+      const data = await res.json();
+      setUsers(data);
+    } catch (error) {
+      console.error("❌ Failed to get all users:", error);
+    }
+  }, [BACKEND_URL]);
+
   useEffect(() => {
     getUserDetail();
   }, [getUserDetail]);
@@ -85,9 +98,11 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider
       value={{
         userdetails,
-        setUserdetails,
-        orders,
         address,
+        orders,
+        getallusers, // Add new function
+        users, // Add new state
+        getUserDetail,
         setAddress,
       }}
     >
