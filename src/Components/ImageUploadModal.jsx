@@ -5,12 +5,12 @@ import { productsTable } from "../../configs/schema";
 import { toast } from "react-toastify";
 import { ProductContext } from "../contexts/productContext";
 
-const ImageUploadModal = ({ isopen }) => {
+const ImageUploadModal = ({ isopen, onClose }) => {
   const [isOpen, setIsOpen] = useState(isopen);
   const [step, setStep] = useState(1);
-  const [images, setImages] = useState([]); 
-  const [uploadedUrls, setUploadedUrls] = useState([]); 
-  
+  const [images, setImages] = useState([]);
+  const [uploadedUrls, setUploadedUrls] = useState([]);
+
   const { uploadImage, uploading, error } = useCloudinary();
   const { setProducts } = useContext(ProductContext);
 
@@ -27,7 +27,6 @@ const ImageUploadModal = ({ isopen }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Convert numeric fields to numbers immediately
     if (name === "discount" || name === "oprice" || name === "size") {
       setProduct({ ...product, [name]: Number(value) });
     } else {
@@ -67,21 +66,30 @@ const ImageUploadModal = ({ isopen }) => {
   };
   
   const handlesubmit = async () => {
-    // Validation check before submitting
     const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size"];
     for (const field of requiredFields) {
       if (!product[field] || (typeof product[field] === 'string' && product[field].trim() === "")) {
         return toast.error(`Please fill in the '${field}' field.`);
       }
     }
+    
+    if (uploadedUrls.length === 0) {
+      return toast.error("No images were uploaded. Please upload images before submitting.");
+    }
+    
+    // Prepare the final payload for the database
+    const payload = {
+      ...product,
+      quantity: 1, 
+      imageurl: uploadedUrls,
+    };
+
+    console.log("Attempting DB insert with data:", payload);
 
     try {
       const res = await db
         .insert(productsTable)
-        .values({ 
-          ...product,
-          imageurl: uploadedUrls,
-        })
+        .values(payload)
         .returning(productsTable);
       
       setProducts(prev => [...prev, res[0]]);
@@ -107,6 +115,7 @@ const ImageUploadModal = ({ isopen }) => {
         oprice: "",
         size: "",
       });
+      onClose();
     }
   };
 
@@ -118,7 +127,7 @@ const ImageUploadModal = ({ isopen }) => {
         <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center">
           <div className="bg-black text-white p-6 rounded-lg shadow-xl w-96 relative">
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => { setIsOpen(false); onClose(); }}
               className="absolute top-2 right-3 text-white hover:text-white"
             >
               ✖
@@ -127,7 +136,6 @@ const ImageUploadModal = ({ isopen }) => {
             {step === 1 ? (
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
-                
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
                     Select Images (Max 10)
@@ -144,7 +152,6 @@ const ImageUploadModal = ({ isopen }) => {
                     </p>
                   )}
                 </div>
-
                 <button
                   onClick={handleUpload}
                   disabled={isUploadDisabled}
