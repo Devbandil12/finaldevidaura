@@ -1,19 +1,9 @@
 import React, { useState, useContext, useEffect } from "react";
-import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
-import {
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  productsTable,
-  usersTable,
-} from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
@@ -21,8 +11,7 @@ import OrderChart from "./OrderChart";
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, RadialLinearScale, PointElement, LineElement } from 'chart.js';
 import 'chart.js/auto';
-import { UserContext } from "../contexts/UserContext"; // NEW IMPORT
-import { CartContext } from "../contexts/CartContext"; // NEW IMPORT
+import { UserContext } from "../contexts/UserContext";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, RadialLinearScale, PointElement, LineElement);
 
@@ -31,1112 +20,506 @@ const AdminPanel = () => {
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const { products, setProducts } = useContext(ProductContext);
-  const { orders, setOrders, getorders } = useContext(OrderContext);
-  const { queries, getquery } = useContext(ContactContext);
-  const { user } = useUser();
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [orderStatusTab, setOrderStatusTab] = useState("All");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [userkiDetails, setUserkiDetails] = useState([]);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [querySearch, setQuerySearch] = useState("");
-  const [usersList, setUsersList] = useState([]);
+  const [orderSearchLoading, setOrderSearchLoading] = useState(false);
+
+  const { products, getProducts, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { orders, getorders, updateOrderStatus, getSingleOrderDetails } = useContext(OrderContext);
+  const { queries, getquery, deleteQuery } = useContext(ContactContext);
+  const { coupons, refreshCoupons, deleteCoupon, saveCoupon, editingCoupon, setEditingCoupon } = useContext(CouponContext);
+
+  const { user } = useUser();
   const navigate = useNavigate();
-  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // NEW STATE VARIABLES
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [dailyRevenueData, setDailyRevenueData] = useState([]);
-  const [topProducts, setTopProducts] = useState([]);
-  const [newUsersThisMonth, setNewUsersThisMonth] = useState(0);
-  const [selectedProducts, setSelectedProducts] = useState([]); // For bulk actions
-  const { cart, wishlist } = useContext(CartContext); // Use Cart & Wishlist context
-  const { users, setUsers, getusers } = useContext(UserContext); // Use UserContext
-
-  const {
-    coupons,
-    editingCoupon,
-    setEditingCoupon,
-    saveCoupon,
-    deleteCoupon,
-    refreshCoupons
-  } = useContext(CouponContext);
-
-  // --- Data Fetching and Effects ---
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await db.select().from(usersTable);
-        setUsersList(res);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
-    getquery();
-    getusers(); // Fetch all users using the updated context
-  }, []);
-
-  const userdetails = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      setUserkiDetails(res[0]);
-      if (res[0].role !== "admin") {
-        navigate("/");
-      }
-    } catch (error) {
-      console.log(error);
-    }
+  const handleEdit = (product) => {
+    setEditingProduct(product);
   };
 
-  useEffect(() => {
-    if (user) {
-      userdetails();
-    }
-  }, [user]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [orderStatusTab, setOrderStatusTab] = useState("All");
 
-  useEffect(() => {
-    getorders();
-  }, []);
-
-  useEffect(() => {
-    refreshCoupons();
-  }, [refreshCoupons]);
-
-  // NEW useEffect to calculate advanced metrics
-  useEffect(() => {
-    const totalRev = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-    setTotalRevenue(totalRev);
-
-    const salesByDay = {};
-    orders.forEach(order => {
-      const date = new Date(order.createdAt).toISOString().split('T')[0];
-      salesByDay[date] = (salesByDay[date] || 0) + (order.totalAmount || 0);
-    });
-    setDailyRevenueData(Object.keys(salesByDay).map(date => ({ date, revenue: salesByDay[date] })));
-
-    const productSales = {};
-    orders.forEach(order => {
-      if (order.products) {
-        order.products.forEach(product => {
-          productSales[product.productId] = (productSales[product.productId] || 0) + product.quantity;
-        });
-      }
-    });
-    const sortedProducts = Object.keys(productSales).sort((a, b) => productSales[b] - productSales[a]);
-    setTopProducts(sortedProducts.slice(0, 5).map(id => {
-      const product = products.find(p => p.id === id);
-      return product ? { name: product.name, sales: productSales[id] } : null;
-    }).filter(p => p));
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newUsers = users.filter(user => new Date(user.createdAt) > thirtyDaysAgo).length;
-    setNewUsersThisMonth(newUsers);
-
-  }, [orders, products, users]);
-
-  // --- Analysis Data Calculation ---
-  const totalOrders = orders.length;
-  const totalProducts = products.length;
-  const totalUsers = usersList.length;
-  const totalQueries = queries.length;
-
-  const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
-  const cancelledOrders = orders.filter(o => o.status === "Order Cancelled").length;
-  const processingOrders = orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length;
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  
-  // NEW FUNCTIONS
-  const handleProductSelection = (productId) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter(id => id !== productId));
-    } else {
-      setSelectedProducts([...selectedProducts, productId]);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (userkiDetails?.role !== "admin") return;
-    if (window.confirm("Are you sure you want to delete the selected products?")) {
-      setLoading(true);
-      try {
-        // You would call your backend API here to delete multiple products
-        // e.g. await fetch(`${BASE}/api/products/bulk-delete`, { method: 'POST', body: JSON.stringify({ ids: selectedProducts }) });
-        
-        // Simulating the deletion for front-end state
-        setProducts(products.filter(p => !selectedProducts.includes(p.id)));
-        toast.success("Selected products deleted successfully.");
-      } catch (error) {
-        console.error("Error during bulk delete:", error);
-        toast.error("Failed to delete products.");
-      } finally {
-        setLoading(false);
-        setSelectedProducts([]);
-      }
-    }
-  };
-
-
-  // --- Functions (existing) ---
-  const handleProductUpdate = async (updatedProduct) => {
-    console.log(updatedProduct);
-    try {
-      const res = await db
-        .update(productsTable)
-        .set({
-          ...updatedProduct,
-          name: updatedProduct.name,
-          size: updatedProduct.size,
-          discount: updatedProduct.discount,
-          price: updatedProduct.oprice,
-          imageurl: updatedProduct.imageurl,
-        })
-        .where(eq(productsTable.id, updatedProduct.id))
-        .returning(productsTable);
-      toast.success("Product added Successfully");
-    } catch (error) {
-      const { message } = error;
-      toast.error(message);
-    }
-    setProducts((prevProducts) => {
-      const exists = prevProducts.find((p) => p.id === updatedProduct.id);
-      return exists
-        ? prevProducts.map((p) =>
-            p.id === updatedProduct.id ? updatedProduct : p
-          )
-        : [...prevProducts, updatedProduct];
-    });
-    setEditingProduct(null);
-  };
-  
-  const handleProductDelete = async (productId) => {
-    if (userkiDetails?.role !== "admin") return;
+  const handleProductSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((prevProducts) =>
-        prevProducts.filter((p) => p.id !== productId)
-      );
-      try {
-        await db
-          .delete(orderItemsTable)
-          .where(eq(orderItemsTable.productId, productId));
-        await db
-          .delete(addToCartTable)
-          .where(eq(addToCartTable.productId, productId));
-        await db.delete(productsTable).where(eq(productsTable.id, productId));
-        console.log("Product and related cart entries deleted successfully");
-      } catch (error) {
-        console.error("Error deleting product:", error);
+    const formData = new FormData(e.target);
+    const newProduct = Object.fromEntries(formData.entries());
+
+    try {
+      if (editingProduct) {
+        await updateProduct(newProduct);
+      } else {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/products`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProduct),
+        });
+        toast.success("Product added successfully!");
       }
+
       setLoading(false);
-    }
-  };
-  
-  const handleCouponSave = async () => {
-    const payload = {
-      code: editingCoupon.code.toUpperCase(),
-      discountType: editingCoupon.discountType,
-      discountValue: editingCoupon.discountValue,
-      minOrderValue: editingCoupon.minOrderValue,
-      minItemCount: editingCoupon.minItemCount,
-      description: editingCoupon.description || "",
-      validFrom: editingCoupon.validFrom || null,
-      validUntil: editingCoupon.validUntil || null,
-    };
-    const url = editingCoupon.id
-      ? `${BASE}/api/coupons/${editingCoupon.id}`
-      : `${BASE}/api/coupons`;
-    const method = editingCoupon.id ? "PUT" : "POST";
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error();
-      toast.success(editingCoupon.id ? "Updated" : "Added");
-      await refreshCoupons();
-      setEditingCoupon(null);
-    } catch {
-      toast.error("Save failed");
-    }
-  };
-  
-  const handleCouponDelete = async id => {
-    if (!window.confirm("Delete this coupon?")) return;
-    try {
-      const res = await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      toast.success("Deleted");
-      await refreshCoupons();
-    } catch {
-      toast.error("Delete failed");
+      setEditingProduct(null);
+      getProducts();
+      e.target.reset();
+    } catch (error) {
+      console.error("❌ Failed to save product:", error);
+      setLoading(false);
+      toast.error("Failed to save product.");
     }
   };
 
-  const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
-    try {
-      await db
-        .update(ordersTable)
-        .set({ status: newStatus, progressStep: newProgressStep })
-        .where(eq(ordersTable.id, orderId));
-      console.log("updated");
-    } catch (error) {
-      console.log(error);
-    }
+  const handleDelete = async (productId) => {
+    await deleteProduct(productId);
   };
-  
-  const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
-    updateorderstatus(orderId, newStatus, newProgressStep);
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: newStatus, progressStep: newProgressStep }
-        : order
-    );
-    setOrders(updatedOrders);
+
+  const handleQueryDelete = async (queryId) => {
+    await deleteQuery(queryId);
   };
-  
-  const handleorderdetails = async (order) => {
-    setDetailsLoading(true);
-    try {
-      const items = await db
-        .select({
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
-        })
-        .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(orderItemsTable.orderId, order.orderId));
-      setSelectedOrder({
-        ...order,
-        products: items
-      });
-    } catch (error) {
-      console.error("Error fetching order products:", error);
-      toast.error("Failed to load order details.");
-    } finally {
-      setDetailsLoading(false);
-    }
+
+  const handleOrderSearch = async (e) => {
+    e.preventDefault();
+    setOrderSearchLoading(true);
+    const orderDetails = await getSingleOrderDetails(orderSearchQuery);
+    setSelectedOrder(orderDetails);
+    setOrderSearchLoading(false);
   };
-  
-  const usersWithOrders = usersList.map((user) => ({
-    ...user,
-    orders: orders.filter((order) => order.userId === user.id),
-  }));
-  
-  const filteredUsers = usersWithOrders.filter(
-    (user) =>
-      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      user?.phone?.includes(userSearchQuery)
+
+  const handleOrderStatusUpdate = async (orderId, status) => {
+    await updateOrderStatus(orderId, status);
+  };
+
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- JSX Rendering ---
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus = orderStatusTab === "All" || order.status === orderStatusTab;
+    const matchesSearch = String(order.id).includes(orderSearchQuery) || order.userEmail?.toLowerCase().includes(orderSearchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+  
+  const totalUsers = 100; // Mock data
+  const totalProducts = products.length;
+  const totalOrders = orders.length;
+
+  const handleCouponSubmit = async (e) => {
+    e.preventDefault();
+    setCouponLoading(true);
+    const formData = new FormData(e.target);
+    const couponData = Object.fromEntries(formData.entries());
+    await saveCoupon(couponData);
+    setCouponLoading(false);
+    setEditingCoupon(null);
+    e.target.reset();
+  };
+
+  const handleCouponDelete = async (couponId) => {
+    await deleteCoupon(couponId);
+  };
+
+  useEffect(() => {
+    getorders(true, true);
+    getquery();
+    refreshCoupons();
+  }, [getorders, getquery, refreshCoupons]);
+
+  useEffect(() => {
+    if (user && !user.publicMetadata.isAdmin) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (!user || !user.publicMetadata.isAdmin) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-100">
+        <h1 className="text-2xl text-red-500">Access Denied</h1>
+      </div>
+    );
+  }
+
   return (
-    user && userkiDetails.role === "admin" && (
-      <div className="admin-panel-container">
-        <ToastContainer />
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <h2>Admin Dashboard</h2>
+    <div className="flex h-screen bg-gray-100 font-sans">
+      <ToastContainer />
+      <div className="bg-gray-800 text-white w-64 p-6 space-y-6">
+        <h2 className="text-3xl font-bold mb-6">Admin Panel</h2>
+        <nav className="space-y-2">
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={`w-full text-left p-3 rounded-md transition-colors duration-200 ${activeTab === "dashboard" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`w-full text-left p-3 rounded-md transition-colors duration-200 ${activeTab === "products" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Products
+          </button>
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`w-full text-left p-3 rounded-md transition-colors duration-200 ${activeTab === "orders" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Orders
+          </button>
+          <button
+            onClick={() => setActiveTab("queries")}
+            className={`w-full text-left p-3 rounded-md transition-colors duration-200 ${activeTab === "queries" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Customer Queries
+          </button>
+          <button
+            onClick={() => setActiveTab("coupons")}
+            className={`w-full text-left p-3 rounded-md transition-colors duration-200 ${activeTab === "coupons" ? "bg-gray-700" : "hover:bg-gray-700"}`}
+          >
+            Coupons
+          </button>
+        </nav>
+      </div>
+
+      <div className="flex-1 p-10 overflow-y-auto">
+        {activeTab === "dashboard" && (
+          <div>
+            <h1 className="text-4xl font-bold mb-8 text-gray-800">Dashboard</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold text-gray-700">Total Users</h3>
+                <p className="text-4xl font-bold text-indigo-600 mt-2">{totalUsers}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold text-gray-700">Total Products</h3>
+                <p className="text-4xl font-bold text-green-600 mt-2">{totalProducts}</p>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-semibold text-gray-700">Total Orders</h3>
+                <p className="text-4xl font-bold text-red-600 mt-2">{totalOrders}</p>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Orders & Revenue</h2>
+              <OrderChart orders={orders} />
+            </div>
           </div>
-          <ul className="sidebar-nav">
-            <li onClick={() => setActiveTab("dashboard")} className={activeTab === "dashboard" ? "active" : ""}>Dashboard</li>
-            <li onClick={() => setActiveTab("products")} className={activeTab === "products" ? "active" : ""}>Products</li>
-            <li onClick={() => setActiveTab("orders")} className={activeTab === "orders" ? "active" : ""}>Orders</li>
-            <li onClick={() => setActiveTab("users")} className={activeTab === "users" ? "active" : ""}>Users</li>
-            <li onClick={() => setActiveTab("coupons")} className={activeTab === "coupons" ? "active" : ""}>Coupons</li>
-            <li onClick={() => setActiveTab("queries")} className={activeTab === "queries" ? "active" : ""}>Queries</li>
-            <li onClick={() => setActiveTab("carts")} className={activeTab === "carts" ? "active" : ""}>Carts & Wishlists</li>
-          </ul>
-        </div>
+        )}
 
-        <div className="main-content">
-          {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
-          
-          {/* Dashboard Tab */}
-          {activeTab === "dashboard" && (
-            <div className="dashboard-tab">
-              <h2>Admin Dashboard</h2>
-              <div className="dashboard-cards">
-                <div className="card">
-                  <h3>Total Revenue</h3>
-                  <p>₹{totalRevenue.toFixed(2)}</p>
-                </div>
-                <div className="card">
-                  <h3>Total Orders</h3>
-                  <p>{totalOrders}</p>
-                </div>
-                <div className="card">
-                  <h3>Total Products</h3>
-                  <p>{totalProducts}</p>
-                </div>
-                <div className="card">
-                  <h3>Total Users</h3>
-                  <p>{totalUsers}</p>
-                </div>
-                <div className="card">
-                  <h3>Average Order Value</h3>
-                  <p>₹{averageOrderValue.toFixed(2)}</p>
-                </div>
-                <div className="card">
-                  <h3>Pending Queries</h3>
-                  <p>{totalQueries}</p>
-                </div>
-                <div className="card">
-                  <h3>New Users (30 Days)</h3>
-                  <p>{newUsersThisMonth}</p>
-                </div>
-              </div>
-              
-              <div className="dashboard-charts">
-                <div className="chart-container">
-                  <h3>Orders Status Breakdown</h3>
-                  <OrderChart
-                    delivered={deliveredOrders}
-                    pending={processingOrders}
-                    cancelled={cancelledOrders}
-                  />
-                </div>
-                <div className="chart-container">
-                  <h3>Revenue Trend (Last 30 Days)</h3>
-                  <Line data={{
-                    labels: dailyRevenueData.map(d => d.date),
-                    datasets: [{
-                        label: 'Daily Revenue',
-                        data: dailyRevenueData.map(d => d.revenue),
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        tension: 0.1
-                    }]
-                  }} />
-                </div>
-                <div className="chart-container">
-                  <h3>Top 5 Selling Products</h3>
-                  <Bar data={{
-                      labels: topProducts.map(p => p.name),
-                      datasets: [{
-                          label: 'Total Sales',
-                          data: topProducts.map(p => p.sales),
-                          backgroundColor: 'rgba(153, 102, 255, 0.6)'
-                      }]
-                  }} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Products Tab */}
-          {activeTab === "products" && (
-            <div className="products-tab">
-              <h2>Manage Products</h2>
-              <div className="products-actions">
-                <button
-                  className="admin-btn add-btn"
-                  onClick={() => setOpenModal(true)}
-                >
-                  Add New Product
-                </button>
-                <button
-                  className="admin-btn delete-btn"
-                  onClick={handleBulkDelete}
-                  disabled={selectedProducts.length === 0 || loading}
-                >
-                  {loading ? "Deleting..." : `Delete Selected (${selectedProducts.length})`}
-                </button>
-              </div>
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th><input type="checkbox" onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedProducts(products.map(p => p.id));
-                      } else {
-                        setSelectedProducts([]);
-                      }
-                    }} /></th>
-                    <th>ID</th>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Original Price</th>
-                    <th>Discount (%)</th>
-                    <th>Size (ml)</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products?.map((product) =>
-                    editingProduct && editingProduct.id === product.id ? (
-                      <tr key={product.id}>
-                        <td></td>
-                        <td>{product.id}</td>
-                        <td>
-                          <img
-                            src={editingProduct.imageurl}
-                            alt={editingProduct.name}
-                            width="50"
-                            height="50"
-                          />
-                          <br />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  imageurl: imageUrl,
-                                });
-                              }
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingProduct.name}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={product.id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked={selectedProducts.includes(product.id)}
-                            onChange={() => handleProductSelection(product.id)}
-                          />
-                        </td>
-                        <td>{product.id}</td>
-                        <td>
-                          <img
-                            src={product.imageurl}
-                            alt={product.name}
-                            width="50"
-                            height="50"
-                          />
-                        </td>
-                        <td>{product.name}</td>
-                        <td>₹{product.oprice}</td>
-                        <td>{product.discount}</td>
-                        <td>{product.size}</td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(product)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="admin-btn delete-btn"
-                            onClick={() => handleProductDelete(product.id)}
-                          >
-                            {loading ? "deleting" : "delete"}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                  {editingProduct &&
-                    !products.find((p) => p.id === editingProduct.id) && (
-                      <tr key={editingProduct.id}>
-                        <td></td>
-                        <td>{editingProduct.id}</td>
-                        <td>
-                          <img
-                            src={editingProduct.imageurl}
-                            alt={editingProduct.name}
-                            width="50"
-                            height="50"
-                          />
-                          <br />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  imageurl: imageUrl,
-                                });
-                              }
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingProduct.name}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Coupons Tab */}
-          {activeTab === "coupons" && (
-            <div className="coupons-tab">
-              <h2>Manage Coupon Codes</h2>
+        {activeTab === "products" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-4xl font-bold text-gray-800">Product Management</h1>
               <button
-                className="admin-btn add-btn"
-                onClick={() =>
-                  setEditingCoupon({
-                    code: "",
-                    discountType: "percent",
-                    discountValue: 0,
-                    minOrderValue: 0,
-                    minItemCount: 0,
-                    description: "",
-                    validFrom: "",
-                    validUntil: "",
-                    firstOrderOnly: false,
-                  })
-                }
+                onClick={() => setOpenModal(true)}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition-colors duration-200"
               >
-                Add New Coupon
+                Add New Product
               </button>
-              <table className="coupon-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                    <th>Min ₹</th>
-                    <th>Min Items</th>
-                    <th>Description</th>
-                    <th>Max Usage/User</th>
-                    <th>First Order Only</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {editingCoupon && (
-                    <tr>
-                      <td>
-                        <input
-                          placeholder="Code"
-                          value={editingCoupon.code || ""}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={editingCoupon.discountType}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountType: e.target.value }))}
-                        >
-                          <option value="percent">percent</option>
-                          <option value="flat">flat</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Value"
-                          value={editingCoupon.discountValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min ₹"
-                          value={editingCoupon.minOrderValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min Items"
-                          value={editingCoupon.minItemCount ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          placeholder="Description"
-                          value={editingCoupon.description}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Max usage per user"
-                          value={editingCoupon.maxUsagePerUser ?? ""}
-                          onChange={e => setEditingCoupon(ec => ({
-                            ...ec,
-                            maxUsagePerUser: e.target.value === "" ? null : +e.target.value
-                          }))}
-                        />
-                      </td>
-                      <td>
-                        <label>
-                          First Order Only:
-                          <input
-                            type="checkbox"
-                            checked={editingCoupon.firstOrderOnly ?? false}
-                            onChange={e =>
-                              setEditingCoupon(ec => ({ ...ec, firstOrderOnly: e.target.checked }))
-                            }
-                          />
-                        </label>
-                      </td>
-                      <td>
-                        <button className="admin-btn" onClick={handleCouponSave}>
-                          Save
-                        </button>
-                        <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-                  {coupons.map(c => (
-                    <tr key={c.id}>
-                      <td>{c.code}</td>
-                      <td>{c.discountType}</td>
-                      <td>
-                        {c.discountType === "percent"
-                          ? `${c.discountValue}%`
-                          : `₹${c.discountValue}`}
-                      </td>
-                      <td>₹{c.minOrderValue}</td>
-                      <td>{c.minItemCount}</td>
-                      <td>{c.description}</td>
-                      <td>{c.maxUsagePerUser ?? "∞"}</td>
-                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
-                      <td>
-                        <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
-                          Edit
-                        </button>
-                        <button className="admin-btn delete-btn" onClick={() => deleteCoupon(c.id)}>
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          )}
+            {openModal && <ImageUploadModal setOpenModal={setOpenModal} />}
 
-          {/* Orders Tab */}
-          {activeTab === "orders" && (
-            <div className="orders-tab">
-              <h2>
-                {orderStatusTab === "Cancelled" ? "Cancelled Orders" : "Manage Orders"}
-              </h2>
-              <div className="orders-header">
-                <span>Total Orders: {orders.length}</span>
-                <div className="order-tabs">
-                  {["All", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setOrderStatusTab(status)}
-                      className={orderStatusTab === status ? "active" : ""}
-                    >
-                      {status === "Cancelled" ? "Cancelled Orders" : status}
-                    </button>
-                  ))}
-                </div>
-                <div className="order-search">
-                  <input
-                    type="text"
-                    placeholder="Search orders..."
-                    value={orderSearchQuery}
-                    onChange={(e) => setOrderSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                )
-                .map((order) => (
-                  <div key={order.orderId} className="order-card-admin">
-                    <h3>Order #{order.orderId}</h3>
-                    <p><strong>Date:</strong> {order.createdAt}</p>
-                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                    <p><strong>Current Status:</strong></p>
-                    {order.status === "Order Cancelled" ? (
-                      <span className="status-badge status-ordercancelled">
-                        Order Cancelled
-                      </span>
-                    ) : (
-                      <div>
-                        <label>
-                          Update Status:
-                          <select
-                            value={order.status}
-                            onChange={(e) =>
-                              handleOrderStatusUpdate(
-                                order.orderId,
-                                e.target.value,
-                                order.progressStep
-                              )
-                            }
-                          >
-                            <option value="Order Placed">Order Placed</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                          </select>
-                        </label>
-                      </div>
-                    )}
-                    <button
-                      className="view-details-btn-dhamaal"
-                      onClick={() => handleorderdetails(order)}
-                    >
-                      See More Details
-                    </button>
-                  </div>
-                ))}
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                ).length === 0 && <p>No orders found.</p>}
-              {selectedOrder && (
-                <OrderDetailsPopup
-                  order={selectedOrder}
-                  onClose={() => setSelectedOrder(null)}
-                />
-              )}
+            <div className="mb-6">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          )}
 
-          {/* Users Tab */}
-          {activeTab === "users" && (
-            <div className="users-tab">
-              <h2>User Details</h2>
-              <div className="user-search">
-                <input
-                  type="text"
-                  placeholder="Search users by name or phone..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                />
-              </div>
-              {filteredUsers.length > 0 ? (
-                <table className="admin-table">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">Product List</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border-collapse">
                   <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Total Orders</th>
-                      <th>Total Spent</th>
+                    <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                      <th className="py-3 px-6 text-left">ID</th>
+                      <th className="py-3 px-6 text-left">Name</th>
+                      <th className="py-3 px-6 text-left">Price</th>
+                      <th className="py-3 px-6 text-left">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => {
-                      const userOrders = orders.filter(order => order.userId === user.id);
-                      const totalSpent = userOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-                      return (
-                        <tr key={user.id}>
-                          <td>{user.name}</td>
-                          <td>{user.email}</td>
-                          <td>{userOrders.length}</td>
-                          <td>₹{totalSpent.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })}
+                  <tbody className="text-gray-600 text-sm font-light">
+                    {filteredProducts.map((product) => (
+                      <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-100">
+                        <td className="py-3 px-6 whitespace-nowrap">{product.id}</td>
+                        <td className="py-3 px-6">{product.name}</td>
+                        <td className="py-3 px-6">₹{product.price}</td>
+                        <td className="py-3 px-6">
+                          <button onClick={() => handleEdit(product)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                          <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
-              ) : (
-                <p>No users found.</p>
-              )}
-            </div>
-          )}
-
-          {/* New Carts & Wishlists Tab */}
-          {activeTab === "carts" && (
-            <div className="carts-tab">
-              <h2>Carts & Wishlists</h2>
-              
-              <div className="section-container">
-                <h4>Abandoned Carts</h4>
-                {/* Note: This is a simple view. Your backend needs to differentiate between active and abandoned carts. */}
-                {cart && cart.length > 0 ? (
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cart.map((item, index) => (
-                        <tr key={index}>
-                          <td>{item.productName || 'N/A'}</td>
-                          <td>{item.quantity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p>No abandoned carts found.</p>
-                )}
-              </div>
-
-              <div className="section-container">
-                <h4>Popular Wishlist Items</h4>
-                {/* Tally the items across all wishlists. This logic might be better in the backend. */}
-                {wishlist && wishlist.length > 0 ? (
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Placeholder for actual logic to aggregate items from all wishlists */}
-                      <tr>
-                        <td>Example Product A</td>
-                        <td>5</td>
-                      </tr>
-                      <tr>
-                        <td>Example Product B</td>
-                        <td>3</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                ) : (
-                  <p>No items in wishlists.</p>
-                )}
               </div>
             </div>
-          )}
 
-          {/* Queries Tab */}
-          {activeTab === "queries" && (
-            <div className="queries-tab">
-              <h2>User Queries</h2>
-              <div className="query-search">
+            {editingProduct && (
+              <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-2xl font-semibold mb-4">Edit Product</h2>
+                <form onSubmit={handleProductSubmit} className="space-y-4">
+                  <input type="hidden" name="id" defaultValue={editingProduct.id} />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" name="name" defaultValue={editingProduct.name} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" defaultValue={editingProduct.description} className="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Price</label>
+                    <input type="number" name="price" defaultValue={editingProduct.price} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div className="flex justify-end space-x-4">
+                    <button type="button" onClick={() => setEditingProduct(null)} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{loading ? "Saving..." : "Save Changes"}</button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "orders" && (
+          <div>
+            <h1 className="text-4xl font-bold mb-6 text-gray-800">Order Management</h1>
+            <div className="flex items-center mb-6 space-x-4">
+              <button
+                onClick={() => setOrderStatusTab("All")}
+                className={`px-4 py-2 rounded-md ${orderStatusTab === "All" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >All</button>
+              <button
+                onClick={() => setOrderStatusTab("pending")}
+                className={`px-4 py-2 rounded-md ${orderStatusTab === "pending" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >Pending</button>
+              <button
+                onClick={() => setOrderStatusTab("shipped")}
+                className={`px-4 py-2 rounded-md ${orderStatusTab === "shipped" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >Shipped</button>
+              <button
+                onClick={() => setOrderStatusTab("delivered")}
+                className={`px-4 py-2 rounded-md ${orderStatusTab === "delivered" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}
+              >Delivered</button>
+            </div>
+            <div className="mb-6">
+              <form onSubmit={handleOrderSearch} className="flex space-x-2">
                 <input
                   type="text"
-                  placeholder="Search queries by email, phone or date..."
-                  value={querySearch}
-                  onChange={(e) => setQuerySearch(e.target.value)}
+                  placeholder="Search by Order ID or User Email..."
+                  value={orderSearchQuery}
+                  onChange={(e) => {
+                    setOrderSearchQuery(e.target.value);
+                    setSelectedOrder(null);
+                  }}
+                  className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-              {(() => {
-                const filteredQueries = queries.filter(
-                  (q) =>
-                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                    q.phone.includes(querySearch) ||
-                    (q.date && q.date.includes(querySearch))
-                );
-                return filteredQueries.length > 0 ? (
-                  filteredQueries.map((query, index) => (
-                    <div key={index} className="query-card">
-                      <p>
-                        <strong>Email:</strong> {query.email}
-                      </p>
-                      <p>
-                        <strong>Phone:</strong> {query.phone}
-                      </p>
-                      {query.date && (
-                        <p>
-                          <strong>Date:</strong> {query.date}
-                        </p>
-                      )}
-                      <p>
-                        <strong>Message:</strong> {query.message}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No queries found.</p>
-                );
-              })()}
+                <button type="submit" className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors duration-200">Search</button>
+              </form>
             </div>
-          )}
-        </div>
-      </div>
-    )
-  );
-};
 
-export default AdminPanel;
-
-// The OrderDetailsPopup and ImageUploadModal components need to be imported
-// or defined in this file if they are not separate files.
-const OrderDetailsPopup = ({ order, onClose }) => {
-  return (
-    <div className="modal-overlay-chamkila">
-      <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">×</button>
-        <h2>Order Details (#{order.orderId})</h2>
-        <p><strong>User Name:</strong> {order.userName}</p>
-        <p><strong>Phone:</strong> {order.phone}</p>
-        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-        <p><strong>Status:</strong> {order.status}</p>
-        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
-        <p><strong>Products:</strong></p>
-        <ul>
-          {(order.products || []).map(p => (
-            <li key={p.productId}>
-              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - ₹{p.price}
-            </li>
-          ))}
-        </ul>
-        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-        {order.refund?.id && (
-          <div>
-            <h3>Refund Details</h3>
-            <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
-            <p><strong>Refund Status:</strong> {order.refund.status}</p>
-            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
-            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
-            {order.refund.processed_at && (
-              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
+            {selectedOrder && (
+              <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h2 className="text-2xl font-semibold mb-4">Order Details</h2>
+                {detailsLoading ? (
+                  <p>Loading details...</p>
+                ) : (
+                  <div>
+                    <p><strong>Order ID:</strong> {selectedOrder.id}</p>
+                    <p><strong>User Email:</strong> {selectedOrder.userEmail}</p>
+                    <p><strong>Payment Mode:</strong> {selectedOrder.paymentMode}</p>
+                    <p><strong>Payment Status:</strong> {selectedOrder.paymentStatus}</p>
+                    <p><strong>Total:</strong> ₹{selectedOrder.totalAmount}</p>
+                    <p><strong>Status:</strong> {selectedOrder.status}</p>
+                    <p><strong>Address:</strong> {selectedOrder.address}, {selectedOrder.city}, {selectedOrder.state}, {selectedOrder.zip}, {selectedOrder.country}</p>
+                    <p className="mt-4"><strong>Products:</strong></p>
+                    <ul className="list-disc list-inside">
+                      {(selectedOrder.products || []).map(p => (
+                        <li key={p.productId} className="flex items-center space-x-2 mt-2">
+                          <img src={p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded" />
+                          <span>{p.productName} (x{p.quantity}) - ₹{p.price}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-4"><strong>Created At:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
             )}
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4">Order List</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                      <th className="py-3 px-6 text-left">Order ID</th>
+                      <th className="py-3 px-6 text-left">User Email</th>
+                      <th className="py-3 px-6 text-left">Total Amount</th>
+                      <th className="py-3 px-6 text-left">Status</th>
+                      <th className="py-3 px-6 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-600 text-sm font-light">
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-100">
+                        <td className="py-3 px-6 whitespace-nowrap">{order.id}</td>
+                        <td className="py-3 px-6 whitespace-nowrap">{order.userEmail}</td>
+                        <td className="py-3 px-6">₹{order.totalAmount}</td>
+                        <td className="py-3 px-6">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            order.status === 'pending' ? 'bg-yellow-200 text-yellow-800' :
+                            order.status === 'shipped' ? 'bg-blue-200 text-blue-800' :
+                            order.status === 'delivered' ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
+                          }`}>{order.status}</span>
+                        </td>
+                        <td className="py-3 px-6 space-x-2">
+                          <button onClick={() => getSingleOrderDetails(order.id).then(setSelectedOrder)} className="text-blue-600 hover:underline">Details</button>
+                          <select
+                            onChange={(e) => handleOrderStatusUpdate(order.id, e.target.value)}
+                            className="p-1 border border-gray-300 rounded-md text-sm"
+                            value={order.status}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "queries" && (
+          <div>
+            <h1 className="text-4xl font-bold mb-6 text-gray-800">Customer Queries</h1>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4">Query List</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                      <th className="py-3 px-6 text-left">ID</th>
+                      <th className="py-3 px-6 text-left">Name</th>
+                      <th className="py-3 px-6 text-left">Email</th>
+                      <th className="py-3 px-6 text-left">Query</th>
+                      <th className="py-3 px-6 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-600 text-sm font-light">
+                    {queries.map((query) => (
+                      <tr key={query.id} className="border-b border-gray-200 hover:bg-gray-100">
+                        <td className="py-3 px-6 whitespace-nowrap">{query.id}</td>
+                        <td className="py-3 px-6">{query.name}</td>
+                        <td className="py-3 px-6">{query.email}</td>
+                        <td className="py-3 px-6 max-w-sm overflow-hidden whitespace-nowrap text-ellipsis">{query.query}</td>
+                        <td className="py-3 px-6">
+                          <button onClick={() => handleQueryDelete(query.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "coupons" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-4xl font-bold text-gray-800">Coupon Management</h1>
+              <button
+                onClick={() => setEditingCoupon({ code: "", discount: 0, maxUsage: 1, maxUsagePerUser: 1, validFrom: "", validUntil: "", firstOrderOnly: false })}
+                className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition-colors duration-200"
+              >
+                Create New Coupon
+              </button>
+            </div>
+
+            {editingCoupon && (
+              <div className="mb-6 p-6 bg-white rounded-lg shadow-md">
+                <h2 className="text-2xl font-semibold mb-4">
+                  {editingCoupon.id ? "Edit Coupon" : "Create New Coupon"}
+                </h2>
+                <form onSubmit={handleCouponSubmit} className="space-y-4">
+                  <input type="hidden" name="id" defaultValue={editingCoupon.id} />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Code</label>
+                    <input type="text" name="code" defaultValue={editingCoupon.code} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Discount (%)</label>
+                    <input type="number" name="discount" defaultValue={editingCoupon.discount} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Max Usage</label>
+                    <input type="number" name="maxUsage" defaultValue={editingCoupon.maxUsage} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Max Usage Per User</label>
+                    <input type="number" name="maxUsagePerUser" defaultValue={editingCoupon.maxUsagePerUser} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Valid From</label>
+                    <input type="date" name="validFrom" defaultValue={editingCoupon.validFrom} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Valid Until</label>
+                    <input type="date" name="validUntil" defaultValue={editingCoupon.validUntil} className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input type="checkbox" name="firstOrderOnly" defaultChecked={editingCoupon.firstOrderOnly} className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                    <label className="text-sm font-medium text-gray-700">First Order Only</label>
+                  </div>
+                  <div className="flex justify-end space-x-4">
+                    <button type="button" onClick={() => setEditingCoupon(null)} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">{couponLoading ? "Saving..." : "Save Coupon"}</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4">Coupon List</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border-collapse">
+                  <thead>
+                    <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                      <th className="py-3 px-6 text-left">ID</th>
+                      <th className="py-3 px-6 text-left">Code</th>
+                      <th className="py-3 px-6 text-left">Discount</th>
+                      <th className="py-3 px-6 text-left">Max Usage</th>
+                      <th className="py-3 px-6 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-600 text-sm font-light">
+                    {coupons.map((coupon) => (
+                      <tr key={coupon.id} className="border-b border-gray-200 hover:bg-gray-100">
+                        <td className="py-3 px-6">{coupon.id}</td>
+                        <td className="py-3 px-6">{coupon.code}</td>
+                        <td className="py-3 px-6">{coupon.discount}%</td>
+                        <td className="py-3 px-6">{coupon.maxUsage}</td>
+                        <td className="py-3 px-6">
+                          <button onClick={() => setEditingCoupon(coupon)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                          <button onClick={() => handleCouponDelete(coupon.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 };
+
+export default AdminPanel;
