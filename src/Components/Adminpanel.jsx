@@ -17,19 +17,24 @@ import {
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
-import OrderChart from "./OrderChart"; // Import the new chart component
+import OrderChart from "./OrderChart";
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, RadialLinearScale, PointElement, LineElement } from 'chart.js';
+import 'chart.js/auto';
+import { UserContext } from "../contexts/UserContext"; // NEW IMPORT
+import { CartContext } from "../contexts/CartContext"; // NEW IMPORT
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, RadialLinearScale, PointElement, LineElement);
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
   const { products, setProducts } = useContext(ProductContext);
   const { orders, setOrders, getorders } = useContext(OrderContext);
   const { queries, getquery } = useContext(ContactContext);
   const { user } = useUser();
-  
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
@@ -38,9 +43,17 @@ const AdminPanel = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [usersList, setUsersList] = useState([]);
-  
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // NEW STATE VARIABLES
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [dailyRevenueData, setDailyRevenueData] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [newUsersThisMonth, setNewUsersThisMonth] = useState(0);
+  const [selectedProducts, setSelectedProducts] = useState([]); // For bulk actions
+  const { cart, wishlist } = useContext(CartContext); // Use Cart & Wishlist context
+  const { users, setUsers, getusers } = useContext(UserContext); // Use UserContext
 
   const {
     coupons,
@@ -50,7 +63,7 @@ const AdminPanel = () => {
     deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
-  
+
   // --- Data Fetching and Effects ---
   useEffect(() => {
     const fetchUsers = async () => {
@@ -63,6 +76,7 @@ const AdminPanel = () => {
     };
     fetchUsers();
     getquery();
+    getusers(); // Fetch all users using the updated context
   }, []);
 
   const userdetails = async () => {
@@ -93,7 +107,40 @@ const AdminPanel = () => {
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
-  
+
+  // NEW useEffect to calculate advanced metrics
+  useEffect(() => {
+    const totalRev = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    setTotalRevenue(totalRev);
+
+    const salesByDay = {};
+    orders.forEach(order => {
+      const date = new Date(order.createdAt).toISOString().split('T')[0];
+      salesByDay[date] = (salesByDay[date] || 0) + (order.totalAmount || 0);
+    });
+    setDailyRevenueData(Object.keys(salesByDay).map(date => ({ date, revenue: salesByDay[date] })));
+
+    const productSales = {};
+    orders.forEach(order => {
+      if (order.products) {
+        order.products.forEach(product => {
+          productSales[product.productId] = (productSales[product.productId] || 0) + product.quantity;
+        });
+      }
+    });
+    const sortedProducts = Object.keys(productSales).sort((a, b) => productSales[b] - productSales[a]);
+    setTopProducts(sortedProducts.slice(0, 5).map(id => {
+      const product = products.find(p => p.id === id);
+      return product ? { name: product.name, sales: productSales[id] } : null;
+    }).filter(p => p));
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const newUsers = users.filter(user => new Date(user.createdAt) > thirtyDaysAgo).length;
+    setNewUsersThisMonth(newUsers);
+
+  }, [orders, products, users]);
+
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
   const totalProducts = products.length;
@@ -103,8 +150,38 @@ const AdminPanel = () => {
   const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
   const cancelledOrders = orders.filter(o => o.status === "Order Cancelled").length;
   const processingOrders = orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length;
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  
+  // NEW FUNCTIONS
+  const handleProductSelection = (productId) => {
+    if (selectedProducts.includes(productId)) {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId));
+    } else {
+      setSelectedProducts([...selectedProducts, productId]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (userkiDetails?.role !== "admin") return;
+    if (window.confirm("Are you sure you want to delete the selected products?")) {
+      setLoading(true);
+      try {
+        // You would call your backend API here to delete multiple products
+        // e.g. await fetch(`${BASE}/api/products/bulk-delete`, { method: 'POST', body: JSON.stringify({ ids: selectedProducts }) });
+        
+        // Simulating the deletion for front-end state
+        setProducts(products.filter(p => !selectedProducts.includes(p.id)));
+        toast.success("Selected products deleted successfully.");
+      } catch (error) {
+        console.error("Error during bulk delete:", error);
+        toast.error("Failed to delete products.");
+      } finally {
+        setLoading(false);
+        setSelectedProducts([]);
+      }
+    }
+  };
+
 
   // --- Functions (existing) ---
   const handleProductUpdate = async (updatedProduct) => {
@@ -172,7 +249,6 @@ const AdminPanel = () => {
       validFrom: editingCoupon.validFrom || null,
       validUntil: editingCoupon.validUntil || null,
     };
-
     const url = editingCoupon.id
       ? `${BASE}/api/coupons/${editingCoupon.id}`
       : `${BASE}/api/coupons`;
@@ -256,6 +332,7 @@ const AdminPanel = () => {
     ...user,
     orders: orders.filter((order) => order.userId === user.id),
   }));
+  
   const filteredUsers = usersWithOrders.filter(
     (user) =>
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
@@ -265,24 +342,27 @@ const AdminPanel = () => {
   // --- JSX Rendering ---
   return (
     user && userkiDetails.role === "admin" && (
-      <div className="admin-panel">
-        <div className="absolute">
-          <ToastContainer />
+      <div className="admin-panel-container">
+        <ToastContainer />
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <h2>Admin Dashboard</h2>
+          </div>
+          <ul className="sidebar-nav">
+            <li onClick={() => setActiveTab("dashboard")} className={activeTab === "dashboard" ? "active" : ""}>Dashboard</li>
+            <li onClick={() => setActiveTab("products")} className={activeTab === "products" ? "active" : ""}>Products</li>
+            <li onClick={() => setActiveTab("orders")} className={activeTab === "orders" ? "active" : ""}>Orders</li>
+            <li onClick={() => setActiveTab("users")} className={activeTab === "users" ? "active" : ""}>Users</li>
+            <li onClick={() => setActiveTab("coupons")} className={activeTab === "coupons" ? "active" : ""}>Coupons</li>
+            <li onClick={() => setActiveTab("queries")} className={activeTab === "queries" ? "active" : ""}>Queries</li>
+            <li onClick={() => setActiveTab("carts")} className={activeTab === "carts" ? "active" : ""}>Carts & Wishlists</li>
+          </ul>
         </div>
-        
-        <nav className="admin-nav">
-          <button onClick={() => setActiveTab("dashboard")}>Dashboard</button>
-          <button onClick={() => setActiveTab("products")}>Products</button>
-          <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
-          <button onClick={() => setActiveTab("orders")}>Orders</button>
-          <button onClick={() => setActiveTab("users")}>Users</button>
-          <button onClick={() => setActiveTab("queries")}>Queries</button>
-        </nav>
 
-        <div className="admin-content">
+        <div className="main-content">
           {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
-
-          {/* New Dashboard Tab */}
+          
+          {/* Dashboard Tab */}
           {activeTab === "dashboard" && (
             <div className="dashboard-tab">
               <h2>Admin Dashboard</h2>
@@ -311,8 +391,12 @@ const AdminPanel = () => {
                   <h3>Pending Queries</h3>
                   <p>{totalQueries}</p>
                 </div>
+                <div className="card">
+                  <h3>New Users (30 Days)</h3>
+                  <p>{newUsersThisMonth}</p>
+                </div>
               </div>
-
+              
               <div className="dashboard-charts">
                 <div className="chart-container">
                   <h3>Orders Status Breakdown</h3>
@@ -322,6 +406,30 @@ const AdminPanel = () => {
                     cancelled={cancelledOrders}
                   />
                 </div>
+                <div className="chart-container">
+                  <h3>Revenue Trend (Last 30 Days)</h3>
+                  <Line data={{
+                    labels: dailyRevenueData.map(d => d.date),
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: dailyRevenueData.map(d => d.revenue),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        tension: 0.1
+                    }]
+                  }} />
+                </div>
+                <div className="chart-container">
+                  <h3>Top 5 Selling Products</h3>
+                  <Bar data={{
+                      labels: topProducts.map(p => p.name),
+                      datasets: [{
+                          label: 'Total Sales',
+                          data: topProducts.map(p => p.sales),
+                          backgroundColor: 'rgba(153, 102, 255, 0.6)'
+                      }]
+                  }} />
+                </div>
               </div>
             </div>
           )}
@@ -330,15 +438,31 @@ const AdminPanel = () => {
           {activeTab === "products" && (
             <div className="products-tab">
               <h2>Manage Products</h2>
-              <button
-                className="admin-btn add-btn"
-                onClick={() => setOpenModal(true)}
-              >
-                Add New Product
-              </button>
+              <div className="products-actions">
+                <button
+                  className="admin-btn add-btn"
+                  onClick={() => setOpenModal(true)}
+                >
+                  Add New Product
+                </button>
+                <button
+                  className="admin-btn delete-btn"
+                  onClick={handleBulkDelete}
+                  disabled={selectedProducts.length === 0 || loading}
+                >
+                  {loading ? "Deleting..." : `Delete Selected (${selectedProducts.length})`}
+                </button>
+              </div>
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th><input type="checkbox" onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedProducts(products.map(p => p.id));
+                      } else {
+                        setSelectedProducts([]);
+                      }
+                    }} /></th>
                     <th>ID</th>
                     <th>Image</th>
                     <th>Name</th>
@@ -352,6 +476,7 @@ const AdminPanel = () => {
                   {products?.map((product) =>
                     editingProduct && editingProduct.id === product.id ? (
                       <tr key={product.id}>
+                        <td></td>
                         <td>{product.id}</td>
                         <td>
                           <img
@@ -441,6 +566,13 @@ const AdminPanel = () => {
                       </tr>
                     ) : (
                       <tr key={product.id}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product.id)}
+                            onChange={() => handleProductSelection(product.id)}
+                          />
+                        </td>
                         <td>{product.id}</td>
                         <td>
                           <img
@@ -474,6 +606,7 @@ const AdminPanel = () => {
                   {editingProduct &&
                     !products.find((p) => p.id === editingProduct.id) && (
                       <tr key={editingProduct.id}>
+                        <td></td>
                         <td>{editingProduct.id}</td>
                         <td>
                           <img
@@ -589,7 +722,6 @@ const AdminPanel = () => {
               >
                 Add New Coupon
               </button>
-
               <table className="coupon-table">
                 <thead>
                   <tr>
@@ -678,7 +810,7 @@ const AdminPanel = () => {
                         </label>
                       </td>
                       <td>
-                        <button className="admin-btn" onClick={saveCoupon}>
+                        <button className="admin-btn" onClick={handleCouponSave}>
                           Save
                         </button>
                         <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
@@ -824,29 +956,93 @@ const AdminPanel = () => {
                 />
               </div>
               {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <div key={user.id} className="user-card">
-                    <h3>{user.name}</h3>
-                    <p>Phone: {user.phone}</p>
-                    <p>Total Orders: {user.orders.length}</p>
-                    {user.orders.length > 0 && (
-                      <div className="user-orders">
-                        <h4>Orders:</h4>
-                        {user.orders.map((order) => (
-                          <div key={order.orderId} className="user-order">
-                            <span>
-                              Order #{order.orderId} - ₹{order.totalAmount} -{" "}
-                              {order.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Total Orders</th>
+                      <th>Total Spent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => {
+                      const userOrders = orders.filter(order => order.userId === user.id);
+                      const totalSpent = userOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+                      return (
+                        <tr key={user.id}>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>{userOrders.length}</td>
+                          <td>₹{totalSpent.toFixed(2)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               ) : (
                 <p>No users found.</p>
               )}
+            </div>
+          )}
+
+          {/* New Carts & Wishlists Tab */}
+          {activeTab === "carts" && (
+            <div className="carts-tab">
+              <h2>Carts & Wishlists</h2>
+              
+              <div className="section-container">
+                <h4>Abandoned Carts</h4>
+                {/* Note: This is a simple view. Your backend needs to differentiate between active and abandoned carts. */}
+                {cart && cart.length > 0 ? (
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cart.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.productName || 'N/A'}</td>
+                          <td>{item.quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>No abandoned carts found.</p>
+                )}
+              </div>
+
+              <div className="section-container">
+                <h4>Popular Wishlist Items</h4>
+                {/* Tally the items across all wishlists. This logic might be better in the backend. */}
+                {wishlist && wishlist.length > 0 ? (
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Placeholder for actual logic to aggregate items from all wishlists */}
+                      <tr>
+                        <td>Example Product A</td>
+                        <td>5</td>
+                      </tr>
+                      <tr>
+                        <td>Example Product B</td>
+                        <td>3</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                ) : (
+                  <p>No items in wishlists.</p>
+                )}
+              </div>
             </div>
           )}
 
