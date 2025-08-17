@@ -25,7 +25,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   
-  const { products, setProducts } = useContext(ProductContext);
+  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
   const { orders, setOrders, getorders } = useContext(OrderContext);
   const { queries, getquery } = useContext(ContactContext);
   const { user } = useUser();
@@ -107,57 +107,47 @@ const AdminPanel = () => {
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   // --- Functions (existing) ---
-  const handleProductUpdate = async (updatedProduct) => {
-    console.log(updatedProduct);
-    try {
-      const res = await db
-        .update(productsTable)
-        .set({
-          ...updatedProduct,
-          name: updatedProduct.name,
-          size: updatedProduct.size,
-          discount: updatedProduct.discount,
-          price: updatedProduct.oprice,
-          imageurl: updatedProduct.imageurl,
-        })
-        .where(eq(productsTable.id, updatedProduct.id))
-        .returning(productsTable);
-      toast.success("Product added Successfully");
-    } catch (error) {
-      const { message } = error;
-      toast.error(message);
-    }
-    setProducts((prevProducts) => {
-      const exists = prevProducts.find((p) => p.id === updatedProduct.id);
-      return exists
-        ? prevProducts.map((p) =>
-            p.id === updatedProduct.id ? updatedProduct : p
-          )
-        : [...prevProducts, updatedProduct];
-    });
-    setEditingProduct(null);
-  };
-  
-  const handleProductDelete = async (productId) => {
-    if (userkiDetails?.role !== "admin") return;
+  const handleProductUpdate = async () => {
     setLoading(true);
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((prevProducts) =>
-        prevProducts.filter((p) => p.id !== productId)
-      );
-      try {
-        await db
-          .delete(orderItemsTable)
-          .where(eq(orderItemsTable.productId, productId));
-        await db
-          .delete(addToCartTable)
-          .where(eq(addToCartTable.productId, productId));
-        await db.delete(productsTable).where(eq(productsTable.id, productId));
-        console.log("Product and related cart entries deleted successfully");
-      } catch (error) {
-        console.error("Error deleting product:", error);
-      }
+    try {
+      // Use the new updateProduct function from ProductContext
+      await updateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        composition: editingProduct.composition,
+        description: editingProduct.description,
+        fragrance: editingProduct.fragrance,
+        fragranceNotes: editingProduct.fragranceNotes,
+        discount: Number(editingProduct.discount),
+        oprice: Number(editingProduct.oprice),
+        size: Number(editingProduct.size),
+        quantity: Number(editingProduct.quantity),
+        imageurl: JSON.stringify(editingProduct.imageurl),
+      });
+
+      setEditingProduct(null);
+      toast.success("Product updated successfully!");
+    } catch (error) {
+      console.error("❌ Error updating product:", error);
+      toast.error("Failed to update product.");
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProductDelete = async (productId) => {
+    const confirmation = window.confirm("Are you sure you want to delete this product?");
+    if (confirmation) {
+      setLoading(true);
+      try {
+        // Use the new deleteProduct function from ProductContext
+        await deleteProduct(productId);
+        setLoading(false);
+        toast.success("Product deleted successfully!");
+      } catch (error) {
+        console.error("❌ Error deleting product:", error);
+        setLoading(false);
+        toast.error("Failed to delete product.");
+      }
     }
   };
   
