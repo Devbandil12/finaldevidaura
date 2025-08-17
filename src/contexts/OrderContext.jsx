@@ -1,6 +1,7 @@
 // src/contexts/OrderContext.js
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
 
 export const OrderContext = createContext();
 
@@ -10,13 +11,11 @@ export const OrderProvider = ({ children }) => {
   const { userdetails } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // Modified getorders function to fetch all orders if isAdmin is true
   const getorders = async (showLoader = true, isAdmin = false) => {
     if (!isAdmin && !userdetails?.id) {
-      // If not admin and no user, do nothing
       return;
     }
-    
+
     if (showLoader) setLoadingOrders(true);
 
     try {
@@ -24,6 +23,7 @@ export const OrderProvider = ({ children }) => {
         ? `${BACKEND_URL}/api/orders/`
         : `${BACKEND_URL}/api/orders/${userdetails.id}`;
       const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       setOrders(data);
     } catch (err) {
@@ -33,8 +33,36 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update order status");
+      await getorders(true, true);
+      toast.success(`Order ${orderId} status updated to ${newStatus}`);
+    } catch (error) {
+      console.error("❌ Failed to update order status:", error);
+      toast.error("Failed to update order status.");
+    }
+  };
+
+  const getSingleOrderDetails = async (orderId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
+      if (!res.ok) throw new Error("Failed to fetch order details");
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("❌ Error fetching order details:", error);
+      toast.error("Failed to load order details.");
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // This effect handles fetching orders for the signed-in user
     if (userdetails) {
       getorders();
     }
@@ -47,6 +75,8 @@ export const OrderProvider = ({ children }) => {
         getorders,
         setOrders,
         loadingOrders,
+        updateOrderStatus,
+        getSingleOrderDetails,
       }}
     >
       {children}
