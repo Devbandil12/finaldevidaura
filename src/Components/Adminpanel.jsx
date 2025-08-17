@@ -10,9 +10,9 @@ import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 
-// CRITICAL SECURITY FIX: All direct database and schema imports have been removed.
-// All data operations must be handled by secure backend API calls.
-// This component now relies entirely on the Contexts for data, which is the correct and secure way.
+// CRITICAL SECURITY FIX: The following imports were removed as they are insecure
+// and should not be present in a client-side component. All data operations are
+// now handled by the corresponding Contexts, which should make secure backend API calls.
 // import { db } from "../../configs/index";
 // import { eq } from "drizzle-orm";
 // import {
