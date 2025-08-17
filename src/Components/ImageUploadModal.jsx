@@ -1,5 +1,7 @@
 import React, { useState, useContext } from "react";
 import useCloudinary from "../utils/useCloudinary";
+import { db } from "../../configs";
+import { productsTable } from "../../configs/schema";
 import { toast } from "react-toastify";
 import { ProductContext } from "../contexts/productContext";
 
@@ -8,10 +10,9 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   const [step, setStep] = useState(1);
   const [images, setImages] = useState([]);
   const [uploadedUrls, setUploadedUrls] = useState([]);
-  
+
   const { uploadImage, uploading, error } = useCloudinary();
   const { setProducts } = useContext(ProductContext);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   const [product, setProduct] = useState({
     name: "",
@@ -19,15 +20,18 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     description: "",
     fragrance: "",
     fragranceNotes: "",
-    discount: "",
-    oprice: "",
-    size: "",
+    discount: 0,
+    oprice: 0,
+    size: 0,
+    quantity: 1, 
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "discount" || name === "oprice" || name === "size") {
-      setProduct({ ...product, [name]: Number(value) });
+    
+    if (name === "discount" || name === "oprice" || name === "size" || name === "quantity") {
+      // Convert to number, or default to 0 if the input is empty or invalid
+      setProduct({ ...product, [name]: Number(value) || 0 });
     } else {
       setProduct({ ...product, [name]: value });
     }
@@ -65,38 +69,37 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   };
   
   const handlesubmit = async () => {
-    const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size"];
+    const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size", "quantity"];
     for (const field of requiredFields) {
-      if (!product[field] || (typeof product[field] === 'string' && product[field].trim() === "")) {
+      const value = product[field];
+      if (value === null || value === undefined || (typeof value === 'string' && value.trim() === "") || (typeof value === 'number' && isNaN(value))) {
         return toast.error(`Please fill in the '${field}' field.`);
       }
     }
+    
+    if (uploadedUrls.length === 0) {
+      return toast.error("No images were uploaded. Please upload images before submitting.");
+    }
+    
+    const payload = {
+      ...product,
+      imageurl: JSON.stringify(uploadedUrls),
+    };
+    
+    toast.info(`Attempting to add product. Payload: ${JSON.stringify(payload)}`);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/products`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          ...product,
-          imageurl: uploadedUrls,
-        }),
-      });
+      const res = await db
+        .insert(productsTable)
+        .values(payload)
+        .returning(productsTable);
       
-      if (!res.ok) {
-        throw new Error("Failed to add product via API.");
-      }
-
-      const newProduct = await res.json();
+      setProducts(prev => [...prev, res[0]]);
       
-      setProducts(prev => [...prev, newProduct]);
-      
-      console.log("Product added:", newProduct);
       toast.success("Product added successfully!");
     } catch (error) {
-      console.error("API call failed:", error);
-      toast.error("Failed to add product. Check console for details.");
+      console.error("Database insert failed:", error);
+      toast.error("Failed to add product. Check the payload and console for details.");
     } finally {
       setIsOpen(false);
       setStep(1);
@@ -108,9 +111,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
         description: "",
         fragrance: "",
         fragranceNotes: "",
-        discount: "",
-        oprice: "",
-        size: "",
+        discount: 0,
+        oprice: 0,
+        size: 0,
+        quantity: 1,
       });
       onClose();
     }
@@ -121,13 +125,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   return (
     <div>
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center">
           <div className="bg-black text-white p-6 rounded-lg shadow-xl w-96 relative">
             <button
-              onClick={() => {
-                setIsOpen(false);
-                onClose();
-              }}
+              onClick={() => { setIsOpen(false); onClose(); }}
               className="absolute top-2 right-3 text-white hover:text-white"
             >
               ✖
@@ -136,7 +137,6 @@ const ImageUploadModal = ({ isopen, onClose }) => {
             {step === 1 ? (
               <div className="text-center flex items-center justify-center flex-col">
                 <h2 className="text-lg font-semibold">Upload Product Images</h2>
-                
                 <div className="mt-4 w-full">
                   <h3 className="text-md font-medium text-left mb-2">
                     Select Images (Max 10)
