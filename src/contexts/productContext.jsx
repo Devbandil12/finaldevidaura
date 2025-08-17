@@ -22,13 +22,49 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
+  const updateProduct = async (productId, updatedData) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update product");
+      }
+      // After a successful update, refresh the product list
+      getProducts();
+    } catch (error) {
+      console.error("❌ Error updating product:", error);
+    }
+  };
+
+  const deleteProduct = async (productId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete product");
+      }
+      // After a successful deletion, refresh the product list
+      getProducts();
+    } catch (error) {
+      console.error("❌ Error deleting product:", error);
+    }
+  };
+
   // Calls the fetch function when the component mounts
   useEffect(() => {
     getProducts();
   }, []);
 
   return (
-    <ProductContext.Provider value={{ products, setProducts, loading }}>
+    <ProductContext.Provider value={{ products, loading, getProducts, updateProduct, deleteProduct }}>
       {children}
     </ProductContext.Provider>
   );
