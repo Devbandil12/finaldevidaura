@@ -55,9 +55,9 @@ const AdminPanel = () => {
       getquery();
       getorders(true, true);
       getProducts();
-      refreshCoupons();
+      // NOTE: `refreshCoupons` is now called only from CouponContext to avoid redundant fetches
     }
-  }, [isClerkLoaded, userdetails, getallusers, getquery, getorders, getProducts, refreshCoupons]);
+  }, [isClerkLoaded, userdetails, getallusers, getquery, getorders, getProducts]);
 
   // Check for admin role
   useEffect(() => {
@@ -117,7 +117,7 @@ const AdminPanel = () => {
   }, [users]);
   
   const usersWithOrdersAndQueries = useMemo(() => {
-    return users.map((user) => ({
+    return (users || []).map((user) => ({
       ...user,
       orders: orders.filter((order) => order.userId === user.id),
       queries: queries.filter((query) => query.email === user.email),
@@ -515,7 +515,7 @@ const AdminPanel = () => {
                     <ul className="space-y-2">
                       {(selectedOrder.products || []).map(p => (
                         <li key={p.productId} className="flex items-center space-x-3">
-                          <img src={p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded-md" />
+                          <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded-md" />
                           <span>{p.productName} (x{p.quantity}) - ₹{p.price}</span>
                         </li>
                       ))}
