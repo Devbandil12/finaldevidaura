@@ -34,11 +34,20 @@ const ProductDetail = () => {
   if (!product) {
     return <div className="text-center p-8">Product not found.</div>;
   }
-  
+
   // =========================================================
-  // ===  CORRECTED IMAGE LOGIC FOR SINGLE + GALLERY IMAGES ===
+  // ===  BULLETPROOF IMAGE LOGIC ===
   // =========================================================
-  const allImages = product.imageurl || [];
+  let allImages = [];
+  if (product.imageurl) {
+    try {
+      // Attempt to parse the imageurl if it's a string
+      allImages = typeof product.imageurl === 'string' ? JSON.parse(product.imageurl) : product.imageurl;
+    } catch (e) {
+      console.error("Failed to parse imageurl string:", e);
+      allImages = [];
+    }
+  }
   
   // =========================================================
 
@@ -104,11 +113,13 @@ const ProductDetail = () => {
           {/* Image Gallery */}
           <div className="lg:w-1/2">
             <div className="relative mb-4">
-              <img
-                src={allImages[currentImg]}
-                alt={product.name}
-                className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
-              />
+              {allImages.length > 0 && (
+                <img
+                  src={allImages[currentImg]}
+                  alt={product.name}
+                  className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
+                />
+              )}
               {allImages.length > 1 && (
                 <>
                   <button className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10 hover:bg-white transition-colors" onClick={() => changeImage(-1)}>
@@ -120,17 +131,19 @@ const ProductDetail = () => {
                 </>
               )}
             </div>
-            <div className="flex gap-2 overflow-x-auto p-2 justify-center">
-              {allImages.map((img, idx) => (
-                <img
-                  key={idx}
-                src={img}
-                alt={`Thumbnail ${idx + 1}`}
-                className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
-                onClick={() => setCurrentImg(idx)}
-                />
-              ))}
-            </div>
+            {allImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto p-2 justify-center">
+                {allImages.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
+                    onClick={() => setCurrentImg(idx)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info & Actions */}
