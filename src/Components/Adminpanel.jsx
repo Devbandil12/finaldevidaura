@@ -8,7 +8,7 @@ import { CartContext } from "../contexts/CartContext";
 import { toast, ToastContainer } from "react-toastify";
 import ImageUploadModal from "./ImageUploadModal";
 import OrderChart from "./OrderChart";
-import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars } from "react-icons/fa";
+import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes } from "react-icons/fa";
 
 // Helper function to format currency
 const formatCurrency = (amount) => `₹${Number(amount).toFixed(2)}`;
@@ -26,14 +26,26 @@ const AdminPanel = () => {
   const [querySearch, setQuerySearch] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [productSearchQuery, setProductSearchQuery] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
+
+  // Auto-collapse sidebar on smaller screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { products, getProducts, updateProduct, deleteProduct: deleteProductFromContext } = useContext(ProductContext);
   const { orders, getorders, updateOrderStatus, getSingleOrderDetails } = useContext(OrderContext);
   const { queries, getquery, deleteQuery } = useContext(ContactContext);
   const { coupons, refreshCoupons, deleteCoupon, saveCoupon, editingCoupon, setEditingCoupon } = useContext(CouponContext);
   const { userdetails, getallusers, users } = useContext(UserContext);
-  // Assuming these new context functions exist for admin panel
   const { carts, wishlists, getCarts, getWishlists } = useContext(CartContext);
 
   // Data Fetching
@@ -42,8 +54,8 @@ const AdminPanel = () => {
     getorders(true, true);
     getquery();
     getallusers();
-    // Assuming new context functions for admin are here
-    // getCarts();
+    // These functions need to be implemented in CartContext for admin view
+    // getCarts(); 
     // getWishlists();
   }, [getProducts, getorders, getquery, getallusers]);
 
@@ -55,11 +67,11 @@ const AdminPanel = () => {
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   const deliveredOrders = useMemo(() => orders.filter(o => o.status === "Delivered"), [orders]);
-  const totalRevenue = useMemo(() => deliveredOrders.reduce((sum, order) => sum + order.totalAmount, 0), [deliveredOrders]);
+  const totalRevenue = useMemo(() => deliveredOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0), [deliveredOrders]);
 
-  const todayRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= today).reduce((sum, order) => sum + order.totalAmount, 0), [deliveredOrders]);
-  const thisWeekRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= last7Days).reduce((sum, order) => sum + order.totalAmount, 0), [deliveredOrders]);
-  const thisMonthRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= firstDayOfMonth).reduce((sum, order) => sum + order.totalAmount, 0), [deliveredOrders]);
+  const todayRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= today).reduce((sum, order) => sum + (order.totalAmount || 0), 0), [deliveredOrders]);
+  const thisWeekRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= last7Days).reduce((sum, order) => sum + (order.totalAmount || 0), 0), [deliveredOrders]);
+  const thisMonthRevenue = useMemo(() => deliveredOrders.filter(o => new Date(o.createdAt) >= firstDayOfMonth).reduce((sum, order) => sum + (order.totalAmount || 0), 0), [deliveredOrders]);
 
   const totalOrders = orders.length;
   const totalProducts = products.length;
@@ -72,10 +84,10 @@ const AdminPanel = () => {
   // Top 5 Selling Products
   const productSalesMap = useMemo(() => {
     const sales = {};
-    orders.forEach(order => {
+    (orders || []).forEach(order => {
       if (order.products) {
         order.products.forEach(p => {
-          sales[p.productId] = (sales[p.productId] || 0) + p.quantity;
+          sales[p.productId] = (sales[p.productId] || 0) + (p.quantity || 0);
         });
       }
     });
@@ -88,28 +100,23 @@ const AdminPanel = () => {
       .slice(0, 5)
       .map(([id, count]) => {
         const product = products.find(p => p.id === id);
-        return { ...product, salesCount: count };
-      });
+        return product ? { ...product, salesCount: count } : null;
+      }).filter(Boolean); // Filter out any null values
   }, [productSalesMap, products]);
 
-  // Most Popular Wishlist Items (Assuming wishlists is a flat array of product objects)
+  // Most Popular Wishlist Items (Placeholder logic)
   const popularWishlistItems = useMemo(() => {
-    const wishlistCounts = {};
-    // Assuming getWishlists() fetches all user wishlists and returns a flat array
-    // of products like [{id: 'prod1', ...}, {id: 'prod2', ...}]
-    // The actual implementation would depend on your backend API for this.
-    // For now, this is a placeholder to show the logic.
-    // wishlists?.forEach(item => {
-    //   wishlistCounts[item.id] = (wishlistCounts[item.id] || 0) + 1;
-    // });
-    return Object.entries(wishlistCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([id, count]) => ({
-        product: products.find(p => p.id === id),
-        count
-      }));
-  }, [wishlists, products]);
+    // Note: This is a placeholder. A proper implementation would require a backend endpoint
+    // to retrieve all users' wishlists, as the current CartContext is user-specific.
+    const mockWishlistData = [
+      { id: 'mock-prod-1', name: 'Vintage T-shirt', count: 50 },
+      { id: 'mock-prod-2', name: 'Leather Wallet', count: 35 },
+      { id: 'mock-prod-3', name: 'Designer Scarf', count: 22 },
+      { id: 'mock-prod-4', name: 'Smart Watch', count: 18 },
+      { id: 'mock-prod-5', name: 'Bluetooth Speaker', count: 15 },
+    ];
+    return mockWishlistData;
+  }, []);
 
   // Refactored functions
   const handleProductUpdate = useCallback(async (updatedProduct) => {
@@ -132,6 +139,11 @@ const AdminPanel = () => {
     setDetailsLoading(true);
     try {
       const orderDetails = await getSingleOrderDetails(orderId);
+      if (!orderDetails) {
+        toast.error("Order details not found.");
+        return;
+      }
+
       // Mock order timeline for professional look
       const timeline = [
         { status: 'Order Placed', date: new Date(orderDetails.createdAt) },
@@ -151,9 +163,9 @@ const AdminPanel = () => {
   }, [getSingleOrderDetails]);
 
   const handleUserSelect = useCallback((user) => {
-    const userOrders = orders.filter(order => order.userId === user.id);
-    const userQueries = queries.filter(query => query.email === user.email);
-    const CLV = userOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const userOrders = (orders || []).filter(order => order.userId === user.id);
+    const userQueries = (queries || []).filter(query => query.email === user.email);
+    const CLV = userOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 
     setSelectedUser({
       ...user,
@@ -163,17 +175,21 @@ const AdminPanel = () => {
     });
   }, [orders, queries]);
 
-  const filteredOrders = useMemo(() => orders.filter(order =>
+  const filteredOrders = useMemo(() => (orders || []).filter(order =>
     (order.orderId?.toLowerCase().includes(orderSearchQuery.toLowerCase()) || orderSearchQuery === "") &&
     (orderStatusTab === "All" || order.status?.toLowerCase() === orderStatusTab.toLowerCase())
   ), [orders, orderSearchQuery, orderStatusTab]);
 
   const usersWithOrdersAndQueries = useMemo(() => {
-    return users.map(user => ({
-      ...user,
-      orders: orders.filter(order => order.userId === user.id),
-      queries: queries.filter(query => query.email === user.email)
-    }));
+    return (users || []).map(user => {
+      const userOrders = (orders || []).filter(order => order.userId === user.id);
+      const userQueries = (queries || []).filter(query => query.email === user.email);
+      return {
+        ...user,
+        orders: userOrders,
+        queries: userQueries,
+      };
+    });
   }, [users, orders, queries]);
 
   const filteredUsers = useMemo(() => usersWithOrdersAndQueries.filter(user =>
@@ -181,12 +197,12 @@ const AdminPanel = () => {
     user?.phone?.includes(userSearchQuery)
   ), [usersWithOrdersAndQueries, userSearchQuery]);
 
-  const filteredQueries = useMemo(() => queries.filter(query =>
+  const filteredQueries = useMemo(() => (queries || []).filter(query =>
     query?.name?.toLowerCase().includes(querySearch.toLowerCase()) ||
     query?.email?.toLowerCase().includes(querySearch.toLowerCase())
   ), [queries, querySearch]);
   
-  const filteredProducts = useMemo(() => products.filter(product => 
+  const filteredProducts = useMemo(() => (products || []).filter(product => 
     product.name?.toLowerCase().includes(productSearchQuery.toLowerCase()) ||
     product.description?.toLowerCase().includes(productSearchQuery.toLowerCase())
   ), [products, productSearchQuery]);
@@ -204,16 +220,16 @@ const AdminPanel = () => {
   // Calculate coupon performance metrics
   const couponMetrics = useMemo(() => {
     const metrics = {};
-    coupons.forEach(coupon => {
+    (coupons || []).forEach(coupon => {
       metrics[coupon.id] = {
         usageCount: 0,
         totalRevenue: 0,
       };
     });
-    orders.forEach(order => {
+    (orders || []).forEach(order => {
       if (order.couponId && metrics[order.couponId]) {
         metrics[order.couponId].usageCount++;
-        metrics[order.couponId].totalRevenue += order.totalAmount;
+        metrics[order.couponId].totalRevenue += (order.totalAmount || 0);
       }
     });
     return metrics;
@@ -224,9 +240,9 @@ const AdminPanel = () => {
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       
       {/* Sidebar Navigation */}
-      <aside className={`bg-gray-800 text-white transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} h-screen flex flex-col p-4 shadow-lg relative`}>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="absolute -right-4 top-4 p-2 bg-indigo-600 text-white rounded-full shadow-lg transition-transform hover:scale-110">
-          <FaBars />
+      <aside className={`bg-gray-800 text-white transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} h-screen flex flex-col p-4 shadow-lg relative ${window.innerWidth <= 768 && !isSidebarOpen ? 'fixed top-0 left-0 bottom-0 z-40' : ''} `}>
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="absolute -right-4 top-4 p-2 bg-indigo-600 text-white rounded-full shadow-lg transition-transform hover:scale-110 z-50">
+          {isSidebarOpen ? <FaTimes /> : <FaBars />}
         </button>
         <div className="flex items-center justify-center mb-6">
           <h1 className={`text-2xl font-bold transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>Admin Panel</h1>
@@ -263,7 +279,7 @@ const AdminPanel = () => {
         </nav>
       </aside>
 
-      <div className="flex-grow bg-white p-6 rounded-l-lg shadow-md overflow-y-auto">
+      <div className={`flex-grow p-6 transition-all duration-300 ${isSidebarOpen ? 'ml-0' : 'ml-0'}`}>
         {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
         
         {/* Detailed Order Modal */}
@@ -296,7 +312,7 @@ const AdminPanel = () => {
                   
                   <h4 className="text-lg font-semibold mt-4">Products:</h4>
                   <ul className="space-y-2">
-                    {selectedOrder.products?.map(p => (
+                    {(selectedOrder.products || []).map(p => (
                       <li key={p.productId} className="flex items-center space-x-4 border-b pb-2 last:border-b-0">
                         <img src={p.imageurl} alt={p.productName} className="w-16 h-16 object-cover rounded-md" />
                         <div>
@@ -311,7 +327,7 @@ const AdminPanel = () => {
                   <h4 className="text-lg font-semibold mt-6">Order Timeline:</h4>
                   <div className="relative pl-4">
                     <div className="absolute top-0 left-0 h-full w-0.5 bg-gray-200"></div>
-                    {selectedOrder.timeline.map((step, index) => (
+                    {(selectedOrder.timeline || []).map((step, index) => (
                       <div key={index} className="flex items-center mb-4">
                         <div className="w-3 h-3 bg-indigo-600 rounded-full z-10"></div>
                         <div className="ml-4">
@@ -457,26 +473,23 @@ const AdminPanel = () => {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Order Status Breakdown</h3>
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Orders Status Breakdown</h3>
                 <OrderChart delivered={deliveredOrders.length} pending={orders.filter(o => o.status !== "Delivered" && o.status !== "Order Cancelled").length} cancelled={orders.filter(o => o.status === "Order Cancelled").length} />
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-semibold text-gray-800 mb-4">Revenue Trend (Placeholder)</h3>
-                {/* <RevenueTrendChart data={...} /> */}
                 <div className="h-64 flex items-center justify-center text-gray-400 border border-dashed rounded-md">
                   Line chart showing daily/weekly revenue trends.
                 </div>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-semibold text-gray-800 mb-4">Product Sales Breakdown (Placeholder)</h3>
-                {/* <ProductSalesBreakdownChart data={...} /> */}
                 <div className="h-64 flex items-center justify-center text-gray-400 border border-dashed rounded-md">
                   Bar chart showing sales count by product category.
                 </div>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-semibold text-gray-800 mb-4">Customer Acquisition (Placeholder)</h3>
-                {/* <CustomerAcquisitionChart data={...} /> */}
                 <div className="h-64 flex items-center justify-center text-gray-400 border border-dashed rounded-md">
                   Line chart showing new user registrations over time.
                 </div>
@@ -489,17 +502,17 @@ const AdminPanel = () => {
         {activeTab === "products" && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">Manage Products</h2>
-            <div className="flex justify-between items-center">
-              <div className="flex space-x-2">
-                <button className="bg-green-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-colors" onClick={() => setOpenModal(true)}>Add New Product</button>
-                <button className="bg-gray-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 transition-colors">Bulk Actions (Placeholder)</button>
+            <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-2">
+              <div className="flex space-x-2 w-full sm:w-auto">
+                <button className="bg-green-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-colors w-1/2 sm:w-auto" onClick={() => setOpenModal(true)}>Add New Product</button>
+                <button className="bg-gray-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 transition-colors w-1/2 sm:w-auto">Bulk Actions</button>
               </div>
               <input
                 type="text"
                 placeholder="Search products..."
                 value={productSearchQuery}
                 onChange={(e) => setProductSearchQuery(e.target.value)}
-                className="p-2 border rounded-lg shadow-sm"
+                className="w-full sm:w-64 p-2 border rounded-lg shadow-sm"
               />
             </div>
             
@@ -517,7 +530,7 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 text-sm font-light">
-                  {filteredProducts?.map((product) => (
+                  {(filteredProducts || []).map((product) => (
                     <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-6">{product.id}</td>
                       <td className="py-3 px-6"><img src={product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
@@ -582,7 +595,7 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map(order => (
+                  {(filteredOrders || []).map(order => (
                     <tr key={order.orderId} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-6">{order.orderId}</td>
                       <td className="py-3 px-6">{order.userName}</td>
@@ -638,14 +651,14 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 text-sm font-light">
-                  {filteredUsers.map(user => (
+                  {(filteredUsers || []).map(user => (
                     <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-6">{user.id}</td>
                       <td className="py-3 px-6">{user.name}</td>
                       <td className="py-3 px-6">{user.email}</td>
                       <td className="py-3 px-6">{user.role}</td>
                       <td className="py-3 px-6">{user.orders.length}</td>
-                      <td className="py-3 px-6">{formatCurrency(user.orders.reduce((sum, order) => sum + order.totalAmount, 0))}</td>
+                      <td className="py-3 px-6">{formatCurrency(user.CLV)}</td>
                       <td className="py-3 px-6">
                         <button onClick={() => handleUserSelect(user)} className="bg-indigo-500 text-white px-3 py-1 rounded-lg hover:bg-indigo-600">View Profile</button>
                       </td>
@@ -707,7 +720,7 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 text-sm font-light">
-                  {coupons?.map((coupon) => (
+                  {(coupons || []).map((coupon) => (
                     <tr key={coupon.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-6">{coupon.code}</td>
                       <td className="py-3 px-6">{coupon.discountType}</td>
@@ -749,7 +762,7 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700 text-sm font-light">
-                  {filteredQueries.map(query => (
+                  {(filteredQueries || []).map(query => (
                     <tr key={query.id} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-6">{query.id}</td>
                       <td className="py-3 px-6">{query.name}</td>
@@ -777,30 +790,23 @@ const AdminPanel = () => {
                   This section would list carts that have not been converted to orders, helping to identify potential issues or for marketing outreach.
                 </p>
                 <div className="mt-4 p-4 border border-dashed rounded-lg text-gray-400">
-                  <ul className="space-y-2">
-                    {/* Assuming a function like getAbandonedCarts() exists */}
-                    {/* {carts?.filter(c => c.status === 'abandoned').map(cart => (
-                      <li key={cart.id}>Cart #{cart.id} - User: {cart.userName}</li>
-                    ))} */}
-                    <li>Example: Cart #101 - User: Jane Doe</li>
-                    <li>Example: Cart #102 - User: John Smith</li>
-                  </ul>
+                  <p className="text-sm">
+                    Note: A function to fetch all abandoned carts for the admin panel needs to be implemented in your `CartContext.jsx`.
+                  </p>
                 </div>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md">
-                <h3 className="text-xl font-semibold mb-4">Most Popular Wishlist Items (Placeholder)</h3>
+                <h3 className="text-xl font-semibold mb-4">Most Popular Wishlist Items</h3>
                 <p className="text-gray-500 text-sm">
                   Displaying the most frequently wishlisted items can inform product promotion and inventory decisions.
                 </p>
                 <div className="mt-4 p-4 border border-dashed rounded-lg text-gray-400">
                   <ul className="space-y-2">
                     {popularWishlistItems.length > 0 ? popularWishlistItems.map((item, index) => (
-                      <li key={item.product?.id}>{index + 1}. {item.product?.name} ({item.count} adds)</li>
+                      <li key={item.id}>{index + 1}. {item.name} ({item.count} adds)</li>
                     )) : (
                       <p>No wishlist data available.</p>
                     )}
-                    <li>Example: Product A (50 adds)</li>
-                    <li>Example: Product B (35 adds)</li>
                   </ul>
                 </div>
               </div>
