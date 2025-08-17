@@ -33,7 +33,7 @@ const AdminPanel = () => {
   const { isLoaded: isClerkLoaded } = useUser();
 
   // CONTEXTS
-  const { products, getProducts, updateProduct, deleteProduct, loading: productsLoading } = useContext(ProductContext);
+  const { products, getProducts, updateProduct, deleteProduct, loading: productsLoading, addProduct } = useContext(ProductContext);
   const { orders, getorders, updateOrderStatus, getSingleOrderDetails } = useContext(OrderContext);
   const { queries, getquery, deleteQuery } = useContext(ContactContext);
   const { userdetails, users, getallusers } = useContext(UserContext);
@@ -77,7 +77,7 @@ const AdminPanel = () => {
 
   const totalRevenue = useMemo(() => orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0), [orders]);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-  
+
   const productSalesMap = useMemo(() => {
     const sales = {};
     (orders || []).forEach(order => {
@@ -99,7 +99,7 @@ const AdminPanel = () => {
         return product ? { ...product, salesCount: count } : null;
       }).filter(Boolean);
   }, [productSalesMap, products]);
-  
+
   const dailyRevenueData = useMemo(() => {
     const salesByDay = {};
     orders.forEach(order => {
@@ -108,13 +108,13 @@ const AdminPanel = () => {
     });
     return Object.keys(salesByDay).map(date => ({ date, revenue: salesByDay[date] }));
   }, [orders]);
-  
+
   const newUsersThisMonth = useMemo(() => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     return (users || []).filter(user => new Date(user.createdAt) > thirtyDaysAgo).length;
   }, [users]);
-  
+
   const usersWithOrdersAndQueries = useMemo(() => {
     return (users || []).map((user) => ({
       ...user,
@@ -128,16 +128,16 @@ const AdminPanel = () => {
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user?.email?.toLowerCase().includes(userSearchQuery.toLowerCase())
   ), [usersWithOrdersAndQueries, userSearchQuery]);
-  
+
   const filteredQueries = useMemo(() => queries.filter(query =>
     query.name.toLowerCase().includes(querySearch.toLowerCase()) ||
     query.email.toLowerCase().includes(querySearch.toLowerCase())
   ), [queries, querySearch]);
-  
+
   const filteredOrders = useMemo(() => orders
     .filter(order => orderStatusTab === "All" || order.status === orderStatusTab)
     .filter(order => String(order.orderId).toLowerCase().includes(orderSearchQuery.toLowerCase()))
-  , [orders, orderStatusTab, orderSearchQuery]);
+    , [orders, orderStatusTab, orderSearchQuery]);
 
   // --- Functions ---
   const handleProductUpdate = useCallback(async (updatedProduct) => {
@@ -168,7 +168,7 @@ const AdminPanel = () => {
   const handleOrderStatusUpdate = useCallback(async (orderId, newStatus) => {
     await updateOrderStatus(orderId, newStatus);
   }, [updateOrderStatus]);
-  
+
   const handleOrderDetails = useCallback(async (orderId) => {
     setDetailsLoading(true);
     try {
@@ -219,7 +219,7 @@ const AdminPanel = () => {
 
       <div className="flex-1 p-8 overflow-y-auto">
         {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
-        
+
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
           <div className="space-y-8">
@@ -254,7 +254,7 @@ const AdminPanel = () => {
                 <p className="mt-1 text-3xl font-bold text-gray-900">{newUsersThisMonth}</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">Orders Status Breakdown</h3>
@@ -269,23 +269,23 @@ const AdminPanel = () => {
                 <Line data={{
                   labels: dailyRevenueData.map(d => d.date),
                   datasets: [{
-                      label: 'Daily Revenue',
-                      data: dailyRevenueData.map(d => d.revenue),
-                      backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      tension: 0.1
+                    label: 'Daily Revenue',
+                    data: dailyRevenueData.map(d => d.revenue),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
                   }]
                 }} />
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md col-span-1 lg:col-span-2">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800">Top 5 Selling Products</h3>
                 <Bar data={{
-                    labels: topSellingProducts.map(p => p.name),
-                    datasets: [{
-                        label: 'Total Sales',
-                        data: topSellingProducts.map(p => p.salesCount),
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)'
-                    }]
+                  labels: topSellingProducts.map(p => p.name),
+                  datasets: [{
+                    label: 'Total Sales',
+                    data: topSellingProducts.map(p => p.salesCount),
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)'
+                  }]
                 }} />
               </div>
             </div>
@@ -311,6 +311,22 @@ const AdminPanel = () => {
                 {loading ? "Deleting..." : `Delete Selected (${selectedProducts.length})`}
               </button>
             </div>
+            {/* The ImageUploadModal component is now correctly integrated here */}
+            {openModal && (
+              <ImageUploadModal
+                isopen={openModal}
+                onClose={() => setOpenModal(false)}
+                onUpload={async (payload) => {
+                  try {
+                    await addProduct(payload);
+                    setOpenModal(false);
+                    toast.success("Product added successfully!");
+                  } catch (error) {
+                    toast.error("Failed to add product.");
+                  }
+                }}
+              />
+            )}
             <div className="overflow-x-auto bg-white rounded-lg shadow">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -445,7 +461,7 @@ const AdminPanel = () => {
             </div>
           </div>
         )}
-        
+
         {/* Orders Tab */}
         {activeTab === "orders" && (
           <div className="space-y-6">
@@ -616,4 +632,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-
