@@ -23,14 +23,19 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     discount: "",
     oprice: "",
     size: "",
+    quantity: 1, // Explicitly initialize a quantity
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "discount" || name === "oprice" || name === "size") {
-      setProduct({ ...product, [name]: Number(value) });
+    // Check if the value is empty or not
+    const finalValue = value.trim() === "" ? "" : value;
+    
+    // Convert numeric fields to numbers immediately
+    if (name === "discount" || name === "oprice" || name === "size" || name === "quantity") {
+      setProduct({ ...product, [name]: Number(finalValue) });
     } else {
-      setProduct({ ...product, [name]: value });
+      setProduct({ ...product, [name]: finalValue });
     }
   };
 
@@ -66,9 +71,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   };
   
   const handlesubmit = async () => {
-    const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size"];
+    const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size", "quantity"];
     for (const field of requiredFields) {
-      if (!product[field] || (typeof product[field] === 'string' && product[field].trim() === "")) {
+      const value = product[field];
+      if (value === null || value === undefined || (typeof value === 'string' && value.trim() === "")) {
         return toast.error(`Please fill in the '${field}' field.`);
       }
     }
@@ -77,14 +83,12 @@ const ImageUploadModal = ({ isopen, onClose }) => {
       return toast.error("No images were uploaded. Please upload images before submitting.");
     }
     
-    // Prepare the final payload for the database
     const payload = {
       ...product,
-      quantity: 1, 
       imageurl: uploadedUrls,
     };
-
-    console.log("Attempting DB insert with data:", payload);
+    
+    toast.info(`Attempting to add product. Payload: ${JSON.stringify(payload)}`);
 
     try {
       const res = await db
@@ -94,12 +98,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
       
       setProducts(prev => [...prev, res[0]]);
       
-      console.log("Product added:", res);
       toast.success("Product added successfully!");
     } catch (error) {
       console.error("Database insert failed:", error);
-      console.error("Drizzle ORM Error:", error.message);
-      toast.error("Failed to add product. Check console for details.");
+      toast.error("Failed to add product. Check the payload and console for details.");
     } finally {
       setIsOpen(false);
       setStep(1);
@@ -114,6 +116,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
         discount: "",
         oprice: "",
         size: "",
+        quantity: 1,
       });
       onClose();
     }
