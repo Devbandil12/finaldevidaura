@@ -22,6 +22,27 @@ export const ProductProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  
+  const addProduct = async (productData) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productData),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to add product");
+      }
+      const newProduct = await res.json();
+      setProducts(prevProducts => [...prevProducts, newProduct]);
+      toast.success("Product added successfully!");
+      return newProduct;
+    } catch (error) {
+      console.error("❌ Failed to add product:", error);
+      toast.error("Failed to add product.");
+      throw error;
+    }
+  };
 
   const updateProduct = async (updatedProduct) => {
     try {
@@ -60,7 +81,7 @@ export const ProductProvider = ({ children }) => {
   }, []);
 
   return (
-    <ProductContext.Provider value={{ products, getProducts, updateProduct, deleteProduct, loading }}>
+    <ProductContext.Provider value={{ products, getProducts, updateProduct, deleteProduct, loading, addProduct }}>
       {children}
     </ProductContext.Provider>
   );
