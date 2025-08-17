@@ -28,7 +28,7 @@ const AdminPanel = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
-  
+
   const navigate = useNavigate();
   const { isLoaded: isClerkLoaded } = useUser();
 
@@ -338,7 +338,7 @@ const AdminPanel = () => {
                         <td className="px-6 py-4 whitespace-nowrap"></td>
                         <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <img src={p.imageurl}alt={p.productName} className="w-12 h-12 object-cover rounded-md" />
+                          <img src={Array.isArray(editingProduct.imageurl) ? editingProduct.imageurl[0] : editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
                           <br />
                           <input type="file" accept="image/*" onChange={(e) => {
                             const file = e.target.files[0];
