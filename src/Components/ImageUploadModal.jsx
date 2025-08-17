@@ -28,7 +28,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Trim whitespace from the name to prevent errors like "size "
+    // CRITICAL FIX: Trim whitespace from the name to prevent errors like "size "
     const trimmedName = name.trim();
     const finalValue = value.trim() === "" ? "" : value;
     
