@@ -608,4 +608,13 @@ const AdminPanel = () => {
             <p className="text-gray-600">This section is for future implementation to show all user carts and wishlists. </p>
             <p className="text-gray-600">You can use the existing `CartContext` to fetch and manage this data.</p>
             <p className="text-gray-800 font-semibold">Current cart count: {cart.length}</p>
-            <p className
+            <p className="text-gray-800 font-semibold">Current wishlist count: {wishlist.length}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminPanel;
+
