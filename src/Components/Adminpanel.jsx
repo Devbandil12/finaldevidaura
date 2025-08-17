@@ -185,7 +185,7 @@ const AdminPanel = () => {
   }
   
   return (
-    <div className="flex min-h-screen bg-gray-100 font-sans m-t-100">
+    <div className="flex min-h-screen bg-gray-100 font-sans pt-[100px]">
       <ToastContainer />
       <div className="w-64 bg-gray-800 text-white flex flex-col h-full">
         <div className="p-6">
