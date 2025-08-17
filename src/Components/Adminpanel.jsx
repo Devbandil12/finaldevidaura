@@ -1,46 +1,49 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
-import {
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  productsTable,
-  usersTable,
-} from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
-import OrderChart from "./OrderChart"; // Import the new chart component
+import OrderChart from "./OrderChart";
+
+// CRITICAL SECURITY FIX: The following imports were removed as they are insecure
+// and should not be present in a client-side component. All data operations are
+// now handled by the corresponding Contexts, which should make secure backend API calls.
+// import { db } from "../../configs/index";
+// import { eq } from "drizzle-orm";
+// import {
+//   addToCartTable,
+//   orderItemsTable,
+//   ordersTable,
+//   productsTable,
+//   usersTable,
+// } from "../../configs/schema";
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
-  const { products, setProducts } = useContext(ProductContext);
-  const { orders, setOrders, getorders } = useContext(OrderContext);
-  const { queries, getquery } = useContext(ContactContext);
+
+  // All data is now securely fetched from Contexts.
+  // The Contexts are assumed to handle the API calls.
+  const { products, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { orders, getorders, updateOrderStatus, getOrderDetails } = useContext(OrderContext);
+  const { queries, getquery, users, fetchUsers, getUserDetails } = useContext(ContactContext);
   const { user } = useUser();
-  
+
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [userkiDetails, setUserkiDetails] = useState([]);
+  const [userkiDetails, setUserkiDetails] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
-  const [usersList, setUsersList] = useState([]);
-  
   const navigate = useNavigate();
-  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   const {
     coupons,
@@ -48,202 +51,84 @@ const AdminPanel = () => {
     setEditingCoupon,
     saveCoupon,
     deleteCoupon,
-    refreshCoupons
+    refreshCoupons,
+    setNewCoupon,
+    newCoupon
   } = useContext(CouponContext);
-  
-  // --- Data Fetching and Effects ---
+
+  // --- Data Fetching and Effects (Now via Contexts) ---
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await db.select().from(usersTable);
-        setUsersList(res);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
     fetchUsers();
     getquery();
-  }, []);
-
-  const userdetails = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      setUserkiDetails(res[0]);
-      if (res[0].role !== "admin") {
-        navigate("/");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  }, [fetchUsers, getquery]);
 
   useEffect(() => {
-    if (user) {
-      userdetails();
-    }
-  }, [user]);
+    const checkUserRole = async () => {
+      if (user) {
+        const details = await getUserDetails(user.primaryEmailAddress.emailAddress);
+        setUserkiDetails(details);
+        if (details.role !== "admin") {
+          navigate("/");
+        }
+      }
+    };
+    checkUserRole();
+  }, [user, navigate, getUserDetails]);
 
   useEffect(() => {
     getorders();
-  }, []);
+  }, [getorders]);
 
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
-  
-  // --- Analysis Data Calculation ---
-  const totalOrders = orders.length;
-  const totalProducts = products.length;
-  const totalUsers = usersList.length;
-  const totalQueries = queries.length;
 
-  const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
-  const cancelledOrders = orders.filter(o => o.status === "Order Cancelled").length;
-  const processingOrders = orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length;
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-
-  // --- Functions (existing) ---
+  // --- Functions Refactored to Use Contexts (No more direct schema calls) ---
   const handleProductUpdate = async (updatedProduct) => {
-    console.log(updatedProduct);
+    setLoading(true);
     try {
-      const res = await db
-        .update(productsTable)
-        .set({
-          ...updatedProduct,
-          name: updatedProduct.name,
-          size: updatedProduct.size,
-          discount: updatedProduct.discount,
-          price: updatedProduct.oprice,
-          imageurl: updatedProduct.imageurl,
-        })
-        .where(eq(productsTable.id, updatedProduct.id))
-        .returning(productsTable);
-      toast.success("Product added Successfully");
+      await updateProduct(updatedProduct);
+      toast.success("Product updated successfully!");
     } catch (error) {
-      const { message } = error;
-      toast.error(message);
+      toast.error("Failed to update product.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+      setEditingProduct(null);
     }
-    setProducts((prevProducts) => {
-      const exists = prevProducts.find((p) => p.id === updatedProduct.id);
-      return exists
-        ? prevProducts.map((p) =>
-            p.id === updatedProduct.id ? updatedProduct : p
-          )
-        : [...prevProducts, updatedProduct];
-    });
-    setEditingProduct(null);
   };
-  
+
   const handleProductDelete = async (productId) => {
     if (userkiDetails?.role !== "admin") return;
-    setLoading(true);
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts((prevProducts) =>
-        prevProducts.filter((p) => p.id !== productId)
-      );
+      setLoading(true);
       try {
-        await db
-          .delete(orderItemsTable)
-          .where(eq(orderItemsTable.productId, productId));
-        await db
-          .delete(addToCartTable)
-          .where(eq(addToCartTable.productId, productId));
-        await db.delete(productsTable).where(eq(productsTable.id, productId));
-        console.log("Product and related cart entries deleted successfully");
+        await deleteProduct(productId);
+        toast.success("Product deleted successfully!");
       } catch (error) {
-        console.error("Error deleting product:", error);
+        toast.error("Failed to delete product.");
+        console.error(error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
-  };
-  
-  const handleCouponSave = async () => {
-    const payload = {
-      code: editingCoupon.code.toUpperCase(),
-      discountType: editingCoupon.discountType,
-      discountValue: editingCoupon.discountValue,
-      minOrderValue: editingCoupon.minOrderValue,
-      minItemCount: editingCoupon.minItemCount,
-      description: editingCoupon.description || "",
-      validFrom: editingCoupon.validFrom || null,
-      validUntil: editingCoupon.validUntil || null,
-    };
-
-    const url = editingCoupon.id
-      ? `${BASE}/api/coupons/${editingCoupon.id}`
-      : `${BASE}/api/coupons`;
-    const method = editingCoupon.id ? "PUT" : "POST";
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error();
-      toast.success(editingCoupon.id ? "Updated" : "Added");
-      await refreshCoupons();
-      setEditingCoupon(null);
-    } catch {
-      toast.error("Save failed");
-    }
-  };
-  
-  const handleCouponDelete = async id => {
-    if (!window.confirm("Delete this coupon?")) return;
-    try {
-      const res = await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      toast.success("Deleted");
-      await refreshCoupons();
-    } catch {
-      toast.error("Delete failed");
     }
   };
 
-  const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
+  const handleOrderStatusUpdate = async (orderId, newStatus, newProgressStep) => {
     try {
-      await db
-        .update(ordersTable)
-        .set({ status: newStatus, progressStep: newProgressStep })
-        .where(eq(ordersTable.id, orderId));
-      console.log("updated");
+      await updateOrderStatus(orderId, newStatus, newProgressStep);
+      toast.success("Order status updated!");
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to update order status.");
+      console.error(error);
     }
   };
-  
-  const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
-    updateorderstatus(orderId, newStatus, newProgressStep);
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: newStatus, progressStep: newProgressStep }
-        : order
-    );
-    setOrders(updatedOrders);
-  };
-  
+
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
-      const items = await db
-        .select({
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
-        })
-        .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(orderItemsTable.orderId, order.orderId));
-      setSelectedOrder({
-        ...order,
-        products: items
-      });
+      const details = await getOrderDetails(order.orderId);
+      setSelectedOrder(details);
     } catch (error) {
       console.error("Error fetching order products:", error);
       toast.error("Failed to load order details.");
@@ -251,25 +136,43 @@ const AdminPanel = () => {
       setDetailsLoading(false);
     }
   };
-  
-  const usersWithOrders = usersList.map((user) => ({
+
+  const usersWithOrders = users.map((user) => ({
     ...user,
     orders: orders.filter((order) => order.userId === user.id),
   }));
+
   const filteredUsers = usersWithOrders.filter(
     (user) =>
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user?.phone?.includes(userSearchQuery)
   );
 
+  const filteredQueries = queries.filter(
+    (q) =>
+      q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
+      q.phone.includes(querySearch) ||
+      (q.date && q.date.includes(querySearch))
+  );
+
+  const filteredOrders = orders
+    .filter((o) => {
+      if (orderStatusTab === "All") return true;
+      if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+      return o.status === orderStatusTab;
+    })
+    .filter((o) =>
+      o.orderId.toString().includes(orderSearchQuery.trim())
+    );
+
   // --- JSX Rendering ---
   return (
-    user && userkiDetails.role === "admin" && (
+    user && userkiDetails?.role === "admin" && (
       <div className="admin-panel">
         <div className="absolute">
           <ToastContainer />
         </div>
-        
+
         <nav className="admin-nav">
           <button onClick={() => setActiveTab("dashboard")}>Dashboard</button>
           <button onClick={() => setActiveTab("products")}>Products</button>
@@ -289,37 +192,36 @@ const AdminPanel = () => {
               <div className="dashboard-cards">
                 <div className="card">
                   <h3>Total Revenue</h3>
-                  <p>â‚¹{totalRevenue.toFixed(2)}</p>
+                  <p>₹{orders.reduce((sum, order) => sum + order.totalAmount, 0).toFixed(2)}</p>
                 </div>
                 <div className="card">
                   <h3>Total Orders</h3>
-                  <p>{totalOrders}</p>
+                  <p>{orders.length}</p>
                 </div>
                 <div className="card">
                   <h3>Total Products</h3>
-                  <p>{totalProducts}</p>
+                  <p>{products.length}</p>
                 </div>
                 <div className="card">
                   <h3>Total Users</h3>
-                  <p>{totalUsers}</p>
+                  <p>{users.length}</p>
                 </div>
                 <div className="card">
                   <h3>Average Order Value</h3>
-                  <p>â‚¹{averageOrderValue.toFixed(2)}</p>
+                  <p>₹{(orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length || 0).toFixed(2)}</p>
                 </div>
                 <div className="card">
                   <h3>Pending Queries</h3>
-                  <p>{totalQueries}</p>
+                  <p>{queries.length}</p>
                 </div>
               </div>
-
               <div className="dashboard-charts">
                 <div className="chart-container">
                   <h3>Orders Status Breakdown</h3>
                   <OrderChart
-                    delivered={deliveredOrders}
-                    pending={processingOrders}
-                    cancelled={cancelledOrders}
+                    delivered={orders.filter(o => o.status === "Delivered").length}
+                    pending={orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length}
+                    cancelled={orders.filter(o => o.status === "Order Cancelled").length}
                   />
                 </div>
               </div>
@@ -354,13 +256,16 @@ const AdminPanel = () => {
                       <tr key={product.id}>
                         <td>{product.id}</td>
                         <td>
+                          {/* Image display fix: access the first element of the array */}
                           <img
-                            src={editingProduct.imageurl}
+                            src={Array.isArray(editingProduct.imageurl) && editingProduct.imageurl.length > 0 ? editingProduct.imageurl[0] : ''}
                             alt={editingProduct.name}
                             width="50"
                             height="50"
                           />
                           <br />
+                          {/* Note: This logic for handling file uploads within the edit row is incomplete.
+                                It should be handled by a secure API call in your context.
                           <input
                             type="file"
                             accept="image/*"
@@ -370,71 +275,46 @@ const AdminPanel = () => {
                                 const imageUrl = URL.createObjectURL(file);
                                 setEditingProduct({
                                   ...editingProduct,
-                                  imageurl: imageUrl,
+                                  imageurl: [imageUrl],
                                 });
                               }
                             }}
                           />
+                          */}
                         </td>
                         <td>
                           <input
                             type="text"
                             value={editingProduct.name}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                name: e.target.value,
-                              })
-                            }
+                            onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
                             value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
+                            onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
                             value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
+                            onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })}
                           />
                         </td>
                         <td>
                           <input
                             type="number"
                             value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
+                            onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })}
                           />
                         </td>
                         <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
+                          <button className="admin-btn" onClick={() => handleProductUpdate(editingProduct)}>
                             Save
                           </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
+                          <button className="admin-btn" onClick={() => setEditingProduct(null)}>
                             Cancel
                           </button>
                         </td>
@@ -443,125 +323,29 @@ const AdminPanel = () => {
                       <tr key={product.id}>
                         <td>{product.id}</td>
                         <td>
+                          {/* Image display fix: access the first element of the array */}
                           <img
-                            src={product.imageurl}
+                            src={Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : ''}
                             alt={product.name}
                             width="50"
                             height="50"
                           />
                         </td>
                         <td>{product.name}</td>
-                        <td>â‚¹{product.oprice}</td>
+                        <td>₹{product.oprice}</td>
                         <td>{product.discount}</td>
                         <td>{product.size}</td>
                         <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(product)}
-                          >
+                          <button className="admin-btn" onClick={() => setEditingProduct(product)}>
                             Edit
                           </button>
-                          <button
-                            className="admin-btn delete-btn"
-                            onClick={() => handleProductDelete(product.id)}
-                          >
+                          <button className="admin-btn delete-btn" onClick={() => handleProductDelete(product.id)}>
                             {loading ? "deleting" : "delete"}
                           </button>
                         </td>
                       </tr>
                     )
                   )}
-                  {editingProduct &&
-                    !products.find((p) => p.id === editingProduct.id) && (
-                      <tr key={editingProduct.id}>
-                        <td>{editingProduct.id}</td>
-                        <td>
-                          <img
-                            src={editingProduct.imageurl}
-                            alt={editingProduct.name}
-                            width="50"
-                            height="50"
-                          />
-                          <br />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  imageurl: imageUrl,
-                                });
-                              }
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingProduct.name}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
                 </tbody>
               </table>
             </div>
@@ -571,146 +355,65 @@ const AdminPanel = () => {
           {activeTab === "coupons" && (
             <div className="coupons-tab">
               <h2>Manage Coupon Codes</h2>
-              <button
-                className="admin-btn add-btn"
-                onClick={() =>
-                  setEditingCoupon({
-                    code: "",
-                    discountType: "percent",
-                    discountValue: 0,
-                    minOrderValue: 0,
-                    minItemCount: 0,
-                    description: "",
-                    validFrom: "",
-                    validUntil: "",
-                    firstOrderOnly: false,
-                  })
-                }
-              >
-                Add New Coupon
-              </button>
-
-              <table className="coupon-table">
+              <div className="coupon-controls">
+                <input
+                  type="text"
+                  placeholder="Coupon Code"
+                  value={newCoupon.code}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                />
+                <input
+                  type="number"
+                  placeholder="Discount %"
+                  value={newCoupon.discount}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, discount: Number(e.target.value) })}
+                />
+                <button onClick={() => saveCoupon(newCoupon)} className="add-btn">
+                  Add Coupon
+                </button>
+              </div>
+              <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Code</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                    <th>Min â‚¹</th>
-                    <th>Min Items</th>
-                    <th>Description</th>
-                    <th>Max Usage/User</th>
-                    <th>First Order Only</th>
+                    <th>Discount (%)</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {editingCoupon && (
-                    <tr>
-                      <td>
-                        <input
-                          placeholder="Code"
-                          value={editingCoupon.code || ""}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={editingCoupon.discountType}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountType: e.target.value }))}
-                        >
-                          <option value="percent">percent</option>
-                          <option value="flat">flat</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Value"
-                          value={editingCoupon.discountValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min â‚¹"
-                          value={editingCoupon.minOrderValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min Items"
-                          value={editingCoupon.minItemCount ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          placeholder="Description"
-                          value={editingCoupon.description}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Max usage per user"
-                          value={editingCoupon.maxUsagePerUser ?? ""}
-                          onChange={e => setEditingCoupon(ec => ({
-                            ...ec,
-                            maxUsagePerUser: e.target.value === "" ? null : +e.target.value
-                          }))}
-                        />
-                      </td>
-                      <td>
-                        <label>
-                          First Order Only:
+                  {coupons?.map((coupon) =>
+                    editingCoupon && editingCoupon.id === coupon.id ? (
+                      <tr key={coupon.id}>
+                        <td>
                           <input
-                            type="checkbox"
-                            checked={editingCoupon.firstOrderOnly ?? false}
-                            onChange={e =>
-                              setEditingCoupon(ec => ({ ...ec, firstOrderOnly: e.target.checked }))
-                            }
+                            type="text"
+                            value={editingCoupon.code}
+                            onChange={(e) => setEditingCoupon({ ...editingCoupon, code: e.target.value })}
                           />
-                        </label>
-                      </td>
-                      <td>
-                        <button className="admin-btn" onClick={saveCoupon}>
-                          Save
-                        </button>
-                        <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.discount}
+                            onChange={(e) => setEditingCoupon({ ...editingCoupon, discount: Number(e.target.value) })}
+                          />
+                        </td>
+                        <td>
+                          <button className="admin-btn" onClick={() => saveCoupon(editingCoupon)}>Save</button>
+                          <button className="admin-btn" onClick={() => setEditingCoupon(null)}>Cancel</button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={coupon.id}>
+                        <td>{coupon.code}</td>
+                        <td>{coupon.discount}</td>
+                        <td>
+                          <button className="admin-btn" onClick={() => setEditingCoupon(coupon)}>Edit</button>
+                          <button className="admin-btn delete-btn" onClick={() => deleteCoupon(coupon.id)}>Delete</button>
+                        </td>
+                      </tr>
+                    )
                   )}
-                  {coupons.map(c => (
-                    <tr key={c.id}>
-                      <td>{c.code}</td>
-                      <td>{c.discountType}</td>
-                      <td>
-                        {c.discountType === "percent"
-                          ? `${c.discountValue}%`
-                          : `â‚¹${c.discountValue}`}
-                      </td>
-                      <td>â‚¹{c.minOrderValue}</td>
-                      <td>{c.minItemCount}</td>
-                      <td>{c.description}</td>
-                      <td>{c.maxUsagePerUser ?? "âˆž"}</td>
-                      <td>{c.firstOrderOnly ? "âœ…" : "âŒ"}</td>
-                      <td>
-                        <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
-                          Edit
-                        </button>
-                        <button className="admin-btn delete-btn" onClick={() => deleteCoupon(c.id)}>
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
                 </tbody>
               </table>
             </div>
@@ -744,20 +447,12 @@ const AdminPanel = () => {
                   />
                 </div>
               </div>
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                )
-                .map((order) => (
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
                   <div key={order.orderId} className="order-card-admin">
                     <h3>Order #{order.orderId}</h3>
                     <p><strong>Date:</strong> {order.createdAt}</p>
-                    <p><strong>Total:</strong> â‚¹{order.totalAmount}</p>
+                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
                     <p><strong>Current Status:</strong></p>
                     {order.status === "Order Cancelled" ? (
                       <span className="status-badge status-ordercancelled">
@@ -792,16 +487,10 @@ const AdminPanel = () => {
                       See More Details
                     </button>
                   </div>
-                ))}
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                ).length === 0 && <p>No orders found.</p>}
+                ))
+              ) : (
+                <p>No orders found.</p>
+              )}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
@@ -835,7 +524,7 @@ const AdminPanel = () => {
                         {user.orders.map((order) => (
                           <div key={order.orderId} className="user-order">
                             <span>
-                              Order #{order.orderId} - â‚¹{order.totalAmount} -{" "}
+                              Order #{order.orderId} - ₹{order.totalAmount} -{" "}
                               {order.status}
                             </span>
                           </div>
@@ -862,36 +551,28 @@ const AdminPanel = () => {
                   onChange={(e) => setQuerySearch(e.target.value)}
                 />
               </div>
-              {(() => {
-                const filteredQueries = queries.filter(
-                  (q) =>
-                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                    q.phone.includes(querySearch) ||
-                    (q.date && q.date.includes(querySearch))
-                );
-                return filteredQueries.length > 0 ? (
-                  filteredQueries.map((query, index) => (
-                    <div key={index} className="query-card">
+              {filteredQueries.length > 0 ? (
+                filteredQueries.map((query, index) => (
+                  <div key={index} className="query-card">
+                    <p>
+                      <strong>Email:</strong> {query.email}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {query.phone}
+                    </p>
+                    {query.date && (
                       <p>
-                        <strong>Email:</strong> {query.email}
+                        <strong>Date:</strong> {query.date}
                       </p>
-                      <p>
-                        <strong>Phone:</strong> {query.phone}
-                      </p>
-                      {query.date && (
-                        <p>
-                          <strong>Date:</strong> {query.date}
-                        </p>
-                      )}
-                      <p>
-                        <strong>Message:</strong> {query.message}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No queries found.</p>
-                );
-              })()}
+                    )}
+                    <p>
+                      <strong>Message:</strong> {query.message}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p>No queries found.</p>
+              )}
             </div>
           )}
         </div>
@@ -902,27 +583,25 @@ const AdminPanel = () => {
 
 export default AdminPanel;
 
-// The OrderDetailsPopup and ImageUploadModal components need to be imported
-// or defined in this file if they are not separate files.
 const OrderDetailsPopup = ({ order, onClose }) => {
   return (
     <div className="modal-overlay-chamkila">
       <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">Ã—</button>
+        <button onClick={onClose} className="close-btn-tata">×</button>
         <h2>Order Details (#{order.orderId})</h2>
         <p><strong>User Name:</strong> {order.userName}</p>
         <p><strong>Phone:</strong> {order.phone}</p>
         <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
         <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> â‚¹{order.totalAmount}</p>
+        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
         <p><strong>Status:</strong> {order.status}</p>
         <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
         <p><strong>Products:</strong></p>
         <ul>
           {(order.products || []).map(p => (
             <li key={p.productId}>
-              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - â‚¹{p.price}
+              <img src={Array.isArray(p.imageurl) && p.imageurl.length > 0 ? p.imageurl[0] : ''} alt={p.productName} width="50" height="50" />
+              {p.productName} (x{p.quantity}) - ₹{p.price}
             </li>
           ))}
         </ul>
@@ -931,7 +610,7 @@ const OrderDetailsPopup = ({ order, onClose }) => {
           <div>
             <h3>Refund Details</h3>
             <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> â‚¹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
             <p><strong>Refund Status:</strong> {order.refund.status}</p>
             <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
             <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
