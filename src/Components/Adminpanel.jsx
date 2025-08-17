@@ -7,6 +7,7 @@ import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
 import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
+
 import {
   addToCartTable,
   orderItemsTable,
