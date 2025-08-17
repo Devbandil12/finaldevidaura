@@ -267,11 +267,12 @@ export default function ProductShowcaseCarousel() {
               transition={{ duration: 0.45, ease: [0.2, 0.9, 0.2, 1] }}
             >
               <div
-                className="w-full h-full bg-cover bg-center flex items-center justify-center"
-                role="img"
-                aria-label={product.name || "Product image"}
-                style={{ backgroundImage: product.imageurl ? `url(${product.imageurl})` : undefined }}
-              >
+  className="w-full h-full bg-cover bg-center flex items-center justify-center"
+  role="img"
+  aria-label={product.name || "Product image"}
+  style={{ backgroundImage: product.imageurl && product.imageurl.length > 0 ? `url(${product.imageurl[0]})` : undefined }}
+>
+
                 {!product.imageurl && (
                   <div className="w-36 h-36 rounded-full bg-gray-200 border border-gray-300 shadow-md flex items-center justify-center">
                     <span className="text-6xl font-bold text-gray-500">
