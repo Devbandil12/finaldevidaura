@@ -110,18 +110,13 @@ const AdminPanel = () => {
   const handleProductUpdate = async () => {
     setLoading(true);
     try {
-      // Use the new updateProduct function from ProductContext
+      // Pass the entire editingProduct object directly to the context function
       await updateProduct(editingProduct.id, {
-        name: editingProduct.name,
-        composition: editingProduct.composition,
-        description: editingProduct.description,
-        fragrance: editingProduct.fragrance,
-        fragranceNotes: editingProduct.fragranceNotes,
+        ...editingProduct,
         discount: Number(editingProduct.discount),
         oprice: Number(editingProduct.oprice),
         size: Number(editingProduct.size),
         quantity: Number(editingProduct.quantity),
-        imageurl: JSON.stringify(editingProduct.imageurl),
       });
 
       setEditingProduct(null);
