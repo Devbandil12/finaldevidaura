@@ -83,7 +83,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     
     const payload = {
       ...product,
-      imageurl: uploadedUrls,
+      imageurl: JSON.stringify(uploadedUrls),
     };
     
     toast.info(`Attempting to add product. Payload: ${JSON.stringify(payload)}`);
