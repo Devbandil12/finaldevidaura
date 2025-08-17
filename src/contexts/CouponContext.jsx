@@ -1,3 +1,4 @@
+// src/contexts/CouponContext.js
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 
