@@ -23,19 +23,19 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     discount: "",
     oprice: "",
     size: "",
-    quantity: 1, // Explicitly initialize a quantity
+    quantity: 1, 
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Check if the value is empty or not
+    // Trim whitespace from the name to prevent errors like "size "
+    const trimmedName = name.trim();
     const finalValue = value.trim() === "" ? "" : value;
     
-    // Convert numeric fields to numbers immediately
-    if (name === "discount" || name === "oprice" || name === "size" || name === "quantity") {
-      setProduct({ ...product, [name]: Number(finalValue) });
+    if (trimmedName === "discount" || trimmedName === "oprice" || trimmedName === "size" || trimmedName === "quantity") {
+      setProduct({ ...product, [trimmedName]: Number(finalValue) });
     } else {
-      setProduct({ ...product, [name]: finalValue });
+      setProduct({ ...product, [trimmedName]: finalValue });
     }
   };
 
