@@ -3,10 +3,17 @@ import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-
+import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-
+import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
+import {
+  addToCartTable,
+  orderItemsTable,
+  ordersTable,
+  productsTable,
+  usersTable,
+} from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
