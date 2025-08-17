@@ -20,22 +20,20 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     description: "",
     fragrance: "",
     fragranceNotes: "",
-    discount: "",
-    oprice: "",
-    size: "",
+    discount: 0,
+    oprice: 0,
+    size: 0,
     quantity: 1, 
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // CRITICAL FIX: Trim whitespace from the name to prevent errors like "size "
-    const trimmedName = name.trim();
-    const finalValue = value.trim() === "" ? "" : value;
     
-    if (trimmedName === "discount" || trimmedName === "oprice" || trimmedName === "size" || trimmedName === "quantity") {
-      setProduct({ ...product, [trimmedName]: Number(finalValue) });
+    if (name === "discount" || name === "oprice" || name === "size" || name === "quantity") {
+      // Convert to number, or default to 0 if the input is empty or invalid
+      setProduct({ ...product, [name]: Number(value) || 0 });
     } else {
-      setProduct({ ...product, [trimmedName]: finalValue });
+      setProduct({ ...product, [name]: value });
     }
   };
 
@@ -74,7 +72,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     const requiredFields = ["name", "composition", "description", "fragrance", "fragranceNotes", "discount", "oprice", "size", "quantity"];
     for (const field of requiredFields) {
       const value = product[field];
-      if (value === null || value === undefined || (typeof value === 'string' && value.trim() === "")) {
+      if (value === null || value === undefined || (typeof value === 'string' && value.trim() === "") || (typeof value === 'number' && isNaN(value))) {
         return toast.error(`Please fill in the '${field}' field.`);
       }
     }
@@ -113,9 +111,9 @@ const ImageUploadModal = ({ isopen, onClose }) => {
         description: "",
         fragrance: "",
         fragranceNotes: "",
-        discount: "",
-        oprice: "",
-        size: "",
+        discount: 0,
+        oprice: 0,
+        size: 0,
         quantity: 1,
       });
       onClose();
