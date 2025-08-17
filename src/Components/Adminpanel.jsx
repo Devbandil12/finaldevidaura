@@ -10,23 +10,32 @@ import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 
-// CRITICAL SECURITY FIX: Removed all direct database and schema imports.
-// All data operations must be handled by backend API calls.
-// The `AdminPanel` component now relies entirely on the Contexts.
-// This is the correct and secure way to build your application.
+// CRITICAL SECURITY FIX: All direct database and schema imports have been removed.
+// All data operations must be handled by secure backend API calls.
+// This component now relies entirely on the Contexts for data, which is the correct and secure way.
+// import { db } from "../../configs/index";
+// import { eq } from "drizzle-orm";
+// import {
+//   addToCartTable,
+//   orderItemsTable,
+//   ordersTable,
+//   productsTable,
+//   usersTable,
+// } from "../../configs/schema";
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
-  // All data is now securely fetched from Contexts, which should handle API calls.
-  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext);
-  const { orders, setOrders, getorders, updateOrderStatus, getOrderDetails } = useContext(OrderContext);
+
+  // All data is now securely fetched from Contexts.
+  // The Contexts are assumed to handle the API calls.
+  const { products, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { orders, getorders, updateOrderStatus, getOrderDetails } = useContext(OrderContext);
   const { queries, getquery, users, fetchUsers, getUserDetails } = useContext(ContactContext);
   const { user } = useUser();
-  
+
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
@@ -42,7 +51,9 @@ const AdminPanel = () => {
     setEditingCoupon,
     saveCoupon,
     deleteCoupon,
-    refreshCoupons
+    refreshCoupons,
+    setNewCoupon,
+    newCoupon
   } = useContext(CouponContext);
 
   // --- Data Fetching and Effects (Now via Contexts) ---
@@ -73,7 +84,6 @@ const AdminPanel = () => {
   }, [refreshCoupons]);
 
   // --- Functions Refactored to Use Contexts (No more direct schema calls) ---
-
   const handleProductUpdate = async (updatedProduct) => {
     setLoading(true);
     try {
@@ -137,7 +147,24 @@ const AdminPanel = () => {
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user?.phone?.includes(userSearchQuery)
   );
-  
+
+  const filteredQueries = queries.filter(
+    (q) =>
+      q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
+      q.phone.includes(querySearch) ||
+      (q.date && q.date.includes(querySearch))
+  );
+
+  const filteredOrders = orders
+    .filter((o) => {
+      if (orderStatusTab === "All") return true;
+      if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+      return o.status === orderStatusTab;
+    })
+    .filter((o) =>
+      o.orderId.toString().includes(orderSearchQuery.trim())
+    );
+
   // --- JSX Rendering ---
   return (
     user && userkiDetails?.role === "admin" && (
@@ -145,7 +172,7 @@ const AdminPanel = () => {
         <div className="absolute">
           <ToastContainer />
         </div>
-        
+
         <nav className="admin-nav">
           <button onClick={() => setActiveTab("dashboard")}>Dashboard</button>
           <button onClick={() => setActiveTab("products")}>Products</button>
@@ -237,7 +264,8 @@ const AdminPanel = () => {
                             height="50"
                           />
                           <br />
-                          {/* This part of the image logic needs to be handled via your product context's update function */}
+                          {/* Note: This logic for handling file uploads within the edit row is incomplete.
+                                It should be handled by a secure API call in your context.
                           <input
                             type="file"
                             accept="image/*"
@@ -252,6 +280,7 @@ const AdminPanel = () => {
                               }
                             }}
                           />
+                          */}
                         </td>
                         <td>
                           <input
@@ -317,7 +346,6 @@ const AdminPanel = () => {
                       </tr>
                     )
                   )}
-                  {/* ... (new product row logic) ... */}
                 </tbody>
               </table>
             </div>
@@ -327,7 +355,67 @@ const AdminPanel = () => {
           {activeTab === "coupons" && (
             <div className="coupons-tab">
               <h2>Manage Coupon Codes</h2>
-              {/* ... (Coupons code remains the same as it already uses contexts) ... */}
+              <div className="coupon-controls">
+                <input
+                  type="text"
+                  placeholder="Coupon Code"
+                  value={newCoupon.code}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, code: e.target.value })}
+                />
+                <input
+                  type="number"
+                  placeholder="Discount %"
+                  value={newCoupon.discount}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, discount: Number(e.target.value) })}
+                />
+                <button onClick={() => saveCoupon(newCoupon)} className="add-btn">
+                  Add Coupon
+                </button>
+              </div>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Discount (%)</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coupons?.map((coupon) =>
+                    editingCoupon && editingCoupon.id === coupon.id ? (
+                      <tr key={coupon.id}>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingCoupon.code}
+                            onChange={(e) => setEditingCoupon({ ...editingCoupon, code: e.target.value })}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.discount}
+                            onChange={(e) => setEditingCoupon({ ...editingCoupon, discount: Number(e.target.value) })}
+                          />
+                        </td>
+                        <td>
+                          <button className="admin-btn" onClick={() => saveCoupon(editingCoupon)}>Save</button>
+                          <button className="admin-btn" onClick={() => setEditingCoupon(null)}>Cancel</button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={coupon.id}>
+                        <td>{coupon.code}</td>
+                        <td>{coupon.discount}</td>
+                        <td>
+                          <button className="admin-btn" onClick={() => setEditingCoupon(coupon)}>Edit</button>
+                          <button className="admin-btn delete-btn" onClick={() => deleteCoupon(coupon.id)}>Delete</button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -359,16 +447,8 @@ const AdminPanel = () => {
                   />
                 </div>
               </div>
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                )
-                .map((order) => (
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
                   <div key={order.orderId} className="order-card-admin">
                     <h3>Order #{order.orderId}</h3>
                     <p><strong>Date:</strong> {order.createdAt}</p>
@@ -407,16 +487,10 @@ const AdminPanel = () => {
                       See More Details
                     </button>
                   </div>
-                ))}
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                ).length === 0 && <p>No orders found.</p>}
+                ))
+              ) : (
+                <p>No orders found.</p>
+              )}
               {selectedOrder && (
                 <OrderDetailsPopup
                   order={selectedOrder}
@@ -477,36 +551,28 @@ const AdminPanel = () => {
                   onChange={(e) => setQuerySearch(e.target.value)}
                 />
               </div>
-              {(() => {
-                const filteredQueries = queries.filter(
-                  (q) =>
-                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                    q.phone.includes(querySearch) ||
-                    (q.date && q.date.includes(querySearch))
-                );
-                return filteredQueries.length > 0 ? (
-                  filteredQueries.map((query, index) => (
-                    <div key={index} className="query-card">
+              {filteredQueries.length > 0 ? (
+                filteredQueries.map((query, index) => (
+                  <div key={index} className="query-card">
+                    <p>
+                      <strong>Email:</strong> {query.email}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {query.phone}
+                    </p>
+                    {query.date && (
                       <p>
-                        <strong>Email:</strong> {query.email}
+                        <strong>Date:</strong> {query.date}
                       </p>
-                      <p>
-                        <strong>Phone:</strong> {query.phone}
-                      </p>
-                      {query.date && (
-                        <p>
-                          <strong>Date:</strong> {query.date}
-                        </p>
-                      )}
-                      <p>
-                        <strong>Message:</strong> {query.message}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No queries found.</p>
-                );
-              })()}
+                    )}
+                    <p>
+                      <strong>Message:</strong> {query.message}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p>No queries found.</p>
+              )}
             </div>
           )}
         </div>
