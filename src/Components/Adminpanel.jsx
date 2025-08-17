@@ -30,6 +30,7 @@ const AdminPanel = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   
   const navigate = useNavigate();
+  const { isLoaded: isClerkLoaded } = useUser();
 
   // CONTEXTS
   const { products, getProducts, updateProduct, deleteProduct, loading: productsLoading } = useContext(ProductContext);
@@ -48,19 +49,22 @@ const AdminPanel = () => {
 
   // --- Data Fetching and Effects ---
   useEffect(() => {
-    getallusers();
-    getquery();
-    getorders(true, true);
-    getProducts();
-    refreshCoupons();
-  }, [getallusers, getquery, getorders, getProducts, refreshCoupons]);
+    // Only fetch data if Clerk user details are loaded and the user is an admin
+    if (isClerkLoaded && userdetails && userdetails.role === "admin") {
+      getallusers();
+      getquery();
+      getorders(true, true);
+      getProducts();
+      refreshCoupons();
+    }
+  }, [isClerkLoaded, userdetails, getallusers, getquery, getorders, getProducts, refreshCoupons]);
 
   // Check for admin role
   useEffect(() => {
-    if (userdetails && userdetails.role !== "admin") {
+    if (isClerkLoaded && userdetails && userdetails.role !== "admin") {
       navigate("/");
     }
-  }, [userdetails, navigate]);
+  }, [isClerkLoaded, userdetails, navigate]);
 
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
@@ -191,8 +195,8 @@ const AdminPanel = () => {
     }
   };
   
-  // Guard clause for non-admin users
-  if (userdetails && userdetails.role !== "admin") {
+  // Guard clause for non-admin users or if user details are not yet loaded
+  if (!isClerkLoaded || (userdetails && userdetails.role !== "admin")) {
     return <div className="p-4 text-center text-xl font-bold">Access Denied</div>;
   }
   
@@ -335,7 +339,7 @@ const AdminPanel = () => {
                         <td className="px-6 py-4 whitespace-nowrap"></td>
                         <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <img src={editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
+                          <img src={Array.isArray(editingProduct.imageurl) ? editingProduct.imageurl[0] : editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
                           <br />
                           <input type="file" accept="image/*" onChange={(e) => {
                             const file = e.target.files[0];
@@ -358,7 +362,7 @@ const AdminPanel = () => {
                       <tr key={product.id}>
                         <td className="px-6 py-4 whitespace-nowrap"><input type="checkbox" checked={selectedProducts.includes(product.id)} onChange={() => handleProductSelection(product.id)} /></td>
                         <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap"><img src={product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
+                        <td className="px-6 py-4 whitespace-nowrap"><img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
                         <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
                         <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
@@ -604,12 +608,4 @@ const AdminPanel = () => {
             <p className="text-gray-600">This section is for future implementation to show all user carts and wishlists. </p>
             <p className="text-gray-600">You can use the existing `CartContext` to fetch and manage this data.</p>
             <p className="text-gray-800 font-semibold">Current cart count: {cart.length}</p>
-            <p className="text-gray-800 font-semibold">Current wishlist count: {wishlist.length}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default AdminPanel;
+            <p className
