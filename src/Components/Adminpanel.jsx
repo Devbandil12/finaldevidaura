@@ -705,7 +705,6 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-tab">
               <h2>
