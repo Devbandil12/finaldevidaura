@@ -9,6 +9,7 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]); // New state for all users
   const { user, isLoaded, isSignedIn } = useUser();
+const [loading, setLoading] = useState(true); // Add a loading state
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -74,13 +75,16 @@ export const UserProvider = ({ children }) => {
   // New function to get all users for the admin panel
   const getallusers = useCallback(async () => {
     try {
+     setLoading(true); // Set loading to true before the fetch
       const res = await fetch(`${BACKEND_URL}/api/users`);
       if (!res.ok) throw new Error("Failed to fetch all users");
       const data = await res.json();
       setUsers(data);
     } catch (error) {
       console.error("❌ Failed to get all users:", error);
-    }
+    } finally {
+    setLoading(false); // Set loading to false after the fetch completes (success or failure)
+  }
   }, [BACKEND_URL]);
 
   useEffect(() => {
@@ -104,6 +108,7 @@ export const UserProvider = ({ children }) => {
         users, // Add new state
         getUserDetail,
         setAddress,
+        loading,
       }}
     >
       {children}
