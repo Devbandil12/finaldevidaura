@@ -728,15 +728,7 @@ const AdminPanel = () => {
           />
         </td>
         <td>
-          <button className="admin-btn" onClick={() => {
-  // Create a new object with formatted dates
-  const couponToSave = {
-    ...editingCoupon,
-    validFrom: editingCoupon.validFrom ? new Date(editingCoupon.validFrom) : null,
-    validUntil: editingCoupon.validUntil ? new Date(editingCoupon.validUntil) : null,
-  };
-  saveCoupon(couponToSave);
-}}>
+         <button className="admin-btn" onClick={saveCoupon}>
   Save
 </button>
 
