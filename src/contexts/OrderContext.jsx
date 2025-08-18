@@ -9,7 +9,7 @@ export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const { userdetails } = useContext(UserContext);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\\/$/, "");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   const getorders = async (showLoader = true, isAdmin = false) => {
     if (!isAdmin && !userdetails?.id) {
