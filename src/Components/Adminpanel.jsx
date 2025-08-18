@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
+import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { db } from "../../configs/index";
@@ -26,6 +27,8 @@ const AdminPanel = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   
   const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
+
+const { users, getallusers } = useContext(UserContext);
 
 const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
 
@@ -61,6 +64,12 @@ const [selectedOrder, setSelectedOrder] = useState(null);
   } = useContext(CouponContext);
   
   // --- Data Fetching and Effects ---
+
+useEffect(() => {
+    getallusers();
+  }, [getallusers]);
+
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
