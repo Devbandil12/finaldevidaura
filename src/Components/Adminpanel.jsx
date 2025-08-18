@@ -827,7 +827,7 @@ const AdminPanel = () => {
             {editingUser.addresses && editingUser.addresses.length > 0 ? (
               editingUser.addresses.map((address) => (
                 <div key={address.id} className="address-card">
-                  <p><strong>Street:</strong> {address.street}</p>
+                  <p><strong>Street:</strong> {address.address}</p>
                   <p><strong>City:</strong> {address.city}</p>
                   <p><strong>State:</strong> {address.state}</p>
                   <p><strong>Zip:</strong> {address.zipCode}</p>
