@@ -739,11 +739,11 @@ const AdminPanel = () => {
                   return o.status === orderStatusTab;
                 })
                 .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
+                  o.id.toString().includes(orderSearchQuery.trim())
                 )
                 .map((order) => (
-                  <div key={order.orderId} className="order-card-admin">
-                    <h3>Order #{order.orderId}</h3>
+                  <div key={order.id} className="order-card-admin">
+                    <h3>Order #{order.id}</h3>
                     <p><strong>Date:</strong> {order.createdAt}</p>
                     <p><strong>Total:</strong> ₹{order.totalAmount}</p>
                     <p><strong>Current Status:</strong></p>
@@ -844,9 +844,9 @@ const AdminPanel = () => {
           <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
           {editingUser.orders && editingUser.orders.length > 0 ? (
             editingUser.orders.map((order) => (
-              <div key={order.orderId} className="order-card-details">
+              <div key={order.id} className="order-card-details">
                 <div className="order-summary">
-                  <h5>Order #{order.orderId}</h5>
+                  <h5>Order #{order.id}</h5>
                   <p><strong>Total:</strong> ₹{order.totalAmount}</p>
                   <p><strong>Status:</strong> {order.status}</p>
                   <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
