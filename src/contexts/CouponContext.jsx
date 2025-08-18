@@ -47,15 +47,16 @@ export const CouponProvider = ({ children }) => {
       return toast.error("Code is required");
     }
 
-    const payload = {
+    // Correctly format the date strings from the form into Date objects
+    const formattedPayload = {
       code: editingCoupon.code.toUpperCase(),
       discountType: editingCoupon.discountType,
       discountValue: editingCoupon.discountValue,
       minOrderValue: editingCoupon.minOrderValue,
       minItemCount: editingCoupon.minItemCount,
       description: editingCoupon.description || "",
-      validFrom: editingCoupon.validFrom || null,
-      validUntil: editingCoupon.validUntil || null,
+      validFrom: editingCoupon.validFrom ? new Date(editingCoupon.validFrom) : null,
+      validUntil: editingCoupon.validUntil ? new Date(editingCoupon.validUntil) : null,
       firstOrderOnly: editingCoupon.firstOrderOnly ?? false,
       maxUsagePerUser: editingCoupon.maxUsagePerUser ?? null,
     };
@@ -69,7 +70,7 @@ export const CouponProvider = ({ children }) => {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formattedPayload), // Use the formattedPayload
       });
       if (!res.ok) throw new Error();
       toast.success(editingCoupon.id ? "Coupon updated" : "Coupon added");
