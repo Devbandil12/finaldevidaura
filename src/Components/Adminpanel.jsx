@@ -133,7 +133,7 @@ const AdminPanel = () => {
     }
   };
   
-  [span_0](start_span)// Replaced direct DB call with context function[span_0](end_span)
+  // Replaced direct DB call with context function
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
@@ -187,11 +187,11 @@ const AdminPanel = () => {
   
   // Functions to handle order management (these use the new functions from OrderContext)
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    [span_1](start_span)await updateOrderStatus(orderId, newStatus);[span_1](end_span)
+    await updateOrderStatus(orderId, newStatus);
   };
   
   const handleCancelOrder = async (orderId) => {
-    [span_2](start_span)await cancelOrder(orderId);[span_2](end_span)
+    await cancelOrder(orderId);
   };
   // --- JSX Rendering ---
   return (
