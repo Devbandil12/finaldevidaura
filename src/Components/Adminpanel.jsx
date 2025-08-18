@@ -116,7 +116,7 @@ const AdminPanel = () => {
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
-      const details = await getSingleOrderDetails(order.orderId);
+      const details = await getSingleOrderDetails(order.id);
       if (details) {
         setSelectedOrder(details);
       }
@@ -758,7 +758,7 @@ const AdminPanel = () => {
                           <select
                             value={order.status}
                             onChange={(e) =>
-                              handleUpdateOrderStatus(order.orderId, e.target.value)
+                              handleUpdateOrderStatus(order.id, e.target.value)
                             }
                           >
                             <option value="Order Placed">Order Placed</option>
@@ -784,7 +784,7 @@ const AdminPanel = () => {
                   return o.status === orderStatusTab;
                 })
                 .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
+                  o.id.toString().includes(orderSearchQuery.trim())
                 ).length === 0 && <p>No orders found.</p>}
               {selectedOrder && (
                 <OrderDetailsPopup
