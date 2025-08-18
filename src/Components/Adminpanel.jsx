@@ -38,6 +38,15 @@ const AdminPanel = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const [usersList, setUsersList] = useState([]);
+
+const {
+    coupons,
+    editingCoupon,
+    setEditingCoupon,
+    refreshCoupons,
+    saveCoupon,
+    deleteCoupon,
+  } = useContext(CouponContext);
   
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -146,49 +155,7 @@ const AdminPanel = () => {
     }
   };
   
-  const handleCouponSave = async () => {
-    const payload = {
-      code: editingCoupon.code.toUpperCase(),
-      discountType: editingCoupon.discountType,
-      discountValue: editingCoupon.discountValue,
-      minOrderValue: editingCoupon.minOrderValue,
-      minItemCount: editingCoupon.minItemCount,
-      description: editingCoupon.description || "",
-      validFrom: editingCoupon.validFrom || null,
-      validUntil: editingCoupon.validUntil || null,
-    };
-
-    const url = editingCoupon.id
-      ? `${BASE}/api/coupons/${editingCoupon.id}`
-      : `${BASE}/api/coupons`;
-    const method = editingCoupon.id ? "PUT" : "POST";
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error();
-      toast.success(editingCoupon.id ? "Updated" : "Added");
-      await refreshCoupons();
-      setEditingCoupon(null);
-    } catch {
-      toast.error("Save failed");
-    }
-  };
   
-  const handleCouponDelete = async id => {
-    if (!window.confirm("Delete this coupon?")) return;
-    try {
-      const res = await fetch(`${BASE}/api/coupons/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      toast.success("Deleted");
-      await refreshCoupons();
-    } catch {
-      toast.error("Delete failed");
-    }
-  };
-
   const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
     try {
       await db
