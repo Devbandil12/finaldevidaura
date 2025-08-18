@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState } from "react";
+// src/contexts/OrderContext.jsx
+import React, { createContext, useState, useContext } from "react";
 import { UserContext } from "./UserContext";
 
-const OrderContext = createContext();
-export const useOrders = () => useContext(OrderContext);
+export const OrderContext = createContext();
 
 export const OrderProvider = ({ children }) => {
   const { userdetails } = useContext(UserContext);
@@ -12,7 +12,7 @@ export const OrderProvider = ({ children }) => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  // ─── Fetch orders ───────────────────────────────────────────
+  // ─── Fetch orders ───────────────────────────
   const getorders = async (showLoader = true, isAdmin = false) => {
     if (!isAdmin && !userdetails?.id) return;
     if (showLoader) setLoadingOrders(true);
@@ -34,7 +34,7 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  // ─── Update order refund ─────────────────────────────────────
+  // ─── Update order refund ─────────────────────
   const updateOrderRefund = async (orderId, amount) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/refund`, {
@@ -46,14 +46,13 @@ export const OrderProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to refund order");
       const result = await res.json();
 
-      // merge refund details into state
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
             ? {
                 ...o,
                 paymentStatus: "refunded",
-                refund: result.refund, // keep whole refund object for UI
+                refund: result.refund,
               }
             : o
         )
