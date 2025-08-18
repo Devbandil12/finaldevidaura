@@ -39,14 +39,7 @@ const AdminPanel = () => {
   const [querySearch, setQuerySearch] = useState("");
   const [usersList, setUsersList] = useState([]);
 
-const {
-    coupons,
-    editingCoupon,
-    setEditingCoupon,
-    refreshCoupons,
-    saveCoupon,
-    deleteCoupon,
-  } = useContext(CouponContext);
+
   
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
