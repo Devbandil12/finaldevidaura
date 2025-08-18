@@ -4,32 +4,22 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
-import {
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  productsTable,
-  usersTable,
-} from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
-import OrderChart from "./OrderChart"; // Import the new chart component
+import OrderChart from "./OrderChart";
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   
   const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
 
-  // Correctly import and use the users state from UserContext
-  const { users, getallusers } = useContext(UserContext);
+  const { users, getallusers, userdetails, getAdminUserDetail } = useContext(UserContext);
 
   const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
 
@@ -43,7 +33,6 @@ const AdminPanel = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
-  const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
   const navigate = useNavigate();
@@ -57,33 +46,29 @@ const AdminPanel = () => {
     deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
+
   // --- Data Fetching and Effects ---
 
   useEffect(() => {
     getallusers();
   }, [getallusers]);
+  
   useEffect(() => {
     getquery();
   }, [getquery]);
-  const userdetails = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      setUserkiDetails(res[0]);
-      if (res[0].role !== "admin") {
-        navigate("/");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  
   useEffect(() => {
     if (user) {
-      userdetails();
+      getAdminUserDetail();
     }
-  }, [user]);
+  }, [user, getAdminUserDetail]);
+
+  useEffect(() => {
+    if (userdetails && userdetails.role !== "admin") {
+      navigate("/");
+    }
+  }, [userdetails, navigate]);
+  
   useEffect(() => {
     getorders();
   }, [getorders]);
@@ -91,6 +76,7 @@ const AdminPanel = () => {
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
+  
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
   const totalProducts = products.length;
@@ -115,7 +101,6 @@ const AdminPanel = () => {
   const handleProductUpdate = async () => {
     setLoading(true);
     try {
-      // Pass the entire editingProduct object directly to the context function
       await updateProduct(editingProduct.id, {
         ...editingProduct,
         discount: Number(editingProduct.discount),
@@ -137,7 +122,6 @@ const AdminPanel = () => {
     if (confirmation) {
       setLoading(true);
       try {
-        // Use the new deleteProduct function from ProductContext
         await deleteProduct(productId);
         setLoading(false);
         toast.success("Product deleted successfully!");
@@ -148,45 +132,15 @@ const AdminPanel = () => {
       }
     }
   };
-  const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
-    try {
-      await db
-        .update(ordersTable)
-        .set({ status: newStatus, progressStep: newProgressStep })
-        .where(eq(ordersTable.id, orderId));
-      console.log("updated");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
-    updateorderstatus(orderId, newStatus, newProgressStep);
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: newStatus, progressStep: newProgressStep }
-        : order
-    );
-    setOrders(updatedOrders);
-  };
   
+  // Replaced direct DB call with context function
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
-      const items = await db
-        .select({
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
-        })
-        .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(orderItemsTable.orderId, order.orderId));
-      setSelectedOrder({
-        ...order,
-        products: items
-      });
+      const orderDetails = await getSingleOrderDetails(order.orderId);
+      if (orderDetails) {
+        setSelectedOrder(orderDetails);
+      }
     } catch (error) {
       console.error("Error fetching order products:", error);
       toast.error("Failed to load order details.");
@@ -210,7 +164,6 @@ const AdminPanel = () => {
       toast.success("User updated successfully!");
       setEditingUser(null);
       getallusers();
-      // Refresh the user list
     } catch (error) {
       console.error("Failed to update user:", error);
       toast.error("Failed to update user.");
@@ -226,7 +179,6 @@ const AdminPanel = () => {
       if (!res.ok) throw new Error("Failed to delete user");
       toast.success("User deleted successfully!");
       getallusers();
-      // Refresh the user list
     } catch (error) {
       console.error("Failed to delete user:", error);
       toast.error("Failed to delete user.");
@@ -243,7 +195,7 @@ const AdminPanel = () => {
   };
   // --- JSX Rendering ---
   return (
-    user && userkiDetails.role === "admin" && (
+    userdetails?.role === "admin" && (
       <div className="admin-panel">
         <div className="absolute">
           <ToastContainer />
@@ -252,7 +204,6 @@ const AdminPanel = () => {
         <nav className="admin-nav">
           <button onClick={() => setActiveTab("dashboard")}>Dashboard</button>
           <button onClick={() => setActiveTab("products")}>Products</button>
-     
           <button onClick={() => setActiveTab("coupons")}>Coupon Codes</button>
           <button onClick={() => setActiveTab("orders")}>Orders</button>
           <button onClick={() => setActiveTab("users")}>Users</button>
@@ -270,34 +221,29 @@ const AdminPanel = () => {
               <div className="dashboard-cards">
                 <div className="card">
                   <h3>Total Revenue</h3>
-           
                   <p>₹{totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="card">
                   <h3>Total Orders</h3>
                   <p>{totalOrders}</p>
                 </div>
-       
                 <div className="card">
                   <h3>Total Products</h3>
                   <p>{totalProducts}</p>
                 </div>
                 <div className="card">
                   <h3>Total Users</h3>
- 
                   <p>{totalUsers}</p>
                 </div>
                 <div className="card">
                   <h3>Average Order Value</h3>
                   <p>₹{averageOrderValue.toFixed(2)}</p>
-            
                 </div>
                 <div className="card">
                   <h3>Pending Queries</h3>
                   <p>{totalQueries}</p>
                 </div>
               </div>
-
             
               <div className="dashboard-charts">
                 <div className="chart-container">
@@ -305,7 +251,6 @@ const AdminPanel = () => {
                   <OrderChart
                     delivered={deliveredOrders}
                     pending={processingOrders}
-  
                     cancelled={cancelledOrders}
                   />
                 </div>
@@ -313,73 +258,59 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Products 
-          Tab */}
+          {/* Products Tab */}
           {activeTab === "products" && (
             <div className="products-tab">
               <h2>Manage Products</h2>
               <button
                 className="admin-btn add-btn"
                 onClick={() => setOpenModal(true)}
-        
               >
                 Add New Product
               </button>
               <table className="admin-table">
                 <thead>
                   <tr>
-             
                     <th>ID</th>
                     <th>Image</th>
                     <th>Name</th>
                     <th>Original Price</th>
                     <th>Discount (%)</th>
-           
                     <th>Size (ml)</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {products?.map((product) =>
- 
-                    editingProduct && editingProduct.id === product.id ?
-(
+                    editingProduct && editingProduct.id === product.id ? (
                       <tr key={product.id}>
                         <td>{product.id}</td>
                         <td>
                           <img
-   
                             src={editingProduct.imageurl}
                             alt={editingProduct.name}
                             width="50"
-                   
                             height="50"
                           />
                           <br />
                           <input
-            
                             type="file"
                             accept="image/*"
                             onChange={(e) => {
-                          
                               const file = e.target.files[0];
                               if (file) {
                                 const imageUrl = URL.createObjectURL(file);
-                          
                                 setEditingProduct({
                                   ...editingProduct,
                                   imageurl: imageUrl,
-                         
                                 });
                               }
                             }}
                           />
-         
                         </td>
                         <td>
                           <input
                             type="text"
-       
                             value={editingProduct.name}
                             onChange={(e) =>
                               setEditingProduct({
