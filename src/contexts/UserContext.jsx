@@ -1,114 +1,99 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
-import { useUser } from "@clerk/clerk-react";
+import React, { createContext, useState, useEffect } from "react";
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
-  const [address, setAddress] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]); // New state for all users
-  const { user, isLoaded, isSignedIn } = useUser();
-const [loading, setLoading] = useState(true); // Add a loading state
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  const getUserDetail = useCallback(async () => {
-    if (!isLoaded || !isSignedIn) {
-      setUserdetails(null);
-      return;
+  // ─── Load user from localStorage on app start ───────────
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userdetails");
+    if (storedUser) {
+      setUserdetails(JSON.parse(storedUser));
     }
+    setLoadingUser(false);
+  }, []);
 
+  // ─── Save user to localStorage ─────────────────────────
+  const saveUser = (user) => {
+    setUserdetails(user);
+    localStorage.setItem("userdetails", JSON.stringify(user));
+  };
+
+  // ─── Clear user (logout) ───────────────────────────────
+  const logoutUser = () => {
+    setUserdetails(null);
+    localStorage.removeItem("userdetails");
+  };
+
+  // ─── Login ─────────────────────────────────────────────
+  const loginUser = async (credentials) => {
     try {
-      const email = user?.primaryEmailAddress?.emailAddress;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerkId = user?.id; // Correct variable name from schema
-
-      if (!email || !clerkId) {
-        console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
-        return;
-      }
-
-      // 1. Try to get existing user using clerkId for a more reliable lookup
-      let res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
+      const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      if (!res.ok) throw new Error("Login failed");
       const data = await res.json();
-
-      if (data) {
-        setUserdetails(data);
-      } else {
-        // 2. Create new user
-        const postRes = await fetch(`${BACKEND_URL}/api/users`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, clerkId }), // Use 'clerkId' to match schema
-        });
-        const postData = await postRes.json();
-        setUserdetails(postData);
-      }
+      saveUser(data.user);
+      return data;
     } catch (err) {
-      console.error("❌ Error in getUserDetail:", err);
+      console.error("❌ loginUser error:", err);
+      throw err;
     }
-  }, [user, isLoaded, isSignedIn, BACKEND_URL]);
+  };
 
-  const getMyOrders = useCallback(async () => {
+  // ─── Signup ────────────────────────────────────────────
+  const signupUser = async (info) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(info),
+      });
+      if (!res.ok) throw new Error("Signup failed");
+      const data = await res.json();
+      saveUser(data.user);
+      return data;
+    } catch (err) {
+      console.error("❌ signupUser error:", err);
+      throw err;
+    }
+  };
+
+  // ─── Update user profile ───────────────────────────────
+  const updateUser = async (updates) => {
     if (!userdetails?.id) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/orders`);
+      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Update failed");
       const data = await res.json();
-      setOrders(data);
-    } catch (error) {
-      console.error("❌ Failed to get orders:", error);
+      saveUser(data);
+      return data;
+    } catch (err) {
+      console.error("❌ updateUser error:", err);
+      throw err;
     }
-  }, [userdetails?.id, BACKEND_URL]);
-
-  const getUserAddress = useCallback(async () => {
-    if (!userdetails?.id) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
-      const data = await res.json();
-      setAddress(data);
-    } catch (error) {
-      console.error("❌ Failed to get user addresses:", error);
-    }
-  }, [userdetails?.id, BACKEND_URL]);
-
-  // New function to get all users for the admin panel
-  const getallusers = useCallback(async () => {
-    try {
-     setLoading(true); // Set loading to true before the fetch
-      const res = await fetch(`${BACKEND_URL}/api/users`);
-      if (!res.ok) throw new Error("Failed to fetch all users");
-      const data = await res.json();
-      setUsers(data);
-    } catch (error) {
-      console.error("❌ Failed to get all users:", error);
-    } finally {
-    setLoading(false); // Set loading to false after the fetch completes (success or failure)
-  }
-  }, [BACKEND_URL]);
-
-  useEffect(() => {
-    getUserDetail();
-  }, [getUserDetail]);
-
-  useEffect(() => {
-    if (userdetails) {
-      getMyOrders();
-      getUserAddress();
-    }
-  }, [userdetails, getMyOrders, getUserAddress]);
+  };
 
   return (
     <UserContext.Provider
       value={{
         userdetails,
-        address,
-        orders,
-        getallusers, // Add new function
-        users, // Add new state
-        getUserDetail,
-        setAddress,
-        loading,
+        loadingUser,
+        loginUser,
+        signupUser,
+        logoutUser,
+        updateUser,
+        saveUser,
       }}
     >
       {children}
