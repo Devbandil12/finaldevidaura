@@ -9,7 +9,7 @@ export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const { userdetails } = useContext(UserContext);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\\/$/, "");
 
   const getorders = async (showLoader = true, isAdmin = false) => {
     if (!isAdmin && !userdetails?.id) {
@@ -49,6 +49,21 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
+  const cancelOrder = async (orderId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
+        method: "PUT",
+      });
+      if (!res.ok) throw new Error("Failed to cancel order");
+      toast.success(`Order ${orderId} has been successfully canceled.`);
+      await getorders(true, true); // Refresh the orders list for admin
+    } catch (error) {
+      console.error("❌ Failed to cancel order:", error);
+      toast.error("Failed to cancel order.");
+    }
+  };
+
+
   const getSingleOrderDetails = async (orderId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
@@ -77,9 +92,11 @@ export const OrderProvider = ({ children }) => {
         loadingOrders,
         updateOrderStatus,
         getSingleOrderDetails,
+        cancelOrder,
       }}
     >
       {children}
     </OrderContext.Provider>
   );
 };
+
