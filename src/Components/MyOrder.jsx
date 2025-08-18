@@ -2,7 +2,7 @@
 
 import React, { useContext, useState } from "react";
 import { createPortal } from "react-dom";
-import { OrderContext } from "../contexts/OrderContext";
+import { useOrders } from "../contexts/OrderContext"; // ✅ FIXED
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import Loader from "./Loader";
@@ -99,8 +99,8 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 };
 
 export default function MyOrders() {
-  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } =
-    useContext(OrderContext);
+  // ✅ FIXED: useOrders hook instead of useContext(OrderContext)
+  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } = useOrders();
   const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
 
@@ -120,57 +120,76 @@ export default function MyOrders() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const cancelOrder = async (order) => {
-    try {
-      const res = await fetch(`${BACKEND}/api/payments/refund`, {
+  try {
+    let res;
+
+    // COD orders → just cancel
+    if (order.paymentMode === "cod") {
+      res = await fetch(`${BACKEND}/api/orders/${order.orderId}/cancel`, {
+        method: "PATCH",
+      });
+    } 
+    // Online (Razorpay) orders → refund + cancel
+    else if (order.paymentMode === "online" && order.paymentStatus === "paid") {
+      res = await fetch(`${BACKEND}/api/orders/${order.orderId}/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: order.orderId,
-          amount: order.totalAmount * 0.95,
-          speed: "optimum",
-        }),
+        body: JSON.stringify({ amount: order.totalAmount * 0.95 }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Refund failed");
-
-      await updateOrderRefund(order.orderId, data.refund);
-      await updateOrderStatus(order.orderId, "Order Cancelled");
-
-      setCancellationMessages((prev) => ({
-        ...prev,
-        [order.orderId]: (
-          <div className="cancel-message" key={order.orderId}>
-            ✅ Refund Initiated (ID: {data.refund.id})<br />
-            Amount: ₹{(data.refund.amount / 100).toFixed(2)}<br />
-            Status: {data.refund.status}<br />
-            Initiated:{" "}
-            {formatDateTime(
-              new Date(data.refund.created_at * 1000).toISOString()
-            )}
-          </div>
-        ),
-      }));
-    } catch (err) {
-      console.error(err);
-      setCancellationMessages((prev) => ({
-        ...prev,
-        [modalOrder.orderId]: (
-          <div className="error-message" key={modalOrder.orderId}>
-            ❌ Cancellation/refund failed; please contact support.
-          </div>
-        ),
-      }));
+    } else {
+      throw new Error("Unsupported order type for cancellation");
     }
-  };
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Cancel/Refund failed");
+
+    // Update UI (status, refund info)
+    await updateOrderStatus(order.orderId, "Order Cancelled");
+    if (data.refund) {
+      await updateOrderRefund(order.orderId, data.refund);
+    }
+
+    // Show cancellation message
+    setCancellationMessages((prev) => ({
+      ...prev,
+      [order.orderId]: (
+        <div className="cancel-message" key={order.orderId}>
+          ✅ {order.paymentMode === "online" ? "Refund Initiated" : "Order Cancelled"} <br />
+          {data.refund && (
+            <>
+              ID: {data.refund.id} <br />
+              Amount: ₹{(data.refund.amount / 100).toFixed(2)} <br />
+              Status: {data.refund.status} <br />
+              Initiated:{" "}
+              {new Date(data.refund.created_at * 1000).toLocaleString()}
+            </>
+          )}
+        </div>
+      ),
+    }));
+  } catch (err) {
+    console.error(err);
+    setCancellationMessages((prev) => ({
+      ...prev,
+      [order.orderId]: (
+        <div className="error-message" key={order.orderId}>
+          ❌ Cancellation failed; please contact support.
+        </div>
+      ),
+    }));
+  }
+};
+
 
   const handleConfirmCancel = async () => {
-    if (!modalOrder) return;
-    setCancellingOrderId(modalOrder.orderId);
-    setIsModalOpen(false);
-    await cancelOrder(modalOrder);
-    setCancellingOrderId(null);
-    setModalOrder(null);
-  };
+  if (!modalOrder) return;
+  setCancellingOrderId(modalOrder.orderId);
+  setIsModalOpen(false);
+  await cancelOrder(modalOrder); 
+  setCancellingOrderId(null);
+  setModalOrder(null);
+};
+
 
   const reorder = (orderId) => {
     const order = orders.find((o) => o.orderId === orderId);
@@ -199,7 +218,6 @@ export default function MyOrders() {
     try {
       const res = await fetch(`${BACKEND}/api/poll-refunds`);
       if (!res.ok) throw new Error("Failed to refresh status");
-      // Simulate a delay for the loader
       await new Promise(r => setTimeout(r, 1000));
       console.log(`Successfully refreshed status for order ${orderId}.`);
     } catch (err) {
@@ -241,6 +259,7 @@ export default function MyOrders() {
 
   return (
     <div className="myorder-container">
+      {/* Modal */}
       {isModalOpen &&
         modalOrder &&
         createPortal(
