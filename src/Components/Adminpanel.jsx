@@ -4,52 +4,37 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
-import {
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  productsTable,
-  usersTable,
-} from "../../configs/schema";
 import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
-import OrderChart from "./OrderChart"; // Import the new chart component
+import OrderChart from "./OrderChart";
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   
-  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
+  const { products, updateProduct, deleteProduct } = useContext(ProductContext); 
 
-const { users, getallusers } = useContext(UserContext);
+  const { users, getallusers, userdetails, getUserDetail } = useContext(UserContext);
 
-const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
+  const { orders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
 
   const { queries, getquery } = useContext(ContactContext);
 
   const { user } = useUser();
   
 
-
-const [editingUser, setEditingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
-  const [usersList, setUsersList] = useState([]);
-
-
-  
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -61,51 +46,32 @@ const [editingUser, setEditingUser] = useState(null);
     deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
-  
+
   // --- Data Fetching and Effects ---
 
-useEffect(() => {
+  useEffect(() => {
     getallusers();
   }, [getallusers]);
-
-
+  
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await db.select().from(usersTable);
-        setUsersList(res);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
     getquery();
-  }, []);
-
-  const userdetails = async () => {
-    try {
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      setUserkiDetails(res[0]);
-      if (res[0].role !== "admin") {
-        navigate("/");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
+  }, [getquery]);
+  
   useEffect(() => {
     if (user) {
-      userdetails();
+      getUserDetail();
     }
-  }, [user]);
+  }, [user, getUserDetail]);
 
   useEffect(() => {
+    if (userdetails && userdetails.role !== "admin") {
+      navigate("/");
+    }
+  }, [userdetails, navigate]);
+  
+  useEffect(() => {
     getorders();
-  }, []);
+  }, [getorders]);
 
   useEffect(() => {
     refreshCoupons();
@@ -114,20 +80,27 @@ useEffect(() => {
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
   const totalProducts = products.length;
-  const totalUsers = usersList.length;
+  const totalUsers = users.length;
   const totalQueries = queries.length;
 
   const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
   const cancelledOrders = orders.filter(o => o.status === "Order Cancelled").length;
   const processingOrders = orders.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped").length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  const averageOrderValue = totalOrders > 0 ?
+  totalRevenue / totalOrders : 0;
 
+  // Filter users based on search query
+  const filteredUsers = users.filter(
+    (user) =>
+      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+      user?.email?.toLowerCase().includes(userSearchQuery.toLowerCase())
+  );
+  
   // --- Functions (existing) ---
   const handleProductUpdate = async () => {
     setLoading(true);
     try {
-      // Pass the entire editingProduct object directly to the context function
       await updateProduct(editingProduct.id, {
         ...editingProduct,
         discount: Number(editingProduct.discount),
@@ -135,7 +108,6 @@ useEffect(() => {
         size: Number(editingProduct.size),
         quantity: Number(editingProduct.quantity),
       });
-
       setEditingProduct(null);
       toast.success("Product updated successfully!");
     } catch (error) {
@@ -145,13 +117,11 @@ useEffect(() => {
       setLoading(false);
     }
   };
-
   const handleProductDelete = async (productId) => {
     const confirmation = window.confirm("Are you sure you want to delete this product?");
     if (confirmation) {
       setLoading(true);
       try {
-        // Use the new deleteProduct function from ProductContext
         await deleteProduct(productId);
         setLoading(false);
         toast.success("Product deleted successfully!");
@@ -163,47 +133,14 @@ useEffect(() => {
     }
   };
   
-  
-  const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
-    try {
-      await db
-        .update(ordersTable)
-        .set({ status: newStatus, progressStep: newProgressStep })
-        .where(eq(ordersTable.id, orderId));
-      console.log("updated");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  
-  const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
-    updateorderstatus(orderId, newStatus, newProgressStep);
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: newStatus, progressStep: newProgressStep }
-        : order
-    );
-    setOrders(updatedOrders);
-  };
-  
+  // Replaced direct DB call with context function
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
-      const items = await db
-        .select({
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
-        })
-        .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(orderItemsTable.orderId, order.orderId));
-      setSelectedOrder({
-        ...order,
-        products: items
-      });
+      const orderDetails = await getSingleOrderDetails(order.orderId);
+      if (orderDetails) {
+        setSelectedOrder(orderDetails);
+      }
     } catch (error) {
       console.error("Error fetching order products:", error);
       toast.error("Failed to load order details.");
@@ -212,69 +149,53 @@ useEffect(() => {
     }
   };
   
-  const usersWithOrders = usersList.map((user) => ({
-    ...user,
-    orders: orders.filter((order) => order.userId === user.id),
-  }));
-  const filteredUsers = usersWithOrders.filter(
-    (user) =>
-      user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-      user?.phone?.includes(userSearchQuery)
-  );
-
-
-// Functions to handle user management
-const handleEditUser = (user) => {
-  setEditingUser(user);
-};
-
-const handleSaveUser = async () => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${editingUser.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingUser),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
-    toast.success("User updated successfully!");
-    setEditingUser(null);
-    getallusers(); // Refresh the user list
-  } catch (error) {
-    console.error("Failed to update user:", error);
-    toast.error("Failed to update user.");
-  }
-};
-
-const handleDeleteUser = async (userId) => {
-  if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
-  try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete user");
-    toast.success("User deleted successfully!");
-    getallusers(); // Refresh the user list
-  } catch (error) {
-    console.error("Failed to delete user:", error);
-    toast.error("Failed to delete user.");
-  }
-};
-
-// Functions to handle order management (these use the new functions from OrderContext)
-const handleUpdateOrderStatus = async (orderId, newStatus) => {
-  await updateOrderStatus(orderId, newStatus);
-};
-
-const handleCancelOrder = async (orderId) => {
-  await cancelOrder(orderId);
-};
-
-
-
-
+  // Functions to handle user management
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+  };
+  const handleSaveUser = async () => {
+    try {
+      const res = await fetch(`${BASE}/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingUser),
+      });
+      if (!res.ok) throw new Error("Failed to update user");
+      toast.success("User updated successfully!");
+      setEditingUser(null);
+      getallusers();
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      toast.error("Failed to update user.");
+    }
+  };
+  
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`${BASE}/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete user");
+      toast.success("User deleted successfully!");
+      getallusers();
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast.error("Failed to delete user.");
+    }
+  };
+  
+  // Functions to handle order management (these use the new functions from OrderContext)
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    await updateOrderStatus(orderId, newStatus);
+  };
+  
+  const handleCancelOrder = async (orderId) => {
+    await cancelOrder(orderId);
+  };
   // --- JSX Rendering ---
   return (
-    user && userkiDetails.role === "admin" && (
+    userdetails?.role === "admin" && (
       <div className="admin-panel">
         <div className="absolute">
           <ToastContainer />
@@ -293,6 +214,7 @@ const handleCancelOrder = async (orderId) => {
           {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
 
           {/* New Dashboard Tab */}
+    
           {activeTab === "dashboard" && (
             <div className="dashboard-tab">
               <h2>Admin Dashboard</h2>
@@ -322,7 +244,7 @@ const handleCancelOrder = async (orderId) => {
                   <p>{totalQueries}</p>
                 </div>
               </div>
-
+            
               <div className="dashboard-charts">
                 <div className="chart-container">
                   <h3>Orders Status Breakdown</h3>
@@ -481,583 +403,611 @@ const handleCancelOrder = async (orderId) => {
                       </tr>
                     )
                   )}
-                  {editingProduct &&
-                    !products.find((p) => p.id === editingProduct.id) && (
-                      <tr key={editingProduct.id}>
-                        <td>{editingProduct.id}</td>
-                        <td>
-                          <img
-                            src={editingProduct.imageurl}
-                            alt={editingProduct.name}
-                            width="50"
-                            height="50"
-                          />
-                          <br />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const imageUrl = URL.createObjectURL(file);
-                                setEditingProduct({
-                                  ...editingProduct,
-                                  imageurl: imageUrl,
-                                });
-                              }
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            value={editingProduct.name}
-                            onChange={(e) =>
+                  {editingProduct && !products.find((p) => p.id === editingProduct.id) && (
+                    <tr key="new-product">
+                      <td>{editingProduct.id}</td>
+                      <td>
+                        <img
+                          src={editingProduct.imageurl}
+                          alt={editingProduct.name}
+                          width="50"
+                          height="50"
+                        />
+                        <br />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const imageUrl = URL.createObjectURL(file);
                               setEditingProduct({
                                 ...editingProduct,
-                                name: e.target.value,
-                              })
+                                imageurl: imageUrl,
+                              });
                             }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.oprice}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                oprice: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.discount}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                discount: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            value={editingProduct.size}
-                            onChange={(e) =>
-                              setEditingProduct({
-                                ...editingProduct,
-                                size: parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            className="admin-btn"
-                            onClick={() => handleProductUpdate(editingProduct)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="admin-btn"
-                            onClick={() => setEditingProduct(null)}
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={editingProduct.name}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              name: e.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingProduct.oprice}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              oprice: parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingProduct.discount}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              discount: parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingProduct.size}
+                          onChange={(e) =>
+                            setEditingProduct({
+                              ...editingProduct,
+                              size: parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button
+                          className="admin-btn"
+                          onClick={() => handleProductUpdate(editingProduct)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="admin-btn"
+                          onClick={() => setEditingProduct(null)}
+                        >
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           )}
-
           {/* Coupons Tab */}
           {activeTab === "coupons" && (
             <div className="coupons-tab">
               <h2>Manage Coupon Codes</h2>
               <button
                 className="admin-btn add-btn"
-                onClick={() =>
-                  setEditingCoupon({
-                    code: "",
-                    discountType: "percent",
-                    discountValue: 0,
-                    minOrderValue: 0,
-                    minItemCount: 0,
-                    description: "",
-                    validFrom: "",
-                    validUntil: "",
-                    firstOrderOnly: false,
-                  })
-                }
+                onClick={() => setEditingCoupon({ code: "", discountType: "percent", discountValue: 0, minOrderValue: 0, minItemCount: 0, description: "", validFrom: "", validUntil: "", firstOrderOnly: false, }) }
               >
                 Add New Coupon
               </button>
-
               <table className="coupon-table">
-  <thead>
-    <tr>
-      <th>Code</th>
-      <th>Type</th>
-      <th>Value</th>
-      <th>Min ₹</th>
-      <th>Min Items</th>
-      <th>Description</th>
-      <th>Max Usage/User</th>
-      <th>First Order Only</th>
-      <th>Valid From</th>
-      <th>Valid Until</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {editingCoupon && (
-      <tr>
-        <td>
-          <input
-            placeholder="Code"
-            value={editingCoupon.code || ""}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({ ...ec, code: e.target.value }))
-            }
-          />
-        </td>
-        <td>
-          <select
-            value={editingCoupon.discountType}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                discountType: e.target.value,
-              }))
-            }
-          >
-            <option value="percent">percent</option>
-            <option value="flat">flat</option>
-          </select>
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Value"
-            value={editingCoupon.discountValue ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                discountValue: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Min ₹"
-            value={editingCoupon.minOrderValue ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                minOrderValue: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Min Items"
-            value={editingCoupon.minItemCount ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                minItemCount: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            placeholder="Description"
-            value={editingCoupon.description}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                description: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Max usage per user"
-            value={editingCoupon.maxUsagePerUser ?? ""}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                maxUsagePerUser: e.target.value === "" ? null : +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <label>
-            <input
-              type="checkbox"
-              checked={editingCoupon.firstOrderOnly ?? false}
-              onChange={(e) =>
-                setEditingCoupon((ec) => ({
-                  ...ec,
-                  firstOrderOnly: e.target.checked,
-                }))
-              }
-            />
-          </label>
-        </td>
-        <td>
-          <input
-            type="date"
-            value={
-              editingCoupon.validFrom
-                ? new Date(editingCoupon.validFrom).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                validFrom: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="date"
-            value={
-              editingCoupon.validUntil
-                ? new Date(editingCoupon.validUntil).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                validUntil: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-         <button className="admin-btn" onClick={saveCoupon}>
-  Save
-</button>
-
-          <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
-            Cancel
-          </button>
-        </td>
-      </tr>
-    )}
-    {coupons.map((c) => (
-      <tr key={c.id}>
-        <td>{c.code}</td>
-        <td>{c.discountType}</td>
-        <td>
-          {c.discountType === "percent"
-            ? `${c.discountValue}%`
-            : `₹${c.discountValue}`}
-        </td>
-        <td>₹{c.minOrderValue}</td>
-        <td>{c.minItemCount}</td>
-        <td>{c.description}</td>
-        <td>{c.maxUsagePerUser ?? "∞"}</td>
-        <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
-        <td>{new Date(c.validFrom).toLocaleDateString()}</td>
-        <td>{new Date(c.validUntil).toLocaleDateString()}</td>
-        <td>
-          <button
-            className="admin-btn"
-            onClick={() => setEditingCoupon({ ...c })}
-          >
-            Edit
-          </button>
-          <button
-            className="admin-btn delete-btn"
-            onClick={() => deleteCoupon(c.id)}
-          >
-            Delete
-          </button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Discount</th>
+                    <th>Min. Order</th>
+                    <th>Min. Items</th>
+                    <th>Valid Until</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {coupons.map((coupon) =>
+                    editingCoupon && editingCoupon.id === coupon.id ? (
+                      <tr key={coupon.id}>
+                        <td>
+                          <input
+                            type="text"
+                            value={editingCoupon.code}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                code: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.discountValue}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                discountValue: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                          <select
+                            value={editingCoupon.discountType}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                discountType: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="percent">%</option>
+                            <option value="fixed">₹</option>
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.minOrderValue}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                minOrderValue: parseFloat(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            value={editingCoupon.minItemCount}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                minItemCount: parseInt(e.target.value),
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="date"
+                            value={editingCoupon.validUntil?.split("T")[0] || ""}
+                            onChange={(e) =>
+                              setEditingCoupon({
+                                ...editingCoupon,
+                                validUntil: e.target.value,
+                              })
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button className="admin-btn" onClick={() => saveCoupon(editingCoupon)}>
+                            Save
+                          </button>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingCoupon(null)}
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={coupon.id}>
+                        <td>{coupon.code}</td>
+                        <td>
+                          {coupon.discountValue}
+                          {coupon.discountType === "percent" ? "%" : "₹"}
+                        </td>
+                        <td>₹{coupon.minOrderValue}</td>
+                        <td>{coupon.minItemCount}</td>
+                        <td>
+                          {coupon.validUntil
+                            ? new Date(coupon.validUntil).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                        <td>
+                          <button
+                            className="admin-btn"
+                            onClick={() => setEditingCoupon(coupon)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="admin-btn delete-btn"
+                            onClick={() => deleteCoupon(coupon.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                  {editingCoupon && !coupons.find((c) => c.id === editingCoupon.id) && (
+                    <tr key="new-coupon">
+                      <td>
+                        <input
+                          type="text"
+                          value={editingCoupon.code}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              code: e.target.value,
+                            })
+                          }
+                          placeholder="Code"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingCoupon.discountValue}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              discountValue: parseFloat(e.target.value),
+                            })
+                          }
+                          placeholder="Value"
+                        />
+                        <select
+                          value={editingCoupon.discountType}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              discountType: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="percent">%</option>
+                          <option value="fixed">₹</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingCoupon.minOrderValue}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              minOrderValue: parseFloat(e.target.value),
+                            })
+                          }
+                          placeholder="Min. Order"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={editingCoupon.minItemCount}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              minItemCount: parseInt(e.target.value),
+                            })
+                          }
+                          placeholder="Min. Items"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          value={editingCoupon.validUntil}
+                          onChange={(e) =>
+                            setEditingCoupon({
+                              ...editingCoupon,
+                              validUntil: e.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button className="admin-btn" onClick={() => saveCoupon(editingCoupon)}>
+                          Add
+                        </button>
+                        <button
+                          className="admin-btn"
+                          onClick={() => setEditingCoupon(null)}
+                        >
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
-
           {/* Orders Tab */}
           {activeTab === "orders" && (
-            <div className="orders-tab">
-              <h2>
-                {orderStatusTab === "Cancelled" ? "Cancelled Orders" : "Manage Orders"}
-              </h2>
-              <div className="orders-header">
-                <span>Total Orders: {orders.length}</span>
-                <div className="order-tabs">
-                  {["All", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => setOrderStatusTab(status)}
-                      className={orderStatusTab === status ? "active" : ""}
-                    >
-                      {status === "Cancelled" ? "Cancelled Orders" : status}
-                    </button>
-                  ))}
-                </div>
-                <div className="order-search">
-                  <input
-                    type="text"
-                    placeholder="Search orders..."
-                    value={orderSearchQuery}
-                    onChange={(e) => setOrderSearchQuery(e.target.value)}
-                  />
-                </div>
+            <div className="tab-content orders-tab">
+              <h2>Manage Orders</h2>
+              <div className="filter-options">
+                <input
+                  type="text"
+                  placeholder="Search by Order ID or User ID"
+                  value={orderSearchQuery}
+                  onChange={(e) => setOrderSearchQuery(e.target.value)}
+                />
+                <select
+                  value={orderStatusTab}
+                  onChange={(e) => setOrderStatusTab(e.target.value)}
+                >
+                  <option value="All">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Order Cancelled">Cancelled</option>
+                </select>
               </div>
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                )
-                .map((order) => (
-                  <div key={order.orderId} className="order-card-admin">
-                    <h3>Order #{order.orderId}</h3>
-                    <p><strong>Date:</strong> {order.createdAt}</p>
-                    <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                    <p><strong>Current Status:</strong></p>
-                    {order.status === "Order Cancelled" ? (
-                      <span className="status-badge status-ordercancelled">
-                        Order Cancelled
-                      </span>
-                    ) : (
-                      <div>
-                        <label>
-                          Update Status:
+              <div className="order-list-container">
+                {loadingOrders ? (
+                  <p>Loading orders...</p>
+                ) : (
+                  (orders.filter(order =>
+                    (orderStatusTab === "All" || order.status === orderStatusTab) &&
+                    (order.orderId?.includes(orderSearchQuery) || order.userId?.includes(orderSearchQuery))
+                  ).length > 0) ? (
+                    orders.filter(order =>
+                      (orderStatusTab === "All" || order.status === orderStatusTab) &&
+                      (order.orderId?.includes(orderSearchQuery) || order.userId?.includes(orderSearchQuery))
+                    ).map((order) => (
+                      <div key={order.orderId} className="order-card">
+                        <h3>Order #{order.orderId}</h3>
+                        <p>
+                          <strong>User:</strong> {order.userId}
+                        </p>
+                        <p>
+                          <strong>Total:</strong> ₹{order.totalAmount}
+                        </p>
+                        <p>
+                          <strong>Status:</strong> {order.status}
+                        </p>
+                        <div className="order-actions">
                           <select
                             value={order.status}
                             onChange={(e) =>
-                              handleOrderStatusUpdate(
-                                order.orderId,
-                                e.target.value,
-                                order.progressStep
-                              )
+                              handleUpdateOrderStatus(order.orderId, e.target.value)
                             }
                           >
-                            <option value="Order Placed">Order Placed</option>
+                            <option value="Pending">Pending</option>
                             <option value="Processing">Processing</option>
                             <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
+                            <option value="Order Cancelled">Cancelled</option>
                           </select>
-                        </label>
+                          <button
+                            onClick={() => handleorderdetails(order)}
+                            className="details-btn"
+                          >
+                            {detailsLoading ? "Loading..." : "View Details"}
+                          </button>
+                        </div>
                       </div>
-                    )}
-                    <button
-                      className="view-details-btn-dhamaal"
-                      onClick={() => handleorderdetails(order)}
-                    >
-                      See More Details
-                    </button>
-                  </div>
-                ))}
-              {orders
-                .filter((o) => {
-                  if (orderStatusTab === "All") return true;
-                  if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-                  return o.status === orderStatusTab;
-                })
-                .filter((o) =>
-                  o.orderId.toString().includes(orderSearchQuery.trim())
-                ).length === 0 && <p>No orders found.</p>}
+                    ))
+                  ) : (
+                    <p>No orders found matching the criteria.</p>
+                  )
+                )}
+              </div>
               {selectedOrder && (
-                <OrderDetailsPopup
-                  order={selectedOrder}
-                  onClose={() => setSelectedOrder(null)}
-                />
+                <div className="order-details-modal">
+                  <div className="modal-content">
+                    <button className="close-btn" onClick={() => setSelectedOrder(null)}>
+                      &times;
+                    </button>
+                    <h3>Order #{selectedOrder.orderId} Details</h3>
+                    <p>
+                      <strong>User ID:</strong> {selectedOrder.userId}
+                    </p>
+                    <p>
+                      <strong>Total Amount:</strong> ₹{selectedOrder.totalAmount}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {selectedOrder.status}
+                    </p>
+                    <p>
+                      <strong>Ordered On:</strong>{" "}
+                      {new Date(selectedOrder.createdAt).toLocaleString()}
+                    </p>
+                    <p>
+                      <strong>Payment Mode:</strong> {selectedOrder.paymentMode}
+                    </p>
+                    <p>
+                      <strong>Payment Status:</strong> {selectedOrder.paymentStatus}
+                    </p>
+                    <p>
+                      <strong>Address:</strong> {selectedOrder.address}, {selectedOrder.city}, {selectedOrder.state}, {selectedOrder.zip}, {selectedOrder.country}
+                    </p>
+                    <h4>Products</h4>
+                    <ul>
+                      {(selectedOrder.products || []).map((product) => (
+                        <li key={product.productId}>
+                          <img src={product.imageurl} alt={product.productName} width="50" height="50" />
+                          {product.productName} (x{product.quantity}) - ₹{product.price}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               )}
             </div>
           )}
-
+          {/* Users Tab */}
           {activeTab === "users" && (
-  <div className="tab-content users-tab">
-    <h2>Manage Users</h2>
-    <input
-      type="text"
-      placeholder="Search users..."
-      value={userSearchQuery}
-      onChange={(e) => setUserSearchQuery(e.target.value)}
-      className="admin-search-input"
-    />
+            <div className="tab-content users-tab">
+              <h2>Manage Users</h2>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="admin-search-input"
+              />
 
-    {editingUser ? (
-      <div className="user-edit-form">
-        <button onClick={() => setEditingUser(null)} className="back-button">
-          &larr; Back to Users
-        </button>
-        <h3>User Details: {editingUser.name}</h3>
+              {editingUser ? (
+                <div className="user-edit-form">
+                  <button onClick={() => setEditingUser(null)} className="back-button">
+                    &larr; Back to Users
+                  </button>
+                  <h3>User Details: {editingUser.name}</h3>
 
-        <div className="user-details-section">
-          <div className="user-info">
-            <p><strong>Name:</strong> {editingUser.name}</p>
-            <p><strong>Email:</strong> {editingUser.email}</p>
-            <p><strong>Phone:</strong> {editingUser.phone || 'N/A'}</p>
-            <p><strong>Role:</strong> {editingUser.role}</p>
-            <p><strong>Joined At:</strong> {new Date(editingUser.createdAt).toLocaleString()}</p>
-          </div>
+                  <div className="user-details-section">
+                    <div className="user-info">
+                      <p><strong>Name:</strong> {editingUser.name}</p>
+                      <p><strong>Email:</strong> {editingUser.email}</p>
+                      <p><strong>Phone:</strong> {editingUser.phone || 'N/A'}</p>
+                      <p><strong>Role:</strong> {editingUser.role}</p>
+                      <p><strong>Joined At:</strong> {new Date(editingUser.createdAt).toLocaleString()}</p>
+                    </div>
 
-          <div className="addresses-list">
-            <h4>User Addresses</h4>
-            {editingUser.addresses && editingUser.addresses.length > 0 ? (
-              editingUser.addresses.map((address) => (
-                <div key={address.id} className="address-card">
-                  <p><strong>Street:</strong> {address.street}</p>
-                  <p><strong>City:</strong> {address.city}</p>
-                  <p><strong>State:</strong> {address.state}</p>
-                  <p><strong>Zip:</strong> {address.zipCode}</p>
-                  <p><strong>Country:</strong> {address.country}</p>
-                </div>
-              ))
-            ) : (
-              <p>No addresses found for this user.</p>
-            )}
-          </div>
-        </div>
+                    <div className="addresses-list">
+                      <h4>User Addresses</h4>
+                      {editingUser.addresses && editingUser.addresses.length > 0 ? (
+                        editingUser.addresses.map((address) => (
+                          <div key={address.id} className="address-card">
+                            <p><strong>Street:</strong> {address.street}</p>
+                            <p><strong>City:</strong> {address.city}</p>
+                            <p><strong>State:</strong> {address.state}</p>
+                            <p><strong>Zip:</strong> {address.zipCode}</p>
+                            <p><strong>Country:</strong> {address.country}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No addresses found for this user.</p>
+                      )}
+                    </div>
+                  </div>
 
-        <div className="user-orders-section">
-          <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
-          {editingUser.orders && editingUser.orders.length > 0 ? (
-            editingUser.orders.map((order) => (
-              <div key={order.orderId} className="order-card-details">
-                <div className="order-summary">
-                  <h5>Order #{order.orderId}</h5>
-                  <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                  <p><strong>Status:</strong> {order.status}</p>
-                  <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                  <div className="user-orders-section">
+                    <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
+                    {editingUser.orders && editingUser.orders.length > 0 ? (
+                      editingUser.orders.map((order) => (
+                        <div key={order.orderId} className="order-card-details">
+                          <div className="order-summary">
+                            <h5>Order #{order.orderId}</h5>
+                            <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+                            <p><strong>Status:</strong> {order.status}</p>
+                            <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                          </div>
+                          <div className="order-details-actions">
+                            <p><strong>Change Status:</strong></p>
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
+                            >
+                              {["Pending", "Processing", "Shipped", "Delivered", "Canceled"].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                            {order.status !== "Canceled" && (
+                              <button onClick={() => handleCancelOrder(order.orderId)}>Cancel Order</button>
+                            )}
+                          </div>
+                          <div className="order-products-list">
+                            <h6>Products:</h6>
+                            <ul>
+                              {(order.orderItems || []).map(item => (
+                                <li key={item.id}>
+                                  {item.productName} (x{item.quantity}) - ₹{item.price}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No orders found for this user.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="order-details-actions">
-                  <p><strong>Change Status:</strong></p>
-                  <select
-                    value={order.status}
-                    onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
-                  >
-                    {["Pending", "Processing", "Shipped", "Delivered", "Canceled"].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  {order.status !== "Canceled" && (
-                    <button onClick={() => handleCancelOrder(order.orderId)}>Cancel Order</button>
-                  )}
+              ) : (
+                <div className="user-table-container">
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined At</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.id}</td>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>{new Date(user.createdAt).toLocaleString()}</td>
+                          <td>
+                            <button onClick={() => handleEditUser(user)}>View Details</button>
+                            <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="order-products-list">
-                  <h6>Products:</h6>
-                  <ul>
-                    {(order.orderItems || []).map(item => (
-                      <li key={item.id}>
-                        {item.productName} (x{item.quantity}) - ₹{item.price}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>No orders found for this user.</p>
+              )}
+            </div>
           )}
-        </div>
-      </div>
-    ) : (
-      <div className="user-table-container">
-        <table className="user-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Joined At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{new Date(user.createdAt).toLocaleString()}</td>
-                <td>
-                  <button onClick={() => handleEditUser(user)}>View Details</button>
-                  <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </div>
-)}
-
-
           {/* Queries Tab */}
           {activeTab === "queries" && (
             <div className="queries-tab">
-              <h2>User Queries</h2>
-              <div className="query-search">
-                <input
-                  type="text"
-                  placeholder="Search queries by email, phone or date..."
-                  value={querySearch}
-                  onChange={(e) => setQuerySearch(e.target.value)}
-                />
-              </div>
-              {(() => {
-                const filteredQueries = queries.filter(
-                  (q) =>
-                    q.email.toLowerCase().includes(querySearch.toLowerCase()) ||
-                    q.phone.includes(querySearch) ||
-                    (q.date && q.date.includes(querySearch))
-                );
-                return filteredQueries.length > 0 ? (
-                  filteredQueries.map((query, index) => (
-                    <div key={index} className="query-card">
+              <h2>Customer Queries</h2>
+              <input
+                type="text"
+                placeholder="Search queries..."
+                value={querySearch}
+                onChange={(e) => setQuerySearch(e.target.value)}
+                className="admin-search-input"
+              />
+              <div className="query-list-container">
+                {queries
+                  .filter(
+                    (query) =>
+                      query.name
+                        .toLowerCase()
+                        .includes(querySearch.toLowerCase()) ||
+                      query.email
+                        .toLowerCase()
+                        .includes(querySearch.toLowerCase())
+                  )
+                  .map((query) => (
+                    <div className="query-card" key={query.id}>
+                      <h3>{query.name}</h3>
                       <p>
                         <strong>Email:</strong> {query.email}
                       </p>
                       <p>
                         <strong>Phone:</strong> {query.phone}
                       </p>
-                      {query.date && (
-                        <p>
-                          <strong>Date:</strong> {query.date}
-                        </p>
-                      )}
                       <p>
                         <strong>Message:</strong> {query.message}
                       </p>
+                      <p>
+                        <strong>Received:</strong>{" "}
+                        {new Date(query.createdAt).toLocaleString()}
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <p>No queries found.</p>
-                );
-              })()}
+                  ))}
+              </div>
             </div>
           )}
         </div>
@@ -1067,46 +1017,3 @@ const handleCancelOrder = async (orderId) => {
 };
 
 export default AdminPanel;
-
-// The OrderDetailsPopup and ImageUploadModal components need to be imported
-// or defined in this file if they are not separate files.
-const OrderDetailsPopup = ({ order, onClose }) => {
-  return (
-    <div className="modal-overlay-chamkila">
-      <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">×</button>
-        <h2>Order Details (#{order.orderId})</h2>
-        <p><strong>User Name:</strong> {order.userName}</p>
-        <p><strong>Phone:</strong> {order.phone}</p>
-        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-        <p><strong>Status:</strong> {order.status}</p>
-        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
-        <p><strong>Products:</strong></p>
-        <ul>
-          {(order.products || []).map(p => (
-            <li key={p.productId}>
-              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - ₹{p.price}
-            </li>
-          ))}
-        </ul>
-        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-        {order.refund?.id && (
-          <div>
-            <h3>Refund Details</h3>
-            <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
-            <p><strong>Refund Status:</strong> {order.refund.status}</p>
-            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
-            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
-            {order.refund.processed_at && (
-              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
