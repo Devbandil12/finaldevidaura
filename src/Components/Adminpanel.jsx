@@ -1,13 +1,17 @@
-import React, { useState, useContext, useEffect } from "react";
+// src/components/Adminpanel.jsx
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import "../style/adminPanel.css";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { db } from "../../configs/index";
 import { useUser } from "@clerk/clerk-react";
-import { eq } from "drizzle-orm";
 import { useNavigate } from "react-router-dom";
+import ImageUploadModal from "./ImageUploadModal";
+import { CouponContext } from "../contexts/CouponContext";
+import { toast, ToastContainer } from "react-toastify";
+import OrderChart from "./OrderChart";
+import { db } from "../../configs/index";
 import {
   addToCartTable,
   orderItemsTable,
@@ -15,30 +19,19 @@ import {
   productsTable,
   usersTable,
 } from "../../configs/schema";
-import ImageUploadModal from "./ImageUploadModal";
-import { CouponContext } from "../contexts/CouponContext";
-import { toast, ToastContainer } from "react-toastify";
-import OrderChart from "./OrderChart"; // Import the new chart component
+import { eq } from "drizzle-orm";
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("dashboard"); // Default to 'dashboard'
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
-  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
-
-const { users, getallusers } = useContext(UserContext);
-
-const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
-
+  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { users, getallusers } = useContext(UserContext);
+  const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
   const { queries, getquery } = useContext(ContactContext);
-
   const { user } = useUser();
-  
-
-
-const [editingUser, setEditingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
@@ -46,10 +39,7 @@ const [editingUser, setEditingUser] = useState(null);
   const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
-  const [usersList, setUsersList] = useState([]);
 
-
-  
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -61,60 +51,48 @@ const [editingUser, setEditingUser] = useState(null);
     deleteCoupon,
     refreshCoupons
   } = useContext(CouponContext);
-  
+
   // --- Data Fetching and Effects ---
 
-useEffect(() => {
-    getallusers();
-  }, [getallusers]);
-
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await db.select().from(usersTable);
-        setUsersList(res);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
-    getquery();
-  }, []);
-
-  const userdetails = async () => {
+  const userdetails = useCallback(async () => {
     try {
-      const res = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user?.primaryEmailAddress?.emailAddress));
-      setUserkiDetails(res[0]);
-      if (res[0].role !== "admin") {
+      const res = await fetch(`${BASE}/api/users/find-by-email?email=${user?.primaryEmailAddress?.emailAddress}`);
+      const data = await res.json();
+      setUserkiDetails(data);
+      if (data?.role !== "admin") {
         navigate("/");
       }
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [user, navigate, BASE]);
 
   useEffect(() => {
     if (user) {
       userdetails();
     }
-  }, [user]);
+  }, [user, userdetails]);
+  
+  useEffect(() => {
+    getallusers();
+  }, [getallusers]);
+  
+  useEffect(() => {
+    getorders(true, true); // Fetch all orders for admin
+  }, [getorders]);
 
   useEffect(() => {
-    getorders();
-  }, []);
+    getquery();
+  }, [getquery]);
 
   useEffect(() => {
     refreshCoupons();
   }, [refreshCoupons]);
-  
+
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
   const totalProducts = products.length;
-  const totalUsers = usersList.length;
+  const totalUsers = users.length;
   const totalQueries = queries.length;
 
   const deliveredOrders = orders.filter(o => o.status === "Delivered").length;
@@ -127,7 +105,6 @@ useEffect(() => {
   const handleProductUpdate = async () => {
     setLoading(true);
     try {
-      // Pass the entire editingProduct object directly to the context function
       await updateProduct(editingProduct.id, {
         ...editingProduct,
         discount: Number(editingProduct.discount),
@@ -135,7 +112,6 @@ useEffect(() => {
         size: Number(editingProduct.size),
         quantity: Number(editingProduct.quantity),
       });
-
       setEditingProduct(null);
       toast.success("Product updated successfully!");
     } catch (error) {
@@ -151,7 +127,6 @@ useEffect(() => {
     if (confirmation) {
       setLoading(true);
       try {
-        // Use the new deleteProduct function from ProductContext
         await deleteProduct(productId);
         setLoading(false);
         toast.success("Product deleted successfully!");
@@ -163,47 +138,13 @@ useEffect(() => {
     }
   };
   
-  
-  const updateorderstatus = async (orderId, newStatus, newProgressStep) => {
-    try {
-      await db
-        .update(ordersTable)
-        .set({ status: newStatus, progressStep: newProgressStep })
-        .where(eq(ordersTable.id, orderId));
-      console.log("updated");
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  
-  const handleOrderStatusUpdate = (orderId, newStatus, newProgressStep) => {
-    updateorderstatus(orderId, newStatus, newProgressStep);
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? { ...order, status: newStatus, progressStep: newProgressStep }
-        : order
-    );
-    setOrders(updatedOrders);
-  };
-  
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
-      const items = await db
-        .select({
-          productId: orderItemsTable.productId,
-          quantity: orderItemsTable.quantity,
-          price: orderItemsTable.price,
-          productName: productsTable.name,
-          imageurl: productsTable.imageurl
-        })
-        .from(orderItemsTable)
-        .innerJoin(productsTable, eq(orderItemsTable.productId, productsTable.id))
-        .where(eq(orderItemsTable.orderId, order.orderId));
-      setSelectedOrder({
-        ...order,
-        products: items
-      });
+      const details = await getSingleOrderDetails(order.orderId);
+      if (details) {
+        setSelectedOrder(details);
+      }
     } catch (error) {
       console.error("Error fetching order products:", error);
       toast.error("Failed to load order details.");
@@ -211,66 +152,56 @@ useEffect(() => {
       setDetailsLoading(false);
     }
   };
-  
-  const usersWithOrders = usersList.map((user) => ({
-    ...user,
-    orders: orders.filter((order) => order.userId === user.id),
-  }));
-  const filteredUsers = usersWithOrders.filter(
+
+  const filteredUsers = users.filter(
     (user) =>
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user?.phone?.includes(userSearchQuery)
   );
 
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+  };
+  
+  const handleSaveUser = async () => {
+    try {
+      const res = await fetch(`${BASE}/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingUser),
+      });
+      if (!res.ok) throw new Error("Failed to update user");
+      toast.success("User updated successfully!");
+      setEditingUser(null);
+      getallusers();
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      toast.error("Failed to update user.");
+    }
+  };
 
-// Functions to handle user management
-const handleEditUser = (user) => {
-  setEditingUser(user);
-};
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`${BASE}/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete user");
+      toast.success("User deleted successfully!");
+      getallusers();
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast.error("Failed to delete user.");
+    }
+  };
 
-const handleSaveUser = async () => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${editingUser.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingUser),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
-    toast.success("User updated successfully!");
-    setEditingUser(null);
-    getallusers(); // Refresh the user list
-  } catch (error) {
-    console.error("Failed to update user:", error);
-    toast.error("Failed to update user.");
-  }
-};
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    await updateOrderStatus(orderId, newStatus);
+  };
 
-const handleDeleteUser = async (userId) => {
-  if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
-  try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete user");
-    toast.success("User deleted successfully!");
-    getallusers(); // Refresh the user list
-  } catch (error) {
-    console.error("Failed to delete user:", error);
-    toast.error("Failed to delete user.");
-  }
-};
-
-// Functions to handle order management (these use the new functions from OrderContext)
-const handleUpdateOrderStatus = async (orderId, newStatus) => {
-  await updateOrderStatus(orderId, newStatus);
-};
-
-const handleCancelOrder = async (orderId) => {
-  await cancelOrder(orderId);
-};
-
-
-
+  const handleCancelOrder = async (orderId) => {
+    await cancelOrder(orderId);
+  };
 
   // --- JSX Rendering ---
   return (
@@ -601,203 +532,201 @@ const handleCancelOrder = async (orderId) => {
               </button>
 
               <table className="coupon-table">
-  <thead>
-    <tr>
-      <th>Code</th>
-      <th>Type</th>
-      <th>Value</th>
-      <th>Min ₹</th>
-      <th>Min Items</th>
-      <th>Description</th>
-      <th>Max Usage/User</th>
-      <th>First Order Only</th>
-      <th>Valid From</th>
-      <th>Valid Until</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {editingCoupon && (
-      <tr>
-        <td>
-          <input
-            placeholder="Code"
-            value={editingCoupon.code || ""}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({ ...ec, code: e.target.value }))
-            }
-          />
-        </td>
-        <td>
-          <select
-            value={editingCoupon.discountType}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                discountType: e.target.value,
-              }))
-            }
-          >
-            <option value="percent">percent</option>
-            <option value="flat">flat</option>
-          </select>
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Value"
-            value={editingCoupon.discountValue ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                discountValue: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Min ₹"
-            value={editingCoupon.minOrderValue ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                minOrderValue: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Min Items"
-            value={editingCoupon.minItemCount ?? 0}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                minItemCount: +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            placeholder="Description"
-            value={editingCoupon.description}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                description: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="number"
-            placeholder="Max usage per user"
-            value={editingCoupon.maxUsagePerUser ?? ""}
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                maxUsagePerUser: e.target.value === "" ? null : +e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <label>
-            <input
-              type="checkbox"
-              checked={editingCoupon.firstOrderOnly ?? false}
-              onChange={(e) =>
-                setEditingCoupon((ec) => ({
-                  ...ec,
-                  firstOrderOnly: e.target.checked,
-                }))
-              }
-            />
-          </label>
-        </td>
-        <td>
-          <input
-            type="date"
-            value={
-              editingCoupon.validFrom
-                ? new Date(editingCoupon.validFrom).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                validFrom: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-          <input
-            type="date"
-            value={
-              editingCoupon.validUntil
-                ? new Date(editingCoupon.validUntil).toISOString().split("T")[0]
-                : ""
-            }
-            onChange={(e) =>
-              setEditingCoupon((ec) => ({
-                ...ec,
-                validUntil: e.target.value,
-              }))
-            }
-          />
-        </td>
-        <td>
-         <button className="admin-btn" onClick={saveCoupon}>
-  Save
-</button>
-
-          <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
-            Cancel
-          </button>
-        </td>
-      </tr>
-    )}
-    {coupons.map((c) => (
-      <tr key={c.id}>
-        <td>{c.code}</td>
-        <td>{c.discountType}</td>
-        <td>
-          {c.discountType === "percent"
-            ? `${c.discountValue}%`
-            : `₹${c.discountValue}`}
-        </td>
-        <td>₹{c.minOrderValue}</td>
-        <td>{c.minItemCount}</td>
-        <td>{c.description}</td>
-        <td>{c.maxUsagePerUser ?? "∞"}</td>
-        <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
-        <td>{new Date(c.validFrom).toLocaleDateString()}</td>
-        <td>{new Date(c.validUntil).toLocaleDateString()}</td>
-        <td>
-          <button
-            className="admin-btn"
-            onClick={() => setEditingCoupon({ ...c })}
-          >
-            Edit
-          </button>
-          <button
-            className="admin-btn delete-btn"
-            onClick={() => deleteCoupon(c.id)}
-          >
-            Delete
-          </button>
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Min ₹</th>
+                    <th>Min Items</th>
+                    <th>Description</th>
+                    <th>Max Usage/User</th>
+                    <th>First Order Only</th>
+                    <th>Valid From</th>
+                    <th>Valid Until</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editingCoupon && (
+                    <tr>
+                      <td>
+                        <input
+                          placeholder="Code"
+                          value={editingCoupon.code || ""}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({ ...ec, code: e.target.value }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <select
+                          value={editingCoupon.discountType}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              discountType: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="percent">percent</option>
+                          <option value="flat">flat</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Value"
+                          value={editingCoupon.discountValue ?? 0}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              discountValue: +e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Min ₹"
+                          value={editingCoupon.minOrderValue ?? 0}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              minOrderValue: +e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Min Items"
+                          value={editingCoupon.minItemCount ?? 0}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              minItemCount: +e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          placeholder="Description"
+                          value={editingCoupon.description}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              description: e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          placeholder="Max usage per user"
+                          value={editingCoupon.maxUsagePerUser ?? ""}
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              maxUsagePerUser: e.target.value === "" ? null : +e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={editingCoupon.firstOrderOnly ?? false}
+                            onChange={(e) =>
+                              setEditingCoupon((ec) => ({
+                                ...ec,
+                                firstOrderOnly: e.target.checked,
+                              }))
+                            }
+                          />
+                        </label>
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          value={
+                            editingCoupon.validFrom
+                              ? new Date(editingCoupon.validFrom).toISOString().split("T")[0]
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              validFrom: e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="date"
+                          value={
+                            editingCoupon.validUntil
+                              ? new Date(editingCoupon.validUntil).toISOString().split("T")[0]
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setEditingCoupon((ec) => ({
+                              ...ec,
+                              validUntil: e.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button className="admin-btn" onClick={saveCoupon}>
+                          Save
+                        </button>
+                        <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                  {coupons.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.code}</td>
+                      <td>{c.discountType}</td>
+                      <td>
+                        {c.discountType === "percent"
+                          ? `${c.discountValue}%`
+                          : `₹${c.discountValue}`}
+                      </td>
+                      <td>₹{c.minOrderValue}</td>
+                      <td>{c.minItemCount}</td>
+                      <td>{c.description}</td>
+                      <td>{c.maxUsagePerUser ?? "∞"}</td>
+                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
+                      <td>{new Date(c.validFrom).toLocaleDateString()}</td>
+                      <td>{new Date(c.validUntil).toLocaleDateString()}</td>
+                      <td>
+                        <button
+                          className="admin-btn"
+                          onClick={() => setEditingCoupon({ ...c })}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="admin-btn delete-btn"
+                          onClick={() => deleteCoupon(c.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -855,11 +784,7 @@ const handleCancelOrder = async (orderId) => {
                           <select
                             value={order.status}
                             onChange={(e) =>
-                              handleOrderStatusUpdate(
-                                order.orderId,
-                                e.target.value,
-                                order.progressStep
-                              )
+                              handleUpdateOrderStatus(order.orderId, e.target.value)
                             }
                           >
                             <option value="Order Placed">Order Placed</option>
@@ -897,124 +822,123 @@ const handleCancelOrder = async (orderId) => {
           )}
 
           {activeTab === "users" && (
-  <div className="tab-content users-tab">
-    <h2>Manage Users</h2>
-    <input
-      type="text"
-      placeholder="Search users..."
-      value={userSearchQuery}
-      onChange={(e) => setUserSearchQuery(e.target.value)}
-      className="admin-search-input"
-    />
+            <div className="tab-content users-tab">
+              <h2>Manage Users</h2>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="admin-search-input"
+              />
 
-    {editingUser ? (
-      <div className="user-edit-form">
-        <button onClick={() => setEditingUser(null)} className="back-button">
-          &larr; Back to Users
-        </button>
-        <h3>User Details: {editingUser.name}</h3>
+              {editingUser ? (
+                <div className="user-edit-form">
+                  <button onClick={() => setEditingUser(null)} className="back-button">
+                    &larr; Back to Users
+                  </button>
+                  <h3>User Details: {editingUser.name}</h3>
 
-        <div className="user-details-section">
-          <div className="user-info">
-            <p><strong>Name:</strong> {editingUser.name}</p>
-            <p><strong>Email:</strong> {editingUser.email}</p>
-            <p><strong>Phone:</strong> {editingUser.phone || 'N/A'}</p>
-            <p><strong>Role:</strong> {editingUser.role}</p>
-            <p><strong>Joined At:</strong> {new Date(editingUser.createdAt).toLocaleString()}</p>
-          </div>
+                  <div className="user-details-section">
+                    <div className="user-info">
+                      <p><strong>Name:</strong> {editingUser.name}</p>
+                      <p><strong>Email:</strong> {editingUser.email}</p>
+                      <p><strong>Phone:</strong> {editingUser.phone || 'N/A'}</p>
+                      <p><strong>Role:</strong> {editingUser.role}</p>
+                      <p><strong>Joined At:</strong> {new Date(editingUser.createdAt).toLocaleString()}</p>
+                    </div>
 
-          <div className="addresses-list">
-            <h4>User Addresses</h4>
-            {editingUser.addresses && editingUser.addresses.length > 0 ? (
-              editingUser.addresses.map((address) => (
-                <div key={address.id} className="address-card">
-                  <p><strong>Street:</strong> {address.street}</p>
-                  <p><strong>City:</strong> {address.city}</p>
-                  <p><strong>State:</strong> {address.state}</p>
-                  <p><strong>Zip:</strong> {address.zipCode}</p>
-                  <p><strong>Country:</strong> {address.country}</p>
-                </div>
-              ))
-            ) : (
-              <p>No addresses found for this user.</p>
-            )}
-          </div>
-        </div>
+                    <div className="addresses-list">
+                      <h4>User Addresses</h4>
+                      {editingUser.addresses && editingUser.addresses.length > 0 ? (
+                        editingUser.addresses.map((address) => (
+                          <div key={address.id} className="address-card">
+                            <p><strong>Street:</strong> {address.street}</p>
+                            <p><strong>City:</strong> {address.city}</p>
+                            <p><strong>State:</strong> {address.state}</p>
+                            <p><strong>Zip:</strong> {address.zipCode}</p>
+                            <p><strong>Country:</strong> {address.country}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No addresses found for this user.</p>
+                      )}
+                    </div>
+                  </div>
 
-        <div className="user-orders-section">
-          <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
-          {editingUser.orders && editingUser.orders.length > 0 ? (
-            editingUser.orders.map((order) => (
-              <div key={order.orderId} className="order-card-details">
-                <div className="order-summary">
-                  <h5>Order #{order.orderId}</h5>
-                  <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                  <p><strong>Status:</strong> {order.status}</p>
-                  <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                  <div className="user-orders-section">
+                    <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
+                    {editingUser.orders && editingUser.orders.length > 0 ? (
+                      editingUser.orders.map((order) => (
+                        <div key={order.orderId} className="order-card-details">
+                          <div className="order-summary">
+                            <h5>Order #{order.orderId}</h5>
+                            <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+                            <p><strong>Status:</strong> {order.status}</p>
+                            <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                          </div>
+                          <div className="order-details-actions">
+                            <p><strong>Change Status:</strong></p>
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
+                            >
+                              {["Pending", "Processing", "Shipped", "Delivered", "Canceled"].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                            {order.status !== "Canceled" && (
+                              <button onClick={() => handleCancelOrder(order.orderId)}>Cancel Order</button>
+                            )}
+                          </div>
+                          <div className="order-products-list">
+                            <h6>Products:</h6>
+                            <ul>
+                              {(order.orderItems || []).map(item => (
+                                <li key={item.id}>
+                                  {item.productName} (x{item.quantity}) - ₹{item.price}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>No orders found for this user.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="order-details-actions">
-                  <p><strong>Change Status:</strong></p>
-                  <select
-                    value={order.status}
-                    onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
-                  >
-                    {["Pending", "Processing", "Shipped", "Delivered", "Canceled"].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  {order.status !== "Canceled" && (
-                    <button onClick={() => handleCancelOrder(order.orderId)}>Cancel Order</button>
-                  )}
+              ) : (
+                <div className="user-table-container">
+                  <table className="user-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Joined At</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user) => (
+                        <tr key={user.id}>
+                          <td>{user.id}</td>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>{new Date(user.createdAt).toLocaleString()}</td>
+                          <td>
+                            <button onClick={() => handleEditUser(user)}>View Details</button>
+                            <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="order-products-list">
-                  <h6>Products:</h6>
-                  <ul>
-                    {(order.orderItems || []).map(item => (
-                      <li key={item.id}>
-                        {item.productName} (x{item.quantity}) - ₹{item.price}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>No orders found for this user.</p>
+              )}
+            </div>
           )}
-        </div>
-      </div>
-    ) : (
-      <div className="user-table-container">
-        <table className="user-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Joined At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{new Date(user.createdAt).toLocaleString()}</td>
-                <td>
-                  <button onClick={() => handleEditUser(user)}>View Details</button>
-                  <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </div>
-)}
-
 
           {/* Queries Tab */}
           {activeTab === "queries" && (
