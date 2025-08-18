@@ -576,144 +576,202 @@ const AdminPanel = () => {
               </button>
 
               <table className="coupon-table">
-                <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                    <th>Min ₹</th>
-                    <th>Min Items</th>
-                    <th>Description</th>
-                    <th>Max Usage/User</th>
-                    <th>First Order Only</th>
-                    <th>Valid From</th>
-                    <th>Valid Until</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {editingCoupon && (
-                    <tr>
-                      <td>
-                        <input
-                          placeholder="Code"
-                          value={editingCoupon.code || ""}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, code: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          value={editingCoupon.discountType}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountType: e.target.value }))}
-                        >
-                          <option value="percent">percent</option>
-                          <option value="flat">flat</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Value"
-                          value={editingCoupon.discountValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, discountValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min ₹"
-                          value={editingCoupon.minOrderValue ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minOrderValue: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Min Items"
-                          value={editingCoupon.minItemCount ?? 0}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, minItemCount: +e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          placeholder="Description"
-                          value={editingCoupon.description}
-                          onChange={e => setEditingCoupon(ec => ({ ...ec, description: e.target.value }))}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          placeholder="Max usage per user"
-                          value={editingCoupon.maxUsagePerUser ?? ""}
-                          onChange={e => setEditingCoupon(ec => ({
-                            ...ec,
-                            maxUsagePerUser: e.target.value === "" ? null : +e.target.value
-                          }))}
-                        />
-                      </td>
-                      <td>
-                        <label>
-                          First Order Only:
-                          <input
-                            type="checkbox"
-                            checked={editingCoupon.firstOrderOnly ?? false}
-                            onChange={e =>
-                              setEditingCoupon(ec => ({ ...ec, firstOrderOnly: e.target.checked }))
-                            }
-                          />
-                        </label>
-                      </td>
-                     <td>
-      <input
-        type="date"
-        value={editingId === coupon.id ? editedCoupon.validFrom : coupon.validFrom}
-        onChange={(e) => setEditedCoupon({ ...editedCoupon, validFrom: e.target.value })}
-      />
-    </td>
-    <td>
-      <input
-        type="date"
-        value={editingId === coupon.id ? editedCoupon.validUntil : coupon.validUntil}
-        onChange={(e) => setEditedCoupon({ ...editedCoupon, validUntil: e.target.value })}
-      />
-    </td>
-                      <td>
-                        <button className="admin-btn" onClick={saveCoupon}>
-                          Save
-                        </button>
-                        <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-                  {coupons.map(c => (
-                    <tr key={c.id}>
-                      <td>{c.code}</td>
-                      <td>{c.discountType}</td>
-                      <td>
-                        {c.discountType === "percent"
-                          ? `${c.discountValue}%`
-                          : `₹${c.discountValue}`}
-                      </td>
-                      <td>₹{c.minOrderValue}</td>
-                      <td>{c.minItemCount}</td>
-                      <td>{c.description}</td>
-                      <td>{c.maxUsagePerUser ?? "∞"}</td>
-                      <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
-                      <td>
-                        <button className="admin-btn" onClick={() => setEditingCoupon({ ...c })}>
-                          Edit
-                        </button>
-                        <button className="admin-btn delete-btn" onClick={() => deleteCoupon(c.id)}>
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Type</th>
+      <th>Value</th>
+      <th>Min ₹</th>
+      <th>Min Items</th>
+      <th>Description</th>
+      <th>Max Usage/User</th>
+      <th>First Order Only</th>
+      <th>Valid From</th>
+      <th>Valid Until</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {editingCoupon && (
+      <tr>
+        <td>
+          <input
+            placeholder="Code"
+            value={editingCoupon.code || ""}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({ ...ec, code: e.target.value }))
+            }
+          />
+        </td>
+        <td>
+          <select
+            value={editingCoupon.discountType}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                discountType: e.target.value,
+              }))
+            }
+          >
+            <option value="percent">percent</option>
+            <option value="flat">flat</option>
+          </select>
+        </td>
+        <td>
+          <input
+            type="number"
+            placeholder="Value"
+            value={editingCoupon.discountValue ?? 0}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                discountValue: +e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <input
+            type="number"
+            placeholder="Min ₹"
+            value={editingCoupon.minOrderValue ?? 0}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                minOrderValue: +e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <input
+            type="number"
+            placeholder="Min Items"
+            value={editingCoupon.minItemCount ?? 0}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                minItemCount: +e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <input
+            placeholder="Description"
+            value={editingCoupon.description}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                description: e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <input
+            type="number"
+            placeholder="Max usage per user"
+            value={editingCoupon.maxUsagePerUser ?? ""}
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                maxUsagePerUser: e.target.value === "" ? null : +e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <label>
+            <input
+              type="checkbox"
+              checked={editingCoupon.firstOrderOnly ?? false}
+              onChange={(e) =>
+                setEditingCoupon((ec) => ({
+                  ...ec,
+                  firstOrderOnly: e.target.checked,
+                }))
+              }
+            />
+          </label>
+        </td>
+        <td>
+          <input
+            type="date"
+            value={
+              editingCoupon.validFrom
+                ? new Date(editingCoupon.validFrom).toISOString().split("T")[0]
+                : ""
+            }
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                validFrom: e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <input
+            type="date"
+            value={
+              editingCoupon.validUntil
+                ? new Date(editingCoupon.validUntil).toISOString().split("T")[0]
+                : ""
+            }
+            onChange={(e) =>
+              setEditingCoupon((ec) => ({
+                ...ec,
+                validUntil: e.target.value,
+              }))
+            }
+          />
+        </td>
+        <td>
+          <button className="admin-btn" onClick={saveCoupon}>
+            Save
+          </button>
+          <button className="admin-btn" onClick={() => setEditingCoupon(null)}>
+            Cancel
+          </button>
+        </td>
+      </tr>
+    )}
+    {coupons.map((c) => (
+      <tr key={c.id}>
+        <td>{c.code}</td>
+        <td>{c.discountType}</td>
+        <td>
+          {c.discountType === "percent"
+            ? `${c.discountValue}%`
+            : `₹${c.discountValue}`}
+        </td>
+        <td>₹{c.minOrderValue}</td>
+        <td>{c.minItemCount}</td>
+        <td>{c.description}</td>
+        <td>{c.maxUsagePerUser ?? "∞"}</td>
+        <td>{c.firstOrderOnly ? "✅" : "❌"}</td>
+        <td>{new Date(c.validFrom).toLocaleDateString()}</td>
+        <td>{new Date(c.validUntil).toLocaleDateString()}</td>
+        <td>
+          <button
+            className="admin-btn"
+            onClick={() => setEditingCoupon({ ...c })}
+          >
+            Edit
+          </button>
+          <button
+            className="admin-btn delete-btn"
+            onClick={() => deleteCoupon(c.id)}
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
             </div>
           )}
 
