@@ -26,10 +26,17 @@ const AdminPanel = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   
   const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
-  const { orders, setOrders, getorders } = useContext(OrderContext);
+
+const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
+
   const { queries, getquery } = useContext(ContactContext);
+
   const { user } = useUser();
   
+
+
+const [editingUser, setEditingUser] = useState(null);
+const [selectedOrder, setSelectedOrder] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
@@ -206,6 +213,56 @@ const AdminPanel = () => {
       user?.name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user?.phone?.includes(userSearchQuery)
   );
+
+
+// Functions to handle user management
+const handleEditUser = (user) => {
+  setEditingUser(user);
+};
+
+const handleSaveUser = async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${editingUser.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingUser),
+    });
+    if (!res.ok) throw new Error("Failed to update user");
+    toast.success("User updated successfully!");
+    setEditingUser(null);
+    getallusers(); // Refresh the user list
+  } catch (error) {
+    console.error("Failed to update user:", error);
+    toast.error("Failed to update user.");
+  }
+};
+
+const handleDeleteUser = async (userId) => {
+  if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Failed to delete user");
+    toast.success("User deleted successfully!");
+    getallusers(); // Refresh the user list
+  } catch (error) {
+    console.error("Failed to delete user:", error);
+    toast.error("Failed to delete user.");
+  }
+};
+
+// Functions to handle order management (these use the new functions from OrderContext)
+const handleUpdateOrderStatus = async (orderId, newStatus) => {
+  await updateOrderStatus(orderId, newStatus);
+};
+
+const handleCancelOrder = async (orderId) => {
+  await cancelOrder(orderId);
+};
+
+
+
 
   // --- JSX Rendering ---
   return (
@@ -831,44 +888,125 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Users Tab */}
           {activeTab === "users" && (
-            <div className="users-tab">
-              <h2>User Details</h2>
-              <div className="user-search">
-                <input
-                  type="text"
-                  placeholder="Search users by name or phone..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                />
+  <div className="tab-content users-tab">
+    <h2>Manage Users</h2>
+    <input
+      type="text"
+      placeholder="Search users..."
+      value={userSearchQuery}
+      onChange={(e) => setUserSearchQuery(e.target.value)}
+      className="admin-search-input"
+    />
+
+    {editingUser ? (
+      <div className="user-edit-form">
+        <button onClick={() => setEditingUser(null)} className="back-button">
+          &larr; Back to Users
+        </button>
+        <h3>User Details: {editingUser.name}</h3>
+
+        <div className="user-details-section">
+          <div className="user-info">
+            <p><strong>Name:</strong> {editingUser.name}</p>
+            <p><strong>Email:</strong> {editingUser.email}</p>
+            <p><strong>Phone:</strong> {editingUser.phone || 'N/A'}</p>
+            <p><strong>Role:</strong> {editingUser.role}</p>
+            <p><strong>Joined At:</strong> {new Date(editingUser.createdAt).toLocaleString()}</p>
+          </div>
+
+          <div className="addresses-list">
+            <h4>User Addresses</h4>
+            {editingUser.addresses && editingUser.addresses.length > 0 ? (
+              editingUser.addresses.map((address) => (
+                <div key={address.id} className="address-card">
+                  <p><strong>Street:</strong> {address.street}</p>
+                  <p><strong>City:</strong> {address.city}</p>
+                  <p><strong>State:</strong> {address.state}</p>
+                  <p><strong>Zip:</strong> {address.zipCode}</p>
+                  <p><strong>Country:</strong> {address.country}</p>
+                </div>
+              ))
+            ) : (
+              <p>No addresses found for this user.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="user-orders-section">
+          <h4>User Orders ({editingUser.orders ? editingUser.orders.length : 0})</h4>
+          {editingUser.orders && editingUser.orders.length > 0 ? (
+            editingUser.orders.map((order) => (
+              <div key={order.orderId} className="order-card-details">
+                <div className="order-summary">
+                  <h5>Order #{order.orderId}</h5>
+                  <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+                  <p><strong>Status:</strong> {order.status}</p>
+                  <p><strong>Ordered On:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+                </div>
+                <div className="order-details-actions">
+                  <p><strong>Change Status:</strong></p>
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleUpdateOrderStatus(order.orderId, e.target.value)}
+                  >
+                    {["Pending", "Processing", "Shipped", "Delivered", "Canceled"].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {order.status !== "Canceled" && (
+                    <button onClick={() => handleCancelOrder(order.orderId)}>Cancel Order</button>
+                  )}
+                </div>
+                <div className="order-products-list">
+                  <h6>Products:</h6>
+                  <ul>
+                    {(order.orderItems || []).map(item => (
+                      <li key={item.id}>
+                        {item.productName} (x{item.quantity}) - ₹{item.price}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <div key={user.id} className="user-card">
-                    <h3>{user.name}</h3>
-                    <p>Phone: {user.phone}</p>
-                    <p>Total Orders: {user.orders.length}</p>
-                    {user.orders.length > 0 && (
-                      <div className="user-orders">
-                        <h4>Orders:</h4>
-                        {user.orders.map((order) => (
-                          <div key={order.orderId} className="user-order">
-                            <span>
-                              Order #{order.orderId} - ₹{order.totalAmount} -{" "}
-                              {order.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p>No users found.</p>
-              )}
-            </div>
+            ))
+          ) : (
+            <p>No orders found for this user.</p>
           )}
+        </div>
+      </div>
+    ) : (
+      <div className="user-table-container">
+        <table className="user-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Joined At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map((user) => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.name}</td>
+                <td>{user.email}</td>
+                <td>{new Date(user.createdAt).toLocaleString()}</td>
+                <td>
+                  <button onClick={() => handleEditUser(user)}>View Details</button>
+                  <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
+
 
           {/* Queries Tab */}
           {activeTab === "queries" && (
