@@ -27,7 +27,7 @@ export const OrderProvider = ({ children }) => {
       const data = await res.json();
       setOrders(data);
     } catch (err) {
-      console.error("❌ Error fetching orders:", err);
+      console.error("âŒ Error fetching orders:", err);
     } finally {
       if (showLoader) setLoadingOrders(false);
     }
@@ -44,7 +44,7 @@ export const OrderProvider = ({ children }) => {
       await getorders(true, true);
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
-      console.error("❌ Failed to update order status:", error);
+      console.error("âŒ Failed to update order status:", error);
       toast.error("Failed to update order status.");
     }
   };
@@ -58,7 +58,7 @@ export const OrderProvider = ({ children }) => {
       toast.success(`Order ${orderId} has been successfully canceled.`);
       await getorders(true, true); // Refresh the orders list for admin
     } catch (error) {
-      console.error("❌ Failed to cancel order:", error);
+      console.error("âŒ Failed to cancel order:", error);
       toast.error("Failed to cancel order.");
     }
   };
@@ -71,7 +71,7 @@ export const OrderProvider = ({ children }) => {
       const data = await res.json();
       return data;
     } catch (error) {
-      console.error("❌ Error fetching order details:", error);
+      console.error("âŒ Error fetching order details:", error);
       toast.error("Failed to load order details.");
       return null;
     }
