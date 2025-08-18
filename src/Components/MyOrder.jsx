@@ -99,8 +99,8 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 };
 
 export default function MyOrders() {
-  // ✅ FIXED: useOrders hook instead of useContext(OrderContext)
-  const { orders, updateOrderRefund } = useContext(OrderContext);
+  
+  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
 
