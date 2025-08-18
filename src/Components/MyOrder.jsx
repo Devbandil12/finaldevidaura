@@ -2,7 +2,7 @@
 
 import React, { useContext, useState } from "react";
 import { createPortal } from "react-dom";
-import { useOrders } from "../contexts/OrderContext"; // ✅ FIXED
+import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import Loader from "./Loader";
@@ -100,7 +100,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 
 export default function MyOrders() {
   // ✅ FIXED: useOrders hook instead of useContext(OrderContext)
-  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } = useOrders();
+  const { orders, updateOrderRefund } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { products } = useContext(ProductContext);
 
