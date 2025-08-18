@@ -1,118 +1,101 @@
-// src/contexts/UserContext.jsx
+// src/contexts/OrderContext.js
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { UserContext } from "./UserContext";
+import { toast } from "react-toastify";
 
-import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
-import { useUser } from "@clerk/clerk-react";
-import { OrderContext } from "./OrderContext";
+export const OrderContext = createContext();
 
-export const UserContext = createContext();
-
-export const UserProvider = ({ children }) => {
-  const [userdetails, setUserdetails] = useState(null);
-  const [address, setAddress] = useState([]);
+export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]);
-  const { user, isLoaded, isSignedIn } = useUser();
-  const [loading, setLoading] = useState(true);
-  const { getorders } = useContext(OrderContext);
-
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const { userdetails } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  const getUserDetail = useCallback(async () => {
-    if (!isLoaded || !isSignedIn) {
-      setUserdetails(null);
+  const getorders = async (showLoader = true, isAdmin = false) => {
+    if (!isAdmin && !userdetails?.id) {
       return;
     }
 
+    if (showLoader) setLoadingOrders(true);
+
     try {
-      const email = user?.primaryEmailAddress?.emailAddress;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerkId = user?.id;
-
-      if (!email || !clerkId) {
-        console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
-        return;
-      }
-
-      let res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
+      const url = isAdmin
+        ? `${BACKEND_URL}/api/orders/`
+        : `${BACKEND_URL}/api/orders/${userdetails.id}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-
-      if (data) {
-        setUserdetails(data);
-      } else {
-        const phone = user?.phoneNumbers?.[0]?.phoneNumber || null;
-        res = await fetch(`${BACKEND_URL}/api/users/add-new-user`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, clerkId, phone }),
-        });
-        const newUser = await res.json();
-        setUserdetails(newUser);
-      }
-    } catch (error) {
-      console.error("❌ Error fetching or adding user:", error);
+      setOrders(data);
+    } catch (err) {
+      console.error("❌ Error fetching orders:", err);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoadingOrders(false);
     }
-  }, [isLoaded, isSignedIn, user, BACKEND_URL]);
+  };
 
-  const getMyOrders = useCallback(async () => {
-    if (!userdetails?.id) return;
+  const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await getorders(false, false, userdetails.id);
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update order status");
+      await getorders(true, true);
+      toast.success(`Order ${orderId} status updated to ${newStatus}`);
     } catch (error) {
-      console.error("❌ Failed to get user orders:", error);
+      console.error("❌ Failed to update order status:", error);
+      toast.error("Failed to update order status.");
     }
-  }, [userdetails, getorders]);
+  };
 
-  const getUserAddress = useCallback(async () => {
-    if (!userdetails?.id) return;
+  const cancelOrder = async (orderId) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
+        method: "PUT",
+      });
+      if (!res.ok) throw new Error("Failed to cancel order");
+      toast.success(`Order ${orderId} has been successfully canceled.`);
+      await getorders(true, true); // Refresh the orders list for admin
+    } catch (error) {
+      console.error("❌ Failed to cancel order:", error);
+      toast.error("Failed to cancel order.");
+    }
+  };
+
+
+  const getSingleOrderDetails = async (orderId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
+      if (!res.ok) throw new Error("Failed to fetch order details");
       const data = await res.json();
-      setAddress(data);
+      return data;
     } catch (error) {
-      console.error("❌ Failed to get user addresses:", error);
+      console.error("❌ Error fetching order details:", error);
+      toast.error("Failed to load order details.");
+      return null;
     }
-  }, [userdetails?.id, BACKEND_URL]);
-
-  const getallusers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/users`);
-      if (!res.ok) throw new Error("Failed to fetch all users");
-      const data = await res.json();
-      setUsers(data);
-    } catch (error) {
-      console.error("❌ Failed to get all users:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [BACKEND_URL]);
-
-  useEffect(() => {
-    getUserDetail();
-  }, [getUserDetail]);
+  };
 
   useEffect(() => {
     if (userdetails) {
-      getMyOrders();
-      getUserAddress();
+      getorders();
     }
-  }, [userdetails, getMyOrders, getUserAddress]);
+  }, [userdetails]);
 
   return (
-    <UserContext.Provider
+    <OrderContext.Provider
       value={{
-        userdetails,
-        address,
         orders,
-        getallusers,
-        users,
-        getUserDetail,
-        loading,
+        getorders,
+        setOrders,
+        loadingOrders,
+        updateOrderStatus,
+        getSingleOrderDetails,
+        cancelOrder,
       }}
     >
       {children}
-    </UserContext.Provider>
+    </OrderContext.Provider>
   );
 };
