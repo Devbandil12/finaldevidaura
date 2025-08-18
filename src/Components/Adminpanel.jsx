@@ -586,6 +586,8 @@ const AdminPanel = () => {
                     <th>Description</th>
                     <th>Max Usage/User</th>
                     <th>First Order Only</th>
+                    <th>Valid From</th>
+                    <th>Valid Until</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -662,6 +664,20 @@ const AdminPanel = () => {
                           />
                         </label>
                       </td>
+                     <td>
+      <input
+        type="date"
+        value={editingId === coupon.id ? editedCoupon.validFrom : coupon.validFrom}
+        onChange={(e) => setEditedCoupon({ ...editedCoupon, validFrom: e.target.value })}
+      />
+    </td>
+    <td>
+      <input
+        type="date"
+        value={editingId === coupon.id ? editedCoupon.validUntil : coupon.validUntil}
+        onChange={(e) => setEditedCoupon({ ...editedCoupon, validUntil: e.target.value })}
+      />
+    </td>
                       <td>
                         <button className="admin-btn" onClick={saveCoupon}>
                           Save
