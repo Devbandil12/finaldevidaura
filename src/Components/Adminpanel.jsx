@@ -17,7 +17,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   
-  const { products, updateProduct, deleteProduct } = useContext(ProductContext); 
+  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext); 
 
   const { users, getallusers, userdetails, getUserDetail } = useContext(UserContext);
 
@@ -70,7 +70,7 @@ const AdminPanel = () => {
   }, [userdetails, navigate]);
   
   useEffect(() => {
-    getorders();
+    getorders(true, true);
   }, [getorders]);
 
   useEffect(() => {
@@ -133,7 +133,7 @@ const AdminPanel = () => {
     }
   };
   
-  // Replaced direct DB call with context function
+  [span_0](start_span)// Replaced direct DB call with context function[span_0](end_span)
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
@@ -187,11 +187,11 @@ const AdminPanel = () => {
   
   // Functions to handle order management (these use the new functions from OrderContext)
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    await updateOrderStatus(orderId, newStatus);
+    [span_1](start_span)await updateOrderStatus(orderId, newStatus);[span_1](end_span)
   };
   
   const handleCancelOrder = async (orderId) => {
-    await cancelOrder(orderId);
+    [span_2](start_span)await cancelOrder(orderId);[span_2](end_span)
   };
   // --- JSX Rendering ---
   return (
