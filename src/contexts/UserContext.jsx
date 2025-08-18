@@ -1,6 +1,7 @@
+// src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { OrderContext } from "./OrderContext"; // 1. ADD THIS IMPORT
+import { OrderContext } from "./OrderContext"; // 1. ADD THIS LINE
 
 export const UserContext = createContext();
 
@@ -8,11 +9,11 @@ export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]); // New state for all users
+  const [users, setUsers] = useState([]);
   const { user, isLoaded, isSignedIn } = useUser();
-  const [loading, setLoading] = useState(true); // Add a loading state
+  const [loading, setLoading] = useState(true);
 
-  // 2. ADD THIS LINE
+  // 2. ADD THIS LINE TO GET THE FUNCTION FROM THE OTHER CONTEXT
   const { getorders } = useContext(OrderContext);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -26,43 +27,43 @@ export const UserProvider = ({ children }) => {
     try {
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerkId = user?.id; // Correct variable name from schema
+      const clerkId = user?.id;
 
       if (!email || !clerkId) {
         console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
         return;
       }
 
-      // 1. Try to get existing user using clerkId for a more reliable lookup
       let res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
       const data = await res.json();
 
       if (data) {
         setUserdetails(data);
       } else {
-        // 2. Create new user
-        const postRes = await fetch(`${BACKEND_URL}/api/users`, {
+        const phone = user?.phoneNumbers?.[0]?.phoneNumber || null;
+        res = await fetch(`${BACKEND_URL}/api/users/add-new-user`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, clerkId }), // Use 'clerkId' to match schema
+          body: JSON.stringify({ name, email, clerkId, phone }),
         });
-        const postData = await postRes.json();
-        setUserdetails(postData);
+        const newUser = await res.json();
+        setUserdetails(newUser);
       }
-    } catch (err) {
-      console.error("❌ Error in getUserDetail:", err);
+    } catch (error) {
+      console.error("❌ Error fetching or adding user:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [user, isLoaded, isSignedIn, BACKEND_URL]);
+  }, [isLoaded, isSignedIn, user, BACKEND_URL]);
 
   const getMyOrders = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
-      // 3. CHANGE THIS LINE
       await getorders(false, false, userdetails.id);
     } catch (error) {
-      console.error("❌ Failed to get orders:", error);
+      console.error("❌ Failed to get user orders:", error);
     }
-  }, [userdetails?.id, getorders]);
+  }, [userdetails, getorders]);
 
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) return;
@@ -75,10 +76,9 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // New function to get all users for the admin panel
   const getallusers = useCallback(async () => {
     try {
-      setLoading(true); // Set loading to true before the fetch
+      setLoading(true);
       const res = await fetch(`${BACKEND_URL}/api/users`);
       if (!res.ok) throw new Error("Failed to fetch all users");
       const data = await res.json();
@@ -86,7 +86,7 @@ export const UserProvider = ({ children }) => {
     } catch (error) {
       console.error("❌ Failed to get all users:", error);
     } finally {
-      setLoading(false); // Set loading to false after the fetch completes (success or failure)
+      setLoading(false);
     }
   }, [BACKEND_URL]);
 
@@ -107,10 +107,9 @@ export const UserProvider = ({ children }) => {
         userdetails,
         address,
         orders,
-        getallusers, // Add new function
-        users, // Add new state
+        getallusers,
+        users,
         getUserDetail,
-        setAddress,
         loading,
       }}
     >
