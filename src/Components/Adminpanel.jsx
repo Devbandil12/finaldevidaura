@@ -20,7 +20,7 @@ const AdminPanel = () => {
   const { products, updateProduct, deleteProduct } = useContext(ProductContext);
   
   // Using states and functions from UserContext
-  const { users, getallusers, userdetails, getUserDetail } = useContext(UserContext);
+  const { users, getallusers, userdetails, getUserDetail, loading } = useContext(UserContext);
   
   // Using states and functions from OrderContext
   const { orders, getorders, updateOrderStatus, getSingleOrderDetails, cancelOrder, loadingOrders } = useContext(OrderContext);
@@ -848,6 +848,10 @@ const AdminPanel = () => {
               )}
             </div>
           )}
+
+
+
+
           {/* Users Tab */}
           {activeTab === "users" && (
             <div className="tab-content users-tab">
