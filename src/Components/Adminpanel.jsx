@@ -49,12 +49,14 @@ const AdminPanel = () => {
   }, [userdetails, navigate]);
 
   useEffect(() => {
-    getallusers();
-  }, [getallusers]);
-
-  useEffect(() => {
+  if (activeTab === "orders") {
+    // Pass true to getorders to fetch all orders for the admin panel
     getorders(true, true);
-  }, [getorders]);
+  } else if (activeTab === "users") {
+    getallusers();
+  }
+}, [activeTab, getorders, getallusers]);
+
 
   useEffect(() => {
     getquery();
