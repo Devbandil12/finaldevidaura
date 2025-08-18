@@ -39,7 +39,6 @@ const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingl
 
 
 const [editingUser, setEditingUser] = useState(null);
-const [selectedOrder, setSelectedOrder] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
