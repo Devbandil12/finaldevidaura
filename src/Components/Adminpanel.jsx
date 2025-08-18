@@ -11,24 +11,15 @@ import ImageUploadModal from "./ImageUploadModal";
 import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
-import { db } from "../../configs/index";
-import {
-  addToCartTable,
-  orderItemsTable,
-  ordersTable,
-  productsTable,
-  usersTable,
-} from "../../configs/schema";
-import { eq } from "drizzle-orm";
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const { products, setProducts, updateProduct, deleteProduct } = useContext(ProductContext);
-  const { users, getallusers } = useContext(UserContext);
-  const { orders, setOrders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
+  const { products, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { users, getallusers, userdetails } = useContext(UserContext); // Get userdetails from UserContext
+  const { orders, getorders, loadingOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
   const { queries, getquery } = useContext(ContactContext);
   const { user } = useUser();
   const [editingUser, setEditingUser] = useState(null);
@@ -36,10 +27,8 @@ const AdminPanel = () => {
   const [orderStatusTab, setOrderStatusTab] = useState("All");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [userkiDetails, setUserkiDetails] = useState([]);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [querySearch, setQuerySearch] = useState("");
-
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -53,41 +42,20 @@ const AdminPanel = () => {
   } = useContext(CouponContext);
 
   // --- Data Fetching and Effects ---
-
-  const userdetails = useCallback(async () => {
-    try {
-      const res = await fetch(`${BASE}/api/users/find-by-email?email=${user?.primaryEmailAddress?.emailAddress}`);
-      const data = await res.json();
-      setUserkiDetails(data);
-      if (data?.role !== "admin") {
-        navigate("/");
-      }
-    } catch (error) {
-      console.log(error);
+  useEffect(() => {
+    if (userdetails && userdetails.role !== "admin") {
+      navigate("/");
     }
-  }, [user, navigate, BASE]);
+  }, [userdetails, navigate]);
 
   useEffect(() => {
-    if (user) {
-      userdetails();
+    if (userdetails?.role === "admin") {
+      getallusers();
+      getorders(true, true);
+      getquery();
+      refreshCoupons();
     }
-  }, [user, userdetails]);
-  
-  useEffect(() => {
-    getallusers();
-  }, [getallusers]);
-  
-  useEffect(() => {
-    getorders(true, true); // Fetch all orders for admin
-  }, [getorders]);
-
-  useEffect(() => {
-    getquery();
-  }, [getquery]);
-
-  useEffect(() => {
-    refreshCoupons();
-  }, [refreshCoupons]);
+  }, [userdetails, getallusers, getorders, getquery, refreshCoupons]);
 
   // --- Analysis Data Calculation ---
   const totalOrders = orders.length;
@@ -205,7 +173,7 @@ const AdminPanel = () => {
 
   // --- JSX Rendering ---
   return (
-    user && userkiDetails.role === "admin" && (
+    user && userdetails?.role === "admin" && (
       <div className="admin-panel">
         <div className="absolute">
           <ToastContainer />
@@ -992,8 +960,7 @@ const AdminPanel = () => {
 
 export default AdminPanel;
 
-// The OrderDetailsPopup and ImageUploadModal components need to be imported
-// or defined in this file if they are not separate files.
+// OrderDetailsPopup component remains the same
 const OrderDetailsPopup = ({ order, onClose }) => {
   return (
     <div className="modal-overlay-chamkila">
