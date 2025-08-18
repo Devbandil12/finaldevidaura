@@ -1,5 +1,6 @@
-Import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { OrderContext } from "./OrderContext"; // 1. ADD THIS IMPORT
 
 export const UserContext = createContext();
 
@@ -9,7 +10,10 @@ export const UserProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]); // New state for all users
   const { user, isLoaded, isSignedIn } = useUser();
-const [loading, setLoading] = useState(true); // Add a loading state
+  const [loading, setLoading] = useState(true); // Add a loading state
+
+  // 2. ADD THIS LINE
+  const { getorders } = useContext(OrderContext);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -53,13 +57,12 @@ const [loading, setLoading] = useState(true); // Add a loading state
   const getMyOrders = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/orders`);
-      const data = await res.json();
-      setOrders(data);
+      // 3. CHANGE THIS LINE
+      await getorders(false, false, userdetails.id);
     } catch (error) {
       console.error("❌ Failed to get orders:", error);
     }
-  }, [userdetails?.id, BACKEND_URL]);
+  }, [userdetails?.id, getorders]);
 
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) return;
@@ -75,7 +78,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
   // New function to get all users for the admin panel
   const getallusers = useCallback(async () => {
     try {
-     setLoading(true); // Set loading to true before the fetch
+      setLoading(true); // Set loading to true before the fetch
       const res = await fetch(`${BACKEND_URL}/api/users`);
       if (!res.ok) throw new Error("Failed to fetch all users");
       const data = await res.json();
@@ -83,8 +86,8 @@ const [loading, setLoading] = useState(true); // Add a loading state
     } catch (error) {
       console.error("❌ Failed to get all users:", error);
     } finally {
-    setLoading(false); // Set loading to false after the fetch completes (success or failure)
-  }
+      setLoading(false); // Set loading to false after the fetch completes (success or failure)
+    }
   }, [BACKEND_URL]);
 
   useEffect(() => {
