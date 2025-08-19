@@ -132,7 +132,7 @@ export default function MyOrders() {
   const reorder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return;
-    const items = order.items.map((item) => ({
+    const items = order.orderItems.map((item) => ({
       product: {
         id: item.productId,
         name: item.productName,
@@ -233,7 +233,7 @@ export default function MyOrders() {
         {!loadingOrders && sortedOrders.length === 0 && <p>No orders found.</p>}
 
         {sortedOrders.map((order) => {
-          const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
+          const totalItems = order.ordeItems.reduce((sum, i) => sum + i.quantity, 0);
 
           // ✅ Map refund fields from DB
           const r = order.refund_status
@@ -267,7 +267,7 @@ export default function MyOrders() {
               </div>
 
               <div className="order-items">
-                {order.items.map((item, i) => {
+                {order.orderItems.map((item, i) => {
                   const fallback = products.find((p) => p.id === item.productId);
                   const imgSrc = item.img || fallback?.imageurl || "/fallback.png";
                   return (
