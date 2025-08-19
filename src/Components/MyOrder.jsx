@@ -37,7 +37,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 
   const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
-  
+
   let icon, message, details, cardClass;
 
   switch (status) {
@@ -100,9 +100,7 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 
 export default function MyOrders() {
   const { orders, cancelOrder, loadingOrders } = useContext(OrderContext);
-
   const { userdetails } = useContext(UserContext);
-
   const { products } = useContext(ProductContext);
 
   const [expandedOrders, setExpandedOrders] = useState({});
@@ -117,26 +115,22 @@ export default function MyOrders() {
   }
 
   const sortedOrders = (orders || [])
-  .filter((o) => userdetails?.id && o.userId === userdetails.id)
-  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .filter((o) => userdetails?.id && o.userId === userdetails.id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-
-  
   const handleConfirmCancel = async () => {
-  if (!modalOrder) return;
-  setCancellingOrderId(modalOrder.orderId);
-  setIsModalOpen(false);
+    if (!modalOrder) return;
+    setCancellingOrderId(modalOrder.id);
+    setIsModalOpen(false);
 
-  // ✅ Use context cancelOrder (handles Razorpay + COD)
-  await cancelOrder(modalOrder.orderId, modalOrder.paymentMode, modalOrder.totalAmount);
+    await cancelOrder(modalOrder.id, modalOrder.paymentMode, modalOrder.totalAmount);
 
-  setCancellingOrderId(null);
-  setModalOrder(null);
-};
-
+    setCancellingOrderId(null);
+    setModalOrder(null);
+  };
 
   const reorder = (orderId) => {
-    const order = orders.find((o) => o.orderId === orderId);
+    const order = orders.find((o) => o.id === orderId);
     if (!order) return;
     const items = order.items.map((item) => ({
       product: {
@@ -162,8 +156,7 @@ export default function MyOrders() {
     try {
       const res = await fetch(`${BACKEND}/api/poll-refunds`);
       if (!res.ok) throw new Error("Failed to refresh status");
-      // Simulate a delay for the loader
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1000));
       console.log(`Successfully refreshed status for order ${orderId}.`);
     } catch (err) {
       console.error("Refresh failed:", err);
@@ -180,15 +173,16 @@ export default function MyOrders() {
       { label: "Delivered", icon: <FaCheckCircle /> },
     ];
 
-    const final = status === "Delivered" ? steps.length + 1 : progressStep || 1;
+    const final = status === "delivered" ? steps.length + 1 : progressStep || 1;
 
     return (
       <div className="progress-steps">
         {steps.map((step, idx) => (
           <div key={idx} className="myorder-step-wrapper">
             <div
-              className={`myorder-step ${final > idx + 1 ? "completed" : ""
-                } ${final === idx + 1 ? "current" : ""}`}
+              className={`myorder-step ${
+                final > idx + 1 ? "completed" : ""
+              } ${final === idx + 1 ? "current" : ""}`}
             >
               <div className="step-icon">{step.icon}</div>
               <div className="step-label">{step.label}</div>
@@ -212,28 +206,21 @@ export default function MyOrders() {
               <h2>Confirm Cancellation</h2>
               <p>
                 Are you sure you want to cancel{" "}
-                <strong>Order #{modalOrder.orderId}</strong>?
+                <strong>Order #{modalOrder.id}</strong>?
                 <br />
-                You paid: <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong><br />
+                You paid: <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong>
+                <br />
                 A 5% cancellation fee applies.
                 <br />
                 You will be refunded:{" "}
-                <strong>
-                  ₹{(modalOrder.totalAmount * 0.95).toFixed(2)}
-                </strong>
+                <strong>₹{(modalOrder.totalAmount * 0.95).toFixed(2)}</strong>
               </p>
 
               <div className="modal-actions">
-                <button
-                  onClick={handleConfirmCancel}
-                  className="btn btn-danger"
-                >
+                <button onClick={handleConfirmCancel} className="btn btn-danger">
                   Yes, Cancel Order
                 </button>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="btn btn-secondary"
-                >
+                <button onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
                   No, Go Back
                 </button>
               </div>
@@ -246,18 +233,25 @@ export default function MyOrders() {
         {!loadingOrders && sortedOrders.length === 0 && <p>No orders found.</p>}
 
         {sortedOrders.map((order) => {
-          const totalItems = order.items.reduce(
-            (sum, i) => sum + i.quantity,
-            0
-          );
-          const r = order.refund;
-          const isExpanded = expandedOrders[order.orderId];
+          const totalItems = order.items.reduce((sum, i) => sum + i.quantity, 0);
+
+          // ✅ Map refund fields from DB
+          const r = order.refund_status
+            ? {
+                status: order.refund_status,
+                amount: order.refund_amount,
+                refund_completed_at: order.refund_completed_at,
+                speed: order.refund_speed,
+              }
+            : null;
+
+          const isExpanded = expandedOrders[order.id];
 
           return (
-            <div key={order.orderId} className="order-card">
+            <div key={order.id} className="order-card">
               <div className="order-header">
                 <div className="order-header-left">
-                  <h3>Order #{order.orderId}</h3>
+                  <h3>Order #{order.id}</h3>
                   <span className="badge">
                     {totalItems} {totalItems > 1 ? "items" : "item"}
                   </span>
@@ -274,11 +268,8 @@ export default function MyOrders() {
 
               <div className="order-items">
                 {order.items.map((item, i) => {
-                  const fallback = products.find(
-                    (p) => p.id === item.productId
-                  );
-                  const imgSrc =
-                    item.img || fallback?.imageurl || "/fallback.png";
+                  const fallback = products.find((p) => p.id === item.productId);
+                  const imgSrc = item.img || fallback?.imageurl || "/fallback.png";
                   return (
                     <div key={i} className="order-item">
                       <img src={imgSrc} alt={item.productName} />
@@ -295,29 +286,30 @@ export default function MyOrders() {
                           </p>
                         </div>
                       </div>
-                      <div className="item-price">
-                        ₹{item.price * item.quantity}
-                      </div>
+                      <div className="item-price">₹{item.price * item.quantity}</div>
                     </div>
                   );
                 })}
               </div>
 
-              {r && <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.orderId)} />}
+              {r && (
+                <RefundStatusDisplay refund={r} onRefresh={() => handleRefreshStatus(order.id)} />
+              )}
 
               <div className="order-footer">
                 <div className="order-summary">
                   <p>
-                    <strong>Total Amount:</strong> ₹
-                    {order.totalAmount.toFixed(2)}
+                    <strong>Total Amount:</strong> ₹{order.totalAmount.toFixed(2)}
                   </p>
                   <p>
                     <strong>Ordered On:</strong> {formatDateTime(order.createdAt)}
                   </p>
                 </div>
                 <div className="buttons">
-                  {order.paymentStatus === "paid" && order.status === "order placed" && !r && (
-                    cancellingOrderId === order.orderId ? (
+                  {order.paymentStatus === "paid" &&
+                    order.status === "order placed" &&
+                    !r &&
+                    (cancellingOrderId === order.id ? (
                       <MiniLoader text="Cancelling..." />
                     ) : (
                       <button
@@ -329,22 +321,15 @@ export default function MyOrders() {
                       >
                         Cancel Order
                       </button>
-                    )
-                  )}
+                    ))}
 
-                  {order.status === "Delivered" && (
-                    <button
-                      className="reorder-btn"
-                      onClick={() => reorder(order.orderId)}
-                    >
+                  {order.status === "delivered" && (
+                    <button className="reorder-btn" onClick={() => reorder(order.id)}>
                       Reorder
                     </button>
                   )}
-                  {order.status !== "Order Cancelled" && (
-                    <button
-                      className="track-btn"
-                      onClick={() => toggleTrackOrder(order.orderId)}
-                    >
+                  {order.status !== "cancelled" && (
+                    <button className="track-btn" onClick={() => toggleTrackOrder(order.id)}>
                       {isExpanded ? "Hide Tracking" : "Track Order"}
                       {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
                     </button>
@@ -352,9 +337,9 @@ export default function MyOrders() {
                 </div>
               </div>
 
-              {cancellationMessages[order.orderId]}
+              {cancellationMessages[order.id]}
 
-              {isExpanded && order.status !== "Order Cancelled" && (
+              {isExpanded && order.status !== "cancelled" && (
                 <div className="order-progress">
                   {renderStepProgress(order.progressStep, order.status)}
                 </div>
