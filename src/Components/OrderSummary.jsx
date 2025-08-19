@@ -1,81 +1,97 @@
+
+// src/components/OrderSummary.jsx
+
 import React from "react";
+// No need to import a separate CSS file anymore
+// import "../style/orderSummary.css";
 
 // Helper: formatAddress
 const formatAddress = (address) => {
   if (!address) return "";
-  return `${address.name} - ${address.address}, ${address.city}, ${address.state}, ${address.country} (${address.postalCode})${address.phone ? " - Phone: " + address.phone : ""}`;
+  return `${address.name} - ${address.address}, ${address.city}, ${address.state}, ${address.country} (${address.postalCode})${
+    address.phone ? " - Phone: " + address.phone : ""
+  }`;
 };
-
 export default function OrderSummary({
   selectedAddress,
   selectedItems,
   breakdown,
   loadingPrices,
-  appliedCoupon
+  appliedCoupon,
 }) {
   const itemCount = selectedItems.reduce(
     (acc, i) => acc + (i.quantity || 1),
     0
   );
 
-  const productDiscount = (breakdown.originalTotal - breakdown.productTotal).toFixed(2);
+  const productDiscount = breakdown.originalTotal - breakdown.productTotal;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center border-b pb-4 mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Order Summary</h2>
-        <span className="text-gray-500 text-sm">{itemCount} item{itemCount > 1 ? "s" : ""}</span>
+    <div className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
+      <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+        <h2 className="text-xl font-bold text-gray-800">Order Summary</h2>
+        <span className="text-sm text-gray-500">
+          {itemCount} item{itemCount > 1 ? "s" : ""}
+        </span>
       </div>
 
-      <div className="mb-4">
-        <strong className="text-gray-700">Deliver to:</strong>
-        <p className="text-sm text-gray-600 mt-1">
+      <div className="mt-4 p-4 bg-gray-50 rounded-md text-sm text-gray-700">
+        <strong className="block mb-1">Deliver to:</strong>
+        <p>
           {selectedAddress
             ? formatAddress(selectedAddress)
             : "No address selected"}
         </p>
       </div>
 
-      <details className="mb-4" open>
-        <summary className="font-medium text-gray-800 cursor-pointer list-none flex justify-between items-center">
-          <span>Items</span>
-          <svg className="w-4 h-4 ml-2 text-gray-500 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+      <details className="mt-4" open>
+        <summary className="text-lg font-semibold cursor-pointer py-2">
+          Items
         </summary>
-        <ul className="mt-3 space-y-3">
+        <ul className="divide-y divide-gray-100">
           {selectedItems.map((item, idx) => (
-            <li key={idx} className="flex items-start space-x-4 border-b last:border-b-0 pb-3">
-              <img src={item.product.imageurl} alt={item.product.name} className="w-16 h-16 object-cover rounded-md shadow-sm" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">{item.product.name}</p>
-                <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity || 1}</p>
+            <li key={idx} className="flex items-center justify-between py-2">
+              <div className="flex items-center space-x-4">
+                <img
+                  src={item.product.imageurl}
+                  alt={item.product.name}
+                  className="w-16 h-16 object-cover rounded-md"
+                />
+                <div className="flex-1">
+                  <p className="font-medium text-gray-800">
+                    {item.product.name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    ×{item.quantity || 1}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm font-medium text-gray-700">
-                ₹{Math.floor(item.product.oprice * (1 - item.product.discount / 100))}
+              <p className="text-base font-semibold text-gray-800">
+                ₹
+                {Math.floor(
+                  item.product.oprice * (1 - item.product.discount / 100)
+                )}
               </p>
             </li>
           ))}
         </ul>
       </details>
 
-      <div className="space-y-2 text-sm text-gray-600">
+      <div className="mt-4 pt-4 border-t border-gray-200 space-y-2 text-sm text-gray-700">
         {loadingPrices ? (
-          <p className="text-center py-4">Loading price details…</p>
+          <p>Loading price details…</p>
         ) : (
           <>
             <div className="flex justify-between">
               <span>Subtotal</span>
               <span>₹{breakdown.productTotal}</span>
             </div>
-            {productDiscount > 0 && (
-              <div className="flex justify-between text-green-600 font-medium">
-                <span>Product Discount</span>
-                <span>-₹{productDiscount}</span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span>Product Discount</span>
+              <span className="text-red-500">-₹{productDiscount}</span>
+            </div>
             {appliedCoupon && (
-              <div className="flex justify-between text-green-600 font-medium">
+              <div className="flex justify-between text-green-600 font-semibold">
                 <span>Coupon ({appliedCoupon.code})</span>
                 <span>-₹{breakdown.discountAmount}</span>
               </div>
@@ -84,7 +100,7 @@ export default function OrderSummary({
               <span>Delivery Charge</span>
               <span>₹{breakdown.deliveryCharge}</span>
             </div>
-            <div className="flex justify-between items-center text-lg font-bold text-gray-800 border-t pt-4 mt-4">
+            <div className="flex justify-between items-center text-lg font-bold mt-2 pt-2 border-t border-gray-300 text-gray-900">
               <span>Total</span>
               <span>₹{breakdown.total}</span>
             </div>
