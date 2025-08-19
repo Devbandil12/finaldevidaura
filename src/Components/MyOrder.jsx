@@ -99,9 +99,10 @@ const RefundStatusDisplay = ({ refund, onRefresh }) => {
 };
 
 export default function MyOrders() {
-  const { orders, updateOrderStatus, updateOrderRefund, loadingOrders } =
-    useContext(OrderContext);
+  const { orders, cancelOrder, loadingOrders } = useContext(OrderContext);
+
   const { userdetails } = useContext(UserContext);
+
   const { products } = useContext(ProductContext);
 
   const [expandedOrders, setExpandedOrders] = useState({});
@@ -119,58 +120,19 @@ export default function MyOrders() {
     .filter((o) => o.userId === userdetails.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const cancelOrder = async (order) => {
-    try {
-      const res = await fetch(`${BACKEND}/api/payments/refund`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: order.orderId,
-          amount: order.totalAmount * 0.95,
-          speed: "optimum",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Refund failed");
-
-      await updateOrderRefund(order.orderId, data.refund);
-      await updateOrderStatus(order.orderId, "Order Cancelled");
-
-      setCancellationMessages((prev) => ({
-        ...prev,
-        [order.orderId]: (
-          <div className="cancel-message" key={order.orderId}>
-            ✅ Refund Initiated (ID: {data.refund.id})<br />
-            Amount: ₹{(data.refund.amount / 100).toFixed(2)}<br />
-            Status: {data.refund.status}<br />
-            Initiated:{" "}
-            {formatDateTime(
-              new Date(data.refund.created_at * 1000).toISOString()
-            )}
-          </div>
-        ),
-      }));
-    } catch (err) {
-      console.error(err);
-      setCancellationMessages((prev) => ({
-        ...prev,
-        [modalOrder.orderId]: (
-          <div className="error-message" key={modalOrder.orderId}>
-            ❌ Cancellation/refund failed; please contact support.
-          </div>
-        ),
-      }));
-    }
-  };
-
+  
   const handleConfirmCancel = async () => {
-    if (!modalOrder) return;
-    setCancellingOrderId(modalOrder.orderId);
-    setIsModalOpen(false);
-    await cancelOrder(modalOrder);
-    setCancellingOrderId(null);
-    setModalOrder(null);
-  };
+  if (!modalOrder) return;
+  setCancellingOrderId(modalOrder.orderId);
+  setIsModalOpen(false);
+
+  // ✅ Use context cancelOrder (handles Razorpay + COD)
+  await cancelOrder(modalOrder.orderId, modalOrder.paymentMode, modalOrder.totalAmount);
+
+  setCancellingOrderId(null);
+  setModalOrder(null);
+};
+
 
   const reorder = (orderId) => {
     const order = orders.find((o) => o.orderId === orderId);
