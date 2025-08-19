@@ -8,7 +8,6 @@ import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
 import Confirmation from "./Confirmation";
-// Removed import "../style/checkout.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/?$/, '');
 
@@ -98,7 +97,7 @@ export default function Checkout() {
 
   const handlePlaceOrder = async () => {
     if (selectedItems.length === 0) {
-      alert("No items selected for the order.");
+      toast.error("No items selected for the order.");
       return;
     }
     try {
