@@ -1,12 +1,22 @@
 /* addressSelection.css */
 
+:root {
+  --primary-color: #4A90E2;
+  --secondary-color: #F1F5F9;
+  --text-color: #334155;
+  --light-text-color: #64748B;
+  --card-bg: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .address-selection {
   background: var(--card-bg);
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-color);
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 32px;
   border-radius: 12px;
   box-shadow: var(--shadow-md);
 }
@@ -192,9 +202,20 @@
   font-size: 0.85rem;
 }
 
-/* Responsive Styles */
+/* Responsive */
 @media (max-width: 600px) {
+  .address-selection {
+    padding: 16px;
+  }
+  .address-selection h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
   .address-selection .address-form {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .address-selection .add-new-btn {
+    width: 100%;
   }
 }
