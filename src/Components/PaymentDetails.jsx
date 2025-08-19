@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
 import { CreditCard, IndianRupee, Truck } from "lucide-react";
-// Removed import "../style/paymentDetails.css";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/?$/, "");
 
@@ -41,7 +40,7 @@ export default function PaymentDetails({
 
   const handleRazorpayPayment = async () => {
     try {
-      setLoading(true); // ✅ disable double-tap
+      setLoading(true);
 
       const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
         method: "POST",
