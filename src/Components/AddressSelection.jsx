@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLocationArrow, faMapMarkerAlt, faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons';
-
+// Removed import "../style/addressSelection.css";
 
 /* Fix default icon paths for many bundlers */
 delete L.Icon.Default.prototype._getIconUrl;
@@ -140,14 +140,14 @@ export default function AddressSelection({ userId, onSelect }) {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h3 className="text-2xl font-semibold text-gray-800 mb-6">Select your address</h3>
+    <div className="p-4 md:p-6 bg-white rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold text-gray-800 mb-4">Select your address</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
         {addresses.map((addr, i) => (
           <div
             key={addr.id}
-            className={`bg-white rounded-lg p-5 shadow-sm transition-all duration-200 ease-in-out cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-blue-400 ${
-              selectedIndex === i ? "ring-2 ring-blue-500 shadow-lg" : "shadow-md"
+            className={`bg-gray-50 rounded-lg p-5 shadow-sm transition-all duration-200 ease-in-out cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-blue-400 ${
+              selectedIndex === i ? "ring-2 ring-blue-500 shadow-lg bg-blue-50" : "shadow-md"
             }`}
             onClick={() => selectAddress(i)}
           >
@@ -283,8 +283,8 @@ export default function AddressSelection({ userId, onSelect }) {
       )}
 
       {showMap && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-4 rounded-lg shadow-xl w-11/12 max-w-2xl h-4/5 flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
+          <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-2xl h-4/5 flex flex-col">
             <MapContainer
               center={mapMarker || [20.5937, 78.9629]}
               zoom={15}
@@ -298,7 +298,7 @@ export default function AddressSelection({ userId, onSelect }) {
               <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
             </MapContainer>
 
-            <div className="mt-4 flex justify-between">
+            <div className="mt-4 flex justify-between space-x-2">
               <button type="button" onClick={() => setShowMap(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
                 Cancel
               </button>
