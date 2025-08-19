@@ -1,5 +1,4 @@
 import React from "react";
-// Removed import "../style/orderSummary.css";
 
 // Helper: formatAddress
 const formatAddress = (address) => {
