@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
-// Removed import "../style/confirmation.css";
 
 export default function Confirmation({ resetCheckout }) {
   const navigate = useNavigate();
