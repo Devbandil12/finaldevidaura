@@ -1,9 +1,13 @@
+
+// src/components/AddressSelection.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLocationArrow, faMapMarkerAlt, faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons';
+// import "../style/addressSelection.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLocationArrow, faMapMarkerAlt } from "@fortawesome/free-solid-svg-icons";
 
 /* Fix default icon paths for many bundlers */
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,7 +17,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).href,
 });
 
-const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/?$/, "")) + "/api/address";
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "") + "/api/address";
 
 function ClickableMap({ center, marker, setMarker }) {
   useMapEvents({
@@ -24,285 +28,540 @@ function ClickableMap({ center, marker, setMarker }) {
   return marker ? <Marker position={marker} /> : null;
 }
 
-export default function AddressSelection({ userId, onSelect }) {
+export default function AddressSelection({ userId, onSelect, selectedAddress }) {
   const [addresses, setAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [showMap, setShowMap] = useState(false);
-  const [mapMarker, setMapMarker] = useState(null);
-  const [form, setForm] = useState({});
-  const [isNew, setIsNew] = useState(true);
-  const mapRef = useRef(null);
 
   const emptyAddress = {
     name: "",
     phone: "",
     altPhone: "",
-    address: "",
-    landmark: "",
+    postalCode: "",
     city: "",
     state: "",
-    postalCode: "",
-    country: "",
+    country: "India",
+    address: "",
+    landmark: "",
     deliveryInstructions: "",
-    addressType: "",
+    addressType: "Home",
+    label: "",
     latitude: "",
-    longitude: ""
+    longitude: "",
+    geoAccuracy: "",
+    isDefault: false,
+    isVerified: false,
   };
+  const [formAddress, setFormAddress] = useState(emptyAddress);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // Map modal
+  const [showMap, setShowMap] = useState(false);
+  const [mapMarker, setMapMarker] = useState(null);
+  const mapRef = useRef();
+
+  // For controlling custom address type input
+  const [customAddressType, setCustomAddressType] = useState("");
+  // Load addresses
   useEffect(() => {
-    fetchAddresses();
+    if (!userId) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/user/${userId}`);
+        const data = await res.json();
+        if (data.success) {
+          setAddresses(data.data || []);
+          const defaultIdx = (data.data || []).findIndex((a) => a.isDefault);
+          if (defaultIdx >= 0) {
+            setSelectedIndex(defaultIdx);
+            onSelect?.(data.data[defaultIdx]);
+          } else if ((data.data || []).length > 0) {
+            setSelectedIndex(0);
+            onSelect?.(data.data[0]);
+          }
+        }
+      } catch (err) {
+        console.error("fetch addresses", err);
+      }
+    })();
   }, [userId]);
+  // When opening the map modal, set marker to current location if available
+  useEffect(() => {
+    if (showMap) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const currentPos = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            };
+            setMapMarker(currentPos);
+            if (mapRef.current) {
+              mapRef.current.setView(currentPos, 15);
+            }
+          },
+          (err) => {
+            console.warn("Geolocation failed or denied, using previous marker or default", err);
+            if (!mapMarker) {
+              setMapMarker({ lat: 20.5937, lng: 78.9629 }); // Default India
+            }
+          }
+        );
+      } else {
+        if (!mapMarker) {
+          setMapMarker({ lat: 20.5937, lng: 78.9629 });
+        }
+      }
+    }
+  }, [showMap]);
 
-  const fetchAddresses = async () => {
+  function selectAddress(idx) {
+    setSelectedIndex(idx);
+    onSelect?.(addresses[idx]);
+  }
+
+  function addNew() {
+    setFormAddress(emptyAddress);
+    setCustomAddressType("");
+    setIsEditing(false);
+    setEditingId(null);
+    setShowForm(true);
+  }
+
+  function editAddress(idx) {
+    const addr = addresses[idx];
+    setFormAddress(addr);
+    setIsEditing(true);
+    setEditingId(addr.id);
+    setShowForm(true);
+    setCustomAddressType(
+      addr.addressType && !["Home", "Work", "Other"].includes(addr.addressType)
+        ? addr.addressType
+        : ""
+    );
+  }
+
+  async function deleteAddress(idx) {
+    const toDelete = addresses[idx];
+    if (!toDelete) return alert("Address not found");
+    if (!window.confirm("Are you sure you want to delete this address?")) return;
     try {
-      const res = await fetch(`${API_BASE}/user/${userId}`);
+      const res = await fetch(`${API_BASE}/${toDelete.id}`, {
+        method: "DELETE",
+      });
       const data = await res.json();
-      setAddresses(data);
-      if (data.length > 0) {
-        const defaultIndex = data.findIndex((addr) => addr.isDefault);
-        setSelectedIndex(defaultIndex !== -1 ? defaultIndex : 0);
-        onSelect(data[defaultIndex !== -1 ? defaultIndex : 0]);
+      if (data.success) {
+        const filtered = addresses.filter((a) => a.id !== toDelete.id);
+        setAddresses(filtered);
+        setSelectedIndex(null);
+        onSelect?.(null);
+        setShowForm(false);
+      } else {
+        alert(data.msg || "Failed to delete address");
       }
     } catch (err) {
-      console.error("Error fetching addresses:", err);
+      console.error("deleteAddress error:", err);
+      alert("Network error while deleting address");
     }
-  };
+  }
 
-  const selectAddress = (index) => {
-    setSelectedIndex(index);
-    onSelect(addresses[index]);
-  };
-
-  const saveAddress = async (e) => {
-    e.preventDefault();
-    const method = isNew ? "POST" : "PUT";
-    const url = isNew ? API_BASE : `${API_BASE}/${form.id}`;
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, userId }),
-    });
-    if (res.ok) {
-      fetchAddresses();
-      setForm({});
-      setIsNew(true);
-    } else {
-      console.error("Failed to save address");
-    }
-  };
-
-  const deleteAddress = async (index) => {
-    if (confirm("Are you sure you want to delete this address?")) {
-      const id = addresses[index].id;
-      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        fetchAddresses();
+  async function setDefaultAddress(idx) {
+    const addr = addresses[idx];
+    if (!addr) return;
+    try {
+      const res = await fetch(`${API_BASE}/${addr.id}/default`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAddresses((prev) =>
+          prev.map((a) => ({ ...a, isDefault: a.id === addr.id }))
+        );
+        setSelectedIndex(idx);
+        onSelect?.(addr);
       } else {
-        console.error("Failed to delete address");
+        alert(data.msg || "Failed to set default");
+      }
+    } catch (err) {
+      console.error("setDefaultAddress error:", err);
+      alert("Network error while setting default");
+    }
+  }
+
+  async function saveAddress() {
+    if (!userId) {
+      return alert(
+        "User ID missing — please login or wait for user data to load."
+      );
+    }
+    // required fields
+    if (
+      !formAddress.name ||
+      !formAddress.phone ||
+      !formAddress.address ||
+      !formAddress.city ||
+      !formAddress.state ||
+      !formAddress.postalCode
+    ) {
+      return alert("Please fill all required fields");
+    }
+
+    // Compose addressType properly
+    let finalAddressType = formAddress.addressType;
+    if (finalAddressType === "Other") {
+      if (!customAddressType.trim()) {
+        return alert("Please specify the custom address type.");
+      }
+      finalAddressType = customAddressType.trim();
+    }
+
+    setLoading(true);
+    try {
+      const url = isEditing ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
+      const method = isEditing ? "PUT" : "POST";
+      const payload = { ...formAddress, addressType: finalAddressType, userId };
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (isEditing) {
+          setAddresses((prev) =>
+            prev.map((a) => (a.id === data.data.id ? data.data : a))
+          );
+        } else {
+          setAddresses((prev) => [data.data, ...prev]);
+        }
+        setShowForm(false);
+        setIsEditing(false);
+        setEditingId(null);
+        const idx = addresses.findIndex?.((a) => a.id === data.data.id) ?? 0;
+        setSelectedIndex(idx);
+        onSelect?.(data.data);
+      } else {
+        alert(data.msg || "Failed to save address");
+      }
+    } catch (err) {
+      console.error("saveAddress error:", err);
+      alert("Network error while saving address");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Postal code lookup as before
+  async function lookupPostalCode(pc) {
+    if (!pc) return;
+    const postal = String(pc).trim();
+    if (/^\d{6}$/.test(postal)) {
+      try {
+        const r = await fetch(`https://api.postalpincode.in/pincode/${postal}`);
+        const j = await r.json();
+        if (Array.isArray(j) && j[0].Status === "Success" && j[0].PostOffice?.length) {
+          const po = j[0].PostOffice[0];
+          setFormAddress((prev) => ({
+            ...prev,
+            city: po.District,
+            state: po.State,
+            country: "India",
+          }));
+        } else {
+          console.log("No postal data found");
+        }
+      } catch (err) {
+        console.error("Postal lookup error:", err);
       }
     }
-  };
+  }
 
-  const editAddress = (index) => {
-    setForm(addresses[index]);
-    setIsNew(false);
-  };
-
-  const setDefaultAddress = async (index) => {
-    const id = addresses[index].id;
-    const res = await fetch(`${API_BASE}/${id}/default`, {
-      method: "PUT",
-    });
-    if (res.ok) {
-      fetchAddresses();
-    } else {
-      console.error("Failed to set default address");
-    }
-  };
-
-  const applyMapLocation = () => {
-    if (mapMarker) {
-      const { lat, lng } = mapMarker;
-      setForm((prev) => ({
-        ...prev,
-        latitude: lat,
-        longitude: lng,
-        geoAccuracy: "Approximate",
-      }));
-    }
+  function applyMapLocation() {
+    if (!mapMarker) return;
+    setFormAddress((prev) => ({
+      ...prev,
+      latitude: mapMarker.lat,
+      longitude: mapMarker.lng,
+      geoAccuracy: "Approximate",
+    }));
     setShowMap(false);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  }
 
   return (
-    <div className="p-4 md:p-6 bg-white rounded-lg shadow-md">
-      <h3 className="text-xl font-semibold text-gray-800 mb-4">Select your address</h3>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-        {addresses.map((addr, i) => (
-          <div
-            key={addr.id}
-            className={`bg-gray-50 rounded-lg p-5 shadow-sm transition-all duration-200 ease-in-out cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-blue-400 ${
-              selectedIndex === i ? "ring-2 ring-blue-500 shadow-lg bg-blue-50" : "shadow-md"
-            }`}
-            onClick={() => selectAddress(i)}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <strong className="text-lg text-gray-700">
-                {addr.name} {addr.isVerified ? "✔️" : ""}
-              </strong>
-              <div className="flex items-center space-x-2">
-                <button
-                  className="text-gray-500 hover:text-blue-500 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    editAddress(i);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faPenToSquare} />
-                </button>
-                <button
-                  className="text-gray-500 hover:text-red-500 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteAddress(i);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
-                {!addr.isDefault ? (
-                  <button
-                    className="ml-2 text-sm text-blue-500 hover:underline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDefaultAddress(i);
-                    }}
-                  >
-                    Set Default
-                  </button>
-                ) : (
-                  <span className="text-xs font-semibold text-white bg-blue-500 px-2 py-1 rounded-full">Default</span>
+    <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        Select Address
+      </h2>
+
+      {!showForm && addresses.length > 0 && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {addresses.map((addr, idx) => (
+              <div
+                key={addr.id}
+                onClick={() => selectAddress(idx)}
+                className={`relative p-6 rounded-lg border-2 cursor-pointer transition-all duration-200
+                  ${
+                    selectedAddress?.id === addr.id
+                      ? "border-blue-600 bg-blue-50 shadow-md"
+                      : "border-gray-200 bg-white hover:border-blue-500 shadow-sm hover:shadow-md"
+                  }`}
+              >
+                {addr.isDefault && (
+                  <span className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                    Default
+                  </span>
                 )}
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-lg text-gray-800">
+                    {addr.name}
+                  </h3>
+                  <div className="flex gap-2 text-gray-500 text-sm">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editAddress(idx);
+                      }}
+                      className="hover:text-blue-600"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteAddress(idx);
+                      }}
+                      className="hover:text-red-600"
+                    >
+                      Delete
+                    </button>
+                    {!addr.isDefault && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDefaultAddress(idx);
+                        }}
+                        className="hover:text-green-600"
+                      >
+                        Set Default
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-gray-700">{addr.address}, {addr.city}</p>
+                <p className="text-gray-700">
+                  {addr.state}, {addr.country} - {addr.postalCode}
+                </p>
+                <p className="text-gray-600 mt-2">
+                  <span className="font-medium">Phone:</span> {addr.phone}
+                </p>
+                <span className="absolute bottom-2 left-2 text-xs text-gray-500">
+                  {addr.addressType}
+                </span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={addNew}
+            className="w-full md:w-auto mt-4 px-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md"
+          >
+            Add New Address
+          </button>
+        </div>
+      )}
+
+      {addresses.length === 0 && !showForm && (
+        <div className="text-center p-8 bg-gray-50 rounded-lg shadow-inner">
+          <p className="text-gray-500 mb-4">You have no saved addresses.</p>
+          <button
+            onClick={addNew}
+            className="px-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md"
+          >
+            Add First Address
+          </button>
+        </div>
+      )}
+
+      {showForm && (
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+          <h3 className="text-xl font-semibold text-gray-800">
+            {isEditing ? "Edit Address" : "Add New Address"}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input
+                type="text"
+                id="name"
+                value={formAddress.name}
+                onChange={(e) => setFormAddress({ ...formAddress, name: e.target.value })}
+                required
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                value={formAddress.phone}
+                onChange={(e) => setFormAddress({ ...formAddress, phone: e.target.value })}
+                required
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input
+                type="text"
+                id="address"
+                value={formAddress.address}
+                onChange={(e) => setFormAddress({ ...formAddress, address: e.target.value })}
+                required
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-full">
+                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                <input
+                  type="text"
+                  id="postalCode"
+                  value={formAddress.postalCode}
+                  onChange={(e) => setFormAddress({ ...formAddress, postalCode: e.target.value })}
+                  onBlur={(e) => lookupPostalCode(e.target.value)}
+                  required
+                  className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div className="w-full">
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <input
+                  type="text"
+                  id="city"
+                  value={formAddress.city}
+                  onChange={(e) => setFormAddress({ ...formAddress, city: e.target.value })}
+                  required
+                  className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-1">
-              <span className="font-semibold text-blue-600 mr-1">{addr.addressType}</span> - {addr.address}
-              {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}, {addr.country}
-            </p>
-            <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
-          </div>
-        ))}
-      </div>
-      <button
-        className="flex items-center justify-center w-full md:w-auto px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-        onClick={() => {
-          setForm(emptyAddress);
-          setIsNew(true);
-        }}
-      >
-        <span className="text-xl font-bold mr-2">+</span> Add New Address
-      </button>
-
-      {(isNew || form.id) && (
-        <form className="mt-8 p-6 bg-white rounded-lg shadow-lg" onSubmit={saveAddress}>
-          <h4 className="text-xl font-semibold text-gray-800 mb-4">{isNew ? "Add New Address" : "Edit Address"}</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input type="text" name="name" value={form.name || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">State</label>
+              <input
+                type="text"
+                id="state"
+                value={formAddress.state}
+                onChange={(e) => setFormAddress({ ...formAddress, state: e.target.value })}
+                required
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input type="text" name="phone" value={form.phone || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <input
+                type="text"
+                id="country"
+                value={formAddress.country}
+                onChange={(e) => setFormAddress({ ...formAddress, country: e.target.value })}
+                required
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div className="flex flex-col col-span-1 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Address</label>
-              <input type="text" name="address" value={form.address || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            <div>
+              <label htmlFor="landmark" className="block text-sm font-medium text-gray-700 mb-1">Landmark (Optional)</label>
+              <input
+                type="text"
+                id="landmark"
+                value={formAddress.landmark}
+                onChange={(e) => setFormAddress({ ...formAddress, landmark: e.target.value })}
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">City</label>
-              <input type="text" name="city" value={form.city || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">State</label>
-              <input type="text" name="state" value={form.state || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-              <input type="text" name="postalCode" value={form.postalCode || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Country</label>
-              <input type="text" name="country" value={form.country || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Landmark</label>
-              <input type="text" name="landmark" value={form.landmark || ""} onChange={handleInputChange} className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 mb-1">Address Type</label>
-              <select name="addressType" value={form.addressType || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
-                <option value="">Select Address Type</option>
+            <div>
+              <label htmlFor="addressType" className="block text-sm font-medium text-gray-700 mb-1">Address Type</label>
+              <select
+                id="addressType"
+                value={formAddress.addressType}
+                onChange={(e) => setFormAddress({ ...formAddress, addressType: e.target.value })}
+                className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              >
                 <option value="Home">Home</option>
                 <option value="Work">Work</option>
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div className="flex flex-col col-span-1 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">Delivery Instructions</label>
-              <textarea name="deliveryInstructions" value={form.deliveryInstructions || ""} onChange={handleInputChange} className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"></textarea>
-            </div>
-            <div className="flex flex-col col-span-1 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700 mb-1">
-                Use Current Location{" "}
-                <FontAwesomeIcon icon={faLocationArrow} className="cursor-pointer text-blue-500" onClick={() => {
-                  navigator.geolocation.getCurrentPosition((pos) => {
-                    setMapMarker({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                    setShowMap(true);
-                  });
-                }} />{" "}
-                or Pin Location{" "}
-                <FontAwesomeIcon icon={faMapMarkerAlt} className="cursor-pointer text-blue-500" onClick={() => setShowMap(true)} />
-              </label>
-            </div>
+            {formAddress.addressType === "Other" && (
+              <div>
+                <label htmlFor="customAddressType" className="block text-sm font-medium text-gray-700 mb-1">Custom Type</label>
+                <input
+                  type="text"
+                  id="customAddressType"
+                  value={customAddressType}
+                  onChange={(e) => setCustomAddressType(e.target.value)}
+                  className="w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
           </div>
-
-          <div className="flex space-x-4 mt-6">
-            <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
-              {isNew ? "Save Address" : "Update Address"}
-            </button>
-            <button type="button" onClick={() => { setForm({}); setIsNew(true); }} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+          <div className="flex justify-between items-center mt-6">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
+            >
               Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveAddress}
+              disabled={loading}
+              className={`px-6 py-3 rounded-md font-semibold transition-colors duration-200 shadow-md ${
+                loading
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              {loading ? "Saving..." : isEditing ? "Save Changes" : "Save Address"}
             </button>
           </div>
         </form>
       )}
 
       {showMap && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 p-4">
-          <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-2xl h-4/5 flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-4 w-11/12 max-w-2xl h-3/4 flex flex-col shadow-lg">
             <MapContainer
               center={mapMarker || [20.5937, 78.9629]}
               zoom={15}
-              className="flex-1 rounded-lg"
+              style={{ flex: 1, borderRadius: "0.5rem" }}
               whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
             </MapContainer>
-
-            <div className="mt-4 flex justify-between space-x-2">
-              <button type="button" onClick={() => setShowMap(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+            <div className="mt-4 flex justify-between">
+              <button
+                type="button"
+                onClick={() => setShowMap(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+              >
                 Cancel
               </button>
-              <button type="button" onClick={applyMapLocation} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
-                Apply Location
+              <button
+                type="button"
+                onClick={applyMapLocation}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Use This Location
               </button>
             </div>
           </div>
