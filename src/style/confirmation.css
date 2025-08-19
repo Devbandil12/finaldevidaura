@@ -1,5 +1,15 @@
 /* confirmation.css */
 
+:root {
+  --primary-color: #4A90E2;
+  --secondary-color: #F1F5F9;
+  --text-color: #334155;
+  --light-text-color: #64748B;
+  --card-bg: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .confirmation {
   text-align: center;
   padding: 40px 20px;
@@ -98,4 +108,18 @@
 .confirmation .btn-secondary:hover {
   background: #E2E8F0;
   box-shadow: var(--shadow-md);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .confirmation {
+    padding: 24px 16px;
+    margin: 20px auto;
+  }
+  .confirmation .confirmation-title {
+    font-size: 1.5rem;
+  }
+  .confirmation .confirmation-message {
+    font-size: 1rem;
+  }
 }
