@@ -12,24 +12,31 @@ export const OrderProvider = ({ children }) => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // 🔹 Fetch orders (user → only own, admin → all)
-  const getorders = async (showLoader = true, isAdmin = false) => {
-    if (!isAdmin && !userdetails?.id) return;
-    if (showLoader) setLoadingOrders(true);
+const getorders = async (showLoader = true, isAdmin = false) => {
+  if (!isAdmin && !userdetails?.id) return;
+  if (showLoader) setLoadingOrders(true);
 
-    try {
-      const url = isAdmin
-        ? `${BACKEND_URL}/api/orders/`
-        : `${BACKEND_URL}/api/orders/${userdetails.id}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data = await res.json();
-      setOrders(data);
-    } catch (err) {
-      console.error("❌ Error fetching orders:", err);
-    } finally {
-      if (showLoader) setLoadingOrders(false);
+  try {
+    let res;
+    if (isAdmin) {
+      res = await fetch(`${BACKEND_URL}/api/orders/`);
+    } else {
+      res = await fetch(`${BACKEND_URL}/api/orders/get-my-orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userdetails.id }),
+      });
     }
-  };
+
+    if (!res.ok) throw new Error("Failed to fetch orders");
+    const data = await res.json();
+    setOrders(data);
+  } catch (err) {
+    console.error("❌ Error fetching orders:", err);
+  } finally {
+    if (showLoader) setLoadingOrders(false);
+  }
+};
 
   // 🔹 Update order status
   const updateOrderStatus = async (orderId, newStatus) => {
