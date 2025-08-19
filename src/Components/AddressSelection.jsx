@@ -2,10 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import "../style/addressSelection.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLocationArrow, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
-
+import { faLocationArrow, faMapMarkerAlt, faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 
 /* Fix default icon paths for many bundlers */
@@ -16,7 +14,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).href,
 });
 
-const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address";
+const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/?$/, "")) + "/api/address";
 
 function ClickableMap({ center, marker, setMarker }) {
   useMapEvents({
@@ -30,671 +28,287 @@ function ClickableMap({ center, marker, setMarker }) {
 export default function AddressSelection({ userId, onSelect }) {
   const [addresses, setAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapMarker, setMapMarker] = useState(null);
+  const [form, setForm] = useState({});
+  const [isNew, setIsNew] = useState(true);
+  const mapRef = useRef(null);
 
   const emptyAddress = {
     name: "",
     phone: "",
     altPhone: "",
-    postalCode: "",
-    city: "",
-    state: "",
-    country: "India",
     address: "",
     landmark: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "",
     deliveryInstructions: "",
-    addressType: "Home",
-    label: "",
+    addressType: "",
     latitude: "",
-    longitude: "",
-    geoAccuracy: "",
-    isDefault: false,
-    isVerified: false,
+    longitude: ""
   };
 
-  const [formAddress, setFormAddress] = useState(emptyAddress);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // Map modal
-  const [showMap, setShowMap] = useState(false);
-  const [mapMarker, setMapMarker] = useState(null);
-  const mapRef = useRef();
-
-  // For controlling custom address type input
-  const [customAddressType, setCustomAddressType] = useState("");
-
-  // Load addresses
   useEffect(() => {
-    if (!userId) return;
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/user/${userId}`);
-        const data = await res.json();
-        if (data.success) {
-          setAddresses(data.data || []);
-          const defaultIdx = (data.data || []).findIndex((a) => a.isDefault);
-          if (defaultIdx >= 0) {
-            setSelectedIndex(defaultIdx);
-            onSelect?.(data.data[defaultIdx]);
-          } else if ((data.data || []).length > 0) {
-            setSelectedIndex(0);
-            onSelect?.(data.data[0]);
-          }
-        }
-      } catch (err) {
-        console.error("fetch addresses", err);
-      }
-    })();
+    fetchAddresses();
   }, [userId]);
 
-  // When opening the map modal, set marker to current location if available
-  useEffect(() => {
-    if (showMap) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const currentPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            setMapMarker(currentPos);
-            if (mapRef.current) {
-              mapRef.current.setView(currentPos, 15);
-            }
-          },
-          (err) => {
-            console.warn("Geolocation failed or denied, using previous marker or default", err);
-            if (!mapMarker) {
-              setMapMarker({ lat: 20.5937, lng: 78.9629 }); // Default India
-            }
-          }
-        );
-      } else {
-        if (!mapMarker) {
-          setMapMarker({ lat: 20.5937, lng: 78.9629 });
-        }
-      }
-    }
-  }, [showMap]);
-
-  function selectAddress(idx) {
-    setSelectedIndex(idx);
-    onSelect?.(addresses[idx]);
-  }
-
-  function addNew() {
-    setFormAddress(emptyAddress);
-    setCustomAddressType("");
-    setIsEditing(false);
-    setEditingId(null);
-    setShowForm(true);
-  }
-
-  function editAddress(idx) {
-    const addr = addresses[idx];
-    setFormAddress(addr);
-    setIsEditing(true);
-    setEditingId(addr.id);
-    setShowForm(true);
-    setCustomAddressType(addr.addressType && !["Home", "Work", "Other"].includes(addr.addressType) ? addr.addressType : "");
-  }
-
-  async function deleteAddress(idx) {
-    const toDelete = addresses[idx];
-    if (!toDelete) return alert("Address not found");
-    if (!window.confirm("Are you sure you want to delete this address?")) return;
-
+  const fetchAddresses = async () => {
     try {
-      const res = await fetch(`${API_BASE}/${toDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE}/user/${userId}`);
       const data = await res.json();
-      if (data.success) {
-        const filtered = addresses.filter((a) => a.id !== toDelete.id);
-        setAddresses(filtered);
-        setSelectedIndex(null);
-        onSelect?.(null);
-        setShowForm(false);
-      } else {
-        alert(data.msg || "Failed to delete address");
+      setAddresses(data);
+      if (data.length > 0) {
+        const defaultIndex = data.findIndex((addr) => addr.isDefault);
+        setSelectedIndex(defaultIndex !== -1 ? defaultIndex : 0);
+        onSelect(data[defaultIndex !== -1 ? defaultIndex : 0]);
       }
     } catch (err) {
-      console.error("deleteAddress error:", err);
-      alert("Network error while deleting address");
+      console.error("Error fetching addresses:", err);
     }
-  }
+  };
 
-  async function setDefaultAddress(idx) {
-    const addr = addresses[idx];
-    if (!addr) return;
-    try {
-      const res = await fetch(`${API_BASE}/${addr.id}/default`, { method: "PUT" });
-      const data = await res.json();
-      if (data.success) {
-        setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === addr.id })));
-        setSelectedIndex(idx);
-        onSelect?.(addr);
-      } else {
-        alert(data.msg || "Failed to set default");
-      }
-    } catch (err) {
-      console.error("setDefaultAddress error:", err);
-      alert("Network error while setting default");
-    }
-  }
+  const selectAddress = (index) => {
+    setSelectedIndex(index);
+    onSelect(addresses[index]);
+  };
 
-  async function saveAddress() {
-    if (!userId) {
-      return alert("User ID missing — please login or wait for user data to load.");
-    }
-    // required fields
-    if (
-      !formAddress.name ||
-      !formAddress.phone ||
-      !formAddress.address ||
-      !formAddress.city ||
-      !formAddress.state ||
-      !formAddress.postalCode
-    ) {
-      return alert("Please fill all required fields");
-    }
-
-    // Compose addressType properly
-    let finalAddressType = formAddress.addressType;
-    if (finalAddressType === "Other") {
-      if (!customAddressType.trim()) {
-        return alert("Please specify the custom address type.");
-      }
-      finalAddressType = customAddressType.trim();
-    }
-
-    setLoading(true);
-    try {
-      const url = isEditing ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
-      const method = isEditing ? "PUT" : "POST";
-      const payload = { ...formAddress, addressType: finalAddressType, userId };
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success) {
-        if (isEditing) {
-          setAddresses((prev) => prev.map((a) => (a.id === data.data.id ? data.data : a)));
-        } else {
-          setAddresses((prev) => [data.data, ...prev]);
-        }
-        setShowForm(false);
-        setIsEditing(false);
-        setEditingId(null);
-        const idx = (addresses.findIndex?.((a) => a.id === data.data.id)) ?? 0;
-        setSelectedIndex(idx);
-        onSelect?.(data.data);
-      } else {
-        alert(data.msg || "Failed to save address");
-      }
-    } catch (err) {
-      console.error("saveAddress error:", err);
-      alert("Network error while saving address");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Postal code lookup as before
-  async function lookupPostalCode(pc) {
-    if (!pc) return;
-    const postal = String(pc).trim();
-    if (/^\d{6}$/.test(postal)) {
-      try {
-        const r = await fetch(`https://api.postalpincode.in/pincode/${postal}`);
-        const j = await r.json();
-        if (Array.isArray(j) && j[0].Status === "Success" && j[0].PostOffice?.length) {
-          const po = j[0].PostOffice[0];
-          setFormAddress((prev) => ({
-            ...prev,
-            city: po.District || prev.city,
-            state: po.State || prev.state,
-            country: "India",
-          }));
-          return;
-        }
-      } catch (e) {
-        console.warn("postalpincode lookup failed", e);
-      }
-    }
-    // fallback to Nominatim
-    try {
-      const q = encodeURIComponent(postal);
-      const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${q}&limit=1`);
-      const j2 = await r2.json();
-      if (Array.isArray(j2) && j2.length > 0) {
-        const first = j2[0];
-        if (first.address) {
-          setFormAddress((prev) => ({
-            ...prev,
-            city: first.address.city || first.address.town || first.address.village || prev.city,
-            state: first.address.state || prev.state,
-            country: first.address.country || prev.country,
-            latitude: first.lat || prev.latitude,
-            longitude: first.lon || prev.longitude,
-          }));
-        } else {
-          setFormAddress((prev) => ({
-            ...prev,
-            latitude: first.lat || prev.latitude,
-            longitude: first.lon || prev.longitude,
-          }));
-        }
-      }
-    } catch (e) {
-      console.warn("nominatim postal lookup failed", e);
-    }
-  }
-
-  function useCurrentLocationInForm() {
-    if (!navigator.geolocation) return alert("Geolocation is not supported by your browser.");
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          if (data) {
-            const addr = data.address || {};
-            setFormAddress((prev) => ({
-              ...prev,
-              address: (data.display_name || prev.address).split(",")[0],
-              city: addr.city || addr.town || addr.village || prev.city,
-              state: addr.state || prev.state,
-              postalCode: addr.postcode || prev.postalCode,
-              country: addr.country || prev.country,
-              latitude,
-              longitude,
-              geoAccuracy: accuracy,
-            }));
-            setShowForm(true);
-          } else {
-            alert("Unable to reverse-geocode your location.");
-          }
-        } catch (err) {
-          console.error("reverse geocode failed", err);
-          alert("Failed to fetch address details from location.");
-        }
-      },
-      (error) => {
-        alert("Failed to get your location: " + error.message);
-      }
-    );
-  }
-
-  function onPostalBlur() {
-    const pc = formAddress.postalCode;
-    if (!pc) return;
-    lookupPostalCode(pc);
-  }
-
-  async function applyMapMarker() {
-    if (!mapMarker) {
-      alert("Please pick a location on the map.");
-      return;
-    }
-    const lat = mapMarker.lat;
-    const lon = mapMarker.lng ?? mapMarker.lon;
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
-      const j = await res.json();
-      const addr = j.address || {};
-      setFormAddress((prev) => ({
-        ...prev,
-        address: j.display_name?.split(",")[0] || prev.address,
-        city: addr.city || addr.town || addr.village || prev.city,
-        state: addr.state || prev.state,
-        postalCode: addr.postcode || prev.postalCode,
-        country: addr.country || prev.country,
-        latitude: lat,
-        longitude: lon,
-        geoAccuracy: prev.geoAccuracy,
-      }));
-      setShowMap(false);
-      setShowForm(true);
-    } catch (err) {
-      console.error("reverse geocode marker failed", err);
-      alert("Failed to fetch address for selected location.");
-    }
-  }
-
-  // Helper to update formAddress with changes, including addressType management
-  function updateFormAddress(field, value) {
-    if (field === "addressType") {
-      setFormAddress((prev) => ({ ...prev, addressType: value }));
-      if (value !== "Other") setCustomAddressType("");
+  const saveAddress = async (e) => {
+    e.preventDefault();
+    const method = isNew ? "POST" : "PUT";
+    const url = isNew ? API_BASE : `${API_BASE}/${form.id}`;
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, userId }),
+    });
+    if (res.ok) {
+      fetchAddresses();
+      setForm({});
+      setIsNew(true);
     } else {
-      setFormAddress((prev) => ({ ...prev, [field]: value }));
+      console.error("Failed to save address");
     }
-  }
+  };
+
+  const deleteAddress = async (index) => {
+    if (confirm("Are you sure you want to delete this address?")) {
+      const id = addresses[index].id;
+      const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchAddresses();
+      } else {
+        console.error("Failed to delete address");
+      }
+    }
+  };
+
+  const editAddress = (index) => {
+    setForm(addresses[index]);
+    setIsNew(false);
+  };
+
+  const setDefaultAddress = async (index) => {
+    const id = addresses[index].id;
+    const res = await fetch(`${API_BASE}/${id}/default`, {
+      method: "PUT",
+    });
+    if (res.ok) {
+      fetchAddresses();
+    } else {
+      console.error("Failed to set default address");
+    }
+  };
+
+  const applyMapLocation = () => {
+    if (mapMarker) {
+      const { lat, lng } = mapMarker;
+      setForm((prev) => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        geoAccuracy: "Approximate",
+      }));
+    }
+    setShowMap(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   return (
-  <div className="address-selection">
-    <h2>Select or Add Delivery Address</h2>
-
-    <button onClick={addNew} className="add-new-btn">
-      + Add New Address
-    </button>
-
-    <div className="address-list" style={{ marginTop: 15 }}>
-      {addresses.map((addr, i) => (
-        <div
-          key={addr.id}
-          className={`address-card ${selectedIndex === i ? "active" : ""}`}
-          onClick={() => selectAddress(i)}
-        >
-          <div className="address-header">
-            <strong>
-              {addr.name} {addr.isVerified ? "✔️" : ""}
-            </strong>
-            <div className="address-actions">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editAddress(i);
-                }}
-              >
-                ✎
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteAddress(i);
-                }}
-              >
-                🗑
-              </button>
-              {!addr.isDefault ? (
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <h3 className="text-2xl font-semibold text-gray-800 mb-6">Select your address</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
+        {addresses.map((addr, i) => (
+          <div
+            key={addr.id}
+            className={`bg-white rounded-lg p-5 shadow-sm transition-all duration-200 ease-in-out cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-blue-400 ${
+              selectedIndex === i ? "ring-2 ring-blue-500 shadow-lg" : "shadow-md"
+            }`}
+            onClick={() => selectAddress(i)}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <strong className="text-lg text-gray-700">
+                {addr.name} {addr.isVerified ? "✔️" : ""}
+              </strong>
+              <div className="flex items-center space-x-2">
                 <button
+                  className="text-gray-500 hover:text-blue-500 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDefaultAddress(i);
+                    editAddress(i);
                   }}
                 >
-                  Set Default
+                  <FontAwesomeIcon icon={faPenToSquare} />
                 </button>
-              ) : (
-                <span className="default-label">Default</span>
-              )}
+                <button
+                  className="text-gray-500 hover:text-red-500 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteAddress(i);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+                {!addr.isDefault ? (
+                  <button
+                    className="ml-2 text-sm text-blue-500 hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDefaultAddress(i);
+                    }}
+                  >
+                    Set Default
+                  </button>
+                ) : (
+                  <span className="text-xs font-semibold text-white bg-blue-500 px-2 py-1 rounded-full">Default</span>
+                )}
+              </div>
             </div>
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-semibold text-blue-600 mr-1">{addr.addressType}</span> - {addr.address}
+              {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}, {addr.country}
+            </p>
+            <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
           </div>
-          <p>
-            {addr.address}
-            {addr.landmark ? `, ${addr.landmark}` : ""}, {addr.city}, {addr.state} - {addr.postalCode}
-          </p>
-          <p>{addr.country}</p>
-          <p>
-            Phone: {addr.phone}
-            {addr.altPhone ? `, Alt: ${addr.altPhone}` : ""}
-          </p>
-          {addr.deliveryInstructions && <p>Delivery Instructions: {addr.deliveryInstructions}</p>}
-          <p>Address Type: {addr.addressType}</p>
-          {addr.label && <p>Label: {addr.label}</p>}
-        </div>
-      ))}
-    </div>
-
-    {showForm && (
-      <div className="address-form">
-        <h3>{isEditing ? "Edit Address" : "Add New Address"}</h3>
-
-        <div className="form-grid">
-          {/* Name */}
-          <div className="input-group">
-            <input
-              id="name"
-              value={formAddress.name}
-              onChange={(e) => updateFormAddress("name", e.target.value)}
-              placeholder=" "
-              required
-            />
-            <label htmlFor="name">
-              Name<span style={{ color: "red" }}>*</span>
-            </label>
-          </div>
-
-          {/* Phone and Alt Phone in same row */}
-          <div className="row">
-            <div className="input-group">
-              <input
-                id="phone"
-                type="tel"
-                value={formAddress.phone}
-                onChange={(e) => updateFormAddress("phone", e.target.value)}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="phone">
-                Phone<span style={{ color: "red" }}>*</span>
-              </label>
-            </div>
-            <div className="input-group">
-              <input
-                id="altPhone"
-                type="tel"
-                value={formAddress.altPhone || ""}
-                onChange={(e) => updateFormAddress("altPhone", e.target.value)}
-                placeholder=" "
-              />
-              <label htmlFor="altPhone">Alt Phone</label>
-            </div>
-          </div>
-
-          {/* Address */}
-          <div className="input-group">
-            <input
-              id="address"
-              value={formAddress.address || ""}
-              onChange={(e) => updateFormAddress("address", e.target.value)}
-              placeholder=" "
-              required
-            />
-            <label htmlFor="address">
-              Address<span style={{ color: "red" }}>*</span>
-            </label>
-          </div>
-
-          {/* Landmark and City in same row */}
-          <div className="row">
-            <div className="input-group">
-              <input
-                id="landmark"
-                value={formAddress.landmark || ""}
-                onChange={(e) => updateFormAddress("landmark", e.target.value)}
-                placeholder=" "
-              />
-              <label htmlFor="landmark">Landmark</label>
-            </div>
-            <div className="input-group">
-              <input
-                id="city"
-                value={formAddress.city || ""}
-                onChange={(e) => updateFormAddress("city", e.target.value)}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="city">
-                City<span style={{ color: "red" }}>*</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Postal Code with buttons in same row */}
-          <div className="postal-row">
-            <div className="input-group" style={{ flex: 1 }}>
-              <input
-                id="postalCode"
-                value={formAddress.postalCode || ""}
-                onChange={(e) => updateFormAddress("postalCode", e.target.value)}
-                onBlur={onPostalBlur}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="postalCode">
-                Postal Code<span style={{ color: "red" }}>*</span>
-              </label>
-            </div>
-            <button type="button" onClick={useCurrentLocationInForm}>
-            <FontAwesomeIcon icon={faLocationArrow} style={{ marginRight: '6px' }} />  Locate Me
-            </button>
-            <button type="button" onClick={() => setShowMap(true)}>
-             <FontAwesomeIcon icon={faMapMarkerAlt} style={{ marginRight: '6px' }} /> Pin on Map
-            </button>
-          </div>
-
-          {/* State and Country in same row */}
-          <div className="row">
-            <div className="input-group">
-              <input
-                id="state"
-                value={formAddress.state || ""}
-                onChange={(e) => updateFormAddress("state", e.target.value)}
-                placeholder=" "
-                required
-              />
-              <label htmlFor="state">
-                State<span style={{ color: "red" }}>*</span>
-              </label>
-            </div>
-            <div className="input-group">
-              <input
-                id="country"
-                value={formAddress.country || "India"}
-                disabled
-                placeholder=" "
-                onChange={(e) => updateFormAddress("country", e.target.value)}
-              />
-              <label htmlFor="country">Country</label>
-            </div>
-          </div>
-
-          {/* Delivery Instructions */}
-          <div className="input-group">
-            <textarea
-              id="deliveryInstructions"
-              value={formAddress.deliveryInstructions || ""}
-              onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)}
-              placeholder=" "
-              rows={3}
-            />
-            <label htmlFor="deliveryInstructions">Delivery Instructions</label>
-          </div>
-
-          {/* Address Type radios */}
-          <fieldset className="form-label">
-            <legend>Address Type</legend>
-            <label>
-              <input
-                type="radio"
-                name="addressType"
-                value="Home"
-                checked={formAddress.addressType === "Home"}
-                onChange={(e) => updateFormAddress("addressType", e.target.value)}
-              />
-              Home
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="addressType"
-                value="Work"
-                checked={formAddress.addressType === "Work"}
-                onChange={(e) => updateFormAddress("addressType", e.target.value)}
-              />
-              Work
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="addressType"
-                value="Other"
-                checked={formAddress.addressType === "Other"}
-                onChange={(e) => updateFormAddress("addressType", e.target.value)}
-              />
-              Other
-            </label>
-            {formAddress.addressType === "Other" && (
-              <input
-                type="text"
-                placeholder="Enter custom address type"
-                value={customAddressType}
-                onChange={(e) => setCustomAddressType(e.target.value)}
-              />
-            )}
-          </fieldset>
-
-
-          <div className="form-buttons" style={{ marginTop: 15 }}>
-            <button type="button" onClick={() => setShowForm(false)} disabled={loading}>
-              Cancel
-            </button>
-            <button type="button" onClick={saveAddress} disabled={loading}>
-              {loading ? "Saving..." : "Save"}
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
-    )}
-
-    {/* Map Modal */}
-    {showMap && (
-      <div
-        className="map-modal"
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.7)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 9999,
+      <button
+        className="flex items-center justify-center w-full md:w-auto px-6 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+        onClick={() => {
+          setForm(emptyAddress);
+          setIsNew(true);
         }}
       >
-        <div
-          style={{
-            background: "#fff",
-            padding: 10,
-            borderRadius: 8,
-            width: "90%",
-            maxWidth: 600,
-            height: 400,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <MapContainer
-            center={mapMarker || [20.5937, 78.9629]}
-            zoom={15}
-            style={{ flex: 1 }}
-            whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
-          </MapContainer>
+        <span className="text-xl font-bold mr-2">+</span> Add New Address
+      </button>
 
-          <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between" }}>
-            <button type="button" onClick={() => setShowMap(false)}>
+      {(isNew || form.id) && (
+        <form className="mt-8 p-6 bg-white rounded-lg shadow-lg" onSubmit={saveAddress}>
+          <h4 className="text-xl font-semibold text-gray-800 mb-4">{isNew ? "Add New Address" : "Edit Address"}</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input type="text" name="name" value={form.name || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input type="text" name="phone" value={form.phone || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input type="text" name="address" value={form.address || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">City</label>
+              <input type="text" name="city" value={form.city || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">State</label>
+              <input type="text" name="state" value={form.state || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+              <input type="text" name="postalCode" value={form.postalCode || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Country</label>
+              <input type="text" name="country" value={form.country || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Landmark</label>
+              <input type="text" name="landmark" value={form.landmark || ""} onChange={handleInputChange} className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-700 mb-1">Address Type</label>
+              <select name="addressType" value={form.addressType || ""} onChange={handleInputChange} required className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                <option value="">Select Address Type</option>
+                <option value="Home">Home</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="flex flex-col col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 mb-1">Delivery Instructions</label>
+              <textarea name="deliveryInstructions" value={form.deliveryInstructions || ""} onChange={handleInputChange} className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"></textarea>
+            </div>
+            <div className="flex flex-col col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 mb-1">
+                Use Current Location{" "}
+                <FontAwesomeIcon icon={faLocationArrow} className="cursor-pointer text-blue-500" onClick={() => {
+                  navigator.geolocation.getCurrentPosition((pos) => {
+                    setMapMarker({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    setShowMap(true);
+                  });
+                }} />{" "}
+                or Pin Location{" "}
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="cursor-pointer text-blue-500" onClick={() => setShowMap(true)} />
+              </label>
+            </div>
+          </div>
+
+          <div className="flex space-x-4 mt-6">
+            <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+              {isNew ? "Save Address" : "Update Address"}
+            </button>
+            <button type="button" onClick={() => { setForm({}); setIsNew(true); }} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
               Cancel
             </button>
-            <button type="button" onClick={applyMapMarker}>
-              Select Location
-            </button>
+          </div>
+        </form>
+      )}
+
+      {showMap && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-xl w-11/12 max-w-2xl h-4/5 flex flex-col">
+            <MapContainer
+              center={mapMarker || [20.5937, 78.9629]}
+              zoom={15}
+              className="flex-1 rounded-lg"
+              whenCreated={(mapInstance) => (mapRef.current = mapInstance)}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <ClickableMap center={mapMarker} marker={mapMarker} setMarker={setMapMarker} />
+            </MapContainer>
+
+            <div className="mt-4 flex justify-between">
+              <button type="button" onClick={() => setShowMap(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                Cancel
+              </button>
+              <button type="button" onClick={applyMapLocation} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                Apply Location
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 }
