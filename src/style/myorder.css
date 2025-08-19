@@ -418,6 +418,7 @@
 @media (max-width: 768px) {
   .myorder-container {
     padding: 1.5rem 0.5rem;
+    padding-top: 100px;
   }
   .order-card {
     padding: 1rem;
