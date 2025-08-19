@@ -1,70 +1,89 @@
 /* checkout.css */
 
+:root {
+  --primary-color: #4A90E2;
+  --secondary-color: #F1F5F9;
+  --text-color: #334155;
+  --light-text-color: #64748B;
+  --bg-color: #F8FAFC;
+  --card-bg: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .checkout-wrapper {
   font-family: 'Inter', system-ui, sans-serif;
-  color: #070D0D;
+  color: var(--text-color);
   max-width: 1200px;
   margin: 100px auto 40px;
   padding: 24px;
+  background-color: var(--bg-color);
 }
 
 .checkout-wrapper .checkout-header {
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 }
 
 .checkout-wrapper .checkout-header h1 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   text-align: center;
-  color: #242D4C;
+  color: var(--primary-color);
 }
 
 /* Progress Indicator */
 .checkout-wrapper .progress-indicator {
   display: flex;
   justify-content: center;
-  gap: 24px;
+  gap: 2rem;
   margin-top: 20px;
 }
 
 .checkout-wrapper .progress-step {
   text-align: center;
-  opacity: 0.5;
-  transition: 0.3s;
+  opacity: 0.6;
+  transition: opacity 0.3s ease-in-out;
+  font-weight: 500;
+  color: var(--light-text-color);
+  position: relative;
 }
 
 .checkout-wrapper .progress-step.active {
   opacity: 1;
+  color: var(--text-color);
 }
 
 .checkout-wrapper .progress-step span {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--secondary-color);
+  color: var(--light-text-color);
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  margin: 0 auto 8px;
+  transition: background 0.3s ease-in-out;
 }
 
 .checkout-wrapper .progress-step.active span {
-  background: #242D4C;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--card-bg);
 }
 
-.checkout-wrapper .progress-step p {
-  font-size: 0.85rem;
-  margin-top: 6px;
-  color: #070D0D;
-}
-
-/* Body Layout */
+/* Layout */
 .checkout-wrapper .checkout-body {
   display: flex;
-  gap: 32px;
+  flex-direction: column;
+  gap: 2rem;
   align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  .checkout-wrapper .checkout-body {
+    flex-direction: row;
+  }
 }
 
 .checkout-wrapper .checkout-main {
@@ -74,77 +93,62 @@
 }
 
 .checkout-wrapper .checkout-summary {
-  max-width: 360px;
   width: 100%;
+}
+
+@media (min-width: 768px) {
+  .checkout-wrapper .checkout-summary {
+    max-width: 400px;
+  }
 }
 
 /* Nav Buttons */
 .checkout-wrapper .checkout-nav-buttons {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.checkout-wrapper .btn {
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
 }
 
 .checkout-wrapper .btn-outline {
-  background: transparent;
-  border: 1px solid #242D4C;
-  color: #242D4C;
+  background: var(--card-bg);
+  border-color: var(--light-text-color);
+  color: var(--light-text-color);
 }
 
 .checkout-wrapper .btn-outline:hover {
-  background: #242D4C;
-  color: #F1EAD8;
-}
-
-
-/* Buttons inside checkout */
-.checkout-wrapper .btn {
-  padding: 10px 20px;
-  font-weight: 600;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  background: var(--secondary-color);
+  color: var(--text-color);
+  border-color: var(--secondary-color);
+  box-shadow: var(--shadow-md);
 }
 
 .checkout-wrapper .btn-primary {
-  background: #242D4C;
-  color: #F1EAD8;
+  background: var(--primary-color);
+  color: var(--card-bg);
+  border-color: var(--primary-color);
 }
 
 .checkout-wrapper .btn-primary:hover {
-  background: #1c223d;
+  background: #3A7AD1;
+  border-color: #3A7AD1;
+  box-shadow: var(--shadow-md);
 }
 
-.checkout-wrapper .btn-outline {
-  background: transparent;
-  border: 1px solid #242D4C;
-  color: #242D4C;
-}
-
-.checkout-wrapper .btn-outline:hover {
-  background: #242D4C;
-  color: #F1EAD8;
-}
-
-
-/* Responsive */
-@media (max-width: 900px) {
-  .checkout-wrapper .checkout-body {
-    flex-direction: column;
-  }
-  .checkout-wrapper .checkout-summary {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  .checkout-wrapper .checkout-nav-buttons {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .checkout-wrapper .checkout-nav-buttons .btn {
-    width: 100%;
-  }
+.checkout-wrapper .btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
 }
