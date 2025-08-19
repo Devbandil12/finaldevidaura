@@ -1,5 +1,3 @@
-// src/components/Checkout.jsx
-
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
@@ -10,17 +8,11 @@ import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
 import Confirmation from "./Confirmation";
-// No need to import a separate CSS file anymore, as we're using Tailwind
-// import "../style/checkout.css";
+import "../style/checkout.css";
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
 
-async function submitOrderCOD(
-  selectedItems,
-  selectedAddress,
-  userdetails,
-  appliedCoupon
-) {
+async function submitOrderCOD(selectedItems, selectedAddress, userdetails, appliedCoupon) {
   const res = await fetch(`${BACKEND}/api/payments/createOrder`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,10 +21,7 @@ async function submitOrderCOD(
       phone: selectedAddress.phone,
       paymentMode: "cod",
       couponCode: appliedCoupon?.code || null,
-      cartItems: selectedItems.map((i) => ({
-        id: i.product.id,
-        quantity: i.quantity,
-      })),
+      cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
     }),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -46,8 +35,10 @@ export default function Checkout() {
 
   const [step, setStep] = useState(1);
   const [selectedAddress, setSelectedAddress] = useState(null);
-
+  
   const [selectedItems, setSelectedItems] = useState([]);
+
+
   useEffect(() => {
     const items = localStorage.getItem("selectedItems");
     if (items) {
@@ -71,194 +62,121 @@ export default function Checkout() {
   });
   const [loadingPrices, setLoadingPrices] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentVerified, setPaymentVerified] = useState(false);
-  const [upiId, setUpiId] = useState("");
-  const [verifiedUpi, setVerifiedUpi] = useState(false);
-  const [selectedUpiApp, setSelectedUpiApp] = useState(null);
-
   useEffect(() => {
     async function fetchBreakdown() {
       if (!selectedItems.length) return;
       setLoadingPrices(true);
+
       const res = await fetch(`${BACKEND}/api/payments/breakdown`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cartItems: selectedItems.map((i) => ({
-            id: i.product.id,
-            quantity: i.quantity,
-          })),
-          couponCode: appliedCoupon?.code,
+          cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+          couponCode: appliedCoupon?.code || null,
         }),
       });
-
       const data = await res.json();
-      if (res.ok) {
-        setBreakdown(data);
+      if (data.success) {
+        setBreakdown(data.breakdown);
       } else {
-        console.error("Failed to fetch breakdown:", data.msg);
-        toast.error("Failed to fetch price details.");
+        console.error('Price breakdown error:', data.msg);
       }
       setLoadingPrices(false);
     }
     fetchBreakdown();
   }, [selectedItems, appliedCoupon]);
 
-  const handleNext = () => {
-    if (step === 1 && !selectedAddress) {
-      toast.error("Please select an address to proceed.");
-      return;
-    }
-    setStep(step + 1);
-  };
+  const [paymentMethod, setPaymentMethod] = useState("Razorpay");
+  const [upiId, setUpiId] = useState("");
+  const [verifiedUpi] = useState(false);
+  const [selectedUpiApp, setSelectedUpiApp] = useState("PhonePe");
+  const [paymentVerified, setPaymentVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
 
-  const handlePrev = () => {
-    if (step === 1) {
-      navigate(-1);
-    } else {
-      setStep(step - 1);
-    }
-  };
+  
 
-  const resetCheckout = () => {
-    setStep(1);
-    setSelectedAddress(null);
-    setSelectedItems([]);
-    setAppliedCoupon(null);
-    setBreakdown({
-      productTotal: 0,
-      deliveryCharge: 0,
-      discountAmount: 0,
-      total: 0,
-    });
-    setPaymentMethod("");
-    setPaymentVerified(false);
-    setUpiId("");
-    setVerifiedUpi(false);
-    setSelectedUpiApp(null);
+  
+
+
+  const handleRazorpaySuccess = async () => {
     localStorage.removeItem("selectedItems");
-    localStorage.removeItem("appliedCoupon");
-    setCart([]);
-  };
-
-  const handlePlaceOrder = async () => {
-    try {
-      if (
-        paymentMethod === "Cash on Delivery" &&
-        selectedAddress.city.toLowerCase() !== "gwalior"
-      ) {
-        toast.error("Cash on Delivery is only available in Gwalior.");
-        return;
-      }
-      toast.info("Placing your order...", { autoClose: false });
-      await submitOrderCOD(
-        selectedItems,
-        selectedAddress,
-        userdetails,
-        appliedCoupon
-      );
-      toast.dismiss();
-      toast.success("Order placed successfully!");
-      setOrders([...orders, { status: "pending" }]);
-      resetCheckout();
-      setStep(3);
-    } catch (err) {
-      toast.dismiss();
-      toast.error("Order placement failed: " + err.message);
-    }
-  };
-
-  const handleRazorpaySuccess = async (response) => {
-    toast.dismiss();
-    toast.success("Payment successful! Redirecting...");
-    setOrders([...orders, { status: "pending" }]);
-    resetCheckout();
+    await getorders();
     setStep(3);
   };
 
+  const handlePlaceOrder = async () => {
+    if (selectedItems.length === 0) {
+      alert("No items selected for the order.");
+      return;
+    }
+    try {
+      await submitOrderCOD(selectedItems, selectedAddress, userdetails, appliedCoupon);
+      localStorage.removeItem("selectedItems");
+      await getorders();
+      toast.success("Order placed!");
+      setStep(3);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not place order.");
+    }
+  };
+
+  const handleNext = () => {
+  if (step === 1) {
+    if (!selectedAddress) {
+      alert("Please select a delivery address before proceeding.");
+      return; // Prevent going to next step
+    }
+  }
+  setStep((prev) => Math.min(prev + 1, 3));
+};
+
+
+  const handlePrev = () => {
+    if (step === 1) {
+      navigate("/cart");
+    } else {
+      setStep((prev) => Math.max(prev - 1, 1));
+    }
+  };
+
+  const resetCheckout = () => setStep(1);
+
+  
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8 font-sans">
-      <ToastContainer position="top-center" />
-      <div className="w-full max-w-5xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-6">
-          Checkout
-        </h1>
-        <div className="relative flex justify-between items-center after:absolute after:top-1/2 after:left-0 after:right-0 after:h-0.5 after:bg-gray-300 after:-translate-y-1/2">
-          {/* Step 1 */}
-          <div className="relative z-10 flex flex-col items-center flex-1">
+    <div className="checkout-wrapper">
+      <div className="checkout-header">
+        <div className="absolute top-2">
+          <ToastContainer />
+        </div>
+        <div className="progress-indicator">
+          {["Address", "Payment", "Confirmation"].map((label, idx) => (
             <div
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-300 font-semibold ${
-                step >= 1
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-300 text-gray-600"
-              }`}
+              key={idx}
+              className={`progress-step ${step === idx + 1 ? "active" : ""}`}
             >
-              1
+              <span>{idx + 1}</span>
+              <p>{label}</p>
             </div>
-            <span
-              className={`mt-2 text-sm text-center transition-colors duration-300 ${
-                step >= 1 ? "text-blue-600 font-medium" : "text-gray-600"
-              }`}
-            >
-              Address
-            </span>
-          </div>
-
-          {/* Step 2 */}
-          <div className="relative z-10 flex flex-col items-center flex-1">
-            <div
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-300 font-semibold ${
-                step >= 2
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-300 text-gray-600"
-              }`}
-            >
-              2
-            </div>
-            <span
-              className={`mt-2 text-sm text-center transition-colors duration-300 ${
-                step >= 2 ? "text-blue-600 font-medium" : "text-gray-600"
-              }`}
-            >
-              Payment
-            </span>
-          </div>
-
-          {/* Step 3 */}
-          <div className="relative z-10 flex flex-col items-center flex-1">
-            <div
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors duration-300 font-semibold ${
-                step >= 3
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-300 text-gray-600"
-              }`}
-            >
-              3
-            </div>
-            <span
-              className={`mt-2 text-sm text-center transition-colors duration-300 ${
-                step >= 3 ? "text-blue-600 font-medium" : "text-gray-600"
-              }`}
-            >
-              Confirmation
-            </span>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="flex flex-col-reverse md:flex-row w-full max-w-5xl mx-auto gap-8">
-        <div className="flex-1 space-y-6">
+      <div className="checkout-body">
+        <div className="checkout-main">
           {step === 1 && (
             <AddressSelection
               userId={userdetails?.id}
-              onSelect={setSelectedAddress}
-              selectedAddress={selectedAddress}
+    onSelect={setSelectedAddress}
             />
           )}
 
           {step === 2 && (
             <PaymentDetails
+              transactionId={transactionId}
+              setTransactionId={setTransactionId}
               paymentMethod={paymentMethod}
               setPaymentMethod={setPaymentMethod}
               upiId={upiId}
@@ -281,30 +199,19 @@ export default function Checkout() {
 
           {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
 
-          <div className="flex justify-between items-center pt-4">
-            <button
-              onClick={handlePrev}
-              className="px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
-            >
+          <div className="checkout-nav-buttons">
+            <button onClick={handlePrev} className="btn btn-outline">
               {step === 1 ? "Back to Cart" : "Back"}
             </button>
-            {step < 3 && (
-              <button
-                onClick={handleNext}
-                disabled={step === 1 && !selectedAddress}
-                className={`px-6 py-2 rounded-md font-semibold transition-colors duration-200 shadow-md ${
-                  step === 1 && !selectedAddress
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                {step === 1 ? "Next: Payment" : "Next"}
+            {step === 1 && (
+              <button onClick={handleNext} className="btn btn-primary">
+                Next
               </button>
             )}
           </div>
         </div>
 
-        <aside className="w-full md:w-96 flex-shrink-0">
+        <aside className="checkout-summary">
           <OrderSummary
             selectedAddress={selectedAddress}
             selectedItems={selectedItems}
