@@ -233,7 +233,7 @@ export default function MyOrders() {
         {!loadingOrders && sortedOrders.length === 0 && <p>No orders found.</p>}
 
         {sortedOrders.map((order) => {
-          const totalItems = order.ordeItems.reduce((sum, i) => sum + i.quantity, 0);
+          const totalItems = order.orderItems.reduce((sum, i) => sum + i.quantity, 0);
 
           // ✅ Map refund fields from DB
           const r = order.refund_status
