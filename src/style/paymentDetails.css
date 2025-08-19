@@ -1,5 +1,15 @@
 /* payment-details.css */
 
+:root {
+  --primary-color: #4A90E2;
+  --secondary-color: #F1F5F9;
+  --text-color: #334155;
+  --light-text-color: #64748B;
+  --card-bg: #FFFFFF;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+}
+
 .payment-details {
   background: var(--card-bg);
   padding: 32px;
@@ -97,4 +107,17 @@
   gap: 12px;
   font-style: italic;
   color: var(--light-text-color);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .payment-details {
+    padding: 16px;
+  }
+  .payment-details .summary-header {
+    font-size: 1rem;
+  }
+  .payment-details .payment-option {
+    padding: 10px 16px;
+  }
 }
