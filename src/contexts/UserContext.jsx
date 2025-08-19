@@ -25,7 +25,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
       const clerkId = user?.id; // Correct variable name from schema
 
       if (!email || !clerkId) {
-        console.warn("âŒ Email or Clerk ID not found from Clerk. Skipping DB operation.");
+        console.warn("❌ Email or Clerk ID not found from Clerk. Skipping DB operation.");
         return;
       }
 
@@ -46,7 +46,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
         setUserdetails(postData);
       }
     } catch (err) {
-      console.error("âŒ Error in getUserDetail:", err);
+      console.error("❌ Error in getUserDetail:", err);
     }
   }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
@@ -57,7 +57,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
       const data = await res.json();
       setOrders(data);
     } catch (error) {
-      console.error("âŒ Failed to get orders:", error);
+      console.error("❌ Failed to get orders:", error);
     }
   }, [userdetails?.id, BACKEND_URL]);
 
@@ -68,7 +68,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
       const data = await res.json();
       setAddress(data);
     } catch (error) {
-      console.error("âŒ Failed to get user addresses:", error);
+      console.error("❌ Failed to get user addresses:", error);
     }
   }, [userdetails?.id, BACKEND_URL]);
 
@@ -81,7 +81,7 @@ const [loading, setLoading] = useState(true); // Add a loading state
       const data = await res.json();
       setUsers(data);
     } catch (error) {
-      console.error("âŒ Failed to get all users:", error);
+      console.error("❌ Failed to get all users:", error);
     } finally {
     setLoading(false); // Set loading to false after the fetch completes (success or failure)
   }
