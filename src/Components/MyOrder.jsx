@@ -117,8 +117,9 @@ export default function MyOrders() {
   }
 
   const sortedOrders = (orders || [])
-    .filter((o) => o.userId === userdetails.id)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  .filter((o) => userdetails?.id && o.userId === userdetails.id)
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
 
   
   const handleConfirmCancel = async () => {
