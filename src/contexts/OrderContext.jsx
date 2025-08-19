@@ -11,11 +11,9 @@ export const OrderProvider = ({ children }) => {
   const { userdetails } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
+  // 🔹 Fetch orders (user → only own, admin → all)
   const getorders = async (showLoader = true, isAdmin = false) => {
-    if (!isAdmin && !userdetails?.id) {
-      return;
-    }
-
+    if (!isAdmin && !userdetails?.id) return;
     if (showLoader) setLoadingOrders(true);
 
     try {
@@ -27,12 +25,13 @@ export const OrderProvider = ({ children }) => {
       const data = await res.json();
       setOrders(data);
     } catch (err) {
-      console.error("âŒ Error fetching orders:", err);
+      console.error("❌ Error fetching orders:", err);
     } finally {
       if (showLoader) setLoadingOrders(false);
     }
   };
 
+  // 🔹 Update order status
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
@@ -42,57 +41,65 @@ export const OrderProvider = ({ children }) => {
       });
       if (!res.ok) throw new Error("Failed to update order status");
       await getorders(true, true);
-      toast.success(`Order ${orderId} status updated to ${newStatus}`);
+      toast.success(`Order ${orderId} updated to ${newStatus}`);
     } catch (error) {
-      console.error("âŒ Failed to update order status:", error);
+      console.error("❌ Failed to update order status:", error);
       toast.error("Failed to update order status.");
     }
   };
 
-  const cancelOrder = async (orderId) => {
+  // 🔹 Cancel order (COD + prepaid via refund API)
+  const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
-        method: "PUT",
-      });
-      if (!res.ok) throw new Error("Failed to cancel order");
-      toast.success(`Order ${orderId} has been successfully canceled.`);
-      await getorders(true, true); // Refresh the orders list for admin
+      if (paymentMode === "razorpay") {
+        // Refund prepaid
+        const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, amount }),
+        });
+        if (!res.ok) throw new Error("Refund failed");
+      } else {
+        // COD → just cancel
+        await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
+          method: "PUT",
+        });
+      }
+      toast.success(`Order ${orderId} canceled successfully.`);
+      await getorders(true, true);
     } catch (error) {
-      console.error("âŒ Failed to cancel order:", error);
+      console.error("❌ Failed to cancel order:", error);
       toast.error("Failed to cancel order.");
     }
   };
 
-
+  // 🔹 Single order details
   const getSingleOrderDetails = async (orderId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
       if (!res.ok) throw new Error("Failed to fetch order details");
-      const data = await res.json();
-      return data;
+      return await res.json();
     } catch (error) {
-      console.error("âŒ Error fetching order details:", error);
+      console.error("❌ Error fetching order details:", error);
       toast.error("Failed to load order details.");
       return null;
     }
   };
 
   useEffect(() => {
-    if (userdetails) {
-      getorders();
-    }
+    if (userdetails) getorders();
   }, [userdetails]);
 
   return (
     <OrderContext.Provider
       value={{
         orders,
+        loadingOrders,
         getorders,
         setOrders,
-        loadingOrders,
         updateOrderStatus,
-        getSingleOrderDetails,
         cancelOrder,
+        getSingleOrderDetails,
       }}
     >
       {children}
