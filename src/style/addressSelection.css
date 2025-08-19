@@ -1,268 +1,200 @@
-/* ───────────── AddressSelection Component Styles ───────────── */
+/* addressSelection.css */
+
 .address-selection {
-  background: #fff;
+  background: var(--card-bg);
   font-family: 'Inter', system-ui, sans-serif;
-  color: #070D0D;
+  color: var(--text-color);
   max-width: 900px;
   margin: 0 auto;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
 }
 
-/* Heading */
 .address-selection h2 {
-  font-size: 1.5rem;
-  color: #242D4C;
-  margin-bottom: 16px;
+  font-size: 1.75rem;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
   font-weight: 700;
 }
 
 /* Add New Button */
 .address-selection .add-new-btn {
-  background: #242D4C;
-  color: #F1EAD8;
-  padding: 10px 18px;
+  background: var(--primary-color);
+  color: var(--card-bg);
+  padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
+
 .address-selection .add-new-btn:hover {
-  background: #1c223d;
+  background: #3A7AD1;
+  box-shadow: var(--shadow-md);
 }
 
 /* Address List */
 .address-selection .address-list {
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
-  margin-top: 20px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-.address-selection .address-card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 16px;
-  cursor: pointer;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.address-selection .address-card.active {
-  border-color: #242D4C;
-  box-shadow: 0 0 6px rgba(36, 45, 76, 0.3);
-}
-
-/* ───────────── Form Styles ───────────── */
-.address-selection .address-form {
-  margin-top: 30px;
-}
-
-/* Form Heading */
-.address-selection .address-form h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #242D4C;
-}
-
-/* Remove auto grid — manual grouping from JSX handles layout */
-.address-selection .form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Input Group - For floating labels */
-.address-selection .input-group {
-  position: relative;
-  flex: 1;
-}
-
-.address-selection .input-group input,
-.address-selection .input-group textarea {
-  width: 100%;
-  padding: 14px 12px 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: #fff;
-  outline-offset: 2px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.address-selection .input-group input:focus,
-.address-selection .input-group textarea:focus {
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
-}
-
-/* Label for floating */
-.address-selection .input-group label {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  background: #fff;
-  padding: 0 4px;
-  color: #777;
-  font-size: 1rem;
-  font-weight: 500;
-  pointer-events: none;
-  transition: all 0.2s ease;
-  z-index: 1;
-}
-
-/* Floating label on focus or filled */
-.address-selection .input-group input:focus + label,
-.address-selection .input-group input:not(:placeholder-shown) + label,
-.address-selection .input-group textarea:focus + label,
-.address-selection .input-group textarea:not(:placeholder-shown) + label {
-  top: 0px;
-  font-size: 0.75rem;
-  color: #242D4C;
-}
-
-/* Row for grouped inputs */
-.address-selection .row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap; /* Prevent overflow on small screens */
-}
-
-/* Postal Code row */
-.address-selection .postal-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.address-selection .postal-row .input-group {
-  flex: 1;
-  min-width: 180px;
-}
-.address-selection .postal-row button {
-  background: #242D4C;
-  color: #F1EAD8;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.address-selection .postal-row button:hover {
-  background: #1c223d;
-}
-
-/* Address Type Radio Buttons */
-.address-selection .address-form fieldset {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-.address-selection .address-form fieldset legend {
-  font-weight: 700;
-  color: #242D4C;
-  margin-bottom: 10px;
-}
-.address-selection .address-form fieldset label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  margin-right: 20px;
-  cursor: pointer;
-}
-.address-selection .address-form fieldset input[type="radio"] {
-  margin: 0;
-}
-
-/* Form Actions */
-.address-selection .form-buttons {
-  display: flex;
-  justify-content: space-between;
   gap: 16px;
 }
-.address-selection .form-buttons button {
-  padding: 10px 20px;
-  font-weight: 600;
-  border-radius: 6px;
-  border: none;
+
+.address-selection .address-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 20px;
   cursor: pointer;
-}
-.address-selection .form-buttons button:last-child {
-  background: #242D4C;
-  color: #F1EAD8;
-}
-.address-selection .form-buttons button:first-child {
-  background: #ccc;
-  color: #333;
+  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-sm);
 }
 
-/* Default label style */
+.address-selection .address-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.address-selection .address-card.selected {
+  border-color: var(--primary-color);
+  background-color: var(--secondary-color);
+}
+
+.address-selection .address-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 8px;
+}
+
+.address-selection .address-card p {
+  color: var(--light-text-color);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+/* Buttons */
+.address-selection .address-card .card-buttons {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.address-selection .address-card .card-buttons button {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.address-selection .address-card .card-buttons .edit-btn {
+  background: #F1F5F9;
+  color: var(--text-color);
+}
+
+.address-selection .address-card .card-buttons .edit-btn:hover {
+  background: #E2E8F0;
+}
+
+.address-selection .address-card .card-buttons .remove-btn {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FEE2E2;
+}
+
+.address-selection .address-card .card-buttons .remove-btn:hover {
+  background: #FEE2E2;
+}
+
+/* Address Form */
+.address-selection .address-form {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 600px) {
+  .address-selection .address-form {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.address-selection .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.address-selection .form-group label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.address-selection .form-group input,
+.address-selection .form-group select,
+.address-selection .form-group textarea {
+  padding: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+  background-color: #F8FAFC;
+}
+
+.address-selection .form-group input:focus,
+.address-selection .form-group select:focus,
+.address-selection .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Buttons */
+.address-selection .form-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.address-selection .form-buttons button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.address-selection .form-buttons .cancel-btn {
+  background: #E2E8F0;
+  color: var(--text-color);
+}
+
+.address-selection .form-buttons .save-btn {
+  background: var(--primary-color);
+  color: var(--card-bg);
+}
+
 .address-selection .default-label {
   font-weight: 600;
-  color: #242D4C;
-  padding: 2px 8px;
-  border: 1px solid #242D4C;
+  color: #16A34A;
+  padding: 4px 10px;
+  border: 1px solid #BBF7D0;
+  background-color: #DCFCE7;
   border-radius: 6px;
   font-size: 0.85rem;
 }
 
-/* Scrollbar hidden */
-.address-selection .address-list {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.address-selection .address-list::-webkit-scrollbar {
-  display: none;
-}
-
-
-
-
-.address-selection .address-list {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-}
-
-.address-selection .address-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-
-
-
-
-/* Checked state highlight */
-.address-selection .address-form fieldset input[type="radio"]:checked + span {
-  color: #242D4C;
-  font-weight: 600;
-}
-
-/* Radio button style */
-.address-selection .address-form fieldset input[type="radio"] {
-  accent-color: #242D4C;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-}
-
-
-/* Custom Address Type Input */
-.address-selection .address-form .custom-address-input {
-  width: 100%;
-  padding: 10px 12px;
-  margin-top: 12px; /* space above input */
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.address-selection .address-form .custom-address-input:focus {
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
-  outline: none;
+/* Responsive Styles */
+@media (max-width: 600px) {
+  .address-selection .address-form {
+    grid-template-columns: 1fr;
+  }
 }
