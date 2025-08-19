@@ -4,7 +4,6 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLocationArrow, faMapMarkerAlt, faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons';
-// Removed import "../style/addressSelection.css";
 
 /* Fix default icon paths for many bundlers */
 delete L.Icon.Default.prototype._getIconUrl;
