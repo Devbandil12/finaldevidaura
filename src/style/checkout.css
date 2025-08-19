@@ -9,6 +9,7 @@
   --card-bg: #FFFFFF;
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
 }
 
 .checkout-wrapper {
@@ -151,4 +152,24 @@
   background-color: #ccc;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .checkout-wrapper {
+    padding: 16px;
+    margin: 40px auto;
+  }
+  .checkout-wrapper .checkout-header h1 {
+    font-size: 2rem;
+  }
+  .checkout-wrapper .checkout-body {
+    flex-direction: column;
+  }
+  .checkout-wrapper .checkout-main {
+    width: 100%;
+  }
+  .checkout-wrapper .checkout-summary {
+    max-width: 100%;
+  }
 }
