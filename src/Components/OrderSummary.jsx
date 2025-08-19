@@ -1,6 +1,5 @@
 import React from "react";
-
-import "../style/orderSummary.css";
+// Removed import "../style/orderSummary.css";
 
 // Helper: formatAddress
 const formatAddress = (address) => {
@@ -20,63 +19,75 @@ export default function OrderSummary({
     0
   );
 
-  const productDiscount = breakdown.originalTotal - breakdown.productTotal;
+  const productDiscount = (breakdown.originalTotal - breakdown.productTotal).toFixed(2);
 
   return (
-    <div className="order-summary-card">
-      <div className="order-summary-card__header">
-        <h2>Order Summary</h2>
-        <span>
-          {itemCount} item{itemCount > 1 ? "s" : ""}
-        </span>
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center border-b pb-4 mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">Order Summary</h2>
+        <span className="text-gray-500 text-sm">{itemCount} item{itemCount > 1 ? "s" : ""}</span>
       </div>
 
-      <div className="order-summary-card__address">
-        <strong>Deliver to:</strong>
-        <p>
+      <div className="mb-4">
+        <strong className="text-gray-700">Deliver to:</strong>
+        <p className="text-sm text-gray-600 mt-1">
           {selectedAddress
             ? formatAddress(selectedAddress)
             : "No address selected"}
         </p>
       </div>
 
-      <details className="order-summary-card__items" open>
-        <summary>Items</summary>
-        <ul>
+      <details className="mb-4" open>
+        <summary className="font-medium text-gray-800 cursor-pointer list-none flex justify-between items-center">
+          <span>Items</span>
+          <svg className="w-4 h-4 ml-2 text-gray-500 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+        <ul className="mt-3 space-y-3">
           {selectedItems.map((item, idx) => (
-            <li key={idx} className="order-summary-item-details">
-              <img src={item.product.imageurl} alt={item.product.name} />
-              <div className="item-info">
-                <p className="item-name">{item.product.name}</p>
-                <p className="item-qty">×{item.quantity || 1}</p>
+            <li key={idx} className="flex items-start space-x-4 border-b last:border-b-0 pb-3">
+              <img src={item.product.imageurl} alt={item.product.name} className="w-16 h-16 object-cover rounded-md shadow-sm" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">{item.product.name}</p>
+                <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity || 1}</p>
               </div>
-              <p className="item-price">
-                ₹
-                {Math.floor(
-                  item.product.oprice * (1 - item.product.discount / 100)
-                )}
+              <p className="text-sm font-medium text-gray-700">
+                ₹{Math.floor(item.product.oprice * (1 - item.product.discount / 100))}
               </p>
             </li>
           ))}
         </ul>
       </details>
 
-      <div className="order-summary-card__breakdown">
+      <div className="space-y-2 text-sm text-gray-600">
         {loadingPrices ? (
-          <p>Loading price details…</p>
+          <p className="text-center py-4">Loading price details…</p>
         ) : (
           <>
-            <div><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
-            <div><span>Product Discount</span><span className="text-danger">-₹{productDiscount}</span></div>
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>₹{breakdown.productTotal}</span>
+            </div>
+            {productDiscount > 0 && (
+              <div className="flex justify-between text-green-600 font-medium">
+                <span>Product Discount</span>
+                <span>-₹{productDiscount}</span>
+              </div>
+            )}
             {appliedCoupon && (
-              <div style={{ color: "green", fontWeight: 600 }}>
+              <div className="flex justify-between text-green-600 font-medium">
                 <span>Coupon ({appliedCoupon.code})</span>
                 <span>-₹{breakdown.discountAmount}</span>
               </div>
             )}
-            <div><span>Delivery Charge </span><span>₹{breakdown.deliveryCharge}</span></div>
-            <div className="order-summary-card__total">
-              <span>Total</span><span>₹{breakdown.total}</span>
+            <div className="flex justify-between">
+              <span>Delivery Charge</span>
+              <span>₹{breakdown.deliveryCharge}</span>
+            </div>
+            <div className="flex justify-between items-center text-lg font-bold text-gray-800 border-t pt-4 mt-4">
+              <span>Total</span>
+              <span>₹{breakdown.total}</span>
             </div>
           </>
         )}
