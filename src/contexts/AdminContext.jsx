@@ -73,6 +73,19 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
+  // New function to get single order details
+  const getSingleOrderDetails = async (orderId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
+      if (!res.ok) throw new Error("Failed to fetch order details");
+      return await res.json();
+    } catch (error) {
+      console.error("❌ Error fetching single order details:", error);
+      toast.error("Failed to load order details.");
+      return null;
+    }
+  };
+
   const updateOrderStatus = async (orderId, status) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
@@ -119,7 +132,7 @@ export const AdminProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/coupons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(couponData), // include { code, discount, userId? }
+        body: JSON.stringify(couponData),
       });
       if (!res.ok) throw new Error("Failed to create coupon");
       toast.success("Coupon created");
@@ -131,14 +144,10 @@ export const AdminProvider = ({ children }) => {
 
   /* -------------------- EXPORT -------------------- */
   const exportUsers = (selectedUsers) => {
-    // 🔹 selectedUsers: array of user objects
-    // Use jsPDF or similar here
     console.log("Exporting users:", selectedUsers);
   };
 
   const exportOrders = (selectedOrders) => {
-    // 🔹 selectedOrders: array of order objects
-    // Use jsPDF or similar here
     console.log("Exporting orders:", selectedOrders);
   };
 
@@ -159,6 +168,7 @@ export const AdminProvider = ({ children }) => {
         deleteUser,
         exportUsers,
         getAllOrders,
+        getSingleOrderDetails, // Add the new function to the context value
         updateOrderStatus,
         cancelOrder,
         exportOrders,
