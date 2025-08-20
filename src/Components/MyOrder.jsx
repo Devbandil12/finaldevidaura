@@ -1,5 +1,3 @@
-// src/components/MyOrders.jsx
-
 import React, { useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { OrderContext } from "../contexts/OrderContext";
@@ -196,6 +194,44 @@ export default function MyOrders() {
     );
   };
 
+  const isOnlinePayment = modalOrder?.paymentMode === "Online Payment";
+
+  const renderModalContent = () => {
+    if (!modalOrder) return null;
+
+    if (isOnlinePayment) {
+      const refundAmount = modalOrder.totalAmount * 0.95;
+      return (
+        <>
+          <h2>Confirm Cancellation</h2>
+          <p>
+            Are you sure you want to cancel{" "}
+            <strong>Order #{modalOrder.id}</strong>?
+            <br />
+            You paid: <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong>
+            <br />
+            A 5% cancellation fee applies.
+            <br />
+            You will be refunded:{" "}
+            <strong>₹{refundAmount.toFixed(2)}</strong>
+          </p>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <h2>Confirm Cancellation</h2>
+          <p>
+            Are you sure you want to cancel{" "}
+            <strong>Order #{modalOrder.id}</strong>?
+            <br />
+            This order was placed with Cash on Delivery. No refund is required.
+          </p>
+        </>
+      );
+    }
+  };
+
   return (
     <div className="myorder-container">
       {isModalOpen &&
@@ -203,19 +239,7 @@ export default function MyOrders() {
         createPortal(
           <div className="modal-overlay">
             <div className="modal">
-              <h2>Confirm Cancellation</h2>
-              <p>
-                Are you sure you want to cancel{" "}
-                <strong>Order #{modalOrder.id}</strong>?
-                <br />
-                You paid: <strong>₹{modalOrder.totalAmount.toFixed(2)}</strong>
-                <br />
-                A 5% cancellation fee applies.
-                <br />
-                You will be refunded:{" "}
-                <strong>₹{(modalOrder.totalAmount * 0.95).toFixed(2)}</strong>
-              </p>
-
+              {renderModalContent()}
               <div className="modal-actions">
                 <button onClick={handleConfirmCancel} className="btn btn-danger">
                   Yes, Cancel Order
