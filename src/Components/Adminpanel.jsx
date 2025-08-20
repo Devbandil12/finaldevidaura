@@ -182,19 +182,22 @@ const AdminPanel = () => {
   };
   
   const handleorderdetails = async (order) => {
-    setDetailsLoading(true);
-    try {
-      const details = await getSingleOrderDetails(order.id);
-      if (details) {
-        setSelectedOrder(details);
-      }
-    } catch (error) {
-      console.error("Error fetching order products:", error);
-      toast.error("Failed to load order details.");
-    } finally {
-      setDetailsLoading(false);
+  setDetailsLoading(true);
+  try {
+    // This line is now correctly awaiting the result from getSingleOrderDetails
+    const details = await getSingleOrderDetails(order.id);
+    if (details) {
+      setSelectedOrder(details);
+    } else {
+      console.error('getSingleOrderDetails returned null or undefined.');
     }
-  };
+  } catch (error) {
+    console.error("Error fetching order products:", error);
+    toast.error("Failed to load order details.");
+  } finally {
+    setDetailsLoading(false);
+  }
+};
 
   const filteredUsers = users?.filter(
     (user) =>
