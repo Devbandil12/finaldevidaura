@@ -652,9 +652,10 @@
   color: #EFEDE4;
   cursor: pointer;
   font-size: 0.9rem;
+  padding: 5px 10px;
   font-weight: 500;
   padding: 0;
-  text-align: right;
+  align-self: right;
 }
 
 /* Available Coupons List */
