@@ -602,7 +602,6 @@
 
 /* Coupon Box (Dynamic) */
 .coupon-box {
-  background-color: #f7fcf7;
   border: 1px solid #d4e3d4;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -625,7 +624,7 @@
 
 .coupon-box button {
   padding: 10px 18px;
-  background-color: #5cb85c;
+  background-color: #070D0D;
   color: white;
   border: none;
   border-radius: 6px;
@@ -634,15 +633,11 @@
   transition: background-color 0.2s ease-in-out;
 }
 
-.coupon-box button:hover {
-  background-color: #449d44;
-}
 
 .coupon-box.applied {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 2px solid #5cb85c;
 }
 
 .coupon-box.applied span {
@@ -653,7 +648,7 @@
 .coupon-box.applied button {
   background: none;
   border: none;
-  color: #dc3545;
+  color: #070D0D;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
@@ -666,7 +661,6 @@
 }
 
 .available-coupons-section h4 {
-  border-top: 1px solid #e0e0e0;
   padding-top: 20px;
 }
 
