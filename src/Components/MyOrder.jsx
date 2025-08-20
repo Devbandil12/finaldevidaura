@@ -306,8 +306,7 @@ export default function MyOrders() {
                   </p>
                 </div>
                 <div className="buttons">
-                  {order.paymentStatus === "paid" &&
-                    order.status === "order placed" &&
+                  {order.status === "order placed" &&
                     !r &&
                     (cancellingOrderId === order.id ? (
                       <MiniLoader text="Cancelling..." />
