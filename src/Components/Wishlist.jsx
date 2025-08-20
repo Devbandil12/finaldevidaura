@@ -30,12 +30,6 @@ const Wishlist = () => {
 
   return (
     <>
-      <div style={{ padding: '10px', backgroundColor: 'lightblue', border: '1px solid blue', margin: '100px 10px' }}>
-          <h4>Wishlist Debugging Info:</h4>
-          <p>Is Wishlist Loading: <strong>{isWishlistLoading ? 'True' : 'False'}</strong></p>
-          <p>Wishlist Item Count: <strong>{wishlist.length}</strong></p>
-      </div>
-
       <div className="wishlist-main-container">
         {wishlist.length === 0 ? (
           <div className="empty-wishlist">
