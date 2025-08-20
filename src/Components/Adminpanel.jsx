@@ -28,17 +28,19 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   );
 };
 
+// src/components/Adminpanel.jsx
 const OrderDetailsPopup = ({ order, onClose }) => {
   if (!order) return null;
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Order Details (#{order.id})</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl">×</button>
-        </div>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh] relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">×</button>
+        
+        <h2 className="text-xl font-bold mb-4">Order Details (#{order.id})</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">Customer & Payment</h3>
             <p><strong>User:</strong> {order.userName}</p>
             <p><strong>Phone:</strong> {order.phone || 'N/A'}</p>
             <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
@@ -46,27 +48,32 @@ const OrderDetailsPopup = ({ order, onClose }) => {
             <p><strong>Total Amount:</strong> ₹{order.totalAmount}</p>
             <p><strong>Status:</strong> <span className="font-semibold text-green-600">{order.status}</span></p>
           </div>
-          <div className="mt-4">
-            <strong>Shipping Address:</strong>
-            <p>{order.address}, {order.city}, {order.state}, {order.zip}</p>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">Shipping Address</h3>
+            <p>
+              {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
+            </p>
+            <p><strong>Landmark:</strong> {order.shippingAddress?.landmark || 'N/A'}</p>
+            <p><strong>Contact:</strong> {order.shippingAddress?.phone || 'N/A'}</p>
           </div>
-          <div className="mt-4">
-            <strong>Products:</strong>
-            <ul className="list-disc list-inside space-y-2">
-              {(order.products || []).map(p => (
-                <li key={p.productId} className="flex items-center space-x-2">
-                  <img src={p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded" />
-                  <span>{p.productName} (x{p.quantity}) - ₹{p.price}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="font-semibold text-lg">Products</h3>
+          <ul className="list-disc list-inside space-y-2">
+            {(order.products || []).map(p => (
+              <li key={p.productId} className="flex items-center space-x-2">
+                <img src={p.imageurl} alt={p.productName} className="w-12 h-12 object-cover rounded" />
+                <span>{p.productName} (x{p.quantity}) - ₹{p.price}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>
   );
 };
-
 // New Carts & Wishlists component
 const CartsWishlistsTab = () => {
   return (
