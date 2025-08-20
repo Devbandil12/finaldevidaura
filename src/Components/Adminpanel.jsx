@@ -1,15 +1,14 @@
 // src/components/Adminpanel.jsx
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import "../style/adminPanel.css";
-import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { AdminContext } from "../contexts/AdminContext";
+import { AdminContext } from "../contexts/AdminContext"; // Using AdminContext for all admin data
+import { CouponContext } from "../contexts/CouponContext"; // Keeping CouponContext
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
-import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 
@@ -64,12 +63,12 @@ const AdminPanel = () => {
   
   // Contexts
   const { products, updateProduct, deleteProduct } = useContext(ProductContext);
-  const { users, getallusers, userdetails } = useContext(UserContext);
-  const { orders, getorders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
+  const { userdetails } = useContext(UserContext); // Only using userdetails from UserContext
   const { queries, getquery } = useContext(ContactContext);
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
-  // Integrate the AdminContext
-  const { users: allUsers, orders: allOrders, getAllUsers, getAllOrders, loading: adminLoading } = useContext(AdminContext);
+  
+  // Using AdminContext for all user and order data/logic
+  const { users, orders, getAllUsers, getAllOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder, loading: adminLoading } = useContext(AdminContext);
 
   const { user } = useUser();
   const [editingUser, setEditingUser] = useState(null);
@@ -89,13 +88,15 @@ const AdminPanel = () => {
     }
   }, [userdetails, navigate]);
 
+  // Using getAllUsers from AdminContext
   useEffect(() => {
-    getallusers();
-  }, [getallusers]);
+    getAllUsers();
+  }, [getAllUsers]);
 
+  // Using getAllOrders from AdminContext
   useEffect(() => {
-    getorders(true, true);
-  }, [getorders]);
+    getAllOrders();
+  }, [getAllOrders]);
 
   useEffect(() => {
     getquery();
@@ -181,6 +182,7 @@ const AdminPanel = () => {
   
   const handleSaveUser = async () => {
     try {
+      // Logic for updating user still points to your backend API
       const res = await fetch(`${BASE}/api/users/${editingUser.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -189,7 +191,7 @@ const AdminPanel = () => {
       if (!res.ok) throw new Error("Failed to update user");
       toast.success("User updated successfully!");
       setEditingUser(null);
-      getallusers();
+      getAllUsers(); // Refreshing user list using AdminContext
     } catch (error) {
       console.error("Failed to update user:", error);
       toast.error("Failed to update user.");
@@ -199,12 +201,13 @@ const AdminPanel = () => {
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user? This cannot be undone.")) return;
     try {
+      // Logic for deleting user still points to your backend API
       const res = await fetch(`${BASE}/api/users/${userId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete user");
       toast.success("User deleted successfully!");
-      getallusers();
+      getAllUsers(); // Refreshing user list using AdminContext
     } catch (error) {
       console.error("Failed to delete user:", error);
       toast.error("Failed to delete user.");
@@ -212,10 +215,12 @@ const AdminPanel = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    // Calling updateOrderStatus from AdminContext
     await updateOrderStatus(orderId, newStatus);
   };
 
   const handleCancelOrder = async (orderId) => {
+    // Calling cancelOrder from AdminContext
     await cancelOrder(orderId);
   };
 
@@ -746,6 +751,7 @@ const AdminPanel = () => {
             </div>
           )}
 
+          {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-tab">
               <h2>
