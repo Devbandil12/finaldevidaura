@@ -229,7 +229,7 @@ const ShoppingCart = () => {
               activeCart.map((item) => (
                 <div key={item.product.id} className="cart-item">
                   <div className="product-content">
-                    <img src={item.product.imageurl} alt={item.product.name} />
+                    <img src={item.product.imageurl[0]} alt={item.product.name} />
                     <div className="title-quantity-price">
                       <div className="title-quantity">
                         <div className="product-title">
