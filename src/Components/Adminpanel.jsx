@@ -249,11 +249,11 @@ const AdminPanel = () => {
   // --- JSX Rendering ---
   return (
     user && userdetails?.role === "admin" && (
-      <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[50px]">
+      <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[60px]">
         <ToastContainer />
 
         {/* Hamburger Menu Icon for mobile */}
-        <div className="md:hidden absolute top-[80px] right-[15px] p-4 z-100">
+        <div className="md:hidden absolute top-[60px] right-[5px] p-4 z-100">
           <button onClick={toggleSidebar} className="text-gray-800 text-2xl">
             {isSidebarOpen ? <FaTimes /> : <FaBars />}
           </button>
