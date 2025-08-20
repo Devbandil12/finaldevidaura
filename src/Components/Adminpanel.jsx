@@ -1,6 +1,6 @@
 // src/components/Adminpanel.jsx
 import React, { useState, useContext, useEffect, useCallback } from "react";
-import "../style/adminPanel.css";
+import "react-toastify/dist/ReactToastify.css";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
@@ -11,24 +11,12 @@ import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
+
+// Import icons for the new sidebar
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart } from 'react-icons/fa';
 
 // Placeholder components for the new UI
-const ImageUploadModal = ({ isopen, onClose }) => {
-  if (!isopen) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Add New Product</h2>
-        <p>Image upload functionality would go here.</p>
-        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded">Close</button>
-      </div>
-    </div>
-  );
-};
-
 const OrderDetailsPopup = ({ order, onClose }) => {
-  if (!order) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
@@ -61,6 +49,18 @@ const OrderDetailsPopup = ({ order, onClose }) => {
             </ul>
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+const ImageUploadModal = ({ isopen, onClose }) => {
+  if (!isopen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Add New Product</h2>
+        <p>Image upload functionality would go here.</p>
+        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded">Close</button>
       </div>
     </div>
   );
@@ -568,6 +568,9 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
+          {/* Carts & Wishlists Tab */}
+          {activeTab === "carts" && <CartsWishlistsTab />}
         </div>
       </div>
     )
