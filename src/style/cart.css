@@ -602,9 +602,8 @@
 
 /* Coupon Box (Dynamic) */
 .coupon-box {
-  border: 1px solid #d4e3d4;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   padding: 15px;
   margin-bottom: 25px;
 }
@@ -617,7 +616,7 @@
 .coupon-box input {
   flex-grow: 1;
   padding: 10px;
-  border: 1px solid #d4e3d4;
+  border: 1px solid #e0e0e0;
   border-radius: 6px;
   font-size: 1rem;
 }
@@ -674,19 +673,7 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
-.coupon-item:hover {
-  background-color: #f8fcf8;
-  border-color: #c9e6c9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
 
-.coupon-item.applied {
-  border: 2px solid #5cb85c;
-  background-color: #eaf6ff;
-  transform: none;
-  box-shadow: none;
-}
 
 .coupon-item strong {
   color: #444;
