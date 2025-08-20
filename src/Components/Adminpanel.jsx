@@ -8,27 +8,12 @@ import { AdminContext } from "../contexts/AdminContext";
 import { CouponContext } from "../contexts/CouponContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
+import ImageUploadModal from "./ImageUploadModal";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
-
-// Import icons for the new sidebar
-import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart } from 'react-icons/fa';
+import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
 
 // Placeholder components for the new UI
-const ImageUploadModal = ({ isopen, onClose }) => {
-  if (!isopen) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Add New Product</h2>
-        <p>Image upload functionality would go here.</p>
-        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded">Close</button>
-      </div>
-    </div>
-  );
-};
-
-// src/components/Adminpanel.jsx
 const OrderDetailsPopup = ({ order, onClose }) => {
   if (!order) return null;
   return (
@@ -74,7 +59,7 @@ const OrderDetailsPopup = ({ order, onClose }) => {
     </div>
   );
 };
-// New Carts & Wishlists component
+
 const CartsWishlistsTab = () => {
   return (
     <div className="space-y-6">
@@ -90,20 +75,18 @@ const CartsWishlistsTab = () => {
     </div>
   );
 };
-
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar
+
   // Contexts
   const { products, updateProduct, deleteProduct } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const { queries, getquery } = useContext(ContactContext);
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
-  
-  // Using AdminContext for all user and order data/logic
   const { users, orders, getAllUsers, getAllOrders, updateOrderStatus, getSingleOrderDetails, cancelOrder, loading: adminLoading } = useContext(AdminContext);
 
   const { user } = useUser();
@@ -189,22 +172,19 @@ const AdminPanel = () => {
   };
   
   const handleorderdetails = async (order) => {
-  setDetailsLoading(true);
-  try {
-    // This line is now correctly awaiting the result from getSingleOrderDetails
-    const details = await getSingleOrderDetails(order.id);
-    if (details) {
-      setSelectedOrder(details);
-    } else {
-      console.error('getSingleOrderDetails returned null or undefined.');
+    setDetailsLoading(true);
+    try {
+      const details = await getSingleOrderDetails(order.id);
+      if (details) {
+        setSelectedOrder(details);
+      }
+    } catch (error) {
+      console.error("Error fetching order products:", error);
+      toast.error("Failed to load order details.");
+    } finally {
+      setDetailsLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching order products:", error);
-    toast.error("Failed to load order details.");
-  } finally {
-    setDetailsLoading(false);
-  }
-};
+  };
 
   const filteredUsers = users?.filter(
     (user) =>
@@ -256,12 +236,25 @@ const AdminPanel = () => {
     await cancelOrder(orderId);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   // --- JSX Rendering ---
   return (
     user && userdetails?.role === "admin" && (
-      <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[100px]">
+      <div className="flex min-h-screen bg-gray-100 text-gray-800">
         <ToastContainer />
-        <div className="fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out">
+
+        {/* Hamburger Menu Icon for mobile */}
+        <div className="md:hidden p-4">
+          <button onClick={toggleSidebar} className="text-gray-800 text-2xl">
+            {isSidebarOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
+
+        {/* Sidebar */}
+        <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform md:relative md:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <nav className="flex flex-col p-4 space-y-2">
             <h2 className="text-2xl font-bold mb-4">Admin Panel</h2>
             <button onClick={() => setActiveTab("dashboard")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "dashboard" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
@@ -543,11 +536,14 @@ const AdminPanel = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredUsers?.map((user) => (
                         <tr key={user.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{new Date(user.createdAt).toLocaleString()}</td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => handleEditUser(user)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">View Details</button><button onClick={() => handleDeleteUser(user.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete</button></td>
+                          <td>{user.id}</td>
+                          <td>{user.name}</td>
+                          <td>{user.email}</td>
+                          <td>{new Date(user.createdAt).toLocaleString()}</td>
+                          <td>
+                            <button onClick={() => handleEditUser(user)}>View Details</button>
+                            <button onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
