@@ -22,6 +22,7 @@ async function submitOrderCOD(selectedItems, selectedAddress, userdetails, appli
       paymentMode: "cod",
       couponCode: appliedCoupon?.code || null,
       cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+      userAddressId: selectedAddress.id,
     }),
   });
   if (!res.ok) throw new Error(await res.text());
