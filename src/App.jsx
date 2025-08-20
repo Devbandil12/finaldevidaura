@@ -32,20 +32,8 @@ import { CartProvider } from "./contexts/CartContext";
 import { CouponProvider } from "./contexts/CouponContext";
 import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
-
+import { AdminProvider } from "./contexts/AdminContext";
 import { useUser } from "@clerk/clerk-react";
-import { db } from "../configs";
-import { usersTable } from "../configs/schema";
-import { eq } from "drizzle-orm";
-
-// Catch all runtime errors and show them as alert on mobile
-if (typeof window !== "undefined") {
-  window.onerror = function (msg, url, lineNo, columnNo, error) {
-    alert("⚠️ App crashed:\n" + msg + "\n\n" + (error?.stack || ""));
-    return false;
-  };
-}
-
 
 
 function PostLoginRedirector() {
@@ -64,73 +52,67 @@ function PostLoginRedirector() {
       }
     }
   }, [isLoaded, isSignedIn, location.pathname, navigate]);
-
   return null;
 }
 
 const App = () => {
-  // REMOVED: cart and wishlist state are now managed by CartProvider
-  // const [cart, setCart] = useState([]);
-  // const [wishlist, setWishlist] = useState([]);
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
   return (
     <UserProvider>
-      <ProductProvider>
-        <OrderProvider>
-          <CartProvider>
-            <CouponProvider>
-              <ContactProvider>
-                <Router>
-                  <ScrollToTop />
-                  <PostLoginRedirector />
+      <AdminProvider>
+        <ProductProvider>
+          <OrderProvider>
+            <CartProvider>
+              <CouponProvider>
+                <ContactProvider>
+                  <Router>
+                    <ScrollToTop />
+                    <PostLoginRedirector />
+                    <Navbar isVisible={isNavbarVisible} />
+                    <MobileBackBar />
+                    <Routes>
+                      {/* Public: Main pages */}
+                      <Route
+                        path="/"
+                        element={
+                          <>
+                            <HeroSection />
+                            <DualMarquee />
+                            <ProductShowcaseCarousel />
+                            {/* Products no longer receives props */}
+                            <Products />
+                            <TestimonialsSection />
+                          </>
+                        }
+                      />
 
-                  {/* Navbar now gets cart/wishlist from its own context consumer */}
-                  <Navbar onVisibilityChange={setNavbarVisible} />
-                  
-                  <MobileBackBar isNavbarVisible={isNavbarVisible} />
+                      {/* Public: Auth & other pages */}
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/myorder" element={<MyOrder />} />
+                      <Route path="/product/:productId" element={<ProductDetail />} />
+                      {/* Wishlist no longer receives props */}
+                      <Route path="/wishlist" element={<Wishlist />} />
+                      {/* Cart no longer receives props */}
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/Admin" element={<Adminpannel />} />
+                      <Route path="/contact" element={<ContactUs />} />
 
-                  <Routes>
-                    {/* Public: Home */}
-                    <Route
-                      path="/"
-                      element={
-                        <>
-                          <HeroSection />
-                          <DualMarquee />
-                          <ProductShowcaseCarousel />
-                          {/* Products no longer receives props */}
-                          <Products />
-                          <TestimonialsSection />
-                        </>
-                      }
-                    />
+                      {/* Checkout: guarded by intent, never open directly */}
+                      <Route element={<CheckoutGuard />}>
+                        <Route path="/checkout" element={<Checkout />} />
+                      </Route>
+                    </Routes>
 
-                    {/* Public: Auth & other pages */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/myorder" element={<MyOrder />} />
-                    <Route path="/product/:productId" element={<ProductDetail />} />
-                    {/* Wishlist no longer receives props */}
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    {/* Cart no longer receives props */}
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/Admin" element={<Adminpannel />} />
-                    <Route path="/contact" element={<ContactUs />} />
-
-                    {/* Checkout: guarded by intent, never open directly */}
-                    <Route element={<CheckoutGuard />}>
-                      <Route path="/checkout" element={<Checkout />} />
-                    </Route>
-                  </Routes>
-
-                  <Footer />
-                </Router>
-              </ContactProvider>
-            </CouponProvider>
-          </CartProvider>
-        </OrderProvider>
-      </ProductProvider>
+                    <Footer />
+                  </Router>
+                </ContactProvider>
+              </CouponProvider>
+            </CartProvider>
+          </OrderProvider>
+        </ProductProvider>
+      </AdminProvider>
     </UserProvider>
   );
 };
