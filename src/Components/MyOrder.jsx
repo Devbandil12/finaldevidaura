@@ -269,7 +269,7 @@ export default function MyOrders() {
               <div className="order-items">
                 {order.orderItems.map((item, i) => {
                   const fallback = products.find((p) => p.id === item.productId);
-                  const imgSrc = item.img || fallback?.imageurl || "/fallback.png";
+                  const imgSrc = item.img[0] || fallback?.imageurl[0] || "/fallback.png";
                   return (
                     <div key={i} className="order-item">
                       <img src={imgSrc} alt={item.productName} />
