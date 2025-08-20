@@ -356,7 +356,7 @@ const AdminPanel = () => {
                       editingProduct && editingProduct.id === product.id ? (
                         <tr key={product.id}>
                           <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap"><img src={editingProduct.imageurl[0]} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" /><input type="file" accept="image/*" onChange={(e) => setEditingProduct({ ...editingProduct, imageurl: URL.createObjectURL(e.target.files[0]) })} className="mt-2 text-xs" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><img src={editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" /><input type="file" accept="image/*" onChange={(e) => setEditingProduct({ ...editingProduct, imageurl: URL.createObjectURL(e.target.files[0]) })} className="mt-2 text-xs" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
