@@ -35,6 +35,15 @@ import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { useUser } from "@clerk/clerk-react";
 
+// Catch all runtime errors and show them as alert on mobile
+if (typeof window !== "undefined") {
+  window.onerror = function (msg, url, lineNo, columnNo, error) {
+    alert("⚠️ App crashed:\n" + msg + "\n\n" + (error?.stack || ""));
+    return false;
+  };
+}
+
+
 
 function PostLoginRedirector() {
   const location = useLocation();
