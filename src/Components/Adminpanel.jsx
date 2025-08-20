@@ -253,7 +253,7 @@ const AdminPanel = () => {
         <ToastContainer />
 
         {/* Hamburger Menu Icon for mobile */}
-        <div className="md:hidden fixed top-0 left-0 p-4 z-50">
+        <div className="md:hidden fixed top-0 left-0 p-4 z-100">
           <button onClick={toggleSidebar} className="text-gray-800 text-2xl">
             {isSidebarOpen ? <FaTimes /> : <FaBars />}
           </button>
