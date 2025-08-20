@@ -5,7 +5,7 @@ import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
-import { AdminContext } from "../contexts/AdminContext"; // Import the AdminContext
+import { AdminContext } from "../contexts/AdminContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
@@ -13,26 +13,63 @@ import { CouponContext } from "../contexts/CouponContext";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 
+// The OrderDetailsPopup and ImageUploadModal components need to be imported
+// or defined in this file if they are not separate files.
+const OrderDetailsPopup = ({ order, onClose }) => {
+  return (
+    <div className="modal-overlay-chamkila">
+      <div className="modal-content-badshah">
+        <button onClick={onClose} className="close-btn-tata">×</button>
+        <h2>Order Details (#{order.orderId})</h2>
+        <p><strong>User Name:</strong> {order.userName}</p>
+        <p><strong>Phone:</strong> {order.phone}</p>
+        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
+        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
+        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
+        <p><strong>Status:</strong> {order.status}</p>
+        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
+        <p><strong>Products:</strong></p>
+        <ul>
+          {(order.products || []).map(p => (
+            <li key={p.productId}>
+              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
+              {p.productName} (x{p.quantity}) - ₹{p.price}
+            </li>
+          ))}
+        </ul>
+        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
+        {order.refund?.id && (
+          <div>
+            <h3>Refund Details</h3>
+            <p><strong>Refund ID:</strong> {order.refund.id}</p>
+            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
+            <p><strong>Refund Status:</strong> {order.refund.status}</p>
+            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
+            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
+            {order.refund.processed_at && (
+              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-
+  
   // Contexts
   const { products, updateProduct, deleteProduct } = useContext(ProductContext);
   const { users, getallusers, userdetails } = useContext(UserContext);
-  // Use OrderContext as it is already correctly implemented
   const { orders, getorders, updateOrderStatus, getSingleOrderDetails, cancelOrder } = useContext(OrderContext);
   const { queries, getquery } = useContext(ContactContext);
+  const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
   // Integrate the AdminContext
-  const {
-    getAllUsers,
-    getAllOrders,
-    updateUser,
-    deleteUser,
-    loading: adminLoading,
-  } = useContext(AdminContext);
+  const { users: allUsers, orders: allOrders, getAllUsers, getAllOrders, loading: adminLoading } = useContext(AdminContext);
 
   const { user } = useUser();
   const [editingUser, setEditingUser] = useState(null);
@@ -45,15 +82,6 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  const {
-    coupons,
-    editingCoupon,
-    setEditingCoupon,
-    saveCoupon,
-    deleteCoupon,
-    refreshCoupons
-  } = useContext(CouponContext);
-
   // --- Data Fetching and Effects ---
   useEffect(() => {
     if (userdetails?.role !== "admin" && userdetails !== null) {
@@ -62,12 +90,10 @@ const AdminPanel = () => {
   }, [userdetails, navigate]);
 
   useEffect(() => {
-    // We will keep the original getallusers logic from UserContext
     getallusers();
   }, [getallusers]);
 
   useEffect(() => {
-    // We will keep the original getorders logic from OrderContext
     getorders(true, true);
   }, [getorders]);
 
@@ -980,46 +1006,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-
-// The OrderDetailsPopup and ImageUploadModal components need to be imported
-// or defined in this file if they are not separate files.
-const OrderDetailsPopup = ({ order, onClose }) => {
-  return (
-    <div className="modal-overlay-chamkila">
-      <div className="modal-content-badshah">
-        <button onClick={onClose} className="close-btn-tata">×</button>
-        <h2>Order Details (#{order.orderId})</h2>
-        <p><strong>User Name:</strong> {order.userName}</p>
-        <p><strong>Phone:</strong> {order.phone}</p>
-        <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-        <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
-        <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-        <p><strong>Status:</strong> {order.status}</p>
-        <p><strong>Address:</strong> {order.address}, {order.city}, {order.state}, {order.zip}, {order.country}</p>
-        <p><strong>Products:</strong></p>
-        <ul>
-          {(order.products || []).map(p => (
-            <li key={p.productId}>
-              <img src={p.imageurl} alt={p.productName} width="50" height="50" />
-              {p.productName} (x{p.quantity}) - ₹{p.price}
-            </li>
-          ))}
-        </ul>
-        <p><strong>Created At:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-        {order.refund?.id && (
-          <div>
-            <h3>Refund Details</h3>
-            <p><strong>Refund ID:</strong> {order.refund.id}</p>
-            <p><strong>Refund Amount:</strong> ₹{(order.refund.amount / 100).toFixed(2)}</p>
-            <p><strong>Refund Status:</strong> {order.refund.status}</p>
-            <p><strong>Refund Speed:</strong> {order.refund.speedProcessed}</p>
-            <p><strong>Refund Initiated At:</strong> {new Date(order.refund.created_at * 1000).toLocaleString()}</p>
-            {order.refund.processed_at && (
-              <p><strong>Refund Completed At:</strong> {new Date(order.refund.processed_at * 1000).toLocaleString()}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
