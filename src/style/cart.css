@@ -635,8 +635,10 @@
 
 .coupon-box.applied {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 10px;
 }
 
 .coupon-box.applied span {
@@ -645,13 +647,14 @@
 }
 
 .coupon-box.applied button {
-  background: none;
+  background: #070D0D;
   border: none;
-  color: #070D0D;
+  color: #EFEDE4;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0;
+  text-align: right;
 }
 
 /* Available Coupons List */
