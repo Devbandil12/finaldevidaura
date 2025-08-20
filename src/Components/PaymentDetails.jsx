@@ -129,6 +129,7 @@ export default function PaymentDetails({
               })),
               couponCode: appliedCoupon?.code,
               orderId: orderData.orderId,
+              userAddressId: selectedAddress.id,
             }),
           });
 
