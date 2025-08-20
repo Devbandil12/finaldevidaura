@@ -75,6 +75,7 @@ const CartsWishlistsTab = () => {
     </div>
   );
 };
+
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [openModal, setOpenModal] = useState(false);
@@ -236,6 +237,11 @@ const AdminPanel = () => {
     await cancelOrder(orderId);
   };
 
+  const handleTabClick = (tabName) => {
+    setActiveTab(tabName);
+    setIsSidebarOpen(false);
+  };
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -243,39 +249,39 @@ const AdminPanel = () => {
   // --- JSX Rendering ---
   return (
     user && userdetails?.role === "admin" && (
-      <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[100px]">
+      <div className="flex min-h-screen bg-gray-100 text-gray-800 mt-[100px]">
         <ToastContainer />
 
         {/* Hamburger Menu Icon for mobile */}
-        <div className="md:hidden p-4">
+        <div className="md:hidden fixed top-0 left-0 p-4 z-50">
           <button onClick={toggleSidebar} className="text-gray-800 text-2xl">
             {isSidebarOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
 
         {/* Sidebar */}
-        <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform md:relative md:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-md z-50 transform md:relative md:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <nav className="flex flex-col p-4 space-y-2">
             <h2 className="text-2xl font-bold mb-4">Admin Panel</h2>
-            <button onClick={() => setActiveTab("dashboard")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "dashboard" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("dashboard")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "dashboard" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaTachometerAlt /><span>Dashboard</span>
             </button>
-            <button onClick={() => setActiveTab("products")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "products" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("products")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "products" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaBox /><span>Products</span>
             </button>
-            <button onClick={() => setActiveTab("coupons")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "coupons" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("coupons")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "coupons" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaTicketAlt /><span>Coupons</span>
             </button>
-            <button onClick={() => setActiveTab("orders")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "orders" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("orders")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "orders" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaClipboardList /><span>Orders</span>
             </button>
-            <button onClick={() => setActiveTab("users")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "users" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("users")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "users" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaUsers /><span>Users</span>
             </button>
-            <button onClick={() => setActiveTab("queries")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "queries" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("queries")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "queries" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaEnvelope /><span>Queries</span>
             </button>
-            <button onClick={() => setActiveTab("carts")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "carts" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+            <button onClick={() => handleTabClick("carts")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "carts" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaShoppingCart /><span>Carts & Wishlists</span>
             </button>
           </nav>
@@ -284,8 +290,8 @@ const AdminPanel = () => {
         <div className="flex-1 p-8 overflow-y-auto">
           {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
           {selectedOrder && <OrderDetailsPopup order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
-
-          {/* Dashboard Tab */}
+          
+          {/* Main content sections */}
           {activeTab === "dashboard" && (
             <div className="space-y-8">
               <h2 className="text-3xl font-bold">Admin Dashboard</h2>
@@ -326,7 +332,6 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Products Tab */}
           {activeTab === "products" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -376,7 +381,6 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {/* Coupons Tab */}
           {activeTab === "coupons" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
