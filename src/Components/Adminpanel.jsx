@@ -8,7 +8,6 @@ import { AdminContext } from "../contexts/AdminContext";
 import { CouponContext } from "../contexts/CouponContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import ImageUploadModal from "./ImageUploadModal";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 
@@ -16,7 +15,21 @@ import OrderChart from "./OrderChart";
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart } from 'react-icons/fa';
 
 // Placeholder components for the new UI
+const ImageUploadModal = ({ isopen, onClose }) => {
+  if (!isopen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Add New Product</h2>
+        <p>Image upload functionality would go here.</p>
+        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded">Close</button>
+      </div>
+    </div>
+  );
+};
+
 const OrderDetailsPopup = ({ order, onClose }) => {
+  if (!order) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
@@ -49,18 +62,6 @@ const OrderDetailsPopup = ({ order, onClose }) => {
             </ul>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
-const ImageUploadModal = ({ isopen, onClose }) => {
-  if (!isopen) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Add New Product</h2>
-        <p>Image upload functionality would go here.</p>
-        <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-200 rounded">Close</button>
       </div>
     </div>
   );
@@ -550,7 +551,7 @@ const AdminPanel = () => {
           {activeTab === "queries" && (
             <div className="space-y-6">
               <h2 className="text-3xl font-bold">User Queries</h2>
-              <input type="text" placeholder="Search queries by email or phone..." value={querySearch} onChange={(e) => setQuerySearch(e.target.value)} className="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input type="text" placeholder="Search queries by email or phone..." value={querySearch} onChange={(e) => setUserSearchQuery(e.target.value)} className="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               <div className="space-y-4">
                 {queries?.length > 0 ? (
                   queries?.filter(q => q.email.toLowerCase().includes(querySearch.toLowerCase()) || q.phone.includes(querySearch) || (q.date && q.date.includes(querySearch)))
