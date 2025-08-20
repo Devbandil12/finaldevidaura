@@ -654,8 +654,7 @@
   font-size: 0.9rem;
   padding: 5px 10px;
   font-weight: 500;
-  padding: 0;
-  align-self: right;
+  align-self: flex-end;
 }
 
 /* Available Coupons List */
