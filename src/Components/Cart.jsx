@@ -69,7 +69,7 @@ const ShoppingCart = () => {
         product: {
           id: item.product.id,
           name: item.product.name,
-          imageurl: item.product.imageurl,
+          imageurl: item.product.imageurl[0],
           size: item.product.size,
           oprice: item.product.oprice,
           discount: item.product.discount,
@@ -167,7 +167,7 @@ const ShoppingCart = () => {
         );
         return (
           <div key={product.id} className="remaining-product-item">
-            <img src={product.imageurl} alt={product.name} />
+            <img src={product.imageurl[0]} alt={product.name} />
             <div className="r-product-title">
               <h3>{product.name}</h3>
               <span>{product.size} ml</span>
