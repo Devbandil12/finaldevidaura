@@ -94,8 +94,10 @@ export const AdminProvider = ({ children }) => {
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Failed to update order");
+      const updatedOrder = await res.json();
       toast.success(`Order #${orderId} updated`);
       await getAllOrders();
+      return updatedOrder;
     } catch (err) {
       console.error("❌ updateOrderStatus failed:", err);
       toast.error("Failed to update order");
