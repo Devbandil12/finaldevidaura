@@ -230,8 +230,15 @@ const AdminPanel = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    await updateOrderStatus(orderId, newStatus);
-  };
+    // 🟢 Call the update function and get the new order data
+    const updatedOrder = await updateOrderStatus(orderId, newStatus);
+    if (updatedOrder) {
+        // 🟢 Update the local orders state with the new data
+        setOrders(prevOrders => prevOrders.map(order => 
+            order.id === orderId ? updatedOrder.updatedOrder : order
+        ));
+    }
+};
 
   const handleCancelOrder = async (orderId) => {
     await cancelOrder(orderId);
