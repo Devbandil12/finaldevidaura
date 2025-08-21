@@ -168,11 +168,7 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-              
-              {/* Product Composition */}
-              {product.composition && (
-                <p className="text-lg font-semibold text-gray-500 mb-4">{product.composition}</p>
-              )}
+             
               
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
@@ -185,6 +181,12 @@ const ProductDetail = () => {
                 )}
               </div>
 
+<div className="flex items-center border border-gray-300 rounded-lg p-2">
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
+                <span className="px-4 text-lg font-semibold">{quantity}</span>
+                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-xl">+</button>
+              </div>
+
               {/* Description & Other Notes */}
               <div className="space-y-4 text-gray-800">
                 {product.description && (
@@ -194,11 +196,11 @@ const ProductDetail = () => {
                     <p className="leading-relaxed">{product.description}</p>
                   </div>
                 )}
-                {product.fragranceNotes && (
+                {product.composition && (
                   <div>
-                    <h3 className="font-bold text-lg">Fragrance Notes</h3>
+                    <h3 className="font-bold text-lg">Top Notes</h3>
                     <hr className="border-t border-gray-300 my-1" />
-                    <p>{product.fragranceNotes}</p>
+                    <p>{product.composition}</p>
                   </div>
                 )}
                 {product.fragrance && (
@@ -208,16 +210,19 @@ const ProductDetail = () => {
                     <p>{product.fragrance}</p>
                   </div>
                 )}
+{product.fragranceNotes && (
+                  <div>
+                    <h3 className="font-bold text-lg">Base Notes</h3>
+                    <hr className="border-t border-gray-300 my-1" />
+                    <p>{product.fragranceNotes}</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* CTA buttons */}
             <div className="mt-8 flex items-center gap-4 flex-wrap">
-              <div className="flex items-center border border-gray-300 rounded-lg p-2">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
-                <span className="px-4 text-lg font-semibold">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-xl">+</button>
-              </div>
+              
 
               <button
                 onClick={handleAddToCart}
