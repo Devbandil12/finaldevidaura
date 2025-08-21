@@ -172,7 +172,7 @@ const ProductDetail = () => {
               
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-4xl font-extrabold text-green-600">₹{discountedPrice}</span>
+                <span className="text-2xl font-extrabold text-green-600">₹{discountedPrice}</span>
                 {discount > 0 && (
                   <>
                     <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
@@ -192,21 +192,22 @@ const ProductDetail = () => {
                 {product.description && (
                   <div>
                     <h3 className="font-bold text-lg">Description</h3>
-                    <hr className="border-t border-gray-300 my-1" />
+                    
                     <p className="leading-relaxed">{product.description}</p>
                   </div>
                 )}
+
                 {product.composition && (
                   <div>
                     <h3 className="font-bold text-lg">Top Notes</h3>
-                    <hr className="border-t border-gray-300 my-1" />
                     <p>{product.composition}</p>
                   </div>
                 )}
+
                 {product.fragrance && (
                   <div>
                     <h3 className="font-bold text-lg">Heart Notes</h3>
-                    <hr className="border-t border-gray-300 my-1" />
+                   
                     <p>{product.fragrance}</p>
                   </div>
                 )}
