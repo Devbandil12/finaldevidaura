@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+// 🟢 Import your custom Cloudinary hook
+import useCloudinary from "./useCloudinary";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
@@ -176,6 +178,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [formOpen, setFormOpen] = useState(false);
   const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
 
+  // 🟢 Use your custom Cloudinary hook
+  const { uploadImage, uploading, error: uploadError } = useCloudinary();
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
     return () => clearTimeout(t);
@@ -255,18 +260,19 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setFormOpen(true);
   };
 
-  const handleImageUpload = (e) => {
+  // 🟢 Updated image upload handler
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-          })
-      )
-    ).then(setImages);
+    const uploadedUrls = [];
+    for (const file of files) {
+      try {
+        const url = await uploadImage(file);
+        uploadedUrls.push(url);
+      } catch (err) {
+        console.error("Failed to upload image:", err);
+      }
+    }
+    setImages(uploadedUrls);
   };
 
   const openImagePreview = (idx, photoUrls) => {
@@ -300,8 +306,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
   return (
     <div className="max-w-[900px] mx-auto p-4 sm:p-6 md:p-8 bg-white shadow-lg rounded-xl">
+      {/* Summary Section */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Customer Reviews</h2>
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Customer Reviews</h2>
         <div className="flex items-center gap-2">
           <label className="flex items-center text-gray-700">
             <SlidersHorizontal size={16} className="mr-2" />
@@ -321,8 +328,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           />
         </div>
       </div>
-
-      {/* Summary Section */}
       {starFilter === null && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
           <div className="flex flex-col items-start gap-2">
@@ -333,7 +338,10 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           <div className="flex flex-col gap-2">
             {[5, 4, 3, 2, 1].map((star) => (
               <div key={star} className="grid grid-cols-12 items-center gap-2">
-                <span className="col-span-1 font-semibold">{star}</span>
+                {/* 🟢 Render the Star icon instead of a text character */}
+                <span className="col-span-1 flex items-center gap-1 font-semibold text-gray-900">
+                  {star} <Star fill="#facc15" stroke="#facc15" size={14} />
+                </span>
                 <div className="col-span-10 w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-400"
@@ -481,12 +489,15 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
               onChange={handleImageUpload}
               className="p-3 border border-gray-300 rounded-md col-span-1 md:col-span-2"
             />
+            {/* 🟢 Add a loading indicator for image uploads */}
+            {uploading && <p className="col-span-1 md:col-span-2 text-center text-gray-500">Uploading image(s)...</p>}
+            {uploadError && <p className="col-span-1 md:col-span-2 text-center text-red-500">Error: {uploadError}</p>}
             <div className="flex gap-2 flex-wrap col-span-1 md:col-span-2">
               {images.map((src, i) => (
                 <img key={i} src={src} alt="preview" className="w-16 h-16 object-cover rounded-md border border-gray-300" onError={handleImgError} />
               ))}
             </div>
-            <button type="submit" className="px-6 py-3 bg-black text-white rounded-md font-semibold transition-colors hover:bg-gray-800 col-span-1 md:col-span-2">
+            <button type="submit" disabled={uploading || isLoading} className="px-6 py-3 bg-black text-white rounded-md font-semibold transition-colors hover:bg-gray-800 col-span-1 md:col-span-2">
               {editingReviewId ? "Update Review" : "Submit Review"}
             </button>
           </motion.form>
@@ -540,5 +551,4 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     </div>
   );
 };
-
 export default ReviewComponent;
