@@ -17,7 +17,6 @@ import {
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
-
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 const formatDateTime = (dateString) => {
@@ -32,12 +31,10 @@ const formatDateTime = (dateString) => {
 
 const RefundStatusDisplay = ({ refund, onRefresh }) => {
   if (!refund || !refund.status) return null;
-
   const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
 
   let icon, message, details, cardClass;
-
   switch (status) {
     case "created":
     case "queued":
@@ -149,12 +146,22 @@ export default function MyOrders() {
   const toggleTrackOrder = (orderId) =>
     setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
 
+  // 🟢 Corrected handleRefreshStatus function
   const handleRefreshStatus = async (orderId) => {
     setIsRefreshing(true);
     try {
-      const res = await fetch(`${BACKEND}/api/poll-refunds`);
-      if (!res.ok) throw new Error("Failed to refresh status");
-      await new Promise((r) => setTimeout(r, 1000));
+      // Fetch the updated order details from the backend
+      const res = await fetch(`${BACKEND}/api/orders/${orderId}`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch updated order status");
+      }
+      const updatedOrder = await res.json();
+      
+      // Update the state with the new order data
+      setOrders(prevOrders => prevOrders.map(order => 
+        order.id === orderId ? updatedOrder : order
+      ));
+      
       console.log(`Successfully refreshed status for order ${orderId}.`);
     } catch (err) {
       console.error("Refresh failed:", err);
@@ -170,9 +177,7 @@ export default function MyOrders() {
       { label: "Shipped", icon: <FaShippingFast /> },
       { label: "Delivered", icon: <FaCheckCircle /> },
     ];
-
     const final = status === "delivered" ? steps.length + 1 : progressStep || 1;
-
     return (
       <div className="progress-steps">
         {steps.map((step, idx) => (
@@ -198,7 +203,6 @@ export default function MyOrders() {
 
   const renderModalContent = () => {
     if (!modalOrder) return null;
-
     if (isOnlinePayment) {
       const refundAmount = modalOrder.totalAmount * 0.95;
       return (
@@ -225,7 +229,8 @@ export default function MyOrders() {
             Are you sure you want to cancel{" "}
             <strong>Order #{modalOrder.id}</strong>?
             <br />
-            This order was placed with Cash on Delivery. No refund is required.
+            This order was placed with 
+            Cash on Delivery. No refund is required.
           </p>
         </>
       );
@@ -259,7 +264,6 @@ export default function MyOrders() {
         {sortedOrders.map((order) => {
           const totalItems = order.orderItems.reduce((sum, i) => sum + i.quantity, 0);
 
-          // ✅ Map refund fields from DB
           const r = order.refund_status
             ? {
                 status: order.refund_status,
@@ -268,7 +272,6 @@ export default function MyOrders() {
                 speed: order.refund_speed,
               }
             : null;
-
           const isExpanded = expandedOrders[order.id];
 
           return (
