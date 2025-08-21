@@ -2,14 +2,14 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import "../style/testimonials.css";
 import { Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+// 🟢 Import your custom Cloudinary hook
+import useCloudinary from '../utils/useCloudinary';
 
 const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
-
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
-
   const [form, setForm] = useState({
     name: "",
     title: "",
@@ -17,6 +17,9 @@ export default function TestimonialsSection() {
     rating: 0,
     avatar: "",
   });
+  
+  // 🟢 Use your custom Cloudinary hook
+  const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
   useEffect(() => {
     fetchTestimonials();
@@ -33,12 +36,10 @@ export default function TestimonialsSection() {
       console.error("Error loading testimonials:", err);
     }
   };
-
   const filteredTestimonials = useMemo(
     () => testimonials.filter((t) => t.rating >= 3),
     [testimonials]
   );
-
   const splitIntoChunks = (arr) => {
     if (arr.length < 12) return [arr];
     const half = Math.ceil(arr.length / 2);
@@ -46,9 +47,12 @@ export default function TestimonialsSection() {
   };
 
   const chunks = useMemo(() => splitIntoChunks(filteredTestimonials), [filteredTestimonials]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploading) {
+        alert("Please wait for the image to finish uploading.");
+        return;
+    }
     if (!form.name || !form.text || form.rating < 1 || !form.avatar) {
       alert("All fields are required.");
       return;
@@ -72,20 +76,22 @@ export default function TestimonialsSection() {
       console.error("Submit error:", err);
     }
   };
-
-  const handleAvatarUpload = (e) => {
+  
+  // 🟢 Updated image upload handler to use your hook
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const maxSize = 2 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert("Image is too large. Please upload an image under 2MB.");
-      return;
+
+    try {
+      const url = await uploadImage(file);
+      // The `uploadImage` hook handles the upload and returns the URL.
+      // We set the form's avatar field to this URL.
+      setForm((prev) => ({ ...prev, avatar: url }));
+    } catch (err) {
+      // The hook already sets an error state, but we can log it here too.
+      console.error("Cloudinary upload failed:", err);
+      alert("Image upload failed. Please try again.");
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, avatar: reader.result }));
-    };
-    reader.readAsDataURL(file);
   };
 
   const maxTextLength = 220;
@@ -158,10 +164,20 @@ export default function TestimonialsSection() {
               ))}
             </div>
 
-            <input type="file" accept="image/*" required onChange={handleAvatarUpload} />
+            {/* 🟢 Updated file input */}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              disabled={uploading}
+            />
+            {/* 🟢 Add loading and error feedback */}
+            {uploading && <p>Uploading avatar...</p>}
+            {uploadError && <p style={{ color: 'red' }}>Error: {uploadError}</p>}
+
             {form.avatar && <img src={form.avatar} className="avatar" alt="Preview" />}
 
-            <button type="submit" className="submit-button">
+            <button type="submit" className="submit-button" disabled={uploading}>
               Submit Feedback
             </button>
           </motion.form>
@@ -197,7 +213,6 @@ function Marquee({ children, direction = "left", alwaysShow = false }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
   return (
     <div
       className="marquee-wrapper"
@@ -241,13 +256,11 @@ function TestimonialCard({ data }) {
         ))}
 <span className="rating-number">{data.rating.toFixed(1)}</span>
 
-      </div>
+      
+</div>
 
       {data.title && <div className="title">{data.title}</div>}
       <div className="feedback">"{data.text}"</div>
     </div>
   );
 }
-
-
-
