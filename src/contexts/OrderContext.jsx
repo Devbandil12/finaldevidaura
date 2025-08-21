@@ -61,7 +61,7 @@ export const OrderProvider = ({ children }) => {
       if (paymentMode === "online") {
         // Refund prepaid
         const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-          method: "POST",
+          method: "POST", // 🟢 This must be a POST request to match your backend
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId, amount }),
         });
@@ -69,7 +69,7 @@ export const OrderProvider = ({ children }) => {
       } else {
         // COD → just cancel
         await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
-          method: "PUT",
+          method: "PUT", // 🟢 This should be a PUT request
         });
       }
       toast.success(`Order ${orderId} canceled successfully.`);
