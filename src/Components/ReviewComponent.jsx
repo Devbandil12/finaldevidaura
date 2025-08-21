@@ -15,7 +15,7 @@ import {
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 // 🟢 Import your custom Cloudinary hook
-import useCloudinary from "../utils/useCloudinary.js";
+import useCloudinary from "../utils/useCloudinary";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
