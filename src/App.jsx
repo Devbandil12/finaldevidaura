@@ -40,43 +40,71 @@ import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
 
-// Catch all runtime errors and unhandled rejections
+// Global error + unhandled rejection handler
 if (typeof window !== "undefined") {
-  // Runtime errors (syntax, reference errors, etc.)
+  // helper: send error to backend
+  function reportError(type, details) {
+    try {
+      fetch("/api/log-error", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          details,
+          userAgent: navigator.userAgent,
+          url: window.location.href,
+          time: new Date().toISOString()
+        })
+      });
+    } catch (err) {
+      console.warn("Failed to report error:", err);
+    }
+  }
+
+  // Runtime errors
   window.onerror = function (msg, url, lineNo, columnNo, error) {
-    const details = [
-      "⚠️ App crashed:",
-      "Message: " + msg,
-      "File: " + url,
-      "Line: " + lineNo,
-      "Column: " + columnNo,
-      "Stack: " + (error?.stack || "N/A")
-    ].join("\n");
-
-    alert(details);
-
-    console.error("Global Error Handler:", {
+    const details = {
       message: msg,
       file: url,
       line: lineNo,
       column: columnNo,
-      error,
-    });
+      stack: error?.stack || "N/A",
+    };
 
-    return false; // prevent default browser error popup
+    // User alert
+    alert(
+      "⚠️ App crashed:\n" +
+        "Message: " + details.message + "\n" +
+        "File: " + details.file + "\n" +
+        "Line: " + details.line + ", Col: " + details.column + "\n\n" +
+        "Stack: " + details.stack
+    );
+
+    // Log to console
+    console.error("Global Error Handler:", details);
+
+    // Report to backend
+    reportError("runtime", details);
+
+    return false; // prevent default browser popup
   };
 
-  // Unhandled Promise rejections (e.g., failed async calls)
+  // Unhandled Promise rejections
   window.onunhandledrejection = function (event) {
-    const details = [
-      "⚠️ Unhandled Promise Rejection:",
-      "Reason: " + (event.reason?.message || event.reason || "Unknown"),
-      "Stack: " + (event.reason?.stack || "N/A")
-    ].join("\n");
+    const details = {
+      reason: event.reason?.message || event.reason || "Unknown",
+      stack: event.reason?.stack || "N/A",
+    };
 
-    alert(details);
+    alert(
+      "⚠️ Unhandled Promise Rejection:\n" +
+        "Reason: " + details.reason + "\n\n" +
+        "Stack: " + details.stack
+    );
 
-    console.error("Unhandled Promise Rejection:", event.reason);
+    console.error("Unhandled Promise Rejection:", details);
+
+    reportError("promiseRejection", details);
   };
 }
 
