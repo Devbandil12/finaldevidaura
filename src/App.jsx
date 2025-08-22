@@ -40,6 +40,49 @@ import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
 
+// Catch all runtime errors and unhandled rejections
+if (typeof window !== "undefined") {
+  // Runtime errors (syntax, reference errors, etc.)
+  window.onerror = function (msg, url, lineNo, columnNo, error) {
+    const details = [
+      "⚠️ App crashed:",
+      "Message: " + msg,
+      "File: " + url,
+      "Line: " + lineNo,
+      "Column: " + columnNo,
+      "Stack: " + (error?.stack || "N/A")
+    ].join("\n");
+
+    alert(details);
+
+    console.error("Global Error Handler:", {
+      message: msg,
+      file: url,
+      line: lineNo,
+      column: columnNo,
+      error,
+    });
+
+    return false; // prevent default browser error popup
+  };
+
+  // Unhandled Promise rejections (e.g., failed async calls)
+  window.onunhandledrejection = function (event) {
+    const details = [
+      "⚠️ Unhandled Promise Rejection:",
+      "Reason: " + (event.reason?.message || event.reason || "Unknown"),
+      "Stack: " + (event.reason?.stack || "N/A")
+    ].join("\n");
+
+    alert(details);
+
+    console.error("Unhandled Promise Rejection:", event.reason);
+  };
+}
+
+
+
+
 function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
