@@ -39,36 +39,31 @@ import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
+// Utilities: Global error reporting
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
-const LOG_ERROR_URL = `${API_BASE}/api/log-error`;
+const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";
 
-
+// helper: send error to backend
+function reportError(type, details) {
+  try {
+    fetch(LOG_ERROR_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type,
+        details,
+        userAgent: navigator.userAgent,
+        url: window.location.href,
+        time: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.warn("Failed to report error:", err);
+  }
+}
 
 // Global error + unhandled rejection handler
 if (typeof window !== "undefined") {
-  // ✅ Define correct backend URL (fallbacks to same-origin /api)
-  const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
-  const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";
-
-  // helper: send error to backend
-  function reportError(type, details) {
-    try {
-      fetch(LOG_ERROR_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          details,
-          userAgent: navigator.userAgent,
-          url: window.location.href,
-          time: new Date().toISOString()
-        })
-      });
-    } catch (err) {
-      console.warn("Failed to report error:", err);
-    }
-  }
-
   // Runtime errors
   window.onerror = function (msg, url, lineNo, columnNo, error) {
     const details = {
@@ -78,14 +73,6 @@ if (typeof window !== "undefined") {
       column: columnNo,
       stack: error?.stack || "N/A",
     };
-
-    alert(
-      "⚠️ App crashed:\n" +
-        "Message: " + details.message + "\n" +
-        "File: " + details.file + "\n" +
-        "Line: " + details.line + ", Col: " + details.column + "\n\n" +
-        "Stack: " + details.stack
-    );
 
     console.error("Global Error Handler:", details);
     reportError("runtime", details);
@@ -98,12 +85,6 @@ if (typeof window !== "undefined") {
       reason: event.reason?.message || event.reason || "Unknown",
       stack: event.reason?.stack || "N/A",
     };
-
-    alert(
-      "⚠️ Unhandled Promise Rejection:\n" +
-        "Reason: " + details.reason + "\n\n" +
-        "Stack: " + details.stack
-    );
 
     console.error("Unhandled Promise Rejection:", details);
     reportError("promiseRejection", details);
