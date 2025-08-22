@@ -39,13 +39,21 @@ import { db } from "../configs";
 import { usersTable } from "../configs/schema";
 import { eq } from "drizzle-orm";
 
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+const LOG_ERROR_URL = `${API_BASE}/api/log-error`;
+
+
 
 // Global error + unhandled rejection handler
 if (typeof window !== "undefined") {
+  // ✅ Define correct backend URL (fallbacks to same-origin /api)
+  const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+  const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";
+
   // helper: send error to backend
   function reportError(type, details) {
     try {
-      fetch("/api/log-error", {
+      fetch(LOG_ERROR_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -71,7 +79,6 @@ if (typeof window !== "undefined") {
       stack: error?.stack || "N/A",
     };
 
-    // User alert
     alert(
       "⚠️ App crashed:\n" +
         "Message: " + details.message + "\n" +
@@ -80,12 +87,8 @@ if (typeof window !== "undefined") {
         "Stack: " + details.stack
     );
 
-    // Log to console
     console.error("Global Error Handler:", details);
-
-    // Report to backend
     reportError("runtime", details);
-
     return false; // prevent default browser popup
   };
 
@@ -103,10 +106,10 @@ if (typeof window !== "undefined") {
     );
 
     console.error("Unhandled Promise Rejection:", details);
-
     reportError("promiseRejection", details);
   };
 }
+
 
 
 
