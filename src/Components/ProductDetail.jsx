@@ -205,7 +205,7 @@ const ProductDetail = () => {
 </div>
 
               {/* Description & Other Notes */}
-              <div className="space-y-4 text-gray-800">
+              <div className="space-y-4 text-gray-800 mt-[15px]">
                 {product.description && (
                   <div>
                     <h3 className="font-bold text-lg">Description</h3>
