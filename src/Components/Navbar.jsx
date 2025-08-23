@@ -1,304 +1,413 @@
 // src/Components/Navbar.jsx
-import React, { useState, useEffect, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaShoppingCart,
-  FaHeart,
-  FaUserCircle,
-  FaSignOutAlt,
-  FaBoxOpen,
-  FaEnvelope,
-  FaUserShield,
-} from "react-icons/fa";
 
+// Icons (Lucide outline from react-icons/lu)
+import {
+  LuShoppingCart,
+  LuHeart,
+  LuUserCircle,
+  LuLogOut,
+  LuPackage,
+  LuMail,
+  LuShield,
+} from "react-icons/lu";
+
+// Assets
+import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
+
+// CSS
+import "../style/navbar.css";
+
+// Clerk
 import { useUser, useClerk } from "@clerk/clerk-react";
+
+// Contexts
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-import "../style/navbar.css"; // keep for hamburger only
+// GSAP
+import { gsap } from "gsap";
 
-const Navbar = () => {
+const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // sidebar
+  const [navbarVisible, setNavbarVisible] = useState(true);
 
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const isLoggedIn = isSignedIn;
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [navbarVisible, setNavbarVisible] = useState(true);
-
   const navigate = useNavigate();
 
-  const toggleSidebar = () => setIsOpen((v) => !v);
+  // ---- Refs ----
+  const navRef = useRef(null);
+  const sidebarScopeRef = useRef(null);
+  const profileAnimScopeRef = useRef(null);
+  const profileWrapperRef = useRef(null);
+  const profileContainerRef = useRef(null);
 
-  // Hide navbar on scroll
+  // Hamburger toggle
+  const toggleSidebar = (e) => {
+    e.preventDefault();
+    setIsOpen((v) => !v);
+  };
+
+  // Prevent background scroll when sidebar is open
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "auto";
+    document.documentElement.style.overflow = isOpen ? "hidden" : "auto";
+  }, [isOpen]);
+
+  // Hide navbar on scroll down, show on scroll up
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      setNavbarVisible(currentScroll < lastScrollTop);
+      const currentScroll =
+        window.pageYOffset || document.documentElement.scrollTop;
+      const isVisible = currentScroll < lastScrollTop;
+
+      setNavbarVisible(isVisible);
+      if (onVisibilityChange) onVisibilityChange(isVisible);
+
       lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, [onVisibilityChange]);
+
+  // Outside click to close profile
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileWrapperRef.current &&
+        !profileWrapperRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside, true);
   }, []);
 
-  // Sidebar animation variants
-  const sidebarVariants = {
-    hidden: { x: "100%" },
-    visible: {
-      x: 0,
-      transition: {
-        type: "tween",
-        duration: 0.3,
-        when: "beforeChildren",
-        staggerChildren: 0.08,
-      },
-    },
-    exit: { x: "100%", transition: { duration: 0.25 } },
-  };
+  // Close profile dropdown on scroll
+  useEffect(() => {
+    const handleScrollProfile = () => {
+      if (isProfileOpen) setIsProfileOpen(false);
+    };
+    window.addEventListener("scroll", handleScrollProfile);
+    return () => window.removeEventListener("scroll", handleScrollProfile);
+  }, [isProfileOpen]);
 
-  const linkVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  // GSAP page-load animation
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+        willChange: "transform, opacity",
+        force3D: true,
+      });
+
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
+        .from(
+          ".nav-links li",
+          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+          "-=0.06"
+        )
+        .from(
+          ".icons > *",
+          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+          "-=0.1"
+        )
+        .add(() => {
+          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+            willChange: "auto",
+          });
+        });
+    }, navRef);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <header
-      className="fixed w-full z-50"
-      style={{ top: navbarVisible ? "0" : "-70px", transition: "top 0.3s ease-in-out" }}
-    >
-      <nav className="flex items-center justify-between px-6 py-3 backdrop-blur-lg bg-white/70 shadow-md border-b">
-        {/* Brand */}
-        <div onClick={() => navigate("/")} className="cursor-pointer select-none">
-          <h1 className="text-2xl font-extrabold tracking-wide bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-            DEVIDAURA
-          </h1>
-        </div>
-
-        {/* Links */}
-        <div className="hidden md:flex space-x-8 font-semibold text-gray-800">
-          <a onClick={() => navigate("/")} className="hover:text-gray-600 cursor-pointer">
-            Home
-          </a>
-          <a
-            onClick={() =>
-              document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="hover:text-gray-600 cursor-pointer"
-          >
-            Collection
-          </a>
-          <a
-            onClick={() =>
-              document.getElementById("shop-section")?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="hover:text-gray-600 cursor-pointer"
-          >
-            Shop
+    <header ref={navRef}>
+      <nav
+        id="navbar"
+        style={{
+          top: navbarVisible ? "0" : "-50px",
+          transition: "top 0.3s ease-in-out",
+        }}
+      >
+        {/* LEFT: Brand */}
+        <div className="part-1 nav-brand">
+          <a className="logo" onClick={() => navigate("/")}>
+            <h1>DEVIDAURA</h1>
           </a>
         </div>
 
-        {/* Right: Icons */}
-        <div className="flex items-center gap-5">
-          {/* Wishlist */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => navigate("/wishlist")}
-            className="relative text-gray-700 hover:text-black"
-          >
-            <FaHeart size={22} />
-            {wishlist.length > 0 && (
-              <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white rounded-full px-2 font-bold">
-                {wishlist.length}
-              </span>
-            )}
-          </motion.button>
-
-          {/* Cart */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => navigate("/cart")}
-            className="relative text-gray-700 hover:text-black"
-          >
-            <FaShoppingCart size={22} />
-            {cart.length > 0 && (
-              <span className="absolute -top-2 -right-2 text-xs bg-black text-white rounded-full px-2 font-bold">
-                {cart.length}
-              </span>
-            )}
-          </motion.button>
-
-          {/* Profile / Auth */}
-          {isLoggedIn ? (
-            <div className="relative">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsProfileOpen((v) => !v)}
-                className="text-gray-700 hover:text-black"
+        {/* CENTER: Links */}
+        <div className="part-2">
+          <ul className="nav-links">
+            <li>
+              <a onClick={() => navigate("/")}>Home</a>
+            </li>
+            <li>
+              <a
+                onClick={() =>
+                  document
+                    .getElementById("products-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
               >
-                <FaUserCircle size={26} />
-              </motion.button>
+                Collection
+              </a>
+            </li>
+            <li>
+              <a
+                onClick={() =>
+                  document
+                    .getElementById("shop-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                Shop
+              </a>
+            </li>
+          </ul>
+        </div>
 
-              {/* Dropdown */}
-              <AnimatePresence>
-                {isProfileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-lg border p-3"
+        {/* RIGHT: Icons */}
+        <div className="part-3">
+          <div className="icons">
+            {/* Wishlist */}
+            <div className="wishlist-icon">
+              <a onClick={() => navigate("/wishlist")}>
+                <button id="wishlist-icon" className="icon-btn">
+                  <LuHeart size={22} />
+                  <span id="wishlist-count">{wishlist.length}</span>
+                </button>
+              </a>
+            </div>
+
+            {/* Cart */}
+            <div className="cart-icon">
+              <a onClick={() => navigate("/cart")}>
+                <button id="cart-icon" className="icon-btn">
+                  <LuShoppingCart size={22} />
+                  <span id="cart-count">{cart.length}</span>
+                </button>
+              </a>
+            </div>
+
+            {/* Profile / Sign in */}
+            {isLoggedIn ? (
+              <div className="profile-wrapper" ref={profileWrapperRef}>
+                <div
+                  className="profile-icon"
+                  id="profile-btn"
+                  ref={profileAnimScopeRef}
+                >
+                  <button
+                    id="profileButton"
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    aria-expanded={isProfileOpen}
+                    aria-controls="profileContent"
                   >
-                    <div className="px-2 py-2 border-b">
-                      <h3 className="font-bold text-gray-900">{userdetails?.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                      </p>
+                    <LuUserCircle size={26} />
+                  </button>
+                </div>
+
+                {/* Profile Dropdown */}
+                <div className="profile-container" ref={profileContainerRef}>
+                  <div
+                    className={`profile-content ${
+                      isProfileOpen ? "active" : "hidden"
+                    }`}
+                    id="profileContent"
+                  >
+                    <div className="desktop-profile-info">
+                      <img src={UserIcon} alt="User" />
+                      <div className="user-data">
+                        <h3 id="profile-name">{userdetails?.name}</h3>
+                        <p id="profile-email">
+                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                        </p>
+                      </div>
                     </div>
-                    <ul className="mt-2 space-y-2">
-                      <li onClick={() => navigate("/myorder")} className="flex items-center gap-2 cursor-pointer hover:text-black">
-                        <FaBoxOpen /> My Orders
+
+                    <ul>
+                      <li
+                        onClick={() => {
+                          navigate("/myorder");
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <LuPackage size={18} /> <a>My Orders</a>
                       </li>
-                      <li onClick={() => navigate("/contact")} className="flex items-center gap-2 cursor-pointer hover:text-black">
-                        <FaEnvelope /> Contact Us
+                      <li
+                        onClick={() => {
+                          navigate("/contact");
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <LuMail size={18} /> <a>Contact Us</a>
                       </li>
                       {userdetails?.role === "admin" && (
-                        <li onClick={() => navigate("/admin")} className="flex items-center gap-2 cursor-pointer hover:text-black">
-                          <FaUserShield /> Admin Panel
+                        <li
+                          onClick={() => {
+                            navigate("/admin");
+                            setIsProfileOpen(false);
+                          }}
+                        >
+                          <LuShield size={18} /> <a>Admin Panel</a>
                         </li>
                       )}
                       <li
-                        onClick={async () => {
+                        className="logout"
+                        onClick={async (e) => {
+                          e.preventDefault();
                           await signOut({ redirectUrl: "/" });
                           setIsProfileOpen(false);
                         }}
-                        className="flex items-center gap-2 text-red-600 cursor-pointer"
                       >
-                        <FaSignOutAlt /> Log Out
+                        <LuLogOut size={18} /> <a>Log Out</a>
                       </li>
                     </ul>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <button
-              onClick={() => navigate("/login")}
-              className="px-4 py-1.5 rounded-lg bg-black text-white font-semibold hover:opacity-90"
-            >
-              Sign Up
-            </button>
-          )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div id="loginSignupButtons" className="desktop-login-signup">
+                <button id="loginButton" onClick={() => navigate("/login")}>
+                  <span className="btn-text">Sign Up</span>
+                </button>
+              </div>
+            )}
 
-          {/* Mobile Hamburger (unchanged) */}
-          <div className="md:hidden flex items-center">
-            <div className="mobile-view">
-              <div className="menu-icon" onClick={toggleSidebar}>
-                <div className="menu-container">
-                  <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
-                    <div className="line" />
-                    <div className="line" />
-                    <div className="line" />
+            {/* ===== Mobile View: Hamburger + Sidebar (UNCHANGED) ===== */}
+            <div className="part-1">
+              <div className="mobile-view" ref={sidebarScopeRef}>
+                <div className="menu-icon" onClick={toggleSidebar}>
+                  <div className="menu-container">
+                    <div
+                      className={`hamburger ${isOpen ? "active" : ""}`}
+                      id="hamburger"
+                    >
+                      <div className="line" />
+                      <div className="line" />
+                      <div className="line" />
+                    </div>
+                  </div>
+
+                  {/* Sidebar */}
+                  <div
+                    className={`sidebar ${isOpen ? "open" : ""}`}
+                    id="sidebar"
+                  >
+                    <header className="sidebar-header">
+                      <div className="sidebar-user-avt-img">
+                        <img src={UserIcon} alt="User" />
+                        <h4>{userdetails?.name || "Guest"}</h4>
+                      </div>
+                      {isLoggedIn ? (
+                        <div className="sidebar-user">
+                          <p>
+                            {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          className="sidebar-signin"
+                          onClick={() => navigate("/login")}
+                        >
+                          Login / Sign Up
+                        </button>
+                      )}
+                      <button className="sidebar-close" onClick={toggleSidebar}>
+                        ✕
+                      </button>
+                    </header>
+
+                    <nav className="sidebar-nav">
+                      <ul>
+                        <li
+                          onClick={() => {
+                            navigate("/myorder");
+                            toggleSidebar();
+                          }}
+                        >
+                          <LuPackage size={20} /> <span>My Orders</span>
+                        </li>
+                        <li
+                          onClick={() => {
+                            navigate("/wishlist");
+                            toggleSidebar();
+                          }}
+                        >
+                          <LuHeart size={20} /> <span>Wishlist</span>
+                        </li>
+                        <li
+                          onClick={() => {
+                            navigate("/cart");
+                            toggleSidebar();
+                          }}
+                        >
+                          <LuShoppingCart size={20} /> <span>Cart</span>
+                        </li>
+                        {isLoggedIn && userdetails?.role === "admin" && (
+                          <li
+                            onClick={() => {
+                              navigate("/admin");
+                              toggleSidebar();
+                            }}
+                          >
+                            <LuShield size={20} /> <span>Admin Panel</span>
+                          </li>
+                        )}
+                        <li
+                          onClick={() => {
+                            navigate("/contact");
+                            toggleSidebar();
+                          }}
+                        >
+                          <LuMail size={20} /> <span>Contact Us</span>
+                        </li>
+                      </ul>
+                    </nav>
+
+                    {isLoggedIn && (
+                      <footer className="sidebar-footer">
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await signOut({ redirectUrl: "/" });
+                            toggleSidebar();
+                          }}
+                        >
+                          <LuLogOut size={20} /> <span>Log Out</span>
+                        </button>
+                      </footer>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+            {/* ===== /Mobile View ===== */}
           </div>
         </div>
       </nav>
-
-      {/* Sidebar with swipe gesture */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black z-40"
-              onClick={toggleSidebar}
-            />
-
-            {/* Sidebar */}
-            <motion.div
-              variants={sidebarVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(e, info) => {
-                if (info.offset.x > 100) toggleSidebar(); // swipe right to close
-              }}
-              className="fixed top-0 right-0 h-screen w-72 bg-white z-50 shadow-xl flex flex-col"
-            >
-              <header className="p-4 border-b flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-gray-900">{userdetails?.name || "Guest"}</h4>
-                  {isLoggedIn && (
-                    <p className="text-sm text-gray-500">
-                      {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                    </p>
-                  )}
-                </div>
-                {!isLoggedIn && (
-                  <button
-                    className="bg-black text-white px-3 py-1 rounded-md"
-                    onClick={() => navigate("/login")}
-                  >
-                    Login / Sign Up
-                  </button>
-                )}
-                <button className="text-lg" onClick={toggleSidebar}>
-                  ✕
-                </button>
-              </header>
-
-              <nav className="p-4 flex-1 overflow-y-auto">
-                <motion.ul className="space-y-4 font-semibold">
-                  <motion.li variants={linkVariants} onClick={() => { navigate("/myorder"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
-                    <FaBoxOpen /> My Orders
-                  </motion.li>
-                  <motion.li variants={linkVariants} onClick={() => { navigate("/wishlist"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
-                    <FaHeart /> Wishlist
-                  </motion.li>
-                  <motion.li variants={linkVariants} onClick={() => { navigate("/cart"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
-                    <FaShoppingCart /> Cart
-                  </motion.li>
-                  {isLoggedIn && userdetails?.role === "admin" && (
-                    <motion.li variants={linkVariants} onClick={() => { navigate("/admin"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
-                      <FaUserShield /> Admin Panel
-                    </motion.li>
-                  )}
-                  <motion.li variants={linkVariants} onClick={() => { navigate("/contact"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
-                    <FaEnvelope /> Contact Us
-                  </motion.li>
-                </motion.ul>
-              </nav>
-
-              {isLoggedIn && (
-                <footer className="p-4 border-t">
-                  <motion.button
-                    variants={linkVariants}
-                    onClick={async () => {
-                      await signOut({ redirectUrl: "/" });
-                      toggleSidebar();
-                    }}
-                    className="flex items-center gap-2 text-red-600 font-bold"
-                  >
-                    <FaSignOutAlt /> Log Out
-                  </motion.button>
-                </footer>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </header>
   );
 };
