@@ -32,11 +32,15 @@ import { UserContext } from "../contexts/UserContext";
 // GSAP
 import { gsap } from "gsap";
 
+// We no longer need to accept cartCount and wishlistCount as props.
 const Navbar = ({ onVisibilityChange }) => {
+  // We get both the cart and wishlist directly from the context.
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
 
-  const [cartCount, setCartCount] = useState(0);
+  // We are removing the redundant `cartCount` state.
+  // const [cartCount, setCartCount] = useState(0);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // sidebar
   const [navbarVisible, setNavbarVisible] = useState(true);
@@ -55,11 +59,10 @@ const Navbar = ({ onVisibilityChange }) => {
   const profileContainerRef = useRef(null);
 
   // -------------------------
-  // Counts
+  // Counts (Now much simpler!)
   // -------------------------
-  useEffect(() => {
-    if (cart) setCartCount(cart.length);
-  }, [cart]);
+  // The cart count will now be derived directly from the context.
+  const cartCount = cart.length;
 
   // -------------------------
   // Hamburger toggle (logic unchanged)
@@ -203,7 +206,7 @@ const Navbar = ({ onVisibilityChange }) => {
         gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
           willChange: "auto",
         });
-      }); // ✅ ← This closing parenthesis was missing
+      });
   }, navRef);
 
   return () => ctx.revert();
@@ -212,34 +215,32 @@ const Navbar = ({ onVisibilityChange }) => {
 
 
   // =======================
+  // GSAP: Sidebar stagger (start immediately)
   // =======================
-// =======================
-// GSAP: Sidebar stagger (start immediately)
-// =======================
-useEffect(() => {
-  if (!isOpen) return;
-
-  const prefersReduced =
-    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (prefersReduced) return;
-
-  const ctx = gsap.context(() => {
-    const headerSel = ".sidebar-header";
-    const itemsSel = ".sidebar-nav li";
-    const footerSel = ".sidebar-footer";
-
-    // Reset any leftover styles
-    gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-
-    // Start stagger *immediately* when sidebar opens
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-    tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
-      .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
-      .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
-  }, sidebarScopeRef);
-
-  return () => ctx.revert();
-}, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
+  
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
+  
+    const ctx = gsap.context(() => {
+      const headerSel = ".sidebar-header";
+      const itemsSel = ".sidebar-nav li";
+      const footerSel = ".sidebar-footer";
+  
+      // Reset any leftover styles
+      gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
+  
+      // Start stagger *immediately* when sidebar opens
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
+        .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
+        .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
+    }, sidebarScopeRef);
+  
+    return () => ctx.revert();
+  }, [isOpen]);
 
 
   // ==============================
@@ -332,8 +333,9 @@ useEffect(() => {
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon" className="icon-btn">
                   <img src={CartIcon} alt="Cart" />
+                  {/* We now use cart.length directly */}
                   <span id="cart-count" className="badge">
-                    {cartCount >= 0 ? cartCount : ""}
+                    {cart.length >= 0 ? cart.length : ""}
                   </span>
                 </button>
               </a>
@@ -424,13 +426,12 @@ useEffect(() => {
                 </div>
               </div>
             ) : (
-              <SignInButton>
-                <div id="loginSignupButtons" className="desktop-login-signup">
-                  <button id="loginButton">
-                    <span className="btn-text">Sign Up</span>
-                  </button>
-                </div>
-              </SignInButton>
+            <div id="loginSignupButtons" className="desktop-login-signup">
+  <button id="loginButton" onClick={() => navigate("/login")}>
+    <span className="btn-text">Sign Up</span>
+  </button>
+</div>
+
             )}
 
             {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
@@ -459,9 +460,10 @@ useEffect(() => {
                           <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
                         </div>
                       ) : (
-                        <SignInButton>
-                          <button className="sidebar-signin">Login / Sign Up</button>
-                        </SignInButton>
+                       <button className="sidebar-signin" onClick={() => navigate("/login")}>
+  Login / Sign Up
+</button>
+
                       )}
                       <button className="sidebar-close" onClick={toggleSidebar}>
                         ✕
