@@ -405,7 +405,7 @@ padding-left:10px;
   flex-direction: column;
   justify-content: space-between;
   position: fixed;
-  top: var(--sidebar-top);
+  top: 0;
   left: 100%;
   width: 70vw;
   max-width: 300px;
