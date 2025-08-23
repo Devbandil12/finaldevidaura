@@ -305,7 +305,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   };
 
   return (
-    <div className="max-w-[900px] mx-auto p-4 sm:p-6 md:p-8 bg-white shadow-lg rounded-xl">
+    <div className="max-w-[900px] mx-auto p-4 sm:p-6 md:p-8 bg-white rounded-xl">
       {/* Summary Section */}
       <h2 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">Customer Reviews</h2>
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
