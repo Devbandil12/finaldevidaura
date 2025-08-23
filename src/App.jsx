@@ -129,7 +129,7 @@ const App = () => {
                   <ScrollToTop />
                   <PostLoginRedirector />
                   <Navbar isVisible={isNavbarVisible} />
-                 
+                  <MobileBackBar />
                   <Routes>
                     {/* Public: Main pages */}
                     <Route
