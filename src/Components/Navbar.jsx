@@ -1,4 +1,3 @@
-// src/Components/Navbar.js
 import React, {
   useState,
   useEffect,
@@ -8,19 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Assets
-import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
-import MyOrderIcon from "../assets/order-svgrepo-com.svg";
-import MailUsIcon from "../assets/mail-svgrepo-com.svg";
-import LogOutIcon from "../assets/logout-svgrepo-com.svg";
-import CartIcon from "../assets/cart-svgrepo-com.svg";
-import AdminIcon from "../assets/admin.png";
-import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
-import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
-
-// CSS
-import "../style/navbar.css";
+import { gsap } from "gsap"; // Keeping GSAP for initial load animation
 
 // Clerk
 import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
@@ -29,69 +16,55 @@ import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-// GSAP
-import { gsap } from "gsap";
+// Shadcn UI Components
+import { Button } from "./ui/button"; // Assuming path to shadcn/ui button component
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu"; // Assuming path to shadcn/ui dropdown menu
+import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"; // Assuming path to shadcn/ui sheet (for sidebar)
 
-// We no longer need to accept cartCount and wishlistCount as props.
+// Lucide React Icons (replacing image assets for a cleaner look)
+import {
+  Menu,
+  User,
+  Heart,
+  ShoppingCart,
+  Package, // For My Orders
+  Mail,
+  LogOut,
+  Settings, // For Admin Panel, or a more suitable icon if available
+  X, // For close button in sheet
+} from "lucide-react";
+
 const Navbar = ({ onVisibilityChange }) => {
-  // We get both the cart and wishlist directly from the context.
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
-
-  // We are removing the redundant `cartCount` state.
-  // const [cartCount, setCartCount] = useState(0);
-
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // sidebar
-  const [navbarVisible, setNavbarVisible] = useState(true);
-
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const isLoggedIn = isSignedIn;
-
   const navigate = useNavigate();
 
-  // ---- Refs ----
-  const navRef = useRef(null);            // scope for page-load GSAP
-  const sidebarScopeRef = useRef(null);   // scope for sidebar GSAP
-  const profileAnimScopeRef = useRef(null); // scope for profile dropdown GSAP
-  const profileWrapperRef = useRef(null); // wrapper for outside-click
-  const profileContainerRef = useRef(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false); // Managed by shadcn DropdownMenu
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Managed by shadcn Sheet
+  const [navbarVisible, setNavbarVisible] = useState(true);
 
-  // -------------------------
-  // Counts (Now much simpler!)
-  // -------------------------
-  // The cart count will now be derived directly from the context.
+  // Refs for GSAP animations
+  const navRef = useRef(null);
+
   const cartCount = cart.length;
+  const wishlistCount = wishlist.length;
 
-  // -------------------------
-  // Hamburger toggle (logic unchanged)
-  // -------------------------
-  const toggleSidebar = (e) => {
-    e.preventDefault();
-    setIsOpen((v) => !v);
-  };
-
-  // Prevent background scroll when sidebar is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    }
-  }, [isOpen]);
-
-  // -------------------------
-  // Hide navbar on scroll down, show on scroll up (unchanged)
-  // -------------------------
+  // Hide navbar on scroll down, show on scroll up
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
       const currentScroll =
         window.pageYOffset || document.documentElement.scrollTop;
-      const isVisible = currentScroll < lastScrollTop;
+      const isVisible = currentScroll < lastScrollTop || currentScroll < 50; // Always visible at the very top
 
       setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
@@ -102,446 +75,239 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
 
-  // -------------------------
-  // Outside click to close profile (wrapper contains button + dropdown)
-  // -------------------------
+  // Prevent background scroll when sidebar is open
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        profileWrapperRef.current &&
-        !profileWrapperRef.current.contains(event.target)
-      ) {
-        setIsProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside, true);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside, true);
-  }, []);
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+    }
+  }, [isSidebarOpen]);
 
-  // Close profile dropdown on scroll
-  useEffect(() => {
-    const handleScrollProfile = () => {
-      if (isProfileOpen) setIsProfileOpen(false);
-    };
-    window.addEventListener("scroll", handleScrollProfile);
-    return () => window.removeEventListener("scroll", handleScrollProfile);
-  }, [isProfileOpen]);
-
-  // ===========================================================
-  // Compute sidebar top offset (main navbar + MobileBackBar)
-  // ===========================================================
-  const updateSidebarOffset = useCallback(() => {
-    const mainBar = document.getElementById("navbar"); // top fixed bar
-    
-
-    const visibleHeight = (el) => {
-      if (!el) return 0;
-      const r = el.getBoundingClientRect();
-      const top = Math.max(r.top, 0);
-      const bottom = Math.min(r.bottom, window.innerHeight);
-      return Math.max(0, bottom - top);
-    };
-
-    const offset = visibleHeight(mainBar);
-    document.documentElement.style.setProperty(
-      "--sidebar-top",
-      `${offset}px`
-    );
-  }, []);
-
-  // Run on mount + resize/orientation change + observe bars
+  // GSAP: Page-load stagger for desktop elements
   useLayoutEffect(() => {
-    updateSidebarOffset();
-    const onRes = () => updateSidebarOffset();
-    window.addEventListener("resize", onRes);
-    window.addEventListener("orientationchange", onRes);
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
 
-    const ro = new ResizeObserver(updateSidebarOffset);
-    const mainBar = document.getElementById("navbar");
-    
-    if (mainBar) ro.observe(mainBar);
-    
-
-    return () => {
-      window.removeEventListener("resize", onRes);
-      window.removeEventListener("orientationchange", onRes);
-      ro.disconnect();
-    };
-  }, [updateSidebarOffset]);
-
-  // Update when main bar hides/shows
-  useEffect(() => {
-    updateSidebarOffset();
-  }, [navbarVisible, updateSidebarOffset]);
-
-  // =======================
-  // GSAP: Page-load stagger
-  // =======================
-  useLayoutEffect(() => {
-  const prefersReduced =
-    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (prefersReduced) return;
-
-  const ctx = gsap.context(() => {
-    gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-      willChange: "transform, opacity",
-      force3D: true,
-    });
-
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-
-    tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
-      .from(
-        ".nav-links li",
-        { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
-        "-=0.06"
-      )
-      .from(
-        ".icons > *",
-        { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
-        "-=0.1"
-      )
-      .add(() => {
-        gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-          willChange: "auto",
-        });
+    const ctx = gsap.context(() => {
+      gsap.set([".nav-brand", ".nav-link-item", ".nav-icon-item", ".auth-button"], {
+        willChange: "transform, opacity",
+        force3D: true,
       });
-  }, navRef);
 
-  return () => ctx.revert();
-}, []);
-
-
-
-  // =======================
-  // GSAP: Sidebar stagger (start immediately)
-  // =======================
-  useEffect(() => {
-    if (!isOpen) return;
-  
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-  
-    const ctx = gsap.context(() => {
-      const headerSel = ".sidebar-header";
-      const itemsSel = ".sidebar-nav li";
-      const footerSel = ".sidebar-footer";
-  
-      // Reset any leftover styles
-      gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-  
-      // Start stagger *immediately* when sidebar opens
       const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
-        .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
-        .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
-    }, sidebarScopeRef);
-  
-    return () => ctx.revert();
-  }, [isOpen]);
 
-
-  // ==============================
-  // GSAP: Profile dropdown reveal
-  // ==============================
-  useEffect(() => {
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-
-    if (!isProfileOpen) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(".profile-content", { y: -10, autoAlpha: 0, duration: 0.18 })
+      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
         .from(
-          ".profile-content ul li",
-          { y: 6, autoAlpha: 0, duration: 0.18, stagger: 0.04 },
-          "-=0.04"
-        );
-    }, profileAnimScopeRef);
+          ".nav-link-item",
+          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+          "-=0.06"
+        )
+        .from(
+          ".nav-icon-item",
+          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+          "-=0.1"
+        )
+        .from(
+            ".auth-button",
+            { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+            "-=0.1"
+        )
+        .add(() => {
+          gsap.set([".nav-brand", ".nav-link-item", ".nav-icon-item", ".auth-button"], {
+            willChange: "auto",
+          });
+        });
+    }, navRef);
 
     return () => ctx.revert();
-  }, [isProfileOpen]);
+  }, []);
+
+  const handleNavLinkClick = (path, scrollId) => {
+    if (path) {
+      navigate(path);
+    } else if (scrollId) {
+      document.getElementById(scrollId)?.scrollIntoView({ behavior: "smooth" });
+    }
+    // Close sidebar if it's open, or profile dropdown
+    setIsSidebarOpen(false);
+    setIsProfileOpen(false);
+  };
 
   return (
     <header ref={navRef}>
       <nav
-        id="navbar"
-        style={{
-          top: navbarVisible ? "0" : "-50px",
-          transition: "top 0.3s ease-in-out", // keep your original scroll transition
-        }}
+        className={`fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-4 py-2 transition-all duration-300 ease-in-out md:px-8
+          ${navbarVisible ? "translate-y-0" : "-translate-y-full"}
+          bg-background/80 backdrop-blur-md border-b border-border/40`}
       >
         {/* LEFT: Brand */}
-        <div className="part-1 nav-brand">
-          <a className="logo" onClick={() => navigate("/")}>
-            <h1>DEVIDAURA</h1>
-          </a>
+        <div className="flex items-center nav-brand">
+          <Button variant="ghost" className="text-xl font-bold tracking-tight text-primary-foreground hover:bg-transparent" onClick={() => handleNavLinkClick("/")}>
+            DEVIDAURA
+          </Button>
         </div>
 
-        {/* CENTER: Links (desktop) */}
-        <div className="part-2">
-          <ul className="nav-links">
-            <li>
-              <a onClick={() => navigate("/")}>Home</a>
-            </li>
-            <li>
-              <a
-                onClick={() =>
-                  document
-                    .getElementById("products-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Collection
-              </a>
-            </li>
-            <li>
-              <a
-                onClick={() =>
-                  document
-                    .getElementById("shop-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-              >
-                Shop
-              </a>
-            </li>
-          </ul>
+        {/* CENTER: Links (Desktop) */}
+        <div className="hidden md:flex flex-grow justify-center gap-6">
+          <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick("/")}>
+            Home
+          </Button>
+          <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick(null, "products-section")}>
+            Collection
+          </Button>
+          <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick(null, "shop-section")}>
+            Shop
+          </Button>
         </div>
 
-        {/* RIGHT: Icons */}
-        <div className="part-3">
-          <div className="icons">
-            {/* Wishlist */}
-            <div className="wishlist-icon">
-              <a onClick={() => navigate("/wishlist")}>
-                <button id="wishlist-icon" className="icon-btn">
-                  <img className="wishlist-img" src={WishlistIcon} alt="wishlist" />
-                  <span id="wishlist-count" className="badge">
-                    {wishlist.length >= 0 ? wishlist.length : 0}
-                  </span>
-                </button>
-              </a>
-            </div>
-
-            {/* Cart */}
-            <div className="cart-icon">
-              <a onClick={() => navigate("/cart")}>
-                <button id="cart-icon" className="icon-btn">
-                  <img src={CartIcon} alt="Cart" />
-                  {/* We now use cart.length directly */}
-                  <span id="cart-count" className="badge">
-                    {cart.length >= 0 ? cart.length : ""}
-                  </span>
-                </button>
-              </a>
-            </div>
-
-            {/* Profile / Sign in */}
-            {isLoggedIn ? (
-              <div
-                className="profile-wrapper"
-                ref={profileWrapperRef}
-              >
-                <div className="profile-icon" id="profile-btn" ref={profileAnimScopeRef}>
-                  <button
-                    id="profileButton"
-                    onClick={() => setIsProfileOpen((v) => !v)}
-                    aria-expanded={isProfileOpen}
-                    aria-controls="profileContent"
-                  >
-                    <img src={ProfileIcon} alt="Profile" />
-                  </button>
-                </div>
-
-                {/* Profile Dropdown */}
-                <div className="profile-container" ref={profileContainerRef}>
-                  <div
-                    className={`profile-content ${isProfileOpen ? "active" : "hidden"}`}
-                    id="profileContent"
-                  >
-                    <div className="desktop-profile-info">
-                      <img
-                        src={UserIcon}
-                        alt="User"
-                        className="mob-profile-img"
-                        id="mob-profile-img"
-                      />
-                      <div className="user-data">
-                        <h3 id="profile-name">{userdetails?.name}</h3>
-                        <p id="profile-email">
-                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <ul>
-                      <li
-                        onClick={() => {
-                          navigate("/myorder");
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <img src={MyOrderIcon} alt="" />
-                        <a>My Orders</a>
-                      </li>
-                      <li
-                        onClick={() => {
-                          navigate("/contact");
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <img src={MailUsIcon} alt="" />
-                        <a>Contact Us</a>
-                      </li>
-                      {isLoggedIn && user && userdetails?.role === "admin" && (
-                        <li
-                          onClick={() => {
-                            navigate("/admin");
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          <img src={AdminIcon} alt="" />
-                          <a>Admin Panel</a>
-                        </li>
-                      )}
-                      <li
-                        className="logout"
-                        id="logout-2"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await signOut({ redirectUrl: "/" });
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <a id="logout-btn-2">Log Out</a>
-                        <img src={LogOutIcon} alt="" />
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ) : (
-            <div id="loginSignupButtons" className="desktop-login-signup">
-  <button id="loginButton" onClick={() => navigate("/login")}>
-    <span className="btn-text">Sign Up</span>
-  </button>
-</div>
-
+        {/* RIGHT: Icons & Profile/Auth */}
+        <div className="flex items-center gap-4">
+          {/* Wishlist */}
+          <Button variant="ghost" size="icon" className="relative nav-icon-item" onClick={() => handleNavLinkClick("/wishlist")}>
+            <Heart className="h-5 w-5" />
+            {wishlistCount > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                {wishlistCount}
+              </span>
             )}
+          </Button>
 
-            {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
-            <div className="part-1">
-              <div className="mobile-view" ref={sidebarScopeRef}>
-                <div className="menu-icon" onClick={toggleSidebar}>
-                  {/* hamburger unchanged */}
-                  <div className="menu-container">
-                    <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
-                      <div className="line" />
-                      <div className="line" />
-                      <div className="line" />
+          {/* Cart */}
+          <Button variant="ghost" size="icon" className="relative nav-icon-item" onClick={() => handleNavLinkClick("/cart")}>
+            <ShoppingCart className="h-5 w-5" />
+            {cartCount > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                {cartCount}
+              </span>
+            )}
+          </Button>
+
+          {/* Profile Dropdown / Sign In Button */}
+          {isSignedIn ? (
+            <DropdownMenu onOpenChange={setIsProfileOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative nav-icon-item rounded-full">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex flex-col">
+                  <span>{userdetails?.name || "Guest User"}</span>
+                  <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleNavLinkClick("/myorder")}>
+                  <Package className="mr-2 h-4 w-4" />
+                  <span>My Orders</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavLinkClick("/contact")}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  <span>Contact Us</span>
+                </DropdownMenuItem>
+                {userdetails?.role === "admin" && (
+                  <DropdownMenuItem onClick={() => handleNavLinkClick("/admin")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await signOut({ redirectUrl: "/" });
+                    handleNavLinkClick(); // Close dropdown
+                  }}
+                  className="text-destructive hover:!bg-destructive/10"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <SignInButton mode="modal" signUpUrl="/sign-up">
+              <Button className="auth-button" variant="outline">Sign In</Button>
+            </SignInButton>
+          )}
+
+          {/* Mobile Hamburger Menu */}
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex flex-col w-3/4 sm:max-w-xs">
+              <div className="flex items-center justify-between pb-4 border-b">
+                <h4 className="text-lg font-semibold">Menu</h4>
+                <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Close menu</span>
+                </Button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pt-4">
+                {isSignedIn ? (
+                  <div className="mb-6 flex flex-col items-start gap-2 border-b pb-4">
+                    <div className="flex items-center gap-3">
+                        <User className="h-8 w-8 text-primary" />
+                        <div>
+                            <p className="font-semibold text-base">{userdetails?.name || "Guest"}</p>
+                            <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
+                        </div>
                     </div>
                   </div>
-
-                  {/* Sidebar */}
-                  <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
-                    <header className="sidebar-header">
- <div className="sidebar-user-avt-img">
-                      <img src={UserIcon} alt="User" />
-<h4>{userdetails?.name || "Guest"}</h4>
-</div>
-                      {isLoggedIn ? (
-                        <div className="sidebar-user">
- 
-                          <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
-                        </div>
-                      ) : (
-                       <button className="sidebar-signin" onClick={() => navigate("/login")}>
-  Login / Sign Up
-</button>
-
-                      )}
-                      <button className="sidebar-close" onClick={toggleSidebar}>
-                        ✕
-                      </button>
-                    </header>
-
-                    <nav className="sidebar-nav">
-                      <ul>
-                        <li
-                          onClick={() => {
-                            navigate("/myorder");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={MyOrderIcon} alt="" />
-                          <span>My Orders</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/wishlist");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={WishlistIcon} alt="" />
-                          <span>Wishlist</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/cart");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={CartIcon} alt="" />
-                          <span>Cart</span>
-                        </li>
-                        {isLoggedIn && userdetails?.role === "admin" && (
-                          <li
-                            onClick={() => {
-                              navigate("/admin");
-                              toggleSidebar();
-                            }}
-                          >
-                            <img src={AdminIcon} alt="" />
-                            <span>Admin Panel</span>
-                          </li>
-                        )}
-                        <li
-                          onClick={() => {
-                            navigate("/contact");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={MailUsIcon} alt="" />
-                          <span>Contact Us</span>
-                        </li>
-                      </ul>
-                    </nav>
-
-                    {isLoggedIn && (
-                      <footer className="sidebar-footer">
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await signOut({ redirectUrl: "/" });
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={LogOutIcon} alt="Log out" />
-                          <span>Log Out</span>
-                        </button>
-                      </footer>
-                    )}
+                ) : (
+                  <div className="mb-6 border-b pb-4">
+                      <SignInButton mode="modal" signUpUrl="/sign-up">
+                          <Button variant="default" className="w-full">Sign In / Sign Up</Button>
+                      </SignInButton>
                   </div>
-                </div>
+                )}
+                <nav className="grid gap-2">
+                  <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/myorder")}>
+                    <Package className="mr-2 h-5 w-5" /> My Orders
+                  </Button>
+                  <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/wishlist")}>
+                    <Heart className="mr-2 h-5 w-5" /> Wishlist
+                  </Button>
+                  <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/cart")}>
+                    <ShoppingCart className="mr-2 h-5 w-5" /> Cart
+                  </Button>
+                  {userdetails?.role === "admin" && (
+                    <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/admin")}>
+                      <Settings className="mr-2 h-5 w-5" /> Admin Panel
+                    </Button>
+                  )}
+                  <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/contact")}>
+                    <Mail className="mr-2 h-5 w-5" /> Contact Us
+                  </Button>
+                </nav>
               </div>
-            </div>
-            {/* ===== /Mobile View ===== */}
-          </div>
+
+              {isSignedIn && (
+                <div className="mt-auto border-t pt-4">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-base text-destructive hover:!bg-destructive/10"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await signOut({ redirectUrl: "/" });
+                      handleNavLinkClick(); // Close sidebar
+                    }}
+                  >
+                    <LogOut className="mr-2 h-5 w-5" /> Log Out
+                  </Button>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
     </header>
@@ -549,3 +315,4 @@ const Navbar = ({ onVisibilityChange }) => {
 };
 
 export default Navbar;
+
