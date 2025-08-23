@@ -171,7 +171,7 @@ const ProductDetail = () => {
              
               
               {/* Price & Discount */}
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-4 mb-4">
                 <span className="text-2xl font-extrabold text-green-600">₹{discountedPrice}</span>
                 {discount > 0 && (
                   <>
@@ -205,7 +205,7 @@ const ProductDetail = () => {
 </div>
 
               {/* Description & Other Notes */}
-              <div className="space-y-4 text-gray-800 mt-[15px]">
+              <div className="space-y-4 text-gray-800 mt-[30px]">
                 {product.description && (
                   <div>
                     <h3 className="font-bold text-lg">Description</h3>
