@@ -6,7 +6,7 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { gsap } from "gsap";
+import { gsap } from "gsap"; // Keeping GSAP for initial load animation
 
 // Clerk
 import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
@@ -16,9 +16,7 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
 // Shadcn UI Components
-// Using your Button component directly
-import { Button } from "./ui/buttons"; // Assuming this is where your provided code is
-// Using your DropdownMenu components directly
+import { Button } from "./ui/button"; // Your custom button
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,27 +24,28 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu"; // Assuming this is where your provided code is
-// Using your Sheet components directly
-import { Sheet, SheetTrigger, SheetContent } from "./ui/sheet"; // Assuming this is where your provided code is
+} from "./ui/dropdown-menu"; // Your custom dropdown
+import { Sheet, SheetTrigger, SheetContent } from "./ui/sheet"; // Your custom sheet
 
-// Lucide React Icons
+// Lucide React Icons (replacing image assets for a cleaner look)
 import {
-  Menu, // Will be animated
-  UserRound, // For profile, distinct from generic user
+  Menu, // Will be used for animation, but the custom component renders it
+  UserCircle2, // A more modern, filled profile icon
   Heart,
   ShoppingCart,
-  Package,
+  LayoutGrid, // For Collection/Shop or specific category view
+  Home, // For Home link
+  Package, // For My Orders
   Mail,
   LogOut,
-  Settings,
+  Settings, // For Admin Panel
   X, // For closing sidebar
 } from "lucide-react";
 
 // --- Custom Animated Hamburger Component ---
 const AnimatedHamburger = ({ isOpen, onClick }) => (
   <button
-    className="flex h-8 w-8 flex-col items-center justify-center space-y-1.5 focus:outline-none md:hidden"
+    className="flex h-8 w-8 flex-col items-center justify-center space-y-1.5 focus:outline-none md:hidden z-50 relative"
     onClick={onClick}
     aria-label="Toggle menu"
   >
@@ -171,7 +170,7 @@ const Navbar = ({ onVisibilityChange }) => {
       <nav
         className={`fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between px-4 py-2 transition-all duration-300 ease-in-out md:px-8
           ${navbarVisible ? "translate-y-0" : "-translate-y-full"}
-          ${navbarScrolled ? "bg-background/90 shadow-md backdrop-blur-md" : "bg-transparent"}
+          ${navbarScrolled ? "bg-background/90 shadow-lg backdrop-blur-md" : "bg-transparent"}
           `}
       >
         {/* LEFT: Brand */}
@@ -184,13 +183,13 @@ const Navbar = ({ onVisibilityChange }) => {
         {/* CENTER: Links (Desktop Only) */}
         <div className="hidden md:flex flex-grow justify-center gap-6">
           <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick("/")}>
-            Home
+            <Home className="mr-1 h-4 w-4" /> Home
           </Button>
           <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick(null, "products-section")}>
-            Collection
+            <LayoutGrid className="mr-1 h-4 w-4" /> Collection
           </Button>
           <Button variant="ghost" className="nav-link-item text-sm font-medium transition-colors hover:text-primary" onClick={() => handleNavLinkClick(null, "shop-section")}>
-            Shop
+            <ShoppingCart className="mr-1 h-4 w-4" /> Shop
           </Button>
         </div>
 
@@ -221,7 +220,7 @@ const Navbar = ({ onVisibilityChange }) => {
             <DropdownMenu onOpenChange={setIsProfileDropdownOpen}>
               <DropdownMenuTrigger asChild className="hidden md:flex">
                 <Button variant="ghost" size="icon" className="relative nav-icon-item rounded-full">
-                  <UserRound className="h-5 w-5" />
+                  <UserCircle2 className="h-5 w-5" />
                   <span className="sr-only">Toggle user menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -285,7 +284,7 @@ const Navbar = ({ onVisibilityChange }) => {
                 {isSignedIn ? (
                   <div className="mb-6 flex flex-col items-start gap-2 border-b pb-4">
                     <div className="flex items-center gap-3">
-                        <UserRound className="h-8 w-8 text-primary" />
+                        <UserCircle2 className="h-8 w-8 text-primary" />
                         <div>
                             <p className="font-semibold text-base">{userdetails?.name || "Guest"}</p>
                             <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
@@ -301,10 +300,10 @@ const Navbar = ({ onVisibilityChange }) => {
                 )}
                 <nav className="grid gap-2">
                   <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/")}>
-                    <Menu className="mr-2 h-5 w-5" /> Home
+                    <Home className="mr-2 h-5 w-5" /> Home
                   </Button>
                   <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick(null, "products-section")}>
-                    <Package className="mr-2 h-5 w-5" /> Collection
+                    <LayoutGrid className="mr-2 h-5 w-5" /> Collection
                   </Button>
                   <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick(null, "shop-section")}>
                     <ShoppingCart className="mr-2 h-5 w-5" /> Shop
@@ -314,7 +313,7 @@ const Navbar = ({ onVisibilityChange }) => {
                     <DropdownMenu onOpenChange={setIsProfileDropdownOpen}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="justify-start text-base w-full">
-                          <UserRound className="mr-2 h-5 w-5" /> Profile
+                          <UserCircle2 className="mr-2 h-5 w-5" /> Profile
                         </Button>
                       </DropdownMenuTrigger>
                       {/* Using w-56 for consistency with desktop dropdown */}
