@@ -1,592 +1,594 @@
-@import url('https://fonts.googleapis.com/css2?family=Aboreto&display=swap');
+:root { --sidebar-top: 0px; }
 
 /* ===========================
-   Header & Navbar Container
-   =========================== */
+   Header & Navbar Container
+   =========================== */
 header {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  position: absolute;
-  align-items: center;
-  z-index: 9999;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  align-items: center;
+  z-index: 9999;
 }
 
 /* Keep your existing scroll transition logic in JS; CSS below only styles */
 #navbar {
-  width: 100%;
-  height: 50px;
-  display: flex;
-  justify-content: space-between;
-  padding: 0.2rem 2rem 0rem 2rem;
-  align-items: center;
-  position: fixed;
-  transition: all 0.3s ease-in-out;
-  gap: 10px;
-  font-family: "Aboreto", system-ui;
-  font-weight: 400;
-  font-style: normal;
+  width: 100%;
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.2rem 2rem 0rem 2rem;
+  align-items: center;
+  position: fixed;
+  transition: all 0.3s ease-in-out;
+  gap: 10px;
+
+  /* --- Visual polish (desktop): soft translucent background --- */
+  backdrop-filter: saturate(180%) blur(6px);
+  -webkit-backdrop-filter: saturate(180%) blur(6px);
+  background: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 
 #navbar a {
-  text-decoration: none;
-  font-weight: 600;
+  text-decoration: none;
+  font-weight: 600;
 }
 
 /* ===========================
-   Left Part (Brand)
-   =========================== */
+   Left Part (Brand)
+   =========================== */
 .part-1 {
-  display: flex;
-  font-size: 1.5rem;
-  align-items: center;
-  padding-left: 0;
-  color: black;
+  display: flex;
+  font-size: 1.5rem;
+  align-items: center;
+  padding-left: 0;
+  color: black;
 }
 
 .part-1.nav-brand h1 {
 padding-left:10px;
-  font-size: 1.25rem;
-  letter-spacing: 0.5px;
-  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.5px;
+  margin: 0;
 }
 
 .logo {
-  text-decoration: none;
-  color: black;
-  cursor: pointer;
+  text-decoration: none;
+  color: black;
+  cursor: pointer;
 }
 
 /* ===========================
-   Center (Links)
-   =========================== */
+   Center (Links)
+   =========================== */
 .part-2 {
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  justify-content: space-between;
-  padding: 5px 30px 5px 30px;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: space-between;
+  padding: 5px 30px 5px 30px;
 }
 
 .nav-links {
-  display: flex;
-  gap: 3rem;
+  display: flex;
+  gap: 3rem;
 }
 .nav-links li {
-  list-style: none;
-  font-size: 1.2rem;
-  font-weight: 600;
-  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
-  cursor: pointer;
+  list-style: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  cursor: pointer;
 }
 .nav-links li a {
-  text-decoration: none;
-  color: black;
+  text-decoration: none;
+  color: black;
 }
 
 /* underline hover effect (kept, smoothed) */
 .part-2 a {
-  font-size: 16px;
-  color: #000;
-  text-decoration: none !important;
-  position: relative;
+  font-size: 16px;
+  color: #000;
+  text-decoration: none !important;
+  position: relative;
 }
 .part-2 a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 0;
-  height: 2px;
-  background-color: currentColor;
-  transition: width 0.5s ease-in-out;
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background-color: currentColor;
+  transition: width 0.5s ease-in-out;
 }
 .part-2 a:hover::after {
-  width: 100%;
+  width: 100%;
 }
 
 /* ===========================
-   Right (Icons)
-   =========================== */
+   Right (Icons)
+   =========================== */
 .part-3 {
-  display: flex;
+  display: flex;
 }
 .part-3 .icons {
-  display: flex;
-  align-items: center;
-  gap: 6px; /* tighter spacing for a premium feel */
+  display: flex;
+  align-items: center;
+  gap: 6px; /* tighter spacing for a premium feel */
 }
 
 .part-3 .icons .profile-icon {
-  display: flex;
-  align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 /* --- Generic icon button container (keeps your IDs working) --- */
 .icon-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 4px 6px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 6px;
 }
 
 /* Wishlist & Cart Icons */
 .wishlist-icon {
-  width: 60px;
-  margin: 0;
+  width: 60px;
+  margin: 0;
 }
 .wishlist-icon a {
-  text-decoration: none;
+  text-decoration: none;
 }
 #wishlist-icon {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
 }
 
 #wishlist-count {
-  background-color: transparent;
-  color: black;
-  font-size: 12px;
+  background-color: transparent;
+  color: black;
+  font-size: 12px;
 }
 
 .cart-icon {
-  width: 60px;
+  width: 60px;
 }
 .cart-icon a {
-  text-decoration: none;
+  text-decoration: none;
 }
 #cart-icon {
-  background-color: transparent;
-  color: black;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  background-color: transparent;
+  color: black;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 #cart-count {
-  background-color: transparent;
-  color: black;
-  font-size: 12px;
+  background-color: transparent;
+  color: black;
+  font-size: 12px;
 }
 
 /* --- Turn counts into real badges (without changing your IDs) --- */
 #cart-icon #cart-count,
 #wishlist-icon #wishlist-count {
-  display: inline-block;
-  min-width: 18px;
-  height: 18px;
-  line-height: 18px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #111;
-  background: #f1f1f1;
-  border-radius: 999px;
-  text-align: center;
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111;
+  background: #f1f1f1;
+  border-radius: 999px;
+  text-align: center;
 }
 
 /* Profile Icon */
 .profile-icon button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 /* ===========================
-   Profile Dropdown
-   =========================== */
+   Profile Dropdown
+   =========================== */
 .profile-content {
-  position: absolute;
-  top: 55px;
-  right: 0;
-  background: white;
-  border-radius: 12px;
-  min-width: 300px;
-  padding: 10px;
-  /* visual polish */
-  border: 1px solid #eee;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+  position: absolute;
+  top: 55px;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  min-width: 300px;
+  padding: 10px;
+  /* visual polish */
+  border: 1px solid #eee;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.08);
 
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.3s ease-in-out;
-  visibility: hidden;
-  z-index: 1000;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease-in-out;
+  visibility: hidden;
+  z-index: 1000;
 }
 .profile-content.active {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
 }
 .desktop-profile-info {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  text-align: left;
-  padding: 8px 8px 0 8px;
-  font-size: 15px;
-  gap: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  padding: 8px 8px 0 8px;
+  font-size: 15px;
+  gap: 10px;
 }
 .desktop-profile-info img {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
 }
 .user-data {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-weight: bold;
-  align-items: center;
-  margin-bottom: 10px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: bold;
+  align-items: center;
+  margin-bottom: 10px;
 }
 .user-data h3 { font-size: 15px; margin: 0; }
 .user-data p { font-size: 13px; color: #666; margin: 0; }
 
 .profile-content ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .profile-content ul li {
-  padding: 12px 15px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .profile-content ul li img {
-  width: 30px;
+  width: 30px;
 }
 .profile-content ul li a {
-  text-decoration: none;
-  color: #333;
-  font-weight: bold;
-  font-size: 14px;
-  display: block;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  font-size: 14px;
+  display: block;
 }
 .profile-content ul li:hover {
-  background: #f6f6f6;
+  background: #f6f6f6;
 }
 .profile-content ul li:hover a {
-  color: #000;
-  font-weight: bold;
+  color: #000;
+  font-weight: bold;
 }
 
 /* ===========================
-   Login button (kept)
-   =========================== */
+   Login button (kept)
+   =========================== */
 #loginButton {
-  position: relative;
-  overflow: hidden;
-  padding: 5px 10px;
-  border: 1px solid rgb(0, 0, 0);
-  border-radius: 6px;
-  font-weight: bolder;
-  color: rgb(0, 0, 0);
-  font-size: 14px;
+  position: relative;
+  overflow: hidden;
+  padding: 5px 10px;
+  border: 1px solid rgb(0, 0, 0);
+  border-radius: 6px;
+  font-weight: bolder;
+  color: rgb(0, 0, 0);
+  font-size: 14px;
 }
 #loginButton .btn-text {
-  position: relative;
-  z-index: 2;
+  position: relative;
+  z-index: 2;
 }
 #loginButton a {
-  text-decoration: none;
-  color: black;
+  text-decoration: none;
+  color: black;
 }
 #loginButton::after {
-  content: "";
-  position: absolute;
-  left: 0; bottom: 0;
-  width: 100%; height: 100%;
-  background-color: #000000;
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.6s ease-in-out;
-  z-index: 1;
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 100%; height: 100%;
+  background-color: #000000;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.6s ease-in-out;
+  z-index: 1;
 }
 #loginButton:hover {
-  color: #fff;
-  border: 1px solid black;
+  color: #fff;
+  border: 1px solid black;
 }
 #loginButton:hover::after { transform: scaleY(1); }
 
 /* ===========================
-   Mobile view
-   =========================== */
+   Mobile view
+   =========================== */
 .mobile-view {
-  display: none;
+  display: none;
 }
 
 /* ===========================
-   HAMBURGER (UNCHANGED)
-   =========================== */
+   HAMBURGER (UNCHANGED)
+   =========================== */
 .menu-container {
-  position: relative;
-  z-index: 1000;
-  padding-right:10px;
+  position: relative;
+  z-index: 1000;
+  padding-right:10px;
 }
 
 .hamburger {
-  width: 35px;
-  height: 25px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 3px;
-  align-items: center;
-  cursor: pointer;
-  margin-right: 5px;
-  transition: transform 0.5s ease;
-  z-index: 999999;
-  pointer-events: auto !important;
+  width: 35px;
+  height: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3px;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: transform 0.5s ease;
+  z-index: 999999;
+  pointer-events: auto !important;
 }
 
 .line {
-  width: 100%;
-  height: 3px;
-  background: rgb(0, 0, 0);
-  transition: all 0.5s ease;
-  border-radius: 999px;
+  width: 100%;
+  height: 3px;
+  background: rgb(0, 0, 0);
+  transition: all 0.5s ease;
+  border-radius: 999px;
 }
 
 /* Adjusting line lengths */
 .line:nth-child(1) {
-  width: 17.5px;
-  transform: translateX(-50%);
+  width: 17.5px;
+  transform: translateX(-50%);
 }
 .line:nth-child(2) {
-  width: 35px;
+  width: 35px;
 }
 .line:nth-child(3) {
-  width: 17.5px;
-  transform: translateX(50%);
+  width: 17.5px;
+  transform: translateX(50%);
 }
 
 /* Hamburger Transformations */
 .hamburger.active .line:nth-child(1) {
-  transform: rotate(-135deg) translateY(-240%);
-  background-color: rgb(0, 0, 0);
-  width: 18.5px;
+  transform: rotate(-135deg) translateY(-240%);
+  background-color: rgb(0, 0, 0);
+  width: 18.5px;
 }
 .hamburger.active .line:nth-child(2) {
-  transform: rotate(-45deg);
-  background-color: rgb(0, 0, 0);
+  transform: rotate(-45deg);
+  background-color: rgb(0, 0, 0);
 }
 .hamburger.active .line:nth-child(3) {
-  transform: rotate(-135deg) translateY(290%);
-  background-color: rgb(0, 0, 0);
-  width: 21px;
+  transform: rotate(-135deg) translateY(290%);
+  background-color: rgb(0, 0, 0);
+  width: 21px;
 }
 
 /* ===========================
-   Sidebar (structure & polish)
-   =========================== */
+   Sidebar (structure & polish)
+   =========================== */
 .sidebar {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: fixed;
-  top: 0;
-  left: 100%;
-  width: 70vw;
-  max-width: 300px;
-  height: 100vh;
-  background: #ffffff;
-  color: white;
-  overflow: hidden;
-  z-index: 999;
-  pointer-events: auto;
-  transition: left 0.3s ease;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
-  padding: 0;
-  padding-top: 50px;
-  margin-top: -10px;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  top: var(--sidebar-top);
+  left: 100%;
+  width: 70vw;
+  max-width: 300px;
+  min-height: calc(100svh - var(--sidebar-top)); /* ensures extra space exists */
+  max-height: calc(100svh - var(--sidebar-top));
+  background: #ffffff;
+  color: white;
+  overflow: hidden;
+  z-index: 999;
+  pointer-events: auto;
+  transition: left 0.3s ease;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+  padding: 0;
+  margin-top: -10px;
 }
 
 /* (You had two .sidebar.open earlier; the one below is the effective one) */
 /* fully visible: 100% - width */
-.sidebar.open { 
-  left: calc(100% - min(70vw, 300px));
+.sidebar.open { 
+  left: calc(100% - min(70vw, 300px));
 }
 
 
 /* header */
 .sidebar-header {
-  display: flex;
-  flex-direction: column;
-  align-items: left;
-  justify-items: left;
-  padding: 0.5rem 1rem;
-  position: relative;
-  border-bottom: 1px solid #f0f0f0;
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-items: left;
+  padding: 0.5rem 1rem;
+  position: relative;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 6px;
 }
 .sidebar-header img {
-  width: 50px; height: 50px; border-radius: 50%; object-fit: cover; align-self: flex-start;
+  width: 50px; height: 50px; border-radius: 50%; object-fit: cover; align-self: flex-start;
 }
 .sidebar-user { margin-left: 0.75rem; flex-grow: 1; }
 .sidebar-user h4 { margin: 0; font-size: 1rem; font-weight: 600; }
 .sidebar-user p { margin: 0; font-size: 0.85rem; color: #666; align-self: flex-start; }
 
 .sidebar-signin {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  background: #000;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  align-self: flex-start;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-end;
 }
 
 .sidebar-user-avt-img {
-  display: flex;
-  align-items: flex-end;
-  justify-content: left;
-  gap: 15px;
-  color: #000;
-  width: 100% ;
-  padding: 5px;
-  margin-bottom: 10px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  text-align: right;
+  display: flex;
+  align-items: flex-end;
+  justify-content: left;
+  gap: 15px;
+  color: #000;
+  width: 100% ;
+  padding: 5px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-align: right;
 }
 
 /* close button */
 .sidebar-close {
-  position: absolute;
-  top: 0.5rem; right: 0.5rem;
-  background: none; border: none;
-  font-size: 1.2rem; cursor: pointer;
+  position: absolute;
+  top: 0.5rem; right: 0.5rem;
+  background: none; border: none;
+  font-size: 1.2rem; cursor: pointer;
 }
 
 /* nav */
 .sidebar-nav { flex-grow: 1; overflow-y: auto; }
 .sidebar-nav ul { list-style: none; margin: 0; padding: 1rem; }
 .sidebar-nav li {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: 0.75rem;
-  transition: background 0.2s;
-  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.75rem;
+  transition: background 0.2s;
+  border-radius: 10px;
 }
 .sidebar-nav li:hover { background: #f3f3f3; }
 .sidebar-nav li img {
-  width: 40px;
-  margin-right: 0.75rem;
-  padding-right: 10px;
-  border-right:1px solid #f1efef;
+  width: 40px;
+  margin-right: 0.75rem;
+  padding-right: 10px;
+  border-right:1px solid #f1efef;
 }
 .sidebar-nav li span { font-size: 1rem; color: #333; font-weight: 600; }
 
 /* footer */
 .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid #f0f0f0;
-  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
 }
 .sidebar-footer button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: none; border: none;
-  font-size: 1rem; cursor: pointer;
-  color: #d11; font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none; border: none;
+  font-size: 1rem; cursor: pointer;
+  color: #d11; font-weight: 700;
 }
 .sidebar-footer img { width: 20px; }
 
 /* ===========================
-   Bounce on cart icon (kept)
-   =========================== */
+   Bounce on cart icon (kept)
+   =========================== */
 #cart-icon.cart-bounce,
 #cart-icon.cart-bounce img{
-  animation: cart-bounce 520ms cubic-bezier(.34,1.56,.64,1) both;
-  transform-origin: center;
+  animation: cart-bounce 520ms cubic-bezier(.34,1.56,.64,1) both;
+  transform-origin: center;
 }
 @keyframes cart-bounce{
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.18); }
-  55%  { transform: scale(0.96); }
-  75%  { transform: scale(1.06); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.18); }
+  55%  { transform: scale(0.96); }
+  75%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
 }
 
 /* ===========================
-   Responsive Media Queries
-   =========================== */
+   Responsive Media Queries
+   =========================== */
 @media (max-width: 1095px) {
-  #navbar { width: 95%; }
-  .nav-links { gap: 1.2rem; }
+  #navbar { width: 95%; }
+  .nav-links { gap: 1.2rem; }
 }
 
 @media (max-width: 885px) {
-  #navbar {
-    width: 85%;
-    padding: 0.5rem 0.8rem;
-  }
-  .part-1 { font-size: 1.2rem; }
-  .part-2 { gap: 1rem; }
-  .nav-links { gap: 1.5rem; }
-  .part-2 a { font-size: 0.65rem; }
+  #navbar {
+    width: 85%;
+    padding: 0.5rem 0.8rem;
+  }
+  .part-1 { font-size: 1.2rem; }
+  .part-2 { gap: 1rem; }
+  .nav-links { gap: 1.5rem; }
+  .part-2 a { font-size: 0.65rem; }
 
-  #loginButton {
-    padding: 8px 10px;
-    background-color: rgb(0, 0, 0);
-    border: 1px solid rgb(226, 226, 226);
-    border-radius: 99px;
-    transition: background 0.5s ease;
-    font-weight: bolder;
-    color: white;
-    font-size: 13px;
-  }
+  #loginButton {
+    padding: 8px 10px;
+    background-color: rgb(0, 0, 0);
+    border: 1px solid rgb(226, 226, 226);
+    border-radius: 99px;
+    transition: background 0.5s ease;
+    font-weight: bolder;
+    color: white;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 795px) {
-  #navbar { width: 95%; }
-  .part-2 a { font-size: 0.6rem; }
+  #navbar { width: 95%; }
+  .part-2 a { font-size: 0.6rem; }
 }
 
 @media (max-width: 700px) {
-  #navbar {
-    width: 100%;
-    padding: 0;
-    background-color: white;  
-    margin-top: 0px;
-    border-radius: 0px;
-    border-bottom: 1px solid #eee;
-  }
-  .part-2 { display: none; }
-  .profile-icon { display: none !important; }
-  .desktop-login-signup { display: none; }
-  .wishlist-icon { display: none; }
-  .cart-icon { width: 65px; height: auto; }
-  .part-1 { font-size: 1rem; }
-  .part-1 .logo { font-size: 1.2rem; font-weight: bold; }
+  #navbar {
+    width: 100%;
+    padding: 0;
+    background-color: white;  
+    margin-top: 0px;
+    border-radius: 0px;
+    border-bottom: 1px solid #eee;
+  }
+  .part-2 { display: none; }
+  .profile-icon { display: none !important; }
+  .desktop-login-signup { display: none; }
+  .wishlist-icon { display: none; }
+  .cart-icon { width: 65px; height: auto; }
+  .part-1 { font-size: 1rem; }
+  .part-1 .logo { font-size: 1.2rem; font-weight: bold; }
 
-  .mobile-view { display: block; }
-  #loginSignupButtons { display: none !important; }
+  .mobile-view { display: block; }
+  #loginSignupButtons { display: none !important; }
 }
 
 /* Ensure navbar sits above content & flying clones */
