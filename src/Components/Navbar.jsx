@@ -5,11 +5,10 @@ import React, {
   useContext,
   useRef,
   useLayoutEffect,
-  useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Icons (Lucide outline from react-icons/lu)
+// Icons
 import {
   LuShoppingCart,
   LuHeart,
@@ -53,9 +52,7 @@ const Navbar = ({ onVisibilityChange }) => {
   // ---- Refs ----
   const navRef = useRef(null);
   const sidebarScopeRef = useRef(null);
-  const profileAnimScopeRef = useRef(null);
   const profileWrapperRef = useRef(null);
-  const profileContainerRef = useRef(null);
 
   // Hamburger toggle
   const toggleSidebar = (e) => {
@@ -146,7 +143,7 @@ const Navbar = ({ onVisibilityChange }) => {
       <nav
         id="navbar"
         style={{
-          top: navbarVisible ? "0" : "-50px",
+          top: navbarVisible ? "0" : "-60px",
           transition: "top 0.3s ease-in-out",
         }}
       >
@@ -192,99 +189,79 @@ const Navbar = ({ onVisibilityChange }) => {
         <div className="part-3">
           <div className="icons">
             {/* Wishlist */}
-            <div className="wishlist-icon">
-              <a onClick={() => navigate("/wishlist")}>
-                <button id="wishlist-icon" className="icon-btn">
-                  <LuHeart size={22} />
-                  <span id="wishlist-count">{wishlist.length}</span>
-                </button>
-              </a>
-            </div>
+            <button
+              id="wishlist-icon"
+              className="icon-btn"
+              onClick={() => navigate("/wishlist")}
+            >
+              <LuHeart size={22} />
+              <span id="wishlist-count">{wishlist.length}</span>
+            </button>
 
             {/* Cart */}
-            <div className="cart-icon">
-              <a onClick={() => navigate("/cart")}>
-                <button id="cart-icon" className="icon-btn">
-                  <LuShoppingCart size={22} />
-                  <span id="cart-count">{cart.length}</span>
-                </button>
-              </a>
-            </div>
+            <button
+              id="cart-icon"
+              className="icon-btn"
+              onClick={() => navigate("/cart")}
+            >
+              <LuShoppingCart size={22} />
+              <span id="cart-count">{cart.length}</span>
+            </button>
 
-            {/* Profile / Sign in */}
+            {/* Profile */}
             {isLoggedIn ? (
               <div className="profile-wrapper" ref={profileWrapperRef}>
-                <div
-                  className="profile-icon"
-                  id="profile-btn"
-                  ref={profileAnimScopeRef}
+                <button
+                  id="profileButton"
+                  onClick={() => setIsProfileOpen((v) => !v)}
+                  aria-expanded={isProfileOpen}
                 >
-                  <button
-                    id="profileButton"
-                    onClick={() => setIsProfileOpen((v) => !v)}
-                    aria-expanded={isProfileOpen}
-                    aria-controls="profileContent"
-                  >
-                    <LuUser size={26} />
-                  </button>
-                </div>
+                  <LuUser size={26} />
+                </button>
 
                 {/* Profile Dropdown */}
-                <div className="profile-container" ref={profileContainerRef}>
-                  <div
-                    className={`profile-content ${
-                      isProfileOpen ? "active" : "hidden"
-                    }`}
-                    id="profileContent"
-                  >
-                    <div className="desktop-profile-info">
-                      <img src={UserIcon} alt="User" />
-                      <div className="user-data">
-                        <h3 id="profile-name">{userdetails?.name}</h3>
-                        <p id="profile-email">
-                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                        </p>
-                      </div>
+                <div
+                  className={`profile-content ${
+                    isProfileOpen ? "active" : "hidden"
+                  }`}
+                  id="profileContent"
+                >
+                  {/* Top: User info */}
+                  <div className="profile-header">
+                    <img src={UserIcon} alt="User" />
+                    <div>
+                      <h3>{userdetails?.name}</h3>
+                      <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
                     </div>
+                  </div>
 
-                    <ul>
-                      <li
-                        onClick={() => {
-                          navigate("/myorder");
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <LuPackage size={18} /> <a>My Orders</a>
+                  {/* Middle: Links */}
+                  <ul className="profile-links">
+                    <li onClick={() => navigate("/myorder")}>
+                      <LuPackage size={18} /> My Orders
+                    </li>
+                    <li onClick={() => navigate("/contact")}>
+                      <LuMail size={18} /> Contact Us
+                    </li>
+                    {userdetails?.role === "admin" && (
+                      <li onClick={() => navigate("/admin")}>
+                        <LuShield size={18} /> Admin Panel
                       </li>
-                      <li
-                        onClick={() => {
-                          navigate("/contact");
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <LuMail size={18} /> <a>Contact Us</a>
-                      </li>
-                      {userdetails?.role === "admin" && (
-                        <li
-                          onClick={() => {
-                            navigate("/admin");
-                            setIsProfileOpen(false);
-                          }}
-                        >
-                          <LuShield size={18} /> <a>Admin Panel</a>
-                        </li>
-                      )}
-                      <li
-                        className="logout"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await signOut({ redirectUrl: "/" });
-                          setIsProfileOpen(false);
-                        }}
-                      >
-                        <LuLogOut size={18} /> <a>Log Out</a>
-                      </li>
-                    </ul>
+                    )}
+                  </ul>
+
+                  {/* Bottom: Logout */}
+                  <div className="profile-footer">
+                    <button
+                      className="logout-btn"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        await signOut({ redirectUrl: "/" });
+                        setIsProfileOpen(false);
+                      }}
+                    >
+                      <LuLogOut size={18} /> Log Out
+                    </button>
                   </div>
                 </div>
               </div>
@@ -296,111 +273,86 @@ const Navbar = ({ onVisibilityChange }) => {
               </div>
             )}
 
-            {/* ===== Mobile View: Hamburger + Sidebar (UNCHANGED) ===== */}
-            <div className="part-1">
-              <div className="mobile-view" ref={sidebarScopeRef}>
-                <div className="menu-icon" onClick={toggleSidebar}>
-                  <div className="menu-container">
-                    <div
-                      className={`hamburger ${isOpen ? "active" : ""}`}
-                      id="hamburger"
-                    >
-                      <div className="line" />
-                      <div className="line" />
-                      <div className="line" />
-                    </div>
-                  </div>
-
-                  {/* Sidebar */}
+            {/* ===== Mobile View: Hamburger + Sidebar ===== */}
+            <div className="mobile-view" ref={sidebarScopeRef}>
+              <div className="menu-icon" onClick={toggleSidebar}>
+                <div className="menu-container">
                   <div
-                    className={`sidebar ${isOpen ? "open" : ""}`}
-                    id="sidebar"
+                    className={`hamburger ${isOpen ? "active" : ""}`}
+                    id="hamburger"
                   >
-                    <header className="sidebar-header">
-                      <div className="sidebar-user-avt-img">
-                        <img src={UserIcon} alt="User" />
-                        <h4>{userdetails?.name || "Guest"}</h4>
-                      </div>
-                      {isLoggedIn ? (
-                        <div className="sidebar-user">
-                          <p>
-                            {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                          </p>
-                        </div>
-                      ) : (
-                        <button
-                          className="sidebar-signin"
-                          onClick={() => navigate("/login")}
-                        >
-                          Login / Sign Up
-                        </button>
-                      )}
-                      <button className="sidebar-close" onClick={toggleSidebar}>
-                        ✕
-                      </button>
-                    </header>
-
-                    <nav className="sidebar-nav">
-                      <ul>
-                        <li
-                          onClick={() => {
-                            navigate("/myorder");
-                            toggleSidebar();
-                          }}
-                        >
-                          <LuPackage size={20} /> <span>My Orders</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/wishlist");
-                            toggleSidebar();
-                          }}
-                        >
-                          <LuHeart size={20} /> <span>Wishlist</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/cart");
-                            toggleSidebar();
-                          }}
-                        >
-                          <LuShoppingCart size={20} /> <span>Cart</span>
-                        </li>
-                        {isLoggedIn && userdetails?.role === "admin" && (
-                          <li
-                            onClick={() => {
-                              navigate("/admin");
-                              toggleSidebar();
-                            }}
-                          >
-                            <LuShield size={20} /> <span>Admin Panel</span>
-                          </li>
-                        )}
-                        <li
-                          onClick={() => {
-                            navigate("/contact");
-                            toggleSidebar();
-                          }}
-                        >
-                          <LuMail size={20} /> <span>Contact Us</span>
-                        </li>
-                      </ul>
-                    </nav>
-
-                    {isLoggedIn && (
-                      <footer className="sidebar-footer">
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await signOut({ redirectUrl: "/" });
-                            toggleSidebar();
-                          }}
-                        >
-                          <LuLogOut size={20} /> <span>Log Out</span>
-                        </button>
-                      </footer>
-                    )}
+                    <div className="line" />
+                    <div className="line" />
+                    <div className="line" />
                   </div>
+                </div>
+
+                {/* Sidebar */}
+                <div
+                  className={`sidebar ${isOpen ? "open" : ""}`}
+                  id="sidebar"
+                >
+                  <header className="sidebar-header">
+                    <div className="sidebar-user-avt-img">
+                      <img src={UserIcon} alt="User" />
+                      <h4>{userdetails?.name || "Guest"}</h4>
+                    </div>
+                    {isLoggedIn ? (
+                      <div className="sidebar-user">
+                        <p>
+                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        className="sidebar-signin"
+                        onClick={() => navigate("/login")}
+                      >
+                        Login / Sign Up
+                      </button>
+                    )}
+                    <button className="sidebar-close" onClick={toggleSidebar}>
+                      ✕
+                    </button>
+                  </header>
+
+                  {/* Sidebar Navigation */}
+                  <nav className="sidebar-nav">
+                    <ul>
+                      <li onClick={() => navigate("/myorder")}>
+                        <LuPackage size={20} /> <span>My Orders</span>
+                      </li>
+                      <li onClick={() => navigate("/wishlist")}>
+                        <LuHeart size={20} /> <span>Wishlist</span>
+                      </li>
+                      <li onClick={() => navigate("/cart")}>
+                        <LuShoppingCart size={20} /> <span>Cart</span>
+                      </li>
+                      {isLoggedIn && userdetails?.role === "admin" && (
+                        <li onClick={() => navigate("/admin")}>
+                          <LuShield size={20} /> <span>Admin Panel</span>
+                        </li>
+                      )}
+                      <li onClick={() => navigate("/contact")}>
+                        <LuMail size={20} /> <span>Contact Us</span>
+                      </li>
+                    </ul>
+                  </nav>
+
+                  {/* Sidebar Footer */}
+                  {isLoggedIn && (
+                    <footer className="sidebar-footer">
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          await signOut({ redirectUrl: "/" });
+                          toggleSidebar();
+                        }}
+                      >
+                        <LuLogOut size={20} /> <span>Log Out</span>
+                      </button>
+                    </footer>
+                  )}
                 </div>
               </div>
             </div>
