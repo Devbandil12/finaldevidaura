@@ -22,41 +22,64 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  // Corrected code
-const updateProduct = async (productId, updatedData) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedData),
-    });
+  const addProduct = async (newProduct) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newProduct),
+      });
 
-    if (!res.ok) {
-      throw new Error("Failed to update product");
+      if (!res.ok) {
+        throw new Error("Failed to add product");
+      }
+
+      // Await the response from the add request
+      await res.json();
+      
+      // Now, safely re-fetch the updated list of products
+      await getProducts();
+      
+    } catch (error) {
+      console.error("❌ Error adding product:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Await the response from the update request
-    // This ensures the update is complete before fetching again
-    await res.json();
-    
-    // Now, safely re-fetch the updated list of products
-    getProducts();
+  const updateProduct = async (productId, updatedData) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
 
-  } catch (error) {
-    console.error("❌ Error updating product:", error);
-    // You might want to display a toast notification to the user here.
-  }
-};
+      if (!res.ok) {
+        throw new Error("Failed to update product");
+      }
 
+      // Await the response from the update request
+      // This ensures the update is complete before fetching again
+      await res.json();
+      // Now, safely re-fetch the updated list of products
+      getProducts();
+    } catch (error) {
+      console.error("❌ Error updating product:", error);
+      // You might want to display a toast notification to the user here.
+    }
+  };
 
   const deleteProduct = async (productId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
         method: "DELETE",
       });
-
       if (!res.ok) {
         throw new Error("Failed to delete product");
       }
@@ -71,7 +94,7 @@ const updateProduct = async (productId, updatedData) => {
   }, []);
 
   return (
-    <ProductContext.Provider value={{ products, loading, getProducts, updateProduct, deleteProduct }}>
+    <ProductContext.Provider value={{ products, loading, getProducts, addProduct, updateProduct, deleteProduct }}>
       {children}
     </ProductContext.Provider>
   );
