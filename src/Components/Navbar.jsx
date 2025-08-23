@@ -91,8 +91,7 @@ const Navbar = ({ onVisibilityChange }) => {
     const handleScroll = () => {
       const currentScroll =
         window.pageYOffset || document.documentElement.scrollTop;
-      const isVisible = currentScroll < lastScrollTop - 50 || currentScroll < 10;
-
+      const isVisible = currentScroll < lastScrollTop;
 
       setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
@@ -129,7 +128,53 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScrollProfile);
   }, [isProfileOpen]);
 
-  
+  // ===========================================================
+  // Compute sidebar top offset (main navbar + MobileBackBar)
+  // ===========================================================
+  const updateSidebarOffset = useCallback(() => {
+    const mainBar = document.getElementById("navbar"); // top fixed bar
+    
+
+    const visibleHeight = (el) => {
+      if (!el) return 0;
+      const r = el.getBoundingClientRect();
+      const top = Math.max(r.top, 0);
+      const bottom = Math.min(r.bottom, window.innerHeight);
+      return Math.max(0, bottom - top);
+    };
+
+    const offset = visibleHeight(mainBar);
+    document.documentElement.style.setProperty(
+      "--sidebar-top",
+      `${offset}px`
+    );
+  }, []);
+
+  // Run on mount + resize/orientation change + observe bars
+  useLayoutEffect(() => {
+    updateSidebarOffset();
+    const onRes = () => updateSidebarOffset();
+    window.addEventListener("resize", onRes);
+    window.addEventListener("orientationchange", onRes);
+
+    const ro = new ResizeObserver(updateSidebarOffset);
+    const mainBar = document.getElementById("navbar");
+    
+    if (mainBar) ro.observe(mainBar);
+    
+
+    return () => {
+      window.removeEventListener("resize", onRes);
+      window.removeEventListener("orientationchange", onRes);
+      ro.disconnect();
+    };
+  }, [updateSidebarOffset]);
+
+  // Update when main bar hides/shows
+  useEffect(() => {
+    updateSidebarOffset();
+  }, [navbarVisible, updateSidebarOffset]);
+
   // =======================
   // GSAP: Page-load stagger
   // =======================
