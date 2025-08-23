@@ -120,7 +120,7 @@ const ProductDetail = () => {
                 <img
                   src={allImages[currentImg]}
                   alt={product.name}
-                  className="w-full h-auto rounded-lg shadow-md max-h-[600px] object-contain"
+                  className="w-full h-[350px] rounded-lg shadow-md max-h-[600px] object-contain"
                 />
               )}
               {allImages.length > 1 && (
