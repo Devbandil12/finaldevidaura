@@ -17,7 +17,7 @@ import { UserContext } from "../contexts/UserContext";
 
 // Shadcn UI Components
 // Using your Button component directly
-import { Button } from "./ui/button"; // Assuming this is where your provided code is
+import { Button } from "./ui/buttons"; // Assuming this is where your provided code is
 // Using your DropdownMenu components directly
 import {
   DropdownMenu,
