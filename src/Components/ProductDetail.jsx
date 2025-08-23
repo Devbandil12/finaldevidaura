@@ -111,7 +111,7 @@ const ProductDetail = () => {
 
   return (
     <div className="product-page-container bg-white min-h-screen">
-      <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8 mt-[50px]">
+      <div className="product-main-content bg-white rounded-lg max-w-7xl mx-auto p-4 md:p-8 mt-[50px]">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Image Gallery */}
           <div className="lg:w-1/2">
