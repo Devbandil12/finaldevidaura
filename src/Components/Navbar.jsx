@@ -16,7 +16,9 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
 // Shadcn UI Components
-import { Button } from "./ui/buttons";
+// Using your Button component directly
+import { Button } from "./ui/button"; // Assuming this is where your provided code is
+// Using your DropdownMenu components directly
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +26,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+} from "./ui/dropdown-menu"; // Assuming this is where your provided code is
+// Using your Sheet components directly
+import { Sheet, SheetTrigger, SheetContent } from "./ui/sheet"; // Assuming this is where your provided code is
 
 // Lucide React Icons
 import {
@@ -222,7 +225,7 @@ const Navbar = ({ onVisibilityChange }) => {
                   <span className="sr-only">Toggle user menu</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56"> {/* Default width of 224px for desktop */}
                 <DropdownMenuLabel className="flex flex-col">
                   <span>{userdetails?.name || "Guest User"}</span>
                   <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</span>
@@ -267,9 +270,11 @@ const Navbar = ({ onVisibilityChange }) => {
             <SheetTrigger asChild>
               <AnimatedHamburger isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             </SheetTrigger>
-            <SheetContent side="right" className="flex flex-col w-3/4 sm:max-w-xs p-4">
+            {/* Using your provided SheetContent */}
+            <SheetContent side="right" className="flex flex-col w-full sm:w-3/4 sm:max-w-xs">
               <div className="flex items-center justify-between pb-4 border-b">
                 <h4 className="text-lg font-semibold">Menu</h4>
+                {/* Close button with X icon */}
                 <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
                     <X className="h-5 w-5" />
                     <span className="sr-only">Close menu</span>
@@ -304,54 +309,52 @@ const Navbar = ({ onVisibilityChange }) => {
                   <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick(null, "shop-section")}>
                     <ShoppingCart className="mr-2 h-5 w-5" /> Shop
                   </Button>
-                  <DropdownMenu onOpenChange={setIsProfileDropdownOpen}> {/* Profile Dropdown inside sidebar */}
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="justify-start text-base">
-                        <UserRound className="mr-2 h-5 w-5" /> Profile
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="left" className="w-full sm:max-w-xs">
-                      <DropdownMenuLabel className="flex flex-col">
-                        <span>{userdetails?.name || "Guest User"}</span>
-                        <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</span>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleNavLinkClick("/myorder")}>
-                        <Package className="mr-2 h-4 w-4" />
-                        <span>My Orders</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleNavLinkClick("/wishlist")}>
-                        <Heart className="mr-2 h-4 w-4" />
-                        <span>Wishlist ({wishlistCount})</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleNavLinkClick("/contact")}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        <span>Contact Us</span>
-                      </DropdownMenuItem>
-                      {userdetails?.role === "admin" && (
-                        <DropdownMenuItem onClick={() => handleNavLinkClick("/admin")}>
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Admin Panel</span>
+                  {/* Profile Dropdown inside sidebar */}
+                  {isSignedIn ? (
+                    <DropdownMenu onOpenChange={setIsProfileDropdownOpen}>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="justify-start text-base w-full">
+                          <UserRound className="mr-2 h-5 w-5" /> Profile
+                        </Button>
+                      </DropdownMenuTrigger>
+                      {/* Using w-56 for consistency with desktop dropdown */}
+                      <DropdownMenuContent side="left" className="w-56">
+                        <DropdownMenuLabel className="flex flex-col">
+                          <span>{userdetails?.name || "Guest User"}</span>
+                          <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress || "N/A"}</span>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleNavLinkClick("/myorder")}>
+                          <Package className="mr-2 h-4 w-4" />
+                          <span>My Orders</span>
                         </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  {/* Separate wishlist and profile icons for mobile sidebar if not in dropdown */}
-                  {!isSignedIn && (
-                      <>
-                          <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/wishlist")}>
-                              <Heart className="mr-2 h-5 w-5" /> Wishlist ({wishlistCount})
-                          </Button>
-                      </>
-                  )}
-                  {userdetails?.role === "admin" && (
-                    <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/admin")}>
-                      <Settings className="mr-2 h-5 w-5" /> Admin Panel
+                        <DropdownMenuItem onClick={() => handleNavLinkClick("/wishlist")}>
+                          <Heart className="mr-2 h-4 w-4" />
+                          <span>Wishlist ({wishlistCount})</span>
+                        </DropdownMenuItem>
+                        {userdetails?.role === "admin" && (
+                          <DropdownMenuItem onClick={() => handleNavLinkClick("/admin")}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Admin Panel</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    // Show Wishlist directly if not signed in (and thus no profile dropdown)
+                    <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/wishlist")}>
+                        <Heart className="mr-2 h-5 w-5" /> Wishlist ({wishlistCount})
                     </Button>
                   )}
                   <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/contact")}>
                     <Mail className="mr-2 h-5 w-5" /> Contact Us
                   </Button>
+                  {/* Admin Panel directly in sidebar if signed in and admin */}
+                  {isSignedIn && userdetails?.role === "admin" && (
+                    <Button variant="ghost" className="justify-start text-base" onClick={() => handleNavLinkClick("/admin")}>
+                      <Settings className="mr-2 h-5 w-5" /> Admin Panel
+                    </Button>
+                  )}
                 </nav>
               </div>
 
