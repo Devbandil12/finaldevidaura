@@ -5,6 +5,9 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
+import { motion } from "framer-motion";
+
+
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -238,25 +241,47 @@ const ProductDetail = () => {
             </div>
 
             {/* CTA buttons */}
-            <div className="mt-8 flex items-center gap-4 flex-wrap">
-              
+            
 
-              <button
-                onClick={handleAddToCart}
-                className={`flex-1 py-3 px-6 font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 ${isInCart ? "bg-red-600 text-white hover:bg-red-700" : "bg-black text-white hover:bg-gray-800"}`}
-              >
-                <ShoppingCart size={20} />
-                {isInCart ? "Remove from Cart" : "Add to Cart"}
-              </button>
+    <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full">
+      {/* Add / Remove from Cart */}
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        onClick={handleAddToCart}
+        className={`w-full sm:flex-1 py-3 px-6 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
+          isInCart
+            ? "bg-neutral-800 text-gray-100 hover:bg-neutral-900"
+            : "bg-gray-100 text-neutral-900 hover:bg-gray-200"
+        }`}
+      >
+        <motion.div
+          animate={{ rotate: [0, -10, 10, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+        >
+          <ShoppingCart size={20} />
+        </motion.div>
+        {isInCart ? "Remove from Cart" : "Add to Cart"}
+      </motion.button>
 
-              <button
-                onClick={handleBuyNow}
-                className="flex-1 py-3 px-6 font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 flex items-center justify-center gap-2"
-              >
-                <ShoppingCart size={20} />
-                Buy Now
-              </button>
-            </div>
+      {/* Buy Now */}
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        onClick={handleBuyNow}
+        className="w-full sm:flex-1 py-3 px-6 font-medium rounded-xl bg-neutral-900 text-gray-100 hover:bg-neutral-950 transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
+      >
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+        >
+          <ShoppingCart size={20} />
+        </motion.div>
+        Buy Now
+      </motion.button>
+    </div>
+  
+
           </div>
         </div>
       </div>
