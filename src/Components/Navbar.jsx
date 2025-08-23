@@ -16,7 +16,7 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
 // Shadcn UI Components
-import { Button } from "./ui/button"; // Your custom button
+import { Button } from "./ui/buttons"; // Your custom button
 import {
   DropdownMenu,
   DropdownMenuContent,
