@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+
+/* In your global CSS, e.g., src/index.css or src/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* White */
+    --foreground: 222.2 47.4% 11.2%; /* Dark gray/black for text */
+    --primary: 222.2 47.4% 45.2%; /* Example: a blue for primary actions */
+    --primary-foreground: 210 20% 98%; /* White for text on primary */
+    --muted-foreground: 215.4 16.3% 46.9%; /* Lighter gray for secondary text */
+    --border: 214.3 31.8% 91.4%; /* Light gray border */
+    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
+    /* ... other shadcn/ui variables */
+  }
+  /* If you have dark mode */
+  .dark {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    /* ... dark mode colors */
+  }
+}
+
+
 @font-face {
   font-family: Luxury;
   src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
