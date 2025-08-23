@@ -329,7 +329,8 @@ menu-container {
    =========================== */
 .sidebar {
   display: flex; flex-direction: column; justify-content: space-between;
-  position: fixed; top: var(--sidebar-top);
+  position: fixed;
+  top: var(--sidebar-top);
   left: 100%;
   width: 70vw; max-width: 300px;
   min-height: calc(100svh - var(--sidebar-top));
@@ -339,6 +340,7 @@ menu-container {
   transition: left 0.3s ease;
   box-shadow: 0 8px 28px rgba(0,0,0,0.12);
   padding: 0;
+  z-index: 999;
 }
 .sidebar.open { left: calc(100% - min(70vw, 300px)); }
 
