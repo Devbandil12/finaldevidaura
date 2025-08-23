@@ -251,8 +251,8 @@ const ProductDetail = () => {
         onClick={handleAddToCart}
         className={`w-full sm:flex-1 py-3 px-6 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
           isInCart
-            ? "bg-neutral-800 text-gray-100 hover:bg-neutral-900"
-            : "bg-red-100 text-neutral-900 hover:bg-red-200"
+            ? "bg-red-800 text-neutral-100 hover:bg-redd-900"
+            : "bg-gray-100 text-neutral-900 hover:bg-gray-200"
         }`}
       >
         <motion.div
