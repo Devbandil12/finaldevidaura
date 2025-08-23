@@ -20,7 +20,7 @@ import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
 import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
 
 // CSS
-import "../style/navbar.css";
+import "../style/navbar.css"; // Ensure this path is correct
 
 // Clerk
 import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
@@ -32,14 +32,9 @@ import { UserContext } from "../contexts/UserContext";
 // GSAP
 import { gsap } from "gsap";
 
-// We no longer need to accept cartCount and wishlistCount as props.
 const Navbar = ({ onVisibilityChange }) => {
-  // We get both the cart and wishlist directly from the context.
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
-
-  // We are removing the redundant `cartCount` state.
-  // const [cartCount, setCartCount] = useState(0);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // sidebar
@@ -59,13 +54,12 @@ const Navbar = ({ onVisibilityChange }) => {
   const profileContainerRef = useRef(null);
 
   // -------------------------
-  // Counts (Now much simpler!)
+  // Counts
   // -------------------------
-  // The cart count will now be derived directly from the context.
   const cartCount = cart.length;
 
   // -------------------------
-  // Hamburger toggle (logic unchanged)
+  // Hamburger toggle
   // -------------------------
   const toggleSidebar = (e) => {
     e.preventDefault();
@@ -84,7 +78,7 @@ const Navbar = ({ onVisibilityChange }) => {
   }, [isOpen]);
 
   // -------------------------
-  // Hide navbar on scroll down, show on scroll up (unchanged)
+  // Hide navbar on scroll down, show on scroll up
   // -------------------------
   useEffect(() => {
     let lastScrollTop = 0;
@@ -103,7 +97,7 @@ const Navbar = ({ onVisibilityChange }) => {
   }, [onVisibilityChange]);
 
   // -------------------------
-  // Outside click to close profile (wrapper contains button + dropdown)
+  // Outside click to close profile
   // -------------------------
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -134,7 +128,6 @@ const Navbar = ({ onVisibilityChange }) => {
   const updateSidebarOffset = useCallback(() => {
     const mainBar = document.getElementById("navbar"); // top fixed bar
     
-
     const visibleHeight = (el) => {
       if (!el) return 0;
       const r = el.getBoundingClientRect();
@@ -213,7 +206,6 @@ const Navbar = ({ onVisibilityChange }) => {
 }, []);
 
 
-
   // =======================
   // GSAP: Sidebar stagger (start immediately)
   // =======================
@@ -242,7 +234,6 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => ctx.revert();
   }, [isOpen]);
 
-
   // ==============================
   // GSAP: Profile dropdown reveal
   // ==============================
@@ -266,24 +257,22 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => ctx.revert();
   }, [isProfileOpen]);
 
+
   return (
     <header ref={navRef}>
       <nav
         id="navbar"
-        style={{
-          top: navbarVisible ? "0" : "-50px",
-          transition: "top 0.3s ease-in-out", // keep your original scroll transition
-        }}
+        className={navbarVisible ? "navbar-visible" : "navbar-hidden"}
       >
         {/* LEFT: Brand */}
-        <div className="part-1 nav-brand">
+        <div className="navbar-part-1 nav-brand">
           <a className="logo" onClick={() => navigate("/")}>
             <h1>DEVIDAURA</h1>
           </a>
         </div>
 
         {/* CENTER: Links (desktop) */}
-        <div className="part-2">
+        <div className="navbar-part-2">
           <ul className="nav-links">
             <li>
               <a onClick={() => navigate("/")}>Home</a>
@@ -314,7 +303,7 @@ const Navbar = ({ onVisibilityChange }) => {
         </div>
 
         {/* RIGHT: Icons */}
-        <div className="part-3">
+        <div className="navbar-part-3">
           <div className="icons">
             {/* Wishlist */}
             <div className="wishlist-icon">
@@ -333,7 +322,6 @@ const Navbar = ({ onVisibilityChange }) => {
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon" className="icon-btn">
                   <img src={CartIcon} alt="Cart" />
-                  {/* We now use cart.length directly */}
                   <span id="cart-count" className="badge">
                     {cart.length >= 0 ? cart.length : ""}
                   </span>
@@ -427,116 +415,111 @@ const Navbar = ({ onVisibilityChange }) => {
               </div>
             ) : (
             <div id="loginSignupButtons" className="desktop-login-signup">
-  <button id="loginButton" onClick={() => navigate("/login")}>
-    <span className="btn-text">Sign Up</span>
-  </button>
-</div>
-
+              <button id="loginButton" onClick={() => navigate("/login")}>
+                <span className="btn-text">Sign Up</span>
+              </button>
+            </div>
             )}
 
-            {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
-            <div className="part-1">
-              <div className="mobile-view" ref={sidebarScopeRef}>
-                <div className="menu-icon" onClick={toggleSidebar}>
-                  {/* hamburger unchanged */}
-                  <div className="menu-container">
-                    <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
-                      <div className="line" />
-                      <div className="line" />
-                      <div className="line" />
-                    </div>
+            {/* ===== Mobile View: hamburger + sidebar ===== */}
+            <div className="mobile-menu-wrapper" ref={sidebarScopeRef}>
+              <div className="menu-icon" onClick={toggleSidebar}>
+                {/* hamburger unchanged */}
+                <div className="menu-container">
+                  <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
+                    <div className="line" />
+                    <div className="line" />
+                    <div className="line" />
                   </div>
+                </div>
 
-                  {/* Sidebar */}
-                  <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
-                    <header className="sidebar-header">
- <div className="sidebar-user-avt-img">
+                {/* Sidebar */}
+                <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
+                  <header className="sidebar-header">
+                    <div className="sidebar-user-avt-img">
                       <img src={UserIcon} alt="User" />
-<h4>{userdetails?.name || "Guest"}</h4>
-</div>
-                      {isLoggedIn ? (
-                        <div className="sidebar-user">
- 
-                          <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
-                        </div>
-                      ) : (
-                       <button className="sidebar-signin" onClick={() => navigate("/login")}>
-  Login / Sign Up
-</button>
-
-                      )}
-                      <button className="sidebar-close" onClick={toggleSidebar}>
-                        ✕
+                      <h4>{userdetails?.name || "Guest"}</h4>
+                    </div>
+                    {isLoggedIn ? (
+                      <div className="sidebar-user">
+                        <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
+                      </div>
+                    ) : (
+                      <button className="sidebar-signin" onClick={() => navigate("/login")}>
+                        Login / Sign Up
                       </button>
-                    </header>
-
-                    <nav className="sidebar-nav">
-                      <ul>
-                        <li
-                          onClick={() => {
-                            navigate("/myorder");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={MyOrderIcon} alt="" />
-                          <span>My Orders</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/wishlist");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={WishlistIcon} alt="" />
-                          <span>Wishlist</span>
-                        </li>
-                        <li
-                          onClick={() => {
-                            navigate("/cart");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={CartIcon} alt="" />
-                          <span>Cart</span>
-                        </li>
-                        {isLoggedIn && userdetails?.role === "admin" && (
-                          <li
-                            onClick={() => {
-                              navigate("/admin");
-                              toggleSidebar();
-                            }}
-                          >
-                            <img src={AdminIcon} alt="" />
-                            <span>Admin Panel</span>
-                          </li>
-                        )}
-                        <li
-                          onClick={() => {
-                            navigate("/contact");
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={MailUsIcon} alt="" />
-                          <span>Contact Us</span>
-                        </li>
-                      </ul>
-                    </nav>
-
-                    {isLoggedIn && (
-                      <footer className="sidebar-footer">
-                        <button
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await signOut({ redirectUrl: "/" });
-                            toggleSidebar();
-                          }}
-                        >
-                          <img src={LogOutIcon} alt="Log out" />
-                          <span>Log Out</span>
-                        </button>
-                      </footer>
                     )}
-                  </div>
+                    <button className="sidebar-close" onClick={toggleSidebar}>
+                      ✕
+                    </button>
+                  </header>
+
+                  <nav className="sidebar-nav">
+                    <ul>
+                      <li
+                        onClick={() => {
+                          navigate("/myorder");
+                          toggleSidebar();
+                        }}
+                      >
+                        <img src={MyOrderIcon} alt="" />
+                        <span>My Orders</span>
+                      </li>
+                      <li
+                        onClick={() => {
+                          navigate("/wishlist");
+                          toggleSidebar();
+                        }}
+                      >
+                        <img src={WishlistIcon} alt="" />
+                        <span>Wishlist</span>
+                      </li>
+                      <li
+                        onClick={() => {
+                          navigate("/cart");
+                          toggleSidebar();
+                        }}
+                      >
+                        <img src={CartIcon} alt="" />
+                        <span>Cart</span>
+                      </li>
+                      {isLoggedIn && userdetails?.role === "admin" && (
+                        <li
+                          onClick={() => {
+                            navigate("/admin");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={AdminIcon} alt="" />
+                          <span>Admin Panel</span>
+                        </li>
+                      )}
+                      <li
+                        onClick={() => {
+                          navigate("/contact");
+                          toggleSidebar();
+                        }}
+                      >
+                        <img src={MailUsIcon} alt="" />
+                        <span>Contact Us</span>
+                      </li>
+                    </ul>
+                  </nav>
+
+                  {isLoggedIn && (
+                    <footer className="sidebar-footer">
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          await signOut({ redirectUrl: "/" });
+                          toggleSidebar();
+                        }}
+                      >
+                        <img src={LogOutIcon} alt="Log out" />
+                        <span>Log Out</span>
+                      </button>
+                    </footer>
+                  )}
                 </div>
               </div>
             </div>
@@ -549,3 +532,4 @@ const Navbar = ({ onVisibilityChange }) => {
 };
 
 export default Navbar;
+
