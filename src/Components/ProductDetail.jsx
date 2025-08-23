@@ -287,7 +287,7 @@ const ProductDetail = () => {
       </div>
       
       {/* Review Section */}
-      <div className="product-reviews-section bg-white rounded-lg max-w-7xl mx-auto mt-8 p-4">
+      <div className="product-reviews-section bg-white rounded-lg max-w-7xl mx-auto mt-8">
         <ReviewComponent productId={product.id} userdetails={userdetails} />
       </div>
     </div>
