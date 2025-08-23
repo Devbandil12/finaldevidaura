@@ -568,7 +568,7 @@ padding-left:10px;
 }
 
 @media (max-width: 795px) {
-  #navbar { width: 95%; }
+  #navbar { width: 100%; }
   .part-2 a { font-size: 0.6rem; }
 }
 
