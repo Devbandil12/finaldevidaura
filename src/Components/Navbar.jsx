@@ -1,32 +1,29 @@
-// src/Components/Navbar.jsx
+// src/Components/Navbar.js
 import React, {
   useState,
   useEffect,
   useContext,
   useRef,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
 
-// Icons
-import {
-  LuShoppingCart,
-  LuHeart,
-  LuUser,
-  LuLogOut,
-  LuPackage,
-  LuMail,
-  LuShield,
-} from "react-icons/lu";
-
 // Assets
 import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
+import MyOrderIcon from "../assets/order-svgrepo-com.svg";
+import MailUsIcon from "../assets/mail-svgrepo-com.svg";
+import LogOutIcon from "../assets/logout-svgrepo-com.svg";
+import CartIcon from "../assets/cart-svgrepo-com.svg";
+import AdminIcon from "../assets/admin.png";
+import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
+import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
 
 // CSS
 import "../style/navbar.css";
 
 // Clerk
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
 
 // Contexts
 import { CartContext } from "../contexts/CartContext";
@@ -39,6 +36,7 @@ const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
 
+  const [cartCount, setCartCount] = useState(0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // sidebar
   const [navbarVisible, setNavbarVisible] = useState(true);
@@ -50,11 +48,22 @@ const Navbar = ({ onVisibilityChange }) => {
   const navigate = useNavigate();
 
   // ---- Refs ----
-  const navRef = useRef(null);
-  const sidebarScopeRef = useRef(null);
-  const profileWrapperRef = useRef(null);
+  const navRef = useRef(null);            // scope for page-load GSAP
+  const sidebarScopeRef = useRef(null);   // scope for sidebar GSAP
+  const profileAnimScopeRef = useRef(null); // scope for profile dropdown GSAP
+  const profileWrapperRef = useRef(null); // wrapper for outside-click
+  const profileContainerRef = useRef(null);
 
-  // Hamburger toggle
+  // -------------------------
+  // Counts
+  // -------------------------
+  useEffect(() => {
+    if (cart) setCartCount(cart.length);
+  }, [cart]);
+
+  // -------------------------
+  // Hamburger toggle (logic unchanged)
+  // -------------------------
   const toggleSidebar = (e) => {
     e.preventDefault();
     setIsOpen((v) => !v);
@@ -62,11 +71,18 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // Prevent background scroll when sidebar is open
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
-    document.documentElement.style.overflow = isOpen ? "hidden" : "auto";
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+    }
   }, [isOpen]);
 
-  // Hide navbar on scroll down, show on scroll up
+  // -------------------------
+  // Hide navbar on scroll down, show on scroll up (unchanged)
+  // -------------------------
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
@@ -83,7 +99,9 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
 
-  // Outside click to close profile
+  // -------------------------
+  // Outside click to close profile (wrapper contains button + dropdown)
+  // -------------------------
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -107,44 +125,153 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => window.removeEventListener("scroll", handleScrollProfile);
   }, [isProfileOpen]);
 
-  // GSAP page-load animation
+  // ===========================================================
+  // Compute sidebar top offset (main navbar + MobileBackBar)
+  // ===========================================================
+  const updateSidebarOffset = useCallback(() => {
+    const mainBar = document.getElementById("navbar"); // top fixed bar
+    
+
+    const visibleHeight = (el) => {
+      if (!el) return 0;
+      const r = el.getBoundingClientRect();
+      const top = Math.max(r.top, 0);
+      const bottom = Math.min(r.bottom, window.innerHeight);
+      return Math.max(0, bottom - top);
+    };
+
+    const offset = visibleHeight(mainBar);
+    document.documentElement.style.setProperty(
+      "--sidebar-top",
+      `${offset}px`
+    );
+  }, []);
+
+  // Run on mount + resize/orientation change + observe bars
   useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-        willChange: "transform, opacity",
-        force3D: true,
-      });
+    updateSidebarOffset();
+    const onRes = () => updateSidebarOffset();
+    window.addEventListener("resize", onRes);
+    window.addEventListener("orientationchange", onRes);
 
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    const ro = new ResizeObserver(updateSidebarOffset);
+    const mainBar = document.getElementById("navbar");
+    
+    if (mainBar) ro.observe(mainBar);
+    
 
-      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
-        .from(
-          ".nav-links li",
-          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
-          "-=0.06"
-        )
-        .from(
-          ".icons > *",
-          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
-          "-=0.1"
-        )
-        .add(() => {
-          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-            willChange: "auto",
-          });
+    return () => {
+      window.removeEventListener("resize", onRes);
+      window.removeEventListener("orientationchange", onRes);
+      ro.disconnect();
+    };
+  }, [updateSidebarOffset]);
+
+  // Update when main bar hides/shows
+  useEffect(() => {
+    updateSidebarOffset();
+  }, [navbarVisible, updateSidebarOffset]);
+
+  // =======================
+  // GSAP: Page-load stagger
+  // =======================
+  useLayoutEffect(() => {
+  const prefersReduced =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (prefersReduced) return;
+
+  const ctx = gsap.context(() => {
+    gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+      willChange: "transform, opacity",
+      force3D: true,
+    });
+
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+    tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
+      .from(
+        ".nav-links li",
+        { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+        "-=0.06"
+      )
+      .from(
+        ".icons > *",
+        { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+        "-=0.1"
+      )
+      .add(() => {
+        gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+          willChange: "auto",
         });
-    }, navRef);
+      }); // ✅ ← This closing parenthesis was missing
+  }, navRef);
+
+  return () => ctx.revert();
+}, []);
+
+
+
+  // =======================
+  // =======================
+// =======================
+// GSAP: Sidebar stagger (start immediately)
+// =======================
+useEffect(() => {
+  if (!isOpen) return;
+
+  const prefersReduced =
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (prefersReduced) return;
+
+  const ctx = gsap.context(() => {
+    const headerSel = ".sidebar-header";
+    const itemsSel = ".sidebar-nav li";
+    const footerSel = ".sidebar-footer";
+
+    // Reset any leftover styles
+    gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
+
+    // Start stagger *immediately* when sidebar opens
+    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+    tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
+      .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
+      .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
+  }, sidebarScopeRef);
+
+  return () => ctx.revert();
+}, [isOpen]);
+
+
+  // ==============================
+  // GSAP: Profile dropdown reveal
+  // ==============================
+  useEffect(() => {
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
+
+    if (!isProfileOpen) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(".profile-content", { y: -10, autoAlpha: 0, duration: 0.18 })
+        .from(
+          ".profile-content ul li",
+          { y: 6, autoAlpha: 0, duration: 0.18, stagger: 0.04 },
+          "-=0.04"
+        );
+    }, profileAnimScopeRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [isProfileOpen]);
 
   return (
     <header ref={navRef}>
       <nav
         id="navbar"
         style={{
-          top: navbarVisible ? "0" : "-60px",
-          transition: "top 0.3s ease-in-out",
+          top: navbarVisible ? "0" : "-50px",
+          transition: "top 0.3s ease-in-out", // keep your original scroll transition
         }}
       >
         {/* LEFT: Brand */}
@@ -154,7 +281,7 @@ const Navbar = ({ onVisibilityChange }) => {
           </a>
         </div>
 
-        {/* CENTER: Links */}
+        {/* CENTER: Links (desktop) */}
         <div className="part-2">
           <ul className="nav-links">
             <li>
@@ -189,168 +316,225 @@ const Navbar = ({ onVisibilityChange }) => {
         <div className="part-3">
           <div className="icons">
             {/* Wishlist */}
-            <button
-              id="wishlist-icon"
-              className="icon-btn"
-              onClick={() => navigate("/wishlist")}
-            >
-              <LuHeart size={22} />
-              <span id="wishlist-count">{wishlist.length}</span>
-            </button>
+            <div className="wishlist-icon">
+              <a onClick={() => navigate("/wishlist")}>
+                <button id="wishlist-icon" className="icon-btn">
+                  <img className="wishlist-img" src={WishlistIcon} alt="wishlist" />
+                  <span id="wishlist-count" className="badge">
+                    {wishlist.length >= 0 ? wishlist.length : 0}
+                  </span>
+                </button>
+              </a>
+            </div>
 
             {/* Cart */}
-            <button
-              id="cart-icon"
-              className="icon-btn"
-              onClick={() => navigate("/cart")}
-            >
-              <LuShoppingCart size={22} />
-              <span id="cart-count">{cart.length}</span>
-            </button>
-
-            {/* Profile */}
-            {isLoggedIn ? (
-              <div className="profile-wrapper" ref={profileWrapperRef}>
-                <button
-                  id="profileButton"
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  aria-expanded={isProfileOpen}
-                >
-                  <LuUser size={26} />
+            <div className="cart-icon">
+              <a onClick={() => navigate("/cart")}>
+                <button id="cart-icon" className="icon-btn">
+                  <img src={CartIcon} alt="Cart" />
+                  <span id="cart-count" className="badge">
+                    {cartCount >= 0 ? cartCount : ""}
+                  </span>
                 </button>
+              </a>
+            </div>
+
+            {/* Profile / Sign in */}
+            {isLoggedIn ? (
+              <div
+                className="profile-wrapper"
+                ref={profileWrapperRef}
+              >
+                <div className="profile-icon" id="profile-btn" ref={profileAnimScopeRef}>
+                  <button
+                    id="profileButton"
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    aria-expanded={isProfileOpen}
+                    aria-controls="profileContent"
+                  >
+                    <img src={ProfileIcon} alt="Profile" />
+                  </button>
+                </div>
 
                 {/* Profile Dropdown */}
-                <div
-                  className={`profile-content ${
-                    isProfileOpen ? "active" : "hidden"
-                  }`}
-                  id="profileContent"
-                >
-                  {/* Top: User info */}
-                  <div className="profile-header">
-                    <img src={UserIcon} alt="User" />
-                    <div>
-                      <h3>{userdetails?.name}</h3>
-                      <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
+                <div className="profile-container" ref={profileContainerRef}>
+                  <div
+                    className={`profile-content ${isProfileOpen ? "active" : "hidden"}`}
+                    id="profileContent"
+                  >
+                    <div className="desktop-profile-info">
+                      <img
+                        src={UserIcon}
+                        alt="User"
+                        className="mob-profile-img"
+                        id="mob-profile-img"
+                      />
+                      <div className="user-data">
+                        <h3 id="profile-name">{userdetails?.name}</h3>
+                        <p id="profile-email">
+                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Middle: Links */}
-                  <ul className="profile-links">
-                    <li onClick={() => navigate("/myorder")}>
-                      <LuPackage size={18} /> My Orders
-                    </li>
-                    <li onClick={() => navigate("/contact")}>
-                      <LuMail size={18} /> Contact Us
-                    </li>
-                    {userdetails?.role === "admin" && (
-                      <li onClick={() => navigate("/admin")}>
-                        <LuShield size={18} /> Admin Panel
+                    <ul>
+                      <li
+                        onClick={() => {
+                          navigate("/myorder");
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <img src={MyOrderIcon} alt="" />
+                        <a>My Orders</a>
                       </li>
-                    )}
-                  </ul>
-
-                  {/* Bottom: Logout */}
-                  <div className="profile-footer">
-                    <button
-                      className="logout-btn"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await signOut({ redirectUrl: "/" });
-                        setIsProfileOpen(false);
-                      }}
-                    >
-                      <LuLogOut size={18} /> Log Out
-                    </button>
+                      <li
+                        onClick={() => {
+                          navigate("/contact");
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <img src={MailUsIcon} alt="" />
+                        <a>Contact Us</a>
+                      </li>
+                      {isLoggedIn && user && userdetails?.role === "admin" && (
+                        <li
+                          onClick={() => {
+                            navigate("/admin");
+                            setIsProfileOpen(false);
+                          }}
+                        >
+                          <img src={AdminIcon} alt="" />
+                          <a>Admin Panel</a>
+                        </li>
+                      )}
+                      <li
+                        className="logout"
+                        id="logout-2"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          await signOut({ redirectUrl: "/" });
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <a id="logout-btn-2">Log Out</a>
+                        <img src={LogOutIcon} alt="" />
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
             ) : (
-              <div id="loginSignupButtons" className="desktop-login-signup">
-                <button id="loginButton" onClick={() => navigate("/login")}>
-                  <span className="btn-text">Sign Up</span>
-                </button>
-              </div>
+              <SignInButton>
+                <div id="loginSignupButtons" className="desktop-login-signup">
+                  <button id="loginButton">
+                    <span className="btn-text">Sign Up</span>
+                  </button>
+                </div>
+              </SignInButton>
             )}
 
-            {/* ===== Mobile View: Hamburger + Sidebar ===== */}
-            <div className="mobile-view" ref={sidebarScopeRef}>
-              <div className="menu-icon" onClick={toggleSidebar}>
-                <div className="menu-container">
-                  <div
-                    className={`hamburger ${isOpen ? "active" : ""}`}
-                    id="hamburger"
-                  >
-                    <div className="line" />
-                    <div className="line" />
-                    <div className="line" />
-                  </div>
-                </div>
-
-                {/* Sidebar */}
-                <div
-                  className={`sidebar ${isOpen ? "open" : ""}`}
-                  id="sidebar"
-                >
-                  <header className="sidebar-header">
-                    <div className="sidebar-user-avt-img">
-                      <img src={UserIcon} alt="User" />
-                      <h4>{userdetails?.name || "Guest"}</h4>
+            {/* ===== Mobile View: hamburger + sidebar (UNCHANGED logic & CSS) ===== */}
+            <div className="part-1">
+              <div className="mobile-view" ref={sidebarScopeRef}>
+                <div className="menu-icon" onClick={toggleSidebar}>
+                  {/* hamburger unchanged */}
+                  <div className="menu-container">
+                    <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
+                      <div className="line" />
+                      <div className="line" />
+                      <div className="line" />
                     </div>
-                    {isLoggedIn ? (
-                      <div className="sidebar-user">
-                        <p>
-                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                        </p>
-                      </div>
-                    ) : (
-                      <button
-                        className="sidebar-signin"
-                        onClick={() => navigate("/login")}
-                      >
-                        Login / Sign Up
-                      </button>
-                    )}
-                    
-                  </header>
+                  </div>
 
-                  {/* Sidebar Navigation */}
-                  <nav className="sidebar-nav">
-                    <ul>
-                      <li onClick={() => navigate("/myorder")}>
-                        <LuPackage size={20} /> <span>My Orders</span>
-                      </li>
-                      <li onClick={() => navigate("/wishlist")}>
-                        <LuHeart size={20} /> <span>Wishlist</span>
-                      </li>
-                      <li onClick={() => navigate("/cart")}>
-                        <LuShoppingCart size={20} /> <span>Cart</span>
-                      </li>
-                      {isLoggedIn && userdetails?.role === "admin" && (
-                        <li onClick={() => navigate("/admin")}>
-                          <LuShield size={20} /> <span>Admin Panel</span>
-                        </li>
+                  {/* Sidebar */}
+                  <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
+                    <header className="sidebar-header">
+ <div className="sidebar-user-avt-img">
+                      <img src={UserIcon} alt="User" />
+<h4>{userdetails?.name || "Guest"}</h4>
+</div>
+                      {isLoggedIn ? (
+                        <div className="sidebar-user">
+ 
+                          <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
+                        </div>
+                      ) : (
+                        <SignInButton>
+                          <button className="sidebar-signin">Login / Sign Up</button>
+                        </SignInButton>
                       )}
-                      <li onClick={() => navigate("/contact")}>
-                        <LuMail size={20} /> <span>Contact Us</span>
-                      </li>
-                    </ul>
-                  </nav>
-
-                  {/* Sidebar Footer */}
-                  {isLoggedIn && (
-                    <footer className="sidebar-footer">
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await signOut({ redirectUrl: "/" });
-                          toggleSidebar();
-                        }}
-                      >
-                        <LuLogOut size={20} /> <span>Log Out</span>
+                      <button className="sidebar-close" onClick={toggleSidebar}>
+                        ✕
                       </button>
-                    </footer>
-                  )}
+                    </header>
+
+                    <nav className="sidebar-nav">
+                      <ul>
+                        <li
+                          onClick={() => {
+                            navigate("/myorder");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={MyOrderIcon} alt="" />
+                          <span>My Orders</span>
+                        </li>
+                        <li
+                          onClick={() => {
+                            navigate("/wishlist");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={WishlistIcon} alt="" />
+                          <span>Wishlist</span>
+                        </li>
+                        <li
+                          onClick={() => {
+                            navigate("/cart");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={CartIcon} alt="" />
+                          <span>Cart</span>
+                        </li>
+                        {isLoggedIn && userdetails?.role === "admin" && (
+                          <li
+                            onClick={() => {
+                              navigate("/admin");
+                              toggleSidebar();
+                            }}
+                          >
+                            <img src={AdminIcon} alt="" />
+                            <span>Admin Panel</span>
+                          </li>
+                        )}
+                        <li
+                          onClick={() => {
+                            navigate("/contact");
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={MailUsIcon} alt="" />
+                          <span>Contact Us</span>
+                        </li>
+                      </ul>
+                    </nav>
+
+                    {isLoggedIn && (
+                      <footer className="sidebar-footer">
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await signOut({ redirectUrl: "/" });
+                            toggleSidebar();
+                          }}
+                        >
+                          <img src={LogOutIcon} alt="Log out" />
+                          <span>Log Out</span>
+                        </button>
+                      </footer>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
