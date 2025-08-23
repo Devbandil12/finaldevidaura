@@ -1,87 +1,60 @@
-
-/* src/style/navbar.css */
-
-/* Import Google Font - Inter */
-@import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap)');
-
-:root {
-  --sidebar-top: 0px; /* Managed by JS for dynamic navbar height */
+/* ===========================
+   HAMBURGER (UNCHANGED)
+   =========================== */
+.menu-container {
+  position: relative;
+  z-index: 1000;
+  padding-right:10px;
 }
 
-/* Global font application if not handled by a root Tailwind class */
-body {
-  font-family: 'Inter', sans-serif;
-}
-
-/* Base styles for the entire header - kept for structural element */
-header {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  position: absolute;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* Hamburger Icon Animation (Preserved and Scoped) */
-/* This block contains the specific CSS for the hamburger animation */
-/* Base styling for the hamburger lines */
-.devidaura-navbar .hamburger {
-  /* Tailwind classes handle overall look, but these are for animation */
-  width: 30px;
-  height: 20px;
+.hamburger {
+  width: 35px;
+  height: 25px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 3px;
   align-items: center;
   cursor: pointer;
+  margin-right: 5px;
   transition: transform 0.5s ease;
   z-index: 999999;
   pointer-events: auto !important;
 }
 
-.devidaura-navbar .line {
+.line {
   width: 100%;
-  height: 2px; /* Thinner lines */
-  background: currentColor; /* Inherit color, will be gray-700 from Tailwind */
+  height: 3px;
+  background: rgb(0, 0, 0);
   transition: all 0.5s ease;
   border-radius: 999px;
 }
 
-/* Adjusting line lengths (original animation logic preserved) */
-.devidaura-navbar .line:nth-child(1) {
-  width: 15px; /* Adjusted for visual balance with thinner lines */
+/* Adjusting line lengths */
+.line:nth-child(1) {
+  width: 17.5px;
   transform: translateX(-50%);
 }
-.devidaura-navbar .line:nth-child(2) {
-  width: 30px; /* Adjusted */
+.line:nth-child(2) {
+  width: 35px;
 }
-.devidaura-navbar .line:nth-child(3) {
-  width: 15px; /* Adjusted */
+.line:nth-child(3) {
+  width: 17.5px;
   transform: translateX(50%);
 }
 
-/* Hamburger Transformations (original animation logic preserved) */
-.devidaura-navbar .hamburger.active .line:nth-child(1) {
-  transform: rotate(-135deg) translateY(-210%); /* Adjusted Y for thinner lines */
-  background-color: currentColor;
-  width: 18px; /* Adjusted */
+/* Hamburger Transformations */
+.hamburger.active .line:nth-child(1) {
+  transform: rotate(-135deg) translateY(-240%);
+  background-color: rgb(0, 0, 0);
+  width: 18.5px;
 }
-.devidaura-navbar .hamburger.active .line:nth-child(2) {
+.hamburger.active .line:nth-child(2) {
   transform: rotate(-45deg);
-  background-color: currentColor;
+  background-color: rgb(0, 0, 0);
 }
-.devidaura-navbar .hamburger.active .line:nth-child(3) {
-  transform: rotate(-135deg) translateY(210%); /* Adjusted Y for thinner lines */
-  background-color: currentColor;
-  width: 18px; /* Adjusted */
+.hamburger.active .line:nth-child(3) {
+  transform: rotate(-135deg) translateY(290%);
+  background-color: rgb(0, 0, 0);
+  width: 21px;
 }
-
-/*
-  All other styles are handled directly by Tailwind CSS in Navbar.jsx.
-  This CSS file is primarily for the hamburger animation which requires
-  specific CSS properties for the transforms and transitions that are
-  difficult to replicate purely with Tailwind's utility classes for pseudo-elements.
-*/
-
