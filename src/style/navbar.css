@@ -1,12 +1,22 @@
-
 /* Import Google Font - Inter */
-@import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)');
+@import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap)');
 
-:root { --sidebar-top: 0px; }
+:root {
+  --sidebar-top: 0px;
+  /* Modern Colors */
+  --color-primary: #007bff; /* A vibrant blue for accents */
+  --color-dark: #1a1a1a;
+  --color-text: #333333;
+  --color-light-text: #777777;
+  --color-background-light: #ffffff;
+  --color-background-subtle: #f8f9fa;
+  --color-border-light: #e0e0e0;
+  --color-shadow-light: rgba(0, 0, 0, 0.05);
+  --color-shadow-medium: rgba(0, 0, 0, 0.1);
+  --color-error: #dc3545;
+}
 
-/* ===========================
-   Header & Navbar Container
-   =========================== */
+/* Base styles for the entire header */
 header {
   width: 100%;
   display: flex;
@@ -14,595 +24,587 @@ header {
   position: absolute;
   align-items: center;
   z-index: 9999;
-  font-family: 'Inter', sans-serif; /* Set default font */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-#navbar {
+/* Navbar container */
+.devidaura-navbar {
   width: 100%;
-  height: 60px; /* Slightly increased height for modern feel */
+  height: 70px; /* Taller for a more substantial modern feel */
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 2rem; /* Adjusted padding */
   align-items: center;
+  padding: 0 2.5rem; /* More generous padding */
   position: fixed;
-  transition: all 0.3s ease-in-out;
-  gap: 15px; /* Increased gap */
-
-  /* --- Modern Visual polish: Frosted glass effect with subtle shadow --- */
-  backdrop-filter: saturate(180%) blur(10px); /* Stronger blur */
-  -webkit-backdrop-filter: saturate(180%) blur(10px);
-  background: rgba(255,255,255,0.88); /* Slightly less opaque */
-  border-bottom: 1px solid rgba(0,0,0,0.06); /* Softer border */
-  box-shadow: 0 2px 15px rgba(0,0,0,0.04); /* Subtle shadow for depth */
-}
-
-/* Visibility for scroll effect */
-.navbar-visible {
   top: 0;
-}
-.navbar-hidden {
-  top: -60px; /* Hide completely */
+  left: 0;
+  background: var(--color-background-light);
+  backdrop-filter: saturate(180%) blur(12px); /* Stronger frosted glass */
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: 0 4px 20px var(--color-shadow-light); /* Refined shadow */
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease; /* Transition for scroll-hide */
+  z-index: 1000;
 }
 
+.devidaura-navbar.navbar-hidden {
+  transform: translateY(-100%); /* Hide completely by moving up */
+  box-shadow: none; /* No shadow when hidden */
+}
 
-#navbar a {
+.devidaura-navbar.navbar-visible {
+  transform: translateY(0);
+}
+
+/* General link styling within navbar */
+.devidaura-navbar a {
   text-decoration: none;
+  color: var(--color-text);
   font-weight: 500;
-  color: #333; /* Default link color */
+  transition: color 0.2s ease;
+}
+.devidaura-navbar a:hover {
+  color: var(--color-primary);
 }
 
 /* ===========================
-   Left Part (Brand)
+   Navbar Sections
    =========================== */
-.navbar-part-1 { /* Renamed for clarity */
+.devidaura-navbar .nav-left-section,
+.devidaura-navbar .nav-right-section {
   display: flex;
-  font-size: 1.6rem; /* Slightly larger brand text */
   align-items: center;
-  padding-left: 0;
-  color: #111;
-  font-weight: 700;
-  letter-spacing: -0.5px; /* Tighter letter spacing */
+  gap: 2rem; /* Consistent spacing */
 }
 
-.navbar-part-1.nav-brand h1 {
-  padding-left: 0; /* Remove extra padding */
-  font-size: 1.4rem; /* Adjusted brand font size */
-  margin: 0;
-  color: #111;
+/* Brand Logo */
+.devidaura-navbar .nav-brand-logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem; /* Larger, bolder logo */
+  font-weight: 800; /* Extra bold */
+  letter-spacing: -0.8px;
+  color: var(--color-dark);
 }
 
-.logo {
-  text-decoration: none;
-  color: #111;
+.devidaura-navbar .nav-brand-logo .logo {
   cursor: pointer;
+  color: var(--color-dark); /* Ensure logo text color is dark */
 }
 
-/* ===========================
-   Center (Links)
-   =========================== */
-.navbar-part-2 { /* Renamed for clarity */
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  gap: 2.5rem; /* Increased gap between links */
-  justify-content: center; /* Center links */
-  padding: 0;
+.devidaura-navbar .nav-brand-logo .text-accent {
+  color: var(--color-primary); /* Accent color for part of the logo */
 }
 
-.nav-links {
+/* Main Navigation Links (Desktop) */
+.devidaura-navbar .main-nav-links {
   display: flex;
-  gap: 2.5rem; /* Increased gap */
-  margin: 0;
-  padding: 0;
-}
-.nav-links li {
   list-style: none;
-  font-size: 1rem; /* Standardized font size */
-  font-weight: 500;
-  cursor: pointer;
-}
-.nav-links li a {
-  text-decoration: none;
-  color: #555; /* Softer link color */
-  transition: color 0.3s ease;
+  margin: 0;
+  padding: 0;
+  gap: 2.2rem; /* Spacing between desktop links */
 }
 
-/* Underline hover effect (enhanced) */
-.navbar-part-2 a {
-  font-size: 1rem;
-  color: #555;
-  text-decoration: none !important;
+.devidaura-navbar .main-nav-links li a {
   position: relative;
-  transition: color 0.3s ease;
+  font-size: 1.05rem; /* Slightly larger text */
+  font-weight: 600;
+  color: var(--color-text);
 }
-.navbar-part-2 a::after {
+
+.devidaura-navbar .main-nav-links li a::after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: -4px; /* Lowered for cleaner look */
+  bottom: -6px; /* Lowered underline */
   width: 0;
   height: 2px;
-  background-color: #007bff; /* Accent color for underline */
-  transition: width 0.4s ease-in-out;
+  background-color: var(--color-primary);
+  transition: width 0.3s ease-in-out;
 }
-.navbar-part-2 a:hover {
-  color: #111; /* Darker on hover */
-}
-.navbar-part-2 a:hover::after {
+
+.devidaura-navbar .main-nav-links li a:hover::after {
   width: 100%;
 }
-
-/* ===========================
-   Right (Icons)
-   =========================== */
-.navbar-part-3 { /* Renamed for clarity */
-  display: flex;
-  align-items: center; /* Align items vertically */
+.devidaura-navbar .main-nav-links li a:hover {
+  color: var(--color-primary);
 }
-.navbar-part-3 .icons {
+
+
+/* Utility Icons */
+.devidaura-navbar .nav-utility-icons {
   display: flex;
   align-items: center;
-  gap: 12px; /* Increased gap between icons */
+  gap: 1.2rem; /* Spacing between utility icons */
 }
 
-/* --- Generic icon button container --- */
-.icon-btn {
+.devidaura-navbar .nav-icon-wrapper {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center; /* Center icon and badge */
-  gap: 4px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 8px; /* Increased padding for better touch target */
-  border-radius: 8px; /* Rounded corners */
-  transition: background-color 0.2s ease;
-}
-.icon-btn:hover {
-  background-color: rgba(0,0,0,0.05); /* Subtle hover background */
 }
 
-.icon-btn img {
-  width: 24px; /* Standardized icon size */
-  height: 24px;
-}
-
-/* Wishlist & Cart Icons */
-.wishlist-icon, .cart-icon {
-  width: auto; /* Allow content to dictate width */
-  margin: 0;
-}
-
-/* --- Turn counts into real badges (without changing your IDs) --- */
-#cart-icon .badge,
-#wishlist-icon .badge {
-  display: inline-flex; /* Use flex for centering */
-  align-items: center;
-  justify-content: center;
-  min-width: 20px; /* Slightly larger badges */
-  height: 20px;
-  line-height: 1; /* Reset line-height */
-  padding: 0 6px;
-  font-size: 11px; /* Smaller font for badges */
-  font-weight: 600;
-  color: #fff;
-  background: #007bff; /* Accent color for badges */
-  border-radius: 999px;
-  text-align: center;
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translate(30%, -30%); /* Position above and to the right */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-/* Profile Icon */
-.profile-icon button {
+.devidaura-navbar .icon-btn {
   background: none;
   border: none;
+  padding: 8px; /* Larger hit area */
+  border-radius: 50%; /* Circular buttons */
   cursor: pointer;
-  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
-.profile-icon button img {
-  width: 32px; /* Slightly larger profile icon */
-  height: 32px;
-  border-radius: 50%; /* Make it round */
-  object-fit: cover;
-  border: 2px solid transparent;
+
+.devidaura-navbar .icon-btn:hover {
+  background-color: var(--color-background-subtle);
+  transform: translateY(-2px); /* Subtle lift on hover */
+}
+
+.devidaura-navbar .icon-btn img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0.8); /* Slightly muted icon color */
+  transition: filter 0.2s ease;
+}
+
+.devidaura-navbar .icon-btn:hover img {
+  filter: brightness(1); /* Restore full brightness on hover */
+}
+
+/* Badges for counts */
+.devidaura-navbar .badge {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  transform: translate(40%, -40%);
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+  color: var(--color-background-light);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0 4px; /* Adjust padding for single/double digits */
+  box-shadow: 0 2px 5px var(--color-shadow-medium);
+  pointer-events: none; /* Allow clicks to pass through to the button */
+}
+
+/* Profile Button */
+.devidaura-navbar .profile-btn {
+  padding: 4px; /* Less padding for the avatar-like button */
+  border-radius: 50%;
+  border: 2px solid transparent; /* Subtle border for focus/hover */
   transition: border-color 0.2s ease;
 }
-.profile-icon button:hover img {
-  border-color: #007bff; /* Accent border on hover */
+.devidaura-navbar .profile-btn:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-background-subtle);
+  transform: translateY(-2px);
+}
+.devidaura-navbar .profile-btn img {
+  width: 32px; /* Larger profile image */
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: none; /* No brightness filter for profile image */
 }
 
-
-/* ===========================
-   Profile Dropdown
-   =========================== */
-.profile-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.profile-container {
+/* Profile Dropdown */
+.devidaura-navbar .profile-dropdown-content {
   position: absolute;
-  top: 100%; /* Position below the profile button */
+  top: calc(100% + 15px); /* Position below navbar with some space */
   right: 0;
-  padding-top: 10px; /* Space between button and dropdown */
-  z-index: 1000;
-}
-
-.profile-content {
-  background: white;
+  min-width: 280px;
+  background: var(--color-background-light);
   border-radius: 12px;
-  min-width: 280px; /* Adjusted minimum width */
-  padding: 10px 0; /* Adjusted padding */
-  border: 1px solid rgba(0,0,0,0.08); /* Softer border */
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1); /* More pronounced shadow */
-
-  overflow: hidden;
+  box-shadow: 0 10px 30px var(--color-shadow-medium);
+  border: 1px solid var(--color-border-light);
+  padding: 10px 0;
   opacity: 0;
-  transform: translateY(-10px);
-  transition: all 0.2s ease-out; /* Smoother transition */
   visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s ease-out;
+  z-index: 999;
 }
-.profile-content.active {
+
+.devidaura-navbar .profile-dropdown-content.active {
   opacity: 1;
-  transform: translateY(0);
   visibility: visible;
+  transform: translateY(0);
 }
-.desktop-profile-info {
+
+.devidaura-navbar .dropdown-user-info {
   display: flex;
   align-items: center;
-  text-align: left;
-  padding: 10px 20px; /* Adjusted padding */
-  gap: 15px; /* Increased gap */
-  border-bottom: 1px solid #eee; /* Separator */
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--color-background-subtle);
   margin-bottom: 10px;
+  gap: 15px;
 }
-.desktop-profile-info img {
-  width: 48px; /* Standardized avatar size */
-  height: 48px;
+
+.devidaura-navbar .user-avatar {
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   object-fit: cover;
 }
-.user-data {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; /* Align text to the left */
-  gap: 0.2rem;
-  font-weight: 500;
-}
-.user-data h3 { font-size: 16px; margin: 0; color: #111; }
-.user-data p { font-size: 13px; color: #777; margin: 0; }
 
-.profile-content ul {
+.devidaura-navbar .user-details h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.devidaura-navbar .user-details p {
+  margin: 2px 0 0 0;
+  font-size: 0.9rem;
+  color: var(--color-light-text);
+}
+
+.devidaura-navbar .dropdown-links {
   list-style: none;
   margin: 0;
-  padding: 0 10px; /* Padding for list items */
+  padding: 0 10px;
 }
-.profile-content ul li {
+
+.devidaura-navbar .dropdown-links li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 12px 15px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px; /* Gap between icon and text */
-}
-.profile-content ul li img {
-  width: 24px; /* Icon size */
-  height: 24px;
-  filter: grayscale(80%); /* Subtle grayscale for icons */
-  transition: filter 0.15s ease;
-}
-.profile-content ul li a {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  font-size: 15px;
-  display: block;
-}
-.profile-content ul li:hover {
-  background: #f5f5f5; /* Lighter hover background */
-}
-.profile-content ul li:hover img {
-  filter: grayscale(0%); /* Colorize icon on hover */
-}
-.profile-content ul li:hover a {
-  color: #111;
-}
-
-.profile-content .logout {
-  border-top: 1px solid #eee; /* Separator for logout */
-  margin-top: 10px;
-  padding-top: 10px;
-}
-.profile-content .logout a {
-  color: #dc3545; /* Red for logout */
-  font-weight: 600;
-}
-.profile-content .logout img {
-  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%); /* Red tint for logout icon */
-}
-.profile-content .logout:hover {
-  background: #ffebeb; /* Lighter red on hover */
-}
-
-
-/* ===========================
-   Login button (modernized)
-   =========================== */
-#loginButton {
-  position: relative;
-  overflow: hidden;
-  padding: 8px 18px; /* Increased padding */
-  border: 1px solid #007bff; /* Accent color border */
-  border-radius: 25px; /* Pill shape */
-  font-weight: 600;
-  color: #007bff; /* Accent color text */
-  font-size: 15px;
-  background-color: transparent;
-  transition: all 0.4s ease-in-out;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#loginButton .btn-text {
-  position: relative;
-  z-index: 2;
-}
-#loginButton a {
-  text-decoration: none;
-  color: inherit; /* Inherit color from button */
-}
-#loginButton::after {
-  content: "";
-  position: absolute;
-  left: 0; bottom: 0;
-  width: 100%; height: 100%;
-  background-color: #007bff; /* Accent fill */
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.4s ease-in-out;
-  z-index: 1;
-}
-#loginButton:hover {
-  color: #fff; /* White text on hover */
-  border-color: #007bff; /* Keep accent border */
-}
-#loginButton:hover::after { transform: scaleY(1); }
-
-/* ===========================
-   Mobile view
-   =========================== */
-.mobile-menu-wrapper { /* Renamed for clarity */
-  display: none;
-  align-items: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+.devidaura-navbar .dropdown-links li:hover {
+  background-color: var(--color-background-subtle);
+  color: var(--color-primary);
+}
+
+.devidaura-navbar .dropdown-links li img {
+  width: 20px;
+  height: 20px;
+  filter: grayscale(80%) opacity(0.8);
+  transition: filter 0.2s ease;
+}
+
+.devidaura-navbar .dropdown-links li:hover img {
+  filter: grayscale(0%) opacity(1);
+}
+
+.devidaura-navbar .dropdown-links li span {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.devidaura-navbar .dropdown-links li:hover span {
+  color: var(--color-primary);
+}
+
+.devidaura-navbar .logout-link {
+  border-top: 1px solid var(--color-background-subtle);
+  margin-top: 10px;
+  padding-top: 10px !important; /* Override li padding */
+  padding-bottom: 0px !important;
+}
+
+.devidaura-navbar .logout-link span {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+.devidaura-navbar .logout-link img {
+  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%);
+}
+
+.devidaura-navbar .logout-link:hover {
+  background-color: #ffebeb; /* Light red hover */
+}
+
+/* Primary Button (for Sign Up/Login) */
+.devidaura-navbar .btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-background-light);
+  border: 1px solid var(--color-primary);
+  padding: 10px 20px;
+  border-radius: 25px; /* Pill shape */
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.devidaura-navbar .btn-primary:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  border-color: #0056b3;
+  transform: translateY(-2px); /* Subtle lift */
+  box-shadow: 0 4px 10px var(--color-shadow-medium);
+}
+
+/* Text with Icon Button */
+.devidaura-navbar .btn-text-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: color 0.2s ease;
+}
+
+.devidaura-navbar .btn-text-icon:hover {
+  color: var(--color-primary);
+}
+
+.devidaura-navbar .btn-text-icon img {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0.8);
+  transition: filter 0.2s ease;
+}
+
+.devidaura-navbar .btn-text-icon:hover img {
+  filter: brightness(1);
+}
+
 /* ===========================
-   HAMBURGER (UNCHANGED from original)
+   Mobile Menu (Hamburger & Sidebar)
    =========================== */
-.menu-container {
+.devidaura-navbar .mobile-menu-toggle {
+  display: none; /* Hidden by default on desktop */
+}
+
+/* Hamburger Icon (Animation preserved, look updated) */
+.devidaura-navbar .menu-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.devidaura-navbar .menu-icon:hover {
+  background-color: var(--color-background-subtle);
+}
+
+.devidaura-navbar .menu-container {
   position: relative;
   z-index: 1000;
-  padding-right:10px;
+  display: flex; /* Ensure it behaves like a flex item */
+  align-items: center; /* Center the hamburger lines */
+  justify-content: center;
 }
 
-.hamburger {
-  width: 35px;
-  height: 25px;
+.devidaura-navbar .hamburger {
+  width: 30px; /* Slightly smaller for mobile */
+  height: 20px; /* Adjusted height */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 3px;
   align-items: center;
   cursor: pointer;
-  margin-right: 5px;
   transition: transform 0.5s ease;
   z-index: 999999;
   pointer-events: auto !important;
 }
 
-.line {
+.devidaura-navbar .line {
   width: 100%;
-  height: 3px;
-  background: rgb(0, 0, 0);
+  height: 2px; /* Thinner lines for a modern look */
+  background: var(--color-dark); /* Dark color for contrast */
   transition: all 0.5s ease;
   border-radius: 999px;
 }
 
-/* Adjusting line lengths */
-.line:nth-child(1) {
-  width: 17.5px;
+/* Adjusting line lengths (original animation logic preserved) */
+.devidaura-navbar .line:nth-child(1) {
+  width: 15px; /* Adjusted */
   transform: translateX(-50%);
 }
-.line:nth-child(2) {
-  width: 35px;
+.devidaura-navbar .line:nth-child(2) {
+  width: 30px; /* Adjusted */
 }
-.line:nth-child(3) {
-  width: 17.5px;
+.devidaura-navbar .line:nth-child(3) {
+  width: 15px; /* Adjusted */
   transform: translateX(50%);
 }
 
-/* Hamburger Transformations */
-.hamburger.active .line:nth-child(1) {
-  transform: rotate(-135deg) translateY(-240%);
-  background-color: rgb(0, 0, 0);
-  width: 18.5px;
+/* Hamburger Transformations (original animation logic preserved) */
+.devidaura-navbar .hamburger.active .line:nth-child(1) {
+  transform: rotate(-135deg) translateY(-210%); /* Adjusted Y for thinner lines */
+  background-color: var(--color-dark);
+  width: 18px; /* Adjusted */
 }
-.hamburger.active .line:nth-child(2) {
+.devidaura-navbar .hamburger.active .line:nth-child(2) {
   transform: rotate(-45deg);
-  background-color: rgb(0, 0, 0);
+  background-color: var(--color-dark);
 }
-.hamburger.active .line:nth-child(3) {
-  transform: rotate(-135deg) translateY(290%);
-  background-color: rgb(0, 0, 0);
-  width: 21px;
+.devidaura-navbar .hamburger.active .line:nth-child(3) {
+  transform: rotate(-135deg) translateY(210%); /* Adjusted Y for thinner lines */
+  background-color: var(--color-dark);
+  width: 18px; /* Adjusted */
 }
 
-/* ===========================
-   Sidebar (modernized structure & polish)
-   =========================== */
-.sidebar {
+/* Sidebar (Mobile) */
+.devidaura-navbar .sidebar {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: fixed;
   top: var(--sidebar-top);
-  left: 100%;
-  width: 75vw; /* Slightly wider on mobile */
-  max-width: 320px; /* Slightly wider max width */
-  min-height: calc(100svh - var(--sidebar-top));
-  max-height: calc(100svh - var(--sidebar-top));
-  background: #ffffff;
-  color: #333; /* Default text color */
-  overflow: hidden;
+  right: 0; /* Changed from left to right for slide-in from right */
+  left: 100%; /* Initially off-screen to the right */
+  width: 80vw; /* Wider for better content display */
+  max-width: 350px; /* Increased max-width */
+  height: calc(100svh - var(--sidebar-top));
+  background: var(--color-background-light);
+  color: var(--color-text);
+  overflow-y: auto;
   z-index: 999;
-  pointer-events: auto;
-  transition: left 0.3s ease-out; /* Smoother transition */
-  box-shadow: -8px 0 28px rgba(0,0,0,0.1); /* Shadow for slide-in effect */
-  padding: 0;
-  margin-top: -10px; /* Adjust if needed */
+  box-shadow: -8px 0 30px var(--color-shadow-medium); /* Shadow for slide-in */
+  transition: left 0.3s ease-out; /* Transition left property */
 }
 
-.sidebar.open { 
-  left: calc(100% - min(75vw, 320px));
+.devidaura-navbar .sidebar.open {
+  left: calc(100% - min(80vw, 350px)); /* Slide in from right */
 }
 
-/* header */
-.sidebar-header {
+.devidaura-navbar .sidebar-header {
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align elements to the start */
-  padding: 1rem 1.5rem; /* Adjusted padding */
+  align-items: flex-start;
+  padding: 1.5rem; /* More padding */
   position: relative;
-  border-bottom: 1px solid #f0f0f0;
-  gap: 8px;
+  border-bottom: 1px solid var(--color-border-light);
+  gap: 10px;
 }
-.sidebar-header img {
-  width: 60px; /* Larger avatar in sidebar */
+
+.devidaura-navbar .sidebar-user-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: var(--color-dark);
+  width: 100%;
+}
+.devidaura-navbar .sidebar-user-avatar-section img {
+  width: 60px;
   height: 60px;
   border-radius: 50%;
   object-fit: cover;
-  align-self: flex-start;
-  margin-bottom: 10px;
 }
-.sidebar-user { margin-left: 0; flex-grow: 1; }
-.sidebar-user h4 { margin: 0; font-size: 1.1rem; font-weight: 600; color: #111; }
-.sidebar-user p { margin: 0; font-size: 0.9rem; color: #777; }
-
-.sidebar-signin {
-  padding: 0.6rem 1.2rem;
-  font-size: 0.95rem;
-  background: #007bff; /* Accent button */
-  color: #fff;
-  border: none;
-  border-radius: 25px; /* Pill shape */
-  cursor: pointer;
-  align-self: flex-start; /* Align to the start */
-  margin-top: 10px;
-  font-weight: 600;
-  transition: background-color 0.2s ease;
-}
-.sidebar-signin:hover {
-  background-color: #0056b3;
-}
-
-.sidebar-user-avt-img {
-  display: flex;
-  align-items: center; /* Vertically center */
-  justify-content: flex-start; /* Align to the left */
-  gap: 15px;
-  color: #111;
-  width: 100%;
-  padding: 5px 0;
-  margin-bottom: 5px;
-  font-weight: 600;
-  font-size: 1.2rem;
-  text-align: left;
-}
-.sidebar-user-avt-img h4 {
+.devidaura-navbar .sidebar-user-avatar-section h4 {
   margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
-/* close button */
-.sidebar-close {
+.devidaura-navbar .sidebar-user-email {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-light-text);
+  padding-left: 75px; /* Align with text next to avatar */
+}
+
+.devidaura-navbar .sidebar-signin-btn {
+  width: fit-content;
+  align-self: flex-start;
+  margin-top: 15px;
+  padding: 8px 18px; /* Slightly smaller for mobile button */
+  font-size: 0.9rem;
+}
+
+.devidaura-navbar .sidebar-close-btn {
   position: absolute;
-  top: 1rem; right: 1rem; /* Position adjusted */
-  background: none; border: none;
-  font-size: 1.5rem; /* Larger close icon */
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem; /* Larger close icon */
   cursor: pointer;
-  color: #555;
+  color: var(--color-light-text);
   transition: color 0.2s ease;
 }
-.sidebar-close:hover {
-  color: #111;
+
+.devidaura-navbar .sidebar-close-btn:hover {
+  color: var(--color-dark);
 }
 
-/* nav */
-.sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 0.5rem 0; } /* Adjusted padding */
-.sidebar-nav ul { list-style: none; margin: 0; padding: 0 1rem; }
-.sidebar-nav li {
+.devidaura-navbar .sidebar-nav {
+  flex-grow: 1;
+  padding: 1rem 0;
+}
+
+.devidaura-navbar .sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem;
+}
+
+.devidaura-navbar .sidebar-nav li {
   display: flex;
   align-items: center;
+  gap: 15px;
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
   cursor: pointer;
-  padding: 1rem 1.2rem; /* Adjusted padding */
-  transition: background 0.2s;
-  border-radius: 10px;
+  transition: background-color 0.2s ease;
   margin-bottom: 5px;
 }
-.sidebar-nav li:hover { background: #f5f5f5; }
-.sidebar-nav li img {
-  width: 28px; /* Standardized icon size */
-  height: 28px;
-  margin-right: 15px; /* Increased margin */
-  padding-right: 15px;
-  border-right: 1px solid #e0e0e0; /* Lighter border */
+
+.devidaura-navbar .sidebar-nav li:hover {
+  background-color: var(--color-background-subtle);
+}
+
+.devidaura-navbar .sidebar-nav li img {
+  width: 24px;
+  height: 24px;
   filter: grayscale(70%);
   transition: filter 0.2s ease;
 }
-.sidebar-nav li:hover img {
+
+.devidaura-navbar .sidebar-nav li:hover img {
   filter: grayscale(0%);
 }
-.sidebar-nav li span { font-size: 1.05rem; color: #333; font-weight: 500; }
 
-/* footer */
-.sidebar-footer {
-  padding: 1.2rem 1rem; /* Adjusted padding */
-  border-top: 1px solid #f0f0f0;
+.devidaura-navbar .sidebar-nav li span {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.devidaura-navbar .sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border-light);
   text-align: center;
 }
-.sidebar-footer button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem; /* Increased gap */
-  background: none; border: none;
-  font-size: 1.05rem; cursor: pointer;
-  color: #dc3545; font-weight: 600; /* Red for logout */
-  transition: color 0.2s ease;
-}
-.sidebar-footer button:hover {
-  color: #c82333;
-}
-.sidebar-footer img {
-  width: 22px; /* Icon size */
-  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%); /* Red tint */
+
+.devidaura-navbar .sidebar-footer .logout-btn {
+  color: var(--color-error);
+  font-weight: 600;
 }
 
+.devidaura-navbar .sidebar-footer .logout-btn img {
+  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%);
+}
 
 /* ===========================
-   Bounce on cart icon (kept)
+   Bounce on cart icon (kept, now scoped)
    =========================== */
-#cart-icon.cart-bounce,
-#cart-icon.cart-bounce img{
+.devidaura-navbar #cart-icon.cart-bounce,
+.devidaura-navbar #cart-icon.cart-bounce img{
   animation: cart-bounce 520ms cubic-bezier(.34,1.56,.64,1) both;
   transform-origin: center;
 }
@@ -617,59 +619,76 @@ header {
 /* ===========================
    Responsive Media Queries
    =========================== */
-@media (max-width: 1095px) {
-  #navbar { width: 95%; }
-  .nav-links { gap: 1.5rem; } /* Adjusted gap */
+
+/* Tablet and Smaller Desktop */
+@media (max-width: 1200px) {
+  .devidaura-navbar {
+    padding: 0 2rem;
+    height: 65px;
+  }
+  .devidaura-navbar .nav-left-section,
+  .devidaura-navbar .nav-right-section {
+    gap: 1.5rem;
+  }
+  .devidaura-navbar .main-nav-links {
+    gap: 1.8rem;
+  }
+  .devidaura-navbar .nav-brand-logo {
+    font-size: 1.6rem;
+  }
+  .devidaura-navbar .main-nav-links li a {
+    font-size: 0.95rem;
+  }
+  .devidaura-navbar .nav-utility-icons {
+    gap: 1rem;
+  }
+  .devidaura-navbar .btn-primary {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
 }
 
-@media (max-width: 885px) {
-  #navbar {
-    width: 90%; /* Slightly wider on tablet */
-    padding: 0.5rem 1rem;
+/* Mobile */
+@media (max-width: 768px) {
+  .devidaura-navbar {
+    padding: 0 1rem;
+    height: 60px;
   }
-  .navbar-part-1 { font-size: 1.4rem; }
-  .navbar-part-1.nav-brand h1 { font-size: 1.2rem; }
-  .navbar-part-2 { gap: 1rem; }
-  .nav-links { gap: 1.2rem; }
-  .navbar-part-2 a { font-size: 0.9rem; }
 
-  #loginButton {
-    padding: 6px 14px;
-    font-size: 14px;
+  /* Hide desktop navigation and utility icons */
+  .devidaura-navbar .nav-left-section .main-nav-links,
+  .devidaura-navbar .nav-right-section .nav-utility-icons .nav-icon-wrapper:not(.profile-wrapper), /* Hide cart/wishlist */
+  .devidaura-navbar .nav-right-section .desktop-signin-button,
+  .devidaura-navbar .profile-wrapper { /* Hide desktop profile dropdown */
+    display: none;
   }
-}
 
-@media (max-width: 795px) {
-  #navbar { width: 98%; padding: 0.5rem; }
-  .navbar-part-2 a { font-size: 0.85rem; }
-  .navbar-part-3 .icons { gap: 8px; }
-  .icon-btn { padding: 6px; }
-  .icon-btn img { width: 22px; height: 22px; }
-  .profile-icon button img { width: 28px; height: 28px; }
-}
-
-@media (max-width: 700px) {
-  #navbar {
-    width: 100%;
-    padding: 0.8rem 1rem; /* Adjusted padding for mobile */
-    background-color: white;
-    margin-top: 0px;
-    border-radius: 0px;
-    border-bottom: 1px solid #eee;
-    box-shadow: none; /* Remove shadow on mobile navbar */
+  /* Show mobile menu toggle */
+  .devidaura-navbar .mobile-menu-toggle {
+    display: flex; /* Show hamburger */
+    align-items: center;
   }
-  .navbar-part-2 { display: none; }
-  .profile-wrapper { display: none !important; } /* Hide desktop profile on mobile */
-  .desktop-login-signup { display: none; }
-  .wishlist-icon { display: none; }
-  .cart-icon { width: auto; height: auto; }
-  .navbar-part-1 { font-size: 1.1rem; }
-  .navbar-part-1 .logo h1 { font-size: 1.1rem; font-weight: bold; }
 
-  .mobile-menu-wrapper { display: flex; } /* Show mobile hamburger */
-  #loginSignupButtons { display: none !important; }
+  .devidaura-navbar .nav-left-section {
+    gap: 0; /* Remove gap when only logo is present */
+  }
+
+  /* Adjustments for logo on mobile */
+  .devidaura-navbar .nav-brand-logo {
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+  }
+
+  .devidaura-navbar .nav-right-section {
+    gap: 0.5rem; /* Smaller gap on right for mobile */
+  }
+
+  /* Ensure the sidebar's top offset is correct if navbar height changes */
+  .devidaura-navbar .sidebar {
+    top: var(--sidebar-top);
+  }
 }
 
 /* Ensure navbar sits above content & flying clones */
-#navbar { z-index: 1000; }
+.devidaura-navbar { z-index: 1000; }
 
