@@ -1,5 +1,8 @@
 :root { --sidebar-top: 0px; }
 
+
+  @import url("https://use.typekit.net/jvf2lsg.css");
+
 /* ===========================
    Header & Navbar Container
    =========================== */
@@ -22,12 +25,9 @@ header {
   position: fixed;
   transition: all 0.3s ease-in-out;
   gap: 10px;
-
-  /* Glass effect */
-  backdrop-filter: saturate(180%) blur(10px);
-  -webkit-backdrop-filter: saturate(180%) blur(10px);
-  background: rgba(255,255,255,0.7);
-  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-family: "aboreto", sans-serif;
+font-weight: 400;
+font-style: normal;
   z-index: 1000;
 }
 
@@ -79,7 +79,6 @@ header {
   list-style: none;
   font-size: 1.2rem;
   font-weight: 600;
-  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   cursor: pointer;
 }
 .nav-links li a {
