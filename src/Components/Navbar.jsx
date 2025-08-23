@@ -17,7 +17,7 @@ import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
 // Shadcn UI Components
-import { Button } from "./ui/button"; // Assuming path to shadcn/ui button component
+import { Button } from "./ui/buttons"; // Assuming path to shadcn/ui button component
 import {
   DropdownMenu,
   DropdownMenuContent,
