@@ -23,12 +23,6 @@ header {
   position: fixed;
   transition: all 0.3s ease-in-out;
   gap: 10px;
-
-  /* --- Visual polish (desktop): soft translucent background --- */
-  backdrop-filter: saturate(180%) blur(6px);
-  -webkit-backdrop-filter: saturate(180%) blur(6px);
-  background: rgba(255,255,255,0.85);
-  border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 
 #navbar a {
@@ -412,8 +406,7 @@ padding-left:10px;
   left: 100%;
   width: 70vw;
   max-width: 300px;
-  min-height: calc(100svh - var(--sidebar-top)); /* ensures extra space exists */
-  max-height: calc(100svh - var(--sidebar-top));
+  height: 100vh;
   background: #ffffff;
   color: white;
   overflow: hidden;
@@ -422,6 +415,7 @@ padding-left:10px;
   transition: left 0.3s ease;
   box-shadow: 0 8px 28px rgba(0,0,0,0.12);
   padding: 0;
+  padding-top: 50px;
   margin-top: -10px;
 }
 
