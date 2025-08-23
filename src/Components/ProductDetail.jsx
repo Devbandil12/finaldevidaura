@@ -108,7 +108,7 @@ const ProductDetail = () => {
 
   return (
     <div className="product-page-container bg-gray-100 min-h-screen">
-      <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8">
+      <div className="product-main-content bg-white rounded-lg shadow-lg max-w-7xl mx-auto p-4 md:p-8 mt-[50px]">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Image Gallery */}
           <div className="lg:w-1/2">
@@ -154,14 +154,14 @@ const ProductDetail = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={handleToggleWishlist}
-                    className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
+                    className="p-3 transition-colors duration-200"
                     title="Add to Wishlist"
                   >
                     <Heart size={24} fill={isInWishlist ? 'red' : 'none'} stroke={isInWishlist ? 'red' : 'gray'} />
                   </button>
                   <button
                     onClick={handleShare}
-                    className="p-3 rounded-full border border-gray-300 transition-colors duration-200 hover:bg-gray-200"
+                    className="p-3 transition-colors duration-200 "
                     title="Share Product"
                   >
                     <Share2 size={24} />
@@ -181,11 +181,28 @@ const ProductDetail = () => {
                 )}
               </div>
 
-<div className="flex items-center border border-gray-300 rounded-lg p-2">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-1 font-semibold text-xl">-</button>
-                <span className="px-4 text-lg font-semibold">{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)} className="px-3 py-1 font-semibold text-xl">+</button>
-              </div>
+<div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+  {/* Decrease */}
+  <button
+    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
+  >
+    −
+  </button>
+
+  {/* Quantity display */}
+  <span className="w-12 text-center text-lg font-semibold select-none">
+    {quantity}
+  </span>
+
+  {/* Increase */}
+  <button
+    onClick={() => setQuantity((q) => q + 1)}
+    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
+  >
+    +
+  </button>
+</div>
 
               {/* Description & Other Notes */}
               <div className="space-y-4 text-gray-800">
@@ -214,7 +231,6 @@ const ProductDetail = () => {
 {product.fragranceNotes && (
                   <div>
                     <h3 className="font-bold text-lg">Base Notes</h3>
-                    <hr className="border-t border-gray-300 my-1" />
                     <p>{product.fragranceNotes}</p>
                   </div>
                 )}
