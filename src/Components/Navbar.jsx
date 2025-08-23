@@ -91,7 +91,8 @@ const Navbar = ({ onVisibilityChange }) => {
     const handleScroll = () => {
       const currentScroll =
         window.pageYOffset || document.documentElement.scrollTop;
-      const isVisible = currentScroll < lastScrollTop;
+      const isVisible = currentScroll < lastScrollTop - 50 || currentScroll < 10;
+
 
       setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
