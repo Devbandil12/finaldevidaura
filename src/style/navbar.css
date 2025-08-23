@@ -1,22 +1,19 @@
+
+/* src/style/navbar.css */
+
 /* Import Google Font - Inter */
 @import url('[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap)');
 
 :root {
-  --sidebar-top: 0px;
-  /* Modern Colors */
-  --color-primary: #007bff; /* A vibrant blue for accents */
-  --color-dark: #1a1a1a;
-  --color-text: #333333;
-  --color-light-text: #777777;
-  --color-background-light: #ffffff;
-  --color-background-subtle: #f8f9fa;
-  --color-border-light: #e0e0e0;
-  --color-shadow-light: rgba(0, 0, 0, 0.05);
-  --color-shadow-medium: rgba(0, 0, 0, 0.1);
-  --color-error: #dc3545;
+  --sidebar-top: 0px; /* Managed by JS for dynamic navbar height */
 }
 
-/* Base styles for the entire header */
+/* Global font application if not handled by a root Tailwind class */
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Base styles for the entire header - kept for structural element */
 header {
   width: 100%;
   display: flex;
@@ -24,392 +21,15 @@ header {
   position: absolute;
   align-items: center;
   z-index: 9999;
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Navbar container */
-.devidaura-navbar {
-  width: 100%;
-  height: 70px; /* Taller for a more substantial modern feel */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2.5rem; /* More generous padding */
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: var(--color-background-light);
-  backdrop-filter: saturate(180%) blur(12px); /* Stronger frosted glass */
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid var(--color-border-light);
-  box-shadow: 0 4px 20px var(--color-shadow-light); /* Refined shadow */
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease; /* Transition for scroll-hide */
-  z-index: 1000;
-}
-
-.devidaura-navbar.navbar-hidden {
-  transform: translateY(-100%); /* Hide completely by moving up */
-  box-shadow: none; /* No shadow when hidden */
-}
-
-.devidaura-navbar.navbar-visible {
-  transform: translateY(0);
-}
-
-/* General link styling within navbar */
-.devidaura-navbar a {
-  text-decoration: none;
-  color: var(--color-text);
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-.devidaura-navbar a:hover {
-  color: var(--color-primary);
-}
-
-/* ===========================
-   Navbar Sections
-   =========================== */
-.devidaura-navbar .nav-left-section,
-.devidaura-navbar .nav-right-section {
-  display: flex;
-  align-items: center;
-  gap: 2rem; /* Consistent spacing */
-}
-
-/* Brand Logo */
-.devidaura-navbar .nav-brand-logo {
-  display: flex;
-  align-items: center;
-  font-size: 1.8rem; /* Larger, bolder logo */
-  font-weight: 800; /* Extra bold */
-  letter-spacing: -0.8px;
-  color: var(--color-dark);
-}
-
-.devidaura-navbar .nav-brand-logo .logo {
-  cursor: pointer;
-  color: var(--color-dark); /* Ensure logo text color is dark */
-}
-
-.devidaura-navbar .nav-brand-logo .text-accent {
-  color: var(--color-primary); /* Accent color for part of the logo */
-}
-
-/* Main Navigation Links (Desktop) */
-.devidaura-navbar .main-nav-links {
-  display: flex;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  gap: 2.2rem; /* Spacing between desktop links */
-}
-
-.devidaura-navbar .main-nav-links li a {
-  position: relative;
-  font-size: 1.05rem; /* Slightly larger text */
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.devidaura-navbar .main-nav-links li a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -6px; /* Lowered underline */
-  width: 0;
-  height: 2px;
-  background-color: var(--color-primary);
-  transition: width 0.3s ease-in-out;
-}
-
-.devidaura-navbar .main-nav-links li a:hover::after {
-  width: 100%;
-}
-.devidaura-navbar .main-nav-links li a:hover {
-  color: var(--color-primary);
-}
-
-
-/* Utility Icons */
-.devidaura-navbar .nav-utility-icons {
-  display: flex;
-  align-items: center;
-  gap: 1.2rem; /* Spacing between utility icons */
-}
-
-.devidaura-navbar .nav-icon-wrapper {
-  position: relative;
-}
-
-.devidaura-navbar .icon-btn {
-  background: none;
-  border: none;
-  padding: 8px; /* Larger hit area */
-  border-radius: 50%; /* Circular buttons */
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.devidaura-navbar .icon-btn:hover {
-  background-color: var(--color-background-subtle);
-  transform: translateY(-2px); /* Subtle lift on hover */
-}
-
-.devidaura-navbar .icon-btn img {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0.8); /* Slightly muted icon color */
-  transition: filter 0.2s ease;
-}
-
-.devidaura-navbar .icon-btn:hover img {
-  filter: brightness(1); /* Restore full brightness on hover */
-}
-
-/* Badges for counts */
-.devidaura-navbar .badge {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  transform: translate(40%, -40%);
-  min-width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-primary);
-  color: var(--color-background-light);
-  border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0 4px; /* Adjust padding for single/double digits */
-  box-shadow: 0 2px 5px var(--color-shadow-medium);
-  pointer-events: none; /* Allow clicks to pass through to the button */
-}
-
-/* Profile Button */
-.devidaura-navbar .profile-btn {
-  padding: 4px; /* Less padding for the avatar-like button */
-  border-radius: 50%;
-  border: 2px solid transparent; /* Subtle border for focus/hover */
-  transition: border-color 0.2s ease;
-}
-.devidaura-navbar .profile-btn:hover {
-  border-color: var(--color-primary);
-  background-color: var(--color-background-subtle);
-  transform: translateY(-2px);
-}
-.devidaura-navbar .profile-btn img {
-  width: 32px; /* Larger profile image */
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  filter: none; /* No brightness filter for profile image */
-}
-
-/* Profile Dropdown */
-.devidaura-navbar .profile-dropdown-content {
-  position: absolute;
-  top: calc(100% + 15px); /* Position below navbar with some space */
-  right: 0;
-  min-width: 280px;
-  background: var(--color-background-light);
-  border-radius: 12px;
-  box-shadow: 0 10px 30px var(--color-shadow-medium);
-  border: 1px solid var(--color-border-light);
-  padding: 10px 0;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s ease-out;
-  z-index: 999;
-}
-
-.devidaura-navbar .profile-dropdown-content.active {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.devidaura-navbar .dropdown-user-info {
-  display: flex;
-  align-items: center;
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--color-background-subtle);
-  margin-bottom: 10px;
-  gap: 15px;
-}
-
-.devidaura-navbar .user-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.devidaura-navbar .user-details h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-dark);
-}
-
-.devidaura-navbar .user-details p {
-  margin: 2px 0 0 0;
-  font-size: 0.9rem;
-  color: var(--color-light-text);
-}
-
-.devidaura-navbar .dropdown-links {
-  list-style: none;
-  margin: 0;
-  padding: 0 10px;
-}
-
-.devidaura-navbar .dropdown-links li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 15px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.devidaura-navbar .dropdown-links li:hover {
-  background-color: var(--color-background-subtle);
-  color: var(--color-primary);
-}
-
-.devidaura-navbar .dropdown-links li img {
-  width: 20px;
-  height: 20px;
-  filter: grayscale(80%) opacity(0.8);
-  transition: filter 0.2s ease;
-}
-
-.devidaura-navbar .dropdown-links li:hover img {
-  filter: grayscale(0%) opacity(1);
-}
-
-.devidaura-navbar .dropdown-links li span {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.devidaura-navbar .dropdown-links li:hover span {
-  color: var(--color-primary);
-}
-
-.devidaura-navbar .logout-link {
-  border-top: 1px solid var(--color-background-subtle);
-  margin-top: 10px;
-  padding-top: 10px !important; /* Override li padding */
-  padding-bottom: 0px !important;
-}
-
-.devidaura-navbar .logout-link span {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
-.devidaura-navbar .logout-link img {
-  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%);
-}
-
-.devidaura-navbar .logout-link:hover {
-  background-color: #ffebeb; /* Light red hover */
-}
-
-/* Primary Button (for Sign Up/Login) */
-.devidaura-navbar .btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-background-light);
-  border: 1px solid var(--color-primary);
-  padding: 10px 20px;
-  border-radius: 25px; /* Pill shape */
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap; /* Prevent text wrapping */
-}
-
-.devidaura-navbar .btn-primary:hover {
-  background-color: #0056b3; /* Darker blue on hover */
-  border-color: #0056b3;
-  transform: translateY(-2px); /* Subtle lift */
-  box-shadow: 0 4px 10px var(--color-shadow-medium);
-}
-
-/* Text with Icon Button */
-.devidaura-navbar .btn-text-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-text);
-  transition: color 0.2s ease;
-}
-
-.devidaura-navbar .btn-text-icon:hover {
-  color: var(--color-primary);
-}
-
-.devidaura-navbar .btn-text-icon img {
-  width: 20px;
-  height: 20px;
-  filter: brightness(0.8);
-  transition: filter 0.2s ease;
-}
-
-.devidaura-navbar .btn-text-icon:hover img {
-  filter: brightness(1);
-}
-
-/* ===========================
-   Mobile Menu (Hamburger & Sidebar)
-   =========================== */
-.devidaura-navbar .mobile-menu-toggle {
-  display: none; /* Hidden by default on desktop */
-}
-
-/* Hamburger Icon (Animation preserved, look updated) */
-.devidaura-navbar .menu-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-}
-
-.devidaura-navbar .menu-icon:hover {
-  background-color: var(--color-background-subtle);
-}
-
-.devidaura-navbar .menu-container {
-  position: relative;
-  z-index: 1000;
-  display: flex; /* Ensure it behaves like a flex item */
-  align-items: center; /* Center the hamburger lines */
-  justify-content: center;
-}
-
+/* Hamburger Icon Animation (Preserved and Scoped) */
+/* This block contains the specific CSS for the hamburger animation */
+/* Base styling for the hamburger lines */
 .devidaura-navbar .hamburger {
-  width: 30px; /* Slightly smaller for mobile */
-  height: 20px; /* Adjusted height */
+  /* Tailwind classes handle overall look, but these are for animation */
+  width: 30px;
+  height: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -423,15 +43,15 @@ header {
 
 .devidaura-navbar .line {
   width: 100%;
-  height: 2px; /* Thinner lines for a modern look */
-  background: var(--color-dark); /* Dark color for contrast */
+  height: 2px; /* Thinner lines */
+  background: currentColor; /* Inherit color, will be gray-700 from Tailwind */
   transition: all 0.5s ease;
   border-radius: 999px;
 }
 
 /* Adjusting line lengths (original animation logic preserved) */
 .devidaura-navbar .line:nth-child(1) {
-  width: 15px; /* Adjusted */
+  width: 15px; /* Adjusted for visual balance with thinner lines */
   transform: translateX(-50%);
 }
 .devidaura-navbar .line:nth-child(2) {
@@ -445,250 +65,23 @@ header {
 /* Hamburger Transformations (original animation logic preserved) */
 .devidaura-navbar .hamburger.active .line:nth-child(1) {
   transform: rotate(-135deg) translateY(-210%); /* Adjusted Y for thinner lines */
-  background-color: var(--color-dark);
+  background-color: currentColor;
   width: 18px; /* Adjusted */
 }
 .devidaura-navbar .hamburger.active .line:nth-child(2) {
   transform: rotate(-45deg);
-  background-color: var(--color-dark);
+  background-color: currentColor;
 }
 .devidaura-navbar .hamburger.active .line:nth-child(3) {
   transform: rotate(-135deg) translateY(210%); /* Adjusted Y for thinner lines */
-  background-color: var(--color-dark);
+  background-color: currentColor;
   width: 18px; /* Adjusted */
 }
 
-/* Sidebar (Mobile) */
-.devidaura-navbar .sidebar {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: fixed;
-  top: var(--sidebar-top);
-  right: 0; /* Changed from left to right for slide-in from right */
-  left: 100%; /* Initially off-screen to the right */
-  width: 80vw; /* Wider for better content display */
-  max-width: 350px; /* Increased max-width */
-  height: calc(100svh - var(--sidebar-top));
-  background: var(--color-background-light);
-  color: var(--color-text);
-  overflow-y: auto;
-  z-index: 999;
-  box-shadow: -8px 0 30px var(--color-shadow-medium); /* Shadow for slide-in */
-  transition: left 0.3s ease-out; /* Transition left property */
-}
-
-.devidaura-navbar .sidebar.open {
-  left: calc(100% - min(80vw, 350px)); /* Slide in from right */
-}
-
-.devidaura-navbar .sidebar-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 1.5rem; /* More padding */
-  position: relative;
-  border-bottom: 1px solid var(--color-border-light);
-  gap: 10px;
-}
-
-.devidaura-navbar .sidebar-user-avatar-section {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  color: var(--color-dark);
-  width: 100%;
-}
-.devidaura-navbar .sidebar-user-avatar-section img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.devidaura-navbar .sidebar-user-avatar-section h4 {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.devidaura-navbar .sidebar-user-email {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-light-text);
-  padding-left: 75px; /* Align with text next to avatar */
-}
-
-.devidaura-navbar .sidebar-signin-btn {
-  width: fit-content;
-  align-self: flex-start;
-  margin-top: 15px;
-  padding: 8px 18px; /* Slightly smaller for mobile button */
-  font-size: 0.9rem;
-}
-
-.devidaura-navbar .sidebar-close-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.8rem; /* Larger close icon */
-  cursor: pointer;
-  color: var(--color-light-text);
-  transition: color 0.2s ease;
-}
-
-.devidaura-navbar .sidebar-close-btn:hover {
-  color: var(--color-dark);
-}
-
-.devidaura-navbar .sidebar-nav {
-  flex-grow: 1;
-  padding: 1rem 0;
-}
-
-.devidaura-navbar .sidebar-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0 1rem;
-}
-
-.devidaura-navbar .sidebar-nav li {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 1rem 1.2rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  margin-bottom: 5px;
-}
-
-.devidaura-navbar .sidebar-nav li:hover {
-  background-color: var(--color-background-subtle);
-}
-
-.devidaura-navbar .sidebar-nav li img {
-  width: 24px;
-  height: 24px;
-  filter: grayscale(70%);
-  transition: filter 0.2s ease;
-}
-
-.devidaura-navbar .sidebar-nav li:hover img {
-  filter: grayscale(0%);
-}
-
-.devidaura-navbar .sidebar-nav li span {
-  font-size: 1.05rem;
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-.devidaura-navbar .sidebar-footer {
-  padding: 1.5rem;
-  border-top: 1px solid var(--color-border-light);
-  text-align: center;
-}
-
-.devidaura-navbar .sidebar-footer .logout-btn {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
-.devidaura-navbar .sidebar-footer .logout-btn img {
-  filter: invert(30%) sepia(90%) saturate(600%) hue-rotate(330deg) brightness(90%) contrast(100%);
-}
-
-/* ===========================
-   Bounce on cart icon (kept, now scoped)
-   =========================== */
-.devidaura-navbar #cart-icon.cart-bounce,
-.devidaura-navbar #cart-icon.cart-bounce img{
-  animation: cart-bounce 520ms cubic-bezier(.34,1.56,.64,1) both;
-  transform-origin: center;
-}
-@keyframes cart-bounce{
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.18); }
-  55%  { transform: scale(0.96); }
-  75%  { transform: scale(1.06); }
-  100% { transform: scale(1); }
-}
-
-/* ===========================
-   Responsive Media Queries
-   =========================== */
-
-/* Tablet and Smaller Desktop */
-@media (max-width: 1200px) {
-  .devidaura-navbar {
-    padding: 0 2rem;
-    height: 65px;
-  }
-  .devidaura-navbar .nav-left-section,
-  .devidaura-navbar .nav-right-section {
-    gap: 1.5rem;
-  }
-  .devidaura-navbar .main-nav-links {
-    gap: 1.8rem;
-  }
-  .devidaura-navbar .nav-brand-logo {
-    font-size: 1.6rem;
-  }
-  .devidaura-navbar .main-nav-links li a {
-    font-size: 0.95rem;
-  }
-  .devidaura-navbar .nav-utility-icons {
-    gap: 1rem;
-  }
-  .devidaura-navbar .btn-primary {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .devidaura-navbar {
-    padding: 0 1rem;
-    height: 60px;
-  }
-
-  /* Hide desktop navigation and utility icons */
-  .devidaura-navbar .nav-left-section .main-nav-links,
-  .devidaura-navbar .nav-right-section .nav-utility-icons .nav-icon-wrapper:not(.profile-wrapper), /* Hide cart/wishlist */
-  .devidaura-navbar .nav-right-section .desktop-signin-button,
-  .devidaura-navbar .profile-wrapper { /* Hide desktop profile dropdown */
-    display: none;
-  }
-
-  /* Show mobile menu toggle */
-  .devidaura-navbar .mobile-menu-toggle {
-    display: flex; /* Show hamburger */
-    align-items: center;
-  }
-
-  .devidaura-navbar .nav-left-section {
-    gap: 0; /* Remove gap when only logo is present */
-  }
-
-  /* Adjustments for logo on mobile */
-  .devidaura-navbar .nav-brand-logo {
-    font-size: 1.5rem;
-    letter-spacing: -0.5px;
-  }
-
-  .devidaura-navbar .nav-right-section {
-    gap: 0.5rem; /* Smaller gap on right for mobile */
-  }
-
-  /* Ensure the sidebar's top offset is correct if navbar height changes */
-  .devidaura-navbar .sidebar {
-    top: var(--sidebar-top);
-  }
-}
-
-/* Ensure navbar sits above content & flying clones */
-.devidaura-navbar { z-index: 1000; }
+/*
+  All other styles are handled directly by Tailwind CSS in Navbar.jsx.
+  This CSS file is primarily for the hamburger animation which requires
+  specific CSS properties for the transforms and transitions that are
+  difficult to replicate purely with Tailwind's utility classes for pseudo-elements.
+*/
 
