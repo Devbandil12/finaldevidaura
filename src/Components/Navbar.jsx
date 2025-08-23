@@ -311,9 +311,7 @@ const Navbar = ({ onVisibilityChange }) => {
                         Login / Sign Up
                       </button>
                     )}
-                    <button className="sidebar-close" onClick={toggleSidebar}>
-                      ✕
-                    </button>
+                    
                   </header>
 
                   {/* Sidebar Navigation */}
