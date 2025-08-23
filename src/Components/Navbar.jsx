@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import {
   LuShoppingCart,
   LuHeart,
-  LuUserCircle,
+  LuUser,
   LuLogOut,
   LuPackage,
   LuMail,
@@ -225,7 +225,7 @@ const Navbar = ({ onVisibilityChange }) => {
                     aria-expanded={isProfileOpen}
                     aria-controls="profileContent"
                   >
-                    <LuUserCircle size={26} />
+                    <LuUser size={26} />
                   </button>
                 </div>
 
