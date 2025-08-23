@@ -1,552 +1,304 @@
-// src/Components/Navbar.js
-import React, {
-  useState,
-  useEffect,
-  useContext,
-  useRef,
-  useLayoutEffect,
-  useCallback,
-} from "react";
+// src/Components/Navbar.jsx
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-
-// React Icons - Choose the best ones from here!
-// I'm using Font Awesome (Fa) as an example. You can explore others like Io (Ionicons), Md (Material Design), etc.
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  FaBars,        // Hamburger icon
-  FaHeart,       // Wishlist
-  FaShoppingCart, // Cart
-  FaUserCircle,  // Profile
-  FaSignOutAlt,  // Logout
-  FaBox,         // My Orders
-  FaEnvelope,    // Contact Us
-  FaUserShield,  // Admin Panel
-} from 'react-icons/fa';
+  FaShoppingCart,
+  FaHeart,
+  FaUserCircle,
+  FaSignOutAlt,
+  FaBoxOpen,
+  FaEnvelope,
+  FaUserShield,
+} from "react-icons/fa";
 
-// CSS (for global font and preserved hamburger animation)
-import "../style/navbar.css";
-
-// Clerk
-import { useUser, useClerk, SignInButton } from "@clerk/clerk-react";
-
-// Contexts
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-// GSAP
-import { gsap } from "gsap";
+import "../style/navbar.css"; // keep for hamburger only
 
-const Navbar = ({ onVisibilityChange }) => {
+const Navbar = () => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
-
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [navbarVisible, setNavbarVisible] = useState(true);
 
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const isLoggedIn = isSignedIn;
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [navbarVisible, setNavbarVisible] = useState(true);
+
   const navigate = useNavigate();
 
-  // ---- Refs ----
-  const navRef = useRef(null);
-  const sidebarScopeRef = useRef(null);
-  const profileAnimScopeRef = useRef(null);
-  const profileWrapperRef = useRef(null);
+  const toggleSidebar = () => setIsOpen((v) => !v);
 
-  // -------------------------
-  // Counts
-  // -------------------------
-  const cartCount = cart.length;
-  const wishlistCount = wishlist.length;
-
-  // -------------------------
-  // Hamburger / Sidebar toggle
-  // -------------------------
-  const toggleSidebar = (e) => {
-    e.preventDefault();
-    setIsSidebarOpen((v) => !v);
-  };
-
-  // Prevent background scroll when sidebar is open
-  useEffect(() => {
-    if (isSidebarOpen) {
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    }
-    return () => {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    };
-  }, [isSidebarOpen]);
-
-  // -------------------------
-  // Hide navbar on scroll down, show on scroll up
-  // -------------------------
+  // Hide navbar on scroll
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
-      const currentScroll =
-        window.pageYOffset || document.documentElement.scrollTop;
-      const isVisible = currentScroll < lastScrollTop || currentScroll < 10;
-
-      setNavbarVisible(isVisible);
-      if (onVisibilityChange) onVisibilityChange(isVisible);
-
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      setNavbarVisible(currentScroll < lastScrollTop);
       lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [onVisibilityChange]);
-
-  // -------------------------
-  // Outside click to close profile
-  // -------------------------
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        profileWrapperRef.current &&
-        !profileWrapperRef.current.contains(event.target)
-      ) {
-        setIsProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside, true);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside, true);
   }, []);
 
-  // Close profile dropdown on scroll
-  useEffect(() => {
-    const handleScrollProfile = () => {
-      if (isProfileOpen) setIsProfileOpen(false);
-    };
-    window.addEventListener("scroll", handleScrollProfile);
-    return () => window.removeEventListener("scroll", handleScrollProfile);
-  }, [isProfileOpen]);
+  // Sidebar animation variants
+  const sidebarVariants = {
+    hidden: { x: "100%" },
+    visible: {
+      x: 0,
+      transition: {
+        type: "tween",
+        duration: 0.3,
+        when: "beforeChildren",
+        staggerChildren: 0.08,
+      },
+    },
+    exit: { x: "100%", transition: { duration: 0.25 } },
+  };
 
-  // ===========================================================
-  // Compute sidebar top offset (main navbar)
-  // ===========================================================
-  const updateSidebarOffset = useCallback(() => {
-    const mainBar = document.getElementById("navbar");
-
-    const visibleHeight = (el) => {
-      if (!el) return 0;
-      const r = el.getBoundingClientRect();
-      const top = Math.max(r.top, 0);
-      const bottom = Math.min(r.bottom, window.innerHeight);
-      return Math.max(0, bottom - top);
-    };
-
-    const offset = visibleHeight(mainBar);
-    document.documentElement.style.setProperty(
-      "--sidebar-top",
-      `${offset}px`
-    );
-  }, []);
-
-  // Run on mount + resize/orientation change + observe bars
-  useLayoutEffect(() => {
-    updateSidebarOffset();
-    const onRes = () => updateSidebarOffset();
-    window.addEventListener("resize", onRes);
-    window.addEventListener("orientationchange", onRes);
-
-    const ro = new ResizeObserver(updateSidebarOffset);
-    const mainBar = document.getElementById("navbar");
-
-    if (mainBar) ro.observe(mainBar);
-
-    return () => {
-      window.removeEventListener("resize", onRes);
-      window.removeEventListener("orientationchange", onRes);
-      ro.disconnect();
-    };
-  }, [updateSidebarOffset]);
-
-  // Update when main bar hides/shows
-  useEffect(() => {
-    updateSidebarOffset();
-  }, [navbarVisible, updateSidebarOffset]);
-
-  // =======================
-  // GSAP: Page-load stagger
-  // =======================
-  useLayoutEffect(() => {
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-
-    const ctx = gsap.context(() => {
-      gsap.set([".nav-main-link", ".nav-icon-btn", ".nav-brand-logo-text"], {
-        willChange: "transform, opacity",
-        force3D: true,
-      });
-
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-
-      tl.from(".nav-brand-logo-text", { y: -8, autoAlpha: 0, duration: 0.26 })
-        .from(
-          ".nav-main-link",
-          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
-          "-=0.06"
-        )
-        .from(
-          ".nav-icon-btn",
-          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
-          "-=0.1"
-        )
-        .add(() => {
-          gsap.set([".nav-main-link", ".nav-icon-btn", ".nav-brand-logo-text"], {
-            willChange: "auto",
-          });
-        });
-    }, navRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  // =======================
-  // GSAP: Sidebar stagger (start immediately)
-  // =======================
-  useEffect(() => {
-    if (!isSidebarOpen) return;
-
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(".sidebar-header-section", { y: -8, opacity: 0, duration: 0.22 })
-        .from(".sidebar-nav-item", { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
-        .from(".sidebar-footer-section", { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
-    }, sidebarScopeRef);
-
-    return () => ctx.revert();
-  }, [isSidebarOpen]);
-
-
-  // ==============================
-  // GSAP: Profile dropdown reveal
-  // ==============================
-  useEffect(() => {
-    const prefersReduced =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-
-    if (!isProfileOpen) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(".profile-dropdown-menu", { y: -10, autoAlpha: 0, duration: 0.18 })
-        .from(
-          ".profile-dropdown-menu-item",
-          { y: 6, autoAlpha: 0, duration: 0.18, stagger: 0.04 },
-          "-=0.04"
-        );
-    }, profileAnimScopeRef);
-
-    return () => ctx.revert();
-  }, [isProfileOpen]);
+  const linkVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
 
   return (
-    <header ref={navRef} className="font-inter">
-      <nav
-        id="navbar"
-        className={`devidaura-navbar fixed w-full z-50 transition-transform duration-300 ease-in-out font-inter
-          ${navbarVisible ? "translate-y-0" : "-translate-y-full"}
-          bg-white/90 backdrop-blur-md md:bg-transparent md:backdrop-blur-none
-          lg:bg-transparent lg:backdrop-blur-none`}
-      >
-        {/* Navbar Left Section: Brand Logo & Main Navigation (Desktop) */}
-        <div className="flex items-center space-x-8 lg:space-x-12">
-          {/* Brand Logo */}
-          <div className="nav-brand-logo">
-            <a className="text-2xl font-extrabold text-gray-900 cursor-pointer nav-brand-logo-text" onClick={() => navigate("/")}>
-              DEVI<span className="text-blue-600">DAURA</span>
-            </a>
-          </div>
-
-          {/* Main Navigation Links (Desktop) */}
-          <ul className="hidden lg:flex items-center space-x-6">
-            <li>
-              <a onClick={() => navigate("/")} className="nav-main-link text-gray-700 hover:text-blue-600 relative group text-lg font-medium transition-colors">
-                Home
-                <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-            </li>
-            <li>
-              <a
-                onClick={() =>
-                  document
-                    .getElementById("products-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="nav-main-link text-gray-700 hover:text-blue-600 relative group text-lg font-medium transition-colors"
-              >
-                Collection
-                <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-            </li>
-            <li>
-              <a
-                onClick={() =>
-                  document
-                    .getElementById("shop-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="nav-main-link text-gray-700 hover:text-blue-600 relative group text-lg font-medium transition-colors"
-              >
-                Shop
-                <span className="absolute left-0 bottom-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-              </a>
-            </li>
-          </ul>
+    <header
+      className="fixed w-full z-50"
+      style={{ top: navbarVisible ? "0" : "-70px", transition: "top 0.3s ease-in-out" }}
+    >
+      <nav className="flex items-center justify-between px-6 py-3 backdrop-blur-lg bg-white/70 shadow-md border-b">
+        {/* Brand */}
+        <div onClick={() => navigate("/")} className="cursor-pointer select-none">
+          <h1 className="text-2xl font-extrabold tracking-wide bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            DEVIDAURA
+          </h1>
         </div>
 
-        {/* Navbar Right Section: Utility Icons & Mobile Menu */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 md:space-x-4">
-            {/* Wishlist */}
+        {/* Links */}
+        <div className="hidden md:flex space-x-8 font-semibold text-gray-800">
+          <a onClick={() => navigate("/")} className="hover:text-gray-600 cursor-pointer">
+            Home
+          </a>
+          <a
+            onClick={() =>
+              document.getElementById("products-section")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="hover:text-gray-600 cursor-pointer"
+          >
+            Collection
+          </a>
+          <a
+            onClick={() =>
+              document.getElementById("shop-section")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="hover:text-gray-600 cursor-pointer"
+          >
+            Shop
+          </a>
+        </div>
+
+        {/* Right: Icons */}
+        <div className="flex items-center gap-5">
+          {/* Wishlist */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => navigate("/wishlist")}
+            className="relative text-gray-700 hover:text-black"
+          >
+            <FaHeart size={22} />
+            {wishlist.length > 0 && (
+              <span className="absolute -top-2 -right-2 text-xs bg-red-500 text-white rounded-full px-2 font-bold">
+                {wishlist.length}
+              </span>
+            )}
+          </motion.button>
+
+          {/* Cart */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => navigate("/cart")}
+            className="relative text-gray-700 hover:text-black"
+          >
+            <FaShoppingCart size={22} />
+            {cart.length > 0 && (
+              <span className="absolute -top-2 -right-2 text-xs bg-black text-white rounded-full px-2 font-bold">
+                {cart.length}
+              </span>
+            )}
+          </motion.button>
+
+          {/* Profile / Auth */}
+          {isLoggedIn ? (
             <div className="relative">
-              <a onClick={() => navigate("/wishlist")} aria-label="Wishlist">
-                <button className="nav-icon-btn p-2 rounded-full hover:bg-gray-100 transition-colors relative">
-                  <FaHeart className="w-6 h-6 text-gray-700" />
-                  {wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                      {wishlistCount}
-                    </span>
-                  )}
-                </button>
-              </a>
-            </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsProfileOpen((v) => !v)}
+                className="text-gray-700 hover:text-black"
+              >
+                <FaUserCircle size={26} />
+              </motion.button>
 
-            {/* Cart */}
-            <div className="relative">
-              <a onClick={() => navigate("/cart")} aria-label="Cart">
-                <button id="cart-icon" className="nav-icon-btn p-2 rounded-full hover:bg-gray-100 transition-colors relative">
-                  <FaShoppingCart className="w-6 h-6 text-gray-700" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                      {cartCount}
-                    </span>
-                  )}
-                </button>
-              </a>
-            </div>
-
-            {/* Profile / Sign In */}
-            {isLoggedIn ? (
-              <div className="relative" ref={profileWrapperRef}>
-                <button
-                  aria-label="Profile menu"
-                  onClick={() => setIsProfileOpen((v) => !v)}
-                  aria-expanded={isProfileOpen}
-                  className="nav-icon-btn w-10 h-10 rounded-full border-2 border-transparent hover:border-blue-500 transition-colors flex items-center justify-center"
-                  ref={profileAnimScopeRef}
-                >
-                  <FaUserCircle className="w-7 h-7 text-gray-700" />
-                </button>
-
-                {/* Profile Dropdown */}
-                <div
-                  className={`profile-dropdown-menu absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-xl py-2 ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 ease-out z-50
-                    ${isProfileOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"}`}
-                  id="profileDropdownContent"
-                >
-                  <div className="px-4 py-2 border-b border-gray-100 mb-2">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {userdetails?.name || user?.fullName || "User"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                    </p>
-                  </div>
-                  <ul className="space-y-1">
-                    <li
-                      onClick={() => {
-                        navigate("/myorder");
-                        setIsProfileOpen(false);
-                      }}
-                      className="profile-dropdown-menu-item flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer space-x-3"
-                    >
-                      <FaBox className="w-5 h-5 text-gray-500" />
-                      <span>My Orders</span>
-                    </li>
-                    <li
-                      onClick={() => {
-                        navigate("/contact");
-                        setIsProfileOpen(false);
-                      }}
-                      className="profile-dropdown-menu-item flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer space-x-3"
-                    >
-                      <FaEnvelope className="w-5 h-5 text-gray-500" />
-                      <span>Contact Us</span>
-                    </li>
-                    {isLoggedIn && user && userdetails?.role === "admin" && (
+              {/* Dropdown */}
+              <AnimatePresence>
+                {isProfileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-3 w-56 bg-white rounded-lg shadow-lg border p-3"
+                  >
+                    <div className="px-2 py-2 border-b">
+                      <h3 className="font-bold text-gray-900">{userdetails?.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                      </p>
+                    </div>
+                    <ul className="mt-2 space-y-2">
+                      <li onClick={() => navigate("/myorder")} className="flex items-center gap-2 cursor-pointer hover:text-black">
+                        <FaBoxOpen /> My Orders
+                      </li>
+                      <li onClick={() => navigate("/contact")} className="flex items-center gap-2 cursor-pointer hover:text-black">
+                        <FaEnvelope /> Contact Us
+                      </li>
+                      {userdetails?.role === "admin" && (
+                        <li onClick={() => navigate("/admin")} className="flex items-center gap-2 cursor-pointer hover:text-black">
+                          <FaUserShield /> Admin Panel
+                        </li>
+                      )}
                       <li
-                        onClick={() => {
-                          navigate("/admin");
+                        onClick={async () => {
+                          await signOut({ redirectUrl: "/" });
                           setIsProfileOpen(false);
                         }}
-                        className="profile-dropdown-menu-item flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer space-x-3"
+                        className="flex items-center gap-2 text-red-600 cursor-pointer"
                       >
-                        <FaUserShield className="w-5 h-5 text-gray-500" />
-                        <span>Admin Panel</span>
+                        <FaSignOutAlt /> Log Out
                       </li>
-                    )}
-                    <li
-                      className="profile-dropdown-menu-item flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer space-x-3 border-t border-gray-100 mt-2 pt-2"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await signOut({ redirectUrl: "/" });
-                        setIsProfileOpen(false);
-                      }}
-                    >
-                      <FaSignOutAlt className="w-5 h-5 text-red-500" />
-                      <span>Log Out</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              <div className="hidden lg:block"> {/* Only show signup button on desktop */}
-                <button className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-full shadow-md hover:bg-blue-700 transition-all duration-300" onClick={() => navigate("/login")}>
-                  Sign Up
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Hamburger Menu */}
-          <div className="lg:hidden" ref={sidebarScopeRef}>
-            <button
-              aria-label="Open menu"
-              className="menu-icon p-2 rounded-full hover:bg-gray-100 transition-colors"
-              onClick={toggleSidebar}
-            >
-              <div className="menu-container">
-                <div className={`hamburger ${isSidebarOpen ? "active" : ""}`}>
-                  <div className="line" />
-                  <div className="line" />
-                  <div className="line" />
-                </div>
-              </div>
-            </button>
-
-            {/* Sidebar (Mobile) */}
-            <div className={`sidebar fixed inset-y-0 right-0 w-64 md:w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col
-              ${isSidebarOpen ? "translate-x-0" : "translate-x-full"}`}
-              style={{ top: 'var(--sidebar-top)' }}
-            >
-              {/* Sidebar Header */}
-              <header className="sidebar-header-section p-6 flex flex-col items-start border-b border-gray-200 space-y-4">
-                {isLoggedIn ? (
-                  <>
-                    <div className="flex items-center space-x-3">
-                      <FaUserCircle className="w-10 h-10 text-gray-700" />
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900">
-                          {userdetails?.name || user?.fullName || "Guest"}
-                        </h4>
-                        <p className="text-sm text-gray-500">
-                          {user?.primaryEmailAddress?.emailAddress || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <button className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors" onClick={() => navigate("/login")}>
-                    Login / Sign Up
-                  </button>
+                    </ul>
+                  </motion.div>
                 )}
-                 {/* No explicit close button needed - hamburger toggles it */}
-              </header>
+              </AnimatePresence>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="px-4 py-1.5 rounded-lg bg-black text-white font-semibold hover:opacity-90"
+            >
+              Sign Up
+            </button>
+          )}
 
-              {/* Sidebar Navigation */}
-              <nav className="flex-grow overflow-y-auto p-4">
-                <ul className="space-y-1">
-                  <li
-                    onClick={() => {
-                      navigate("/myorder");
-                      toggleSidebar();
-                    }}
-                    className="sidebar-nav-item flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <FaBox className="w-5 h-5 text-gray-500" />
-                    <span>My Orders</span>
-                  </li>
-                  <li
-                    onClick={() => {
-                      navigate("/wishlist");
-                      toggleSidebar();
-                    }}
-                    className="sidebar-nav-item flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <FaHeart className="w-5 h-5 text-gray-500" />
-                    <span>Wishlist</span>
-                  </li>
-                  <li
-                    onClick={() => {
-                      navigate("/cart");
-                      toggleSidebar();
-                    }}
-                    className="sidebar-nav-item flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <FaShoppingCart className="w-5 h-5 text-gray-500" />
-                    <span>Cart</span>
-                  </li>
-                  {isLoggedIn && user && userdetails?.role === "admin" && (
-                    <li
-                      onClick={() => {
-                        navigate("/admin");
-                        toggleSidebar();
-                      }}
-                      className="sidebar-nav-item flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      <FaUserShield className="w-5 h-5 text-gray-500" />
-                      <span>Admin Panel</span>
-                    </li>
-                  )}
-                  <li
-                    onClick={() => {
-                      navigate("/contact");
-                      toggleSidebar();
-                    }}
-                    className="sidebar-nav-item flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                  >
-                    <FaEnvelope className="w-5 h-5 text-gray-500" />
-                    <span>Contact Us</span>
-                  </li>
-                </ul>
-              </nav>
-
-              {/* Sidebar Footer */}
-              {isLoggedIn && (
-                <footer className="sidebar-footer-section p-6 border-t border-gray-200">
-                  <button
-                    className="flex items-center space-x-3 text-red-600 font-semibold hover:text-red-700 transition-colors w-full justify-center"
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      await signOut({ redirectUrl: "/" });
-                      toggleSidebar();
-                    }}
-                  >
-                    <FaSignOutAlt className="w-5 h-5" />
-                    <span>Log Out</span>
-                  </button>
-                </footer>
-              )}
+          {/* Mobile Hamburger (unchanged) */}
+          <div className="md:hidden flex items-center">
+            <div className="mobile-view">
+              <div className="menu-icon" onClick={toggleSidebar}>
+                <div className="menu-container">
+                  <div className={`hamburger ${isOpen ? "active" : ""}`} id="hamburger">
+                    <div className="line" />
+                    <div className="line" />
+                    <div className="line" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Sidebar with swipe gesture */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black z-40"
+              onClick={toggleSidebar}
+            />
+
+            {/* Sidebar */}
+            <motion.div
+              variants={sidebarVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, info) => {
+                if (info.offset.x > 100) toggleSidebar(); // swipe right to close
+              }}
+              className="fixed top-0 right-0 h-screen w-72 bg-white z-50 shadow-xl flex flex-col"
+            >
+              <header className="p-4 border-b flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-gray-900">{userdetails?.name || "Guest"}</h4>
+                  {isLoggedIn && (
+                    <p className="text-sm text-gray-500">
+                      {user?.primaryEmailAddress?.emailAddress || "N/A"}
+                    </p>
+                  )}
+                </div>
+                {!isLoggedIn && (
+                  <button
+                    className="bg-black text-white px-3 py-1 rounded-md"
+                    onClick={() => navigate("/login")}
+                  >
+                    Login / Sign Up
+                  </button>
+                )}
+                <button className="text-lg" onClick={toggleSidebar}>
+                  ✕
+                </button>
+              </header>
+
+              <nav className="p-4 flex-1 overflow-y-auto">
+                <motion.ul className="space-y-4 font-semibold">
+                  <motion.li variants={linkVariants} onClick={() => { navigate("/myorder"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
+                    <FaBoxOpen /> My Orders
+                  </motion.li>
+                  <motion.li variants={linkVariants} onClick={() => { navigate("/wishlist"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
+                    <FaHeart /> Wishlist
+                  </motion.li>
+                  <motion.li variants={linkVariants} onClick={() => { navigate("/cart"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
+                    <FaShoppingCart /> Cart
+                  </motion.li>
+                  {isLoggedIn && userdetails?.role === "admin" && (
+                    <motion.li variants={linkVariants} onClick={() => { navigate("/admin"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
+                      <FaUserShield /> Admin Panel
+                    </motion.li>
+                  )}
+                  <motion.li variants={linkVariants} onClick={() => { navigate("/contact"); toggleSidebar(); }} className="flex items-center gap-2 cursor-pointer">
+                    <FaEnvelope /> Contact Us
+                  </motion.li>
+                </motion.ul>
+              </nav>
+
+              {isLoggedIn && (
+                <footer className="p-4 border-t">
+                  <motion.button
+                    variants={linkVariants}
+                    onClick={async () => {
+                      await signOut({ redirectUrl: "/" });
+                      toggleSidebar();
+                    }}
+                    className="flex items-center gap-2 text-red-600 font-bold"
+                  >
+                    <FaSignOutAlt /> Log Out
+                  </motion.button>
+                </footer>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
