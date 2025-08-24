@@ -285,61 +285,61 @@ const ShoppingCart = () => {
 </div>
 
             <div className="cart-coupons">
-<h4>Apply Coupon</h4>
+  <h4>Apply Coupon</h4>
 
-              {appliedCoupon ? (
-               <div className="coupon-box applied">
-    <span>Coupon {appliedCoupon.code} applied!</span>
-    <button className="remove-link" onClick={() => setAppliedCoupon(null)}>
-      Remove
-    </button>
+  {/* Manual input always visible */}
+  <div className="coupon-box manual-input">
+    <input
+      type="text"
+      placeholder="Enter coupon code"
+      value={manualCouponCode}
+      onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
+    />
+    <button onClick={handleManualApply}>Apply</button>
   </div>
-              ) : (
-                <div className="coupon-box manual-input">
-                  <input
-                    type="text"
-                    placeholder="Enter coupon code"
-                    value={manualCouponCode}
-                    onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
-                  />
-                  <button onClick={handleManualApply}>Apply</button>
-                </div>
-              )}
 
-              <div className="available-coupons-section">
-                <h4>Available Coupons</h4>
-                {availableCoupons.length > 0 ? (
-                  availableCoupons.map((coupon) => {
-                    const isSelected = appliedCoupon?.id === coupon.id;
-                    return (
-                      // mark selected coupon card so we can tint it green
-<div
-  key={coupon.id}
-  className={`coupon-item ${isSelected ? "selected" : ""}`}
-  onClick={async () => {
-    if (isSelected) {
-      setAppliedCoupon(null);
-      toast.info("Coupon removed.");
-    } else {
-      await handleApplyCoupon(coupon);
-    }
-  }}
->
-  <strong>{coupon.code}</strong> –{" "}
-  {coupon.discountType === "percent"
-    ? `${coupon.discountValue}% off`
-    : `₹${coupon.discountValue} off`}
-  <br />
-  <small>{coupon.description}</small>
+  {/* If coupon is applied, show as a pill/tag */}
+  {appliedCoupon && (
+    <div className="applied-tag">
+      <span>{appliedCoupon.code}</span>
+      <button onClick={() => setAppliedCoupon(null)}>×</button>
+    </div>
+  )}
+
+  {/* Available coupons list */}
+  <div className="available-coupons-section">
+    <h4>Available Coupons</h4>
+    {availableCoupons.length > 0 ? (
+      availableCoupons.map((coupon) => {
+        const isSelected = appliedCoupon?.id === coupon.id;
+        return (
+          <div
+            key={coupon.id}
+            className={`coupon-item ${isSelected ? "selected" : ""}`}
+            onClick={async () => {
+              if (isSelected) {
+                setAppliedCoupon(null);
+                toast.info("Coupon removed.");
+              } else {
+                await handleApplyCoupon(coupon);
+              }
+            }}
+          >
+            <strong>{coupon.code}</strong> –{" "}
+            {coupon.discountType === "percent"
+              ? `${coupon.discountValue}% off`
+              : `₹${coupon.discountValue} off`}
+            <br />
+            <small>{coupon.description}</small>
+          </div>
+        );
+      })
+    ) : (
+      <small>No coupons available right now</small>
+    )}
+  </div>
 </div>
 
-                    );
-                  })
-                ) : (
-                  <small>No coupons available right now</small>
-                )}
-              </div>
-            </div>
 
             <div className="cart-summary-button">
               {!isBuyNowActive && (
