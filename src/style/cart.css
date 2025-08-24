@@ -288,6 +288,7 @@
   border: 1px solid #e3e3e3;
   border-radius: 8px;
   font-size: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 .coupon-box.manual-input button {
   flex-shrink: 0;       
@@ -335,6 +336,7 @@
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
   background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 .coupon-item:hover {
   border-color: #c8c8c8;
