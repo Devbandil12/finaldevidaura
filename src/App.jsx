@@ -115,59 +115,6 @@ const App = () => {
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
-useEffect(() => {
-  const handler = (e) => {
-    const btn = e.target.closest("button");
-    if (!btn || btn.disabled) return;
-
-    // Prevent the button’s default click handler for now
-    e.stopPropagation();
-    e.preventDefault();
-
-    // Add styling class
-    btn.classList.add("button-hero");
-
-    // Create ripple
-    const circle = document.createElement("span");
-    circle.classList.add("pulse");
-
-    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
-    const radius = diameter / 2;
-
-    const rect = btn.getBoundingClientRect();
-    const top = e.clientY - rect.top - radius;
-    const left = e.clientX - rect.left - radius;
-
-    circle.style.width = circle.style.height = `${diameter}px`;
-    circle.style.top = `${top}px`;
-    circle.style.left = `${left}px`;
-
-    // Detect background brightness
-    const bgColor = window.getComputedStyle(btn).backgroundColor;
-    const rgb = bgColor.match(/\d+/g)?.map(Number) || [255, 255, 255];
-    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-    const isLight = brightness > 150;
-    circle.style.background = isLight
-      ? "rgba(0,0,0,0.35)"
-      : "rgba(255,255,255,0.4)";
-
-    // Remove old pulse
-    btn.querySelector(".pulse")?.remove();
-    btn.appendChild(circle);
-
-    circle.addEventListener("animationend", () => circle.remove());
-
-    // After ripple delay, re-dispatch click so button logic runs
-    setTimeout(() => {
-      btn.click(); // programmatically trigger original click
-    }, 200); // 200ms matches ripple start
-  };
-
-  document.addEventListener("click", handler, true); // use capture phase
-  return () => document.removeEventListener("click", handler, true);
-}, []);
-
-
 
   return (
     <UserProvider>
