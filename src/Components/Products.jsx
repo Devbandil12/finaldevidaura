@@ -13,7 +13,7 @@ import CartImage from "../assets/cart-svgrepo-com copy.svg";
 import "../style/products.css";
 
 import { gsap } from "gsap";
-
+import HeroButton from "./HeroButton";
 
 const Products = () => {
   // We no longer need this local state variable.
@@ -183,21 +183,21 @@ const Products = () => {
 
                 <div className="p-4 pt-0">
                   {inCart ? (
-                    <button
+                    <Button
                       onClick={() => navigate("/cart")}
-                      className="cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-green-600 text-white hover:bg-green-700"
+                      className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
                     >
                       View Cart
                       <img src={CartImage} alt="Cart" className="w-7 h-7" />
-                    </button>
+                    </HeroButton>
                   ) : (
-                    <button
+                    <HeroButton
                       onClick={() => handleAdd(product, 1, false)}
-                      className="cta-btn w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+                      className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
                     >
                       Add to Cart
                       <img src={CartImage} alt="Cart" className="w-7 h-7" />
-                    </button>
+                    </HeroButton>
                   )}
                 </div>
               </div>
