@@ -350,7 +350,7 @@ const ShoppingCart = () => {
 )}
 
 <HeroButton id="checkout-button"
-                className="checkout" disabled={!itemsToRender.length} onClick={handleCheckout}>
+                className="checkout"  onClick={handleCheckout}>
   {isBuyNowActive ? "Buy Now" : "Checkout"}
 </HeroButton>
 
