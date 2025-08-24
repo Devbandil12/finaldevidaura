@@ -384,9 +384,9 @@ function HeroButton({ children, onClick, className = "", ...props }) {
 
             <div className="cart-summary-button">
               {!isBuyNowActive && (
-                <HeroButton id="clear-cart onClick={clearCart}>Clear Cart</HeroButton>
+                <HeroButton id="clear-cart className=" button-hero" onClick={clearCart}>Clear Cart</HeroButton>
 <HeroButton id="checkout-button"
-                className="checkout"  onClick={handleCheckout}>
+                className="checkout button-hero"  onClick={handleCheckout}>
   {isBuyNowActive ? "Buy Now" : "Checkout"}
 </HeroButton>
 
