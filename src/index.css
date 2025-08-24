@@ -67,17 +67,17 @@ body {
   transform: scale(0);
   animation: hero-pulse 600ms ease-out forwards; /* <-- matches keyframes */
   pointer-events: none;
-  will-change: transform, opacity; /* GPU accel */
+  will-change: transform, opacity; 
 }
 
 /* Ripple animation */
 @keyframes hero-pulse {
   0% {
     transform: scale(0);
-    opacity: 0.6;   /* start slightly visible */
+    opacity: 0;   
   }
   100% {
-    transform: scale(4.5); /* expand */
-    opacity: 0;     /* fade out */
+    transform: scale(4); 
+    opacity: 0;     
   }
 }
