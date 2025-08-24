@@ -56,27 +56,45 @@ const ShoppingCart = () => {
   }, [isBuyNowActive, clearBuyNow]);
 
 
-function createRipple(event) {
-  const button = event.currentTarget;
+function HeroButton({ children, onClick, className = "", ...props }) {
+  const handleClick = (e) => {
+    const button = e.currentTarget;
+    const circle = document.createElement("span");
+    circle.classList.add("pulse");
 
-  // Remove old ripple if present
-  const oldRipple = button.querySelector(".ripple");
-  if (oldRipple) oldRipple.remove();
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
 
-  // Create new ripple
-  const circle = document.createElement("span");
-  circle.classList.add("ripple");
+    // Position relative to touch point
+    const rect = button.getBoundingClientRect();
+    const top = e.clientY - rect.top - radius;
+    const left = e.clientX - rect.left - radius;
 
-  const diameter = Math.max(button.clientWidth, button.clientHeight);
-  const radius = diameter / 2;
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.top = `${top}px`;
+    circle.style.left = `${left}px`;
 
-  circle.style.width = circle.style.height = `${diameter}px`;
-  circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
-  circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+    // Remove any existing pulse before adding a new one
+    const oldPulse = button.querySelector(".pulse");
+    if (oldPulse) oldPulse.remove();
 
-  button.appendChild(circle);
+    button.appendChild(circle);
+
+    // Remove after animation ends
+    circle.addEventListener("animationend", () => {
+      circle.remove();
+    });
+
+    // Run passed onClick
+    if (onClick) onClick(e);
+  };
+
+  return (
+    <button className={`button-hero ${className}`} onClick={handleClick} {...props}>
+      {children}
+    </button>
+  );
 }
-
 
   const handleCheckout = () => {
     if (!itemsToRender.length) {
@@ -366,23 +384,12 @@ function createRipple(event) {
 
             <div className="cart-summary-button">
               {!isBuyNowActive && (
-                <button id="clear-cart" className="button-with-ripple" onClick={(e) => {
-    createRipple(e);
-    clearCart();
-  }}>
-Clear Cart
-</button>
- )}
-              <button
-                id="checkout-button"
-                className="checkout button-with-ripple"
-                disabled={!itemsToRender.length}
-                onClick={(e) => {
-    createRipple(e);
-    handleCheckout(); 
-  }}>
-                {isBuyNowActive ? "Buy Now" : "Checkout"}
-              </button>
+                <HeroButton id="clear-cart onClick={clearCart}>Clear Cart</HeroButton>
+<HeroButton id="checkout-button"
+                className="checkout"  onClick={handleCheckout}>
+  {isBuyNowActive ? "Buy Now" : "Checkout"}
+</HeroButton>
+
             </div>
           </div>
         </div>
