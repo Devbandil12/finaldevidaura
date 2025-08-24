@@ -382,6 +382,7 @@
   background: #fff;
   border-radius: 12px;
   overflow: hidden;
+  padding: 5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease ; 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
@@ -397,13 +398,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 5px 6px;
+  padding: 5px 2px;
 }
 .product-price {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 5px 6px;
+  padding: 5px 2px;
   font-size: 0.95rem;
 }
 .product-price .price {
