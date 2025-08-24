@@ -26,7 +26,7 @@ export default function HeroButton({ children, onClick, className = "", ...props
     const bgColor = window.getComputedStyle(button).backgroundColor;
     const isLight = isLightColor(bgColor);
     circle.style.background = isLight
-      ? "rgba(0,0,0,0.25)" // dark ripple on light bg
+      ? "rgba(0,0,0,0.05)" // dark ripple on light bg
       : "rgba(255,255,255,0.35)"; // light ripple on dark bg
 
     // Remove any old ripple
