@@ -540,6 +540,9 @@
   z-index: 1;
 }
 
+#clear-cart .ripple { background-color: rgba(0, 0, 0, 0.2); }
+
+
 @keyframes ripple {
   to {
     transform: scale(4);
