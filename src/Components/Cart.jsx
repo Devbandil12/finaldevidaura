@@ -90,7 +90,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
 
     // ✅ Delay button logic so animation is visible first
     if (onClick) {
-      setTimeout(() => onClick(e), 200); 
+      setTimeout(() => onClick(e), 600); 
       // 200ms delay = ripple starts, feels snappy
       // you could set this to 600ms if you want full ripple before logic
     }
