@@ -35,9 +35,6 @@ import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 
 import { useUser } from "@clerk/clerk-react";
-import { db } from "../configs";
-import { usersTable } from "../configs/schema";
-import { eq } from "drizzle-orm";
 
 // Utilities: Global error reporting
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
