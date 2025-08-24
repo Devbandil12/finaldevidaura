@@ -54,7 +54,6 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  transition: transform 0.15s ease;
 }
 
 .button-hero:active {
@@ -65,14 +64,13 @@ body {
   position: absolute;
   border-radius: 50%;
   transform: scale(0);
-  animation: hero-pulse 600ms ease-out;
+  animation: hero-ripple 600ms ease-out forwards;
   pointer-events: none;
-  filter: blur(1px);
 }
 
-@keyframes hero-pulse {
+@keyframes hero-ripple {
   to {
-    transform: scale(4);
+    transform: scale(1);
     opacity: 0;
   }
 }
