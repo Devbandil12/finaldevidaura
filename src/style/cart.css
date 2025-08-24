@@ -248,9 +248,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-#clear-cart:hover {
-  background: #f8f8f8;
-}
+
 #checkout-button {
   background: #000;
   color: #fff;
