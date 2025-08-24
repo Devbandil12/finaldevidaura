@@ -538,11 +538,8 @@
   transform: scale(0);
   animation: hero-pulse 600ms ease-out;
   pointer-events: none;
-  filter: blur(1px);
-  width: 200px; /* large so it expands properly */
-  height: 200px;
-  margin-left: -100px; /* center ripple */
-  margin-top: -100px;
+  filter: blur(2px);
+  
 }
 
 @keyframes hero-pulse {
