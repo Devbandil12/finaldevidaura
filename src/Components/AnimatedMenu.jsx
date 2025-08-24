@@ -5,7 +5,7 @@ const AnimatedMenu = ({ size = 50 }) => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="nav" style={{ width: size, height: size }}>
+    <div className="menu-nav" style={{ width: size, height: size }}>
       <svg
         className={`menu-icon ${open ? "open" : ""}`}
         viewBox="0 0 100 56"
