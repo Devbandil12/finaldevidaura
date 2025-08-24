@@ -117,8 +117,10 @@ const HeroSection = () => {
         <div className="hero-cta" ref={buttonRef}>
           <HeroButton className="shop-btn">Explore Collection
 </HeroButton>
-<AnimatedMenu size={60} />
         </div>
+<div className="App" style={{ background: "#1B1A23", height: "100px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <AnimatedMenu size={60} />
+    </div>
       </div>
     </section>
   );
