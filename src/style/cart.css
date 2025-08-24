@@ -521,30 +521,3 @@
 }
 
 
-.button-hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 12px;
-  transition: transform 0.15s ease;
-}
-
-.button-hero:active {
-  transform: scale(0.97);
-}
-
-.button-hero .pulse {
-  position: absolute;
-  border-radius: 50%;
-  transform: scale(0);
-  animation: hero-pulse 600ms ease-out;
-  pointer-events: none;
-  filter: blur(2px);
-  
-}
-
-@keyframes hero-pulse {
-  to {
-    transform: scale(6);
-    opacity: 0;
-  }
-}
