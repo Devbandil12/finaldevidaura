@@ -54,14 +54,8 @@
   color:#fff;
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.hero-cta .shop-btn:hover {
-  background-color: #000;
-  color:#fff;
-  transform: scale(1.03);
-}
 
 .hero-image-wrapper {
   flex: 1;
