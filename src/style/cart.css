@@ -539,6 +539,7 @@
   transform: scale(0);
   animation: hero-pulse 600ms ease-out;
   pointer-events: none;
+  background: rgba(255, 255, 255, 0.4); 
 }
 
 /* Ripple for light buttons (like Clear Cart) */
