@@ -275,7 +275,6 @@ const ShoppingCart = () => {
 
           <div className="cart-summary">
 <h2 className="summary-title">Order Summary</h2>
-            // replace the two price rows to match wording + green final price
 <div className="cart-summary-price">
   <h3 className="row total">
     <span>Total:</span> <span>₹{totalOriginal}</span>
