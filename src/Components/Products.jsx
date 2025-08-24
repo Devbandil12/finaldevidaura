@@ -183,7 +183,7 @@ const Products = () => {
 
                 <div className="p-4 pt-0">
                   {inCart ? (
-                    <Button
+                    <HeroButton
                       onClick={() => navigate("/cart")}
                       className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
                     >
