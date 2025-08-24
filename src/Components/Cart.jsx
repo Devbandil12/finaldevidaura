@@ -222,9 +222,9 @@ function HeroButton({ children, onClick, className = "", ...props }) {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <button className="add-to-cart" onClick={() => addToCart(product, 1)}>
+            <Heroutton className="add-to-cart button-hero" onClick={() => addToCart(product, 1)}>
               Add to Cart
-            </button>
+            </HeroButton>
           </div>
         );
       });
@@ -336,7 +336,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
       value={manualCouponCode}
       onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
     />
-    <HeroButton onClick={handleManualApply}>Apply</HeroButton>
+    <HeroButton className=" button-hero" onClick={handleManualApply}>Apply</HeroButton>
   </div>
 
   {/* If coupon is applied, show as a pill/tag */}
