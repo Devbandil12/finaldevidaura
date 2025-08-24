@@ -265,10 +265,6 @@
    =========================== */
 .cart-coupons {
   margin-top: 20px;
-  border: 1px solid #cccccc56;
-  padding: 5px 10px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 .cart-coupons h4 {
   font-size: 1.1rem;
@@ -288,14 +284,15 @@
   min-width: 0;         
   height: 44px;
   padding: 0 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
+  border: 1px solid #cccccc56;
 }
 .coupon-box.manual-input button {
   flex-shrink: 0;       
   height: 44px;
-  padding: 0 18px;
-  border-radius: 8px;
+  padding: 0 22px;
+  border-radius: 12px;
   background: #000;
   color: #fff;
   font-weight: 600;
