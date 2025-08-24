@@ -283,17 +283,19 @@
   margin-bottom: 12px;
 }
 .coupon-box.manual-input input {
-  flex-grow: 1;
-  height: 48px;
-  padding: 0 14px;
+  flex: 1;           
+  min-width: 0;         
+  height: 44px;
+  padding: 0 12px;
   border: 1px solid #e3e3e3;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 1rem;
 }
 .coupon-box.manual-input button {
-  height: 48px;
-  padding: 0 22px;
-  border-radius: 10px;
+  flex-shrink: 0;       
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
   background: #000;
   color: #fff;
   font-weight: 600;
