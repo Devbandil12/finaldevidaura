@@ -81,26 +81,26 @@ function HeroButton({ children, onClick, className = "", ...props }) {
       ? "rgba(0,0,0,0.35)"   // dark ripple on light background
       : "rgba(255,255,255,0.4)"; // light ripple on dark background
 
-    // Remove any existing pulse before adding a new one
-    const oldPulse = button.querySelector(".pulse");
-    if (oldPulse) oldPulse.remove();
-
+    // Remove old pulse if still present
+    button.querySelector(".pulse")?.remove();
     button.appendChild(circle);
 
-    // Remove after animation ends
-    circle.addEventListener("animationend", () => {
-      circle.remove();
-    });
+    // Clean up after animation
+    circle.addEventListener("animationend", () => circle.remove());
 
-    // Run passed onClick
-    if (onClick) onClick(e);
+    // ✅ Delay button logic so animation is visible first
+    if (onClick) {
+      setTimeout(() => onClick(e), 200); 
+      // 200ms delay = ripple starts, feels snappy
+      // you could set this to 600ms if you want full ripple before logic
+    }
   };
 
-  // Helper: check brightness of background color
+  // Helper
   const isLightColor = (color) => {
-    const rgb = color.match(/\d+/g).map(Number); // extract [R, G, B]
+    const rgb = color.match(/\d+/g).map(Number);
     const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-    return brightness > 150; // threshold for "light"
+    return brightness > 150;
   };
 
   return (
@@ -113,6 +113,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
     </button>
   );
 }
+
 
   const handleCheckout = () => {
     if (!itemsToRender.length) {
@@ -240,7 +241,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <HeroButton className="add-to-cart button-hero" onClick={() => addToCart(product, 1)}>
+            <HeroButton className="add-to-cart" onClick={() => addToCart(product, 1)}>
               Add to Cart
             </HeroButton>
           </div>
@@ -354,7 +355,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
       value={manualCouponCode}
       onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
     />
-    <HeroButton className=" button-hero" onClick={handleManualApply}>Apply</HeroButton>
+    <HeroButton onClick={handleManualApply}>Apply</HeroButton>
   </div>
 
   {/* If coupon is applied, show as a pill/tag */}
@@ -402,11 +403,11 @@ function HeroButton({ children, onClick, className = "", ...props }) {
 
             <div className="cart-summary-button">
               {!isBuyNowActive && (
-                <HeroButton id="clear-cart" className=" button-hero" onClick={clearCart}>Clear Cart</HeroButton>
+                <HeroButton id="clear-cart" onClick={clearCart}>Clear Cart</HeroButton>
 )}
 
 <HeroButton id="checkout-button"
-                className="checkout button-hero" disabled={!itemsToRender.length} onClick={handleCheckout}>
+                className="checkout" disabled={!itemsToRender.length} onClick={handleCheckout}>
   {isBuyNowActive ? "Buy Now" : "Checkout"}
 </HeroButton>
 
