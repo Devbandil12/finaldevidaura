@@ -397,13 +397,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 2px;
+  padding: 5px 6px;
 }
 .product-price {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 10px 2px;
+  padding: 5px 6px;
   font-size: 0.95rem;
 }
 .product-price .price {
