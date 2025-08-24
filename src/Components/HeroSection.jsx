@@ -4,6 +4,7 @@ import gsap from "gsap";
 import "../style/herosection.css";
 import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 import HeroButton from "./HeroButton";
+import AnimatedMenu from "./AnimatedMenu";
 
 const HeroSection = () => {
   const titleRef = useRef(null);
@@ -116,6 +117,7 @@ const HeroSection = () => {
         <div className="hero-cta" ref={buttonRef}>
           <HeroButton className="shop-btn">Explore Collection
 </HeroButton>
+<AnimatedMenu size={60} />
         </div>
       </div>
     </section>
