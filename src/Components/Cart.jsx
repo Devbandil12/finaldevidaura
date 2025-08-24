@@ -384,7 +384,7 @@ Clear Cart
                 onClick={(e) => {
     createRipple(e);
     handleCheckout(); 
-  }}
+  }}>
                 {isBuyNowActive ? "Buy Now" : "Checkout"}
               </button>
             </div>
