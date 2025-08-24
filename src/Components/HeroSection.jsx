@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import "../style/herosection.css";
 import BottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
+import HeroButton from "./HeroButton";
 
 const HeroSection = () => {
   const titleRef = useRef(null);
@@ -113,7 +114,8 @@ const HeroSection = () => {
         <h1 className="hero-slogan" ref={sloganRef}></h1>
 
         <div className="hero-cta" ref={buttonRef}>
-          <button className="shop-btn">Explore Collection</button>
+          <HeroButton className="shop-btn">Explore Collection
+</HeroButton>
         </div>
       </div>
     </section>
