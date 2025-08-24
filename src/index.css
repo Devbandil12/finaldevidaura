@@ -54,6 +54,7 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .button-hero:active {
@@ -64,13 +65,19 @@ body {
   position: absolute;
   border-radius: 50%;
   transform: scale(0);
-  animation: hero-ripple 600ms ease-out forwards;
+  animation: hero-pulse 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none;
+  will-change: transform, opacity;
 }
 
-@keyframes hero-ripple {
-  to {
-    transform: scale(1);
-    opacity: 0;
+/* Ripple animation */
+@keyframes hero-pulse {
+  0% {
+    transform: scale(0);
+    opacity: 0.3;   /* softer, like HeroUI */
+  }
+  100% {
+    transform: scale(4.5); /* expand further */
+    opacity: 0;     /* fade smoothly */
   }
 }
