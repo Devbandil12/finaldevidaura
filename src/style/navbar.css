@@ -385,7 +385,7 @@ padding-left:10px;
 
 /* Hamburger Transformations */
 .hamburger.active .line:nth-child(1) {
-  transform: rotate(-135deg) translateY(-245%);
+  transform: rotate(-135deg) translateY(-265%);
   background-color: rgb(0, 0, 0);
   width: 18.5px;
 }
@@ -394,7 +394,7 @@ padding-left:10px;
   background-color: rgb(0, 0, 0);
 }
 .hamburger.active .line:nth-child(3) {
-  transform: rotate(-135deg) translateY(295%);
+  transform: rotate(-135deg) translateY(310%);
   background-color: rgb(0, 0, 0);
   width: 21px;
 }
