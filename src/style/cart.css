@@ -745,6 +745,32 @@
   font-weight: 700;
 }
 
+
+/* Applied coupon pill */
+.applied-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  background: #eaf9ee;
+  border: 1px solid #bfe6c8;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  color: #198754;
+  font-size: 0.9rem;
+}
+.applied-tag button {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #dc3545;
+  line-height: 1;
+}
+
+
+
 /* Card look on mobile similar to mock */
 @media (max-width: 480px) {
   .cart-summary {
