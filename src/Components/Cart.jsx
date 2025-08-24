@@ -61,6 +61,33 @@ const ShoppingCart = () => {
       return;
     }
 
+
+
+
+   function createRipple(event) {
+  const button = event.currentTarget;
+
+  // Remove old ripple if present
+  const oldRipple = button.querySelector(".ripple");
+  if (oldRipple) oldRipple.remove();
+
+  // Create new ripple
+  const circle = document.createElement("span");
+  circle.classList.add("ripple");
+
+  const diameter = Math.max(button.clientWidth, button.clientHeight);
+  const radius = diameter / 2;
+
+  circle.style.width = circle.style.height = `${diameter}px`;
+  circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+  circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+
+  button.appendChild(circle);
+}
+
+
+
+
     const fullCartItems = itemsToRender.map((item) => {
       const price = Math.floor(
         item.product.oprice * (1 - item.product.discount / 100)
@@ -343,14 +370,21 @@ const ShoppingCart = () => {
 
             <div className="cart-summary-button">
               {!isBuyNowActive && (
-                <button id="clear-cart" onClick={clearCart}>Clear Cart</button>
-              )}
+                <button id="clear-cart" className="button-with-ripple" onClick={(e) => {
+    createRipple(e);
+    clearCart();
+  }}>
+Clear Cart
+</button>
+ )}
               <button
                 id="checkout-button"
-                className="checkout"
+                className="checkout button-with-ripple"
                 disabled={!itemsToRender.length}
-                onClick={handleCheckout}
-              >
+                onClick={(e) => {
+    createRipple(e);
+    handleCheckout(); 
+  }}
                 {isBuyNowActive ? "Buy Now" : "Checkout"}
               </button>
             </div>
