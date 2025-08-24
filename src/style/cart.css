@@ -241,7 +241,7 @@
 }
 #clear-cart {
   background: #fff;
-  border: 1px solid #e3e3e3;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   color: #111;
   border-radius: 12px;
   height: 52px;
