@@ -1,3 +1,6 @@
+
+
+/* ======= NAV MENU ICON ======= */
 .menu-nav {
   cursor: pointer;
   display: inline-block;
@@ -7,7 +10,7 @@
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: black;
+  stroke: black; /* Change to white if needed */
   stroke-width: 2;
   stroke-dasharray: 59 236;
   stroke-dashoffset: 68;
@@ -27,16 +30,42 @@
   animation: stroke-animation-reverse 0.6s forwards;
 }
 
+/* ======= STROKE ANIMATIONS ======= */
 @keyframes stroke-animation {
-  0% { stroke-dashoffset: 68; stroke-dasharray: 59 236; }
-  50% { stroke-dashoffset: 290; stroke-dasharray: 25 270; }
-  65% { stroke-dashoffset: 295; stroke-dasharray: 25 270; }
-  100% { stroke-dashoffset: 68; stroke-dasharray: 59 236; }
+  0% {
+    stroke-dashoffset: 68;
+    stroke-dasharray: 59 236;
+  }
+  50% {
+    stroke-dashoffset: 290;
+    stroke-dasharray: 25 270;
+  }
+  65% {
+    stroke-dashoffset: 295;
+    stroke-dasharray: 25 270;
+  }
+  100% {
+    stroke-dashoffset: 68;
+    stroke-dasharray: 59 236;
+  }
 }
 
 @keyframes stroke-animation-reverse {
-  0% { stroke-dashoffset: 68; stroke-dasharray: 59 236; }
-  50% { stroke-dashoffset: 290; stroke-dasharray: 25 270; }
-  65% { stroke-dashoffset: 295; stroke-dasharray: 25 270; }
-  100% { stroke-dashoffset: 290; stroke-dasharray: 25 270; }
+  0% {
+    stroke-dashoffset: 68;
+    stroke-dasharray: 59 236;
+  }
+  50% {
+    stroke-dashoffset: 290;
+    stroke-dasharray: 25 270;
+  }
+  65% {
+    stroke-dashoffset: 295;
+    stroke-dasharray: 25 270;
+  }
+  100% {
+    stroke-dashoffset: 290;
+    stroke-dasharray: 25 270;
+  }
 }
+
