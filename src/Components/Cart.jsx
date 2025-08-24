@@ -10,6 +10,7 @@ import { CouponContext } from "../contexts/CouponContext";
 
 import { toast } from "react-toastify";
 import Loader from "./Loader";
+import HeroButton from "./HeroButton";
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -55,64 +56,6 @@ const ShoppingCart = () => {
     };
   }, [isBuyNowActive, clearBuyNow]);
 
-
-function HeroButton({ children, onClick, className = "", ...props }) {
-  const handleClick = (e) => {
-    const button = e.currentTarget;
-    const circle = document.createElement("span");
-    circle.classList.add("pulse");
-
-    const diameter = Math.max(button.clientWidth, button.clientHeight);
-    const radius = diameter / 2;
-
-    // Position relative to touch point
-    const rect = button.getBoundingClientRect();
-    const top = e.clientY - rect.top - radius;
-    const left = e.clientX - rect.left - radius;
-
-    circle.style.width = circle.style.height = `${diameter}px`;
-    circle.style.top = `${top}px`;
-    circle.style.left = `${left}px`;
-
-    // --- Detect background brightness ---
-    const bgColor = window.getComputedStyle(button).backgroundColor;
-    const isLight = isLightColor(bgColor);
-    circle.style.background = isLight
-      ? "rgba(0,0,0,0.35)"   // dark ripple on light background
-      : "rgba(255,255,255,0.4)"; // light ripple on dark background
-
-    // Remove old pulse if still present
-    button.querySelector(".pulse")?.remove();
-    button.appendChild(circle);
-
-    // Clean up after animation
-    circle.addEventListener("animationend", () => circle.remove());
-
-    // ✅ Delay button logic so animation is visible first
-    if (onClick) {
-      setTimeout(() => onClick(e), 600); 
-      // 200ms delay = ripple starts, feels snappy
-      // you could set this to 600ms if you want full ripple before logic
-    }
-  };
-
-  // Helper
-  const isLightColor = (color) => {
-    const rgb = color.match(/\d+/g).map(Number);
-    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-    return brightness > 150;
-  };
-
-  return (
-    <button
-      className={`button-hero ${className}`}
-      onClick={handleClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
 
 
   const handleCheckout = () => {
