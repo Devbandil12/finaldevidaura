@@ -336,7 +336,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
       value={manualCouponCode}
       onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
     />
-    <button onClick={handleManualApply}>Apply</button>
+    <HeroButton onClick={handleManualApply}>Apply</HeroButton>
   </div>
 
   {/* If coupon is applied, show as a pill/tag */}
@@ -388,7 +388,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
 )}
 
 <HeroButton id="checkout-button"
-                className="checkout button-hero"  onClick={handleCheckout}>
+                className="checkout button-hero" disabled={!itemsToRender.length} onClick={handleCheckout}>
   {isBuyNowActive ? "Buy Now" : "Checkout"}
 </HeroButton>
 
