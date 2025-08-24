@@ -1,31 +1,5 @@
 @import "tailwindcss";
 
-
-/* In your global CSS, e.g., src/index.css or src/globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 222.2 47.4% 11.2%; /* Dark gray/black for text */
-    --primary: 222.2 47.4% 45.2%; /* Example: a blue for primary actions */
-    --primary-foreground: 210 20% 98%; /* White for text on primary */
-    --muted-foreground: 215.4 16.3% 46.9%; /* Lighter gray for secondary text */
-    --border: 214.3 31.8% 91.4%; /* Light gray border */
-    --destructive: 0 84.2% 60.2%; /* Red for destructive actions */
-    /* ... other shadcn/ui variables */
-  }
-  /* If you have dark mode */
-  .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    /* ... dark mode colors */
-  }
-}
-
-
 @font-face {
   font-family: Luxury;
   src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
@@ -37,6 +11,7 @@ html {
 body {
   overflow-x: hidden !important;
   font-family: "Luxury";
+  background: white !important;
 }
 
 /* Scrollbar container */
@@ -61,30 +36,7 @@ body {
   background: #555;
 }
 
-.product-heading {
-  font-size: 3.2rem;
-  font-weight: 900;
-  margin-top: 4rem;
-  margin-bottom: 2rem;
-  text-align: center;
-  position: relative;
-}
 
-.product-heading::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 5px;
-  transform: translateX(-50%);
-  width: 0;
-  height: 3px; /* Adjust the thickness of the underline */
-  background-color: currentColor; /* Matches the text color */
-  transition: width 0.5s ease-in-out;
-}
-
-.product-heading:hover::after {
-  width: 100%;
-}
 
 
 /* styles.css */
@@ -95,13 +47,6 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
-}
-
-
-body {
-
- background: white !important;
-
 }
 
 
