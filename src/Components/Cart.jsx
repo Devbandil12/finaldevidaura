@@ -74,6 +74,13 @@ function HeroButton({ children, onClick, className = "", ...props }) {
     circle.style.top = `${top}px`;
     circle.style.left = `${left}px`;
 
+    // --- Detect background brightness ---
+    const bgColor = window.getComputedStyle(button).backgroundColor;
+    const isLight = isLightColor(bgColor);
+    circle.style.background = isLight
+      ? "rgba(0,0,0,0.35)"   // dark ripple on light background
+      : "rgba(255,255,255,0.4)"; // light ripple on dark background
+
     // Remove any existing pulse before adding a new one
     const oldPulse = button.querySelector(".pulse");
     if (oldPulse) oldPulse.remove();
@@ -89,8 +96,19 @@ function HeroButton({ children, onClick, className = "", ...props }) {
     if (onClick) onClick(e);
   };
 
+  // Helper: check brightness of background color
+  const isLightColor = (color) => {
+    const rgb = color.match(/\d+/g).map(Number); // extract [R, G, B]
+    const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+    return brightness > 150; // threshold for "light"
+  };
+
   return (
-    <button className={`button-hero ${className}`} onClick={handleClick} {...props}>
+    <button
+      className={`button-hero ${className}`}
+      onClick={handleClick}
+      {...props}
+    >
       {children}
     </button>
   );
