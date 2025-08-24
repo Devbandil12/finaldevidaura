@@ -222,7 +222,7 @@ function HeroButton({ children, onClick, className = "", ...props }) {
               </div>
               <span className="discount">{product.discount}% Off</span>
             </div>
-            <Heroutton className="add-to-cart button-hero" onClick={() => addToCart(product, 1)}>
+            <HeroButton className="add-to-cart button-hero" onClick={() => addToCart(product, 1)}>
               Add to Cart
             </HeroButton>
           </div>
