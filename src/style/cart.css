@@ -234,7 +234,7 @@
 
 /* Summary buttons */
 .cart-summary-button {
-  margin-top: 18px;
+  margin-top: 70px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -265,7 +265,7 @@
    Coupons Section
    =========================== */
 .cart-coupons {
-  margin-top: 20px;
+  margin-top: 50px;
 }
 .cart-coupons h4 {
   font-size: 1.1rem;
@@ -326,7 +326,7 @@
 
 /* Coupon list items */
 .available-coupons-section {
-  margin-top: 20px;
+  margin-top: 60px;
 }
 .coupon-item {
   
