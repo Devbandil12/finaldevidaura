@@ -55,16 +55,8 @@ const ShoppingCart = () => {
     };
   }, [isBuyNowActive, clearBuyNow]);
 
-  const handleCheckout = () => {
-    if (!itemsToRender.length) {
-      toast.error("Your cart is empty.");
-      return;
-    }
 
-
-
-
-   function createRipple(event) {
+function createRipple(event) {
   const button = event.currentTarget;
 
   // Remove old ripple if present
@@ -86,7 +78,11 @@ const ShoppingCart = () => {
 }
 
 
-
+  const handleCheckout = () => {
+    if (!itemsToRender.length) {
+      toast.error("Your cart is empty.");
+      return;
+    }
 
     const fullCartItems = itemsToRender.map((item) => {
       const price = Math.floor(
