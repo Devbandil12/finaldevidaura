@@ -118,6 +118,41 @@ const App = () => {
   const { user } = useUser();
   const [isNavbarVisible, setNavbarVisible] = useState(true);
 
+useEffect(() => {
+  const handler = (e) => {
+    const btn = e.target.closest("button"); // catch clicks only on <button>
+    if (!btn) return;
+
+    // Add .button-hero class to all buttons (for styling)
+    btn.classList.add("button-hero");
+
+    const circle = document.createElement("span");
+    circle.classList.add("pulse");
+
+    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+    const radius = diameter / 2;
+
+    const rect = btn.getBoundingClientRect();
+    const top = e.clientY - rect.top - radius;
+    const left = e.clientX - rect.left - radius;
+
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.top = `${top}px`;
+    circle.style.left = `${left}px`;
+
+    const oldPulse = btn.querySelector(".pulse");
+    if (oldPulse) oldPulse.remove();
+
+    btn.appendChild(circle);
+
+    circle.addEventListener("animationend", () => circle.remove());
+  };
+
+  document.addEventListener("click", handler);
+  return () => document.removeEventListener("click", handler);
+}, []);
+
+
   return (
     <UserProvider>
       <ProductProvider>
