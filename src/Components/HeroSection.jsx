@@ -112,7 +112,7 @@ const HeroSection = () => {
 
         <h1 className="hero-slogan" ref={sloganRef}></h1>
 
-        <div className="hero-cta" ref={buttonRef}>
+        <div id="clear-cart" className="hero-cta" ref={buttonRef}>
           <button className="shop-btn">Explore Collection</button>
         </div>
       </div>
