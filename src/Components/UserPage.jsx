@@ -455,9 +455,7 @@ const [originalAddr, setOriginalAddr] = useState(null);
     ) : (
       <div className="flex flex-wrap gap-6">
         {wishlist.map(item => {
-          const p = findProduct(item.productId);
-          if (!p) return null;
-
+          const p = findProduct(item.productId); if (!p) return null; const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
           return (
             <div
               key={item.id}
