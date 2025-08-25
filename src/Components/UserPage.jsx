@@ -299,7 +299,7 @@ const UserPage = () => {
   } = useContext(UserContext);
 
   const { orders, loadingOrders, getorders } = useContext(OrderContext);
-  const { wishlist, isWishlistLoading } = useContext(CartContext);
+  const {cart, wishlist, isWishlistLoading } = useContext(CartContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { queries, getQueriesByUser } = useContext(ContactContext);
   const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
