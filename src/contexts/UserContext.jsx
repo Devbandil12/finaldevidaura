@@ -66,6 +66,60 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails, getUserAddress]);
 
+ // ✅ Update User Details (uses PUT /:id route)
+    const updateUser = useCallback(async (updatedData) => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedData),
+            });
+            if (!res.ok) throw new Error("Failed to update user");
+            const data = await res.json();
+            setUserdetails(data);
+            toast.success("Profile updated successfully!");
+        } catch (error) {
+            console.error("❌ Failed to update user:", error);
+            toast.error("Failed to update profile.");
+        }
+    }, [userdetails?.id, BACKEND_URL]);
+
+
+// ✅ Add User Address (uses POST / route from addressRoutes.js)
+    const addAddress = useCallback(async (newAddress) => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/addresses`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
+            });
+            if (!res.ok) throw new Error("Failed to add address");
+            await res.json();
+            getUserAddress();
+            toast.success("Address added successfully!");
+        } catch (error) {
+            console.error("❌ Failed to add address:", error);
+            toast.error("Failed to add address.");
+        }
+    }, [userdetails?.id, BACKEND_URL, getUserAddress]);
+
+    // ✅ Delete User Address (uses DELETE /:id route from addressRoutes.js)
+    const deleteAddress = useCallback(async (addressId) => {
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/addresses/${addressId}`, {
+                method: "DELETE",
+            });
+            if (!res.ok) throw new Error("Failed to delete address");
+            await res.json();
+            getUserAddress();
+            toast.info("Address deleted successfully!");
+        } catch (error) {
+            console.error("❌ Failed to delete address:", error);
+            toast.error("Failed to delete address.");
+        }
+    }, [userdetails?.id, BACKEND_URL, getUserAddress]);
+
+
   return (
     <UserContext.Provider
       value={{
@@ -74,6 +128,9 @@ export const UserProvider = ({ children }) => {
         setAddress,
         getUserDetail,
         getUserAddress,
+        updateUser,
+        addAddress,
+        deleteAddress,
       }}
     >
       {children}
