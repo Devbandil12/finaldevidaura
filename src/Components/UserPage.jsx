@@ -6,10 +6,15 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import { Pencil, Trash2, Plus, MapPin, Star } from 'lucide-react';
-import { toast } from "react-toastify";
+
 
 const UserPage = () => {
-    const { userdetails, address, getUserDetail, getUserAddress } = useContext(UserContext);
+    // Destructure the new functions from UserContext
+    const { 
+        userdetails, address, updateUser, addAddress, deleteAddress,
+        getUserDetail, getUserAddress 
+    } = useContext(UserContext);
+
     const { orders, loadingOrders, getorders } = useContext(OrderContext);
     const { wishlist, isWishlistLoading } = useContext(CartContext);
     const { products, loading: productsLoading } = useContext(ProductContext);
@@ -35,27 +40,30 @@ const UserPage = () => {
         }
     }, [userdetails, getorders, getReviewsByUser, getQueriesByUser]);
 
-    const handleUpdateUser = async () => {
-        toast.success("User details updated!");
-        setIsEditingUser(false);
-    };
-
-    const handleAddAddress = async () => {
-        toast.success("Address added!");
-        setIsAddingAddress(false);
-        setNewAddress({ name: "", phone: "", address: "", city: "", state: "", postalCode: "", landmark: "" });
-    };
-
-    const handleDeleteAddress = async (addressId) => {
-        if (window.confirm("Are you sure you want to delete this address?")) {
-            toast.info("Address deleted!");
-        }
-    };
-    
     const findProduct = (productId) => products.find(p => p.id === productId);
 
     const formatAddress = (addr) => `${addr.address}, ${addr.city}, ${addr.state}, ${addr.postalCode}`;
 
+    // ✅ This function now calls the context function to update user details
+    const handleUpdateUser = async () => {
+        await updateUser({ name, phone });
+        setIsEditingUser(false);
+    };
+
+    // ✅ This function now calls the context function to add a new address
+    const handleAddAddress = async () => {
+        await addAddress(newAddress);
+        setIsAddingAddress(false);
+        setNewAddress({ name: "", phone: "", address: "", city: "", state: "", postalCode: "", landmark: "" });
+    };
+
+    // ✅ This function now calls the context function to delete an address
+    const handleDeleteAddress = async (addressId) => {
+        if (window.confirm("Are you sure you want to delete this address?")) {
+            await deleteAddress(addressId);
+        }
+    };
+    
     if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -75,7 +83,6 @@ const UserPage = () => {
                             <button 
                                 onClick={() => {
                                     setIsEditingUser(!isEditingUser);
-                                    // FIX: Pre-populate fields on edit
                                     if (!isEditingUser) {
                                         setName(userdetails.name);
                                         setPhone(userdetails.phone || "");
