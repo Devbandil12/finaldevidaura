@@ -15,7 +15,6 @@ const IconBtn = ({ children, onClick, title = '' }) => (
   </button>
 );
 
-// 🔹 Floating Input Component
 const FloatingInput = ({ label, value, onChange, type = "text", ...props }) => (
   <div className="relative w-full">
     <input
@@ -26,13 +25,20 @@ const FloatingInput = ({ label, value, onChange, type = "text", ...props }) => (
       className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 placeholder-transparent focus:border-black focus:ring-1 focus:ring-black focus:outline-none"
       {...props}
     />
-    <label className="absolute left-3 top-2 text-gray-500 text-sm transition-all
-      peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
-      peer-focus:top-2 peer-focus:text-sm peer-focus:text-black">
+    <label
+      className="
+        absolute left-3 
+        -top-2 bg-white px-1
+        text-gray-500 text-sm transition-all
+        peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
+        peer-focus:-top-2 peer-focus:text-sm peer-focus:text-black
+      "
+    >
       {label}
     </label>
   </div>
 );
+
 
 // 🔹 Floating Select
 const FloatingSelect = ({ label, value, onChange, options }) => (
