@@ -179,6 +179,8 @@ const UserPage = () => {
   });
   const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
+const [originalAddr, setOriginalAddr] = useState(null); 
+
 
   useEffect(() => {
     if (userdetails) {
@@ -311,7 +313,20 @@ const UserPage = () => {
                     <FloatingDropdown label="Address Type" value={newAddress.addressType} onChange={e => setNewAddress({...newAddress, addressType: e.target.value})} options={["Home","Work","Other"]} />
                     <div className="md:col-span-2 flex gap-3">
                       <button onClick={handleAddAddress} className="px-4 py-2 rounded-lg bg-black text-white">Save Address</button>
-                      <button onClick={() => setIsAddingAddress(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                      <button 
+  onClick={() => {
+    setIsAddingAddress(false);
+    setNewAddress({
+      name: '', phone: '', altPhone: '',
+      address: '', city: '', state: '', postalCode: '',
+      landmark: '', addressType: '', lat: null, lng: null
+    });
+  }} 
+  className="px-4 py-2 rounded-lg border"
+>
+  Cancel
+</button>
+
                     </div>
                   </div>
                 )}
@@ -329,7 +344,16 @@ const UserPage = () => {
                     <FloatingDropdown label="Address Type" value={editingAddr.addressType} onChange={e => setEditingAddr({...editingAddr, addressType: e.target.value})} options={["Home","Work","Other"]} />
                     <div className="md:col-span-2 flex gap-3">
                       <button onClick={handleEditAddressSave} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
-                      <button onClick={() => setEditingAddr(null)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                      <button 
+  onClick={() => {
+    setEditingAddr(originalAddr); // restore untouched values
+    setEditingAddr(null);         // close form
+    setOriginalAddr(null);        // clear backup
+  }} 
+  className="px-4 py-2 rounded-lg border"
+>
+  Cancel
+</button>
                     </div>
                   </div>
                 )}
@@ -340,7 +364,12 @@ const UserPage = () => {
                       key={addr.id}
                       addr={addr}
                       onDelete={handleDeleteAddress}
-                      onEdit={(a) => { setEditingAddr(a); setIsAddingAddress(false); window.scrollTo({top:0, behavior:'smooth'}); }}
+                      onEdit={(a) => {
+  setEditingAddr({ ...a });   // copy for editing
+  setOriginalAddr({ ...a });  // backup copy
+  setIsAddingAddress(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}}
                       onSetDefault={handleSetDefault}
                     />
                   ))}
