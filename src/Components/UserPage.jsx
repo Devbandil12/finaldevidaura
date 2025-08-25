@@ -464,9 +464,7 @@ const [originalAddr, setOriginalAddr] = useState(null);
               {/* Product Image */}
               <div className="h-40 bg-gray-100 flex items-center justify-center">
                 {p.imageUrl ? (
-                  <img
-                    src={p.imageUrl}
-                    alt={p.name}
+                  <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.name}
                     className="h-full object-contain"
                   />
                 ) : (
