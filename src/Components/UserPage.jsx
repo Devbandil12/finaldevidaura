@@ -100,24 +100,58 @@ const ProfileCard = ({ userdetails, onEdit }) => {
 };
 
 const AddressCard = ({ addr, onDelete, onEdit, onSetDefault }) => (
-  <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between gap-4">
-    <div>
+  <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+    {/* Header */}
+    <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
       <div className="flex items-center gap-2">
-        <MapPin className="w-5 h-5 text-gray-600" />
-        <div>
-          <div className="font-semibold">
-            {addr.name} {addr.isDefault && <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full">Default</span>}
-          </div>
-          <div className="text-sm text-gray-600 mt-1">{addr.address}, {addr.city}, {addr.state} - {addr.postalCode}</div>
-          <div className="text-sm text-gray-500 mt-1">Phone: {addr.phone}{addr.altPhone ? ` • Alt: ${addr.altPhone}` : ''}</div>
-        </div>
+        <MapPin className="w-5 h-5 text-gray-500" />
+        <h3 className="font-semibold text-gray-800">{addr.name}</h3>
+        {addr.addressType && (
+          <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+            {addr.addressType}
+          </span>
+        )}
+        {addr.isDefault && (
+          <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-black text-white">
+            Default
+          </span>
+        )}
       </div>
     </div>
-    <div className="flex flex-col items-end gap-2">
+
+    {/* Body */}
+    <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
+      <p className="leading-snug">
+        {addr.address}, {addr.city}, {addr.state} - {addr.postalCode}
+      </p>
+      {addr.landmark && (
+        <p className="text-gray-500 text-xs">Landmark: {addr.landmark}</p>
+      )}
+      <p className="text-gray-600">
+        📞 {addr.phone}
+        {addr.altPhone && (
+          <span className="ml-2 text-gray-500">Alt: {addr.altPhone}</span>
+        )}
+      </p>
+    </div>
+
+    {/* Footer actions */}
+    <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+      {!addr.isDefault && (
+        <button
+          onClick={() => onSetDefault(addr.id)}
+          className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+        >
+          Set Default
+        </button>
+      )}
       <div className="flex gap-2">
-        {!addr.isDefault && (<button onClick={() => onSetDefault(addr.id)} className="text-sm px-3 py-1 rounded-full border">Set Default</button>)}
-        <IconBtn onClick={() => onEdit(addr)} title="Edit"><Pencil className="w-4 h-4"/></IconBtn>
-        <IconBtn onClick={() => onDelete(addr.id)} title="Delete"><Trash2 className="w-4 h-4"/></IconBtn>
+        <IconBtn onClick={() => onEdit(addr)} title="Edit">
+          <Pencil className="w-4 h-4 text-gray-600" />
+        </IconBtn>
+        <IconBtn onClick={() => onDelete(addr.id)} title="Delete">
+          <Trash2 className="w-4 h-4 text-red-500" />
+        </IconBtn>
       </div>
     </div>
   </div>
