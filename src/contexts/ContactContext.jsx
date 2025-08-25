@@ -44,6 +44,21 @@ export const ContactProvider = ({ children }) => {
     }
   };
 
+
+    const getQueriesByUser = async (email) => {
+        if (!email) return;
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/contact/user/${email}`);
+            if (!res.ok) throw new Error("Failed to fetch user queries");
+            const data = await res.json();
+            setQueries(data); // Assuming this is for a single user's queries
+        } catch (error) {
+            console.error("❌ Failed to fetch user queries:", error);
+        }
+    };
+
+
+
   return (
     <ContactContext.Provider
       value={{ queries, setQueries, addQuery, getquery, deleteQuery }}
