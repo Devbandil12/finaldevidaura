@@ -172,7 +172,9 @@ const ProductDetail = () => {
                 </div>
               </div>
              
-              <p className="text-lg font-semibold mt-4">Status: {product.stockStatus}</p>
+                                <p className="text-sm font-normal text-red-700 mt-1">
+  {product.stockStatus}
+</p>
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-4">
