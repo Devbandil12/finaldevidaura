@@ -451,8 +451,7 @@ const navigate = useNavigate();
                 </div>
               )}
 
-              
-{activeTab === 'wishlist' && (
+             {activeTab === 'wishlist' && (
   <div>
     {/* Header row with title + button */}
     <div className="flex justify-between items-center mb-4">
@@ -468,17 +467,16 @@ const navigate = useNavigate();
     {(!wishlist || wishlist.length === 0) ? (
       <p className="text-gray-500">No items in wishlist</p>
     ) : (
-      <div className="flex flex-wrap gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {wishlist.map(item => {
           const p = findProduct(item.productId);
           if (!p) return null;
-
           const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
 
           return (
             <div
               key={item.id}
-              className="w-64 bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+              className="w-full bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
             >
               {/* Product Image */}
               <div className="h-40 bg-gray-100 flex items-center justify-center">
@@ -494,27 +492,25 @@ const navigate = useNavigate();
               </div>
 
               {/* Product Info */}
-              <div className="p-4 flex flex-col gap-3">
+              <div className="p-3 flex flex-col gap-2">
                 {/* Name + Size */}
-                <div className="flex justify-between items-center">
-                  <div className="font-medium text-gray-800 truncate">
-                    {p.name}
-                  </div>
-                  {p.size && (
-                    <div className="text-sm text-gray-500 ml-2">{p.size}ml</div>
-                  )}
+                <div className="flex justify-between items-center text-sm md:text-base">
+                  <div className="font-medium text-gray-800">{p.name}</div>
+                  {p.size && <div className="text-gray-500 ml-2">{p.size}ml</div>}
                 </div>
 
                 {/* Price + Discount */}
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-gray-500">
+                <div className="flex justify-between items-center text-sm md:text-base">
+                  <div className="text-gray-500">
                     ₹{discountedPrice}
-                    <span className="line-through ml-2 text-gray-400">
-                      ₹{p.oprice}
-                    </span>
+                    {p.discount > 0 && (
+                      <span className="line-through ml-2 text-gray-400 text-xs md:text-sm">
+                        ₹{p.oprice}
+                      </span>
+                    )}
                   </div>
                   {p.discount > 0 && (
-                    <div className="text-green-600 text-sm font-medium">
+                    <div className="text-green-600 font-medium text-xs md:text-sm">
                       {p.discount}% off
                     </div>
                   )}
@@ -535,6 +531,7 @@ const navigate = useNavigate();
     )}
   </div>
 )}
+ 
 
           </div>
         </div>
