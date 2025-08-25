@@ -1,11 +1,12 @@
 import React, { useContext } from "react";
 import "../style/wishlist.css";
 import { CartContext } from "../contexts/CartContext";
-import { CartContext } from "../contexts/productContext";
+import { ProductContext } from "../contexts/productContext";
 import { UserContext } from "../contexts/UserContext";
 import Loader from "./Loader";
 
 const Wishlist = () => {
+const { products, loading } = useContext(ProductContext);
   const {
     wishlist, // The single source of truth for the wishlist
     isWishlistLoading, // The loading state
