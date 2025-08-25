@@ -1,3 +1,4 @@
+// File: src/pages/UserPage.jsx
 import React, { useState, useContext, useEffect } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -5,306 +6,253 @@ import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import { Pencil, Trash2, Plus, MapPin, Star } from 'lucide-react';
+import { Pencil, Trash2, Plus, MapPin, Star, User, Check, X } from 'lucide-react';
 import { toast } from "react-toastify";
 
-const UserPage = () => {
-    // Destructure the new functions from UserContext
-    const { 
-        userdetails, address, updateUser, addAddress, deleteAddress,
-        getUserDetail, getUserAddress 
-    } = useContext(UserContext);
+const IconBtn = ({ children, onClick, title = '' }) => (
+  <button onClick={onClick} className="p-2 rounded-md hover:bg-gray-100 transition" title={title}>
+    {children}
+  </button>
+);
 
-    const { orders, loadingOrders, getorders } = useContext(OrderContext);
-    const { wishlist, isWishlistLoading } = useContext(CartContext);
-    const { products, loading: productsLoading } = useContext(ProductContext);
-    const { queries, getQueriesByUser } = useContext(ContactContext);
-    const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
-
-    const [isEditingUser, setIsEditingUser] = useState(false);
-    const [name, setName] = useState(userdetails?.name || "");
-    const [phone, setPhone] = useState(userdetails?.phone || "");
-    const [isAddingAddress, setIsAddingAddress] = useState(false);
-    const [newAddress, setNewAddress] = useState({
-        name: "", phone: "", address: "", city: "", state: "", postalCode: "", landmark: ""
-    });
-    const [activeTab, setActiveTab] = useState('profile');
-
-    useEffect(() => {
-        if (userdetails && getorders && getReviewsByUser && getQueriesByUser) {
-            setName(userdetails.name);
-            setPhone(userdetails.phone || "");
-            getorders();
-            getReviewsByUser();
-            getQueriesByUser(userdetails.email);
-        }
-    }, [userdetails, getorders, getReviewsByUser, getQueriesByUser]);
-
-    const findProduct = (productId) => products.find(p => p.id === productId);
-
-    const formatAddress = (addr) => `${addr.address}, ${addr.city}, ${addr.state}, ${addr.postalCode}`;
-
-    // ✅ This function now calls the context function to update user details
-    const handleUpdateUser = async () => {
-        await updateUser({ name, phone });
-        setIsEditingUser(false);
-    };
-
-    // ✅ This function now calls the context function to add a new address
-    const handleAddAddress = async () => {
-        await addAddress(newAddress);
-        setIsAddingAddress(false);
-        setNewAddress({ name: "", phone: "", address: "", city: "", state: "", postalCode: "", landmark: "" });
-    };
-
-    // ✅ This function now calls the context function to delete an address
-    const handleDeleteAddress = async (addressId) => {
-        if (window.confirm("Are you sure you want to delete this address?")) {
-            await deleteAddress(addressId);
-        }
-    };
-    
-    if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p>Loading user data...</p>
-            </div>
-        );
-    }
-
-    // Helper function to render a single tab's content
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'profile':
-                return (
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-semibold">Profile Information</h2>
-                            <button 
-                                onClick={() => {
-                                    setIsEditingUser(!isEditingUser);
-                                    if (!isEditingUser) {
-                                        setName(userdetails.name);
-                                        setPhone(userdetails.phone || "");
-                                    }
-                                }} 
-                                className="p-2 rounded-full hover:bg-gray-100 transition"
-                            >
-                                <Pencil className="h-5 w-5" />
-                            </button>
-                        </div>
-                        {isEditingUser ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" className="p-2 border rounded" />
-                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" className="p-2 border rounded" />
-                                <button onClick={handleUpdateUser} className="bg-black text-white py-2 px-4 rounded hover:bg-gray-800 transition">Save Changes</button>
-                                <button onClick={() => setIsEditingUser(false)} className="bg-gray-200 text-black py-2 px-4 rounded hover:bg-gray-300 transition">Cancel</button>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                <p><strong>Name:</strong> {userdetails.name}</p>
-                                <p><strong>Email:</strong> {userdetails.email}</p>
-                                <p><strong>Phone:</strong> {userdetails.phone || 'N/A'}</p>
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'orders':
-                return (
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-semibold mb-4">Order History</h2>
-                        {orders.length === 0 ? (
-                            <p className="text-gray-500">You have no orders yet.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {orders.map(order => (
-                                    <div key={order.id} className="border p-4 rounded-lg">
-                                        <div className="flex justify-between items-center font-medium mb-2">
-                                            <span>Order #{order.id}</span>
-                                            <span>₹{order.totalAmount}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600">Status: {order.status}</p>
-                                        <p className="text-sm text-gray-600">Placed on: {new Date(order.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'addresses':
-                return (
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-semibold">My Addresses</h2>
-                            <button onClick={() => setIsAddingAddress(!isAddingAddress)} className="p-2 rounded-full hover:bg-gray-100 transition">
-                                <Plus className="h-5 w-5" />
-                            </button>
-                        </div>
-                        {isAddingAddress && (
-                            <div className="p-4 mb-4 border rounded-lg bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input type="text" value={newAddress.name} onChange={(e) => setNewAddress({...newAddress, name: e.target.value})} placeholder="Full Name" className="p-2 border rounded" />
-                                <input type="tel" value={newAddress.phone} onChange={(e) => setNewAddress({...newAddress, phone: e.target.value})} placeholder="Phone Number" className="p-2 border rounded" />
-                                <input type="text" value={newAddress.address} onChange={(e) => setNewAddress({...newAddress, address: e.target.value})} placeholder="Address Line" className="p-2 border rounded col-span-1 md:col-span-2" />
-                                <input type="text" value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})} placeholder="City" className="p-2 border rounded" />
-                                <input type="text" value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})} placeholder="State" className="p-2 border rounded" />
-                                <input type="text" value={newAddress.postalCode} onChange={(e) => setNewAddress({...newAddress, postalCode: e.target.value})} placeholder="Postal Code" className="p-2 border rounded" />
-                                <input type="text" value={newAddress.landmark} onChange={(e) => setNewAddress({...newAddress, landmark: e.target.value})} placeholder="Landmark (Optional)" className="p-2 border rounded" />
-                                <button onClick={handleAddAddress} className="bg-black text-white py-2 px-4 rounded hover:bg-gray-800 transition col-span-2">Save Address</button>
-                            </div>
-                        )}
-                        {address.length === 0 ? (
-                            <p className="text-gray-500">You have no saved addresses.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {address.map(addr => (
-                                    <div key={addr.id} className="border p-4 rounded-lg flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-2">
-                                                <MapPin className="h-5 w-5 text-gray-600" />
-                                                <p className="font-semibold">{addr.name}</p>
-                                                {addr.isDefault && <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">Default</span>}
-                                            </div>
-                                            <p className="text-sm mt-1">{formatAddress(addr)}</p>
-                                            <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
-                                        </div>
-                                        <button onClick={() => handleDeleteAddress(addr.id)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-red-600 transition">
-                                            <Trash2 className="h-5 w-5" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'reviews':
-                return (
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-semibold mb-4">My Reviews</h2>
-                        {userReviews.length === 0 ? (
-                            <p className="text-gray-500">You have not submitted any reviews yet.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {userReviews.map(review => {
-                                    const reviewedProduct = findProduct(review.productId);
-                                    return (
-                                        <div key={review.id} className="border p-4 rounded-lg">
-                                            <p className="font-semibold mb-1">{reviewedProduct ? reviewedProduct.name : "Product not found"}</p>
-                                            <div className="flex items-center mb-2">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                                                ))}
-                                            </div>
-                                            <p className="text-gray-700">{review.comment}</p>
-                                            <p className="text-xs text-gray-500 mt-2">Reviewed on {new Date(review.createdAt).toLocaleDateString()}</p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'queries':
-                return (
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-semibold mb-4">My Queries</h2>
-                        {queries.length === 0 ? (
-                            <p className="text-gray-500">You have not submitted any queries yet.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {queries.map((query, index) => (
-                                    <div key={index} className="border p-4 rounded-lg">
-                                        <p className="font-semibold mb-1">Message:</p>
-                                        <p className="text-gray-700">{query.message}</p>
-                                        <p className="text-xs text-gray-500 mt-2">Submitted on: {query.createdAt}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                );
-            case 'wishlist':
-                return (
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-semibold mb-4">My Wishlist</h2>
-                        {wishlist.length === 0 ? (
-                            <p className="text-gray-500">Your wishlist is empty.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {wishlist.map(item => {
-                                    const product = findProduct(item.productId);
-                                    if (!product) return null;
-                                    const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
-                                    return (
-                                        <div key={item.id} className="border rounded-lg overflow-hidden flex flex-col items-center p-4 text-center">
-                                            <img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="h-32 w-32 object-contain mb-2" />
-                                            <p className="font-medium">{product.name}</p>
-                                            <p className="text-sm text-gray-600">₹{discountedPrice} <span className="line-through text-gray-400">₹{product.oprice}</span></p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-100 p-4 md:p-8 pt-[60px] text-gray-900">
-            <div className="max-w-7xl mx-auto space-y-8">
-                <h1 className="text-4xl font-bold border-b pb-4">My Account</h1>
-
-                {/* Tab Navigation */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                    <div className="flex justify-between items-center border-b border-gray-200">
-                        <button 
-                            onClick={() => setActiveTab('profile')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'profile' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Profile
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('orders')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'orders' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Orders
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('addresses')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'addresses' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Addresses
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('reviews')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'reviews' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Reviews
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('queries')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'queries' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Queries
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('wishlist')} 
-                            className={`flex-1 text-center py-3 font-semibold text-lg transition-colors border-b-2 ${activeTab === 'wishlist' ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Wishlist
-                        </button>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="mt-6">
-                        {renderContent()}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+const ProfileCard = ({ userdetails, onEdit }) => {
+  const initials = userdetails?.name?.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() || 'U';
+  return (
+    <div className="bg-white rounded-2xl shadow-soft p-6 flex flex-col items-center text-center">
+      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-100 to-white flex items-center justify-center text-2xl font-semibold text-gray-800 shadow-inner">
+        <User className="absolute w-10 h-10 text-gray-300" />
+        <span className="z-10">{initials}</span>
+      </div>
+      <h3 className="mt-4 text-xl font-semibold">{userdetails.name}</h3>
+      <p className="text-sm text-gray-500">{userdetails.email}</p>
+      <p className="mt-2 text-sm text-gray-600">{userdetails.phone || 'Phone not set'}</p>
+      <div className="mt-4 flex gap-3">
+        <IconBtn onClick={onEdit} title="Edit profile"><Pencil className="w-4 h-4"/></IconBtn>
+      </div>
+    </div>
+  );
 };
 
-export default UserPage;
+const AddressCard = ({ addr, onDelete, onEdit, onSetDefault }) => (
+  <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between gap-4">
+    <div>
+      <div className="flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-gray-600" />
+        <div>
+          <div className="font-semibold">{addr.name} {addr.isDefault && <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full">Default</span>}</div>
+          <div className="text-sm text-gray-600 mt-1">{addr.address}, {addr.city}, {addr.state} - {addr.postalCode}</div>
+          <div className="text-sm text-gray-500 mt-1">Phone: {addr.phone}{addr.altPhone ? ` • Alt: ${addr.altPhone}` : ''}</div>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex gap-2">
+        {!addr.isDefault && (<button onClick={() => onSetDefault(addr.id)} className="text-sm px-3 py-1 rounded-full border">Set Default</button>)}
+        <IconBtn onClick={() => onEdit(addr)} title="Edit"><Pencil className="w-4 h-4"/></IconBtn>
+        <IconBtn onClick={() => onDelete(addr.id)} title="Delete"><Trash2 className="w-4 h-4"/></IconBtn>
+      </div>
+    </div>
+  </div>
+);
+
+const UserPage = () => {
+  const { 
+    userdetails, address, updateUser, addAddress, editAddress, deleteAddress, setDefaultAddress
+  } = useContext(UserContext);
+
+  const { orders, loadingOrders, getorders } = useContext(OrderContext);
+  const { wishlist, isWishlistLoading } = useContext(CartContext);
+  const { products, loading: productsLoading } = useContext(ProductContext);
+  const { queries, getQueriesByUser } = useContext(ContactContext);
+  const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
+
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({ name: '', phone: '', address: '', city: '', state: '', postalCode: '', landmark: '', altPhone: '' });
+  const [activeTab, setActiveTab] = useState('profile');
+  const [editingAddr, setEditingAddr] = useState(null);
+
+  useEffect(() => {
+    if (userdetails) {
+      setName(userdetails.name || '');
+      setPhone(userdetails.phone || '');
+      getorders && getorders();
+      getReviewsByUser && getReviewsByUser();
+      getQueriesByUser && getQueriesByUser(userdetails.email);
+    }
+  }, [userdetails]);
+
+  const findProduct = (productId) => products?.find(p => p.id === productId);
+
+  const formatAddress = (addr) => `${addr.address}, ${addr.city}, ${addr.state}, ${addr.postalCode}`;
+
+  const handleUpdateUser = async () => {
+    if (!name) return toast.error('Name is required');
+    const updated = await updateUser({ name, phone });
+    if (updated) {
+      toast.success('Profile updated');
+      setIsEditingUser(false);
+    } else {
+      toast.error('Failed to update profile');
+    }
+  };
+
+  const handleAddAddress = async () => {
+    if (!newAddress.name || !newAddress.address || !newAddress.city || !newAddress.postalCode || !newAddress.phone) return toast.error('Please fill required address fields');
+    const created = await addAddress(newAddress);
+    if (created) {
+      toast.success('Address added');
+      setIsAddingAddress(false);
+      setNewAddress({ name: '', phone: '', address: '', city: '', state: '', postalCode: '', landmark: '', altPhone: '' });
+    } else {
+      toast.error('Failed to add address');
+    }
+  };
+
+  const handleEditAddressSave = async () => {
+    if (!editingAddr) return;
+    const required = editingAddr.name && editingAddr.address && editingAddr.city && editingAddr.postalCode && editingAddr.phone;
+    if (!required) return toast.error('Please fill required address fields');
+    const updated = await editAddress(editingAddr.id, editingAddr);
+    if (updated) {
+      toast.success('Address updated');
+      setEditingAddr(null);
+    } else {
+      toast.error('Failed to update address');
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm('Remove this address?')) return;
+    const ok = await deleteAddress(addressId);
+    if (ok) toast.success('Address removed'); else toast.error('Failed to delete');
+  };
+
+  const handleSetDefault = async (addressId) => {
+    const updated = await setDefaultAddress(addressId);
+    if (updated) toast.success('Default address set'); else toast.error('Failed to set default');
+  };
+
+  if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading user data...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Left: Profile Card */}
+        <div className="lg:col-span-1">
+          <ProfileCard userdetails={userdetails} onEdit={() => setIsEditingUser(true)} />
+
+          {/* Quick stats or actions */}
+          <div className="mt-6 bg-white p-4 rounded-xl shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500">Orders</div>
+                <div className="font-semibold">{orders?.length || 0}</div>
+              </div>
+              <div>
+                <div className="text-sm text-gray-500">Wishlist</div>
+                <div className="font-semibold">{wishlist?.length || 0}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Tabs and content */}
+        <div className="lg:col-span-3">
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <div className="flex flex-wrap gap-2 mb-6">
+              {['profile','orders','addresses','reviews','queries','wishlist'].map(t => (
+                <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full text-sm font-medium ${activeTab === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div>
+              {activeTab === 'profile' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {isEditingUser ? (
+                    <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input className="p-3 rounded-lg border" value={name} onChange={e => setName(e.target.value)} />
+                        <input className="p-3 rounded-lg border" value={phone} onChange={e => setPhone(e.target.value)} />
+                        <div className="flex gap-3 mt-2">
+                          <button onClick={handleUpdateUser} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
+                          <button onClick={() => setIsEditingUser(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-lg bg-gray-50">
+                      <h3 className="text-lg font-semibold">Profile Information</h3>
+                      <p className="text-sm text-gray-600 mt-2">Name: {userdetails.name}</p>
+                      <p className="text-sm text-gray-600">Email: {userdetails.email}</p>
+                      <p className="text-sm text-gray-600">Phone: {userdetails.phone || 'N/A'}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'orders' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Order History</h2>
+                  {orders.length === 0 ? <p className="text-gray-500">No orders yet</p> : (
+                    <div className="space-y-4">
+                      {orders.map(o => (
+                        <div key={o.id} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">Order #{o.id}</div>
+                            <div className="text-sm text-gray-500">Placed on {new Date(o.createdAt).toLocaleDateString()}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">₹{o.totalAmount}</div>
+                            <div className="text-sm text-gray-500">{o.status}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'addresses' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold">My Addresses</h2>
+                    <button onClick={() => { setIsAddingAddress(!isAddingAddress); setEditingAddr(null); }} className="px-3 py-2 rounded-full bg-gray-100">
+                      <Plus className="w-4 h-4" /> Add
+                    </button>
+                  </div>
+
+                  {isAddingAddress && (
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input value={newAddress.name} onChange={e => setNewAddress({...newAddress, name: e.target.value})} placeholder="Full name" className="p-3 rounded-lg border" />
+                      <input value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} placeholder="Phone" className="p-3 rounded-lg border" />
+                      <input value={newAddress.address} onChange={e => setNewAddress({...newAddress, address: e.target.value})} placeholder="Address line" className="p-3 rounded-lg border md:col-span-2" />
+                      <input value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} placeholder="City" className="p-3 rounded-lg border" />
+                      <input value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="State" className="p-3 rounded-lg border" />
+                      <input value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} placeholder="Postal code" className="p-3 rounded-lg border" />
+                      <input value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} placeholder="Landmark (optional)" className="p-3 rounded-lg border" />
+                      <div className="md:col-span-2 flex gap-3">
+                        <button onClick={handleAddAddress} className="px-4 py-2 rounded-lg bg-black text-white">Save Address</button>
+                        <button onClick={() => setIsAddingAddress(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Edit address inline */}
+                  {editingAddr && (
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input value={editingAddr.name} onChange={e => setEditingAddr({...editingAddr, name: e.target.value})} placeholder="Full name" className="p-3 rounded-lg border" />
+                      <input value={editingAddr.phone} onChange={e => setEditingAddr({...editingAddr, phone: e.target.value})} placeholder="Phone" className="p-3 rounded-lg border" />
+                      <input value={editingAddr.address} onChange={e => setEditingAddr({...editingAddr, address: e.target.value})} placeholder="Address line" className="p-3 rounded-lg border md:col-span-2" />
+                      <input value={editingAddr.city} onChange={e => setEditingAddr({...editingAddr, city: e.target.value})} placeholder="City" className="p-
