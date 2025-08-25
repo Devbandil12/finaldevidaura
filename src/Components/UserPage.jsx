@@ -6,7 +6,7 @@ import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import { Pencil, Trash2, Plus, MapPin, User, Star } from 'lucide-react';
+import { Pencil, Trash2, Plus, MapPin, User, Star, HeartOff } from 'lucide-react';
 import { toast } from "react-toastify";
 
 const IconBtn = ({ children, onClick, title = '' }) => (
@@ -446,27 +446,60 @@ const [originalAddr, setOriginalAddr] = useState(null);
                 </div>
               )}
 
-              {activeTab === 'wishlist' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Wishlist</h2>
-                  {wishlist.length === 0 ? <p className="text-gray-500">Empty</p> : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {wishlist.map(item => {
-                        const p = findProduct(item.productId);
-                        if (!p) return null;
-                        const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
-                        return (
-                          <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm text-center">
-                            <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.name} className="h-32 w-full object-contain mb-3" />
-                            <div className="font-medium">{p.name}</div>
-                            <div className="text-sm text-gray-500">₹{discountedPrice} <span className="line-through text-gray-300">₹{p.oprice}</span></div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+              
+{activeTab === 'wishlist' && (
+  <div>
+    <h2 className="text-xl font-semibold mb-4">My Wishlist</h2>
+    {(!wishlist || wishlist.length === 0) ? (
+      <p className="text-gray-500">No items in wishlist</p>
+    ) : (
+      <div className="flex flex-wrap gap-6">
+        {wishlist.map(item => {
+          const p = findProduct(item.productId);
+          if (!p) return null;
+
+          return (
+            <div
+              key={item.id}
+              className="w-64 bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
+            >
+              {/* Product Image */}
+              <div className="h-40 bg-gray-100 flex items-center justify-center">
+                {p.imageUrl ? (
+                  <img
+                    src={p.imageUrl}
+                    alt={p.name}
+                    className="h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-gray-400">No Image</div>
+                )}
+              </div>
+
+              {/* Product Info */}
+              <div className="p-4 flex flex-col gap-2">
+                <div className="font-medium text-gray-800 truncate">
+                  {p.name}
                 </div>
-              )}
+                <div className="text-sm text-gray-500">₹{p.price}</div>
+
+                {/* Actions */}
+                <button
+                  onClick={() => removeFromWishlist(item.id)}
+                  className="mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition"
+                >
+                  <HeartOff size={16} />
+                  Remove
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+)}
+
           </div>
         </div>
       </div>
