@@ -78,7 +78,9 @@ const Wishlist = () => {
                         <span className="wl-off">{item.discount}% OFF</span>
                       )}
                     </div>
-
+                  <p className="text-sm font-normal text-red-700 mt-1">
+  {product.stockStatus}
+</p>
                     <div className="wl-actions">
                       <button
                         className="wl-btn primary"
