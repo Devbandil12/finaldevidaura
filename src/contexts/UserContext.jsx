@@ -115,7 +115,6 @@ const editAddress = useCallback(async (addressId, updatedFields) => {
     const data = await res.json();
     if (data.success) {
       await getUserAddress();
-      );
       return data.data;
     }
     return null;
@@ -152,7 +151,7 @@ const setDefaultAddress = useCallback(async (addressId) => {
     const data = await res.json();
     if (data.success) {
       await getUserAddress();
-      );
+      
       return data.data;
     }
     return null;
