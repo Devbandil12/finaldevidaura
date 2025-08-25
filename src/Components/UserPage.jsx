@@ -83,19 +83,149 @@ const FloatingDropdown = ({ label, value, onChange, options }) => {
 };
 
 
-const ProfileCard = ({ userdetails, onEdit }) => {
-  const initials = userdetails?.name?.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() || 'U';
+const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const names = userdetails?.name?.split(' ') || ['U'];
+  const firstLetter = names[0]?.charAt(0).toUpperCase();
+  const lastLetter = names[1]?.charAt(0).toUpperCase() || '';
+
+  const getRandomLightColor = (seed) => {
+    const colors = ["#fef3c7", "#dbeafe", "#dcfce7", "#fef2f2", "#ede9fe", "#fff7ed", "#fefce8", "#f0fdfa"];
+    const index = seed ? seed.charCodeAt(0) % colors.length : Math.floor(Math.random() * colors.length);
+    return colors[index];
+  };
+  const color1 = getRandomLightColor(firstLetter);
+  const color2 = getRandomLightColor(lastLetter || firstLetter);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => setPreviewImage(reader.result);
+    reader.readAsDataURL(file);
+
+    if (onProfileImageChange) onProfileImageChange(file);
+    setDropdownOpen(false);
+  };
+
+  const handleRemoveImage = () => {
+    setPreviewImage(null);
+    if (onProfileImageChange) onProfileImageChange(null);
+    setDropdownOpen(false);
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-soft p-6 flex flex-col items-center text-center">
-      <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-100 to-white flex items-center justify-center text-2xl font-semibold text-gray-800 shadow-inner relative">
-        <User className="absolute w-10 h-10 text-gray-300" />
-        <span className="z-10">{initials}</span>
+    <div className="bg-white rounded-2xl shadow-soft p-6 flex flex-col items-center text-center relative">
+      {/* Profile Image / Initials */}
+      <div
+        className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-semibold shadow-inner relative overflow-hidden"
+      >
+        {previewImage || userdetails?.profileImage ? (
+          <img
+            src={previewImage || userdetails.profileImage}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center rounded-full">
+            <span className="flex w-full h-full">
+              <span className="w-1/2 h-full flex items-center justify-center" style={{ backgroundColor: color1 }}>
+                {firstLetter}
+              </span>
+              <span className="w-1/2 h-full flex items-center justify-center" style={{ backgroundColor: color2 }}>
+                {lastLetter}
+              </span>
+            </span>
+          </div>
+        )}
       </div>
+
       <h3 className="mt-4 text-xl font-semibold">{userdetails.name}</h3>
       <p className="text-sm text-gray-500">{userdetails.email}</p>
       <p className="mt-2 text-sm text-gray-600">{userdetails.phone || 'Phone not set'}</p>
-      <div className="mt-4 flex gap-3">
-        <IconBtn onClick={onEdit} title="Edit profile"><Pencil className="w-4 h-4"/></IconBtn>
+
+      {/* Edit Dropdown */}
+      <div className="mt-4 relative">
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="p-2 rounded-md hover:bg-gray-100 transition flex items-center gap-1"
+        >
+          <Pencil className="w-4 h-4"/>
+          <span className="text-sm">Edit</span>
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute top-full mt-2 right-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-20">
+            <button
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
+              onClick={() => fileInputRef.current.click()}
+            >
+              Add / Change Profile Picture
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition"
+              onClick={handleRemoveImage}
+            >
+              Remove Profile Picture
+            </button>
+          </div>
+        )}
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+      </div>
+
+      {/* Wishlist & Cart Summary */}
+      <div className="mt-6 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Wishlist */}
+        <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
+          <div className="flex -space-x-2 mb-2">
+            {wishlist.slice(0,3).map(p => (
+              <img
+                key={p.id}
+                src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
+                className="w-10 h-10 rounded-lg border"
+                alt={p.name}
+              />
+            ))}
+          </div>
+          <div className="text-sm text-gray-700">{wishlist.length} items</div>
+          <button
+            onClick={() => navigate("/wishlist")}
+            className="mt-2 px-3 py-1.5 bg-gray-800 text-white rounded-xl text-xs hover:bg-gray-700 transition"
+          >
+            View Wishlist
+          </button>
+        </div>
+
+        {/* Cart */}
+        <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
+          <div className="flex -space-x-2 mb-2">
+            {cart.slice(0,3).map(p => (
+              <img
+                key={p.id}
+                src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
+                className="w-10 h-10 rounded-lg border"
+                alt={p.name}
+              />
+            ))}
+          </div>
+          <div className="text-sm text-gray-700">{cart.length} items</div>
+          <button
+            onClick={() => navigate("/cart")}
+            className="mt-2 px-3 py-1.5 bg-gray-800 text-white rounded-xl text-xs hover:bg-gray-700 transition"
+          >
+            Go to Cart
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -260,14 +390,22 @@ const navigate = useNavigate();
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Profile Card */}
         <div className="lg:col-span-1">
-          <ProfileCard userdetails={userdetails} onEdit={() => setIsEditingUser(true)} />
+          <ProfileCard
+  userdetails={userdetails}
+  onEdit={() => setIsEditingUser(true)}
+  wishlist={wishlist}        // array of wishlist items
+  cart={cart}                // array of cart items
+  navigate={navigate}        // react-router navigate function
+  onProfileImageChange={handleProfileImageChange} // optional handler for uploading/removing profile pic
+/>
+
         </div>
 
         {/* Main Tabs */}
         <div className="lg:col-span-3">
           <div className="bg-white p-6 rounded-2xl shadow-md">
             <div className="flex flex-wrap gap-2 mb-6">
-              {['profile','orders','addresses','reviews','queries','wishlist'].map(t => (
+              {['profile','orders','addresses','reviews','queries'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full text-sm font-medium ${activeTab === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -450,89 +588,6 @@ const navigate = useNavigate();
                   )}
                 </div>
               )}
-
-             {activeTab === 'wishlist' && (
-  <div>
-    {/* Header row with title + button */}
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-semibold">My Wishlist</h2>
-      <button
-        onClick={() => navigate("/wishlist")}
-        className="px-4 py-2 text-sm rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition"
-      >
-        View All
-      </button>
-    </div>
-
-    {(!wishlist || wishlist.length === 0) ? (
-      <p className="text-gray-500">No items in wishlist</p>
-    ) : (
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {wishlist.map(item => {
-          const p = findProduct(item.productId);
-          if (!p) return null;
-          const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
-
-          return (
-            <div
-              key={item.id}
-              className="w-full bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden"
-            >
-              {/* Product Image */}
-              <div className="h-40 bg-gray-100 flex items-center justify-center">
-                {p.imageurl ? (
-                  <img
-                    src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
-                    alt={p.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-gray-400">No Image</div>
-                )}
-              </div>
-
-              {/* Product Info */}
-              <div className="p-3 flex flex-col gap-2">
-                {/* Name + Size */}
-                <div className="flex justify-between items-center text-sm md:text-base">
-                  <div className="font-medium text-gray-800">{p.name}</div>
-                  {p.size && <div className="text-gray-500 ml-2">{p.size}ml</div>}
-                </div>
-
-                {/* Price + Discount */}
-                <div className="flex justify-between items-center text-sm md:text-base">
-                  <div className="text-gray-500">
-                    ₹{discountedPrice}
-                    {p.discount > 0 && (
-                      <span className="line-through ml-2 text-gray-400 text-xs md:text-sm">
-                        ₹{p.oprice}
-                      </span>
-                    )}
-                  </div>
-                  {p.discount > 0 && (
-                    <div className="text-green-600 font-medium text-xs md:text-sm">
-                      {p.discount}% off
-                    </div>
-                  )}
-                </div>
-
-                {/* View Product Button */}
-                <button
-                  onClick={() => navigate(`/product/${p.id}`)}
-                  className="mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
-                >
-                  View Product
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-)}
- 
-
           </div>
         </div>
       </div>
