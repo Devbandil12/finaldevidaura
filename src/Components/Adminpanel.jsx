@@ -137,24 +137,34 @@ const AdminPanel = () => {
 
   // --- Functions (existing) ---
   const handleProductUpdate = async () => {
-    setLoading(true);
-    try {
-      await updateProduct(editingProduct.id, {
-        ...editingProduct,
-        discount: Number(editingProduct.discount),
-        oprice: Number(editingProduct.oprice),
-        size: Number(editingProduct.size),
-        quantity: Number(editingProduct.quantity),
-      });
-      setEditingProduct(null);
-      toast.success("Product updated successfully!");
-    } catch (error) {
-      console.error("❌ Error updating product:", error);
-      toast.error("Failed to update product.");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    // Create a new object to hold the updated data
+    let updatedData = {
+      ...editingProduct,
+      discount: Number(editingProduct.discount),
+      oprice: Number(editingProduct.oprice),
+      size: Number(editingProduct.size),
+      quantity: Number(editingProduct.quantity),
+      stock: Number(editingProduct.stock) // Ensure stock is a number
+    };
+
+    // Check if imageurl is a string (indicating a single new image from the file input)
+    if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
+      // Convert the single image URL into an array
+      updatedData.imageurl = [updatedData.imageurl];
     }
-  };
+    
+    await updateProduct(updatedData.id, updatedData);
+    setEditingProduct(null);
+    toast.success("Product updated successfully!");
+  } catch (error) {
+    console.error("❌ Error updating product:", error);
+    toast.error("Failed to update product.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleProductDelete = async (productId) => {
     const confirmation = window.confirm("Are you sure you want to delete this product?");
