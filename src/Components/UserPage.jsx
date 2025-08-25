@@ -71,7 +71,19 @@ const UserPage = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isAddingAddress, setIsAddingAddress] = useState(false);
-  const [newAddress, setNewAddress] = useState({ name: '', phone: '', address: '', city: '', state: '', postalCode: '', landmark: '', altPhone: '' });
+  const [newAddress, setNewAddress] = useState({
+   name: '',
+   phone: '',
+   altPhone: '',
+   address: '',
+   city: '',
+   state: '',
+   postalCode: '',
+   landmark: '',
+   addressType: '', 
+   lat: null,
+   lng: null,
+ });
   const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
 
@@ -242,6 +254,17 @@ const UserPage = () => {
                       <input value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} placeholder="State" className="p-3 rounded-lg border" />
                       <input value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} placeholder="Postal code" className="p-3 rounded-lg border" />
                       <input value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} placeholder="Landmark (optional)" className="p-3 rounded-lg border" />
+                     <select
+  value={newAddress.addressType}
+  onChange={(e) => setNewAddress({ ...newAddress, addressType: e.target.value })}
+  className="p-3 rounded-lg border"
+>
+  <option value="">Select type</option>
+  <option value="Home">Home</option>
+  <option value="Work">Work</option>
+  <option value="Other">Other</option>
+</select>
+
                       <div className="md:col-span-2 flex gap-3">
                         <button onClick={handleAddAddress} className="px-4 py-2 rounded-lg bg-black text-white">Save Address</button>
                         <button onClick={() => setIsAddingAddress(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
@@ -259,6 +282,17 @@ const UserPage = () => {
                       <input value={editingAddr.state} onChange={e => setEditingAddr({...editingAddr, state: e.target.value})} placeholder="State" className="p-3 rounded-lg border" />
                       <input value={editingAddr.postalCode} onChange={e => setEditingAddr({...editingAddr, postalCode: e.target.value})} placeholder="Postal code" className="p-3 rounded-lg border" />
                       <input value={editingAddr.landmark} onChange={e => setEditingAddr({...editingAddr, landmark: e.target.value})} placeholder="Landmark (optional)" className="p-3 rounded-lg border" />
+                     <select
+  value={editingAddr.addressType}
+  onChange={(e) => setEditingAddr({ ...editingAddr, addressType: e.target.value })}
+  className="p-3 rounded-lg border"
+>
+  <option value="">Select type</option>
+  <option value="Home">Home</option>
+  <option value="Work">Work</option>
+  <option value="Other">Other</option>
+</select>
+
                       <div className="md:col-span-2 flex gap-3">
                         <button onClick={handleEditAddressSave} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
                         <button onClick={() => setEditingAddr(null)} className="px-4 py-2 rounded-lg border">Cancel</button>
