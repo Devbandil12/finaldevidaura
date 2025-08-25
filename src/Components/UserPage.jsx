@@ -167,11 +167,15 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
               Add / Change Profile Picture
             </button>
             <button
-              className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition"
-              onClick={handleRemoveImage}
-            >
-              Remove Profile Picture
-            </button>
+  className={`w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition ${
+    !previewImage && !userdetails?.profileImage ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+  onClick={handleRemoveImage}
+  disabled={!previewImage && !userdetails?.profileImage}
+>
+  Remove Profile Picture
+</button>
+
           </div>
         )}
         <input
