@@ -38,31 +38,38 @@ const FloatingInput = ({ label, value, onChange, type = "text", id, className = 
   </div>
 );
 
-// 🔹 Custom Floating Dropdown
+// 🔹 Custom Floating Dropdown (modern styled)
 const FloatingDropdown = ({ label, value, onChange, options }) => {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="relative w-full">
+      {/* Trigger */}
       <div
         onClick={() => setOpen(!open)}
-        className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 cursor-pointer focus-within:border-black focus-within:ring-1 focus-within:ring-black"
+        className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 cursor-pointer bg-white focus-within:border-black focus-within:ring-1 focus-within:ring-black"
       >
-        <span>{value || ""}</span>
+        <span className={`${!value ? "text-gray-400" : ""}`}>
+          {value || "Select..."}
+        </span>
       </div>
+
+      {/* Floating Label */}
       <label
         className="absolute left-3 -top-2 bg-white px-1 text-gray-500 text-sm transition-all pointer-events-none"
       >
         {label}
       </label>
 
+      {/* Dropdown Menu */}
       {open && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-fadeIn">
           {options.map(opt => (
             <div
               key={opt}
               onClick={() => { onChange({ target: { value: opt } }); setOpen(false); }}
-              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+              className={`px-4 py-2 text-sm cursor-pointer transition 
+                ${value === opt ? "bg-black text-white" : "hover:bg-gray-100 text-gray-700"}`}
             >
               {opt}
             </div>
@@ -72,6 +79,7 @@ const FloatingDropdown = ({ label, value, onChange, options }) => {
     </div>
   );
 };
+
 
 const ProfileCard = ({ userdetails, onEdit }) => {
   const initials = userdetails?.name?.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() || 'U';
