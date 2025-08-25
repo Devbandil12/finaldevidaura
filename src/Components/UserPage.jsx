@@ -8,6 +8,8 @@ import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import { Pencil, Trash2, Plus, MapPin, User, Star, HeartOff } from 'lucide-react';
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+
 
 const IconBtn = ({ children, onClick, title = '' }) => (
   <button onClick={onClick} className="p-2 rounded-md hover:bg-gray-100 transition" title={title}>
@@ -182,6 +184,9 @@ const findProduct = (id) => products.find(p => p.id === id);
   const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
 const [originalAddr, setOriginalAddr] = useState(null); 
+
+
+const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -449,7 +454,17 @@ const [originalAddr, setOriginalAddr] = useState(null);
               
 {activeTab === 'wishlist' && (
   <div>
-    <h2 className="text-xl font-semibold mb-4">My Wishlist</h2>
+    {/* Header row with title + button */}
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-semibold">My Wishlist</h2>
+      <button
+        onClick={() => navigate("/wishlist")}
+        className="px-4 py-2 text-sm rounded-xl bg-gray-800 text-white hover:bg-gray-700 transition"
+      >
+        View All
+      </button>
+    </div>
+
     {(!wishlist || wishlist.length === 0) ? (
       <p className="text-gray-500">No items in wishlist</p>
     ) : (
@@ -458,7 +473,6 @@ const [originalAddr, setOriginalAddr] = useState(null);
           const p = findProduct(item.productId);
           if (!p) return null;
 
-          // Correct discounted price
           const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
 
           return (
@@ -480,26 +494,38 @@ const [originalAddr, setOriginalAddr] = useState(null);
               </div>
 
               {/* Product Info */}
-              <div className="p-4 flex flex-col gap-2">
-                <div className="font-medium text-gray-800 truncate">
-                  {p.name}
-                </div>
-
-                {/* Show discounted & original price */}
-                <div className="text-sm text-gray-500">
-                  <span className="font-semibold text-gray-800">₹{discountedPrice}</span>
-                  {p.discount > 0 && (
-                    <span className="ml-2 line-through text-gray-400">₹{p.oprice}</span>
+              <div className="p-4 flex flex-col gap-3">
+                {/* Name + Size */}
+                <div className="flex justify-between items-center">
+                  <div className="font-medium text-gray-800 truncate">
+                    {p.name}
+                  </div>
+                  {p.size && (
+                    <div className="text-sm text-gray-500 ml-2">{p.size}</div>
                   )}
                 </div>
 
-                {/* Actions */}
+                {/* Price + Discount */}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-500">
+                    ₹{discountedPrice}
+                    <span className="line-through ml-2 text-gray-400">
+                      ₹{p.oprice}
+                    </span>
+                  </div>
+                  {p.discount > 0 && (
+                    <div className="text-green-600 text-sm font-medium">
+                      {p.discount}%
+                    </div>
+                  )}
+                </div>
+
+                {/* View Product Button */}
                 <button
-                  onClick={() => removeFromWishlist(item.id)}
-                  className="mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition"
+                  onClick={() => navigate(`/product/${p.id}`)}
+                  className="mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
                 >
-                  <HeartOff size={16} />
-                  Remove
+                  View Product
                 </button>
               </div>
             </div>
