@@ -163,29 +163,6 @@ const setDefaultAddress = useCallback(async (addressId) => {
   }
 }, [BACKEND_URL]);
 
-// Set Default Address (match Checkout)
-const setDefaultAddress = useCallback(async (addressId) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
-      method: "PUT",
-    });
-    const data = await res.json();
-    if (data.success) {
-      // Update local addresses: mark selected as default, others false
-      setAddress((prev) =>
-        prev.map((a) => ({
-          ...a,
-          isDefault: a._id === addressId,
-        }))
-      );
-      return data.data;
-    }
-    return null;
-  } catch (error) {
-    console.error("❌ Failed to set default address:", error);
-    return null;
-  }
-}, [BACKEND_URL]);
 
 
 
