@@ -133,7 +133,7 @@ const deleteAddress = useCallback(async (addressId) => {
     });
     const data = await res.json();
     if (data.success) {
-      await getUserAddress()
+      await getUserAddress();
       return true;
     }
     return false;
