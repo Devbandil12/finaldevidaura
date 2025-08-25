@@ -355,6 +355,7 @@ const AdminPanel = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size (ml)</th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -367,7 +368,14 @@ const AdminPanel = () => {
                           <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td> 
+                         <td className="px-6 py-4 whitespace-nowrap">
+  <input
+    type="number"
+    value={editingProduct.stock}
+    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })}
+    className="border rounded px-2 py-1 w-16"
+  /></td>
                           <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button><button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button></td>
                         </tr>
                       ) : (
@@ -378,6 +386,7 @@ const AdminPanel = () => {
                           <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
+              v.         <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
                           <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct(product)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
                         </tr>
                       )
