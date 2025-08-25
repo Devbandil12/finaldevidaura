@@ -161,35 +161,70 @@ const ShoppingCart = () => {
   };
 
   const renderRemainingProducts = () =>
-    !isBuyNowActive &&
-    products
-      .filter((p) => !cart.some((c) => c.product?.id === p.id))
-      .map((product) => {
-        const price = Math.trunc(
-          product.oprice * (1 - product.discount / 100)
-        );
-        return (
-          <div key={product.id} className="remaining-product-item">
-            <img src={product.imageurl[0]} alt={product.name} />
-            <div className="r-product-title">
-              <h3>{product.name}</h3>
-              <span>{product.size} ml</span>
+  !isBuyNowActive &&
+  products
+    .filter((p) => !cart.some((c) => c.product?.id === p.id))
+    .map((product) => {
+      const price = Math.trunc(
+        product.oprice * (1 - product.discount / 100)
+      );
+      return (
+        <div
+          className="product-card w-72 rounded-lg bg-white overflow-hidden"
+          key={product.id}
+        >
+          <div className="product-thumb">
+            <img
+              src={product.imageurl[0]}
+              alt={product.name}
+              className="product-img"
+              data-product-id={product.id}
+              onClick={() => navigate(`/product/${product.id}`)}
+            />
+            <div
+              className="img-overlay"
+              onClick={() => navigate(`/product/${product.id}`)}
+            >
+              <span className="overlay-text">Quick View</span>
             </div>
-            <div className="product-price">
-              <div className="price">
-                <span style={{ color: "green", fontWeight: "bold" }}>
-                  ₹{price}
-                </span>
-                <span className="old-price">₹{product.oprice}</span>
-              </div>
-              <span className="discount">{product.discount}% Off</span>
+          </div>
+
+          <div className="p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-start">
+              <h3
+                className="text-lg font-semibold cursor-pointer hover:underline"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                {product.name}
+              </h3>
+              {/* Note: Wishlist icon is not included here to keep it simple. */}
             </div>
-            <HeroButton className="add-to-cart" onClick={() => addToCart(product, 1)}>
+
+            <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+              <p>Rs {price}</p>
+              <p className="line-through-price text-gray-400">
+                Rs {product.oprice}
+              </p>
+              <span className="text-xs text-green-600 font-semibold">
+                ({product.discount}% OFF)
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-400">{product.description}</p>
+          </div>
+
+          <div className="p-4 pt-0">
+            <HeroButton
+              onClick={() => addToCart(product, 1)}
+              className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+            >
               Add to Cart
+              <img src="/src/assets/cart-svgrepo-com copy.svg" alt="Cart" className="w-7 h-7" />
             </HeroButton>
           </div>
-        );
-      });
+        </div>
+      );
+    });
 
   const activeCart = itemsToRender;
   const totalOriginal = activeCart.reduce(
