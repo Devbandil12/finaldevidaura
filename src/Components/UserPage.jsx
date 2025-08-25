@@ -6,7 +6,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import { Pencil, Trash2, Plus, MapPin, Star } from 'lucide-react';
-
+import { toast } from "react-toastify";
 
 const UserPage = () => {
     // Destructure the new functions from UserContext
