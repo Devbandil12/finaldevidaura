@@ -21,7 +21,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     discount: 0,
     oprice: 0,
     size: 0,
-    quantity: 1,
+    stock: 0,
   });
 
   const handleChange = (e) => {
@@ -29,7 +29,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     setProduct({
       ...product,
       [name]:
-        ["discount", "oprice", "size", "quantity"].includes(name)
+        ["discount", "oprice", "size", "stock"].includes(name)
           ? Number(value) || 0
           : value,
     });
@@ -75,13 +75,19 @@ const ImageUploadModal = ({ isopen, onClose }) => {
       "discount",
       "oprice",
       "size",
-      "quantity",
+      "stock",
     ];
     for (const f of required) {
       if (!product[f] || product[f] === 0) {
         return toast.error(`Please fill in '${f}'`);
       }
     }
+
+    if (product.stock < 0) {
+    return toast.error("Stock cannot be negative.");
+  }
+
+
     if (uploadedUrls.length === 0) {
       return toast.error("Please upload images before submitting.");
     }
@@ -111,7 +117,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
       discount: 0,
       oprice: 0,
       size: 0,
-      quantity: 1,
+      stock: 0,
     });
   };
 
@@ -161,13 +167,14 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                     "discount",
                     "oprice",
                     "size",
+                    "stock",
                   ].map((field) => (
                     <input
                       key={field}
                       name={field}
                       placeholder={field}
                       type={["discount", "oprice", "size"].includes(field) ? "number" : "text"}
-                      onChange={handleChange}
+ min={field === "stock" ? 0 : undefined}                     onChange={handleChange}
                       className="p-2 rounded bg-white text-black"
                     />
                   ))}
