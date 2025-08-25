@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import "../style/wishlist.css";
 import { CartContext } from "../contexts/CartContext";
+import { CartContext } from "../contexts/productContext";
 import { UserContext } from "../contexts/UserContext";
 import Loader from "./Loader";
 
@@ -53,11 +54,11 @@ const Wishlist = () => {
                       <span className="wl-badge">{item.discount}% OFF</span>
                     )}
                     <img
-                      src={item.imageurl}
-                      alt={item.name}
-                      className="wishlist-product-img"
-                      loading="lazy"
-                    />
+  src={Array.isArray(item.product.imageurl) ? item.product.imageurl[0] : item.product.imageurl}
+  alt={item.product.name}
+  className="wishlist-product-img"
+  loading="lazy"
+/>
                   </div>
 
                   <div className="wl-meta">
