@@ -319,6 +319,8 @@ const findProduct = (id) => products.find(p => p.id === id);
   const [editingAddr, setEditingAddr] = useState(null);
 const [originalAddr, setOriginalAddr] = useState(null); 
 const { uploadImage, uploading: imageUploading, uploadedUrl, error: uploadError } = useCloudinary();
+const [cart, setCart] = useState([]); 
+
 
 
 const navigate = useNavigate();
