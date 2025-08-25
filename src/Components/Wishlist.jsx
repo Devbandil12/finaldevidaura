@@ -1,12 +1,10 @@
 import React, { useContext } from "react";
 import "../style/wishlist.css";
 import { CartContext } from "../contexts/CartContext";
-import { ProductContext } from "../contexts/productContext";
 import { UserContext } from "../contexts/UserContext";
 import Loader from "./Loader";
 
 const Wishlist = () => {
-const { products, loading } = useContext(ProductContext);
   const {
     wishlist, // The single source of truth for the wishlist
     isWishlistLoading, // The loading state
@@ -55,11 +53,11 @@ const { products, loading } = useContext(ProductContext);
                       <span className="wl-badge">{item.discount}% OFF</span>
                     )}
                     <img
-  src={Array.isArray(item.product.imageurl) ? item.product.imageurl[0] : item.product.imageurl}
-  alt={item.product.name}
-  className="wishlist-product-img"
-  loading="lazy"
-/>
+                      src={Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl}
+                      alt={item.name}
+                      className="wishlist-product-img"
+                      loading="lazy"
+                    />
                   </div>
 
                   <div className="wl-meta">
@@ -80,9 +78,10 @@ const { products, loading } = useContext(ProductContext);
                         <span className="wl-off">{item.discount}% OFF</span>
                       )}
                     </div>
-                  <p className="text-sm font-normal text-red-700 mt-1">
-  {product.stockStatus}
-</p>
+                    {/* CORRECTED: Use item.stockStatus */}
+                    <p className="text-sm font-normal text-red-700 mt-1">
+                      {item.stockStatus}
+                    </p>
                     <div className="wl-actions">
                       <button
                         className="wl-btn primary"
