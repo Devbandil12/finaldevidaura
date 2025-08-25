@@ -79,77 +79,128 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // Add User Address
-  const addAddress = useCallback(async (newAddress) => {
-    if (!userdetails?.id) return null;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/addresses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
-      });
-      if (!res.ok) throw new Error("Failed to add address");
-      const created = await res.json();
-      // Optimistically update addresses
-      setAddress((prev) => [created, ...prev]);
-      return created;
-    } catch (error) {
-      console.error("❌ Failed to add address:", error);
-      return null;
-    }
-  }, [userdetails?.id, BACKEND_URL]);
+  // Corrected Address APIs in UserContext.jsx
 
-  // Edit Address
-  const editAddress = useCallback(async (addressId, updatedFields) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/addresses/${addressId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedFields),
-      });
-      if (!res.ok) throw new Error("Failed to edit address");
-      const updated = await res.json();
-      setAddress((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-      return updated;
-    } catch (error) {
-      console.error("❌ Failed to edit address:", error);
-      return null;
-    }
-  }, [BACKEND_URL]);
+// Fetch addresses (match Checkout)
+const getUserAddress = useCallback(async () => {
+  if (!userdetails?.id) return;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`);
+    if (!res.ok) throw new Error("Failed to fetch addresses");
+    const data = await res.json();
+    setAddress(Array.isArray(data.data) ? data.data : []);
+  } catch (error) {
+    console.error("❌ Failed to get user addresses:", error);
+  }
+}, [userdetails?.id, BACKEND_URL]);
 
-  // Delete User Address
-  const deleteAddress = useCallback(async (addressId) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/addresses/${addressId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete address");
-      setAddress((prev) => prev.filter((a) => a.id !== addressId));
+// Add Address (match Checkout payload + endpoint)
+const addAddress = useCallback(async (newAddress) => {
+  if (!userdetails?.id) return null;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setAddress((prev) => [...prev, data.data]);
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("❌ Failed to add address:", error);
+    return null;
+  }
+}, [userdetails?.id, BACKEND_URL]);
+
+// Edit Address
+const editAddress = useCallback(async (addressId, updatedFields) => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedFields),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setAddress((prev) =>
+        prev.map((a) => (a._id === addressId ? data.data : a))
+      );
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("❌ Failed to edit address:", error);
+    return null;
+  }
+}, [BACKEND_URL]);
+
+// Delete Address
+const deleteAddress = useCallback(async (addressId) => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (data.success) {
+      setAddress((prev) => prev.filter((a) => a._id !== addressId));
       return true;
-    } catch (error) {
-      console.error("❌ Failed to delete address:", error);
-      return false;
     }
-  }, [BACKEND_URL]);
+    return false;
+  } catch (error) {
+    console.error("❌ Failed to delete address:", error);
+    return false;
+  }
+}, [BACKEND_URL]);
 
-  // Set default address (backend should support this; if not, this will attempt PUT)
-  const setDefaultAddress = useCallback(async (addressId) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/addresses/${addressId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isDefault: true }),
-      });
-      if (!res.ok) throw new Error("Failed to set default");
-      const updated = await res.json();
-      // Update local addresses: mark selected default, others false
-      setAddress((prev) => prev.map((a) => ({ ...a, isDefault: a.id === updated.id })));
-      return updated;
-    } catch (error) {
-      console.error("❌ Failed to set default address:", error);
-      return null;
+// Set Default Address
+const setDefaultAddress = useCallback(async (addressId) => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
+      method: "PUT",
+    });
+    const data = await res.json();
+    if (data.success) {
+      setAddress((prev) =>
+        prev.map((a) => ({ ...a, isDefault: a._id === addressId }))
+      );
+      return data.data;
     }
-  }, [BACKEND_URL]);
+    return null;
+  } catch (error) {
+    console.error("❌ Failed to set default address:", error);
+    return null;
+  }
+}, [BACKEND_URL]);
+
+// Set Default Address (match Checkout)
+const setDefaultAddress = useCallback(async (addressId) => {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
+      method: "PUT",
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Update local addresses: mark selected as default, others false
+      setAddress((prev) =>
+        prev.map((a) => ({
+          ...a,
+          isDefault: a._id === addressId,
+        }))
+      );
+      return data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error("❌ Failed to set default address:", error);
+    return null;
+  }
+}, [BACKEND_URL]);
+
+
+
 
   useEffect(() => {
     getUserDetail();
