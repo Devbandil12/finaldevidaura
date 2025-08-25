@@ -20,6 +20,7 @@ import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
 import ProductDetail from "./Components/ProductDetail";
+import UserPage from "./Components/UserPage";
 
 // Styles
 import "./style/adminPanel.css";
@@ -33,6 +34,7 @@ import { CouponProvider } from "./contexts/CouponContext";
 import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
+import { ReviewProvider } from "./contexts/ReviewContext";
 
 import { useUser } from "@clerk/clerk-react";
 
@@ -123,6 +125,7 @@ const App = () => {
           <CartProvider>
             <CouponProvider>
               <ContactProvider>
+                <ReviewProvider>
                 <Router>
                   <ScrollToTop />
                   <PostLoginRedirector />
@@ -152,7 +155,7 @@ const App = () => {
                     <Route path="/wishlist" element={<Wishlist />} />
                     {/* Cart no longer receives props */}
                     <Route path="/cart" element={<Cart />} />
-                    
+                    <Route path="/myaccount" element={<UserPage />} />
                     {/* Admin route now wrapped with AdminProvider */}
                     <Route
                       path="/Admin"
@@ -173,6 +176,7 @@ const App = () => {
 
                   <Footer />
                 </Router>
+               </ReviewProvider>
               </ContactProvider>
             </CouponProvider>
           </CartProvider>
