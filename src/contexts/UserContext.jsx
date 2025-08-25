@@ -47,19 +47,7 @@ export const UserProvider = ({ children }) => {
     }
   }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
-  // Get addresses for logged-in user
-  const getUserAddress = useCallback(async () => {
-    if (!userdetails?.id) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}/addresses`);
-      if (!res.ok) throw new Error("Failed to fetch addresses");
-      const data = await res.json();
-      setAddress(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("❌ Failed to get user addresses:", error);
-    }
-  }, [userdetails?.id, BACKEND_URL]);
-
+  
   // Update User Details
   const updateUser = useCallback(async (updatedData) => {
     if (!userdetails?.id) return null;
