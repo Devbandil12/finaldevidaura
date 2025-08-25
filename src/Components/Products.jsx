@@ -134,14 +134,13 @@ const Products = () => {
                 key={product.id}
               >
                 <div className="product-thumb">
-                 <img
-    src={product.imageurl[0] || product.imageurl}
-    alt={product.name}
-    className="product-img"
-    data-product-id={product.id}
-    onClick={() => handleSlideClick(product)}
+                <img
+  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+  alt={product.name}
+  className="product-img"
+  data-product-id={product.id}
+  onClick={() => handleSlideClick(product)}
 />
-
 
                   <div
                     className="img-overlay"
