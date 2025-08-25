@@ -172,7 +172,8 @@ const ProductDetail = () => {
                 </div>
               </div>
              
-              
+              <p className="text-lg font-semibold mt-4">Status: {product.stockStatus}</p>
+
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-2xl font-extrabold text-green-600">₹{discountedPrice}</span>
