@@ -65,6 +65,17 @@ const ShoppingCart = () => {
       return;
     }
 
+    const outOfStockItem = itemsToRender.find(
+      (item) => item.product.stock <= 0
+    );
+
+    if (outOfStockItem) {
+      toast.error(
+        `Sorry, the product "${outOfStockItem.product.name}" is out of stock. Please remove it to proceed.`
+      );
+      return;
+    }
+
     const fullCartItems = itemsToRender.map((item) => {
       const price = Math.floor(
         item.product.oprice * (1 - item.product.discount / 100)
