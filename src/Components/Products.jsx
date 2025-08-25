@@ -135,7 +135,7 @@ const Products = () => {
               >
                 <div className="product-thumb">
                  <img
-    src={product.imageurl[0]}
+    src={product.imageurl[0] || product.imageurl}
     alt={product.name}
     className="product-img"
     data-product-id={product.id}
