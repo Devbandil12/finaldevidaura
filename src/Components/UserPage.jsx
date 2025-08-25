@@ -1,5 +1,5 @@
 // File: src/pages/UserPage.jsx
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
 import { CartContext } from "../contexts/CartContext";
