@@ -486,7 +486,7 @@ const navigate = useNavigate();
                   <img
                     src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
                     alt={p.name}
-                    className="h-full object-cover"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="text-gray-400">No Image</div>
