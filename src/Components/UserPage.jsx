@@ -25,16 +25,18 @@ const UserPage = () => {
     });
 
     useEffect(() => {
-        if (userdetails) {
-            setName(userdetails.name);
-            setPhone(userdetails.phone || "");
-        }
-        if (userdetails) {
-            getorders();
-            getReviewsByUser();
-            getQueriesByUser(userdetails.email);
-        }
-    }, [userdetails, getorders, getReviewsByUser, getQueriesByUser]);
+    if (userdetails && getorders && getReviewsByUser && getQueriesByUser) {
+        // Set local state only after userdetails is confirmed to exist
+        setName(userdetails.name);
+        setPhone(userdetails.phone || "");
+
+        // Now, confidently call the API-fetching functions
+        getorders();
+        getReviewsByUser();
+        getQueriesByUser(userdetails.email);
+    }
+}, [userdetails, getorders, getReviewsByUser, getQueriesByUser]);
+
 
     const handleUpdateUser = async () => {
         toast.success("User details updated!");
