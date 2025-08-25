@@ -184,6 +184,27 @@ function AddressForm({ initial, onCancel, onSave, saving }){
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <input className="border rounded-lg p-3" placeholder="Name (eg. Home, Work)" value={form.name} onChange={e=>update('name', e.target.value)} />
         <input className="border rounded-lg p-3" placeholder="Phone" value={form.phone} onChange={e=>update('phone', e.target.value)} />
+<input
+    className="border rounded-lg p-3"
+    placeholder="Alternate Phone (optional)"
+    value={form.altPhone}
+    onChange={e => update('altPhone', e.target.value)}
+  />
+<div className="flex gap-3 mt-2">
+  {['Home', 'Work', 'Other'].map(type => (
+    <button
+      key={type}
+      type="button"
+      onClick={() => update('addressType', type)}
+      className={`px-4 py-2 rounded-full border ${
+        form.addressType === type ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'
+      }`}
+    >
+      {type}
+    </button>
+  ))}
+</div>
+
         <input className="border rounded-lg p-3 md:col-span-2" placeholder="Address line" value={form.address} onChange={e=>update('address', e.target.value)} />
         <input className="border rounded-lg p-3" placeholder="City" value={form.city} onChange={e=>update('city', e.target.value)} />
         <input className="border rounded-lg p-3" placeholder="State" value={form.state} onChange={e=>update('state', e.target.value)} />
