@@ -209,7 +209,9 @@ const ShoppingCart = () => {
                 ({product.discount}% OFF)
               </span>
             </div>
-
+                  <p className="text-sm font-normal text-red-700 mt-1">
+  {product.stockStatus}
+</p>
             <p className="text-xs text-gray-400">{product.description}</p>
           </div>
 
