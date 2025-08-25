@@ -56,15 +56,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  useEffect(() => {
-    getUserDetail();
-  }, [getUserDetail]);
-
-  useEffect(() => {
-    if (userdetails) {
-      getUserAddress();
-    }
-  }, [userdetails, getUserAddress]);
 
  // ✅ Update User Details (uses PUT /:id route)
     const updateUser = useCallback(async (updatedData) => {
@@ -77,10 +68,8 @@ export const UserProvider = ({ children }) => {
             if (!res.ok) throw new Error("Failed to update user");
             const data = await res.json();
             setUserdetails(data);
-            toast.success("Profile updated successfully!");
         } catch (error) {
             console.error("❌ Failed to update user:", error);
-            toast.error("Failed to update profile.");
         }
     }, [userdetails?.id, BACKEND_URL]);
 
@@ -96,10 +85,8 @@ export const UserProvider = ({ children }) => {
             if (!res.ok) throw new Error("Failed to add address");
             await res.json();
             getUserAddress();
-            toast.success("Address added successfully!");
         } catch (error) {
             console.error("❌ Failed to add address:", error);
-            toast.error("Failed to add address.");
         }
     }, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
@@ -112,25 +99,21 @@ export const UserProvider = ({ children }) => {
             if (!res.ok) throw new Error("Failed to delete address");
             await res.json();
             getUserAddress();
-            toast.info("Address deleted successfully!");
         } catch (error) {
             console.error("❌ Failed to delete address:", error);
-            toast.error("Failed to delete address.");
         }
     }, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
 
 useEffect(() => {
-        getUserDetail();
-    }, [getUserDetail]);
+    getUserDetail();
+  }, [getUserDetail]);
 
-
-useEffect(() => {
-        if (userdetails) {
-            getUserAddress();
-        }
-    }, [userdetails, getUserAddress]);
-
+  useEffect(() => {
+    if (userdetails) {
+      getUserAddress();
+    }
+  }, [userdetails, getUserAddress]);
 
   return (
     <UserContext.Provider
