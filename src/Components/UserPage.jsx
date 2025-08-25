@@ -6,7 +6,7 @@ import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import { Pencil, Trash2, Plus, MapPin, Star, User } from 'lucide-react';
+import { Pencil, Trash2, Plus, MapPin, User } from 'lucide-react';
 import { toast } from "react-toastify";
 
 const IconBtn = ({ children, onClick, title = '' }) => (
@@ -15,8 +15,9 @@ const IconBtn = ({ children, onClick, title = '' }) => (
   </button>
 );
 
-const FloatingInput = ({ label, value, onChange, type = "text", id, ...props }) => (
-  <div className="relative w-full">
+// 🔹 Floating Input
+const FloatingInput = ({ label, value, onChange, type = "text", id, className = "", ...props }) => (
+  <div className={`relative w-full ${className}`}>
     <input
       id={id}
       type={type}
@@ -28,38 +29,49 @@ const FloatingInput = ({ label, value, onChange, type = "text", id, ...props }) 
     />
     <label
       htmlFor={id}
-      className="
-        absolute left-3 
-        -top-2 bg-white px-1
-        text-gray-500 text-sm transition-all
+      className="absolute left-3 -top-2 bg-white px-1 text-gray-500 text-sm transition-all pointer-events-none
         peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
-        peer-focus:-top-2 peer-focus:text-sm peer-focus:text-black
-      "
+        peer-focus:-top-2 peer-focus:text-sm peer-focus:text-black"
     >
       {label}
     </label>
   </div>
 );
 
+// 🔹 Custom Floating Dropdown
+const FloatingDropdown = ({ label, value, onChange, options }) => {
+  const [open, setOpen] = useState(false);
 
-// 🔹 Floating Select
-const FloatingSelect = ({ label, value, onChange, options }) => (
-  <div className="relative w-full">
-    <select
-      value={value}
-      onChange={onChange}
-      className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 focus:border-black focus:ring-1 focus:ring-black focus:outline-none"
-    >
-      <option value=""></option>
-      {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-    </select>
-    <label className="absolute left-3 top-2 text-gray-500 text-sm transition-all
-      peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
-      peer-focus:top-2 peer-focus:text-sm peer-focus:text-black">
-      {label}
-    </label>
-  </div>
-);
+  return (
+    <div className="relative w-full">
+      <div
+        onClick={() => setOpen(!open)}
+        className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 cursor-pointer focus-within:border-black focus-within:ring-1 focus-within:ring-black"
+      >
+        <span>{value || ""}</span>
+      </div>
+      <label
+        className="absolute left-3 -top-2 bg-white px-1 text-gray-500 text-sm transition-all pointer-events-none"
+      >
+        {label}
+      </label>
+
+      {open && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg">
+          {options.map(opt => (
+            <div
+              key={opt}
+              onClick={() => { onChange({ target: { value: opt } }); setOpen(false); }}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ProfileCard = ({ userdetails, onEdit }) => {
   const initials = userdetails?.name?.split(' ').map(s => s[0]).join('').slice(0,2).toUpperCase() || 'U';
@@ -254,7 +266,7 @@ const UserPage = () => {
                     <FloatingInput label="State" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} />
                     <FloatingInput label="Postal Code" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} />
                     <FloatingInput label="Landmark" value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} />
-                    <FloatingSelect label="Address Type" value={newAddress.addressType} onChange={e => setNewAddress({...newAddress, addressType: e.target.value})} options={["Home","Work","Other"]} />
+                    <FloatingDropdown label="Address Type" value={newAddress.addressType} onChange={e => setNewAddress({...newAddress, addressType: e.target.value})} options={["Home","Work","Other"]} />
                     <div className="md:col-span-2 flex gap-3">
                       <button onClick={handleAddAddress} className="px-4 py-2 rounded-lg bg-black text-white">Save Address</button>
                       <button onClick={() => setIsAddingAddress(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
@@ -272,7 +284,7 @@ const UserPage = () => {
                     <FloatingInput label="State" value={editingAddr.state} onChange={e => setEditingAddr({...editingAddr, state: e.target.value})} />
                     <FloatingInput label="Postal Code" value={editingAddr.postalCode} onChange={e => setEditingAddr({...editingAddr, postalCode: e.target.value})} />
                     <FloatingInput label="Landmark" value={editingAddr.landmark} onChange={e => setEditingAddr({...editingAddr, landmark: e.target.value})} />
-                    <FloatingSelect label="Address Type" value={editingAddr.addressType} onChange={e => setEditingAddr({...editingAddr, addressType: e.target.value})} options={["Home","Work","Other"]} />
+                    <FloatingDropdown label="Address Type" value={editingAddr.addressType} onChange={e => setEditingAddr({...editingAddr, addressType: e.target.value})} options={["Home","Work","Other"]} />
                     <div className="md:col-span-2 flex gap-3">
                       <button onClick={handleEditAddressSave} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
                       <button onClick={() => setEditingAddr(null)} className="px-4 py-2 rounded-lg border">Cancel</button>
@@ -294,7 +306,94 @@ const UserPage = () => {
               </div>
             )}
 
-            {/* Other Tabs (orders, reviews, queries, wishlist) remain unchanged */}
+            {activeTab === 'orders' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Order History</h2>
+                  {orders.length === 0 ? <p className="text-gray-500">No orders yet</p> : (
+                    <div className="space-y-4">
+                      {orders.map(o => (
+                        <div key={o.id} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                          <div>
+                            <div className="font-medium">Order #{o.id}</div>
+                            <div className="text-sm text-gray-500">Placed on {new Date(o.createdAt).toLocaleDateString()}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">₹{o.totalAmount}</div>
+                            <div className="text-sm text-gray-500">{o.status}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+{activeTab === 'reviews' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Reviews</h2>
+                  {userReviews.length === 0 ? (
+                    <p className="text-gray-500">No reviews yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {userReviews.map(r => {
+                        const product = findProduct(r.productId);
+                        return (
+                          <div key={r.id} className="p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-start gap-4">
+                              <div>
+                                <div className="font-semibold">{product?.name || 'Product'}</div>
+                                <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</div>
+                              </div>
+                              <div className="ml-auto flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? 'text-yellow-400' : 'text-gray-300'}`} />))}
+                              </div>
+                            </div>
+                            <p className="mt-2 text-gray-700">{r.comment}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'queries' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Queries</h2>
+                  {queries.length === 0 ? <p className="text-gray-500">No queries submitted</p> : (
+                    <div className="space-y-3">
+                      {queries.map((q, i) => (
+                        <div key={i} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="font-semibold">Message</div>
+                          <div className="text-gray-700 mt-1">{q.message}</div>
+                          <div className="text-xs text-gray-500 mt-2">Submitted on {q.createdAt}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'wishlist' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Wishlist</h2>
+                  {wishlist.length === 0 ? <p className="text-gray-500">Empty</p> : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {wishlist.map(item => {
+                        const p = findProduct(item.productId);
+                        if (!p) return null;
+                        const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
+                        return (
+                          <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm text-center">
+                            <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.name} className="h-32 w-full object-contain mb-3" />
+                            <div className="font-medium">{p.name}</div>
+                            <div className="text-sm text-gray-500">₹{discountedPrice} <span className="line-through text-gray-300">₹{p.oprice}</span></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         </div>
       </div>
