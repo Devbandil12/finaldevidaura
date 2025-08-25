@@ -9,7 +9,7 @@ import { ReviewContext } from "../contexts/ReviewContext";
 import { Pencil, Trash2, Plus, MapPin, User, Star, HeartOff } from 'lucide-react';
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-
+import useCloudinary from '../utils/useCloudinary';
 
 const IconBtn = ({ children, onClick, title = '' }) => (
   <button onClick={onClick} className="p-2 rounded-md hover:bg-gray-100 transition" title={title}>
@@ -314,6 +314,7 @@ const findProduct = (id) => products.find(p => p.id === id);
   const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
 const [originalAddr, setOriginalAddr] = useState(null); 
+const { uploadImage, uploading: imageUploading, uploadedUrl, error: uploadError } = useCloudinary();
 
 
 const navigate = useNavigate();
@@ -339,6 +340,27 @@ const navigate = useNavigate();
       toast.error('Failed to update profile');
     }
   };
+
+
+const handleProfileImageChange = async (file) => {
+  if (!file) {
+  await updateUser({ profileImage: null });
+  toast.success("Profile picture removed");
+  return;
+}
+
+  try {
+    const url = await uploadImage(file);       // Upload to Cloudinary
+    if (url) {
+      await updateUser({ profileImage: url }); // Save to backend
+      toast.success("Profile picture updated");
+    }
+  } catch (err) {
+    toast.error("Failed to upload profile image");
+    console.error(err);
+  }
+};
+
 
   const handleAddAddress = async () => {
     if (!newAddress.name || !newAddress.address || !newAddress.city || !newAddress.postalCode || !newAddress.phone) 
@@ -393,11 +415,12 @@ const navigate = useNavigate();
           <ProfileCard
   userdetails={userdetails}
   onEdit={() => setIsEditingUser(true)}
-  wishlist={wishlist}        // array of wishlist items
-  cart={cart}                // array of cart items
-  navigate={navigate}        // react-router navigate function
-  onProfileImageChange={handleProfileImageChange} // optional handler for uploading/removing profile pic
+  wishlist={wishlist}
+  cart={cart}
+  navigate={navigate}
+  onProfileImageChange={handleProfileImageChange}
 />
+
 
         </div>
 
