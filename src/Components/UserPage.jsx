@@ -255,4 +255,106 @@ const UserPage = () => {
                       <input value={editingAddr.name} onChange={e => setEditingAddr({...editingAddr, name: e.target.value})} placeholder="Full name" className="p-3 rounded-lg border" />
                       <input value={editingAddr.phone} onChange={e => setEditingAddr({...editingAddr, phone: e.target.value})} placeholder="Phone" className="p-3 rounded-lg border" />
                       <input value={editingAddr.address} onChange={e => setEditingAddr({...editingAddr, address: e.target.value})} placeholder="Address line" className="p-3 rounded-lg border md:col-span-2" />
-                      <input value={editingAddr.city} onChange={e => setEditingAddr({...editingAddr, city: e.target.value})} placeholder="City" className="p-
+                      <input value={editingAddr.city} onChange={e => setEditingAddr({...editingAddr, city: e.target.value})} placeholder="City" className="p-3 rounded-lg border" />
+                      <input value={editingAddr.state} onChange={e => setEditingAddr({...editingAddr, state: e.target.value})} placeholder="State" className="p-3 rounded-lg border" />
+                      <input value={editingAddr.postalCode} onChange={e => setEditingAddr({...editingAddr, postalCode: e.target.value})} placeholder="Postal code" className="p-3 rounded-lg border" />
+                      <input value={editingAddr.landmark} onChange={e => setEditingAddr({...editingAddr, landmark: e.target.value})} placeholder="Landmark (optional)" className="p-3 rounded-lg border" />
+                      <div className="md:col-span-2 flex gap-3">
+                        <button onClick={handleEditAddressSave} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
+                        <button onClick={() => setEditingAddr(null)} className="px-4 py-2 rounded-lg border">Cancel</button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {address.map(addr => (
+                      <div key={addr.id}>
+                        <AddressCard
+                          addr={addr}
+                          onDelete={handleDeleteAddress}
+                          onEdit={(a) => { setEditingAddr(a); setIsAddingAddress(false); window.scrollTo({top:0, behavior:'smooth'}); }}
+                          onSetDefault={handleSetDefault}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Reviews</h2>
+                  {userReviews.length === 0 ? (
+                    <p className="text-gray-500">No reviews yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {userReviews.map(r => {
+                        const product = findProduct(r.productId);
+                        return (
+                          <div key={r.id} className="p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-start gap-4">
+                              <div>
+                                <div className="font-semibold">{product?.name || 'Product'}</div>
+                                <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</div>
+                              </div>
+                              <div className="ml-auto flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? 'text-yellow-400' : 'text-gray-300'}`} />))}
+                              </div>
+                            </div>
+                            <p className="mt-2 text-gray-700">{r.comment}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'queries' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Queries</h2>
+                  {queries.length === 0 ? <p className="text-gray-500">No queries submitted</p> : (
+                    <div className="space-y-3">
+                      {queries.map((q, i) => (
+                        <div key={i} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="font-semibold">Message</div>
+                          <div className="text-gray-700 mt-1">{q.message}</div>
+                          <div className="text-xs text-gray-500 mt-2">Submitted on {q.createdAt}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'wishlist' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Wishlist</h2>
+                  {wishlist.length === 0 ? <p className="text-gray-500">Empty</p> : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {wishlist.map(item => {
+                        const p = findProduct(item.productId);
+                        if (!p) return null;
+                        const discountedPrice = Math.floor(p.oprice * (1 - p.discount / 100));
+                        return (
+                          <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm text-center">
+                            <img src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl} alt={p.name} className="h-32 w-full object-contain mb-3" />
+                            <div className="font-medium">{p.name}</div>
+                            <div className="text-sm text-gray-500">₹{discountedPrice} <span className="line-through text-gray-300">₹{p.oprice}</span></div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UserPage;
