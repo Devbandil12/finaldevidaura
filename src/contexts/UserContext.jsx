@@ -120,6 +120,13 @@ export const UserProvider = ({ children }) => {
     }, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
 
+useEffect(() => {
+        if (userdetails) {
+            getUserAddress();
+        }
+    }, [userdetails, getUserAddress]);
+
+
   return (
     <UserContext.Provider
       value={{
