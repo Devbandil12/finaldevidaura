@@ -175,8 +175,7 @@ const Products = () => {
                       ({product.discount}% OFF)
                     </span>
                   </div>
-                  <p className="text-sm font-semibold mt-1">
-  Status: {product.stockStatus}
+                  <p className="text-sm font-semibold mt-1">{product.stockStatus}
 </p>
                   <p className="text-xs text-gray-400">
                     {product.description}
