@@ -15,9 +15,10 @@ const IconBtn = ({ children, onClick, title = '' }) => (
   </button>
 );
 
-const FloatingInput = ({ label, value, onChange, type = "text", ...props }) => (
+const FloatingInput = ({ label, value, onChange, type = "text", id, ...props }) => (
   <div className="relative w-full">
     <input
+      id={id}
       type={type}
       value={value}
       onChange={onChange}
@@ -26,6 +27,7 @@ const FloatingInput = ({ label, value, onChange, type = "text", ...props }) => (
       {...props}
     />
     <label
+      htmlFor={id}
       className="
         absolute left-3 
         -top-2 bg-white px-1
