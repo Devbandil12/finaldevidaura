@@ -387,7 +387,10 @@ const AdminPanel = () => {
                           <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct(product)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
+                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct({ 
+  ...product, 
+  imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] 
+})} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
                         </tr>
                       )
                     )}
