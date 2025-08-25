@@ -59,7 +59,18 @@ const ShoppingCart = () => {
     };
   }, [isBuyNowActive, clearBuyNow]);
 
+  // New useEffect hook to clear the error message
+  useEffect(() => {
+    // Check if the cart has items and if any of them are out of stock
+    const isAnyItemOutOfStock = itemsToRender.some(
+      (item) => item.product.stock <= 0
+    );
 
+    // If there are no out-of-stock items, clear the error
+    if (!isAnyItemOutOfStock) {
+      setCheckoutError("");
+    }
+  }, [itemsToRender, setCheckoutError]);
 
   const handleCheckout = () => {
    setCheckoutError(""); // Clear any previous errors
