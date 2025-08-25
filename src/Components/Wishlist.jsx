@@ -6,24 +6,21 @@ import Loader from "./Loader";
 
 const Wishlist = () => {
   const {
-    wishlist, // The single source of truth for the wishlist
-    isWishlistLoading, // The loading state
-    addToCart, // The function that handles both cart state and DB updates
-    removeFromWishlist, // The function that handles both wishlist state and DB updates
+    wishlist,
+    isWishlistLoading,
+    addToCart,
+    removeFromWishlist,
   } = useContext(CartContext);
   
-  // The move to cart logic is now a simple, single function call.
   const handleMoveToCart = async (wishlistitem) => {
     await addToCart(wishlistitem.product);
     await removeFromWishlist(wishlistitem.product);
   };
   
-  // The remove item logic is now a single function call.
   const handleRemoveItem = async (wishlistitem) => {
     await removeFromWishlist(wishlistitem.product);
   };
 
-  // Conditionally render a loader if the wishlist is loading
   if (isWishlistLoading) {
     return <Loader text="Loading wishlist..." />;
   }
@@ -70,7 +67,9 @@ const Wishlist = () => {
                         Size: <span className="wl-size-chip">{item.size}ml</span>
                       </div>
                     )}
-
+                    <p className="text-sm font-normal text-red-700 mt-1">
+                      {item.stockStatus}
+                    </p>
                     <div className="wl-price-line">
                       <span className="wl-price">₹{discountedPrice}</span>
                       <span className="wl-mrp">₹{item.oprice}</span>
@@ -78,10 +77,6 @@ const Wishlist = () => {
                         <span className="wl-off">{item.discount}% OFF</span>
                       )}
                     </div>
-                    {/* CORRECTED: Use item.stockStatus */}
-                    <p className="text-sm font-normal text-red-700 mt-1">
-                      {item.stockStatus}
-                    </p>
                     <div className="wl-actions">
                       <button
                         className="wl-btn primary"
