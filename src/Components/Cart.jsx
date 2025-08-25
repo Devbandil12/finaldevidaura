@@ -222,7 +222,7 @@ const ShoppingCart = () => {
               className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
             >
               Add to Cart
-              <img src="/src/assets/cart-svgrepo-com copy.svg" alt="Cart" className="w-7 h-7" />
+                <img src={CartImage} alt="Cart" className="w-7 h-7" />
             </HeroButton>
           </div>
         </div>
