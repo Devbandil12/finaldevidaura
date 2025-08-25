@@ -6,7 +6,7 @@ import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import { Pencil, Trash2, Plus, MapPin, User } from 'lucide-react';
+import { Pencil, Trash2, Plus, MapPin, User, Star } from 'lucide-react';
 import { toast } from "react-toastify";
 
 const IconBtn = ({ children, onClick, title = '' }) => (
@@ -167,6 +167,8 @@ const UserPage = () => {
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { queries, getQueriesByUser } = useContext(ContactContext);
   const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
+
+const findProduct = (id) => products.find(p => p.id === id);
 
   const [isEditingUser, setIsEditingUser] = useState(false);
   const [name, setName] = useState('');
