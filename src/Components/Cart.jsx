@@ -7,6 +7,7 @@ import { ProductContext } from "../contexts/productContext";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";
+import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import { toast } from "react-toastify";
 import Loader from "./Loader";
