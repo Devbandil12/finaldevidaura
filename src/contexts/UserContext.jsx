@@ -121,6 +121,11 @@ export const UserProvider = ({ children }) => {
 
 
 useEffect(() => {
+        getUserDetail();
+    }, [getUserDetail]);
+
+
+useEffect(() => {
         if (userdetails) {
             getUserAddress();
         }
