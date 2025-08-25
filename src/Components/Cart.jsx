@@ -17,6 +17,8 @@ const ShoppingCart = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSignedIn } = useUser();
+  const [checkoutError, setCheckoutError] = useState("");
+
 
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
@@ -60,6 +62,8 @@ const ShoppingCart = () => {
 
 
   const handleCheckout = () => {
+   setCheckoutError(""); // Clear any previous errors
+
     if (!itemsToRender.length) {
       toast.error("Your cart is empty.");
       return;
@@ -70,7 +74,7 @@ const ShoppingCart = () => {
     );
 
     if (outOfStockItem) {
-      toast.error(
+      setCheckoutError(
         `Sorry, the product "${outOfStockItem.product.name}" is out of stock. Please remove it to proceed.`
       );
       return;
@@ -394,6 +398,13 @@ const ShoppingCart = () => {
 
 
             <div className="cart-summary-button">
+
+               {checkoutError && (
+    <div className="text-red-600 text-sm font-semibold p-2 bg-red-100 rounded-md mb-4 text-center">
+      {checkoutError}
+    </div>
+  )}
+
               {!isBuyNowActive && (
                 <HeroButton id="clear-cart" onClick={clearCart}>Clear Cart</HeroButton>
 )}
