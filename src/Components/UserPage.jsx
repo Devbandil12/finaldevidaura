@@ -1,12 +1,11 @@
-// src/components/UserPage.jsx
 import React, { useState, useContext, useEffect } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
 import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
-import { ContactContext } from "../contexts/ContactContext"; // Import ContactContext
-import { ReviewContext } from "../contexts/ReviewContext"; // Import ReviewContext
-import { PencilIcon, TrashIcon, PlusIcon, MapPinIcon, StarIcon } from "@heroicons/react/24/outline";
+import { ContactContext } from "../contexts/ContactContext";
+import { ReviewContext } from "../contexts/ReviewContext";
+import { Pencil, Trash2, Plus, MapPin, Star } from 'lucide-react';
 import { toast } from "react-toastify";
 
 const UserPage = () => {
@@ -14,8 +13,8 @@ const UserPage = () => {
     const { orders, loadingOrders, getorders } = useContext(OrderContext);
     const { wishlist, isWishlistLoading } = useContext(CartContext);
     const { products, loading: productsLoading } = useContext(ProductContext);
-    const { queries, getQueriesByUser } = useContext(ContactContext); // Consume ContactContext
-    const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext); // Consume ReviewContext
+    const { queries, getQueriesByUser } = useContext(ContactContext);
+    const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
 
     const [isEditingUser, setIsEditingUser] = useState(false);
     const [name, setName] = useState(userdetails?.name || "");
@@ -76,7 +75,7 @@ const UserPage = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-semibold">Profile Information</h2>
                         <button onClick={() => setIsEditingUser(!isEditingUser)} className="p-2 rounded-full hover:bg-gray-100 transition">
-                            <PencilIcon className="h-5 w-5" />
+                            <Pencil className="h-5 w-5" />
                         </button>
                     </div>
                     {isEditingUser ? (
@@ -130,7 +129,7 @@ const UserPage = () => {
                                         <p className="font-semibold mb-1">{reviewedProduct ? reviewedProduct.name : "Product not found"}</p>
                                         <div className="flex items-center mb-2">
                                             {[...Array(5)].map((_, i) => (
-                                                <StarIcon key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                                                <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
                                             ))}
                                         </div>
                                         <p className="text-gray-700">{review.comment}</p>
@@ -165,7 +164,7 @@ const UserPage = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-semibold">My Addresses</h2>
                         <button onClick={() => setIsAddingAddress(!isAddingAddress)} className="p-2 rounded-full hover:bg-gray-100 transition">
-                            <PlusIcon className="h-5 w-5" />
+                            <Plus className="h-5 w-5" />
                         </button>
                     </div>
                     {isAddingAddress && (
@@ -188,7 +187,7 @@ const UserPage = () => {
                                 <div key={addr.id} className="border p-4 rounded-lg flex items-start justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
-                                            <MapPinIcon className="h-5 w-5 text-gray-600" />
+                                            <MapPin className="h-5 w-5 text-gray-600" />
                                             <p className="font-semibold">{addr.name}</p>
                                             {addr.isDefault && <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">Default</span>}
                                         </div>
@@ -196,7 +195,7 @@ const UserPage = () => {
                                         <p className="text-sm text-gray-600">Phone: {addr.phone}</p>
                                     </div>
                                     <button onClick={() => handleDeleteAddress(addr.id)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-red-600 transition">
-                                        <TrashIcon className="h-5 w-5" />
+                                        <Trash2 className="h-5 w-5" />
                                     </button>
                                 </div>
                             ))}
