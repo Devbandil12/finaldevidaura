@@ -486,7 +486,7 @@ const navigate = useNavigate();
                   <img
                     src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
                     alt={p.name}
-                    className="h-full object-contain"
+                    className="h-full object-cover"
                   />
                 ) : (
                   <div className="text-gray-400">No Image</div>
@@ -501,7 +501,7 @@ const navigate = useNavigate();
                     {p.name}
                   </div>
                   {p.size && (
-                    <div className="text-sm text-gray-500 ml-2">{p.size}</div>
+                    <div className="text-sm text-gray-500 ml-2">{p.size}ml</div>
                   )}
                 </div>
 
@@ -515,7 +515,7 @@ const navigate = useNavigate();
                   </div>
                   {p.discount > 0 && (
                     <div className="text-green-600 text-sm font-medium">
-                      {p.discount}%
+                      {p.discount}% off
                     </div>
                   )}
                 </div>
