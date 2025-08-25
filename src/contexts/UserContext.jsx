@@ -60,6 +60,7 @@ export const UserProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to update user");
       const data = await res.json();
       setUserdetails(data);
+      await getUserDetail();
       return data;
     } catch (error) {
       console.error("❌ Failed to update user:", error);
@@ -93,7 +94,7 @@ const addAddress = useCallback(async (newAddress) => {
     });
     const data = await res.json();
     if (data.success) {
-      setAddress((prev) => [...prev, data.data]);
+      await getUserAddress();
       return data.data;
     }
     return null;
@@ -113,8 +114,7 @@ const editAddress = useCallback(async (addressId, updatedFields) => {
     });
     const data = await res.json();
     if (data.success) {
-      setAddress((prev) =>
-        prev.map((a) => (a._id === addressId ? data.data : a))
+      await getUserAddress();
       );
       return data.data;
     }
@@ -133,7 +133,7 @@ const deleteAddress = useCallback(async (addressId) => {
     });
     const data = await res.json();
     if (data.success) {
-      setAddress((prev) => prev.filter((a) => a._id !== addressId));
+      await getUserAddress()
       return true;
     }
     return false;
@@ -151,8 +151,7 @@ const setDefaultAddress = useCallback(async (addressId) => {
     });
     const data = await res.json();
     if (data.success) {
-      setAddress((prev) =>
-        prev.map((a) => ({ ...a, isDefault: a._id === addressId }))
+      await getUserAddress();
       );
       return data.data;
     }
