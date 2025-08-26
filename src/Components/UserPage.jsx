@@ -382,22 +382,23 @@ const navigate = useNavigate();
 
 const handleProfileImageChange = async (file) => {
   if (!file) {
-  await updateUser({ profileImage: null });
-  toast.success("Profile picture removed");
-  return;
-}
+    const removed = await updateUser({ profileImage: null });
+    if (removed) toast.success("Profile picture removed");
+    return;
+  }
 
   try {
-    const url = await uploadImage(file);       // Upload to Cloudinary
-    if (url) {
-      await updateUser({ profileImage: url }); // Save to backend
-      toast.success("Profile picture updated");
-    }
+    const url = await uploadImage(file); // Cloudinary upload
+    if (!url) throw new Error("Upload failed");
+
+    const updated = await updateUser({ profileImage: url }); // Save URL to backend
+    if (updated) toast.success("Profile picture updated");
   } catch (err) {
     toast.error("Failed to upload profile image");
     console.error(err);
   }
 };
+
 
 
   const handleAddAddress = async () => {
@@ -482,20 +483,21 @@ const handleProfileImageChange = async (file) => {
       />
 
       <div className="flex gap-3 mt-4">
-        <button
-          className="px-4 py-2 rounded-lg bg-black text-white"
-          onClick={async () => {
-            const updated = await updateUser(profileForm);
-            if (updated) {
-              toast.success("Profile updated");
-              setShowProfileModal(false);
-            } else {
-              toast.error("Failed to update profile");
-            }
-          }}
-        >
-          Save
-        </button>
+      <button
+  className="px-4 py-2 rounded-lg bg-black text-white"
+  onClick={async () => {
+    const updated = await updateUser(profileForm); // Updated context function
+    if (updated) {
+      toast.success("Profile updated");
+      setShowProfileModal(false);
+    } else {
+      toast.error("Failed to update profile");
+    }
+  }}
+>
+  Save
+</button>
+
         <button
           className="px-4 py-2 rounded-lg border"
           onClick={() => setShowProfileModal(false)}
