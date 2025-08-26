@@ -54,7 +54,7 @@ const BillCreator = () => {
 
   return (
     <div className="p-4 md:p-6 font-sans bg-gray-100 min-h-screen">
-      <h2 className="text-3xl font-bold mb-6 text-center text-black-600">DEVID AURA</h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-black-800">DEVID AURA</h2>
       <p className="text-center italic text-gray-600 mb-6">Presence in Every Step</p>
 
       {/* Inputs Section */}
@@ -179,7 +179,7 @@ const BillCreator = () => {
         >
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-pink-600">DEVID AURA</h1>
+            <h1 className="text-3xl font-bold text-black-800">DEVID AURA</h1>
             <div className="text-right mt-2 md:mt-0">
               <p><strong>Invoice #:</strong> {invoiceNumber}</p>
               <p><strong>Date:</strong> {invoiceDate}</p>
