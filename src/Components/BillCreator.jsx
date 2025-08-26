@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import ReactToPdf from "react-to-pdf";
 
-const TailwindBillGenerator = () => {
+const BillCreator = () => {
   const [products, setProducts] = useState([
     { name: "", size: "", price: "", discountedPrice: "", qty: 1 },
   ]);
@@ -206,4 +206,4 @@ const TailwindBillGenerator = () => {
   );
 };
 
-export default TailwindBillGenerator;
+export default BillCreator;
