@@ -1,9 +1,7 @@
 import React, { useState, useRef } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { toast } from "react-toastify";
 
 const BillCreator = () => {
-  // State for products, user, delivery partner, payment
   const [products, setProducts] = useState([
     { name: "", size: "", price: "", discount: "", qty: 1 },
   ]);
@@ -12,16 +10,10 @@ const BillCreator = () => {
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [utrNo, setUtrNo] = useState("");
 
-  // State for loading and errors
   const [isGenerating, setIsGenerating] = useState(false);
-  const [pdfError, setPdfError] = useState(null);
 
-  // Invoice details
-  const invoiceNumber = `INV-${Math.floor(Math.random() * 100000)}`;
-  const invoiceDate = new Date().toLocaleDateString("en-GB");
-  const invoiceRef = useRef();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // Handlers
   const handleProductChange = (index, field, value) => {
     const updatedProducts = [...products];
     updatedProducts[index][field] = value;
@@ -32,55 +24,45 @@ const BillCreator = () => {
     setProducts([...products, { name: "", size: "", price: "", discount: "", qty: 1 }]);
   };
 
-  const calculateTotals = () => {
-    let total = 0;
-    products.forEach((p) => {
-      const discountedPrice = Number(p.price || 0) * (1 - Number(p.discount || 0) / 100);
-      total += discountedPrice * Number(p.qty || 0);
-    });
-    return total.toFixed(2);
-  };
-
-  const paidAmount = paymentMode === "UPI" ? calculateTotals() : 0;
-  const leftAmount = paymentMode === "CashOnDelivery" ? calculateTotals() : 0;
-
   // The core function to generate and download the PDF
   const generatePDF = async () => {
     setIsGenerating(true);
-    setPdfError(null);
 
-    // Give the DOM a moment to update with the latest state
-    setTimeout(async () => {
-      const input = invoiceRef.current;
-      if (!input) {
-        setPdfError("Invoice element not found. Please refresh the page.");
-        setIsGenerating(false);
-        return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/payments/create-manual-bill`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user,
+          deliveryPartner,
+          paymentMode,
+          utrNo,
+          products,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF. Please try again.");
       }
 
-      try {
-        const canvas = await html2canvas(input, {
-          scale: 2, // Higher scale for better image quality
-          useCORS: true,
-        });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `manual_invoice.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
 
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      toast.success("Bill downloaded successfully!");
 
-        // Add the image to the PDF
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-        // Save the PDF with a unique name
-        pdf.save(`DEVID_AURA_Invoice_${invoiceNumber}.pdf`);
-      } catch (error) {
-        console.error("PDF generation failed:", error);
-        setPdfError("Failed to generate PDF. Please check your browser settings or try again.");
-      } finally {
-        setIsGenerating(false);
-      }
-    }, 500);
+    } catch (error) {
+      console.error("❌ Manual PDF generation failed:", error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -203,103 +185,7 @@ const BillCreator = () => {
         {isGenerating ? "Generating..." : "Generate PDF"}
       </button>
 
-      {pdfError && (
-        <div className="bg-red-200 text-red-700 p-3 rounded-lg mt-4">
-          Error: {pdfError}
-        </div>
-      )}
-
-      {/* Invoice Preview */}
-      <div className="overflow-auto max-h-[80vh] p-2 mt-8 mx-auto">
-        <div
-          ref={invoiceRef}
-          className="w-[210mm] min-h-[297mm] p-8 bg-white box-border shadow-2xl rounded-2xl"
-        >
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b-2 border-neutral-200">
-            <h1 className="text-4xl font-extrabold text-neutral-900">DEVID AURA</h1>
-            <div className="text-right mt-4 md:mt-0">
-              <p className="text-lg font-semibold">INVOICE</p>
-              <p className="text-sm"><strong>Invoice #:</strong> {invoiceNumber}</p>
-              <p className="text-sm"><strong>Date:</strong> {invoiceDate}</p>
-            </div>
-          </div>
-
-          {/* User & Delivery */}
-          <div className="flex flex-col md:flex-row justify-between mb-8">
-            <div className="p-4 border border-neutral-200 rounded-lg">
-              <h5 className="font-semibold text-neutral-700">BILL TO:</h5>
-              <p className="font-medium">{user.name}</p>
-              <p className="text-sm text-neutral-600 whitespace-pre-wrap">{user.address}</p>
-              <p className="text-sm text-neutral-600">{user.phone}</p>
-            </div>
-            <div className="mt-4 md:mt-0 p-4 border border-neutral-200 rounded-lg">
-              <h5 className="font-semibold text-neutral-700">DELIVERY:</h5>
-              <p className="font-medium">{deliveryPartner}</p>
-              {paymentMode === "UPI" && (
-                <>
-                  <h5 className="font-semibold text-neutral-700 mt-2">UTR No:</h5>
-                  <p className="text-sm">{utrNo || "N/A"}</p>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Product Table */}
-          <table className="w-full border-collapse mb-8 text-sm">
-            <thead>
-              <tr className="border-b-2 border-neutral-200">
-                <th className="font-bold px-4 py-2 text-left">Product</th>
-                <th className="font-bold px-4 py-2 text-left">Size</th>
-                <th className="font-bold px-4 py-2 text-left">Qty</th>
-                <th className="font-bold px-4 py-2 text-left">Price</th>
-                <th className="font-bold px-4 py-2 text-left">Discount</th>
-                <th className="font-bold px-4 py-2 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p, index) => {
-                const discountedPrice =
-                  Number(p.price || 0) * (1 - Number(p.discount || 0) / 100);
-                return (
-                  <tr key={index} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3">{p.name}</td>
-                    <td className="px-4 py-3">{p.size}</td>
-                    <td className="px-4 py-3">{p.qty}</td>
-                    <td className="px-4 py-3">₹{p.price}</td>
-                    <td className="px-4 py-3">{p.discount}%</td>
-                    <td className="px-4 py-3 text-right">₹{(discountedPrice * p.qty).toFixed(2)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {/* Payment Summary */}
-          <div className="flex justify-end mb-8">
-            <div className="w-full md:w-1/3 text-right">
-              <div className="flex justify-between items-center text-sm mb-2">
-                <span>Paid:</span>
-                <span className="font-semibold">₹{paidAmount}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm mb-2">
-                <span>Left:</span>
-                <span className="font-semibold">₹{leftAmount}</span>
-              </div>
-              <div className="flex justify-between items-center text-lg font-bold border-t-2 border-neutral-300 pt-2 mt-2">
-                <span>Total:</span>
-                <span>₹{calculateTotals()}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center text-neutral-500 text-sm mt-8">
-            <p>Thank you for shopping with DEVID AURA!</p>
-            <p>All sales are subject to our return policy.</p>
-          </div>
-        </div>
-      </div>
+      {/* This component will no longer show the UI error message, as that's handled by toasts */}
     </div>
   );
 };
