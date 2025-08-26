@@ -147,6 +147,8 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
       <h3 className="mt-4 text-xl font-semibold">{userdetails.name}</h3>
       <p className="text-sm text-gray-500">{userdetails.email}</p>
       <p className="mt-2 text-sm text-gray-600">{userdetails.phone || 'Phone not set'}</p>
+      {userdetails.dob && <p className="text-sm text-gray-600">DOB: {userdetails.dob}</p>}
+{userdetails.gender && <p className="text-sm text-gray-600">Gender: {userdetails.gender}</p>}
 
       {/* Edit Dropdown */}
       <div className="mt-4 relative">
@@ -174,11 +176,16 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
   disabled={!previewImage && !userdetails?.profileImage}
 >
   Remove Profile Picture
-</button>
 <button
   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
   onClick={() => {
-    if (onEdit) onEdit(); // calls setIsEditingUser(true) in parent
+    setProfileForm({
+      name: userdetails.name || '',
+      phone: userdetails.phone || '',
+      dob: userdetails.dob || '',
+      gender: userdetails.gender || '',
+    });
+    setShowProfileModal(true);
     setDropdownOpen(false);
   }}
 >
@@ -330,6 +337,13 @@ const findProduct = (id) => products.find(p => p.id === id);
 const [originalAddr, setOriginalAddr] = useState(null); 
 const { uploadImage, uploading: imageUploading, uploadedUrl, error: uploadError } = useCloudinary();
  
+const [showProfileModal, setShowProfileModal] = useState(false);
+const [profileForm, setProfileForm] = useState({
+  name: '',
+  phone: '',
+  dob: '',
+  gender: '',
+});
 
 
 
@@ -423,6 +437,72 @@ const handleProfileImageChange = async (file) => {
     );
   }
 
+
+{showProfileModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
+      <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
+
+      <FloatingInput
+        label="Name"
+        value={profileForm.name}
+        onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+      />
+      <FloatingInput
+        label="Phone"
+        value={profileForm.phone}
+        onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+      />
+      <FloatingInput
+        label="Date of Birth"
+        type="date"
+        value={profileForm.dob}
+        onChange={e => setProfileForm({...profileForm, dob: e.target.value})}
+      />
+
+      <FloatingDropdown
+        label="Gender"
+        value={profileForm.gender}
+        onChange={e => setProfileForm({...profileForm, gender: e.target.value})}
+        options={['Male','Female','Other']}
+      />
+
+      <div className="flex gap-3 mt-4">
+        <button
+          className="px-4 py-2 rounded-lg bg-black text-white"
+          onClick={async () => {
+            const updated = await updateUser(profileForm);
+            if (updated) {
+              toast.success("Profile updated");
+              setShowProfileModal(false);
+            } else {
+              toast.error("Failed to update profile");
+            }
+          }}
+        >
+          Save
+        </button>
+        <button
+          className="px-4 py-2 rounded-lg border"
+          onClick={() => setShowProfileModal(false)}
+        >
+          Cancel
+        </button>
+      </div>
+
+      <button
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+        onClick={() => setShowProfileModal(false)}
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
+
+
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-12">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -444,36 +524,14 @@ const handleProfileImageChange = async (file) => {
         <div className="lg:col-span-3">
           <div className="bg-white p-6 rounded-2xl shadow-md">
             <div className="flex flex-wrap gap-2 mb-6">
-              {['profile','orders','addresses','reviews','queries'].map(t => (
+              {['orders','addresses','reviews','queries'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full text-sm font-medium ${activeTab === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
 
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {isEditingUser ? (
-                  <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FloatingInput label="Name" value={name} onChange={e => setName(e.target.value)} />
-                    <FloatingInput label="Phone" value={phone} onChange={e => setPhone(e.target.value)} />
-                    <div className="flex gap-3 mt-2">
-                      <button onClick={handleUpdateUser} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
-                      <button onClick={() => setIsEditingUser(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 rounded-lg bg-gray-50">
-                    <h3 className="text-lg font-semibold">Profile Information</h3>
-                    <p className="text-sm text-gray-600 mt-2">Name: {userdetails.name}</p>
-                    <p className="text-sm text-gray-600">Email: {userdetails.email}</p>
-                    <p className="text-sm text-gray-600">Phone: {userdetails.phone || 'N/A'}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
+            
             {/* Addresses Tab */}
             {activeTab === 'addresses' && (
               <div>
