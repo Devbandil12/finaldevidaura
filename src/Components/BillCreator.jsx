@@ -155,8 +155,8 @@ const BillCreator = () => {
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8">
             <div className="text-center md:text-left flex-1">
-              <h1 className="text-4xl text-pink-600 font-bold">DEVID AURA</h1>
-              <p className="italic text-gray-600 text-lg">ORESENCE IN EVERY STEP</p>
+              <h1 className="text-4xl text-black-600 font-bold">DEVID AURA</h1>
+              <p className="italic text-gray-600 text-lg">Presence in every step</p>
             </div>
             <div className="text-right flex-1 mt-4 md:mt-0">
               <p><strong>Invoice #:</strong> {invoiceNumber}</p>
