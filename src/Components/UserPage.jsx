@@ -83,7 +83,10 @@ const FloatingDropdown = ({ label, value, onChange, options }) => {
 };
 
 
-const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
+const ProfileCard = ({ userdetails, onEdit, onEditDetails, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
+
+ const { products } = useContext(ProductContext);
+  const findProduct = id => products.find(p => p.id === id);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
@@ -230,18 +233,19 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
         {/* Cart */}
         <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
           <div className="flex -space-x-2 mb-2">
-            {cart.slice(0,3).map(p => (
-     const product = findProduct(item.productId); // <-- add here
+           {cart.slice(0,3).map(item => {
+  const product = findProduct(item.productId);
   if (!product) return null;
   return (
-              <img
-                key={p.id}
-                src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
-                className="w-10 h-10 rounded-lg border"
-                alt={p.name}
-              />
-            );
-            ))}
+    <img
+      key={item.productId}
+      src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+      className="w-10 h-10 rounded-lg border"
+      alt={product.name}
+    />
+  );
+})}
+
           </div>
           <div className="text-sm text-gray-700">{cart.length} items</div>
           <button
