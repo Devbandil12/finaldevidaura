@@ -180,13 +180,7 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
 <button
   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
   onClick={() => {
-    setProfileForm({
-      name: userdetails.name || '',
-      phone: userdetails.phone || '',
-      dob: userdetails.dob || '',
-      gender: userdetails.gender || '',
-    });
-    setShowProfileModal(true);
+    onEditDetails();
     setDropdownOpen(false);
   }}
 >
@@ -511,12 +505,21 @@ const handleProfileImageChange = async (file) => {
         <div className="lg:col-span-1">
           <ProfileCard
   userdetails={userdetails}
-  onEdit={() => setIsEditingUser(true)}
   wishlist={wishlist}
   cart={cart}
   navigate={navigate}
   onProfileImageChange={handleProfileImageChange}
+  onEditDetails={() => {
+    setProfileForm({
+      name: userdetails.name || '',
+      phone: userdetails.phone || '',
+      dob: userdetails.dob || '',
+      gender: userdetails.gender || '',
+    });
+    setShowProfileModal(true);
+  }}
 />
+
 
 
         </div>
