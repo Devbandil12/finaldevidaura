@@ -15,9 +15,6 @@ const BillCreator = () => {
   // State for loading and errors
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfError, setPdfError] = useState(null);
-  
-  // New state to hold the canvas image data
-  const [canvasImage, setCanvasImage] = useState(null);
 
   // Invoice details
   const invoiceNumber = `INV-${Math.floor(Math.random() * 100000)}`;
@@ -51,8 +48,8 @@ const BillCreator = () => {
   const generatePDF = async () => {
     setIsGenerating(true);
     setPdfError(null);
-    setCanvasImage(null); // Clear previous image
 
+    // Give the DOM a moment to update with the latest state
     setTimeout(async () => {
       const input = invoiceRef.current;
       if (!input) {
@@ -63,23 +60,23 @@ const BillCreator = () => {
 
       try {
         const canvas = await html2canvas(input, {
-          scale: 2,
+          scale: 2, // Higher scale for better image quality
           useCORS: true,
         });
 
         const imgData = canvas.toDataURL("image/png");
-        setCanvasImage(imgData); // Display the canvas image
-        
-        // This is the part that was causing the issue, so we'll leave it out for now.
-        // const pdf = new jsPDF("p", "mm", "a4");
-        // const pdfWidth = pdf.internal.pageSize.getWidth();
-        // const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        // pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        // pdf.save(`DEVID_AURA_Invoice_${invoiceNumber}.pdf`);
-      
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        // Add the image to the PDF
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+        // Save the PDF with a unique name
+        pdf.save(`DEVID_AURA_Invoice_${invoiceNumber}.pdf`);
       } catch (error) {
-        console.error("Canvas generation failed:", error);
-        setPdfError("Failed to capture image. Please check your browser settings or try again.");
+        console.error("PDF generation failed:", error);
+        setPdfError("Failed to generate PDF. Please check your browser settings or try again.");
       } finally {
         setIsGenerating(false);
       }
@@ -87,49 +84,49 @@ const BillCreator = () => {
   };
 
   return (
-    <div className="p-4 md:p-12 font-sans min-h-screen" style={{ backgroundColor: '#fafafa', color: '#3f3f3f' }}>
-      <h2 className="text-3xl font-bold mb-2 text-center" style={{ color: '#171717' }}>DEVID AURA</h2>
-      <p className="text-center italic mb-8" style={{ color: '#525252' }}>Presence in Every Step</p>
+    <div className="p-4 md:p-12 font-sans bg-neutral-50 text-neutral-800 min-h-screen">
+      <h2 className="text-3xl font-bold mb-2 text-center text-neutral-900">DEVID AURA</h2>
+      <p className="text-center italic text-neutral-600 mb-8">Presence in Every Step</p>
 
       {/* Inputs Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="p-6 rounded-2xl shadow-md space-y-4" style={{ backgroundColor: '#ffffff' }}>
-          <h4 className="font-semibold text-lg" style={{ color: '#404040' }}>User Details</h4>
+        <div className="bg-white p-6 rounded-2xl shadow-md space-y-4">
+          <h4 className="font-semibold text-lg text-neutral-700">User Details</h4>
           <input
             type="text"
             placeholder="Name"
             value={user.name}
             onChange={(e) => setUser({ ...user, name: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <textarea
             placeholder="Address"
             value={user.address}
             onChange={(e) => setUser({ ...user, address: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <input
             type="text"
             placeholder="Phone"
             value={user.phone}
             onChange={(e) => setUser({ ...user, phone: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
-          <h4 className="font-semibold mt-6 text-lg" style={{ color: '#404040' }}>Delivery Partner</h4>
+          <h4 className="font-semibold mt-6 text-lg text-neutral-700">Delivery Partner</h4>
           <input
             type="text"
             placeholder="Delivery Partner Name"
             value={deliveryPartner}
             onChange={(e) => setDeliveryPartner(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
-          <h4 className="font-semibold mt-6 text-lg" style={{ color: '#404040' }}>Payment Mode</h4>
+          <h4 className="font-semibold mt-6 text-lg text-neutral-700">Payment Mode</h4>
           <select
             value={paymentMode}
             onChange={(e) => setPaymentMode(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="UPI">UPI</option>
             <option value="CashOnDelivery">Cash on Delivery</option>
@@ -141,14 +138,14 @@ const BillCreator = () => {
               placeholder="UTR Number"
               value={utrNo}
               onChange={(e) => setUtrNo(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+              className="w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-2"
             />
           )}
         </div>
 
         {/* Products Input */}
-        <div className="p-6 rounded-2xl shadow-md space-y-4" style={{ backgroundColor: '#ffffff' }}>
-          <h4 className="font-semibold text-lg" style={{ color: '#404040' }}>Products</h4>
+        <div className="bg-white p-6 rounded-2xl shadow-md space-y-4">
+          <h4 className="font-semibold text-lg text-neutral-700">Products</h4>
           {products.map((p, index) => (
             <div key={index} className="flex flex-wrap gap-2 mb-2">
               <input
@@ -156,42 +153,41 @@ const BillCreator = () => {
                 placeholder="Name"
                 value={p.name}
                 onChange={(e) => handleProductChange(index, "name", e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg min-w-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-2 border border-neutral-300 rounded-lg min-w-[100px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <input
                 type="text"
                 placeholder="Size"
                 value={p.size}
                 onChange={(e) => handleProductChange(index, "size", e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-2 border border-neutral-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <input
                 type="number"
                 placeholder="Price"
                 value={p.price}
                 onChange={(e) => handleProductChange(index, "price", e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-2 border border-neutral-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <input
                 type="number"
                 placeholder="Disc %"
                 value={p.discount}
                 onChange={(e) => handleProductChange(index, "discount", e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-2 border border-neutral-300 rounded-lg min-w-[60px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               <input
                 type="number"
                 placeholder="Qty"
                 value={p.qty}
                 onChange={(e) => handleProductChange(index, "qty", e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-lg min-w-[50px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 p-2 border border-neutral-300 rounded-lg min-w-[50px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           ))}
           <button
             onClick={addProduct}
-            className="hover:bg-blue-600 transition text-white px-4 py-2 rounded-lg mt-2 shadow-md"
-            style={{ backgroundColor: '#3b82f6' }}
+            className="bg-indigo-500 hover:bg-indigo-600 transition text-white px-4 py-2 rounded-lg mt-2 shadow-md"
           >
             Add Another Product
           </button>
@@ -202,23 +198,14 @@ const BillCreator = () => {
       <button
         onClick={generatePDF}
         disabled={isGenerating}
-        className={`px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg ${isGenerating ? "bg-gray-400 cursor-not-allowed" : "text-white hover:bg-blue-700"}`}
-        style={{ backgroundColor: isGenerating ? '#9ca3af' : '#2563eb' }}
+        className={`px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg ${isGenerating ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
       >
         {isGenerating ? "Generating..." : "Generate PDF"}
       </button>
 
       {pdfError && (
-        <div className="p-3 rounded-lg mt-4" style={{ backgroundColor: '#fecaca', color: '#b91c1c' }}>
+        <div className="bg-red-200 text-red-700 p-3 rounded-lg mt-4">
           Error: {pdfError}
-        </div>
-      )}
-
-      {/* Canvas Preview Image */}
-      {canvasImage && (
-        <div className="mt-8 text-center">
-          <p className="font-semibold mb-4">Canvas Preview:</p>
-          <img src={canvasImage} alt="Invoice Preview" className="mx-auto" style={{ maxWidth: '100%' }} />
         </div>
       )}
 
@@ -226,12 +213,11 @@ const BillCreator = () => {
       <div className="overflow-auto max-h-[80vh] p-2 mt-8 mx-auto">
         <div
           ref={invoiceRef}
-          className="w-[210mm] min-h-[297mm] p-8 box-border shadow-2xl rounded-2xl"
-          style={{ backgroundColor: '#ffffff' }}
+          className="w-[210mm] min-h-[297mm] p-8 bg-white box-border shadow-2xl rounded-2xl"
         >
           {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b-2 border-gray-200">
-            <h1 className="text-4xl font-extrabold" style={{ color: '#171717' }}>DEVID AURA</h1>
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b-2 border-neutral-200">
+            <h1 className="text-4xl font-extrabold text-neutral-900">DEVID AURA</h1>
             <div className="text-right mt-4 md:mt-0">
               <p className="text-lg font-semibold">INVOICE</p>
               <p className="text-sm"><strong>Invoice #:</strong> {invoiceNumber}</p>
@@ -241,18 +227,18 @@ const BillCreator = () => {
 
           {/* User & Delivery */}
           <div className="flex flex-col md:flex-row justify-between mb-8">
-            <div className="p-4 border rounded-lg" style={{ borderColor: '#e5e5e5' }}>
-              <h5 className="font-semibold" style={{ color: '#404040' }}>BILL TO:</h5>
+            <div className="p-4 border border-neutral-200 rounded-lg">
+              <h5 className="font-semibold text-neutral-700">BILL TO:</h5>
               <p className="font-medium">{user.name}</p>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: '#525252' }}>{user.address}</p>
-              <p className="text-sm" style={{ color: '#525252' }}>{user.phone}</p>
+              <p className="text-sm text-neutral-600 whitespace-pre-wrap">{user.address}</p>
+              <p className="text-sm text-neutral-600">{user.phone}</p>
             </div>
-            <div className="mt-4 md:mt-0 p-4 border rounded-lg" style={{ borderColor: '#e5e5e5' }}>
-              <h5 className="font-semibold" style={{ color: '#404040' }}>DELIVERY:</h5>
+            <div className="mt-4 md:mt-0 p-4 border border-neutral-200 rounded-lg">
+              <h5 className="font-semibold text-neutral-700">DELIVERY:</h5>
               <p className="font-medium">{deliveryPartner}</p>
               {paymentMode === "UPI" && (
                 <>
-                  <h5 className="font-semibold mt-2" style={{ color: '#404040' }}>UTR No:</h5>
+                  <h5 className="font-semibold text-neutral-700 mt-2">UTR No:</h5>
                   <p className="text-sm">{utrNo || "N/A"}</p>
                 </>
               )}
@@ -262,7 +248,7 @@ const BillCreator = () => {
           {/* Product Table */}
           <table className="w-full border-collapse mb-8 text-sm">
             <thead>
-              <tr className="border-b-2" style={{ borderColor: '#e5e5e5' }}>
+              <tr className="border-b-2 border-neutral-200">
                 <th className="font-bold px-4 py-2 text-left">Product</th>
                 <th className="font-bold px-4 py-2 text-left">Size</th>
                 <th className="font-bold px-4 py-2 text-left">Qty</th>
@@ -276,7 +262,7 @@ const BillCreator = () => {
                 const discountedPrice =
                   Number(p.price || 0) * (1 - Number(p.discount || 0) / 100);
                 return (
-                  <tr key={index} className="border-b transition-colors" style={{ borderColor: '#e5e5e5', '--tw-bg-opacity': '1' }}>
+                  <tr key={index} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
                     <td className="px-4 py-3">{p.name}</td>
                     <td className="px-4 py-3">{p.size}</td>
                     <td className="px-4 py-3">{p.qty}</td>
@@ -300,7 +286,7 @@ const BillCreator = () => {
                 <span>Left:</span>
                 <span className="font-semibold">₹{leftAmount}</span>
               </div>
-              <div className="flex justify-between items-center text-lg font-bold border-t-2 pt-2 mt-2" style={{ borderColor: '#a3a3a3' }}>
+              <div className="flex justify-between items-center text-lg font-bold border-t-2 border-neutral-300 pt-2 mt-2">
                 <span>Total:</span>
                 <span>₹{calculateTotals()}</span>
               </div>
@@ -308,7 +294,7 @@ const BillCreator = () => {
           </div>
 
           {/* Footer */}
-          <div className="text-center text-sm mt-8" style={{ color: '#737373' }}>
+          <div className="text-center text-neutral-500 text-sm mt-8">
             <p>Thank you for shopping with DEVID AURA!</p>
             <p>All sales are subject to our return policy.</p>
           </div>
