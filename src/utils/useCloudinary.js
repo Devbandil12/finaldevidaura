@@ -4,6 +4,7 @@ import axios from "axios";
 const useCloudinary = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState("");
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
 
   const uploadImage = async (file) => {
@@ -14,32 +15,38 @@ const useCloudinary = () => {
 
     setUploading(true);
     setError(null);
+    setProgress(0);
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "freelance");
-    formData.append("cloud_name", import.meta.env.VITE_CLOUDINARY_CLOUD_NAME);
 
-    // This is the original, simple URL
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
 
     try {
-      const response = await axios.post(uploadUrl, formData);
-      
+      const response = await axios.post(uploadUrl, formData, {
+        onUploadProgress: (event) => {
+          const percent = Math.round((event.loaded * 100) / event.total);
+          setProgress(percent);
+        },
+      });
+
       const secureUrl = response.data.secure_url;
       setUploadedUrl(secureUrl);
-      
+
       return secureUrl;
-      
+
     } catch (err) {
       setError(err.message);
-      throw err; 
+      throw err;
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   };
 
-  return { uploadImage, uploading, uploadedUrl, error };
+  return { uploadImage, uploading, progress, uploadedUrl, error };
 };
 
 export default useCloudinary;
