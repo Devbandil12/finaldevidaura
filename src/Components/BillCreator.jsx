@@ -15,6 +15,9 @@ const BillCreator = () => {
   // State for loading and errors
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfError, setPdfError] = useState(null);
+  
+  // New state to hold the canvas image data
+  const [canvasImage, setCanvasImage] = useState(null);
 
   // Invoice details
   const invoiceNumber = `INV-${Math.floor(Math.random() * 100000)}`;
@@ -46,22 +49,42 @@ const BillCreator = () => {
 
   // The core function to generate and download the PDF
   const generatePDF = async () => {
-  setIsGenerating(true);
-  setPdfError(null);
+    setIsGenerating(true);
+    setPdfError(null);
+    setCanvasImage(null); // Clear previous image
 
-  try {
-    const pdf = new jsPDF("p", "mm", "a4");
-    // This will create a blank PDF document
-    pdf.text("Hello World!", 10, 10);
-    pdf.save("test_document.pdf");
-  } catch (error) {
-    console.error("Test failed:", error);
-    setPdfError("Failed to generate PDF. Check console for details.");
-  } finally {
-    setIsGenerating(false);
-  }
-};
+    setTimeout(async () => {
+      const input = invoiceRef.current;
+      if (!input) {
+        setPdfError("Invoice element not found. Please refresh the page.");
+        setIsGenerating(false);
+        return;
+      }
 
+      try {
+        const canvas = await html2canvas(input, {
+          scale: 2,
+          useCORS: true,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        setCanvasImage(imgData); // Display the canvas image
+        
+        // This is the part that was causing the issue, so we'll leave it out for now.
+        // const pdf = new jsPDF("p", "mm", "a4");
+        // const pdfWidth = pdf.internal.pageSize.getWidth();
+        // const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        // pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        // pdf.save(`DEVID_AURA_Invoice_${invoiceNumber}.pdf`);
+      
+      } catch (error) {
+        console.error("Canvas generation failed:", error);
+        setPdfError("Failed to capture image. Please check your browser settings or try again.");
+      } finally {
+        setIsGenerating(false);
+      }
+    }, 500);
+  };
 
   return (
     <div className="p-4 md:p-12 font-sans min-h-screen" style={{ backgroundColor: '#fafafa', color: '#3f3f3f' }}>
@@ -188,6 +211,14 @@ const BillCreator = () => {
       {pdfError && (
         <div className="p-3 rounded-lg mt-4" style={{ backgroundColor: '#fecaca', color: '#b91c1c' }}>
           Error: {pdfError}
+        </div>
+      )}
+
+      {/* Canvas Preview Image */}
+      {canvasImage && (
+        <div className="mt-8 text-center">
+          <p className="font-semibold mb-4">Canvas Preview:</p>
+          <img src={canvasImage} alt="Invoice Preview" className="mx-auto" style={{ maxWidth: '100%' }} />
         </div>
       )}
 
