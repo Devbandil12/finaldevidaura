@@ -446,6 +446,12 @@ const handleProfileImageChange = async (file) => {
   }
 
 
+
+
+
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
 {showProfileModal && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
     <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
@@ -508,11 +514,6 @@ const handleProfileImageChange = async (file) => {
   </div>
 )}
 
-
-
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Profile Card */}
         <div className="lg:col-span-1">
