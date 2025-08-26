@@ -21,6 +21,7 @@ import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
 import ProductDetail from "./Components/ProductDetail";
 import UserPage from "./Components/UserPage";
+import BillCreator from "./Components/BillCreator";
 
 // Styles
 import "./style/adminPanel.css";
@@ -165,7 +166,7 @@ const App = () => {
                         </AdminProvider>
                       }
                     />
-
+                    <Route path="/bill" element={<BillCreator />} />
                     <Route path="/contact" element={<ContactUs />} />
 
                     {/* Checkout: guarded by intent, never open directly */}
