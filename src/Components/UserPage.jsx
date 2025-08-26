@@ -90,6 +90,10 @@ const ProfileCard = ({ userdetails, onEdit, onEditDetails, wishlist = [], cart =
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef(null);
+const { uploadImage, uploading, progress, uploadedUrl, error } = useCloudinary();
+const [file, setFile] = useState(null);
+const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
+
 
   const names = userdetails?.name?.split(' ') || ['U'];
   const firstLetter = names[0]?.charAt(0).toUpperCase();
@@ -103,18 +107,20 @@ const ProfileCard = ({ userdetails, onEdit, onEditDetails, wishlist = [], cart =
   const color1 = getRandomLightColor(firstLetter);
   const color2 = getRandomLightColor(lastLetter || firstLetter);
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleFileChange = async (e) => {
+  const selected = e.target.files[0];
+  if (!selected) return;
+  setFile(selected);
 
-    const reader = new FileReader();
-    reader.onload = () => setPreviewImage(reader.result);
-    reader.readAsDataURL(file);
-
-    if (onProfileImageChange) onProfileImageChange(file);
-    setDropdownOpen(false);
-  };
-
+  try {
+    const url = await uploadImage(selected); // Upload to Cloudinary
+    // Call backend to update user profile
+    await updateUser({ profileImage: url });
+    setProfileUrl(url); // Update frontend after backend confirms
+  } catch (err) {
+    console.error("Upload failed", err);
+  }
+};
   const handleRemoveImage = () => {
     setPreviewImage(null);
     if (onProfileImageChange) onProfileImageChange(null);
@@ -343,7 +349,7 @@ const findProduct = (id) => products.find(p => p.id === id);
   const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
 const [originalAddr, setOriginalAddr] = useState(null); 
-const { uploadImage, uploading: imageUploading, uploadedUrl, error: uploadError } = useCloudinary();
+
  
 const [showProfileModal, setShowProfileModal] = useState(false);
 const [profileForm, setProfileForm] = useState({
