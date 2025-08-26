@@ -236,7 +236,7 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
   return (
               <img
                 key={p.id}
-                src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
+                src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
                 className="w-10 h-10 rounded-lg border"
                 alt={p.name}
               />
