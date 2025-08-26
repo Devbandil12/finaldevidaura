@@ -82,18 +82,16 @@ const FloatingDropdown = ({ label, value, onChange, options }) => {
   );
 };
 
-
-const ProfileCard = ({ userdetails, onEdit, onEditDetails, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
-
- const { products } = useContext(ProductContext);
+const ProfileCard = ({ userdetails, onEditDetails, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
+  const { products } = useContext(ProductContext);
   const findProduct = id => products.find(p => p.id === id);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
-  const fileInputRef = useRef(null);
-const { uploadImage, uploading, progress, uploadedUrl, error } = useCloudinary();
-const [file, setFile] = useState(null);
-const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const { uploadImage } = useCloudinary();
+  const [profileUrl, setProfileUrl] = useState(userdetails.profileImage || null);
+  const [uploading, setUploading] = useState(false);
 
   const names = userdetails?.name?.split(' ') || ['U'];
   const firstLetter = names[0]?.charAt(0).toUpperCase();
@@ -107,38 +105,35 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
   const color1 = getRandomLightColor(firstLetter);
   const color2 = getRandomLightColor(lastLetter || firstLetter);
 
+  // 🔹 Handle profile image upload
   const handleFileChange = async (e) => {
-  const selected = e.target.files[0];
-  if (!selected) return;
-  setFile(selected);
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    const url = await uploadImage(selected); // Upload to Cloudinary
-    // Call backend to update user profile
-    await updateUser({ profileImage: url });
-    setProfileUrl(url); // Update frontend after backend confirms
-  } catch (err) {
-    console.error("Upload failed", err);
-  }
-};
-  const handleRemoveImage = () => {
-    setPreviewImage(null);
-    if (onProfileImageChange) onProfileImageChange(null);
+    try {
+      setUploading(true);
+      const url = await uploadImage(file);   // Cloudinary upload
+      await onProfileImageChange(url);       // Update backend
+      setProfileUrl(url);                    // Update UI
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    setProfileUrl(null);
+    if (onProfileImageChange) await onProfileImageChange(null);
     setDropdownOpen(false);
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-soft p-6 flex flex-col items-center text-center relative">
-      {/* Profile Image / Initials */}
-      <div
-        className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-semibold shadow-inner relative overflow-hidden"
-      >
-        {previewImage || userdetails?.profileImage ? (
-          <img
-            src={previewImage || userdetails.profileImage}
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+      {/* Profile Image */}
+      <div className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-semibold shadow-inner relative overflow-hidden">
+        {profileUrl ? (
+          <img src={profileUrl} alt="Profile" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center rounded-full">
             <span className="flex w-full h-full">
@@ -151,13 +146,20 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
             </span>
           </div>
         )}
+
+        {/* Uploading Overlay */}
+        {uploading && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-full">
+            <span className="text-white text-sm">Uploading...</span>
+          </div>
+        )}
       </div>
 
       <h3 className="mt-4 text-xl font-semibold">{userdetails.name}</h3>
       <p className="text-sm text-gray-500">{userdetails.email}</p>
       <p className="mt-2 text-sm text-gray-600">{userdetails.phone || 'Phone not set'}</p>
       {userdetails.dob && <p className="text-sm text-gray-600">DOB: {userdetails.dob}</p>}
-{userdetails.gender && <p className="text-sm text-gray-600">Gender: {userdetails.gender}</p>}
+      {userdetails.gender && <p className="text-sm text-gray-600">Gender: {userdetails.gender}</p>}
 
       {/* Edit Dropdown */}
       <div className="mt-4 relative">
@@ -178,33 +180,32 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
               Add / Change Profile Picture
             </button>
             <button
-  className={`w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition ${
-    !previewImage && !userdetails?.profileImage ? "opacity-50 cursor-not-allowed" : ""
-  }`}
-  onClick={handleRemoveImage}
-  disabled={!previewImage && !userdetails?.profileImage}
->
-  Remove Profile Picture
-</button>
-<button
-  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
-  onClick={() => {
-    onEditDetails();
-    setDropdownOpen(false);
-  }}
->
-  Edit Details
-</button>
-
-
+              className={`w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition ${
+                !profileUrl ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={handleRemoveImage}
+              disabled={!profileUrl}
+            >
+              Remove Profile Picture
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
+              onClick={() => {
+                onEditDetails();
+                setDropdownOpen(false);
+              }}
+            >
+              Edit Details
+            </button>
           </div>
         )}
+
         <input
           type="file"
           ref={fileInputRef}
           accept="image/*"
           className="hidden"
-          onChange={handleFileSelect}
+          onChange={handleFileChange}
         />
       </div>
 
@@ -214,18 +215,17 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
         <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
           <div className="flex -space-x-2 mb-2">
             {wishlist.slice(0,3).map(item => {
-  const product = findProduct(item.productId); // <-- add here
-  if (!product) return null;
-  return (
-    <img
-      key={item.productId}
-      src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
-      className="w-10 h-10 rounded-lg border"
-      alt={product.name}
-    />
-  );
-})}
-
+              const product = findProduct(item.productId);
+              if (!product) return null;
+              return (
+                <img
+                  key={item.productId}
+                  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                  className="w-10 h-10 rounded-lg border"
+                  alt={product.name}
+                />
+              );
+            })}
           </div>
           <div className="text-sm text-gray-700">{wishlist.length} items</div>
           <button
@@ -239,19 +239,18 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
         {/* Cart */}
         <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
           <div className="flex -space-x-2 mb-2">
-           {cart.slice(0,3).map(item => {
-  const product = findProduct(item.productId);
-  if (!product) return null;
-  return (
-    <img
-      key={item.productId}
-      src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
-      className="w-10 h-10 rounded-lg border"
-      alt={product.name}
-    />
-  );
-})}
-
+            {cart.slice(0,3).map(item => {
+              const product = findProduct(item.productId);
+              if (!product) return null;
+              return (
+                <img
+                  key={item.productId}
+                  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                  className="w-10 h-10 rounded-lg border"
+                  alt={product.name}
+                />
+              );
+            })}
           </div>
           <div className="text-sm text-gray-700">{cart.length} items</div>
           <button
@@ -265,6 +264,8 @@ const [profileUrl, setProfileUrl] = useState(currentUser.profileImage);
     </div>
   );
 };
+
+
 
 const AddressCard = ({ addr, onDelete, onEdit, onSetDefault }) => (
   <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
