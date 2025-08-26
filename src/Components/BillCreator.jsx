@@ -46,42 +46,22 @@ const BillCreator = () => {
 
   // The core function to generate and download the PDF
   const generatePDF = async () => {
-    setIsGenerating(true);
-    setPdfError(null);
+  setIsGenerating(true);
+  setPdfError(null);
 
-    // Give the DOM a moment to update with the latest state
-    setTimeout(async () => {
-      const input = invoiceRef.current;
-      if (!input) {
-        setPdfError("Invoice element not found. Please refresh the page.");
-        setIsGenerating(false);
-        return;
-      }
+  try {
+    const pdf = new jsPDF("p", "mm", "a4");
+    // This will create a blank PDF document
+    pdf.text("Hello World!", 10, 10);
+    pdf.save("test_document.pdf");
+  } catch (error) {
+    console.error("Test failed:", error);
+    setPdfError("Failed to generate PDF. Check console for details.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
-      try {
-        const canvas = await html2canvas(input, {
-          scale: 2, // Higher scale for better image quality
-          useCORS: true,
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        // Add the image to the PDF
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-        // Save the PDF with a unique name
-        pdf.save(`DEVID_AURA_Invoice_${invoiceNumber}.pdf`);
-      } catch (error) {
-        console.error("PDF generation failed:", error);
-        setPdfError("Failed to generate PDF. Please check your browser settings or try again.");
-      } finally {
-        setIsGenerating(false);
-      }
-    }, 500);
-  };
 
   return (
     <div className="p-4 md:p-12 font-sans min-h-screen" style={{ backgroundColor: '#fafafa', color: '#3f3f3f' }}>
