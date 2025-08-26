@@ -50,23 +50,25 @@ export const UserProvider = ({ children }) => {
   
   // Update User Details
   const updateUser = useCallback(async (updatedData) => {
-    if (!userdetails?.id) return null;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Failed to update user");
-      const data = await res.json();
-      setUserdetails(data);
-      await getUserDetail();
-      return data;
-    } catch (error) {
-      console.error("❌ Failed to update user:", error);
-      return null;
-    }
-  }, [userdetails?.id, BACKEND_URL]);
+  if (!userdetails?.id) return null;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedData),
+    });
+    if (!res.ok) throw new Error("Failed to update user");
+
+    const data = await res.json();
+    // Merge updated fields locally
+    setUserdetails(prev => ({ ...prev, ...updatedData }));
+    return data;
+  } catch (error) {
+    console.error("❌ Failed to update user:", error);
+    return null;
+  }
+}, [userdetails?.id, BACKEND_URL]);
+
 
   // Corrected Address APIs in UserContext.jsx
 
