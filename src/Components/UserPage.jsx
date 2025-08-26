@@ -204,14 +204,19 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
         {/* Wishlist */}
         <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
           <div className="flex -space-x-2 mb-2">
-            {wishlist.slice(0,3).map(p => (
-              <img
-                key={p.id}
-                src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
-                className="w-10 h-10 rounded-lg border"
-                alt={p.name}
-              />
-            ))}
+            {wishlist.slice(0,3).map(item => {
+  const product = findProduct(item.productId); // <-- add here
+  if (!product) return null;
+  return (
+    <img
+      key={item.productId}
+      src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+      className="w-10 h-10 rounded-lg border"
+      alt={product.name}
+    />
+  );
+})}
+
           </div>
           <div className="text-sm text-gray-700">{wishlist.length} items</div>
           <button
@@ -226,12 +231,16 @@ const ProfileCard = ({ userdetails, onEdit, wishlist = [], cart = [], navigate, 
         <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
           <div className="flex -space-x-2 mb-2">
             {cart.slice(0,3).map(p => (
+     const product = findProduct(item.productId); // <-- add here
+  if (!product) return null;
+  return (
               <img
                 key={p.id}
                 src={Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl}
                 className="w-10 h-10 rounded-lg border"
                 alt={p.name}
               />
+            );
             ))}
           </div>
           <div className="text-sm text-gray-700">{cart.length} items</div>
