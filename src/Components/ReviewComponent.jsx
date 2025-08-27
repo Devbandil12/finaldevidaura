@@ -182,6 +182,12 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
  
+const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
+
+useEffect(() => {
+  const timer = setTimeout(() => setDebouncedFilter(starFilter), 200);
+  return () => clearTimeout(timer);
+}, [starFilter]);
 
 
   const fetchReviews = useCallback(async (initial = false) => {
@@ -191,8 +197,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     const fetchCursor = initial ? null : cursor;
 
     const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-  (starFilter ? `&rating=${starFilter}` : "") +
+  (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
   (fetchCursor ? `&cursor=${fetchCursor}` : "");
+
 
 
     const res = await axios.get(url);
@@ -216,10 +223,11 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
   useEffect(() => {
   setCursor(null);
-  setReviews([]);      
-  setHasMore(true);    
-  fetchReviews(true);  
-}, [starFilter, fetchReviews]);
+  setReviews([]);
+  setHasMore(true);
+  fetchReviews(true);
+}, [debouncedFilter, fetchReviews]);
+
 
 
   const handleSubmit = async (e) => {
