@@ -190,8 +190,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     const fetchCursor = initial ? null : cursor;
 
     const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-      (starFilter ? `&rating=${starFilter}` : "") +
-      (fetchCursor ? `&cursor=${fetchCursor}` : "");
+  (starFilter ? `&rating=${Number(starFilter)}` : "") +
+  (fetchCursor ? `&cursor=${fetchCursor}` : "");
+
 
     const res = await axios.get(url);
     const { reviews: newReviews, nextCursor, hasMore: more, averageRating: avg, ratingCounts: counts } = res.data;
