@@ -181,11 +181,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   // 🟢 Use your custom Cloudinary hook
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
-  const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
-
-useEffect(() => {
-  setDebouncedFilter(starFilter);
-}, [starFilter]);
+ 
 
 
   const fetchReviews = useCallback(async (initial = false) => {
@@ -195,7 +191,7 @@ useEffect(() => {
     const fetchCursor = initial ? null : cursor;
 
     const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-  (starFilter ? `&rating=${Number(starFilter)}` : "") +
+  (starFilter ? `&rating=${starFilter}` : "") +
   (fetchCursor ? `&cursor=${fetchCursor}` : "");
 
 
