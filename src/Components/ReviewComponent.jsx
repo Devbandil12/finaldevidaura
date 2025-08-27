@@ -209,7 +209,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   } finally {
     setIsLoading(false);
   }
-}, [productId, starFilter, cursor]);
+}, [productId, starFilter]);
 
 
   useEffect(() => {
