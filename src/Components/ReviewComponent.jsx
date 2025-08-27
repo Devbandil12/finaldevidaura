@@ -181,7 +181,12 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   // 🟢 Use your custom Cloudinary hook
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
-  
+  const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
+
+useEffect(() => {
+  setDebouncedFilter(starFilter);
+}, [starFilter]);
+
 
   const fetchReviews = useCallback(async (initial = false) => {
   try {
