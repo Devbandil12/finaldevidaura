@@ -182,9 +182,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
-    return () => clearTimeout(t);
-  }, [starFilter]);
+  setDebouncedFilter(starFilter);
+}, [starFilter]);
+
 
   const fetchReviews = useCallback(async (initial = false) => {
   try {
@@ -216,9 +216,12 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 }, [productId, debouncedFilter, cursor]);
 
   useEffect(() => {
-    setCursor(null);
-    fetchReviews(true);
-  }, [debouncedFilter, fetchReviews]);
+  setCursor(null);
+  setReviews([]);      
+  setHasMore(true);    
+  fetchReviews(true);  
+}, [debouncedFilter, fetchReviews]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
