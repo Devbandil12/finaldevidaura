@@ -187,27 +187,33 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   }, [starFilter]);
 
   const fetchReviews = useCallback(async (initial = false) => {
-    try {
-      setIsLoading(true);
-      const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-        (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
-        (cursor && !initial ? `&cursor=${cursor}` : "");
+  try {
+    setIsLoading(true);
 
-      const res = await axios.get(url);
-      const { reviews: newReviews, nextCursor, hasMore, averageRating, ratingCounts } = res.data;
-      setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
-      setCursor(nextCursor);
-      setHasMore(hasMore);
-      if (initial && debouncedFilter === null) {
-        setAverageRating(averageRating);
-        setRatingCounts(ratingCounts);
-      }
-    } catch (err) {
-      console.error("Failed to fetch reviews", err);
-    } finally {
-      setIsLoading(false);
+    // Local cursor for this fetch
+    const fetchCursor = initial ? null : cursor;
+
+    const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
+      (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
+      (fetchCursor ? `&cursor=${fetchCursor}` : "");
+
+    const res = await axios.get(url);
+    const { reviews: newReviews, nextCursor, hasMore: more, averageRating: avg, ratingCounts: counts } = res.data;
+
+    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+    setCursor(nextCursor);
+    setHasMore(more);
+
+    if (initial && !debouncedFilter) {
+      setAverageRating(avg);
+      setRatingCounts(counts);
     }
-  }, [productId, debouncedFilter, cursor]);
+  } catch (err) {
+    console.error("Failed to fetch reviews", err);
+  } finally {
+    setIsLoading(false);
+  }
+}, [productId, debouncedFilter, cursor]);
 
   useEffect(() => {
     setCursor(null);
@@ -355,6 +361,14 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         </div>
       )}
 
+{/* Initial Loader */}
+{isLoading && reviews.length === 0 && (
+  <div className="flex justify-center mt-4">
+    <Loader2 className="animate-spin text-gray-500" size={24} />
+  </div>
+)}
+
+
       {/* Review List */}
       <div className="space-y-6">
         <AnimatePresence>
@@ -418,32 +432,44 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         </AnimatePresence>
       </div>
 
-      {/* Pagination & Load More */}
-      <div className="flex justify-center items-center gap-4 mt-6">
-        {hasMore && !isLoading && (
-          <button
-            onClick={() => fetchReviews(false)}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            <ArrowDown size={16} />
-            Load More Reviews
-          </button>
-        )}
-        {reviews.length > REVIEWS_PER_PAGE && (
-          <button
-            onClick={() => {
-              setCursor(null);
-              fetchReviews(true);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            <ArrowUp size={16} />
-            Back to Top
-          </button>
-        )}
-        {isLoading && <Loader2 className="animate-spin text-gray-500" size={24} />}
-      </div>
+      {/* Load More / Pagination Section */}
+<div className="flex flex-col items-center gap-4 mt-6">
+  {/* Load More button */}
+  {hasMore && !isLoading && (
+   <button
+  onClick={() => fetchReviews(false)}
+  disabled={isLoading}
+  className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+>
+  <ArrowDown size={16} />
+  Load More Reviews
+</button>
+
+  )}
+
+  {/* Pagination loader */}
+  {isLoading && reviews.length > 0 && (
+    <div className="flex justify-center mt-2">
+      <Loader2 className="animate-spin text-gray-500" size={20} />
+    </div>
+  )}
+
+  {/* Back to Top button */}
+  {reviews.length > REVIEWS_PER_PAGE && (
+    <button
+      onClick={() => {
+        setCursor(null);
+        fetchReviews(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}
+      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+    >
+      <ArrowUp size={16} />
+      Back to Top
+    </button>
+  )}
+</div>
+
 
       {/* Toggle Form Button */}
       <div className="flex justify-center mt-6">
