@@ -176,25 +176,21 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [starFilter, setStarFilter] = useState(null);
   const [preview, setPreview] = useState({ images: [], index: null });
   const [formOpen, setFormOpen] = useState(false);
-  const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
+  
 
   // 🟢 Use your custom Cloudinary hook
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
-  useEffect(() => {
-  setDebouncedFilter(starFilter);
-}, [starFilter]);
-
+  
 
   const fetchReviews = useCallback(async (initial = false) => {
   try {
     setIsLoading(true);
 
-    // Local cursor for this fetch
     const fetchCursor = initial ? null : cursor;
 
     const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-      (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
+      (starFilter ? `&rating=${starFilter}` : "") +
       (fetchCursor ? `&cursor=${fetchCursor}` : "");
 
     const res = await axios.get(url);
@@ -204,7 +200,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setCursor(nextCursor);
     setHasMore(more);
 
-    if (initial && !debouncedFilter) {
+    if (initial) {
       setAverageRating(avg);
       setRatingCounts(counts);
     }
@@ -213,14 +209,15 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   } finally {
     setIsLoading(false);
   }
-}, [productId, debouncedFilter, cursor]);
+}, [productId, starFilter, cursor]);
+
 
   useEffect(() => {
   setCursor(null);
   setReviews([]);      
   setHasMore(true);    
   fetchReviews(true);  
-}, [debouncedFilter, fetchReviews]);
+}, [starFilter, fetchReviews]);
 
 
   const handleSubmit = async (e) => {
