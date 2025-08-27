@@ -185,48 +185,37 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 const [debouncedFilter, setDebouncedFilter] = useState(starFilter);
 
 useEffect(() => {
-  const timer = setTimeout(() => setDebouncedFilter(starFilter), 200);
-  return () => clearTimeout(timer);
-}, [starFilter]);
-
+    const t = setTimeout(() => setDebouncedFilter(starFilter), 300);
+    return () => clearTimeout(t);
+  }, [starFilter]);
 
   const fetchReviews = useCallback(async (initial = false) => {
-  try {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
+      const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
+        (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
+        (cursor && !initial ? `&cursor=${cursor}` : "");
 
-    const fetchCursor = initial ? null : cursor;
-
-    const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-  (debouncedFilter ? `&rating=${debouncedFilter}` : "") +
-  (fetchCursor ? `&cursor=${fetchCursor}` : "");
-
-
-
-    const res = await axios.get(url);
-    const { reviews: newReviews, nextCursor, hasMore: more, averageRating: avg, ratingCounts: counts } = res.data;
-
-    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
-    setCursor(nextCursor);
-    setHasMore(more);
-
-    if (initial) {
-      setAverageRating(avg);
-      setRatingCounts(counts);
+      const res = await axios.get(url);
+      const { reviews: newReviews, nextCursor, hasMore, averageRating, ratingCounts } = res.data;
+      setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+      setCursor(nextCursor);
+      setHasMore(hasMore);
+      if (initial && debouncedFilter === null) {
+        setAverageRating(averageRating);
+        setRatingCounts(ratingCounts);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to fetch reviews", err);
-  } finally {
-    setIsLoading(false);
-  }
-}, [productId, starFilter]);
-
+  }, [productId, debouncedFilter, cursor]);
 
   useEffect(() => {
-  setCursor(null);
-  setReviews([]);
-  setHasMore(true);
-  fetchReviews(true);
-}, [debouncedFilter, fetchReviews]);
+    setCursor(null);
+    fetchReviews(true);
+  }, [debouncedFilter, fetchReviews]);
 
 
 
