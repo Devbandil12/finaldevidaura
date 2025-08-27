@@ -222,10 +222,9 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 }, [starFilter, fetchReviews]);
 
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     if (!rating || !comment || (!user && !name)) return;
-
     try {
       const payload = {
         productId,
@@ -238,12 +237,19 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
       };
 
       if (editingReviewId) {
-        await axios.put(`${API_BASE}/${editingReviewId}`, payload);
+        const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
+        const updatedReview = res.data.updated[0];
+        setReviews((prev) =>
+          prev.map((r) => (r.id === updatedReview.id ? updatedReview : r))
+        );
       } else {
-        await axios.post(API_BASE, payload);
+        const res = await axios.post(API_BASE, payload);
+        const newReview = res.data;
+        setReviews((prev) => [newReview, ...prev]);
       }
 
       resetForm();
+
       fetchReviews(true);
     } catch (err) {
       console.error("Review submission failed", err);
