@@ -1,4 +1,4 @@
-Import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Star,
   ArrowDown,
