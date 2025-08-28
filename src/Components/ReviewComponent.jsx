@@ -14,13 +14,12 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-// 🟢 Import your custom Cloudinary hook
 import useCloudinary from "../utils/useCloudinary";
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
 
-// Custom Dropdown Component
+// Custom Dropdown Component (no change)
 const CustomDropdown = ({ label, options, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -81,7 +80,7 @@ const CustomDropdown = ({ label, options, value, onChange }) => {
   );
 };
 
-// Custom Star Rating Dropdown for Form
+// Custom Star Rating Dropdown for Form (no change)
 const StarRatingDropdown = ({ rating, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -178,11 +177,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [formOpen, setFormOpen] = useState(false);
   
 
-  // 🟢 Use your custom Cloudinary hook
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
-
- 
-
 
   const fetchReviews = useCallback(async (initial = false) => {
   try {
@@ -215,46 +210,40 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
 
   useEffect(() => {
-  setCursor(null);
-  setReviews([]);      
-  setHasMore(true);    
-  fetchReviews(true);  
-}, [starFilter, fetchReviews]);
+    setCursor(null);
+    setReviews([]);      
+    setHasMore(true);    
+    fetchReviews(true);  
+  }, [starFilter, fetchReviews]);
 
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!rating || !comment || (!user && !name)) return;
-    try {
-      const payload = {
-        productId,
-        rating,
-        comment,
-        name: user?.name || name,
-        userId: userdetails?.id,
-        clerkId: user?.id,
-        photoUrls: images,
-      };
-
-      if (editingReviewId) {
-        const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
-        const updatedReview = res.data.updated[0];
-        setReviews((prev) =>
-          prev.map((r) => (r.id === updatedReview.id ? updatedReview : r))
-        );
-      } else {
-        const res = await axios.post(API_BASE, payload);
-        const newReview = res.data;
-        setReviews((prev) => [newReview, ...prev]);
+      e.preventDefault();
+      if (!rating || !comment || (!user && !name)) return;
+      try {
+        const payload = {
+          productId,
+          rating,
+          comment,
+          name: user?.name || name,
+          userId: userdetails?.id,
+          clerkId: user?.id,
+          photoUrls: images,
+        };
+  
+        if (editingReviewId) {
+          await axios.put(`${API_BASE}/${editingReviewId}`, payload);
+        } else {
+          await axios.post(API_BASE, payload);
+        }
+  
+        resetForm();
+        fetchReviews(true);
+  
+      } catch (err) {
+        console.error("Review submission failed", err);
       }
-
-      resetForm();
-
-      fetchReviews(true);
-    } catch (err) {
-      console.error("Review submission failed", err);
-    }
-  };
+    };
 
   const resetForm = () => {
     setRating(0);
@@ -274,7 +263,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
     setFormOpen(true);
   };
 
-  // 🟢 Updated image upload handler
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
     const uploadedUrls = [];
@@ -352,7 +340,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
           <div className="flex flex-col gap-2">
             {[5, 4, 3, 2, 1].map((star) => (
               <div key={star} className="grid grid-cols-12 items-center gap-2">
-                {/* 🟢 Render the Star icon instead of a text character */}
                 <span className="col-span-1 flex items-center gap-1 font-semibold text-gray-900">
                   {star} <Star fill="#facc15" stroke="#facc15" size={14} />
                 </span>
@@ -369,16 +356,22 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         </div>
       )}
 
-{/* Initial Loader */}
-{isLoading && reviews.length === 0 && (
-  <div className="flex justify-center mt-4">
-    <Loader2 className="animate-spin text-gray-500" size={24} />
-  </div>
-)}
-
+      {/* Initial Loader */}
+      {isLoading && reviews.length === 0 && (
+        <div className="flex justify-center mt-4">
+          <Loader2 className="animate-spin text-gray-500" size={24} />
+        </div>
+      )}
 
       {/* Review List */}
       <div className="space-y-6">
+        {/* 🟢 Add a condition to show a message if there are no reviews */}
+        {!isLoading && reviews.length === 0 && (
+          <div className="text-center text-gray-500 py-10">
+            <p>No reviews found for this product yet.</p>
+            <p>Be the first to leave a review!</p>
+          </div>
+        )}
         <AnimatePresence>
           {reviews.map((r) => (
             <motion.div
@@ -441,43 +434,39 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
       </div>
 
       {/* Load More / Pagination Section */}
-<div className="flex flex-col items-center gap-4 mt-6">
-  {/* Load More button */}
-  {hasMore && !isLoading && (
-   <button
-  onClick={() => fetchReviews(false)}
-  disabled={isLoading}
-  className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
->
-  <ArrowDown size={16} />
-  Load More Reviews
-</button>
-
-  )}
-
-  {/* Pagination loader */}
-  {isLoading && reviews.length > 0 && (
-    <div className="flex justify-center mt-2">
-      <Loader2 className="animate-spin text-gray-500" size={20} />
-    </div>
-  )}
-
-  {/* Back to Top button */}
-  {reviews.length > REVIEWS_PER_PAGE && (
-    <button
-      onClick={() => {
-        setCursor(null);
-        fetchReviews(true);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }}
-      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-    >
-      <ArrowUp size={16} />
-      Back to Top
-    </button>
-  )}
-</div>
-
+      <div className="flex flex-col items-center gap-4 mt-6">
+        {/* Load More button */}
+        {hasMore && !isLoading && (
+          <button
+            onClick={() => fetchReviews(false)}
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            <ArrowDown size={16} />
+            Load More Reviews
+          </button>
+        )}
+        {/* Pagination loader */}
+        {isLoading && reviews.length > 0 && (
+          <div className="flex justify-center mt-2">
+            <Loader2 className="animate-spin text-gray-500" size={20} />
+          </div>
+        )}
+        {/* Back to Top button */}
+        {reviews.length > REVIEWS_PER_PAGE && (
+          <button
+            onClick={() => {
+              setCursor(null);
+              fetchReviews(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <ArrowUp size={16} />
+            Back to Top
+          </button>
+        )}
+      </div>
 
       {/* Toggle Form Button */}
       <div className="flex justify-center mt-6">
@@ -523,7 +512,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
               onChange={handleImageUpload}
               className="p-3 border border-gray-300 rounded-md col-span-1 md:col-span-2"
             />
-            {/* 🟢 Add a loading indicator for image uploads */}
             {uploading && <p className="col-span-1 md:col-span-2 text-center text-gray-500">Uploading image(s)...</p>}
             {uploadError && <p className="col-span-1 md:col-span-2 text-center text-red-500">Error: {uploadError}</p>}
             <div className="flex gap-2 flex-wrap col-span-1 md:col-span-2">
