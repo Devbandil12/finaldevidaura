@@ -19,7 +19,7 @@ import useCloudinary from "../utils/useCloudinary";
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
 
-// Custom Dropdown Component (no change)
+// Custom Dropdown Component
 const CustomDropdown = ({ label, options, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -49,7 +49,6 @@ const CustomDropdown = ({ label, options, value, onChange }) => {
         {selectedOption.label}
         {isOpen ? <ChevronUp className="-mr-1 ml-2 h-5 w-5" /> : <ChevronDown className="-mr-1 ml-2 h-5 w-5" />}
       </button>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -80,7 +79,7 @@ const CustomDropdown = ({ label, options, value, onChange }) => {
   );
 };
 
-// Custom Star Rating Dropdown for Form (no change)
+// Custom Star Rating Dropdown for Form
 const StarRatingDropdown = ({ rating, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -159,7 +158,6 @@ const StarRatingDropdown = ({ rating, onChange }) => {
   );
 };
 
-
 const ReviewComponent = ({ productId, user, userdetails }) => {
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
@@ -176,48 +174,60 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [preview, setPreview] = useState({ images: [], index: null });
   const [formOpen, setFormOpen] = useState(false);
   
-
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
   const fetchReviews = useCallback(async (initial = false) => {
-  try {
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    const fetchCursor = initial ? null : cursor;
+      const fetchCursor = initial ? null : cursor;
+      
+      let url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}`;
+      
+      if (userdetails?.id) {
+          url += `&userId=${userdetails.id}`;
+      }
 
-    const url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}` +
-  (starFilter ? `&rating=${starFilter}` : "") +
-  (fetchCursor ? `&cursor=${fetchCursor}` : "");
+      if (starFilter) {
+        url += `&rating=${starFilter}`;
+      }
+      
+      if (fetchCursor) {
+        url += `&cursor=${fetchCursor}`;
+      }
 
+      const res = await axios.get(url);
+      const { 
+        reviews: newReviews, 
+        nextCursor, 
+        hasMore: more, 
+        averageRating: avg, 
+        ratingCounts: counts 
+      } = res.data;
 
-    const res = await axios.get(url);
-    const { reviews: newReviews, nextCursor, hasMore: more, averageRating: avg, ratingCounts: counts } = res.data;
+      setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+      setCursor(nextCursor);
+      setHasMore(more);
 
-    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
-    setCursor(nextCursor);
-    setHasMore(more);
-
-    if (initial) {
-      setAverageRating(avg);
-      setRatingCounts(counts);
+      if (initial) {
+        setAverageRating(avg);
+        setRatingCounts(counts);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to fetch reviews", err);
-  } finally {
-    setIsLoading(false);
-  }
-}, [productId, starFilter]);
-
+  }, [productId, starFilter, cursor, userdetails]);
 
   useEffect(() => {
     setCursor(null);
     setReviews([]);      
     setHasMore(true);    
     fetchReviews(true);  
-  }, [starFilter, fetchReviews]);
+  }, [starFilter, fetchReviews, userdetails]);
 
-
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!rating || !comment || (!user && !name)) return;
     try {
@@ -232,35 +242,24 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         };
 
         if (editingReviewId) {
-            // Update a review
             const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
             const updatedReview = res.data.updated[0];
-
-            // 🟢 Update the reviews list in state directly to show the change
             setReviews((prev) =>
                 prev.map((r) => (r.id === updatedReview.id ? updatedReview : r))
             );
         } else {
-            // Add a new review
             const res = await axios.post(API_BASE, payload);
             const newReview = res.data;
-
-            // 🟢 Add the new review to the start of the list in state
             setReviews((prev) => [newReview, ...prev]);
         }
-
-        // 🟢 Remove the full re-fetch here to avoid duplication
-        // The list is now updated instantly, but stats are not.
-        // We will call a separate function to update stats
         
         resetForm();
-        fetchReviewStats(); // 🟢 New call to update stats only
-        
+        fetchReviews(true); 
+    
     } catch (err) {
         console.error("Review submission failed", err);
     }
-};
-
+  };
 
   const resetForm = () => {
     setRating(0);
