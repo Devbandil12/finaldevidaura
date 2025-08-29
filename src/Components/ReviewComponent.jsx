@@ -141,6 +141,7 @@ const StarRatingDropdown = ({ rating, onChange }) => {
               {[5, 4, 3, 2, 1].map((s) => (
                 <button
                   key={s}
+                  type="button"
                   onClick={() => {
                     onChange(s);
                     setIsOpen(false);
