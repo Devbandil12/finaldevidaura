@@ -502,7 +502,13 @@ const fetchReviewStats = async () => {
 
       {/* Toggle Form Button */}
       <div className="flex justify-center mt-6">
-        <button onClick={() => setFormOpen(!formOpen)} className="px-6 py-3 bg-black text-white rounded-full font-semibold transition-colors hover:bg-gray-800">
+        <button onClick={() => {
+      if (formOpen) {
+        resetForm();   
+      } else {
+        setFormOpen(true); 
+      }
+    }} className="px-6 py-3 bg-black text-white rounded-full font-semibold transition-colors hover:bg-gray-800">
           {formOpen ? "Close Review Form" : "Write a Review"}
         </button>
       </div>
