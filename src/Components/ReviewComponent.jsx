@@ -218,49 +218,32 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!rating || !comment || (!user && !name)) return;
-    try {
+      e.preventDefault();
+      if (!rating || !comment || (!user && !name)) return;
+      try {
         const payload = {
-            productId,
-            rating,
-            comment,
-            name: user?.name || name,
-            userId: userdetails?.id,
-            clerkId: user?.id,
-            photoUrls: images,
+          productId,
+          rating,
+          comment,
+          name: user?.name || name,
+          userId: userdetails?.id,
+          clerkId: user?.id,
+          photoUrls: images,
         };
-
+  
         if (editingReviewId) {
-            // Update a review
-            const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
-            const updatedReview = res.data.updated[0];
-
-            // 🟢 Update the reviews list in state directly to show the change
-            setReviews((prev) =>
-                prev.map((r) => (r.id === updatedReview.id ? updatedReview : r))
-            );
+          await axios.put(`${API_BASE}/${editingReviewId}`, payload);
         } else {
-            // Add a new review
-            const res = await axios.post(API_BASE, payload);
-            const newReview = res.data;
-
-            // 🟢 Add the new review to the start of the list in state
-            setReviews((prev) => [newReview, ...prev]);
+          await axios.post(API_BASE, payload);
         }
-
-        // 🟢 Remove the full re-fetch here to avoid duplication
-        // The list is now updated instantly, but stats are not.
-        // We will call a separate function to update stats
-        
+  
         resetForm();
-        fetchReviewStats(); // 🟢 New call to update stats only
-        
-    } catch (err) {
+        fetchReviews(true);
+  
+      } catch (err) {
         console.error("Review submission failed", err);
-    }
-};
-
+      }
+    };
 
   const resetForm = () => {
     setRating(0);
