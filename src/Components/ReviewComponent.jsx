@@ -502,7 +502,7 @@ const fetchReviewStats = async () => {
 
       {/* Toggle Form Button */}
       <div className="flex justify-center mt-6">
-        <button onClick={() => {
+        {user || userdetails ? ( <button onClick={() => {
       if (formOpen) {
         resetForm();   
       } else {
@@ -511,11 +511,14 @@ const fetchReviewStats = async () => {
     }} className="px-6 py-3 bg-black text-white rounded-full font-semibold transition-colors hover:bg-gray-800">
           {formOpen ? "Close Review Form" : "Write a Review"}
         </button>
+  ) : (
+    <p className="text-gray-500 text-center">You must be logged in to write a review.</p>
+  )}
       </div>
 
       {/* Review Form with Animation */}
       <AnimatePresence>
-        {formOpen && (
+        {(user || userdetails) && formOpen && (
           <motion.form
             className="mt-8 p-6 bg-gray-50 rounded-lg shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4"
             onSubmit={handleSubmit}
