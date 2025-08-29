@@ -19,7 +19,7 @@ import useCloudinary from "../utils/useCloudinary";
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
 
-// Custom Dropdown Component (no change)
+// Custom Dropdown Component
 const CustomDropdown = ({ label, options, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -49,7 +49,6 @@ const CustomDropdown = ({ label, options, value, onChange }) => {
         {selectedOption.label}
         {isOpen ? <ChevronUp className="-mr-1 ml-2 h-5 w-5" /> : <ChevronDown className="-mr-1 ml-2 h-5 w-5" />}
       </button>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -80,7 +79,7 @@ const CustomDropdown = ({ label, options, value, onChange }) => {
   );
 };
 
-// Custom Star Rating Dropdown for Form (no change)
+// Custom Star Rating Dropdown for Form
 const StarRatingDropdown = ({ rating, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -159,7 +158,6 @@ const StarRatingDropdown = ({ rating, onChange }) => {
   );
 };
 
-
 const ReviewComponent = ({ productId, user, userdetails }) => {
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
@@ -176,65 +174,61 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
   const [preview, setPreview] = useState({ images: [], index: null });
   const [formOpen, setFormOpen] = useState(false);
   
-
   const { uploadImage, uploading, error: uploadError } = useCloudinary();
 
-    const fetchReviews = useCallback(async (initial = false) => {
-  try {
-    setIsLoading(true);
+  const fetchReviews = useCallback(async (initial = false) => {
+    try {
+      setIsLoading(true);
 
-    const fetchCursor = initial ? null : cursor;
-    
-    let url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}`;
-    
-    
-    if (userdetails?.id) {
-        url += `&userId=${userdetails.id}`;
+      const fetchCursor = initial ? null : cursor;
+      
+      let url = `${API_BASE}/${productId}?limit=${REVIEWS_PER_PAGE}`;
+      
+      // Add userId to the URL to show user reviews on top
+      if (userdetails?.id) {
+          url += `&userId=${userdetails.id}`;
+      }
+
+      if (starFilter) {
+        url += `&rating=${starFilter}`;
+      }
+      
+      if (fetchCursor) {
+        url += `&cursor=${fetchCursor}`;
+      }
+
+      const res = await axios.get(url);
+      const { 
+        reviews: newReviews, 
+        nextCursor, 
+        hasMore: more, 
+        averageRating: avg, 
+        ratingCounts: counts 
+      } = res.data;
+
+      setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
+      setCursor(nextCursor);
+      setHasMore(more);
+
+      if (initial) {
+        setAverageRating(avg);
+        setRatingCounts(counts);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reviews", err);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (starFilter) {
-      url += `&rating=${starFilter}`;
-    }
-    
-    if (fetchCursor) {
-      url += `&cursor=${fetchCursor}`;
-    }
-
-    const res = await axios.get(url);
-    const { 
-      reviews: newReviews, 
-      nextCursor, 
-      hasMore: more, 
-      averageRating: avg, 
-      ratingCounts: counts 
-    } = res.data;
-
-    setReviews(prev => initial ? newReviews : [...prev, ...newReviews]);
-    setCursor(nextCursor);
-    setHasMore(more);
-
-    if (initial) {
-      setAverageRating(avg);
-      setRatingCounts(counts);
-    }
-  } catch (err) {
-    console.error("Failed to fetch reviews", err);
-  } finally {
-    setIsLoading(false);
-  }
-}, [productId, starFilter, cursor, userdetails]);
-
-
+  }, [productId, starFilter, cursor, userdetails]);
 
   useEffect(() => {
     setCursor(null);
     setReviews([]);      
     setHasMore(true);    
-    fetchReviews(true, userdetails?.id);  
-  }, [starFilter, fetchReviews]);
+    fetchReviews(true);  
+  }, [starFilter, fetchReviews, userdetails]);
 
-
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!rating || !comment || (!user && !name)) return;
     try {
@@ -249,31 +243,24 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
         };
 
         if (editingReviewId) {
-            // Update a review
             const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
             const updatedReview = res.data.updated[0];
-
-            // 🟢 Update the reviews list in state directly to show the change
             setReviews((prev) =>
                 prev.map((r) => (r.id === updatedReview.id ? updatedReview : r))
             );
         } else {
-            // Add a new review
             const res = await axios.post(API_BASE, payload);
             const newReview = res.data;
-
-            // 🟢 Add the new review to the start of the list in state
             setReviews((prev) => [newReview, ...prev]);
         }
         
         resetForm();
-        fetchReviewStats(); 
-        
+        fetchReviews(true); 
+    
     } catch (err) {
         console.error("Review submission failed", err);
     }
-};
-
+  };
 
   const resetForm = () => {
     setRating(0);
@@ -395,7 +382,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
       {/* Review List */}
       <div className="space-y-6">
-        {/* 🟢 Add a condition to show a message if there are no reviews */}
+        {/* Add a condition to show a message if there are no reviews */}
         {!isLoading && reviews.length === 0 && (
           <div className="text-center text-gray-500 py-10">
             <p>No reviews found for this product yet.</p>
@@ -465,7 +452,6 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
 
       {/* Load More / Pagination Section */}
       <div className="flex flex-col items-center gap-4 mt-6">
-        {/* Load More button */}
         {hasMore && !isLoading && (
           <button
             onClick={() => fetchReviews(false)}
@@ -476,13 +462,11 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
             Load More Reviews
           </button>
         )}
-        {/* Pagination loader */}
         {isLoading && reviews.length > 0 && (
           <div className="flex justify-center mt-2">
             <Loader2 className="animate-spin text-gray-500" size={20} />
           </div>
         )}
-        {/* Back to Top button */}
         {reviews.length > REVIEWS_PER_PAGE && (
           <button
             onClick={() => {
