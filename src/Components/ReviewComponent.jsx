@@ -226,7 +226,7 @@ const ReviewComponent = ({ productId, user, userdetails }) => {
             productId,
             rating,
             comment,
-            name: user?.name || name,
+            name: user ? `${userdetails?.firstName || user?.firstName || ""} ${userdetails?.lastName || user?.lastName || ""}`.trim() : name,
             userId: userdetails?.id,
             clerkId: user?.id,
             photoUrls: images,
