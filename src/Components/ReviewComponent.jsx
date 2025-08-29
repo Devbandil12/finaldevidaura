@@ -525,7 +525,7 @@ const fetchReviewStats = async () => {
             transition={{ duration: 0.3 }}
           >
             <h3 className="text-xl font-bold col-span-1 md:col-span-2">{editingReviewId ? "Edit Your Review" : "Leave a Review"}</h3>
-            {!user && (
+            {!userdetails && (
               <input
                 type="text"
                 value={name}
