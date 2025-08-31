@@ -140,15 +140,29 @@ export default function CustomAuthPage() {
   };
 
   const handleGoogle = async () => {
-    setError("");
-    try {
-      const strategy = "oauth_google";
-      const action = isSignUp ? signUp : signIn;
-      await action.authenticateWithRedirect({ strategy });
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Google auth failed");
-    }
-  };
+    setError("");
+    setFormLoading(true);
+    try {
+      if (isSignUp) {
+        await signUp.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/"
+        });
+      } else {
+        await signIn.authenticateWithRedirect({
+          strategy: "oauth_google",
+          redirectUrl: "/sso-callback",
+          redirectUrlComplete: "/"
+        });
+      }
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Google auth failed");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
 
   return (
     <div className="auth-modal-main-container">
