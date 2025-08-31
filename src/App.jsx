@@ -22,6 +22,8 @@ import TestimonialsSection from "./Components/TestimonialsSection";
 import ProductDetail from "./Components/ProductDetail";
 import UserPage from "./Components/UserPage";
 import BillCreator from "./Components/BillCreator";
+import PrivacyPolicy from "./Components/PrivacyPolicy";
+import TermsAndConditions from "./Components/TermsAndConditions";
 
 // Styles
 import "./style/adminPanel.css";
@@ -149,6 +151,8 @@ const App = () => {
                     />
 
                     {/* Public: Auth & other pages */}
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsAndConditions />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/myorder" element={<MyOrder />} />
                     <Route path="/product/:productId" element={<ProductDetail />} />
