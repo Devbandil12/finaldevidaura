@@ -12,7 +12,8 @@ export const ProductProvider = ({ children }) => {
   const getProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/products`);
+      // ✅ Updated to use the new grouped endpoint
+      const res = await fetch(`${BACKEND_URL}/api/products/grouped`);
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       setProducts(data);
@@ -22,6 +23,7 @@ export const ProductProvider = ({ children }) => {
       setLoading(false);
     }
   };
+
 
   // ✅ Add product
   const addProduct = async (newProduct) => {
