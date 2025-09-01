@@ -9,6 +9,7 @@ import { CouponContext } from "../contexts/CouponContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
+import VariantsManager from "./VariantsManager";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
@@ -92,17 +93,7 @@ const AdminPanel = () => {
   const [querySearch, setQuerySearch] = useState("");
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
-
-  // Use a local state to manage the expanded state of each product group
-  const [expandedProducts, setExpandedProducts] = useState({});
-
-  const toggleProductExpansion = (productName) => {
-    setExpandedProducts(prev => ({
-      ...prev,
-      [productName]: !prev[productName]
-    }));
-  };
-
+  
   useEffect(() => {
     if (userdetails?.role !== "admin" && userdetails !== null) {
       navigate("/");
@@ -152,7 +143,7 @@ const AdminPanel = () => {
       await updateProduct(updatedData.id, updatedData);
       setEditingProduct(null);
       toast.success("Product updated successfully!");
-      getProducts(); // Refresh the product list from context
+      getProducts();
     } catch (error) {
       console.error("❌ Error updating product:", error);
       toast.error("Failed to update product.");
@@ -353,77 +344,14 @@ const AdminPanel = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {products?.map((productGroup) => (
                       <React.Fragment key={productGroup.id}>
-                        {/* Parent row for the product group */}
-                        <tr className="bg-gray-100">
-                          <td className="px-6 py-4 whitespace-nowrap font-bold">
-                            {productGroup.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap"></td>
-                          <td className="px-6 py-4 whitespace-nowrap"></td>
-                          <td className="px-6 py-4 whitespace-nowrap"></td>
-                          <td className="px-6 py-4 whitespace-nowrap"></td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                            {/* Actions for the entire product group */}
-                            <button onClick={() => toggleProductExpansion(productGroup.name)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
-                              {expandedProducts[productGroup.name] ? 'Collapse' : 'Expand'}
-                            </button>
-                            <button onClick={() => handleProductDelete(productGroup.id, true)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete Product</button>
-                          </td>
-                        </tr>
-                        {/* Variant rows, only shown when expanded */}
-                        {expandedProducts[productGroup.name] && productGroup.variations.map(product => (
-                          editingProduct && editingProduct.id === product.id ? (
-                            <tr key={product.id}>
-                              <td className="px-6 py-4 whitespace-nowrap pl-8">
-                                <input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <img src={editingProduct.imageurl[0]} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => {
-                                    const files = e.target.files;
-                                    if (files.length > 0) {
-                                      const newImageUrl = URL.createObjectURL(files[0]);
-                                      setEditingProduct({ ...editingProduct, imageurl: [newImageUrl] });
-                                    }
-                                  }}
-                                  className="mt-2 text-xs"
-                                />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <input type="number" value={editingProduct.stock} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button>
-                                <button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
-                              </td>
-                            </tr>
-                          ) : (
-                            <tr key={product.id}>
-                              <td className="px-6 py-4 whitespace-nowrap pl-8">
-                                {product.name}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
-                              <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                              <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                                <button onClick={() => setEditingProduct({ ...product, imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] })} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-                                <button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button>
-                              </td>
-                            </tr>
-                          )
-                        ))}
+                        <VariantsManager 
+                          productGroup={productGroup}
+                          editingProduct={editingProduct}
+                          setEditingProduct={setEditingProduct}
+                          handleProductUpdate={handleProductUpdate}
+                          handleProductDelete={handleProductDelete}
+                          loading={loading}
+                        />
                       </React.Fragment>
                     ))}
                   </tbody>
@@ -629,4 +557,3 @@ const AdminPanel = () => {
   );
 };
 export default AdminPanel;
-
