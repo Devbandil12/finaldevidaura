@@ -76,7 +76,7 @@ const AdminPanel = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const { products, updateProduct, deleteProduct } = useContext(ProductContext);
+  const { products, updateProduct, deleteProduct, getProducts } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const { queries, getquery } = useContext(ContactContext);
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
@@ -92,6 +92,16 @@ const AdminPanel = () => {
   const [querySearch, setQuerySearch] = useState("");
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // Use a local state to manage the expanded state of each product group
+  const [expandedProducts, setExpandedProducts] = useState({});
+
+  const toggleProductExpansion = (productName) => {
+    setExpandedProducts(prev => ({
+      ...prev,
+      [productName]: !prev[productName]
+    }));
+  };
 
   useEffect(() => {
     if (userdetails?.role !== "admin" && userdetails !== null) {
@@ -134,7 +144,6 @@ const AdminPanel = () => {
         discount: Number(editingProduct.discount),
         oprice: Number(editingProduct.oprice),
         size: Number(editingProduct.size),
-        quantity: Number(editingProduct.quantity),
         stock: Number(editingProduct.stock)
       };
       if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
@@ -143,6 +152,7 @@ const AdminPanel = () => {
       await updateProduct(updatedData.id, updatedData);
       setEditingProduct(null);
       toast.success("Product updated successfully!");
+      getProducts(); // Refresh the product list from context
     } catch (error) {
       console.error("❌ Error updating product:", error);
       toast.error("Failed to update product.");
@@ -151,14 +161,15 @@ const AdminPanel = () => {
     }
   };
 
-  const handleProductDelete = async (productId) => {
-    const confirmation = window.confirm("Are you sure you want to delete this product?");
+  const handleProductDelete = async (productId, isGroup = false) => {
+    const confirmation = window.confirm(`Are you sure you want to delete this ${isGroup ? 'product and all its variants' : 'variant'}?`);
     if (confirmation) {
       setLoading(true);
       try {
         await deleteProduct(productId);
         setLoading(false);
         toast.success("Product deleted successfully!");
+        getProducts();
       } catch (error) {
         console.error("❌ Error deleting product:", error);
         setLoading(false);
@@ -280,7 +291,7 @@ const AdminPanel = () => {
           </nav>
         </div>
         <div className="flex-1 p-8 overflow-y-auto">
-          {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
+          {openModal && <ImageUploadModal isopen={openModal} onClose={() => {setOpenModal(false); getProducts();}} />}
           {selectedOrder && <OrderDetailsPopup order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
           {activeTab === "dashboard" && (
             <div className="space-y-8">
@@ -331,58 +342,90 @@ const AdminPanel = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size (ml)</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {products?.flatMap(productGroup => productGroup.variations).map(product =>
-                      editingProduct && editingProduct.id === product.id ? (
-                        <tr key={product.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <img src={editingProduct.imageurl[0]} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const files = e.target.files;
-                                if (files.length > 0) {
-                                  const newImageUrl = URL.createObjectURL(files[0]);
-                                  setEditingProduct({ ...editingProduct, imageurl: [newImageUrl] });
-                                }
-                              }}
-                              className="mt-2 text-xs"
-                            />
+                    {products?.map((productGroup) => (
+                      <React.Fragment key={productGroup.id}>
+                        {/* Parent row for the product group */}
+                        <tr className="bg-gray-100">
+                          <td className="px-6 py-4 whitespace-nowrap font-bold">
+                            {productGroup.name}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td> 
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <input type="number" value={editingProduct.stock} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" />
+                          <td className="px-6 py-4 whitespace-nowrap"></td>
+                          <td className="px-6 py-4 whitespace-nowrap"></td>
+                          <td className="px-6 py-4 whitespace-nowrap"></td>
+                          <td className="px-6 py-4 whitespace-nowrap"></td>
+                          <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                            {/* Actions for the entire product group */}
+                            <button onClick={() => toggleProductExpansion(productGroup.name)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+                              {expandedProducts[productGroup.name] ? 'Collapse' : 'Expand'}
+                            </button>
+                            <button onClick={() => handleProductDelete(productGroup.id, true)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete Product</button>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button><button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button></td>
                         </tr>
-                      ) : (
-                        <tr key={product.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                          <td className="px-6 py-4 whitespace-nowrap"><img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct({ ...product, imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] })} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
-                        </tr>
-                      )
-                    )}
+                        {/* Variant rows, only shown when expanded */}
+                        {expandedProducts[productGroup.name] && productGroup.variations.map(product => (
+                          editingProduct && editingProduct.id === product.id ? (
+                            <tr key={product.id}>
+                              <td className="px-6 py-4 whitespace-nowrap pl-8">
+                                <input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <img src={editingProduct.imageurl[0]} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const files = e.target.files;
+                                    if (files.length > 0) {
+                                      const newImageUrl = URL.createObjectURL(files[0]);
+                                      setEditingProduct({ ...editingProduct, imageurl: [newImageUrl] });
+                                    }
+                                  }}
+                                  className="mt-2 text-xs"
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <input type="number" value={editingProduct.stock} onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                <button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+                                <button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+                              </td>
+                            </tr>
+                          ) : (
+                            <tr key={product.id}>
+                              <td className="px-6 py-4 whitespace-nowrap pl-8">
+                                {product.name}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <img src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
+                              <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
+                              <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
+                              <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                                <button onClick={() => setEditingProduct({ ...product, imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] })} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
+                                <button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button>
+                              </td>
+                            </tr>
+                          )
+                        ))}
+                      </React.Fragment>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -586,3 +629,4 @@ const AdminPanel = () => {
   );
 };
 export default AdminPanel;
+
