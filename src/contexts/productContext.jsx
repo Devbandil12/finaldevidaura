@@ -1,4 +1,3 @@
-// src/contexts/ProductContext.js
 import React, { createContext, useState, useEffect } from "react";
 
 export const ProductContext = createContext();
@@ -24,7 +23,6 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-
   // ✅ Add product
   const addProduct = async (newProduct) => {
     try {
@@ -33,10 +31,9 @@ export const ProductProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newProduct),
       });
-
       if (!res.ok) throw new Error("Failed to add product");
 
-      await res.json(); // wait for response
+      await res.json();
       await getProducts(); // refresh product list
       return true;
     } catch (error) {
@@ -44,7 +41,7 @@ export const ProductProvider = ({ children }) => {
       return false;
     }
   };
-
+  
   // Update product
   const updateProduct = async (productId, updatedData) => {
     try {
@@ -53,7 +50,6 @@ export const ProductProvider = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
       });
-
       if (!res.ok) throw new Error("Failed to update product");
       await res.json();
       await getProducts(); // ✅ refresh
@@ -68,7 +64,6 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
         method: "DELETE",
       });
-
       if (!res.ok) throw new Error("Failed to delete product");
       await res.json();
       await getProducts(); // ✅ refresh
