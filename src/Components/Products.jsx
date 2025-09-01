@@ -1,21 +1,27 @@
 // src/pages/Products.js
 import React, { useContext, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
+
 import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
 import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
 import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import "../style/products.css";
+
 import { gsap } from "gsap";
 import HeroButton from "./HeroButton";
 
 const Products = () => {
+  // We no longer need this local state variable.
+  // const [cartState, setCartState] = useState(null);
+
   const { products } = useContext(ProductContext);
   const {
-    cart,
+    cart, // The single source of truth for the cart
     wishlist,
     addToCart,
     removeFromCart,
@@ -26,16 +32,17 @@ const Products = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // We can remove this useEffect as it is no longer needed.
+  // useEffect(() => {
+  //   setCartState(cart);
+  // }, [cart]);
+
   useEffect(() => {
     document.body.style.overflow = "auto";
     document.documentElement.style.overflow = "auto";
   }, [location.pathname]);
 
-  const handleSlideClick = (product) => {
-    // Navigate to the product detail page using the ID of the first variation
-    // This assumes the backend returns the first variation as the main product
-    navigate(`/product/${product.id}`);
-  };
+  const handleSlideClick = (product) => navigate(`/product/${product.id}`);
 
   const handleAdd = async (product, quantity = 1, isBuyNow = false) => {
     if (isBuyNow) {
@@ -98,8 +105,10 @@ const Products = () => {
     toggleWishlist(product);
   };
 
+  // We now check the cart from the context directly.
   const isProductInCart = (productId) =>
     cart?.some((item) => item.product?.id === productId);
+
   const isProductInWishlist = (productId) =>
     wishlist?.some((item) => (item.productId ?? item.product?.id) === productId);
 
@@ -117,7 +126,6 @@ const Products = () => {
             const inWishlist = isProductInWishlist(product.id);
             const inCart = isProductInCart(product.id);
 
-            // The main product object now represents the lowest price variation
             const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
 
             return (
@@ -126,14 +134,13 @@ const Products = () => {
                 key={product.id}
               >
                 <div className="product-thumb">
-                  {/* Display the image from the first variation */}
-                  <img
-                    src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
-                    alt={product.name}
-                    className="product-img"
-                    data-product-id={product.id}
-                    onClick={() => handleSlideClick(product)}
-                  />
+                <img
+  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+  alt={product.name}
+  className="product-img"
+  data-product-id={product.id}
+  onClick={() => handleSlideClick(product)}
+/>
 
                   <div
                     className="img-overlay"
@@ -167,10 +174,9 @@ const Products = () => {
                       ({product.discount}% OFF)
                     </span>
                   </div>
-                  
                   <p className="text-sm font-normal text-red-700 mt-1">
-                    {product.stockStatus}
-                  </p>
+  {product.stockStatus}
+</p>
 
                   <p className="text-xs text-gray-400">
                     {product.description}
