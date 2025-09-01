@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useMemo, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -7,23 +7,24 @@ import ReviewComponent from "./ReviewComponent";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+
+
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
-  const {
-    cart,
-    wishlist,
-    addToCart,
-    removeFromCart,
-    toggleWishlist,
-    startBuyNow,
+  const { 
+    cart, 
+    wishlist, 
+    addToCart, 
+    removeFromCart, 
+    toggleWishlist, 
+    startBuyNow 
   } = useContext(CartContext);
+  
   const { productId } = useParams();
-
-  // Find the parent product and its variations based on the ID
-  const parentProduct = products.find(p => p.variations.some(v => v.id === productId));
-  const product = parentProduct?.variations.find(v => v.id === productId);
+  
+  const product = products.find((p) => p.id === productId);
 
   if (productsLoading) {
     return (
@@ -37,67 +38,62 @@ const ProductDetail = () => {
     return <div className="text-center p-8">Product not found.</div>;
   }
 
-  // State to manage the selected variation (e.g., a specific size)
-  const [selectedVariation, setSelectedVariation] = useState(product);
-  const [currentImg, setCurrentImg] = useState(0);
-
-  useEffect(() => {
-    // This effect ensures that if the URL changes to a new product ID,
-    // the component updates to show the correct details and images.
-    const newProduct = parentProduct?.variations.find(v => v.id === productId);
-    if (newProduct) {
-      setSelectedVariation(newProduct);
-    }
-    window.scrollTo(0, 0);
-  }, [productId, parentProduct]);
-
-  // Use selectedVariation for all dynamic data
+  // =========================================================
+  // ===  BULLETPROOF IMAGE LOGIC ===
+  // =========================================================
   let allImages = [];
-  if (selectedVariation.imageurl) {
+  if (product.imageurl) {
     try {
       // Attempt to parse the imageurl if it's a string
-      allImages = typeof selectedVariation.imageurl === 'string' ? JSON.parse(selectedVariation.imageurl) : selectedVariation.imageurl;
+      allImages = typeof product.imageurl === 'string' ? JSON.parse(product.imageurl) : product.imageurl;
     } catch (e) {
       console.error("Failed to parse imageurl string:", e);
       allImages = [];
     }
   }
+  
+  // =========================================================
 
-  const isInCart = cart?.some((i) => i.product?.id === selectedVariation.id);
-  const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === selectedVariation.id);
+  const isInCart = cart?.some((i) => i.product?.id === product.id);
+  const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
 
   const [quantity, setQuantity] = useState(1);
+  const [currentImg, setCurrentImg] = useState(0);
 
-  const basePrice = Math.floor(Number(selectedVariation.oprice) || 0);
-  const discount = Math.floor(Number(selectedVariation.discount) || 0);
+  const basePrice = Math.floor(Number(product.oprice) || 0);
+  const discount = Math.floor(Number(product.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [productId]);
 
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + allImages.length) % allImages.length);
 
   const handleAddToCart = async () => {
     if (isInCart) {
-      await removeFromCart(selectedVariation);
+      await removeFromCart(product);
     } else {
-      await addToCart(selectedVariation, quantity);
+      await addToCart(product, quantity);
     }
   };
 
   const handleBuyNow = async () => {
-    startBuyNow(selectedVariation, quantity);
+    startBuyNow(product, quantity);
     navigate("/cart", { replace: true });
   };
 
   const handleToggleWishlist = () => {
-    toggleWishlist(selectedVariation);
+    toggleWishlist(product);
   };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: selectedVariation.name,
-          text: `Check out this product: ${selectedVariation.name}`,
+          title: product.name,
+          text: `Check out this product: ${product.name}`,
           url: window.location.href,
         });
       } catch (error) {
@@ -123,7 +119,7 @@ const ProductDetail = () => {
               {allImages.length > 0 && (
                 <img
                   src={allImages[currentImg]}
-                  alt={selectedVariation.name}
+                  alt={product.name}
                   className="w-full h-[350px] md:h-[450px] lg:h-[600px] object-cover md:object-contain rounded-lg shadow-md"
                 />
               )}
@@ -157,7 +153,7 @@ const ProductDetail = () => {
           <div className="lg:w-1/2 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">{selectedVariation.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
                 <div className="flex gap-2">
                   <button
                     onClick={handleToggleWishlist}
@@ -168,35 +164,17 @@ const ProductDetail = () => {
                   </button>
                   <button
                     onClick={handleShare}
-                    className="p-3 transition-colors duration-200"
+                    className="p-3 transition-colors duration-200 "
                     title="Share Product"
                   >
                     <Share2 size={24} />
                   </button>
                 </div>
               </div>
-
-              {/* Size Selector */}
-              {parentProduct?.variations.length > 1 && (
-                <div className="mt-4 mb-4">
-                  <h3 className="font-semibold text-lg">Size:</h3>
-                  <div className="flex gap-2 mt-2">
-                    {parentProduct.variations.map((v) => (
-                      <button
-                        key={v.id}
-                        onClick={() => setSelectedVariation(v)}
-                        className={`px-4 py-2 border rounded-full transition-colors ${selectedVariation.id === v.id ? 'bg-black text-white' : 'bg-gray-200 text-gray-800'}`}
-                      >
-                        {v.size}ml
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <p className="text-sm font-normal text-red-700 mt-1">
-                {selectedVariation.stockStatus}
-              </p>
+             
+                                <p className="text-sm font-normal text-red-700 mt-1">
+  {product.stockStatus}
+</p>
 
               {/* Price & Discount */}
               <div className="flex items-center gap-4 mb-4">
@@ -209,93 +187,111 @@ const ProductDetail = () => {
                 )}
               </div>
 
-              <div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
-                >
-                  −
-                </button>
-                <span className="w-12 text-center text-lg font-semibold select-none">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
-                >
-                  +
-                </button>
-              </div>
+<div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+  {/* Decrease */}
+  <button
+    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
+  >
+    −
+  </button>
+
+  {/* Quantity display */}
+  <span className="w-12 text-center text-lg font-semibold select-none">
+    {quantity}
+  </span>
+
+  {/* Increase */}
+  <button
+    onClick={() => setQuantity((q) => q + 1)}
+    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
+  >
+    +
+  </button>
+</div>
 
               {/* Description & Other Notes */}
               <div className="space-y-4 text-gray-800 mt-[30px]">
-                {selectedVariation.description && (
+                {product.description && (
                   <div>
                     <h3 className="font-bold text-lg">Description</h3>
-                    <p className="leading-relaxed">{selectedVariation.description}</p>
+                    
+                    <p className="leading-relaxed">{product.description}</p>
                   </div>
                 )}
-                {selectedVariation.composition && (
+
+                {product.composition && (
                   <div>
                     <h3 className="font-bold text-lg">Top Notes</h3>
-                    <p>{selectedVariation.composition}</p>
+                    <p>{product.composition}</p>
                   </div>
                 )}
-                {selectedVariation.fragrance && (
+
+                {product.fragrance && (
                   <div>
                     <h3 className="font-bold text-lg">Heart Notes</h3>
-                    <p>{selectedVariation.fragrance}</p>
+                   
+                    <p>{product.fragrance}</p>
                   </div>
                 )}
-                {selectedVariation.fragranceNotes && (
+{product.fragranceNotes && (
                   <div>
                     <h3 className="font-bold text-lg">Base Notes</h3>
-                    <p>{selectedVariation.fragranceNotes}</p>
+                    <p>{product.fragranceNotes}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* CTA buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.03 }}
-                onClick={handleAddToCart}
-                className={`w-full sm:flex-1 py-3 px-6 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
-                  isInCart ? "bg-red-800 text-neutral-100 hover:bg-redd-900" : "bg-gray-100 text-neutral-900 hover:bg-gray-200"
-                }`}
-              >
-                <motion.div
-                  animate={{ rotate: [0, -10, 10, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
-                >
-                  <ShoppingCart size={20} />
-                </motion.div>
-                {isInCart ? "Remove from Cart" : "Add to Cart"}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.03 }}
-                onClick={handleBuyNow}
-                className="w-full sm:flex-1 py-3 px-6 font-medium rounded-xl bg-neutral-900 text-gray-100 hover:bg-neutral-950 transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
-              >
-                <motion.div
-                  animate={{ y: [0, -3, 0] }}
-                  transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                >
-                  <ShoppingCart size={20} />
-                </motion.div>
-                Buy Now
-              </motion.button>
-            </div>
+            
+
+    <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full">
+      {/* Add / Remove from Cart */}
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        onClick={handleAddToCart}
+        className={`w-full sm:flex-1 py-3 px-6 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
+          isInCart
+            ? "bg-red-800 text-neutral-100 hover:bg-redd-900"
+            : "bg-gray-100 text-neutral-900 hover:bg-gray-200"
+        }`}
+      >
+        <motion.div
+          animate={{ rotate: [0, -10, 10, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+        >
+          <ShoppingCart size={20} />
+        </motion.div>
+        {isInCart ? "Remove from Cart" : "Add to Cart"}
+      </motion.button>
+
+      {/* Buy Now */}
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        onClick={handleBuyNow}
+        className="w-full sm:flex-1 py-3 px-6 font-medium rounded-xl bg-neutral-900 text-gray-100 hover:bg-neutral-950 transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
+      >
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+        >
+          <ShoppingCart size={20} />
+        </motion.div>
+        Buy Now
+      </motion.button>
+    </div>
+  
+
           </div>
         </div>
       </div>
-
+      
       {/* Review Section */}
       <div className="product-reviews-section bg-white rounded-lg max-w-7xl mx-auto mt-8">
-        <ReviewComponent productId={selectedVariation.id} userdetails={userdetails} />
+        <ReviewComponent productId={product.id} userdetails={userdetails} />
       </div>
     </div>
   );
