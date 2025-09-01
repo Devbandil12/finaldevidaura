@@ -9,18 +9,20 @@ import { CouponContext } from "../contexts/CouponContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
-import VariantsManager from "./VariantsManager";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
 
+// Placeholder components for the new UI
 const OrderDetailsPopup = ({ order, onClose }) => {
   if (!order) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh] relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">×</button>
+        
         <h2 className="text-xl font-bold mb-4">Order Details (#{order.id})</h2>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">Customer & Payment</h3>
@@ -31,13 +33,17 @@ const OrderDetailsPopup = ({ order, onClose }) => {
             <p><strong>Total Amount:</strong> ₹{order.totalAmount}</p>
             <p><strong>Status:</strong> <span className="font-semibold text-green-600">{order.status}</span></p>
           </div>
+
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">Shipping Address</h3>
-            <p>{order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}</p>
+            <p>
+              {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
+            </p>
             <p><strong>Landmark:</strong> {order.shippingAddress?.landmark || 'N/A'}</p>
             <p><strong>Contact:</strong> {order.shippingAddress?.phone || 'N/A'}</p>
           </div>
         </div>
+
         <div className="mt-6">
           <h3 className="font-semibold text-lg">Products</h3>
           <ul className="list-disc list-inside space-y-2">
@@ -75,9 +81,10 @@ const AdminPanel = () => {
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar
 
-  const { products, updateProduct, deleteProduct, getProducts } = useContext(ProductContext);
+  // Contexts
+  const { products, updateProduct, deleteProduct } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const { queries, getquery } = useContext(ContactContext);
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
@@ -93,7 +100,8 @@ const AdminPanel = () => {
   const [querySearch, setQuerySearch] = useState("");
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
-  
+
+  // --- Data Fetching and Effects ---
   useEffect(() => {
     if (userdetails?.role !== "admin" && userdetails !== null) {
       navigate("/");
@@ -116,9 +124,9 @@ const AdminPanel = () => {
     refreshCoupons();
   }, [refreshCoupons]);
 
+  // --- Analysis Data Calculation ---
   const totalOrders = orders?.length;
-  // Use the length of variations to calculate total products
-  const totalProducts = products?.reduce((sum, p) => sum + p.variations.length, 0);
+  const totalProducts = products?.length;
   const totalUsers = users?.length;
   const totalQueries = queries?.length;
   const deliveredOrders = orders?.filter(o => o.status === "Delivered")?.length;
@@ -127,40 +135,45 @@ const AdminPanel = () => {
   const totalRevenue = orders?.reduce((sum, order) => sum + order.totalAmount, 0);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+  // --- Functions (existing) ---
   const handleProductUpdate = async () => {
-    setLoading(true);
-    try {
-      let updatedData = {
-        ...editingProduct,
-        discount: Number(editingProduct.discount),
-        oprice: Number(editingProduct.oprice),
-        size: Number(editingProduct.size),
-        stock: Number(editingProduct.stock)
-      };
-      if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
-        updatedData.imageurl = [updatedData.imageurl];
-      }
-      await updateProduct(updatedData.id, updatedData);
-      setEditingProduct(null);
-      toast.success("Product updated successfully!");
-      getProducts();
-    } catch (error) {
-      console.error("❌ Error updating product:", error);
-      toast.error("Failed to update product.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    // Create a new object to hold the updated data
+    let updatedData = {
+      ...editingProduct,
+      discount: Number(editingProduct.discount),
+      oprice: Number(editingProduct.oprice),
+      size: Number(editingProduct.size),
+      quantity: Number(editingProduct.quantity),
+      stock: Number(editingProduct.stock) // Ensure stock is a number
+    };
 
-  const handleProductDelete = async (productId, isGroup = false) => {
-    const confirmation = window.confirm(`Are you sure you want to delete this ${isGroup ? 'product and all its variants' : 'variant'}?`);
+    // Check if imageurl is a string (indicating a single new image from the file input)
+    if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
+      // Convert the single image URL into an array
+      updatedData.imageurl = [updatedData.imageurl];
+    }
+    
+    await updateProduct(updatedData.id, updatedData);
+    setEditingProduct(null);
+    toast.success("Product updated successfully!");
+  } catch (error) {
+    console.error("❌ Error updating product:", error);
+    toast.error("Failed to update product.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleProductDelete = async (productId) => {
+    const confirmation = window.confirm("Are you sure you want to delete this product?");
     if (confirmation) {
       setLoading(true);
       try {
         await deleteProduct(productId);
         setLoading(false);
         toast.success("Product deleted successfully!");
-        getProducts();
       } catch (error) {
         console.error("❌ Error deleting product:", error);
         setLoading(false);
@@ -168,7 +181,7 @@ const AdminPanel = () => {
       }
     }
   };
-
+  
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
@@ -193,7 +206,7 @@ const AdminPanel = () => {
   const handleEditUser = (user) => {
     setEditingUser(user);
   };
-
+  
   const handleSaveUser = async () => {
     try {
       const res = await fetch(`${BASE}/api/users/${editingUser.id}`, {
@@ -227,11 +240,15 @@ const AdminPanel = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    // 🟢 Call the update function and get the new order data
     const updatedOrder = await updateOrderStatus(orderId, newStatus);
     if (updatedOrder) {
-      setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? updatedOrder.updatedOrder : order));
+        // 🟢 Update the local orders state with the new data
+        setOrders(prevOrders => prevOrders.map(order => 
+            order.id === orderId ? updatedOrder.updatedOrder : order
+        ));
     }
-  };
+};
 
   const handleCancelOrder = async (orderId) => {
     await cancelOrder(orderId);
@@ -246,15 +263,20 @@ const AdminPanel = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // --- JSX Rendering ---
   return (
     user && userdetails?.role === "admin" && (
       <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[60px]">
         <ToastContainer />
+
+        {/* Hamburger Menu Icon for mobile */}
         <div className="md:hidden absolute top-[50px] right-[5px] p-4 z-100">
           <button onClick={toggleSidebar} className="text-gray-800 text-2xl">
             {isSidebarOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
+
+        {/* Sidebar */}
         <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-md z-50 transform md:relative md:translate-x-0 transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <nav className="flex flex-col p-4 space-y-2">
             <h2 className="text-2xl font-bold mb-4">Admin Panel</h2>
@@ -281,9 +303,12 @@ const AdminPanel = () => {
             </button>
           </nav>
         </div>
+
         <div className="flex-1 p-8 overflow-y-auto">
-          {openModal && <ImageUploadModal isopen={openModal} onClose={() => {setOpenModal(false); getProducts();}} />}
+          {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
           {selectedOrder && <OrderDetailsPopup order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
+          
+          {/* Main content sections */}
           {activeTab === "dashboard" && (
             <div className="space-y-8">
               <h2 className="text-3xl font-bold">Admin Dashboard</h2>
@@ -323,6 +348,7 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
           {activeTab === "products" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -333,32 +359,75 @@ const AdminPanel = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size (ml)</th>
+                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {products?.map((productGroup) => (
-                      <React.Fragment key={productGroup.id}>
-                        <VariantsManager 
-                          productGroup={productGroup}
-                          editingProduct={editingProduct}
-                          setEditingProduct={setEditingProduct}
-                          handleProductUpdate={handleProductUpdate}
-                          handleProductDelete={handleProductDelete}
-                          loading={loading}
-                        />
-                      </React.Fragment>
-                    ))}
+                    {products?.map((product) =>
+                      editingProduct && editingProduct.id === product.id ? (
+                        <tr key={product.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
+                   <td className="px-6 py-4 whitespace-nowrap">
+              <img src={editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
+              <input
+                type="file"
+                accept="image/*"
+                // Change the onChange handler here
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files.length > 0) {
+                    const newImageUrl = URL.createObjectURL(files[0]);
+                    setEditingProduct({
+                      ...editingProduct,
+                      imageurl: [newImageUrl], // ALWAYS wrap the new URL in an array
+                    });
+                  }
+                }}
+                className="mt-2 text-xs"
+              />
+            </td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td> 
+                         <td className="px-6 py-4 whitespace-nowrap">
+  <input
+    type="number"
+    value={editingProduct.stock}
+    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })}
+    className="border rounded px-2 py-1 w-16"
+  /></td>
+                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button><button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button></td>
+                        </tr>
+                      ) : (
+                        <tr key={product.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
+                          <td className="px-6 py-4 whitespace-nowrap"><img src={product.imageurl} alt={product.name} className="w-12 h-12 object-cover rounded-md" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">₹{product.oprice}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
+                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct({ 
+  ...product, 
+  imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] 
+})} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
+                        </tr>
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           )}
+
           {activeTab === "coupons" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -418,6 +487,8 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
+          {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="space-y-6">
               <h2 className="text-3xl font-bold">Manage Orders</h2>
@@ -469,6 +540,8 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
+          {/* Users Tab */}
           {activeTab === "users" && (
             <div className="space-y-6">
               <h2 className="text-3xl font-bold">Manage Users</h2>
@@ -530,13 +603,16 @@ const AdminPanel = () => {
               )}
             </div>
           )}
+
+          {/* Queries Tab */}
           {activeTab === "queries" && (
             <div className="space-y-6">
               <h2 className="text-3xl font-bold">User Queries</h2>
               <input type="text" placeholder="Search queries by email or phone..." value={querySearch} onChange={(e) => setUserSearchQuery(e.target.value)} className="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               <div className="space-y-4">
                 {queries?.length > 0 ? (
-                  queries?.filter(q => q.email.toLowerCase().includes(querySearch.toLowerCase()) || q.phone.includes(querySearch) || (q.date && q.date.includes(querySearch))).map((query, index) => (
+                  queries?.filter(q => q.email.toLowerCase().includes(querySearch.toLowerCase()) || q.phone.includes(querySearch) || (q.date && q.date.includes(querySearch)))
+                  ?.map((query, index) => (
                     <div key={index} className="bg-white p-6 rounded-lg shadow-md space-y-1">
                       <p><strong>Email:</strong> {query.email}</p>
                       <p><strong>Phone:</strong> {query.phone}</p>
@@ -550,10 +626,13 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
+          {/* Carts & Wishlists Tab */}
           {activeTab === "carts" && <CartsWishlistsTab />}
         </div>
       </div>
     )
   );
 };
+
 export default AdminPanel;
