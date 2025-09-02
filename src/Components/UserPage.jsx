@@ -672,7 +672,7 @@ const onEditAddressSave = async (data) => {
                       <FloatingInput
                         label="City"
                         {...regNewAddr("city", { required: "City required" })}
-                        error={addrErrors.city?.message}
+                        error={newAddrErrors.city?.message}
                       />
                       <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
                       <FloatingInput
@@ -753,7 +753,7 @@ const onEditAddressSave = async (data) => {
                           {...regEditAddr("city", { required: "City required" })}
                           error={editAddrErrors.city?.message}
                         />
-                        <FloatingInput label="State" {...regEditAddr("state")} error={addrErrors.state?.message} />
+                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
                         <FloatingInput
                           label="Postal Code"
                           {...regEditAddr("postalCode", { required: "Postal code required" })}
