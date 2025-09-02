@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import FocusLock from "react-focus-lock";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -13,7 +14,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 /* ============================
-   Small UI atoms (Unchanged)
+   Small UI atoms
    ============================ */
 const IconBtn = ({ children, onClick, title = "", className = "" }) => (
   <button
@@ -96,6 +97,7 @@ const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
   );
 };
 
+// deterministic avatar color
 const getDeterministicColor = (s) => {
   const colors = ["#EEF2FF", "#FEF3C7", "#ECFCCB", "#FFF1F2", "#EFF6FF", "#FEFCE8", "#F8FAFC"];
   if (!s) return colors[0];
@@ -104,6 +106,7 @@ const getDeterministicColor = (s) => {
   return colors[h % colors.length];
 };
 
+// helpers for DOB persistence/format
 const toInputDate = (val) => {
   if (!val) return "";
   try {
@@ -118,223 +121,224 @@ const toInputDate = (val) => {
   }
 };
 
+/* ============================
+   Components
+   ============================ */
 
-/* ==========================================================
-   NEW: Reusable Address Form Component
-   This component encapsulates all form logic for addresses.
-   ========================================================== */
-const AddressForm = ({ onSave, onCancel, defaultValues }) => {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors },
-  } = useForm({
-    defaultValues: defaultValues || {
-      name: "", phone: "", altPhone: "", address: "", city: "",
-      state: "", postalCode: "", addressType: "Home",
-    },
-  });
+const ProfileCard = ({
+  userdetails,
+  wishlist = [],
+  cart = [],
+  onEdit,
+  onProfileImageChange,
+  onGoWishlist,
+  onGoCart,
+}) => {
+  const { uploadImage } = useCloudinary();
+  const [uploading, setUploading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const fileRef = useRef(null);
+  const popRef = useRef(null);
+  const [localUrl, setLocalUrl] = useState(userdetails.profileImage || null);
 
-  // This effect ensures the form resets when the user switches
-  // from adding to editing, or edits a different address.
+  useEffect(() => setLocalUrl(userdetails.profileImage || null), [userdetails.profileImage]);
+
+  const initials =
+    (userdetails?.name || "U")
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("") || "U";
+  const bg = getDeterministicColor(userdetails?.email || userdetails?.name || "u");
+
   useEffect(() => {
-    reset(defaultValues);
-  }, [defaultValues, reset]);
+    const onDoc = (e) => {
+      if (!popRef.current) return;
+      if (!popRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const handleSelectFile = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      setUploading(true);
+      const url = await uploadImage(f);
+      await onProfileImageChange(url);
+      setLocalUrl(url);
+      toast.success("Profile updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Upload failed");
+    } finally {
+      setUploading(false);
+      setMenuOpen(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const handleRemove = async () => {
+    const prev = localUrl;
+    setLocalUrl(null);
+    try {
+      await onProfileImageChange(null);
+      toast.success("Profile removed");
+    } catch (e) {
+      setLocalUrl(prev);
+      toast.error("Failed to remove");
+    } finally {
+      setMenuOpen(false);
+    }
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSave)}
-      className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
-    >
-      <h4 className="font-medium mb-2 md:col-span-2">
-        {defaultValues?.id ? "Edit Address" : "Add New Address"}
-      </h4>
-      <FloatingInput
-        label="Full name"
-        {...register("name", { required: "Name required" })}
-        error={errors.name?.message}
-      />
-      <FloatingInput
-        label="Phone"
-        {...register("phone", {
-          required: "Phone required",
-          minLength: { value: 6, message: "Phone too short" },
-        })}
-        error={errors.phone?.message}
-      />
-      <FloatingInput
-        label="Alternate Phone"
-        {...register("altPhone")}
-        error={errors.altPhone?.message}
-      />
-      <FloatingInput
-        label="Address"
-        className="md:col-span-2"
-        {...register("address", { required: "Address required" })}
-        error={errors.address?.message}
-      />
-      <FloatingInput
-        label="City"
-        {...register("city", { required: "City required" })}
-        error={errors.city?.message}
-      />
-      <FloatingInput label="State" {...register("state")} error={errors.state?.message} />
-      <FloatingInput
-        label="Postal Code"
-        {...register("postalCode", { required: "Postal code required" })}
-        error={errors.postalCode?.message}
-      />
-      <Controller
-        control={control}
-        name="addressType"
-        render={({ field }) => (
-          <FloatingDropdown
-            label="Address Type"
-            value={field.value}
-            onChange={field.onChange}
-            options={["Home", "Work", "Other"]}
-          />
-        )}
-      />
+    <aside className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5">
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          <div
+            className="w-18 h-18 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-slate-200"
+            style={{ background: bg }}
+          >
+            {localUrl ? (
+              <img src={localUrl} alt="profile" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl font-semibold text-slate-800">{initials}</span>
+            )}
+            {uploading && (
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs">
+                Uploading…
+              </div>
+            )}
+          </div>
 
-      <div className="md:col-span-2 flex gap-2 mt-2">
-        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
-          {defaultValues?.id ? "Update" : "Save"}
+          {/* Pencil overlay */}
+          <button
+            className="absolute -bottom-1 -right-1 bg-white border border-slate-200 p-1.5 rounded-full shadow hover:bg-slate-50"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+
+          {/* Popover menu */}
+          {menuOpen && (
+            <div
+              ref={popRef}
+              className="absolute z-30 mt-2 right-0 left-10 w-44 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+              role="menu"
+            >
+              {localUrl ? (
+                <>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm"
+                  >
+                    Change profile
+                  </button>
+                  <button
+                    onClick={handleRemove}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm text-red-600"
+                  >
+                    Remove profile
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm"
+                >
+                  Add profile
+                </button>
+              )}
+            </div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleSelectFile}
+          />
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold">{userdetails.name}</h3>
+          <p className="text-sm text-slate-500">{userdetails.email}</p>
+          <p className="text-sm text-slate-500">{userdetails.phone || "Phone not set"}</p>
+        </div>
+      </div>
+
+      {/* Stats — now clickable */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={onGoWishlist}
+          className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition"
+        >
+          <div className="text-sm text-slate-500">Wishlist</div>
+          <div className="font-semibold">{wishlist.length}</div>
         </button>
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-md border">
-          Cancel
+        <button
+          onClick={onGoCart}
+          className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition"
+        >
+          <div className="text-sm text-slate-500">Cart</div>
+          <div className="font-semibold">{cart.length}</div>
         </button>
       </div>
-    </form>
+
+     <div className="mt-1 flex justify-end">
+        <button
+          onClick={onEdit}
+          className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+        >
+          Edit Profile
+        </button>
+      </div>
+    </aside>
   );
 };
 
-
-/* ============================
-   Components (Unchanged)
-   ============================ */
-
-const ProfileCard = ({ userdetails, wishlist = [], cart = [], onEdit, onProfileImageChange, onGoWishlist, onGoCart }) => {
-    const { uploadImage } = useCloudinary();
-    const [uploading, setUploading] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
-    const fileRef = useRef(null);
-    const popRef = useRef(null);
-    const [localUrl, setLocalUrl] = useState(userdetails.profileImage || null);
-    useEffect(() => setLocalUrl(userdetails.profileImage || null), [userdetails.profileImage]);
-    const initials = (userdetails?.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("") || "U";
-    const bg = getDeterministicColor(userdetails?.email || userdetails?.name || "u");
-
-    useEffect(() => {
-        const onDoc = (e) => {
-            if (!popRef.current) return;
-            if (!popRef.current.contains(e.target)) setMenuOpen(false);
-        };
-        document.addEventListener("mousedown", onDoc);
-        return () => document.removeEventListener("mousedown", onDoc);
-    }, []);
-
-    const handleSelectFile = async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        try {
-            setUploading(true);
-            const url = await uploadImage(f);
-            await onProfileImageChange(url);
-            setLocalUrl(url);
-            toast.success("Profile updated");
-        } catch (err) {
-            console.error(err);
-            toast.error("Upload failed");
-        } finally {
-            setUploading(false);
-            setMenuOpen(false);
-            if (fileRef.current) fileRef.current.value = "";
-        }
-    };
-
-    const handleRemove = async () => {
-        const prev = localUrl;
-        setLocalUrl(null);
-        try {
-            await onProfileImageChange(null);
-            toast.success("Profile removed");
-        } catch (e) {
-            setLocalUrl(prev);
-            toast.error("Failed to remove");
-        } finally {
-            setMenuOpen(false);
-        }
-    };
-
-    return (
-      <aside className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-18 h-18 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-slate-200" style={{ background: bg }}>
-              {localUrl ? (<img src={localUrl} alt="profile" className="w-full h-full object-cover" />) : (<span className="text-2xl font-semibold text-slate-800">{initials}</span>)}
-              {uploading && (<div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs">Uploading…</div>)}
-            </div>
-            <button className="absolute -bottom-1 -right-1 bg-white border border-slate-200 p-1.5 rounded-full shadow hover:bg-slate-50" onClick={() => setMenuOpen((v) => !v)} aria-haspopup="menu" aria-expanded={menuOpen}>
-              <Pencil className="w-4 h-4" />
-            </button>
-            {menuOpen && (
-              <div ref={popRef} className="absolute z-30 mt-2 right-0 left-10 w-44 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden" role="menu">
-                {localUrl ? (
-                  <>
-                    <button onClick={() => fileRef.current?.click()} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm">Change profile</button>
-                    <button onClick={handleRemove} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm text-red-600">Remove profile</button>
-                  </>
-                ) : (
-                  <button onClick={() => fileRef.current?.click()} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm">Add profile</button>
-                )}
-              </div>
-            )}
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleSelectFile} />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">{userdetails.name}</h3>
-            <p className="text-sm text-slate-500">{userdetails.email}</p>
-            <p className="text-sm text-slate-500">{userdetails.phone || "Phone not set"}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button onClick={onGoWishlist} className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition">
-            <div className="text-sm text-slate-500">Wishlist</div>
-            <div className="font-semibold">{wishlist.length}</div>
-          </button>
-          <button onClick={onGoCart} className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition">
-            <div className="text-sm text-slate-500">Cart</div>
-            <div className="font-semibold">{cart.length}</div>
-          </button>
-        </div>
-        <div className="mt-1 flex justify-end">
-          <button onClick={onEdit} className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800">Edit Profile</button>
-        </div>
-      </aside>
-    );
-};
 const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => (
   <div className="bg-white rounded-lg p-4 shadow-sm flex flex-col gap-2">
     <div className="flex items-start justify-between">
       <div>
         <div className="font-medium">{addr.name}</div>
-        <div className="text-sm text-slate-500">{addr.address}, {addr.city}</div>
+        <div className="text-sm text-slate-500">
+          {addr.address}, {addr.city}
+        </div>
       </div>
       <div className="text-right">
-        {addr.isDefault && (<span className="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-white">Default</span>)}
+        {addr.isDefault && (
+          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-white">Default</span>
+        )}
       </div>
     </div>
-    <div className="text-sm text-slate-600">📞 {addr.phone}{" "}{addr.altPhone && <span className="text-slate-500">(Alt: {addr.altPhone})</span>}</div>
+    <div className="text-sm text-slate-600">
+      📞 {addr.phone}{" "}
+      {addr.altPhone && <span className="text-slate-500">(Alt: {addr.altPhone})</span>}
+    </div>
     <div className="flex gap-2 mt-2">
-      {!addr.isDefault && (<button onClick={() => onSetDefault(addr.id)} className="px-3 py-1 rounded-md border text-sm">Set Default</button>)}
-      <button onClick={() => onEdit(addr)} className="px-3 py-1 rounded-md border text-sm">Edit</button>
-      <button onClick={() => onDelete(addr.id)} className="px-3 py-1 rounded-md border text-sm text-red-600">Delete</button>
+      {!addr.isDefault && (
+        <button onClick={() => onSetDefault(addr.id)} className="px-3 py-1 rounded-md border text-sm">
+          Set Default
+        </button>
+      )}
+      <button onClick={() => onEdit(addr)} className="px-3 py-1 rounded-md border text-sm">
+        Edit
+      </button>
+      <button
+        onClick={() => onDelete(addr.id)}
+        className="px-3 py-1 rounded-md border text-sm text-red-600"
+      >
+        Delete
+      </button>
     </div>
   </div>
 );
+
 const OrderRow = ({ o, onOpen }) => (
   <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-between">
     <div>
@@ -344,7 +348,12 @@ const OrderRow = ({ o, onOpen }) => (
     <div className="text-right">
       <div className="font-semibold">₹{o.totalAmount}</div>
       <div className="text-sm text-slate-500">{o.status}</div>
-      <button onClick={() => onOpen(o)} className="mt-2 inline-flex items-center gap-2 text-sm text-slate-700">Details <ChevronRight className="w-4 h-4" /></button>
+      <button
+        onClick={() => onOpen(o)}
+        className="mt-2 inline-flex items-center gap-2 text-sm text-slate-700"
+      >
+        Details <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   </div>
 );
@@ -353,7 +362,15 @@ const OrderRow = ({ o, onOpen }) => (
    Main Page
    ============================ */
 export default function UserPage() {
-  const { userdetails, address = [], updateUser, addAddress, editAddress, deleteAddress, setDefaultAddress } = useContext(UserContext);
+  const {
+    userdetails,
+    address = [],
+    updateUser,
+    addAddress,
+    editAddress,
+    deleteAddress,
+    setDefaultAddress,
+  } = useContext(UserContext);
   const { orders = [], loadingOrders, getorders } = useContext(OrderContext);
   const { cart = [], wishlist = [], isWishlistLoading } = useContext(CartContext);
   const { products = [], loading: productsLoading } = useContext(ProductContext);
@@ -362,17 +379,70 @@ export default function UserPage() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("orders");
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingAddr, setEditingAddr] = useState(null);
   const [drawerOrder, setDrawerOrder] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  
-  // -- REFACTORED ADDRESS STATE --
-  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
-  const [editingAddr, setEditingAddr] = useState(null); // This holds the address data for editing
 
-  // Profile form
-  const { register: regProfile, handleSubmit: submitProfile, reset: resetProfile, setValue: setProfileValue, watch: watchProfile, formState: { errors: profileErrors } } = useForm({
-    defaultValues: { name: "", phone: "", dob: "", gender: "" },
-  });
+  // forms
+  const {
+    register: regProfile,
+    handleSubmit: submitProfile,
+    reset: resetProfile,
+    setValue: setProfileValue,
+    watch: watchProfile,
+    formState: { errors: profileErrors },
+  } = useForm({ defaultValues: { name: "", phone: "", dob: "", gender: "" } });
+
+  // Add Address form
+const {
+  register: regNewAddr,
+  handleSubmit: submitNewAddr,
+  reset: resetNewAddr,
+  formState: { errors: newAddrErrors },
+  setValue: setNewAddrValue,
+  watch: watchNewAddr,
+  control: controlNewAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "hi",
+    addressType: "Home",
+    lat: null, 
+    lng: null,
+  },
+});
+
+// Edit Address form
+const {
+  register: regEditAddr,
+  handleSubmit: submitEditAddr,
+  reset: resetEditAddr,
+  formState: { errors: editAddrErrors },
+  setValue: setEditAddrValue,
+  watch: watchEditAddr,
+  control: controlEditAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "hi",
+    addressType: "Home",
+    lat: null, 
+    lng: null,
+  },
+});
 
   const productMap = useMemo(() => {
     const m = new Map();
@@ -381,91 +451,105 @@ export default function UserPage() {
   }, [products]);
   const findProduct = useCallback((id) => productMap.get(id), [productMap]);
 
+  // set form defaults when user changes (incl. DOB formatting)
   useEffect(() => {
     if (!userdetails) return;
-    resetProfile({ name: userdetails.name || "", phone: userdetails.phone || "", dob: toInputDate(userdetails.dob), gender: userdetails.gender || "" });
-    getorders?.();
-    getReviewsByUser?.();
-    getQueriesByUser?.(userdetails.email);
+    resetProfile({
+      name: userdetails.name || "",
+      phone: userdetails.phone || "",
+      dob: toInputDate(userdetails.dob),
+      gender: userdetails.gender || "",
+    });
+    getorders && getorders();
+    getReviewsByUser && getReviewsByUser();
+    getQueriesByUser && getQueriesByUser(userdetails.email);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userdetails]);
+
+  useEffect(() => {
+  if (editingAddr) resetEditAddr(editingAddr);
+}, [editingAddr, resetEditAddr]);
 
   if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  // --- Handlers ---
+  // Handlers
   const onProfileSave = async (data) => {
     try {
-      const payload = { ...data, dob: data.dob || null };
+      // ensure dob is in YYYY-MM-DD for backend or convert to ISO if your API expects ISO
+      const payload = {
+        ...data,
+        dob: data.dob || null, // keep as YYYY-MM-DD (input gives this)
+      };
       const ok = await updateUser(payload);
       if (ok) {
         toast.success("Profile updated");
-        resetProfile({ name: payload.name, phone: payload.phone || "", dob: toInputDate(payload.dob), gender: payload.gender || "" });
+        // re-apply formatted DOB to keep it visible immediately
+        resetProfile({
+          name: payload.name,
+          phone: payload.phone || "",
+          dob: toInputDate(payload.dob),
+          gender: payload.gender || "",
+        });
         setShowProfileModal(false);
       } else toast.error("Failed");
-    } catch (e) { toast.error("Error") }
+    } catch (e) {
+      toast.error("Error");
+    }
   };
 
   const onProfileImageChange = async (urlOrNull) => {
     try {
       const ok = await updateUser({ profileImage: urlOrNull });
       if (!ok) toast.error("Failed to save profile image");
-    } catch (e) { toast.error("Error") }
-  };
-
-  // --- REFACTORED ADDRESS HANDLERS ---
-  const handleOpenAddAddressForm = () => {
-    setEditingAddr(null); // Clear any editing data
-    setIsAddressFormOpen(true);
-  };
-  
-  const handleOpenEditAddressForm = (addressToEdit) => {
-    setEditingAddr(addressToEdit); // Set the data for the form
-    setIsAddressFormOpen(true);
-  };
-
-  const handleCloseAddressForm = () => {
-    setIsAddressFormOpen(false);
-    setEditingAddr(null);
-  };
-
-  const onAddressSave = async (data) => {
-    try {
-      let ok;
-      if (editingAddr && editingAddr.id) {
-        // We are in EDIT mode
-        ok = await editAddress(editingAddr.id, data);
-      } else {
-        // We are in ADD mode
-        ok = await addAddress(data);
-      }
-      
-      if (ok) {
-        toast.success(`Address ${editingAddr ? 'updated' : 'added'} successfully`);
-        handleCloseAddressForm();
-      } else {
-        toast.error("Operation failed");
-      }
     } catch (e) {
-      console.error("Error saving address:", e);
-      toast.error("An error occurred");
+      toast.error("Error");
     }
   };
 
+  const onAddAddress = async (data) => {
+  try {
+    const ok = await addAddress(data);
+    if (ok) {
+      setIsAdding(false);
+      resetNewAddr(); 
+    }
+  } catch (e) {
+    console.error("Error adding address:", e);
+  }
+};
+
+const onEditAddressSave = async (data) => {
+  if (!editingAddr) return;
+  try {
+    const ok = await editAddress(editingAddr.id, data);
+    if (ok) {
+      setEditingAddr(null);
+      resetEditAddr(); 
+    }
+  } catch (e) {
+    console.error("Error updating address:", e);
+  }
+};
+
+
   const onDeleteAddress = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this address?")) return;
+    if (!confirm("Delete this address?")) return;
     try {
       await deleteAddress(id);
-      toast.success("Address deleted");
-    } catch (e) { toast.error("Failed to delete") }
+      toast.success("Deleted");
+    } catch (e) {
+      toast.error("Failed");
+    }
   };
-
   const onSetDefault = async (id) => {
     try {
       await setDefaultAddress(id);
-      toast.success("Default address updated");
-    } catch (e) { toast.error("Failed to set default") }
+      toast.success("Default set");
+    } catch (e) {
+      toast.error("Failed");
+    }
   };
 
   return (
@@ -482,13 +566,34 @@ export default function UserPage() {
             onGoWishlist={() => navigate("/wishlist")}
             onGoCart={() => navigate("/cart")}
           />
+
           <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
             <h4 className="text-sm font-medium text-slate-700 mb-3">Shortcuts</h4>
             <div className="flex flex-col gap-2">
-              <button onClick={() => navigate("/orders")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">View all orders</button>
-              <button onClick={() => navigate("/wishlist")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Wishlist</button>
-              <button onClick={() => navigate("/cart")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Cart</button>
-              <button onClick={() => navigate("/settings")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Security & Settings</button>
+              <button
+                onClick={() => navigate("/orders")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                View all orders
+              </button>
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Wishlist
+              </button>
+              <button
+                onClick={() => navigate("/cart")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Cart
+              </button>
+              <button
+                onClick={() => navigate("/settings")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Security & Settings
+              </button>
             </div>
           </div>
         </div>
@@ -500,7 +605,13 @@ export default function UserPage() {
               <h2 className="text-xl font-semibold">My Account</h2>
               <div className="flex flex-wrap items-center gap-2">
                 {["orders", "addresses", "reviews", "queries"].map((t) => (
-                  <button key={t} onClick={() => setActiveTab(t)} className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${ activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700" }`}>
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+                      activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
                     {t.charAt(0).toUpperCase() + t.slice(1)}
                   </button>
                 ))}
@@ -511,7 +622,11 @@ export default function UserPage() {
             <div>
               {activeTab === "orders" && (
                 <div className="grid grid-cols-1 gap-4">
-                  {orders.length === 0 ? (<div className="text-slate-500">No orders found</div>) : (orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />))}
+                  {orders.length === 0 ? (
+                    <div className="text-slate-500">No orders found</div>
+                  ) : (
+                    orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />)
+                  )}
                 </div>
               )}
 
@@ -519,19 +634,88 @@ export default function UserPage() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">Addresses</h3>
-                    {!isAddressFormOpen && (
-                        <button onClick={handleOpenAddAddressForm} className="px-3 py-1 rounded-md border">
-                            Add Address
-                        </button>
-                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setIsAdding((v) => !v);
+                          setEditingAddr(null);
+                        }}
+                        className="px-3 py-1 rounded-md border"
+                      >
+                        {isAdding ? "Close" : "Add Address"}
+                      </button>
+                    </div>
                   </div>
 
-                  {isAddressFormOpen && (
-                    <AddressForm 
-                      onSave={onAddressSave}
-                      onCancel={handleCloseAddressForm}
-                      defaultValues={editingAddr}
-                    />
+                  {isAdding && (
+                    <form
+                      onSubmit={submitNewAddr(onAddAddress)}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
+                    >
+                      <FloatingInput
+                        label="Full name"
+                        {...regNewAddr("name", { required: "Name required" })}
+                        error={newAddrErrors.name?.message}
+                      />
+                      <FloatingInput
+                        label="Phone"
+                        {...regNewAddr("phone", {
+                          required: "Phone required",
+                          minLength: { value: 6, message: "Phone too short" },
+                        })}
+                        error={newAddrErrors.phone?.message}
+                      />
+                      <FloatingInput
+                        label="Alternate Phone"
+                        {...regNewAddr("altPhone")}
+                        error={newAddrErrors.altPhone?.message}
+                      />
+                      <FloatingInput
+                        label="Address"
+                        className="md:col-span-2"
+                        {...regNewAddr("address", { required: "Address required" })}
+                        error={newAddrErrors.address?.message}
+                      />
+                      <FloatingInput
+                        label="City"
+                        {...regNewAddr("city", { required: "City required" })}
+                        error={newAddrErrors.city?.message}
+                      />
+                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
+                      <FloatingInput
+                        label="Postal Code"
+                        {...regNewAddr("postalCode", { required: "Postal code required" })}
+                        error={newAddrErrors.postalCode?.message}
+                      />
+                     <Controller
+  control={controlNewAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={field.onChange}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
+
+                      <div className="md:col-span-2 flex gap-2 mt-2">
+                        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAdding(false);
+                            resetNewAddr();
+                          }}
+                          className="px-4 py-2 rounded-md border"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -539,41 +723,132 @@ export default function UserPage() {
                       <AddressCard
                         key={a.id}
                         addr={a}
-                        onEdit={handleOpenEditAddressForm}
+                        onEdit={(x) => {
+                          setEditingAddr(x);
+                          setIsAdding(false);
+                        }}
                         onDelete={onDeleteAddress}
                         onSetDefault={onSetDefault}
                       />
                     ))}
                   </div>
+
+                  {editingAddr && (
+                    <div className="mt-4 p-4 bg-slate-50 rounded-md">
+                      <h4 className="font-medium mb-2">Edit Address</h4>
+                      <form
+                        onSubmit={submitEditAddr(onEditAddressSave)}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                      >
+                        <FloatingInput
+                          label="Full name"
+                          {...regEditAddr("name", { required: "Name required" })}
+                          error={editAddrErrors.name?.message}
+                        />
+                        <FloatingInput
+                          label="Phone"
+                          {...regEditAddr("phone", { required: "Phone required" })}
+                          error={editAddrErrors.phone?.message}
+                        />
+                        <FloatingInput
+                          label="Alternate Phone"
+                          {...regEditAddr("altPhone")}
+                          error={editAddrErrors.altPhone?.message}
+                        />
+                        <FloatingInput
+                          label="Address"
+                          className="md:col-span-2"
+                          {...regEditAddr("address", { required: "Address required" })}
+                          error={editAddrErrors.address?.message}
+                        />
+                        <FloatingInput
+                          label="City"
+                          {...regEditAddr("city", { required: "City required" })}
+                          error={editAddrErrors.city?.message}
+                        />
+                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
+                        <FloatingInput
+                          label="Postal Code"
+                          {...regEditAddr("postalCode", { required: "Postal code required" })}
+                          error={editAddrErrors.postalCode?.message}
+                        />
+                      <Controller
+  control={controlEditAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={field.onChange}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
+
+                        <div className="md:col-span-2 flex gap-2 mt-2">
+                          <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                            Update
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingAddr(null);
+                              resetEditAddr();
+                            }}
+                            className="px-4 py-2 rounded-md border"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === "reviews" && (
-                 <div className="grid grid-cols-1 gap-3">
-                  {userReviews.length === 0 ? (<div className="text-slate-500">No reviews</div>) : (userReviews.map((r) => (
-                    <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
-                          <div className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</div>
+                <div className="grid grid-cols-1 gap-3">
+                  {userReviews.length === 0 ? (
+                    <div className="text-slate-500">No reviews</div>
+                  ) : (
+                    userReviews.map((r) => (
+                      <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
+                            <div className="text-xs text-slate-400">
+                              {new Date(r.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
+                              />
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">{[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`} />))}</div>
+                        <p className="mt-2 text-slate-700">{r.comment}</p>
                       </div>
-                      <p className="mt-2 text-slate-700">{r.comment}</p>
-                    </div>
-                  )))}
-                 </div>
+                    ))
+                  )}
+                </div>
               )}
 
               {activeTab === "queries" && (
                 <div className="grid gap-3">
-                  {queries.length === 0 ? (<div className="text-slate-500">No queries</div>) : (queries.map((q) => (
-                    <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
-                      <div className="font-semibold">Message</div>
-                      <div className="text-slate-700 mt-1">{q.message}</div>
-                      <div className="text-xs text-slate-400 mt-2">Submitted on {q.createdAt}</div>
-                    </div>
-                  )))}
+                  {queries.length === 0 ? (
+                    <div className="text-slate-500">No queries</div>
+                  ) : (
+                    queries.map((q) => (
+                      <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
+                        <div className="font-semibold">Message</div>
+                        <div className="text-slate-700 mt-1">{q.message}</div>
+                        <div className="text-xs text-slate-400 mt-2">Submitted on {q.createdAt}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -581,18 +856,29 @@ export default function UserPage() {
         </div>
       </div>
 
-      {/* Order Drawer (Unchanged) */}
+      {/* Order Drawer */}
       {drawerOrder && (
         <div className="fixed inset-0 z-50 flex">
           <div className="w-full lg:w-1/3 ml-auto bg-white shadow-xl p-6 overflow-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Order #{drawerOrder.id}</h3>
-              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">Close</button>
+              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">
+                Close
+              </button>
             </div>
             <div className="mt-4">
               {drawerOrder.items?.map((it) => (
                 <div key={it.id} className="flex items-center gap-3 py-3 border-b">
-                  <img src={(findProduct(it.productId)?.imageurl && (Array.isArray(findProduct(it.productId)?.imageurl) ? findProduct(it.productId)?.imageurl?.[0] : findProduct(it.productId)?.imageurl)) || ""} alt="" className="w-12 h-12 rounded object-cover" />
+                  <img
+                    src={
+                      (findProduct(it.productId)?.imageurl &&
+                        (Array.isArray(findProduct(it.productId)?.imageurl)
+                          ? findProduct(it.productId)?.imageurl?.[0]
+                          : findProduct(it.productId)?.imageurl)) || ""
+                    }
+                    alt=""
+                    className="w-12 h-12 rounded object-cover"
+                  />
                   <div>
                     <div className="font-medium">{findProduct(it.productId)?.name}</div>
                     <div className="text-sm text-slate-500">Qty: {it.qty}</div>
@@ -605,20 +891,46 @@ export default function UserPage() {
         </div>
       )}
 
-      {/* Profile Modal (Unchanged) */}
+      {/* Profile Modal (centered card, not fullscreen) */}
       {showProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <FocusLock returnFocus autoFocus>
             <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
               <form onSubmit={submitProfile(onProfileSave)} className="grid gap-3">
-                <FloatingInput label="Name" {...regProfile("name", { required: "Name required" })} error={profileErrors.name?.message} />
-                <FloatingInput label="Phone" {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })} error={profileErrors.phone?.message} />
-                <FloatingInput label="Date of Birth" type="date" {...regProfile("dob")} />
-                <FloatingDropdown label="Gender" value={watchProfile("gender")} onChange={(val) => setProfileValue("gender", val)} options={["Male", "Female", "Other"]} />
+                <FloatingInput
+                  label="Name"
+                  {...regProfile("name", { required: "Name required" })}
+                  error={profileErrors.name?.message}
+                />
+                <FloatingInput
+                  label="Phone"
+                  {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })}
+                  error={profileErrors.phone?.message}
+                />
+                <FloatingInput
+                  label="Date of Birth"
+                  type="date"
+                  {...regProfile("dob")}
+                />
+                <FloatingDropdown
+                  label="Gender"
+                  value={watchProfile("gender")}
+                  onChange={(val) => setProfileValue("gender", val)}
+                  options={["Male", "Female", "Other"]}
+                />
+
                 <div className="flex gap-2 mt-3">
-                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Save</button>
-                  <button type="button" onClick={() => setShowProfileModal(false)} className="px-4 py-2 rounded-md border">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(false)}
+                    className="px-4 py-2 rounded-md border"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>
