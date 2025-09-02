@@ -647,12 +647,12 @@ const onEditAddressSave = async (data) => {
                     >
                       <FloatingInput
                         label="Full name"
-                        {...regAddr("name", { required: "Name required" })}
+                        {...regNewAddr("name", { required: "Name required" })}
                         error={newAddrErrors.name?.message}
                       />
                       <FloatingInput
                         label="Phone"
-                        {...regAddr("phone", {
+                        {...regNewAddr("phone", {
                           required: "Phone required",
                           minLength: { value: 6, message: "Phone too short" },
                         })}
@@ -660,24 +660,24 @@ const onEditAddressSave = async (data) => {
                       />
                       <FloatingInput
                         label="Alternate Phone"
-                        {...regAddr("altPhone")}
+                        {...regNewAddr("altPhone")}
                         error={newAddrErrors.altPhone?.message}
                       />
                       <FloatingInput
                         label="Address"
                         className="md:col-span-2"
-                        {...regAddr("address", { required: "Address required" })}
+                        {...regNewAddr("address", { required: "Address required" })}
                         error={newAddrErrors.address?.message}
                       />
                       <FloatingInput
                         label="City"
-                        {...regAddr("city", { required: "City required" })}
+                        {...regNewAddr("city", { required: "City required" })}
                         error={addrErrors.city?.message}
                       />
-                      <FloatingInput label="State" {...regAddr("state")} error={newAddrErrors.state?.message} />
+                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
                       <FloatingInput
                         label="Postal Code"
-                        {...regAddr("postalCode", { required: "Postal code required" })}
+                        {...regNewAddr("postalCode", { required: "Postal code required" })}
                         error={newAddrErrors.postalCode?.message}
                       />
                       <FloatingDropdown
