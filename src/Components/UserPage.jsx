@@ -393,26 +393,49 @@ export default function UserPage() {
     formState: { errors: profileErrors },
   } = useForm({ defaultValues: { name: "", phone: "", dob: "", gender: "" } });
 
-  const {
-    register: regAddr,
-    handleSubmit: submitAddr,
-    reset: resetAddr,
-    setValue: setAddrValue,
-    watch: watchAddr,
-    formState: { errors: addrErrors },
-  } = useForm({
-    defaultValues: {
-      name: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      landmark: "",
-      addressType: "",
-    },
-  });
+  // Add Address form
+const {
+  register: regNewAddr,
+  handleSubmit: submitNewAddr,
+  reset: resetNewAddr,
+  formState: { errors: newAddrErrors },
+  setValue: setNewAddrValue,
+  watch: watchNewAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "",
+    addressType: "",
+  },
+});
+
+// Edit Address form
+const {
+  register: regEditAddr,
+  handleSubmit: submitEditAddr,
+  reset: resetEditAddr,
+  formState: { errors: editAddrErrors },
+  setValue: setEditAddrValue,
+  watch: watchEditAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "",
+    addressType: "",
+  },
+});
 
   const productMap = useMemo(() => {
     const m = new Map();
@@ -437,8 +460,8 @@ export default function UserPage() {
   }, [userdetails]);
 
   useEffect(() => {
-    if (editingAddr) resetAddr(editingAddr);
-  }, [editingAddr, resetAddr]);
+  if (editingAddr) resetEditAddr(editingAddr);
+}, [editingAddr, resetEditAddr]);
 
   if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -479,31 +502,30 @@ export default function UserPage() {
   };
 
   const onAddAddress = async (data) => {
-    try {
-      const ok = await addAddress(data);
-      if (ok) {
-        toast.success("Address added");
-        setIsAdding(false);
-        resetAddr();
-      } else toast.error("Failed");
-    } catch (e) {
-      toast.error("Error");
+  try {
+    const ok = await addAddress(data);
+    if (ok) {
+      setIsAdding(false);
+      resetNewAddr(); 
     }
-  };
+  } catch (e) {
+    console.error("Error adding address:", e);
+  }
+};
 
-  const onEditAddressSave = async (data) => {
-    if (!editingAddr) return;
-    try {
-      const ok = await editAddress(editingAddr.id, data);
-      if (ok) {
-        toast.success("Address updated");
-        setEditingAddr(null);
-        resetAddr();
-      } else toast.error("Failed");
-    } catch (e) {
-      toast.error("Error");
+const onEditAddressSave = async (data) => {
+  if (!editingAddr) return;
+  try {
+    const ok = await editAddress(editingAddr.id, data);
+    if (ok) {
+      setEditingAddr(null);
+      resetEditAddr(); 
     }
-  };
+  } catch (e) {
+    console.error("Error updating address:", e);
+  }
+};
+
 
   const onDeleteAddress = async (id) => {
     if (!confirm("Delete this address?")) return;
@@ -620,13 +642,13 @@ export default function UserPage() {
 
                   {isAdding && (
                     <form
-                      onSubmit={submitAddr(onAddAddress)}
+                      onSubmit={submitNewAddr(onAddAddress)}
                       className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
                     >
                       <FloatingInput
                         label="Full name"
                         {...regAddr("name", { required: "Name required" })}
-                        error={addrErrors.name?.message}
+                        error={newAddrErrors.name?.message}
                       />
                       <FloatingInput
                         label="Phone"
@@ -634,34 +656,34 @@ export default function UserPage() {
                           required: "Phone required",
                           minLength: { value: 6, message: "Phone too short" },
                         })}
-                        error={addrErrors.phone?.message}
+                        error={newAddrErrors.phone?.message}
                       />
                       <FloatingInput
                         label="Alternate Phone"
                         {...regAddr("altPhone")}
-                        error={addrErrors.altPhone?.message}
+                        error={newAddrErrors.altPhone?.message}
                       />
                       <FloatingInput
                         label="Address"
                         className="md:col-span-2"
                         {...regAddr("address", { required: "Address required" })}
-                        error={addrErrors.address?.message}
+                        error={newAddrErrors.address?.message}
                       />
                       <FloatingInput
                         label="City"
                         {...regAddr("city", { required: "City required" })}
                         error={addrErrors.city?.message}
                       />
-                      <FloatingInput label="State" {...regAddr("state")} error={addrErrors.state?.message} />
+                      <FloatingInput label="State" {...regAddr("state")} error={newAddrErrors.state?.message} />
                       <FloatingInput
                         label="Postal Code"
                         {...regAddr("postalCode", { required: "Postal code required" })}
-                        error={addrErrors.postalCode?.message}
+                        error={newAddrErrors.postalCode?.message}
                       />
                       <FloatingDropdown
                         label="Address Type"
-                        value={watchAddr("addressType")}
-                        onChange={(e) => setAddrValue("addressType", e.target.value)}
+                        value={watchNewAddr("addressType")}
+                        onChange={(e) => setNewAddrValue("addressType", e.target.value)}
                         options={["Home", "Work", "Other"]}
                       />
 
@@ -673,7 +695,7 @@ export default function UserPage() {
                           type="button"
                           onClick={() => {
                             setIsAdding(false);
-                            resetAddr();
+                            resetNewAddr();
                           }}
                           className="px-4 py-2 rounded-md border"
                         >
@@ -702,45 +724,45 @@ export default function UserPage() {
                     <div className="mt-4 p-4 bg-slate-50 rounded-md">
                       <h4 className="font-medium mb-2">Edit Address</h4>
                       <form
-                        onSubmit={submitAddr(onEditAddressSave)}
+                        onSubmit={submitEditAddr(onEditAddressSave)}
                         className="grid grid-cols-1 md:grid-cols-2 gap-3"
                       >
                         <FloatingInput
                           label="Full name"
-                          {...regAddr("name", { required: "Name required" })}
-                          error={addrErrors.name?.message}
+                          {...regEditAddr("name", { required: "Name required" })}
+                          error={editAddrErrors.name?.message}
                         />
                         <FloatingInput
                           label="Phone"
-                          {...regAddr("phone", { required: "Phone required" })}
-                          error={addrErrors.phone?.message}
+                          {...regEditAddr("phone", { required: "Phone required" })}
+                          error={editAddrErrors.phone?.message}
                         />
                         <FloatingInput
                           label="Alternate Phone"
-                          {...regAddr("altPhone")}
-                          error={addrErrors.altPhone?.message}
+                          {...regEditAddr("altPhone")}
+                          error={editAddrErrors.altPhone?.message}
                         />
                         <FloatingInput
                           label="Address"
                           className="md:col-span-2"
-                          {...regAddr("address", { required: "Address required" })}
-                          error={addrErrors.address?.message}
+                          {...regEditAddr("address", { required: "Address required" })}
+                          error={editAddrErrors.address?.message}
                         />
                         <FloatingInput
                           label="City"
-                          {...regAddr("city", { required: "City required" })}
-                          error={addrErrors.city?.message}
+                          {...regEditAddr("city", { required: "City required" })}
+                          error={editAddrErrors.city?.message}
                         />
-                        <FloatingInput label="State" {...regAddr("state")} error={addrErrors.state?.message} />
+                        <FloatingInput label="State" {...regEditAddr("state")} error={addrErrors.state?.message} />
                         <FloatingInput
                           label="Postal Code"
-                          {...regAddr("postalCode", { required: "Postal code required" })}
-                          error={addrErrors.postalCode?.message}
+                          {...regEditAddr("postalCode", { required: "Postal code required" })}
+                          error={editAddrErrors.postalCode?.message}
                         />
                         <FloatingDropdown
                           label="Address Type"
-                          value={watchAddr("addressType")}
-                          onChange={(e) => setAddrValue("addressType", e.target.value)}
+                          value={watchEditAddr("addressType")}
+                          onChange={(e) => setEditAddrValue("addressType", e.target.value)}
                           options={["Home", "Work", "Other"]}
                         />
                         <div className="md:col-span-2 flex gap-2 mt-2">
@@ -751,7 +773,7 @@ export default function UserPage() {
                             type="button"
                             onClick={() => {
                               setEditingAddr(null);
-                              resetAddr();
+                              resetEditAddr();
                             }}
                             className="px-4 py-2 rounded-md border"
                           >
