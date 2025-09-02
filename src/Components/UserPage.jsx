@@ -574,22 +574,23 @@ export default function UserPage() {
         {/* Main content */}
         <div className="lg:col-span-8">
           <div className="bg-white rounded-2xl p-6 shadow">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">My Account</h2>
-              <div className="flex items-center gap-2">
-                {["orders", "addresses", "reviews", "queries"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setActiveTab(t)}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+  <h2 className="text-xl font-semibold">My Account</h2>
+  <div className="flex flex-wrap items-center gap-2">
+    {["orders", "addresses", "reviews", "queries"].map((t) => (
+      <button
+        key={t}
+        onClick={() => setActiveTab(t)}
+        className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
+          activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
+        }`}
+      >
+        {t.charAt(0).toUpperCase() + t.slice(1)}
+      </button>
+    ))}
+  </div>
+</div>
+
 
             {/* Tab content */}
             <div>
