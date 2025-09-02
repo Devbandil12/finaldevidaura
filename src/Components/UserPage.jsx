@@ -81,7 +81,7 @@ const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
               role="option"
               aria-selected={value === opt}
               onClick={() => {
-                onChange({ target: { value: opt } });
+                onChange(opt);
                 setOpen(false);
               }}
               className={`px-4 py-2 text-sm cursor-pointer ${
@@ -690,7 +690,7 @@ const onEditAddressSave = async (data) => {
     <FloatingDropdown
       label="Address Type"
       value={field.value}
-      onChange={(e) => field.onChange(e.target.value)}
+      onChange={field.onChange}
       options={["Home", "Work", "Other"]}
     />
   )}
@@ -775,7 +775,7 @@ const onEditAddressSave = async (data) => {
     <FloatingDropdown
       label="Address Type"
       value={field.value}
-      onChange={(e) => field.onChange(e.target.value)}
+      onChange={field.onChange}
       options={["Home", "Work", "Other"]}
     />
   )}
