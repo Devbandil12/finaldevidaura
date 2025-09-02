@@ -912,7 +912,7 @@ const onEditAddressSave = async (data) => {
                 <FloatingDropdown
                   label="Gender"
                   value={watchProfile("gender")}
-                  onChange={(e) => setProfileValue("gender", e.target.value)}
+                  onChange={(val) => setProfileValue("gender", val)}
                   options={["Male", "Female", "Other"]}
                 />
 
