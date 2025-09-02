@@ -289,11 +289,15 @@ await onProfileImageChange(url);
         </button>
       </div>
 
-      <div className="mt-1">
-        <button onClick={onEdit} className="px-6 py-2 bg-slate-900 text-white rounded-md">
-          Edit Profile
-        </button>
-      </div>
+     <div className="mt-1 flex justify-end">
+  <button 
+    onClick={onEdit} 
+    className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+  >
+    Edit Profile
+  </button>
+</div>
+
     </aside>
   );
 };
