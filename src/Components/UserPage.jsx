@@ -199,7 +199,7 @@ const ProfileCard = ({
       <div className="flex items-center gap-4">
         <div className="relative">
           <div
-            className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-slate-200"
+            className="w-18 h-18 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-slate-200"
             style={{ background: bg }}
           >
             {localUrl ? (
@@ -228,7 +228,7 @@ const ProfileCard = ({
           {menuOpen && (
             <div
               ref={popRef}
-              className="absolute z-30 mt-2 right-0 w-44 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
+              className="absolute z-30 mt-2 right-0 left-10 w-44 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
               role="menu"
             >
               {localUrl ? (
