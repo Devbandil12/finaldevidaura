@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import FocusLock from "react-focus-lock";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -680,12 +681,18 @@ const onEditAddressSave = async (data) => {
                         {...regNewAddr("postalCode", { required: "Postal code required" })}
                         error={newAddrErrors.postalCode?.message}
                       />
-                      <FloatingDropdown
-                        label="Address Type"
-                        value={watchNewAddr("addressType")}
-                        onChange={(e) => setNewAddrValue("addressType", e.target.value)}
-                        options={["Home", "Work", "Other"]}
-                      />
+                     <Controller
+  control={controlNewAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={(e) => field.onChange(e.target.value)}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
 
                       <div className="md:col-span-2 flex gap-2 mt-2">
                         <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
@@ -759,12 +766,19 @@ const onEditAddressSave = async (data) => {
                           {...regEditAddr("postalCode", { required: "Postal code required" })}
                           error={editAddrErrors.postalCode?.message}
                         />
-                        <FloatingDropdown
-                          label="Address Type"
-                          value={watchEditAddr("addressType")}
-                          onChange={(e) => setEditAddrValue("addressType", e.target.value)}
-                          options={["Home", "Work", "Other"]}
-                        />
+                      <Controller
+  control={controlEditAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={(e) => field.onChange(e.target.value)}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
+
                         <div className="md:col-span-2 flex gap-2 mt-2">
                           <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
                             Update
