@@ -109,7 +109,6 @@ const getDeterministicColor = (s) => {
 const toInputDate = (val) => {
   if (!val) return "";
   try {
-    // supports ISO or Date-compatible strings
     const d = new Date(val);
     if (Number.isNaN(d.getTime())) return "";
     const yyyy = d.getFullYear();
@@ -165,9 +164,9 @@ const ProfileCard = ({
     if (!f) return;
     try {
       setUploading(true);
-      const url = await uploadImage(f);  
-      await onProfileImageChange(url);   
-      setLocalUrl(url);                  
+      const url = await uploadImage(f);
+      await onProfileImageChange(url);
+      setLocalUrl(url);
       toast.success("Profile updated");
     } catch (err) {
       console.error(err);
@@ -290,8 +289,8 @@ const ProfileCard = ({
       </div>
 
      <div className="mt-1 flex justify-end">
-        <button 
-          onClick={onEdit} 
+        <button
+          onClick={onEdit}
           className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
         >
           Edit Profile
