@@ -104,7 +104,7 @@ const addAddress = useCallback(async (newAddress) => {
     console.error("❌ Failed to add address:", error);
     return null;
   }
-}, [userdetails?.id, BACKEND_URL, getUserAddress]]);
+}, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
 // Edit Address
 const editAddress = useCallback(async (addressId, updatedFields) => {
@@ -124,7 +124,7 @@ const editAddress = useCallback(async (addressId, updatedFields) => {
     console.error("❌ Failed to edit address:", error);
     return null;
   }
-}, [BACKEND_URL, getUserAddress]]);
+}, [BACKEND_URL, getUserAddress]);
 
 // Delete Address
 const deleteAddress = useCallback(async (addressId) => {
@@ -142,7 +142,7 @@ const deleteAddress = useCallback(async (addressId) => {
     console.error("❌ Failed to delete address:", error);
     return false;
   }
-}, [BACKEND_URL, getUserAddress]]);
+}, [BACKEND_URL, getUserAddress]);
 
 // Set Default Address
 const setDefaultAddress = useCallback(async (addressId) => {
@@ -161,7 +161,7 @@ const setDefaultAddress = useCallback(async (addressId) => {
     console.error("❌ Failed to set default address:", error);
     return null;
   }
-}, [BACKEND_URL, getUserAddress]]);
+}, [BACKEND_URL, getUserAddress]);
 
 
 
