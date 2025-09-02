@@ -640,6 +640,11 @@ export default function UserPage() {
                         error={addrErrors.phone?.message}
                       />
                       <FloatingInput
+  label="Alternate Phone"
+  {...regAddr("altPhone")}
+  error={addrErrors.altPhone?.message}
+/>
+                      <FloatingInput
                         label="Address"
                         className="md:col-span-2"
                         {...regAddr("address", { required: "Address required" })}
