@@ -524,7 +524,7 @@ export default function UserPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 mt-[60px]">
         {/* Left sidebar */}
         <div className="lg:col-span-4">
           <ProfileCard
