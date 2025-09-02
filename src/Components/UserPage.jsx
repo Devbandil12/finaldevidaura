@@ -1,4 +1,3 @@
-// File: src/pages/UserPage.jsx (Fixed)
 import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { Controller } from "react-hook-form";
@@ -396,50 +395,54 @@ export default function UserPage() {
   } = useForm({ defaultValues: { name: "", phone: "", dob: "", gender: "" } });
 
   // Add Address form
-  const {
-    register: regNewAddr,
-    handleSubmit: submitNewAddr,
-    reset: resetNewAddr,
-    formState: { errors: newAddrErrors },
-    control: controlNewAddr,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      landmark: "", // FIX: Changed from "hi" to empty string
-      addressType: "Home",
-      lat: null, 
-      lng: null,
-    },
-  });
+const {
+  register: regNewAddr,
+  handleSubmit: submitNewAddr,
+  reset: resetNewAddr,
+  formState: { errors: newAddrErrors },
+  setValue: setNewAddrValue,
+  watch: watchNewAddr,
+  control: controlNewAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "hi",
+    addressType: "Home",
+    lat: null, 
+    lng: null,
+  },
+});
 
-  // Edit Address form
-  const {
-    register: regEditAddr,
-    handleSubmit: submitEditAddr,
-    reset: resetEditAddr,
-    formState: { errors: editAddrErrors },
-    control: controlEditAddr,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      landmark: "", // FIX: Changed from "hi" to empty string
-      addressType: "Home",
-      lat: null, 
-      lng: null,
-    },
-  });
+// Edit Address form
+const {
+  register: regEditAddr,
+  handleSubmit: submitEditAddr,
+  reset: resetEditAddr,
+  formState: { errors: editAddrErrors },
+  setValue: setEditAddrValue,
+  watch: watchEditAddr,
+  control: controlEditAddr,
+} = useForm({
+  defaultValues: {
+    name: "",
+    phone: "",
+    altPhone: "",
+    address: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    landmark: "hi",
+    addressType: "Home",
+    lat: null, 
+    lng: null,
+  },
+});
 
   const productMap = useMemo(() => {
     const m = new Map();
@@ -464,10 +467,8 @@ export default function UserPage() {
   }, [userdetails]);
 
   useEffect(() => {
-    if (editingAddr) {
-        resetEditAddr(editingAddr);
-    }
-  }, [editingAddr, resetEditAddr]);
+  if (editingAddr) resetEditAddr(editingAddr);
+}, [editingAddr, resetEditAddr]);
 
   if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -476,10 +477,15 @@ export default function UserPage() {
   // Handlers
   const onProfileSave = async (data) => {
     try {
-      const payload = { ...data, dob: data.dob || null };
+      // ensure dob is in YYYY-MM-DD for backend or convert to ISO if your API expects ISO
+      const payload = {
+        ...data,
+        dob: data.dob || null, // keep as YYYY-MM-DD (input gives this)
+      };
       const ok = await updateUser(payload);
       if (ok) {
         toast.success("Profile updated");
+        // re-apply formatted DOB to keep it visible immediately
         resetProfile({
           name: payload.name,
           phone: payload.phone || "",
@@ -503,37 +509,30 @@ export default function UserPage() {
   };
 
   const onAddAddress = async (data) => {
-    try {
-      const ok = await addAddress(data);
-      if (ok) {
-        toast.success("Address added");
-        setIsAdding(false);
-        resetNewAddr(); 
-      } else {
-        toast.error("Failed to add address");
-      }
-    } catch (e) {
-      console.error("Error adding address:", e);
-      toast.error("An error occurred");
+  try {
+    const ok = await addAddress(data);
+    if (ok) {
+      setIsAdding(false);
+      resetNewAddr(); 
     }
-  };
+  } catch (e) {
+    console.error("Error adding address:", e);
+  }
+};
 
-  const onEditAddressSave = async (data) => {
-    if (!editingAddr) return;
-    try {
-      const ok = await editAddress(editingAddr.id, data);
-      if (ok) {
-        toast.success("Address updated");
-        setEditingAddr(null);
-        resetEditAddr(); 
-      } else {
-        toast.error("Failed to update address");
-      }
-    } catch (e) {
-      console.error("Error updating address:", e);
-      toast.error("An error occurred");
+const onEditAddressSave = async (data) => {
+  if (!editingAddr) return;
+  try {
+    const ok = await editAddress(editingAddr.id, data);
+    if (ok) {
+      setEditingAddr(null);
+      resetEditAddr(); 
     }
-  };
+  } catch (e) {
+    console.error("Error updating address:", e);
+  }
+};
+
 
   const onDeleteAddress = async (id) => {
     if (!confirm("Delete this address?")) return;
@@ -571,10 +570,30 @@ export default function UserPage() {
           <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
             <h4 className="text-sm font-medium text-slate-700 mb-3">Shortcuts</h4>
             <div className="flex flex-col gap-2">
-              <button onClick={() => navigate("/orders")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">View all orders</button>
-              <button onClick={() => navigate("/wishlist")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Wishlist</button>
-              <button onClick={() => navigate("/cart")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Cart</button>
-              <button onClick={() => navigate("/settings")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Security & Settings</button>
+              <button
+                onClick={() => navigate("/orders")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                View all orders
+              </button>
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Wishlist
+              </button>
+              <button
+                onClick={() => navigate("/cart")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Cart
+              </button>
+              <button
+                onClick={() => navigate("/settings")}
+                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+              >
+                Security & Settings
+              </button>
             </div>
           </div>
         </div>
@@ -603,7 +622,9 @@ export default function UserPage() {
             <div>
               {activeTab === "orders" && (
                 <div className="grid grid-cols-1 gap-4">
-                  {orders.length === 0 ? (<div className="text-slate-500">No orders found</div>) : (
+                  {orders.length === 0 ? (
+                    <div className="text-slate-500">No orders found</div>
+                  ) : (
                     orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />)
                   )}
                 </div>
@@ -615,7 +636,10 @@ export default function UserPage() {
                     <h3 className="text-lg font-medium">Addresses</h3>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => { setIsAdding((v) => !v); setEditingAddr(null); }}
+                        onClick={() => {
+                          setIsAdding((v) => !v);
+                          setEditingAddr(null);
+                        }}
                         className="px-3 py-1 rounded-md border"
                       >
                         {isAdding ? "Close" : "Add Address"}
@@ -628,30 +652,68 @@ export default function UserPage() {
                       onSubmit={submitNewAddr(onAddAddress)}
                       className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
                     >
-                      <FloatingInput label="Full name" {...regNewAddr("name", { required: "Name required" })} error={newAddrErrors.name?.message} />
-                      <FloatingInput label="Phone" {...regNewAddr("phone", { required: "Phone required", minLength: { value: 6, message: "Phone too short" },})} error={newAddrErrors.phone?.message} />
-                      <FloatingInput label="Alternate Phone" {...regNewAddr("altPhone")} error={newAddrErrors.altPhone?.message} />
-                      <FloatingInput label="Address" className="md:col-span-2" {...regNewAddr("address", { required: "Address required" })} error={newAddrErrors.address?.message} />
-                      <FloatingInput label="City" {...regNewAddr("city", { required: "City required" })} error={newAddrErrors.city?.message} />
-                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
-                      <FloatingInput label="Postal Code" {...regNewAddr("postalCode", { required: "Postal code required" })} error={newAddrErrors.postalCode?.message} />
-                      {/* FIX: Added missing Landmark field */}
-                      <FloatingInput label="Landmark (Optional)" {...regNewAddr("landmark")} error={newAddrErrors.landmark?.message} />
-                      <Controller
-                        control={controlNewAddr}
-                        name="addressType"
-                        render={({ field }) => (
-                            <FloatingDropdown
-                            label="Address Type"
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={["Home", "Work", "Other"]}
-                            />
-                        )}
+                      <FloatingInput
+                        label="Full name"
+                        {...regNewAddr("name", { required: "Name required" })}
+                        error={newAddrErrors.name?.message}
                       />
+                      <FloatingInput
+                        label="Phone"
+                        {...regNewAddr("phone", {
+                          required: "Phone required",
+                          minLength: { value: 6, message: "Phone too short" },
+                        })}
+                        error={newAddrErrors.phone?.message}
+                      />
+                      <FloatingInput
+                        label="Alternate Phone"
+                        {...regNewAddr("altPhone")}
+                        error={newAddrErrors.altPhone?.message}
+                      />
+                      <FloatingInput
+                        label="Address"
+                        className="md:col-span-2"
+                        {...regNewAddr("address", { required: "Address required" })}
+                        error={newAddrErrors.address?.message}
+                      />
+                      <FloatingInput
+                        label="City"
+                        {...regNewAddr("city", { required: "City required" })}
+                        error={newAddrErrors.city?.message}
+                      />
+                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
+                      <FloatingInput
+                        label="Postal Code"
+                        {...regNewAddr("postalCode", { required: "Postal code required" })}
+                        error={newAddrErrors.postalCode?.message}
+                      />
+                     <Controller
+  control={controlNewAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={field.onChange}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
+
                       <div className="md:col-span-2 flex gap-2 mt-2">
-                        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Save</button>
-                        <button type="button" onClick={() => { setIsAdding(false); resetNewAddr(); }} className="px-4 py-2 rounded-md border">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAdding(false);
+                            resetNewAddr();
+                          }}
+                          className="px-4 py-2 rounded-md border"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </form>
                   )}
@@ -661,7 +723,10 @@ export default function UserPage() {
                       <AddressCard
                         key={a.id}
                         addr={a}
-                        onEdit={(x) => { setEditingAddr(x); setIsAdding(false); }}
+                        onEdit={(x) => {
+                          setEditingAddr(x);
+                          setIsAdding(false);
+                        }}
                         onDelete={onDeleteAddress}
                         onSetDefault={onSetDefault}
                       />
@@ -675,30 +740,65 @@ export default function UserPage() {
                         onSubmit={submitEditAddr(onEditAddressSave)}
                         className="grid grid-cols-1 md:grid-cols-2 gap-3"
                       >
-                        <FloatingInput label="Full name" {...regEditAddr("name", { required: "Name required" })} error={editAddrErrors.name?.message} />
-                        <FloatingInput label="Phone" {...regEditAddr("phone", { required: "Phone required" })} error={editAddrErrors.phone?.message} />
-                        <FloatingInput label="Alternate Phone" {...regEditAddr("altPhone")} error={editAddrErrors.altPhone?.message} />
-                        <FloatingInput label="Address" className="md:col-span-2" {...regEditAddr("address", { required: "Address required" })} error={editAddrErrors.address?.message} />
-                        <FloatingInput label="City" {...regEditAddr("city", { required: "City required" })} error={editAddrErrors.city?.message} />
-                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
-                        <FloatingInput label="Postal Code" {...regEditAddr("postalCode", { required: "Postal code required" })} error={editAddrErrors.postalCode?.message} />
-                        {/* FIX: Added missing Landmark field */}
-                        <FloatingInput label="Landmark (Optional)" {...regEditAddr("landmark")} error={editAddrErrors.landmark?.message} />
-                        <Controller
-                            control={controlEditAddr}
-                            name="addressType"
-                            render={({ field }) => (
-                                <FloatingDropdown
-                                label="Address Type"
-                                value={field.value}
-                                onChange={field.onChange}
-                                options={["Home", "Work", "Other"]}
-                                />
-                            )}
+                        <FloatingInput
+                          label="Full name"
+                          {...regEditAddr("name", { required: "Name required" })}
+                          error={editAddrErrors.name?.message}
                         />
+                        <FloatingInput
+                          label="Phone"
+                          {...regEditAddr("phone", { required: "Phone required" })}
+                          error={editAddrErrors.phone?.message}
+                        />
+                        <FloatingInput
+                          label="Alternate Phone"
+                          {...regEditAddr("altPhone")}
+                          error={editAddrErrors.altPhone?.message}
+                        />
+                        <FloatingInput
+                          label="Address"
+                          className="md:col-span-2"
+                          {...regEditAddr("address", { required: "Address required" })}
+                          error={editAddrErrors.address?.message}
+                        />
+                        <FloatingInput
+                          label="City"
+                          {...regEditAddr("city", { required: "City required" })}
+                          error={editAddrErrors.city?.message}
+                        />
+                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
+                        <FloatingInput
+                          label="Postal Code"
+                          {...regEditAddr("postalCode", { required: "Postal code required" })}
+                          error={editAddrErrors.postalCode?.message}
+                        />
+                      <Controller
+  control={controlEditAddr}
+  name="addressType"
+  render={({ field }) => (
+    <FloatingDropdown
+      label="Address Type"
+      value={field.value}
+      onChange={field.onChange}
+      options={["Home", "Work", "Other"]}
+    />
+  )}
+/>
+
                         <div className="md:col-span-2 flex gap-2 mt-2">
-                          <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Update</button>
-                          <button type="button" onClick={() => { setEditingAddr(null); resetEditAddr(); }} className="px-4 py-2 rounded-md border">Cancel</button>
+                          <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                            Update
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingAddr(null);
+                              resetEditAddr();
+                            }}
+                            className="px-4 py-2 rounded-md border"
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </form>
                     </div>
@@ -708,16 +808,25 @@ export default function UserPage() {
 
               {activeTab === "reviews" && (
                 <div className="grid grid-cols-1 gap-3">
-                  {userReviews.length === 0 ? (<div className="text-slate-500">No reviews</div>) : (
+                  {userReviews.length === 0 ? (
+                    <div className="text-slate-500">No reviews</div>
+                  ) : (
                     userReviews.map((r) => (
                       <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
-                            <div className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</div>
+                            <div className="text-xs text-slate-400">
+                              {new Date(r.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`} />))}
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
+                              />
+                            ))}
                           </div>
                         </div>
                         <p className="mt-2 text-slate-700">{r.comment}</p>
@@ -729,12 +838,14 @@ export default function UserPage() {
 
               {activeTab === "queries" && (
                 <div className="grid gap-3">
-                  {queries.length === 0 ? (<div className="text-slate-500">No queries</div>) : (
+                  {queries.length === 0 ? (
+                    <div className="text-slate-500">No queries</div>
+                  ) : (
                     queries.map((q) => (
                       <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
                         <div className="font-semibold">Message</div>
                         <div className="text-slate-700 mt-1">{q.message}</div>
-                        <div className="text-xs text-slate-400 mt-2">Submitted on {new Date(q.createdAt).toLocaleDateString()}</div>
+                        <div className="text-xs text-slate-400 mt-2">Submitted on {q.createdAt}</div>
                       </div>
                     ))
                   )}
@@ -751,13 +862,20 @@ export default function UserPage() {
           <div className="w-full lg:w-1/3 ml-auto bg-white shadow-xl p-6 overflow-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Order #{drawerOrder.id}</h3>
-              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">Close</button>
+              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">
+                Close
+              </button>
             </div>
             <div className="mt-4">
               {drawerOrder.items?.map((it) => (
                 <div key={it.id} className="flex items-center gap-3 py-3 border-b">
                   <img
-                    src={(findProduct(it.productId)?.imageurl && (Array.isArray(findProduct(it.productId)?.imageurl) ? findProduct(it.productId)?.imageurl?.[0] : findProduct(it.productId)?.imageurl)) || ""}
+                    src={
+                      (findProduct(it.productId)?.imageurl &&
+                        (Array.isArray(findProduct(it.productId)?.imageurl)
+                          ? findProduct(it.productId)?.imageurl?.[0]
+                          : findProduct(it.productId)?.imageurl)) || ""
+                    }
                     alt=""
                     className="w-12 h-12 rounded object-cover"
                   />
@@ -769,7 +887,7 @@ export default function UserPage() {
               ))}
             </div>
           </div>
-          <div className="flex-1 bg-black/20" onClick={() => setDrawerOrder(null)} aria-hidden></div>
+          <div className="flex-1" onClick={() => setDrawerOrder(null)} aria-hidden></div>
         </div>
       )}
 
@@ -780,18 +898,39 @@ export default function UserPage() {
             <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
               <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
               <form onSubmit={submitProfile(onProfileSave)} className="grid gap-3">
-                <FloatingInput label="Name" {...regProfile("name", { required: "Name required" })} error={profileErrors.name?.message} />
-                <FloatingInput label="Phone" {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })} error={profileErrors.phone?.message} />
-                <FloatingInput label="Date of Birth" type="date" {...regProfile("dob")} />
+                <FloatingInput
+                  label="Name"
+                  {...regProfile("name", { required: "Name required" })}
+                  error={profileErrors.name?.message}
+                />
+                <FloatingInput
+                  label="Phone"
+                  {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })}
+                  error={profileErrors.phone?.message}
+                />
+                <FloatingInput
+                  label="Date of Birth"
+                  type="date"
+                  {...regProfile("dob")}
+                />
                 <FloatingDropdown
                   label="Gender"
                   value={watchProfile("gender")}
                   onChange={(val) => setProfileValue("gender", val)}
                   options={["Male", "Female", "Other"]}
                 />
+
                 <div className="flex gap-2 mt-3">
-                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Save</button>
-                  <button type="button" onClick={() => setShowProfileModal(false)} className="px-4 py-2 rounded-md border">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(false)}
+                    className="px-4 py-2 rounded-md border"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>
