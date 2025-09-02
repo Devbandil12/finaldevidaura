@@ -402,6 +402,7 @@ const {
   formState: { errors: newAddrErrors },
   setValue: setNewAddrValue,
   watch: watchNewAddr,
+  control: controlNewAddr,
 } = useForm({
   defaultValues: {
     name: "",
@@ -424,6 +425,7 @@ const {
   formState: { errors: editAddrErrors },
   setValue: setEditAddrValue,
   watch: watchEditAddr,
+  control: controlEditAddr,
 } = useForm({
   defaultValues: {
     name: "",
