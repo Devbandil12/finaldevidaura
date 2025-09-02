@@ -165,10 +165,9 @@ const ProfileCard = ({
     if (!f) return;
     try {
       setUploading(true);
-      const { uploadImage: doUpload } = useCloudinary();
-      const url = await doUpload(f);
-      await onProfileImageChange(url);
-      setLocalUrl(url);
+      const url = await uploadImage(f);  
+await onProfileImageChange(url);   
+      setLocalUrl(url);                  
       toast.success("Profile updated");
     } catch (err) {
       console.error(err);
