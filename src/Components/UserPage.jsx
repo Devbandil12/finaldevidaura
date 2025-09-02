@@ -413,7 +413,7 @@ const {
     state: "",
     postalCode: "",
     landmark: "",
-    addressType: "",
+    addressType: "Home",
   },
 });
 
@@ -436,7 +436,7 @@ const {
     state: "",
     postalCode: "",
     landmark: "",
-    addressType: "",
+    addressType: "Home",
   },
 });
 
