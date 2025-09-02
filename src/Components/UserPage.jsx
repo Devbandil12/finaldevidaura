@@ -1,803 +1,722 @@
-// File: src/pages/UserPage.jsx (Fixed)
-import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { Controller } from "react-hook-form";
-import FocusLock from "react-focus-lock";
+// File: src/pages/UserPage.jsx
+import React, { useState, useContext, useEffect, useRef } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { OrderContext } from "../contexts/OrderContext";
 import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import useCloudinary from "../utils/useCloudinary";
-import { Pencil, Plus, ChevronRight, Star } from "lucide-react";
+import { Pencil, Trash2, Plus, MapPin, User, Star, HeartOff } from 'lucide-react';
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import useCloudinary from '../utils/useCloudinary';
 
-/* ============================
-   Small UI atoms
-   ============================ */
-const IconBtn = ({ children, onClick, title = "", className = "" }) => (
-  <button
-    onClick={onClick}
-    title={title}
-    className={`p-2 rounded-md hover:bg-gray-100 transition ${className}`}
-  >
+const IconBtn = ({ children, onClick, title = '' }) => (
+  <button onClick={onClick} className="p-2 rounded-md hover:bg-gray-100 transition" title={title}>
     {children}
   </button>
 );
 
-const FloatingInput = React.forwardRef(({ label, error, className = "", ...props }, ref) => (
+// 🔹 Floating Input
+const FloatingInput = ({ label, value, onChange, type = "text", id, className = "", ...props }) => (
   <div className={`relative w-full ${className}`}>
     <input
-      ref={ref}
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
       placeholder=" "
-      className={`peer w-full rounded-lg border px-3 pt-5 pb-2 text-sm placeholder-transparent focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none ${error ? "border-red-400" : "border-slate-200"}`}
+      className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 placeholder-transparent focus:border-black focus:ring-1 focus:ring-black focus:outline-none"
       {...props}
     />
     <label
-      className="absolute left-3 -top-2 bg-white px-1 text-slate-500 text-sm transition-all pointer-events-none
-      peer-placeholder-shown:top-4 peer-placeholder-shown:text-slate-400 peer-placeholder-shown:text-base
-      peer-focus:-top-2 peer-focus:text-sm peer-focus:text-slate-900"
+      htmlFor={id}
+      className="absolute left-3 -top-2 bg-white px-1 text-gray-500 text-sm transition-all pointer-events-none
+        peer-placeholder-shown:top-4 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
+        peer-focus:-top-2 peer-focus:text-sm peer-focus:text-black"
     >
       {label}
     </label>
-    {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
   </div>
-));
+);
 
-const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
+// 🔹 Custom Floating Dropdown (modern styled)
+const FloatingDropdown = ({ label, value, onChange, options }) => {
   const [open, setOpen] = useState(false);
-  const boxRef = useRef(null);
-
-  useEffect(() => {
-    const onDoc = (e) => {
-      if (!boxRef.current) return;
-      if (!boxRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
 
   return (
-    <div className="relative w-full" ref={boxRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="peer w-full rounded-lg border px-3 pt-5 pb-2 text-sm text-left cursor-pointer bg-white focus-within:border-slate-900 focus-within:ring-1 focus-within:ring-slate-900"
-        aria-haspopup="listbox"
-        aria-expanded={open}
+    <div className="relative w-full">
+      {/* Trigger */}
+      <div
+        onClick={() => setOpen(!open)}
+        className="peer w-full rounded-lg border border-gray-300 px-3 pt-5 pb-2 text-sm text-gray-900 cursor-pointer bg-white focus-within:border-black focus-within:ring-1 focus-within:ring-black"
       >
-        <span className={`${!value ? "text-slate-400" : ""}`}>{value || "Select..."}</span>
-      </button>
-      <label className="absolute left-3 -top-2 bg-white px-1 text-slate-500 text-sm">{label}</label>
+        <span className={`${!value ? "text-gray-400" : ""}`}>
+          {value || "Select..."}
+        </span>
+      </div>
+
+      {/* Floating Label */}
+      <label
+        className="absolute left-3 -top-2 bg-white px-1 text-gray-500 text-sm transition-all pointer-events-none"
+      >
+        {label}
+      </label>
+
+      {/* Dropdown Menu */}
       {open && (
-        <ul
-          role="listbox"
-          className="absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
-        >
-          {options.map((opt) => (
-            <li
+        <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-fadeIn">
+          {options.map(opt => (
+            <div
               key={opt}
-              role="option"
-              aria-selected={value === opt}
-              onClick={() => {
-                onChange(opt);
-                setOpen(false);
-              }}
-              className={`px-4 py-2 text-sm cursor-pointer ${
-                value === opt ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"
-              }`}
+              onClick={() => { onChange({ target: { value: opt } }); setOpen(false); }}
+              className={`px-4 py-2 text-sm cursor-pointer transition 
+                ${value === opt ? "bg-black text-white" : "hover:bg-gray-100 text-gray-700"}`}
             >
               {opt}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
 };
 
-// deterministic avatar color
-const getDeterministicColor = (s) => {
-  const colors = ["#EEF2FF", "#FEF3C7", "#ECFCCB", "#FFF1F2", "#EFF6FF", "#FEFCE8", "#F8FAFC"];
-  if (!s) return colors[0];
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return colors[h % colors.length];
-};
+const ProfileCard = ({ userdetails, onEditDetails, wishlist = [], cart = [], navigate, onProfileImageChange }) => {
+  const { products } = useContext(ProductContext);
+  const findProduct = id => products.find(p => p.id === id);
 
-// helpers for DOB persistence/format
-const toInputDate = (val) => {
-  if (!val) return "";
-  try {
-    const d = new Date(val);
-    if (Number.isNaN(d.getTime())) return "";
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  } catch {
-    return "";
-  }
-};
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
-/* ============================
-   Components
-   ============================ */
-
-const ProfileCard = ({
-  userdetails,
-  wishlist = [],
-  cart = [],
-  onEdit,
-  onProfileImageChange,
-  onGoWishlist,
-  onGoCart,
-}) => {
   const { uploadImage } = useCloudinary();
+  const [profileUrl, setProfileUrl] = useState(userdetails.profileImage || null);
   const [uploading, setUploading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const fileRef = useRef(null);
-  const popRef = useRef(null);
-  const [localUrl, setLocalUrl] = useState(userdetails.profileImage || null);
 
-  useEffect(() => setLocalUrl(userdetails.profileImage || null), [userdetails.profileImage]);
+  const names = userdetails?.name?.split(' ') || ['U'];
+  const firstLetter = names[0]?.charAt(0).toUpperCase();
+  const lastLetter = names[1]?.charAt(0).toUpperCase() || '';
 
-  const initials =
-    (userdetails?.name || "U")
-      .split(" ")
-      .map((n) => n[0])
-      .slice(0, 2)
-      .join("") || "U";
-  const bg = getDeterministicColor(userdetails?.email || userdetails?.name || "u");
+  const getRandomLightColor = (seed) => {
+    const colors = ["#fef3c7", "#dbeafe", "#dcfce7", "#fef2f2", "#ede9fe", "#fff7ed", "#fefce8", "#f0fdfa"];
+    const index = seed ? seed.charCodeAt(0) % colors.length : Math.floor(Math.random() * colors.length);
+    return colors[index];
+  };
+  const color1 = getRandomLightColor(firstLetter);
+  const color2 = getRandomLightColor(lastLetter || firstLetter);
 
-  useEffect(() => {
-    const onDoc = (e) => {
-      if (!popRef.current) return;
-      if (!popRef.current.contains(e.target)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
+  // 🔹 Handle profile image upload
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const handleSelectFile = async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
     try {
       setUploading(true);
-      const url = await uploadImage(f);
-      await onProfileImageChange(url);
-      setLocalUrl(url);
-      toast.success("Profile updated");
+      const url = await uploadImage(file);   // Cloudinary upload
+      await onProfileImageChange(url);       // Update backend
+      setProfileUrl(url);                    // Update UI
     } catch (err) {
-      console.error(err);
-      toast.error("Upload failed");
+      console.error("Upload failed", err);
     } finally {
       setUploading(false);
-      setMenuOpen(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
-  const handleRemove = async () => {
-    const prev = localUrl;
-    setLocalUrl(null);
-    try {
-      await onProfileImageChange(null);
-      toast.success("Profile removed");
-    } catch (e) {
-      setLocalUrl(prev);
-      toast.error("Failed to remove");
-    } finally {
-      setMenuOpen(false);
-    }
+  const handleRemoveImage = async () => {
+    setProfileUrl(null);
+    if (onProfileImageChange) await onProfileImageChange(null);
+    setDropdownOpen(false);
   };
 
   return (
-    <aside className="bg-white rounded-2xl shadow p-6 flex flex-col gap-5">
-      <div className="flex items-center gap-4">
-        <div className="relative">
-          <div
-            className="w-18 h-18 rounded-full overflow-hidden flex items-center justify-center ring-1 ring-slate-200"
-            style={{ background: bg }}
-          >
-            {localUrl ? (
-              <img src={localUrl} alt="profile" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-2xl font-semibold text-slate-800">{initials}</span>
-            )}
-            {uploading && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white text-xs">
-                Uploading…
-              </div>
-            )}
+    <div className="bg-white rounded-2xl shadow-soft p-6 flex flex-col items-center text-center relative">
+      {/* Profile Image */}
+      <div className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-semibold shadow-inner relative overflow-hidden">
+        {profileUrl ? (
+          <img src={profileUrl} alt="Profile" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center rounded-full">
+            <span className="flex w-full h-full">
+              <span className="w-1/2 h-full flex items-center justify-center" style={{ backgroundColor: color1 }}>
+                {firstLetter}
+              </span>
+              <span className="w-1/2 h-full flex items-center justify-center" style={{ backgroundColor: color2 }}>
+                {lastLetter}
+              </span>
+            </span>
           </div>
+        )}
 
-          {/* Pencil overlay */}
-          <button
-            className="absolute -bottom-1 -right-1 bg-white border border-slate-200 p-1.5 rounded-full shadow hover:bg-slate-50"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
+        {/* Uploading Overlay */}
+        {uploading && (
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-full">
+            <span className="text-white text-sm">Uploading...</span>
+          </div>
+        )}
+      </div>
 
-          {/* Popover menu */}
-          {menuOpen && (
-            <div
-              ref={popRef}
-              className="absolute z-30 mt-2 right-0 left-10 w-44 bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden"
-              role="menu"
+      <h3 className="mt-4 text-xl font-semibold">{userdetails.name}</h3>
+      <p className="text-sm text-gray-500">{userdetails.email}</p>
+      <p className="mt-2 text-sm text-gray-600">{userdetails.phone || 'Phone not set'}</p>
+      {userdetails.dob && <p className="text-sm text-gray-600">DOB: {userdetails.dob}</p>}
+      {userdetails.gender && <p className="text-sm text-gray-600">Gender: {userdetails.gender}</p>}
+
+      {/* Edit Dropdown */}
+      <div className="mt-4 relative">
+        <button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          className="p-2 rounded-md hover:bg-gray-100 transition flex items-center gap-1"
+        >
+          <Pencil className="w-4 h-4"/>
+          <span className="text-sm">Edit</span>
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute top-full mt-2 right-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-20">
+            <button
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
+              onClick={() => fileInputRef.current.click()}
             >
-              {localUrl ? (
-                <>
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm"
-                  >
-                    Change profile
-                  </button>
-                  <button
-                    onClick={handleRemove}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm text-red-600"
-                  >
-                    Remove profile
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full text-left px-4 py-2 hover:bg-slate-50 text-sm"
-                >
-                  Add profile
-                </button>
-              )}
-            </div>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleSelectFile}
-          />
+              Add / Change Profile Picture
+            </button>
+            <button
+              className={`w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-gray-100 transition ${
+                !profileUrl ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={handleRemoveImage}
+              disabled={!profileUrl}
+            >
+              Remove Profile Picture
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition"
+              onClick={() => {
+                onEditDetails();
+                setDropdownOpen(false);
+              }}
+            >
+              Edit Details
+            </button>
+          </div>
+        )}
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+
+      {/* Wishlist & Cart Summary */}
+      <div className="mt-6 w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Wishlist */}
+        <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
+          <div className="flex -space-x-2 mb-2">
+            {wishlist.slice(0,3).map(item => {
+              const product = findProduct(item.productId);
+              if (!product) return null;
+              return (
+                <img
+                  key={item.productId}
+                  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                  className="w-10 h-10 rounded-lg border"
+                  alt={product.name}
+                />
+              );
+            })}
+          </div>
+          <div className="text-sm text-gray-700">{wishlist.length} items</div>
+          <button
+            onClick={() => navigate("/wishlist")}
+            className="mt-2 px-3 py-1.5 bg-gray-800 text-white rounded-xl text-xs hover:bg-gray-700 transition"
+          >
+            View Wishlist
+          </button>
         </div>
 
-        <div>
-          <h3 className="text-lg font-semibold">{userdetails.name}</h3>
-          <p className="text-sm text-slate-500">{userdetails.email}</p>
-          <p className="text-sm text-slate-500">{userdetails.phone || "Phone not set"}</p>
+        {/* Cart */}
+        <div className="bg-white p-4 rounded-2xl shadow-soft flex flex-col items-center">
+          <div className="flex -space-x-2 mb-2">
+            {cart.slice(0,3).map(item => {
+              const product = findProduct(item.productId);
+              if (!product) return null;
+              return (
+                <img
+                  key={item.productId}
+                  src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                  className="w-10 h-10 rounded-lg border"
+                  alt={product.name}
+                />
+              );
+            })}
+          </div>
+          <div className="text-sm text-gray-700">{cart.length} items</div>
+          <button
+            onClick={() => navigate("/cart")}
+            className="mt-2 px-3 py-1.5 bg-gray-800 text-white rounded-xl text-xs hover:bg-gray-700 transition"
+          >
+            Go to Cart
+          </button>
         </div>
       </div>
-
-      {/* Stats — now clickable */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={onGoWishlist}
-          className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition"
-        >
-          <div className="text-sm text-slate-500">Wishlist</div>
-          <div className="font-semibold">{wishlist.length}</div>
-        </button>
-        <button
-          onClick={onGoCart}
-          className="bg-slate-50 p-3 rounded-lg text-center hover:bg-slate-100 transition"
-        >
-          <div className="text-sm text-slate-500">Cart</div>
-          <div className="font-semibold">{cart.length}</div>
-        </button>
-      </div>
-
-     <div className="mt-1 flex justify-end">
-        <button
-          onClick={onEdit}
-          className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
-        >
-          Edit Profile
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 };
 
-const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => (
-  <div className="bg-white rounded-lg p-4 shadow-sm flex flex-col gap-2">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="font-medium">{addr.name}</div>
-        <div className="text-sm text-slate-500">
-          {addr.address}, {addr.city}
-        </div>
-      </div>
-      <div className="text-right">
+
+
+const AddressCard = ({ addr, onDelete, onEdit, onSetDefault }) => (
+  <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+    {/* Header */}
+    <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+      <div className="flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-gray-500" />
+        <h3 className="font-semibold text-gray-800">{addr.name}</h3>
+        {addr.addressType && (
+          <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+            {addr.addressType}
+          </span>
+        )}
         {addr.isDefault && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-white">Default</span>
+          <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-black text-white">
+            Default
+          </span>
         )}
       </div>
     </div>
-    <div className="text-sm text-slate-600">
-      📞 {addr.phone}{" "}
-      {addr.altPhone && <span className="text-slate-500">(Alt: {addr.altPhone})</span>}
+
+    {/* Body */}
+    <div className="px-5 py-4 text-sm text-gray-700 space-y-2">
+      <p className="leading-snug">
+        {addr.address}, {addr.city}, {addr.state} - {addr.postalCode}
+      </p>
+      {addr.landmark && (
+        <p className="text-gray-500 text-xs">Landmark: {addr.landmark}</p>
+      )}
+      <p className="text-gray-600">
+        📞 {addr.phone}
+        {addr.altPhone && (
+          <span className="ml-2 text-gray-500">Alt: {addr.altPhone}</span>
+        )}
+      </p>
     </div>
-    <div className="flex gap-2 mt-2">
+
+    {/* Footer actions */}
+    <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
       {!addr.isDefault && (
-        <button onClick={() => onSetDefault(addr.id)} className="px-3 py-1 rounded-md border text-sm">
+        <button
+          onClick={() => onSetDefault(addr.id)}
+          className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+        >
           Set Default
         </button>
       )}
-      <button onClick={() => onEdit(addr)} className="px-3 py-1 rounded-md border text-sm">
-        Edit
-      </button>
-      <button
-        onClick={() => onDelete(addr.id)}
-        className="px-3 py-1 rounded-md border text-sm text-red-600"
-      >
-        Delete
-      </button>
+      <div className="flex gap-2">
+        <IconBtn onClick={() => onEdit(addr)} title="Edit">
+          <Pencil className="w-4 h-4 text-gray-600" />
+        </IconBtn>
+        <IconBtn onClick={() => onDelete(addr.id)} title="Delete">
+          <Trash2 className="w-4 h-4 text-red-500" />
+        </IconBtn>
+      </div>
     </div>
   </div>
 );
 
-const OrderRow = ({ o, onOpen }) => (
-  <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-between">
-    <div>
-      <div className="font-medium">Order #{o.id}</div>
-      <div className="text-sm text-slate-500">{new Date(o.createdAt).toLocaleDateString()}</div>
-    </div>
-    <div className="text-right">
-      <div className="font-semibold">₹{o.totalAmount}</div>
-      <div className="text-sm text-slate-500">{o.status}</div>
-      <button
-        onClick={() => onOpen(o)}
-        className="mt-2 inline-flex items-center gap-2 text-sm text-slate-700"
-      >
-        Details <ChevronRight className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
-);
-
-/* ============================
-   Main Page
-   ============================ */
-export default function UserPage() {
-  const {
-    userdetails,
-    address = [],
-    updateUser,
-    addAddress,
-    editAddress,
-    deleteAddress,
-    setDefaultAddress,
+const UserPage = () => {
+  const {  
+    userdetails, address, updateUser, addAddress, editAddress, deleteAddress, setDefaultAddress
   } = useContext(UserContext);
-  const { orders = [], loadingOrders, getorders } = useContext(OrderContext);
-  const { cart = [], wishlist = [], isWishlistLoading } = useContext(CartContext);
-  const { products = [], loading: productsLoading } = useContext(ProductContext);
-  const { queries = [], getQueriesByUser } = useContext(ContactContext);
-  const { userReviews = [], loadingReviews, getReviewsByUser } = useContext(ReviewContext);
-  const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState("orders");
-  const [isAdding, setIsAdding] = useState(false);
+  const { orders, loadingOrders, getorders } = useContext(OrderContext);
+  const {cart, wishlist, isWishlistLoading } = useContext(CartContext);
+  const { products, loading: productsLoading } = useContext(ProductContext);
+  const { queries, getQueriesByUser } = useContext(ContactContext);
+  const { userReviews, loadingReviews, getReviewsByUser } = useContext(ReviewContext);
+
+const findProduct = (id) => products.find(p => p.id === id);
+
+  const [isEditingUser, setIsEditingUser] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    name: '', phone: '', altPhone: '',
+    address: '', city: '', state: '', postalCode: '',
+    landmark: '', addressType: '', lat: null, lng: null
+  });
+  const [activeTab, setActiveTab] = useState('profile');
   const [editingAddr, setEditingAddr] = useState(null);
-  const [drawerOrder, setDrawerOrder] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+const [originalAddr, setOriginalAddr] = useState(null); 
 
-  // forms
-  const {
-    register: regProfile,
-    handleSubmit: submitProfile,
-    reset: resetProfile,
-    setValue: setProfileValue,
-    watch: watchProfile,
-    formState: { errors: profileErrors },
-  } = useForm({ defaultValues: { name: "", phone: "", dob: "", gender: "" } });
+ 
+const [showProfileModal, setShowProfileModal] = useState(false);
+const [profileForm, setProfileForm] = useState({
+  name: '',
+  phone: '',
+  dob: '',
+  gender: '',
+});
 
-  // Add Address form
-  const {
-    register: regNewAddr,
-    handleSubmit: submitNewAddr,
-    reset: resetNewAddr,
-    formState: { errors: newAddrErrors },
-    control: controlNewAddr,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      landmark: "", // FIX: Changed from "hi" to empty string
-      addressType: "Home",
-      lat: null, 
-      lng: null,
-    },
-  });
 
-  // Edit Address form
-  const {
-    register: regEditAddr,
-    handleSubmit: submitEditAddr,
-    reset: resetEditAddr,
-    formState: { errors: editAddrErrors },
-    control: controlEditAddr,
-  } = useForm({
-    defaultValues: {
-      name: "",
-      phone: "",
-      altPhone: "",
-      address: "",
-      city: "",
-      state: "",
-      postalCode: "",
-      landmark: "", // FIX: Changed from "hi" to empty string
-      addressType: "Home",
-      lat: null, 
-      lng: null,
-    },
-  });
 
-  const productMap = useMemo(() => {
-    const m = new Map();
-    products.forEach((p) => m.set(p.id, p));
-    return m;
-  }, [products]);
-  const findProduct = useCallback((id) => productMap.get(id), [productMap]);
+const navigate = useNavigate();
 
-  // set form defaults when user changes (incl. DOB formatting)
+
   useEffect(() => {
-    if (!userdetails) return;
-    resetProfile({
-      name: userdetails.name || "",
-      phone: userdetails.phone || "",
-      dob: toInputDate(userdetails.dob),
-      gender: userdetails.gender || "",
-    });
-    getorders && getorders();
-    getReviewsByUser && getReviewsByUser();
-    getQueriesByUser && getQueriesByUser(userdetails.email);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (userdetails) {
+      setName(userdetails.name || '');
+      setPhone(userdetails.phone || '');
+      getorders && getorders();
+      getReviewsByUser && getReviewsByUser();
+      getQueriesByUser && getQueriesByUser(userdetails.email);
+    }
   }, [userdetails]);
 
-  useEffect(() => {
-    if (editingAddr) {
-        resetEditAddr(editingAddr);
+  const handleUpdateUser = async () => {
+    if (!name) return toast.error('Name is required');
+    const updated = await updateUser({ name, phone });
+    if (updated) {
+      toast.success('Profile updated');
+      setIsEditingUser(false);
+    } else {
+      toast.error('Failed to update profile');
     }
-  }, [editingAddr, resetEditAddr]);
+  };
 
-  if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+
+const handleProfileImageChange = async (file) => {
+  if (!file) {
+    const removed = await updateUser({ profileImage: null });
+    if (removed) toast.success("Profile picture removed");
+    return;
   }
 
-  // Handlers
-  const onProfileSave = async (data) => {
-    try {
-      const payload = { ...data, dob: data.dob || null };
-      const ok = await updateUser(payload);
-      if (ok) {
-        toast.success("Profile updated");
-        resetProfile({
-          name: payload.name,
-          phone: payload.phone || "",
-          dob: toInputDate(payload.dob),
-          gender: payload.gender || "",
-        });
-        setShowProfileModal(false);
-      } else toast.error("Failed");
-    } catch (e) {
-      toast.error("Error");
+  try {
+    const url = await uploadImage(file); // Cloudinary upload
+    if (!url) throw new Error("Upload failed");
+
+    const updated = await updateUser({ profileImage: url }); // Save URL to backend
+    if (updated) toast.success("Profile picture updated");
+  } catch (err) {
+    toast.error("Failed to upload profile image");
+    console.error(err);
+  }
+};
+
+
+
+  const handleAddAddress = async () => {
+    if (!newAddress.name || !newAddress.address || !newAddress.city || !newAddress.postalCode || !newAddress.phone) 
+      return toast.error('Please fill required address fields');
+    const created = await addAddress(newAddress);
+    if (created) {
+      toast.success('Address added');
+      setIsAddingAddress(false);
+      setNewAddress({ name: '', phone: '', altPhone: '', address: '', city: '', state: '', postalCode: '', landmark: '', addressType: '', lat: null, lng: null });
+    } else {
+      toast.error('Failed to add address');
     }
   };
 
-  const onProfileImageChange = async (urlOrNull) => {
-    try {
-      const ok = await updateUser({ profileImage: urlOrNull });
-      if (!ok) toast.error("Failed to save profile image");
-    } catch (e) {
-      toast.error("Error");
-    }
-  };
-
-  const onAddAddress = async (data) => {
-    try {
-      const ok = await addAddress(data);
-      if (ok) {
-        toast.success("Address added");
-        setIsAdding(false);
-        resetNewAddr(); 
-      } else {
-        toast.error("Failed to add address");
-      }
-    } catch (e) {
-      console.error("Error adding address:", e);
-      toast.error("An error occurred");
-    }
-  };
-
-  const onEditAddressSave = async (data) => {
+  const handleEditAddressSave = async () => {
     if (!editingAddr) return;
-    try {
-      const ok = await editAddress(editingAddr.id, data);
-      if (ok) {
-        toast.success("Address updated");
-        setEditingAddr(null);
-        resetEditAddr(); 
-      } else {
-        toast.error("Failed to update address");
-      }
-    } catch (e) {
-      console.error("Error updating address:", e);
-      toast.error("An error occurred");
+    const required = editingAddr.name && editingAddr.address && editingAddr.city && editingAddr.postalCode && editingAddr.phone;
+    if (!required) return toast.error('Please fill required address fields');
+    const updated = await editAddress(editingAddr.id, editingAddr);
+    if (updated) {
+      toast.success('Address updated');
+      setEditingAddr(null);
+    } else {
+      toast.error('Failed to update address');
     }
   };
 
-  const onDeleteAddress = async (id) => {
-    if (!confirm("Delete this address?")) return;
-    try {
-      await deleteAddress(id);
-      toast.success("Deleted");
-    } catch (e) {
-      toast.error("Failed");
-    }
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm('Remove this address?')) return;
+    const ok = await deleteAddress(addressId);
+    if (ok) toast.success('Address removed'); else toast.error('Failed to delete');
   };
-  const onSetDefault = async (id) => {
-    try {
-      await setDefaultAddress(id);
-      toast.success("Default set");
-    } catch (e) {
-      toast.error("Failed");
-    }
+
+  const handleSetDefault = async (addressId) => {
+    const updated = await setDefaultAddress(addressId);
+    if (updated) toast.success('Default address set'); else toast.error('Failed to set default');
   };
+
+  if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Loading user data...</p>
+      </div>
+    );
+  }
+
+
+
+
+
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 mt-[60px]">
-        {/* Left sidebar */}
-        <div className="lg:col-span-4">
-          <ProfileCard
-            userdetails={userdetails}
-            wishlist={wishlist}
-            cart={cart}
-            onEdit={() => setShowProfileModal(true)}
-            onProfileImageChange={onProfileImageChange}
-            onGoWishlist={() => navigate("/wishlist")}
-            onGoCart={() => navigate("/cart")}
-          />
+    <div className="min-h-screen bg-gray-50 p-6 md:p-12">
+{showProfileModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
+      <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
 
-          <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-slate-700 mb-3">Shortcuts</h4>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => navigate("/orders")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">View all orders</button>
-              <button onClick={() => navigate("/wishlist")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Wishlist</button>
-              <button onClick={() => navigate("/cart")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Cart</button>
-              <button onClick={() => navigate("/settings")} className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50">Security & Settings</button>
-            </div>
-          </div>
+      <FloatingInput
+        label="Name"
+        value={profileForm.name}
+        onChange={e => setProfileForm({...profileForm, name: e.target.value})}
+      />
+      <FloatingInput
+        label="Phone"
+        value={profileForm.phone}
+        onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+      />
+      <FloatingInput
+        label="Date of Birth"
+        type="date"
+        value={profileForm.dob}
+        onChange={e => setProfileForm({...profileForm, dob: e.target.value})}
+      />
+
+      <FloatingDropdown
+        label="Gender"
+        value={profileForm.gender}
+        onChange={e => setProfileForm({...profileForm, gender: e.target.value})}
+        options={['Male','Female','Other']}
+      />
+
+      <div className="flex gap-3 mt-4">
+      <button
+  className="px-4 py-2 rounded-lg bg-black text-white"
+  onClick={async () => {
+    const updated = await updateUser(profileForm); // Updated context function
+    if (updated) {
+      toast.success("Profile updated");
+      setShowProfileModal(false);
+    } else {
+      toast.error("Failed to update profile");
+    }
+  }}
+>
+  Save
+</button>
+
+        <button
+          className="px-4 py-2 rounded-lg border"
+          onClick={() => setShowProfileModal(false)}
+        >
+          Cancel
+        </button>
+      </div>
+
+      <button
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+        onClick={() => setShowProfileModal(false)}
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Profile Card */}
+        <div className="lg:col-span-1">
+          <ProfileCard
+  userdetails={userdetails}
+  wishlist={wishlist}
+  cart={cart}
+  navigate={navigate}
+  onProfileImageChange={handleProfileImageChange}
+  onEditDetails={() => {
+    setProfileForm({
+      name: userdetails.name || '',
+      phone: userdetails.phone || '',
+      dob: userdetails.dob || '',
+      gender: userdetails.gender || '',
+    });
+    setShowProfileModal(true);
+  }}
+/>
+
+
+
         </div>
 
-        {/* Main content */}
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-2xl p-6 shadow">
-           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
-              <h2 className="text-xl font-semibold">My Account</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                {["orders", "addresses", "reviews", "queries"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setActiveTab(t)}
-                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                      activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+        {/* Main Tabs */}
+        <div className="lg:col-span-3">
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <div className="flex flex-wrap gap-2 mb-6">
+              {['orders','addresses','reviews','queries'].map(t => (
+                <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full text-sm font-medium ${activeTab === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            
+            {/* Addresses Tab */}
+            {activeTab === 'addresses' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">My Addresses</h2>
+                  <button onClick={() => { setIsAddingAddress(!isAddingAddress); setEditingAddr(null); }} className="px-3 py-2 rounded-full bg-gray-100 flex items-center gap-1">
+                    <Plus className="w-4 h-4" /> Add
                   </button>
-                ))}
+                </div>
+
+                {isAddingAddress && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FloatingInput label="Full Name" value={newAddress.name} onChange={e => setNewAddress({...newAddress, name: e.target.value})} />
+                    <FloatingInput label="Phone" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} />
+                    <FloatingInput label="Alt Phone" value={newAddress.altPhone} onChange={e => setNewAddress({...newAddress, altPhone: e.target.value})} />
+                    <FloatingInput label="Address Line" value={newAddress.address} onChange={e => setNewAddress({...newAddress, address: e.target.value})} className="md:col-span-2" />
+                    <FloatingInput label="City" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} />
+                    <FloatingInput label="State" value={newAddress.state} onChange={e => setNewAddress({...newAddress, state: e.target.value})} />
+                    <FloatingInput label="Postal Code" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} />
+                    <FloatingInput label="Landmark" value={newAddress.landmark} onChange={e => setNewAddress({...newAddress, landmark: e.target.value})} />
+                    <FloatingDropdown label="Address Type" value={newAddress.addressType} onChange={e => setNewAddress({...newAddress, addressType: e.target.value})} options={["Home","Work","Other"]} />
+                    <div className="md:col-span-2 flex gap-3">
+                      <button onClick={handleAddAddress} className="px-4 py-2 rounded-lg bg-black text-white">Save Address</button>
+                      <button 
+  onClick={() => {
+    setIsAddingAddress(false);
+    setNewAddress({
+      name: '', phone: '', altPhone: '',
+      address: '', city: '', state: '', postalCode: '',
+      landmark: '', addressType: '', lat: null, lng: null
+    });
+  }} 
+  className="px-4 py-2 rounded-lg border"
+>
+  Cancel
+</button>
+
+                    </div>
+                  </div>
+                )}
+
+                {editingAddr && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <FloatingInput label="Full Name" value={editingAddr.name} onChange={e => setEditingAddr({...editingAddr, name: e.target.value})} />
+                    <FloatingInput label="Phone" value={editingAddr.phone} onChange={e => setEditingAddr({...editingAddr, phone: e.target.value})} />
+                    <FloatingInput label="Alt Phone" value={editingAddr.altPhone} onChange={e => setEditingAddr({...editingAddr, altPhone: e.target.value})} />
+                    <FloatingInput label="Address Line" value={editingAddr.address} onChange={e => setEditingAddr({...editingAddr, address: e.target.value})} className="md:col-span-2" />
+                    <FloatingInput label="City" value={editingAddr.city} onChange={e => setEditingAddr({...editingAddr, city: e.target.value})} />
+                    <FloatingInput label="State" value={editingAddr.state} onChange={e => setEditingAddr({...editingAddr, state: e.target.value})} />
+                    <FloatingInput label="Postal Code" value={editingAddr.postalCode} onChange={e => setEditingAddr({...editingAddr, postalCode: e.target.value})} />
+                    <FloatingInput label="Landmark" value={editingAddr.landmark} onChange={e => setEditingAddr({...editingAddr, landmark: e.target.value})} />
+                    <FloatingDropdown label="Address Type" value={editingAddr.addressType} onChange={e => setEditingAddr({...editingAddr, addressType: e.target.value})} options={["Home","Work","Other"]} />
+                    <div className="md:col-span-2 flex gap-3">
+                      <button onClick={handleEditAddressSave} className="px-4 py-2 rounded-lg bg-black text-white">Save</button>
+                      <button 
+  onClick={() => {
+    setEditingAddr(originalAddr); // restore untouched values
+    setEditingAddr(null);         // close form
+    setOriginalAddr(null);        // clear backup
+  }} 
+  className="px-4 py-2 rounded-lg border"
+>
+  Cancel
+</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {address.map(addr => (
+                    <AddressCard
+                      key={addr.id}
+                      addr={addr}
+                      onDelete={handleDeleteAddress}
+                      onEdit={(a) => {
+  setEditingAddr({ ...a });   // copy for editing
+  setOriginalAddr({ ...a });  // backup copy
+  setIsAddingAddress(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}}
+                      onSetDefault={handleSetDefault}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Tab content */}
-            <div>
-              {activeTab === "orders" && (
-                <div className="grid grid-cols-1 gap-4">
-                  {orders.length === 0 ? (<div className="text-slate-500">No orders found</div>) : (
-                    orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />)
-                  )}
-                </div>
-              )}
-
-              {activeTab === "addresses" && (
+            {activeTab === 'orders' && (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium">Addresses</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setIsAdding((v) => !v); setEditingAddr(null); }}
-                        className="px-3 py-1 rounded-md border"
-                      >
-                        {isAdding ? "Close" : "Add Address"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {isAdding && (
-                    <form
-                      onSubmit={submitNewAddr(onAddAddress)}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
-                    >
-                      <FloatingInput label="Full name" {...regNewAddr("name", { required: "Name required" })} error={newAddrErrors.name?.message} />
-                      <FloatingInput label="Phone" {...regNewAddr("phone", { required: "Phone required", minLength: { value: 6, message: "Phone too short" },})} error={newAddrErrors.phone?.message} />
-                      <FloatingInput label="Alternate Phone" {...regNewAddr("altPhone")} error={newAddrErrors.altPhone?.message} />
-                      <FloatingInput label="Address" className="md:col-span-2" {...regNewAddr("address", { required: "Address required" })} error={newAddrErrors.address?.message} />
-                      <FloatingInput label="City" {...regNewAddr("city", { required: "City required" })} error={newAddrErrors.city?.message} />
-                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
-                      <FloatingInput label="Postal Code" {...regNewAddr("postalCode", { required: "Postal code required" })} error={newAddrErrors.postalCode?.message} />
-                      {/* FIX: Added missing Landmark field */}
-                      <FloatingInput label="Landmark (Optional)" {...regNewAddr("landmark")} error={newAddrErrors.landmark?.message} />
-                      <Controller
-                        control={controlNewAddr}
-                        name="addressType"
-                        render={({ field }) => (
-                            <FloatingDropdown
-                            label="Address Type"
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={["Home", "Work", "Other"]}
-                            />
-                        )}
-                      />
-                      <div className="md:col-span-2 flex gap-2 mt-2">
-                        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Save</button>
-                        <button type="button" onClick={() => { setIsAdding(false); resetNewAddr(); }} className="px-4 py-2 rounded-md border">Cancel</button>
-                      </div>
-                    </form>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {address.map((a) => (
-                      <AddressCard
-                        key={a.id}
-                        addr={a}
-                        onEdit={(x) => { setEditingAddr(x); setIsAdding(false); }}
-                        onDelete={onDeleteAddress}
-                        onSetDefault={onSetDefault}
-                      />
-                    ))}
-                  </div>
-
-                  {editingAddr && (
-                    <div className="mt-4 p-4 bg-slate-50 rounded-md">
-                      <h4 className="font-medium mb-2">Edit Address</h4>
-                      <form
-                        onSubmit={submitEditAddr(onEditAddressSave)}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                      >
-                        <FloatingInput label="Full name" {...regEditAddr("name", { required: "Name required" })} error={editAddrErrors.name?.message} />
-                        <FloatingInput label="Phone" {...regEditAddr("phone", { required: "Phone required" })} error={editAddrErrors.phone?.message} />
-                        <FloatingInput label="Alternate Phone" {...regEditAddr("altPhone")} error={editAddrErrors.altPhone?.message} />
-                        <FloatingInput label="Address" className="md:col-span-2" {...regEditAddr("address", { required: "Address required" })} error={editAddrErrors.address?.message} />
-                        <FloatingInput label="City" {...regEditAddr("city", { required: "City required" })} error={editAddrErrors.city?.message} />
-                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
-                        <FloatingInput label="Postal Code" {...regEditAddr("postalCode", { required: "Postal code required" })} error={editAddrErrors.postalCode?.message} />
-                        {/* FIX: Added missing Landmark field */}
-                        <FloatingInput label="Landmark (Optional)" {...regEditAddr("landmark")} error={editAddrErrors.landmark?.message} />
-                        <Controller
-                            control={controlEditAddr}
-                            name="addressType"
-                            render={({ field }) => (
-                                <FloatingDropdown
-                                label="Address Type"
-                                value={field.value}
-                                onChange={field.onChange}
-                                options={["Home", "Work", "Other"]}
-                                />
-                            )}
-                        />
-                        <div className="md:col-span-2 flex gap-2 mt-2">
-                          <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Update</button>
-                          <button type="button" onClick={() => { setEditingAddr(null); resetEditAddr(); }} className="px-4 py-2 rounded-md border">Cancel</button>
-                        </div>
-                      </form>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "reviews" && (
-                <div className="grid grid-cols-1 gap-3">
-                  {userReviews.length === 0 ? (<div className="text-slate-500">No reviews</div>) : (
-                    userReviews.map((r) => (
-                      <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold mb-4">Order History</h2>
+                  {orders.length === 0 ? <p className="text-gray-500">No orders yet</p> : (
+                    <div className="space-y-4">
+                      {orders.map(o => (
+                        <div key={o.id} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
                           <div>
-                            <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
-                            <div className="text-xs text-slate-400">{new Date(r.createdAt).toLocaleDateString()}</div>
+                            <div className="font-medium">Order #{o.id}</div>
+                            <div className="text-sm text-gray-500">Placed on {new Date(o.createdAt).toLocaleDateString()}</div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`} />))}
+                          <div className="text-right">
+                            <div className="font-semibold">₹{o.totalAmount}</div>
+                            <div className="text-sm text-gray-500">{o.status}</div>
                           </div>
                         </div>
-                        <p className="mt-2 text-slate-700">{r.comment}</p>
-                      </div>
-                    ))
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+{activeTab === 'reviews' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Reviews</h2>
+                  {userReviews.length === 0 ? (
+                    <p className="text-gray-500">No reviews yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {userReviews.map(r => {
+                        const product = findProduct(r.productId);
+                        return (
+                          <div key={r.id} className="p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-start gap-4">
+                              <div>
+                                <div className="font-semibold">{product?.name || 'Product'}</div>
+                                <div className="text-sm text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</div>
+                              </div>
+                              <div className="ml-auto flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (<Star key={i} className={`w-4 h-4 ${i < r.rating ? 'text-yellow-400' : 'text-gray-300'}`} />))}
+                              </div>
+                            </div>
+                            <p className="mt-2 text-gray-700">{r.comment}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
 
-              {activeTab === "queries" && (
-                <div className="grid gap-3">
-                  {queries.length === 0 ? (<div className="text-slate-500">No queries</div>) : (
-                    queries.map((q) => (
-                      <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
-                        <div className="font-semibold">Message</div>
-                        <div className="text-slate-700 mt-1">{q.message}</div>
-                        <div className="text-xs text-slate-400 mt-2">Submitted on {new Date(q.createdAt).toLocaleDateString()}</div>
-                      </div>
-                    ))
+              {activeTab === 'queries' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">My Queries</h2>
+                  {queries.length === 0 ? <p className="text-gray-500">No queries submitted</p> : (
+                    <div className="space-y-3">
+                      {queries.map((q, i) => (
+                        <div key={i} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="font-semibold">Message</div>
+                          <div className="text-gray-700 mt-1">{q.message}</div>
+                          <div className="text-xs text-gray-500 mt-2">Submitted on {q.createdAt}</div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
-            </div>
           </div>
         </div>
       </div>
-
-      {/* Order Drawer */}
-      {drawerOrder && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="w-full lg:w-1/3 ml-auto bg-white shadow-xl p-6 overflow-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Order #{drawerOrder.id}</h3>
-              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">Close</button>
-            </div>
-            <div className="mt-4">
-              {drawerOrder.items?.map((it) => (
-                <div key={it.id} className="flex items-center gap-3 py-3 border-b">
-                  <img
-                    src={(findProduct(it.productId)?.imageurl && (Array.isArray(findProduct(it.productId)?.imageurl) ? findProduct(it.productId)?.imageurl?.[0] : findProduct(it.productId)?.imageurl)) || ""}
-                    alt=""
-                    className="w-12 h-12 rounded object-cover"
-                  />
-                  <div>
-                    <div className="font-medium">{findProduct(it.productId)?.name}</div>
-                    <div className="text-sm text-slate-500">Qty: {it.qty}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 bg-black/20" onClick={() => setDrawerOrder(null)} aria-hidden></div>
-        </div>
-      )}
-
-      {/* Profile Modal (centered card, not fullscreen) */}
-      {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <FocusLock returnFocus autoFocus>
-            <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
-              <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
-              <form onSubmit={submitProfile(onProfileSave)} className="grid gap-3">
-                <FloatingInput label="Name" {...regProfile("name", { required: "Name required" })} error={profileErrors.name?.message} />
-                <FloatingInput label="Phone" {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })} error={profileErrors.phone?.message} />
-                <FloatingInput label="Date of Birth" type="date" {...regProfile("dob")} />
-                <FloatingDropdown
-                  label="Gender"
-                  value={watchProfile("gender")}
-                  onChange={(val) => setProfileValue("gender", val)}
-                  options={["Male", "Female", "Other"]}
-                />
-                <div className="flex gap-2 mt-3">
-                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">Save</button>
-                  <button type="button" onClick={() => setShowProfileModal(false)} className="px-4 py-2 rounded-md border">Cancel</button>
-                </div>
-              </form>
-            </div>
-          </FocusLock>
-        </div>
-      )}
     </div>
   );
-}
+};
+
+export default UserPage;
