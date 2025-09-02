@@ -290,7 +290,7 @@ await onProfileImageChange(url);
       </div>
 
       <div className="mt-1">
-        <button onClick={onEdit} className="w-full px-4 py-2 bg-slate-900 text-white rounded-md">
+        <button onClick={onEdit} className="px-6 py-2 bg-slate-900 text-white rounded-md">
           Edit Profile
         </button>
       </div>
