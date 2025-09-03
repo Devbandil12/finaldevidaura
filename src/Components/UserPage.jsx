@@ -412,6 +412,7 @@ const {
     city: "",
     state: "",
     postalCode: "",
+    country: "India",
     landmark: "",
     addressType: "Home",
     latitude: null, 
@@ -437,6 +438,7 @@ const {
     city: "",
     state: "",
     postalCode: "",
+    country: "India",
     landmark: "",
     addressType: "Home",
     latitude: null, 
@@ -528,14 +530,20 @@ const {
 const onDeleteAddress = async (id) => {
   if (!confirm("Delete this address?")) return;
   try {
-    const deleted = await deleteAddress(id); // returns true/false
-    if (deleted) toast.success("Address deleted");
-    else toast.error("Failed to delete address");
+    // Capture the result object from the context function
+    const result = await deleteAddress(id); 
+    if (result.success) {
+      toast.success("Address deleted");
+    } else {
+      // Display the specific error message from the backend
+      toast.error(result.message);
+    }
   } catch (e) {
     console.error("Error deleting address:", e);
     toast.error("Failed to delete address");
   }
 };
+
 
 const onEditAddressSave = async (data) => {
   if (!editingAddr) return;
@@ -698,12 +706,27 @@ const onEditAddressSave = async (data) => {
                         {...regNewAddr("city", { required: "City required" })}
                         error={newAddrErrors.city?.message}
                       />
-                      <FloatingInput label="State" {...regNewAddr("state")} error={newAddrErrors.state?.message} />
-                      <FloatingInput
-                        label="Postal Code"
-                        {...regNewAddr("postalCode", { required: "Postal code required" })}
-                        error={newAddrErrors.postalCode?.message}
-                      />
+                      <FloatingInput label="State" {...regNewAddr("state", { required: "State is required" })} error={newAddrErrors.state?.message} />
+
+                     <FloatingInput
+  label="Postal Code"
+  {...regNewAddr("postalCode", { 
+    required: "Postal code required",
+    pattern: {
+      value: /^\d{6}$/,
+      message: "Please enter a valid 6-digit Indian pincode."
+    }
+  })}
+  error={newAddrErrors.postalCode?.message}
+/>
+
+                     <FloatingInput
+  label="Country"
+  {...regNewAddr("country")}
+  error={newAddrErrors.country?.message}
+  readOnly 
+/>
+
                      <Controller
   control={controlNewAddr}
   name="addressType"
@@ -788,12 +811,28 @@ const onEditAddressSave = async (data) => {
                           {...regEditAddr("city", { required: "City required" })}
                           error={editAddrErrors.city?.message}
                         />
-                        <FloatingInput label="State" {...regEditAddr("state")} error={editAddrErrors.state?.message} />
-                        <FloatingInput
-                          label="Postal Code"
-                          {...regEditAddr("postalCode", { required: "Postal code required" })}
-                          error={editAddrErrors.postalCode?.message}
-                        />
+
+                        <FloatingInput label="State" {...regEditAddr("state", { required: "State is required" })} error={editAddrErrors.state?.message} />
+
+                       <FloatingInput
+  label="Postal Code"
+  {...regEditAddr("postalCode", { 
+    required: "Postal code required",
+    pattern: {
+      value: /^\d{6}$/,
+      message: "Please enter a valid 6-digit Indian pincode."
+    }
+  })}
+  error={editAddrErrors.postalCode?.message}
+/>
+
+                       <FloatingInput
+  label="Country"
+  {...regEditAddr("country")}
+  error={editAddrErrors.country?.message}
+  readOnly 
+/>
+
                       <Controller
   control={controlEditAddr}
   name="addressType"
