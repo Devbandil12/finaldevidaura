@@ -412,10 +412,10 @@ const {
     city: "",
     state: "",
     postalCode: "",
-    landmark: "hi",
+    landmark: "",
     addressType: "Home",
-    lat: null, 
-    lng: null,
+    latitude: null, 
+    longitude: null,
   },
 });
 
@@ -439,8 +439,8 @@ const {
     postalCode: "",
     landmark: "",
     addressType: "Home",
-    lat: null, 
-    lng: null,
+    latitude: null, 
+    longitude: null,
   },
 });
 
