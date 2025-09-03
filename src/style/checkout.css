@@ -1,39 +1,27 @@
-/* checkout.css - Black & White Minimalist Design */
+/* checkout.css - Modern Slate Design for Original Component Structure */
 
-/* ------------------------- */
-/* --- 1. Design System & Variables --- */
-/* ------------------------- */
+/* ───────────── 1. Design System & Variables ───────────── */
 :root {
   /* Colors */
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-text: #000000;
-  --color-text-muted: #666666;
-  --color-border: #eeeeee;
-  --color-border-strong: #000000;
-  --color-accent: #000000;
-  --color-accent-text: #ffffff;
+  --color-primary: #1e293b;        /* Dark Slate */
+  --color-primary-hover: #0f172a;  /* Nearly Black */
+  --color-secondary-btn-bg: #f1f5f9;
+  --color-secondary-btn-border: #cbd5e1;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;       /* Mid Gray for subtitles */
+  --text-on-primary: #ffffff;
+  --bg-page: #f8fafc;              /* Page background */
+  --bg-panel: #ffffff;             /* Card/Panel background */
+  --border-color: #e2e8f0;
 
-  /* Typography */
-  --font-family-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-
-  /* Spacing & Sizing */
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 1rem;
-  --spacing-4: 1.5rem;
-  --spacing-5: 2.5rem;
-  --container-width: 1200px;
-  --transition-speed: 0.2s ease-in-out;
+  /* Effects */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --border-radius: 0.75rem;
+  --transition: all 0.2s ease-in-out;
 }
 
-/* ------------------------- */
-/* --- 2. Base & Global Styles --- */
-/* ------------------------- */
+/* ───────────── 2. Global & Body Styles ───────────── */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -41,62 +29,62 @@
 }
 
 body {
-  font-family: var(--font-family-sans);
-  background-color: #f9f9f9; /* A very light gray background to lift the white content */
-  color: var(--color-text);
-  line-height: 1.6;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
 }
 
-/* ------------------------- */
-/* --- 3. Main Checkout Layout --- */
-/* ------------------------- */
+/* ───────────── 3. Main Layout & Wrapper ───────────── */
 .checkout-wrapper {
-  max-width: var(--container-width);
-  margin: var(--spacing-5) auto;
-  padding: 0 var(--spacing-3);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-.checkout-header {
-  margin-bottom: var(--spacing-4);
-  background-color: var(--color-surface);
-  padding: var(--spacing-4);
-  border: 1px solid var(--color-border);
-}
-
-.checkout-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-/* --- Responsive Layout: 2 columns for larger screens --- */
-@media (min-width: 992px) {
-  .checkout-body {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    align-items: flex-start;
+@media (min-width: 768px) {
+  .checkout-wrapper {
+    padding: 2rem;
   }
 }
 
-/* ------------------------- */
-/* --- 4. Progress Indicator --- */
-/* ------------------------- */
+.checkout-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 1024px) {
+  .checkout-body {
+    grid-template-columns: 2fr 1fr; /* 2/3 for main, 1/3 for summary */
+    gap: 3rem;
+  }
+}
+
+/* ───────────── 4. Header & Progress Indicator ───────────── */
+.checkout-header {
+  padding: 2rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
 .progress-indicator {
   display: flex;
   justify-content: space-between;
-  position: relative;
+  max-width: 600px;
   margin: 0 auto;
-  max-width: 500px;
+  position: relative;
 }
 
+/* The connecting line */
 .progress-indicator::before {
   content: '';
   position: absolute;
-  top: 15px;
+  top: 18px; /* Vertically center with the circle */
   left: 0;
   right: 0;
   height: 2px;
-  background-color: var(--color-border);
+  background-color: var(--border-color);
   z-index: 1;
 }
 
@@ -104,144 +92,121 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  position: relative;
+  gap: 0.5rem;
   z-index: 2;
-  background-color: var(--color-surface); /* Covers the line */
+  position: relative;
+  background-color: var(--bg-page); /* Cover the line underneath */
   padding: 0 0.5rem;
 }
 
-.progress-step span {
-  width: 32px;
-  height: 32px;
+.progress-step span { /* This targets the number circle */
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  border: 2px solid var(--color-text-muted);
-  background-color: var(--color-surface);
-  color: var(--color-text-muted);
-  transition: var(--transition-speed);
-  margin-bottom: var(--spacing-2);
-}
-
-.progress-step p {
   font-weight: 600;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  transition: var(--transition-speed);
+  font-size: 0.875rem;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-panel);
+  color: var(--text-secondary);
+  transition: var(--transition);
 }
 
-/* Active/Completed Step Styles */
+.progress-step p { /* This targets the label */
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+/* Active/Completed Step Styling */
 .progress-step.active span {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-text);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
 }
-
 .progress-step.active p {
-  color: var(--color-text);
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
-/* ------------------------- */
-/* --- 5. Main Content & Summary --- */
-/* ------------------------- */
-.checkout-main,
-.checkout-summary {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: var(--spacing-5);
+/* ───────────── 5. Content Panels (Main & Summary) ───────────── */
+.checkout-main, .checkout-summary {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 640px) {
+  .checkout-main, .checkout-summary {
+    padding: 2rem;
+  }
 }
 
 .checkout-summary {
-  background-color: #fdfdfd;
   position: sticky;
-  top: var(--spacing-4);
+  top: 2rem; /* Make summary sticky on scroll for desktop */
 }
 
-.checkout-main h2, .checkout-summary h2 {
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    margin-bottom: var(--spacing-4);
-    padding-bottom: var(--spacing-3);
-    border-bottom: 1px solid var(--color-border);
-}
-
-/* ------------------------- */
-/* --- 6. Navigation Buttons --- */
-/* ------------------------- */
+/* ───────────── 6. Buttons ───────────── */
 .checkout-nav-buttons {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: var(--spacing-4);
-  padding-top: var(--spacing-4);
-  border-top: 1px solid var(--color-border);
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .btn {
-  padding: 0.8rem 2rem;
-  font-size: var(--font-size-base);
+  padding: 0.75rem 1.5rem;
   font-weight: 600;
-  border: 2px solid var(--color-border-strong);
+  font-size: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
   cursor: pointer;
-  text-align: center;
-  transition: var(--transition-speed);
-  text-decoration: none;
-  letter-spacing: 0.5px;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-.btn:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-}
-
-.btn-primary {
-  background-color: var(--color-accent);
-  color: var(--color-accent-text);
-}
-
-.btn-primary:hover {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-}
-
+/* This styles your .btn-outline class */
 .btn-outline {
-  background-color: transparent;
-  color: var(--color-text);
+  background: var(--bg-panel);
+  border-color: var(--color-secondary-btn-border);
+  color: var(--text-primary);
 }
-
 .btn-outline:hover {
-  background-color: var(--color-accent);
-  color: var(--color-accent-text);
+  background: var(--color-secondary-btn-bg);
+  border-color: var(--color-secondary-btn-border);
 }
 
-/* Disabled State */
+/* This styles your .btn-primary class */
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
+}
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
 .btn:disabled {
-  background-color: #f5f5f5;
-  border-color: #f5f5f5;
-  color: #999;
+  background-color: #e2e8f0;
+  border-color: #e2e8f0;
+  color: #94a3b8;
   cursor: not-allowed;
-}
-
-/* ------------------------- */
-/* --- 7. Responsive Adjustments --- */
-/* ------------------------- */
-@media (max-width: 576px) {
-  :root {
-    --spacing-5: 1.5rem;
-  }
-
-  .checkout-nav-buttons {
-    flex-direction: column-reverse; /* Stack buttons */
-    gap: var(--spacing-3);
-  }
-
-  .btn {
-    width: 100%; /* Full-width buttons on mobile */
-  }
-
-  .progress-step p {
-    display: none; /* Hide step text on smallest screens to save space */
-  }
+  box-shadow: none;
+  transform: translateY(0);
 }
