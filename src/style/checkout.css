@@ -1,77 +1,111 @@
-/* ───────────── Modern Checkout Redesign ───────────── */
+/* checkout.css */
 
+/* ------------------------- */
+/* --- 1. Design System & Variables --- */
+/* ------------------------- */
 :root {
-  --color-primary: #1e293b; /* Dark Slate */
-  --color-primary-hover: #0f172a; /* Nearly Black */
-  --color-secondary: #f1f5f9; /* Light Gray */
-  --color-secondary-hover: #e2e8f0; /* Darker Gray */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b; /* Mid Gray for subtitles */
-  --text-on-primary: #ffffff;
-  --bg-page: #f8fafc; /* Page background */
-  --bg-panel: #ffffff; /* Card/Panel background */
-  --border-color: #e2e8f0;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* Colors */
+  --color-primary: #007bff;
+  --color-primary-light: #e6f2ff;
+  --color-success: #28a745;
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #e9ecef;
+  --color-gray-400: #ced4da;
+  --color-gray-600: #6c757d;
+  --color-gray-800: #343a40;
+  --color-text: #212529;
+  --color-white: #ffffff;
+  --color-border: #dee2e6;
+
+  /* Typography */
+  --font-family-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+
+  /* Spacing & Sizing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 1rem;
+  --spacing-4: 1.5rem;
+  --spacing-5: 2rem;
+  --border-radius: 0.5rem;
+  --container-width: 1200px;
+
+  /* Effects */
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --transition-speed: 0.2s ease-in-out;
 }
 
-.checkout-page-wrapper {
-  font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text-primary);
-  background-color: var(--bg-page);
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1rem;
+/* ------------------------- */
+/* --- 2. Base & Global Styles --- */
+/* ------------------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (min-width: 768px) {
-  .checkout-page-wrapper {
-    padding: 2rem;
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-gray-100);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* ------------------------- */
+/* --- 3. Main Checkout Layout --- */
+/* ------------------------- */
+.checkout-wrapper {
+  max-width: var(--container-width);
+  margin: var(--spacing-4) auto;
+  padding: 0 var(--spacing-3);
+}
+
+.checkout-header {
+  margin-bottom: var(--spacing-4);
+  background-color: var(--color-white);
+  padding: var(--spacing-4);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.checkout-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* --- Responsive Layout: 2 columns for larger screens --- */
+@media (min-width: 992px) {
+  .checkout-body {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    align-items: flex-start;
   }
 }
 
-/* --- REDESIGNED HEADER --- */
-.checkout-header {
-  margin: 2rem auto 3rem;
-  text-align: center;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 2.5rem;
-}
-
-.header-title h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-
-.header-title .lock-icon {
-  color: var(--text-secondary);
-}
-
-/* --- New Progress Stepper --- */
-.progress-stepper {
+/* ------------------------- */
+/* --- 4. Progress Indicator --- */
+/* ------------------------- */
+.progress-indicator {
   display: flex;
   justify-content: space-between;
-  max-width: 600px;
-  margin: 0 auto;
   position: relative;
+  margin: 0 auto;
+  max-width: 500px;
 }
 
-/* The connecting line */
-.progress-stepper::before {
+/* The connecting line behind the steps */
+.progress-indicator::before {
   content: '';
   position: absolute;
   top: 18px; /* Vertically center with the circle */
   left: 0;
   right: 0;
-  height: 2px;
-  background-color: var(--border-color);
+  height: 4px;
+  background-color: var(--color-gray-200);
   z-index: 1;
 }
 
@@ -79,147 +113,164 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  z-index: 2;
+  text-align: center;
   position: relative;
-  background-color: var(--bg-page); /* Cover the line underneath */
-  padding: 0 0.5rem;
+  z-index: 2;
+  width: 100px; /* Give some width for text */
+  background-color: var(--color-white); /* To cover the line */
 }
 
-.step-circle {
-  width: 36px;
-  height: 36px;
+.progress-step span {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
+  font-size: var(--font-size-lg);
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-600);
+  border: 4px solid var(--color-gray-200);
+  transition: var(--transition-speed);
+  margin-bottom: var(--spacing-2);
+}
+
+.progress-step p {
   font-weight: 600;
-  font-size: 0.875rem;
-  border: 2px solid var(--border-color);
-  background-color: var(--bg-panel);
-  color: var(--text-secondary);
-  transition: all 0.3s ease;
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  transition: var(--transition-speed);
 }
 
-.step-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
-}
-
-/* Active Step Styling */
-.progress-step.active .step-circle {
-  border-color: var(--color-primary);
+/* Active/Completed Step Styles */
+.progress-step.active span {
   background-color: var(--color-primary);
-  color: var(--text-on-primary);
-}
-.progress-step.active .step-label {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* Completed Step Styling */
-.progress-step.completed .step-circle {
   border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: var(--text-on-primary);
-}
-.progress-step.completed .step-label {
-  color: var(--text-primary);
+  color: var(--color-white);
 }
 
-/* --- REDESIGNED LAYOUT --- */
-.checkout-body {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: flex-start;
+.progress-step.active p {
+  color: var(--color-primary);
 }
 
-@media (min-width: 1024px) {
-  .checkout-body {
-    grid-template-columns: 2fr 1fr; /* 2/3 for main, 1/3 for summary */
-    gap: 3rem;
-  }
+/* ------------------------- */
+/* --- 5. Main Content & Summary --- */
+/* ------------------------- */
+.checkout-main,
+.checkout-summary {
+  background: var(--color-white);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-4);
+  box-shadow: var(--box-shadow);
 }
 
-.checkout-main {
-  width: 100%;
+.checkout-summary {
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-border);
+  position: sticky; /* Make summary sticky on desktop */
+  top: var(--spacing-4);
 }
 
-/* New Panel Style for each step */
-.checkout-step-panel {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+/* Placeholder styles for content inside the cards */
+.checkout-main h2, .checkout-summary h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-3);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-2);
 }
 
-@media (min-width: 640px) {
-  .checkout-step-panel {
-    padding: 2rem;
-  }
-}
-
-/* Summary Card */
-.summary-card {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  position: sticky;
-  top: 2rem; /* Make summary sticky on scroll for desktop */
-}
-
-/* --- REDESIGNED BUTTONS --- */
+/* ------------------------- */
+/* --- 6. Navigation Buttons --- */
+/* ------------------------- */
 .checkout-nav-buttons {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  align-items: center;
+  margin-top: var(--spacing-4);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-border);
 }
 
 .btn {
   padding: 0.75rem 1.5rem;
+  font-size: var(--font-size-base);
   font-weight: 600;
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  border: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: var(--shadow-sm);
-}
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  text-align: center;
+  transition: var(--transition-speed);
+  text-decoration: none;
 }
 
-.btn-secondary {
-  background: var(--bg-panel);
-  border-color: #cbd5e1; /* Mid Gray Border */
-  color: var(--text-primary);
-}
-.btn-secondary:hover {
-  background: var(--color-secondary);
-  border-color: var(--color-secondary);
+.btn:focus-visible {
+    outline: 3px solid var(--color-primary-light);
+    outline-offset: 2px;
 }
 
 .btn-primary {
-  background: var(--color-primary);
-  color: var(--text-on-primary);
+  background-color: var(--color-primary);
+  color: var(--color-white);
   border-color: var(--color-primary);
 }
+
 .btn-primary:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  opacity: 0.9;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
 }
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary-light);
+}
+
+/* Disabled State */
 .btn:disabled {
-  background-color: #ccc;
+  background-color: var(--color-gray-200);
+  border-color: var(--color-gray-200);
+  color: var(--color-gray-600);
   cursor: not-allowed;
   box-shadow: none;
-  transform: translateY(0);
+  opacity: 0.8;
+}
+
+/* ------------------------- */
+/* --- 7. Responsive Adjustments --- */
+/* ------------------------- */
+@media (max-width: 576px) {
+  :root {
+    --font-size-base: 0.95rem;
+    --font-size-lg: 1rem;
+    --spacing-4: 1.25rem;
+  }
+
+  /* Simplify progress bar on very small screens */
+  .progress-step p {
+    font-size: 0.75rem;
+  }
+  
+  .progress-step span {
+      width: 35px;
+      height: 35px;
+  }
+
+  .progress-indicator::before {
+      top: 15px;
+  }
+
+  .checkout-nav-buttons {
+    flex-direction: column-reverse; /* Stack buttons */
+    gap: var(--spacing-2);
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%; /* Full-width buttons on mobile */
+  }
 }
