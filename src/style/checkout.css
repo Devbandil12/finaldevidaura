@@ -1,35 +1,20 @@
-I don't like checkout header style I want progressing style 
-
-
-/* checkout.css - Modern Slate Design (Scoped Version)
-  All styles are prefixed with '.checkout-wrapper' to prevent them
-  from affecting other pages on your site.
-*/
-
-/* ───────────── 1. Design System & Variables (Global) ───────────── */
 :root {
-  /* Colors */
-  --color-primary: #1e293b;        /* Dark Slate */
-  --color-primary-hover: #0f172a;  /* Nearly Black */
+  --color-primary: #1e293b;
+  --color-primary-hover: #0f172a;
   --color-secondary-btn-bg: #f1f5f9;
   --color-secondary-btn-border: #cbd5e1;
   --text-primary: #1e293b;
-  --text-secondary: #64748b;       /* Mid Gray for subtitles */
+  --text-secondary: #64748b;
   --text-on-primary: #ffffff;
-  --bg-page: #f8fafc;              /* Page background */
-  --bg-panel: #ffffff;             /* Card/Panel background */
+  --bg-page: #f8fafc;
+  --bg-panel: #ffffff;
   --border-color: #e2e8f0;
-
-  /* Effects */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --border-radius: 0.75rem;
   --transition: all 0.2s ease-in-out;
 }
 
-
-
-/* ───────────── 3. Scoped Layout & Wrapper ───────────── */
 .checkout-wrapper {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
@@ -58,7 +43,7 @@ I don't like checkout header style I want progressing style
     gap: 3rem;
   }
 }
-/* The header is now a styled panel */
+
 .checkout-wrapper .checkout-header {
   background-color: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -75,34 +60,27 @@ I don't like checkout header style I want progressing style
   margin: 0 auto;
 }
 
-/* We now create the line segment on each step individually, instead of one long line */
 .checkout-wrapper .progress-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   position: relative;
-  /* Make each step take up equal space */
   flex: 1 1 0%;
 }
 
-/* The line segment connecting to the PREVIOUS step */
-/* We hide it on the first step */
 .checkout-wrapper .progress-step:not(:first-child)::before {
   content: '';
   position: absolute;
-  /* Position the line from the center of the previous step to this step's center */
   right: 50%;
-  top: 18px; /* Vertically center with the circle */
+  top: 18px;
   height: 2px;
   width: 100%;
   background-color: var(--border-color);
   transition: background-color 0.4s ease;
-  /* Place the line behind the circle */
   z-index: -1;
 }
 
-/* This is the magic: when a step is active, the line BEFORE it becomes colored */
 .checkout-wrapper .progress-step.active::before {
   background-color: var(--color-primary);
 }
@@ -120,7 +98,6 @@ I don't like checkout header style I want progressing style
   background-color: var(--bg-panel);
   color: var(--text-secondary);
   transition: var(--transition);
-  /* Add z-index to ensure the circle is on top of the line */
   position: relative;
   z-index: 1;
 }
@@ -148,7 +125,6 @@ I don't like checkout header style I want progressing style
   top: 2rem;
 }
 
-/* ───────────── 6. Scoped Buttons ───────────── */
 .checkout-wrapper .checkout-nav-buttons {
   display: flex;
   justify-content: space-between;
