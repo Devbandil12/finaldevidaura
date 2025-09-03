@@ -437,7 +437,7 @@ const {
     city: "",
     state: "",
     postalCode: "",
-    landmark: "hi",
+    landmark: "",
     addressType: "Home",
     lat: null, 
     lng: null,
@@ -510,13 +510,19 @@ const {
 
   const onAddAddress = async (data) => {
   try {
-    const ok = await addAddress(data);
+    const payload = {
+      ...data,
+      userId: userdetails.id, // <<< REQUIRED
+    };
+    const ok = await addAddress(payload);
     if (ok) {
       setIsAdding(false);
-      resetNewAddr(); 
+      resetNewAddr();
+      toast.success("Address added");
     }
   } catch (e) {
     console.error("Error adding address:", e);
+    toast.error(e?.response?.data?.msg || "Failed to add address");
   }
 };
 
@@ -535,14 +541,16 @@ const onEditAddressSave = async (data) => {
 
 
   const onDeleteAddress = async (id) => {
-    if (!confirm("Delete this address?")) return;
-    try {
-      await deleteAddress(id);
-      toast.success("Deleted");
-    } catch (e) {
-      toast.error("Failed");
-    }
-  };
+  if (!confirm("Delete this address?")) return;
+  try {
+    // call API with path param, not body
+    await deleteAddress(id); 
+    toast.success("Deleted");
+  } catch (e) {
+    toast.error(e?.response?.data?.msg || "Failed to delete");
+  }
+};
+
   const onSetDefault = async (id) => {
     try {
       await setDefaultAddress(id);
@@ -677,6 +685,11 @@ const onEditAddressSave = async (data) => {
                         error={newAddrErrors.address?.message}
                       />
                       <FloatingInput
+  label="Landmark"
+  {...regNewAddr("landmark")}
+  error={newAddrErrors.landmark?.message}
+/>
+                      <FloatingInput
                         label="City"
                         {...regNewAddr("city", { required: "City required" })}
                         error={newAddrErrors.city?.message}
@@ -761,6 +774,11 @@ const onEditAddressSave = async (data) => {
                           {...regEditAddr("address", { required: "Address required" })}
                           error={editAddrErrors.address?.message}
                         />
+                        <FloatingInput
+  label="Landmark"
+  {...regEditAddr("landmark")}
+  error={editAddrErrors.landmark?.message}
+/>
                         <FloatingInput
                           label="City"
                           {...regEditAddr("city", { required: "City required" })}
