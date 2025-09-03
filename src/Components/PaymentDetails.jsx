@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
-import { CreditCard, IndianRupee, Truck } from "lucide-react";
-import "../style/paymentDetails.css";
+import { IndianRupee, CreditCard, Truck, ChevronUp, ChevronDown } from "lucide-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -168,82 +167,121 @@ export default function PaymentDetails({
   };
 
   return (
-    <div className="payment-details payment-section">
-      <div className="section-card">
-        <div className="summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
-          <IndianRupee size={18} />
-          <span className="payment-total-price">Total: ₹{breakdown.total}</span>
-          <span className="toggle-icon">{summaryExpanded ? "▲" : "▼"}</span>
+  <div className="w-full max-w-3xl mx-auto space-y-6">
+    {/* Price Summary Card */}
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <button
+        onClick={() => setSummaryExpanded(!summaryExpanded)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition"
+      >
+        <div className="flex items-center gap-2">
+          <IndianRupee className="w-5 h-5 text-black" />
+          <span className="text-lg font-semibold text-black">
+            Total: ₹{breakdown.total}
+          </span>
         </div>
-
-        {summaryExpanded && (
-          <div className="summary-details">
-            {loadingPrices ? (
-              <p>Loading breakdown...</p>
-            ) : (
-              <ul className="price-list">
-                <li><strong>Original:</strong> ₹{breakdown.originalTotal}</li>
-                <li><strong>Discount:</strong> -₹{breakdown.originalTotal - breakdown.productTotal}</li>
-                {appliedCoupon && (
-                  <li style={{ color: "green", fontWeight: 600 }}>
-                    <strong>Coupon ({appliedCoupon.code}):</strong> -₹{breakdown.discountAmount}
-                  </li>
-                )}
-                <li><strong>Delivery:</strong> ₹{breakdown.deliveryCharge}</li>
-                <li className="total-line">
-                  <strong>Total:</strong> ₹{breakdown.total}
-                </li>
-              </ul>
-            )}
-          </div>
+        {summaryExpanded ? (
+          <ChevronUp className="w-5 h-5 text-gray-500" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-500" />
         )}
-      </div>
+      </button>
 
-      <div className="section-card payment-methods">
-        <h3><CreditCard size={18} /> Choose Payment Method</h3>
-        <div className="payment-method-selection">
-          {availablePaymentMethods.map((method) => (
-            <label key={method} className="payment-option">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={method}
-                checked={paymentMethod === method}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              />
-              {method}
-            </label>
-          ))}
-        </div>
-
-        <div className="payment-action">
-          {paymentMethod === "Razorpay" && (
-            <button
-              onClick={handleRazorpayPayment}
-              className="btn btn-primary"
-              disabled={loading} // ✅ disable on loading
-            >
-              {loading ? "Processing..." : "Pay Now"}
-            </button>
-          )}
-
-          {paymentMethod === "Cash on Delivery" && (
-            <div className="cod-content">
-              <p>
-                <Truck size={16} style={{ marginRight: "6px" }} />
-                Cash on Delivery selected. Please have exact change ready.
-              </p>
-              <button
-                onClick={handlePlaceOrder}
-                className="btn btn-success"
-                disabled={loading} // ✅ disable COD button too
-              >
-                {loading ? "Placing Order..." : "Place Order"}
-              </button>
-            </div>
+      <div
+        className={`transition-all duration-300 ease-in-out ${
+          summaryExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        } overflow-hidden`}
+      >
+        <div className="px-4 pb-4">
+          {loadingPrices ? (
+            <p className="text-gray-500">Loading breakdown...</p>
+          ) : (
+            <ul className="divide-y divide-gray-200 text-sm">
+              <li className="flex justify-between py-2">
+                <span>Original</span>
+                <span>₹{breakdown.originalTotal}</span>
+              </li>
+              <li className="flex justify-between py-2">
+                <span>Discount</span>
+                <span>-₹{breakdown.originalTotal - breakdown.productTotal}</span>
+              </li>
+              {appliedCoupon && (
+                <li className="flex justify-between py-2 text-green-600 font-semibold">
+                  <span>Coupon ({appliedCoupon.code})</span>
+                  <span>-₹{breakdown.discountAmount}</span>
+                </li>
+              )}
+              <li className="flex justify-between py-2">
+                <span>Delivery</span>
+                <span>₹{breakdown.deliveryCharge}</span>
+              </li>
+              <li className="flex justify-between py-3 font-semibold text-black text-base">
+                <span>Total</span>
+                <span>₹{breakdown.total}</span>
+              </li>
+            </ul>
           )}
         </div>
       </div>
     </div>
-  );
-}
+
+    {/* Payment Methods */}
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-4">
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-black">
+        <CreditCard className="w-5 h-5" /> Choose Payment Method
+      </h3>
+
+      <div className="flex flex-col gap-3">
+        {availablePaymentMethods.map((method) => (
+          <label
+            key={method}
+            className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${
+              paymentMethod === method
+                ? "border-black bg-gray-50"
+                : "border-gray-200 hover:border-gray-400"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              value={method}
+              checked={paymentMethod === method}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-4 h-4 accent-black"
+            />
+            <span className="font-medium text-black">{method}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-2">
+        {paymentMethod === "Razorpay" && (
+          <button
+            onClick={handleRazorpayPayment}
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-black text-white font-semibold transition hover:bg-gray-900 disabled:bg-gray-300"
+          >
+            {loading ? "Processing..." : "Pay Now"}
+          </button>
+        )}
+
+        {paymentMethod === "Cash on Delivery" && (
+          <div className="space-y-3">
+            <p className="flex items-center text-sm text-gray-600">
+              <Truck className="w-4 h-4 mr-2" />
+              Cash on Delivery selected. Please have exact change ready.
+            </p>
+            <button
+              onClick={handlePlaceOrder}
+              disabled={loading}
+              className="w-full py-3 rounded-xl bg-white border border-black text-black font-semibold transition hover:bg-gray-100 disabled:bg-gray-300"
+            >
+              {loading ? "Placing Order..." : "Place Order"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
