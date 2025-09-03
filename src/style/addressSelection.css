@@ -38,26 +38,104 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
 }
+.address-selection .address-list::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* * FIXED: Merged and corrected Address Card styles.
+ * This is now the single source of truth for the address card appearance.
+*/
+
+/* Main card container */
 .address-selection .address-card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 16px;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  display: flex; /* Changed from column to row for side-by-side layout */
+  align-items: flex-start; /* Aligns radio button with the top of the content */
+  gap: 1rem; /* Space between radio and details */
+  border: 1px solid #e5e7eb;
   cursor: pointer;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s;
 }
+
 .address-selection .address-card.active {
-  border-color: #242D4C;
-  box-shadow: 0 0 6px rgba(36, 45, 76, 0.3);
+  border-color: #111827;
+  box-shadow: 0 0 8px rgba(17, 24, 39, 0.2);
 }
+
+.address-selection .address-details {
+  flex: 1; /* Allows details to take up remaining space */
+}
+
+/* Top section with name and default badge */
+.address-selection .address-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.address-selection .address-card-name {
+  font-weight: 500;
+}
+
+.address-selection .address-card-body {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Default badge */
+.address-selection .address-card-default-badge span {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background-color: #111827;
+  color: #fff;
+}
+
+/* Phone number section */
+.address-selection .address-card-phone {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-top: 8px;
+}
+
+/* Action buttons section */
+.address-selection .address-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.address-selection .address-card-actions button {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.address-selection .address-card-actions button:hover {
+  background-color: #f9fafb;
+}
+
+.address-selection .address-card-actions button.delete-btn {
+  color: #dc2626;
+}
+
 
 /* ───────────── Form Styles ───────────── */
 .address-selection .address-form {
   margin-top: 30px;
 }
 
-/* Form Heading */
 .address-selection .address-form h3 {
   font-size: 1.25rem;
   font-weight: 700;
@@ -65,7 +143,6 @@
   color: #242D4C;
 }
 
-/* Remove auto grid — manual grouping from JSX handles layout */
 .address-selection .form-grid {
   display: flex;
   flex-direction: column;
@@ -92,11 +169,11 @@
 
 .address-selection .input-group input:focus,
 .address-selection .input-group textarea:focus {
+  outline: none;
   border-color: #242D4C;
   box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
 }
 
-/* Label for floating */
 .address-selection .input-group label {
   position: absolute;
   top: 50%;
@@ -112,7 +189,6 @@
   z-index: 1;
 }
 
-/* Floating label on focus or filled */
 .address-selection .input-group input:focus + label,
 .address-selection .input-group input:not(:placeholder-shown) + label,
 .address-selection .input-group textarea:focus + label,
@@ -126,10 +202,9 @@
 .address-selection .row {
   display: flex;
   gap: 20px;
-  flex-wrap: wrap; /* Prevent overflow on small screens */
+  flex-wrap: wrap;
 }
 
-/* Postal Code row */
 .address-selection .postal-row {
   display: flex;
   gap: 8px;
@@ -149,6 +224,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
+  height: 42px; /* Align with input field height */
 }
 .address-selection .postal-row button:hover {
   background: #1c223d;
@@ -163,7 +239,7 @@
 .address-selection .address-form fieldset legend {
   font-weight: 700;
   color: #242D4C;
-  margin-bottom: 10px;
+  padding: 0 4px;
 }
 .address-selection .address-form fieldset label {
   display: inline-flex;
@@ -172,15 +248,48 @@
   font-weight: 500;
   margin-right: 20px;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
 .address-selection .address-form fieldset input[type="radio"] {
   margin: 0;
+  accent-color: #242D4C;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* * FIXED: This selector now correctly bolds the label text 
+ * when the radio button inside it is checked. 
+*/
+.address-selection .address-form fieldset label:has(input[type="radio"]:checked) {
+  color: #242D4C;
+  font-weight: 600;
+}
+
+/* * FIXED: This selector now correctly targets the custom address
+ * text input without relying on a specific class name.
+*/
+.address-selection .address-form fieldset input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.address-selection .address-form fieldset input[type="text"]:focus {
+  border-color: #242D4C;
+  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
+  outline: none;
 }
 
 /* Form Actions */
 .address-selection .form-buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
 }
 .address-selection .form-buttons button {
@@ -195,158 +304,6 @@
   color: #F1EAD8;
 }
 .address-selection .form-buttons button:first-child {
-  background: #ccc;
+  background: #e2e8f0;
   color: #333;
-}
-
-/* Default label style */
-.address-selection .default-label {
-  font-weight: 600;
-  color: #242D4C;
-  padding: 2px 8px;
-  border: 1px solid #242D4C;
-  border-radius: 6px;
-  font-size: 0.85rem;
-}
-
-/* Scrollbar hidden */
-.address-selection .address-list {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.address-selection .address-list::-webkit-scrollbar {
-  display: none;
-}
-
-
-
-
-.address-selection .address-list {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-}
-
-.address-selection .address-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-
-
-
-
-/* Checked state highlight */
-.address-selection .address-form fieldset input[type="radio"]:checked + span {
-  color: #242D4C;
-  font-weight: 600;
-}
-
-/* Radio button style */
-.address-selection .address-form fieldset input[type="radio"] {
-  accent-color: #242D4C;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-}
-
-
-/* Custom Address Type Input */
-.address-selection .address-form .custom-address-input {
-  width: 100%;
-  padding: 10px 12px;
-  margin-top: 12px; /* space above input */
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.address-selection .address-form .custom-address-input:focus {
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
-  outline: none;
-}
-
-
-/*
- * Styles to make AddressSelection.jsx cards look like UserPage.jsx cards
- */
-
-/* Main card container */
-.address-card {
-  background-color: #fff;
-  border-radius: 0.5rem; /* rounded-lg */
-  padding: 1rem; /* p-4 */
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* gap-2 */
-  border: 1px solid #e5e7eb;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.address-card.active {
-  border-color: #111827; /* slate-900 */
-}
-
-/* Top section with name and default badge */
-.address-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.address-card-name {
-  font-weight: 500; /* font-medium */
-}
-
-.address-card-body {
-  font-size: 0.875rem; /* text-sm */
-  color: #64748b; /* text-slate-500 */
-  margin-top: 4px;
-}
-
-/* Default badge */
-.address-card-default-badge span {
-  font-size: 0.75rem; /* text-xs */
-  padding: 2px 8px; /* px-2 py-0.5 */
-  border-radius: 9999px; /* rounded-full */
-  background-color: #111827; /* bg-slate-900 */
-  color: #fff; /* text-white */
-}
-
-/* Phone number section */
-.address-card-phone {
-  font-size: 0.875rem; /* text-sm */
-  color: #475569; /* text-slate-600 */
-}
-
-.address-card-alt-phone {
-  color: #64748b; /* text-slate-500 */
-}
-
-/* Action buttons section */
-.address-card-actions {
-  display: flex;
-  gap: 0.5rem; /* gap-2 */
-  margin-top: 0.5rem; /* mt-2 */
-}
-
-.address-card-actions button {
-  padding: 0.25rem 0.75rem; /* px-3 py-1 */
-  border-radius: 0.375rem; /* rounded-md */
-  border: 1px solid #e5e7eb;
-  font-size: 0.875rem; /* text-sm */
-  background-color: #fff;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.address-card-actions button:hover {
-  background-color: #f9fafb;
-}
-
-.address-card-actions button.delete-btn {
-  color: #dc2626; /* text-red-600 */
 }
