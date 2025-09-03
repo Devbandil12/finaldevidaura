@@ -1,76 +1,115 @@
-/* checkout.css - Modern & Clean Stripe-Inspired Design */
+I don't like checkout header style I want progressing style 
 
-/* ───────────── 1. Design System & Variables ───────────── */
+
+/* checkout.css - Modern Slate Design (Scoped Version)
+  All styles are prefixed with '.checkout-wrapper' to prevent them
+  from affecting other pages on your site.
+*/
+
+/* ───────────── 1. Design System & Variables (Global) ───────────── */
 :root {
-  /* A fresh, professional color palette */
-  --color-primary: #6772e5;        /* Vibrant Purple */
-  --color-primary-hover: #5469d4;
-  --bg-page: #f6f9fc;              /* Light gray page background */
-  --bg-panel: #ffffff;
-  --text-primary: #30313d;
-  --text-secondary: #525f7f;
+  /* Colors */
+  --color-primary: #1e293b;        /* Dark Slate */
+  --color-primary-hover: #0f172a;  /* Nearly Black */
+  --color-secondary-btn-bg: #f1f5f9;
+  --color-secondary-btn-border: #cbd5e1;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;       /* Mid Gray for subtitles */
   --text-on-primary: #ffffff;
-  --border-color: #e6ebf1;
+  --bg-page: #f8fafc;              /* Page background */
+  --bg-panel: #ffffff;             /* Card/Panel background */
+  --border-color: #e2e8f0;
 
-  /* Subtle effects for a clean look */
-  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px 0 rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px -1px rgba(50,50,93,.11), 0 2px 4px -1px rgba(0,0,0,.08);
-  --border-radius: 8px;
+  /* Effects */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --border-radius: 0.75rem;
   --transition: all 0.2s ease-in-out;
 }
 
-/* ───────────── 2. Global & Wrapper Styles ───────────── */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
+
+/* ───────────── 3. Scoped Layout & Wrapper ───────────── */
 .checkout-wrapper {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
-  background-color: var(--bg-page);
-  padding: 1.5rem;
+  background-color: var(--bg-panel);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
 @media (min-width: 768px) {
   .checkout-wrapper {
-    padding: 3rem;
+    padding: 2rem;
   }
 }
 
-/* ───────────── 3. NEW Header & Step Indicator ───────────── */
+.checkout-wrapper .checkout-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 1024px) {
+  .checkout-wrapper .checkout-body {
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+  }
+}
+/* The header is now a styled panel */
 .checkout-wrapper .checkout-header {
-  max-width: 1100px;
-  margin: 0 auto 2rem auto;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .checkout-wrapper .progress-indicator {
   display: flex;
-  justify-content: center;
-  gap: 2rem;
+  justify-content: space-between;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-/* Hide the old line pseudo-element if it exists */
-.checkout-wrapper .progress-indicator::before {
-  display: none;
-}
-
+/* We now create the line segment on each step individually, instead of one long line */
 .checkout-wrapper .progress-step {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 3px solid transparent;
-  color: var(--text-secondary);
-  transition: var(--transition);
+  gap: 0.5rem;
+  position: relative;
+  /* Make each step take up equal space */
+  flex: 1 1 0%;
+}
+
+/* The line segment connecting to the PREVIOUS step */
+/* We hide it on the first step */
+.checkout-wrapper .progress-step:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  /* Position the line from the center of the previous step to this step's center */
+  right: 50%;
+  top: 18px; /* Vertically center with the circle */
+  height: 2px;
+  width: 100%;
+  background-color: var(--border-color);
+  transition: background-color 0.4s ease;
+  /* Place the line behind the circle */
+  z-index: -1;
+}
+
+/* This is the magic: when a step is active, the line BEFORE it becomes colored */
+.checkout-wrapper .progress-step.active::before {
+  background-color: var(--color-primary);
 }
 
 .checkout-wrapper .progress-step span {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -78,27 +117,19 @@
   font-weight: 600;
   font-size: 0.875rem;
   border: 2px solid var(--border-color);
-  background-color: var(--bg-page);
+  background-color: var(--bg-panel);
   color: var(--text-secondary);
   transition: var(--transition);
+  /* Add z-index to ensure the circle is on top of the line */
+  position: relative;
+  z-index: 1;
 }
 
 .checkout-wrapper .progress-step p {
-  font-size: 1rem;
-  font-weight: 600;
-  display: none; /* Hide label on mobile for a cleaner look */
-}
-
-@media (min-width: 640px) {
-  .checkout-wrapper .progress-step p {
-    display: block; /* Show label on larger screens */
-  }
-}
-
-/* Active/Completed Step Styling */
-.checkout-wrapper .progress-step.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .checkout-wrapper .progress-step.active span {
@@ -107,47 +138,19 @@
   color: var(--text-on-primary);
 }
 
-/* ───────────── 4. Layout & Content Panels ───────────── */
-.checkout-wrapper .checkout-body {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: flex-start;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-@media (min-width: 1024px) {
-  .checkout-wrapper .checkout-body {
-    grid-template-columns: 1fr 0.7fr; /* Adjust column ratio */
-  }
-}
-
-.checkout-wrapper .checkout-main,
-.checkout-wrapper .checkout-summary {
-  background-color: var(--bg-panel);
-  border-radius: var(--border-radius);
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-@media (min-width: 640px) {
-  .checkout-wrapper .checkout-main,
-  .checkout-wrapper .checkout-summary {
-    padding: 2rem;
-  }
+.checkout-wrapper .progress-step.active p {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .checkout-wrapper .checkout-summary {
   position: sticky;
-  top: 1.5rem;
+  top: 2rem;
 }
 
-/* ───────────── 5. Scoped Buttons ───────────── */
+/* ───────────── 6. Scoped Buttons ───────────── */
 .checkout-wrapper .checkout-nav-buttons {
   display: flex;
-  flex-direction: column-reverse; /* Stack buttons on mobile */
   justify-content: space-between;
   gap: 1rem;
   margin-top: 2rem;
@@ -155,47 +158,34 @@
   border-top: 1px solid var(--border-color);
 }
 
-@media (min-width: 640px) {
-    .checkout-wrapper .checkout-nav-buttons {
-        flex-direction: row; /* Side-by-side on larger screens */
-    }
-}
-
 .checkout-wrapper .btn {
-  width: 100%;
-  padding: 0.8rem 1rem;
+  padding: 0.5rem 1rem;
   font-weight: 600;
-  font-size: 1rem;
-  border-radius: 6px; /* Slightly less rounded */
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
   cursor: pointer;
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-@media (min-width: 640px) {
-    .checkout-wrapper .btn {
-        width: auto;
-    }
-}
-
 
 .checkout-wrapper .btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
 .checkout-wrapper .btn-outline {
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-secondary);
-  box-shadow: none;
+  background: var(--bg-panel);
+  border-color: var(--color-secondary-btn-border);
+  color: var(--text-primary);
 }
 
 .checkout-wrapper .btn-outline:hover {
-  background-color: transparent;
-  color: var(--text-primary);
-  box-shadow: none;
+  background: var(--color-secondary-btn-bg);
+  border-color: var(--color-secondary-btn-border);
 }
 
 .checkout-wrapper .btn-primary {
@@ -210,9 +200,9 @@
 }
 
 .checkout-wrapper .btn:disabled {
-  background-color: #e6ebf1;
-  border-color: #e6ebf1;
-  color: #a5b3c8;
+  background-color: #e2e8f0;
+  border-color: #e2e8f0;
+  color: #94a3b8;
   cursor: not-allowed;
   box-shadow: none;
   transform: translateY(0);
