@@ -168,30 +168,47 @@ export default function PaymentDetails({
   };
 
   return (
-    <div className="payment-details payment-section">
-      <div className="section-card">
-        <div className="summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
-          <IndianRupee size={18} />
-          <span className="payment-total-price">Total: ₹{breakdown.total}</span>
-          <span className="toggle-icon">{summaryExpanded ? "▲" : "▼"}</span>
+    <div className="bg-white text-black w-full max-w-md mx-auto p-4 sm:p-6 space-y-6">
+      {/* Price Summary Section */}
+      <div className="border border-black rounded-lg">
+        <div
+          className="flex justify-between items-center p-4 cursor-pointer"
+          onClick={() => setSummaryExpanded(!summaryExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <IndianRupee size={20} />
+            <span className="font-bold text-lg">Total: ₹{breakdown.total}</span>
+          </div>
+          {summaryExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
 
         {summaryExpanded && (
-          <div className="summary-details">
+          <div className="px-4 pb-4 border-t border-black">
             {loadingPrices ? (
-              <p>Loading breakdown...</p>
+              <p className="pt-4 text-center">Loading breakdown...</p>
             ) : (
-              <ul className="price-list">
-                <li><strong>Original:</strong> ₹{breakdown.originalTotal}</li>
-                <li><strong>Discount:</strong> -₹{breakdown.originalTotal - breakdown.productTotal}</li>
+              <ul className="space-y-2 pt-4 text-sm">
+                <li className="flex justify-between">
+                  <span>Original Price:</span>
+                  <span className="font-semibold">₹{breakdown.originalTotal}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Product Discount:</span>
+                  <span className="font-semibold">-₹{breakdown.originalTotal - breakdown.productTotal}</span>
+                </li>
                 {appliedCoupon && (
-                  <li style={{ color: "green", fontWeight: 600 }}>
-                    <strong>Coupon ({appliedCoupon.code}):</strong> -₹{breakdown.discountAmount}
+                  <li className="flex justify-between font-bold">
+                    <span>Coupon ({appliedCoupon.code}):</span>
+                    <span>-₹{breakdown.discountAmount}</span>
                   </li>
                 )}
-                <li><strong>Delivery:</strong> ₹{breakdown.deliveryCharge}</li>
-                <li className="total-line">
-                  <strong>Total:</strong> ₹{breakdown.total}
+                <li className="flex justify-between">
+                  <span>Delivery Charge:</span>
+                  <span className="font-semibold">₹{breakdown.deliveryCharge}</span>
+                </li>
+                <li className="flex justify-between text-base font-bold border-t border-black pt-2 mt-2">
+                  <span>Total Payable:</span>
+                  <span>₹{breakdown.total}</span>
                 </li>
               </ul>
             )}
@@ -199,44 +216,56 @@ export default function PaymentDetails({
         )}
       </div>
 
-      <div className="section-card payment-methods">
-        <h3><CreditCard size={18} /> Choose Payment Method</h3>
-        <div className="payment-method-selection">
-          {availablePaymentMethods.map((method) => (
-            <label key={method} className="payment-option">
+      {/* Payment Method Section */}
+      <div className="border border-black rounded-lg p-4">
+        <h3 className="flex items-center gap-3 font-bold text-lg mb-4">
+          <CreditCard size={20} />
+          Choose Payment Method
+        </h3>
+        <div className="space-y-3">
+          {availablePaymentMethods.map((method, index) => (
+            <div key={method}>
               <input
                 type="radio"
+                id={`paymentMethod-${index}`}
                 name="paymentMethod"
                 value={method}
                 checked={paymentMethod === method}
                 onChange={(e) => setPaymentMethod(e.target.value)}
+                className="sr-only peer" // Hide the default radio button
               />
-              {method}
-            </label>
+              <label
+                htmlFor={`paymentMethod-${index}`}
+                className="flex items-center p-3 border-2 border-black rounded-lg cursor-pointer transition-colors
+                           peer-checked:bg-black peer-checked:text-white"
+              >
+                {method}
+              </label>
+            </div>
           ))}
         </div>
 
-        <div className="payment-action">
+        <div className="mt-6">
           {paymentMethod === "Razorpay" && (
             <button
               onClick={handleRazorpayPayment}
-              className="btn btn-primary"
-              disabled={loading} // ✅ disable on loading
+              className="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              {loading ? "Processing..." : "Pay Now"}
+              {loading ? "Processing..." : `Pay ₹${breakdown.total}`}
             </button>
           )}
 
           {paymentMethod === "Cash on Delivery" && (
-            <div className="cod-content">
-              <p>
-                <Truck size={16} style={{ marginRight: "6px" }} />
-                Cash on Delivery selected. Please have exact change ready.
+            <div className="space-y-4">
+              <p className="text-sm flex items-center justify-center text-center gap-2 p-2 bg-gray-100 rounded-md border border-black">
+                <Truck size={18} />
+                You will pay on delivery.
               </p>
               <button
                 onClick={handlePlaceOrder}
-                className="btn btn-success"
-                disabled={loading} // ✅ disable COD button too
+                className="w-full bg-black text-white font-bold py-3 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={loading}
               >
                 {loading ? "Placing Order..." : "Place Order"}
               </button>
