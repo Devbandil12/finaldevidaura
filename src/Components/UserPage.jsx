@@ -510,46 +510,50 @@ const {
 
   const onAddAddress = async (data) => {
   try {
-    const payload = {
-      ...data,
-      userId: userdetails.id, // <<< REQUIRED
-    };
-    const ok = await addAddress(payload);
-    if (ok) {
+    const payload = { ...data };
+    const added = await addAddress(payload); // context handles userId & getUserAddress()
+    if (added) {
+      toast.success("Address added");
       setIsAdding(false);
       resetNewAddr();
-      toast.success("Address added");
+    } else {
+      toast.error("Failed to add address");
     }
   } catch (e) {
     console.error("Error adding address:", e);
-    toast.error(e?.response?.data?.msg || "Failed to add address");
+    toast.error("Failed to add address");
+  }
+};
+
+const onDeleteAddress = async (id) => {
+  if (!confirm("Delete this address?")) return;
+  try {
+    const deleted = await deleteAddress(id); // returns true/false
+    if (deleted) toast.success("Address deleted");
+    else toast.error("Failed to delete address");
+  } catch (e) {
+    console.error("Error deleting address:", e);
+    toast.error("Failed to delete address");
   }
 };
 
 const onEditAddressSave = async (data) => {
   if (!editingAddr) return;
   try {
-    const ok = await editAddress(editingAddr.id, data);
-    if (ok) {
+    const updated = await editAddress(editingAddr.id, data); // context handles getUserAddress()
+    if (updated) {
+      toast.success("Address updated");
       setEditingAddr(null);
-      resetEditAddr(); 
+      resetEditAddr();
+    } else {
+      toast.error("Failed to update address");
     }
   } catch (e) {
     console.error("Error updating address:", e);
+    toast.error("Failed to update address");
   }
 };
 
-
-  const onDeleteAddress = async (id) => {
-  if (!confirm("Delete this address?")) return;
-  try {
-    // call API with path param, not body
-    await deleteAddress(id); 
-    toast.success("Deleted");
-  } catch (e) {
-    toast.error(e?.response?.data?.msg || "Failed to delete");
-  }
-};
 
   const onSetDefault = async (id) => {
     try {
