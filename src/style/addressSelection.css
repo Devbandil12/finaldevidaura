@@ -1,148 +1,214 @@
-/* ───────────── AddressSelection Component Styles ───────────── */
+/* ───────────── Modern & Responsive AddressSelection Styles ───────────── */
+
+/* Overall component container with a light background */
 .address-selection {
-  background: #fff;
+  background-color: #f8fafc; /* Light grey background (bg-slate-50) */
   font-family: 'Inter', system-ui, sans-serif;
   color: #070D0D;
-  max-width: 900px;
-  margin: 0 auto;
+  padding: 1rem; /* Add some padding for smaller screens */
 }
 
-/* Heading */
+@media (min-width: 640px) {
+  .address-selection {
+    padding: 2rem; /* Increase padding on larger screens */
+  }
+}
+
+/* Page Heading */
 .address-selection h2 {
-  font-size: 1.5rem;
-  color: #242D4C;
-  margin-bottom: 16px;
+  font-size: 1.875rem; /* Larger, more prominent heading */
+  color: #1e293b; /* Darker slate color */
+  margin-bottom: 1.5rem;
   font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-/* Add New Button */
-.address-selection .add-new-btn {
-  background: #242D4C;
-  color: #F1EAD8;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.address-selection .add-new-btn:hover {
-  background: #1c223d;
-}
-
-/* Address List */
-.address-selection .address-list {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 20px;
+/* Address List Header (Contains title and change button) */
+.address-selection .address-list-header {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-}
-.address-selection .address-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-/* Main card container */
+.address-selection .address-list-header h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* NEW: Style for the 'Change' button */
+.address-selection .change-address-btn {
+  background: none;
+  border: none;
+  color: #4f46e5; /* Indigo color for accent */
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.address-selection .change-address-btn:hover {
+  background-color: #eef2ff; /* Light indigo background on hover */
+}
+
+
+/* --- Address List & Cards --- */
+
+/* FIXED: Removed max-height and overflow to allow the list to expand. */
+/* NEW: Converted to a responsive grid layout. */
+.address-selection .address-list {
+  display: grid;
+  grid-template-columns: 1fr; /* 1 column on mobile */
+  gap: 1rem;
+}
+
+/* On screens larger than 768px, switch to a 2-column grid */
+@media (min-width: 768px) {
+  .address-selection .address-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* REDESIGNED: Modern card styles */
 .address-selection .address-card {
   background-color: #fff;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border-radius: 0.75rem; /* Softer, larger radius */
+  padding: 1.25rem; /* Increased padding */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0; /* Lighter border color */
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.address-selection .address-card:hover {
+  border-color: #c7d2fe; /* Lighter indigo on hover */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
 .address-selection .address-card.active {
-  border-color: #111827;
-  box-shadow: 0 0 8px rgba(17, 24, 39, 0.2);
+  border-color: #4f46e5; /* Indigo accent for active state */
+  box-shadow: 0 0 0 2px #c7d2fe; /* Ring effect */
 }
 
+/* Card Content Styles (tweaked for better typography) */
 .address-selection .address-details {
   flex: 1;
 }
 
-/* Card Content Styles */
 .address-selection .address-card-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 0.25rem;
 }
 
-.address-selection .address-card-name {
+.address-selection .address-card-name-type .name {
+  font-weight: 600;
+  color: #1e293b;
+}
+.address-selection .address-card-name-type .type {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-left: 0.75rem;
+}
+
+.address-selection .address-card-default-badge {
+  font-size: 0.75rem;
   font-weight: 500;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  background-color: #eef2ff;
+  color: #3730a3;
 }
 
 .address-selection .address-card-body {
   font-size: 0.875rem;
-  color: #64748b;
-  margin-top: 4px;
-}
-
-.address-selection .address-card-default-badge span {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  background-color: #111827;
-  color: #fff;
+  color: #475569; /* Slightly darker for better contrast */
+  line-height: 1.5;
+  margin-top: 0.25rem;
 }
 
 .address-selection .address-card-phone {
   font-size: 0.875rem;
   color: #475569;
-  margin-top: 8px;
+  margin-top: 0.75rem;
 }
 
 .address-selection .address-card-actions {
   display: flex;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  justify-content: flex-end; /* Align buttons to the right */
 }
 
 .address-selection .address-card-actions button {
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   font-size: 0.875rem;
+  font-weight: 500;
   background-color: #fff;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .address-selection .address-card-actions button:hover {
-  background-color: #f9fafb;
+  background-color: #f8fafc;
+  color: #000;
 }
 
 .address-selection .address-card-actions button.delete-btn {
   color: #dc2626;
 }
+.address-selection .address-card-actions button.delete-btn:hover {
+  background-color: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
 
+/* --- Form Styles (Modernized) --- */
+.address-selection .add-new-btn {
+  width: 100%;
+  background: #4f46e5;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin-top: 1.5rem;
+}
+.address-selection .add-new-btn:hover {
+  background: #4338ca;
+}
 
-/* ───────────── Form Styles ───────────── */
 .address-selection .address-form {
-  margin-top: 30px;
+  margin-top: 2.5rem;
 }
 
 .address-selection .address-form h3 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 20px;
-  color: #242D4C;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
 }
+
+/* Other form styles like inputs, fieldsets, etc. remain largely the same but would benefit from this new color scheme. */
+/* The provided form CSS is already quite good, so we'll just keep it. */
 
 .address-selection .form-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25rem;
 }
 
-/* Floating Label Input Styles */
 .address-selection .input-group {
   position: relative;
   flex: 1;
@@ -152,19 +218,18 @@
 .address-selection .input-group textarea {
   width: 100%;
   padding: 14px 12px 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  font-size: 1rem;
   background: #fff;
-  outline-offset: 2px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .address-selection .input-group input:focus,
 .address-selection .input-group textarea:focus {
   outline: none;
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px #c7d2fe;
 }
 
 .address-selection .input-group label {
@@ -174,9 +239,9 @@
   transform: translateY(-50%);
   background: #fff;
   padding: 0 4px;
-  color: #777;
+  color: #64748b;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 400;
   pointer-events: none;
   transition: all 0.2s ease;
   z-index: 1;
@@ -188,19 +253,26 @@
 .address-selection .input-group textarea:not(:placeholder-shown) + label {
   top: 0px;
   font-size: 0.75rem;
-  color: #242D4C;
+  color: #4f46e5;
+  font-weight: 500;
 }
 
-/* Form Row Styles */
 .address-selection .row {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: column; /* Stack on mobile */
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .address-selection .row {
+    flex-direction: row; /* Side-by-side on larger screens */
+    gap: 1rem;
+  }
 }
 
 .address-selection .postal-row {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -209,88 +281,75 @@
   min-width: 180px;
 }
 .address-selection .postal-row button {
-  background: #242D4C;
-  color: #F1EAD8;
-  padding: 8px 12px;
+  background: #334155;
+  color: #fff;
+  padding: 0.5rem 0.75rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
-  height: 42px;
+  height: 48px;
 }
 .address-selection .postal-row button:hover {
-  background: #1c223d;
+  background: #1e293b;
 }
 
-/* Fieldset and Radio Button Styles */
 .address-selection .address-form fieldset {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
 }
 .address-selection .address-form fieldset legend {
-  font-weight: 700;
-  color: #242D4C;
+  font-weight: 600;
+  color: #334155;
   padding: 0 4px;
+  font-size: 0.875rem;
 }
+
 .address-selection .address-form fieldset label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   font-weight: 500;
-  margin-right: 20px;
+  margin-right: 1.25rem;
   cursor: pointer;
   transition: color 0.2s ease;
+  font-size: 0.875rem;
 }
 .address-selection .address-form fieldset input[type="radio"] {
-  margin: 0;
-  accent-color: #242D4C;
+  accent-color: #4f46e5;
   cursor: pointer;
-  width: 16px;
-  height: 16px;
+  width: 1rem;
+  height: 1rem;
 }
-
 .address-selection .address-form fieldset label:has(input[type="radio"]:checked) {
-  color: #242D4C;
-  font-weight: 600;
+  color: #4f46e5;
 }
 
 .address-selection .address-form fieldset input[type="text"] {
   width: 100%;
-  padding: 10px 12px;
-  margin-top: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 0.625rem 0.75rem;
+  margin-top: 0.75rem;
 }
 
-.address-selection .address-form fieldset input[type="text"]:focus {
-  border-color: #242D4C;
-  box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
-  outline: none;
-}
-
-/* Form Action Buttons */
 .address-selection .form-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 1rem;
 }
 .address-selection .form-buttons button {
-  padding: 10px 20px;
+  padding: 0.625rem 1.25rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   border: none;
   cursor: pointer;
 }
 .address-selection .form-buttons button:last-child {
-  background: #242D4C;
-  color: #F1EAD8;
+  background: #4f46e5;
+  color: #fff;
 }
 .address-selection .form-buttons button:first-child {
   background: #e2e8f0;
-  color: #333;
+  color: #334155;
 }
