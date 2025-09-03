@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useUser } from "@clerk/clerk-react";
-import { CreditCard, IndianRupee, Truck, ChevronDown, ChevronUp } from "lucide-react";
+import { CreditCard, IndianRupee, Truck } from "lucide-react";
+import "../style/paymentDetails.css";
 
-// The VITE_BACKEND_URL should be defined in your .env file
 const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 export default function PaymentDetails({
@@ -21,17 +21,15 @@ export default function PaymentDetails({
   handlePlaceOrder
 }) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [loading, setLoading] = useState(false); // Shared loading state for both buttons
+  const [loading, setLoading] = useState(false); // shared loading for both buttons
   const { user } = useUser();
 
   useEffect(() => {
-    // Automatically mark payment as unverified if switching to COD
     if (paymentMethod === "Cash on Delivery") {
       onPaymentVerified(false);
     }
   }, [paymentMethod, onPaymentVerified]);
 
-  // Determine if Cash on Delivery is an available option
   const isCODAllowed =
     selectedAddress &&
     selectedAddress.city &&
@@ -43,7 +41,7 @@ export default function PaymentDetails({
 
   const handleRazorpayPayment = async () => {
     try {
-      setLoading(true);
+      setLoading(true); // ✅ disable double-tap
 
       const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
         method: "POST",
@@ -117,6 +115,8 @@ export default function PaymentDetails({
               razorpay_order_id,
               razorpay_payment_id,
               razorpay_signature,
+
+              // ✅ pass extra fields for DB insertion during verification
               user: {
                 id: userdetails.id,
                 fullName: userdetails.name,
@@ -133,7 +133,7 @@ export default function PaymentDetails({
             }),
           });
 
-          setLoading(false);
+          setLoading(false); // ✅ reset loading before checking result
 
           if (!verifyRes.ok) {
             toast.error("Verification failed. Try again.");
@@ -152,7 +152,7 @@ export default function PaymentDetails({
         },
         modal: {
           ondismiss: function () {
-            setLoading(false);
+            setLoading(false); // ✅ reset if Razorpay modal is closed
             toast.error("Payment cancelled.");
           },
         },
@@ -167,104 +167,83 @@ export default function PaymentDetails({
     }
   };
 
-
   return (
-    <div className="bg-white text-black w-full max-w-md mx-auto p-6 border-2 border-black rounded-lg">
-      {/* Price Summary Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-baseline">
-          <h2 className="text-lg font-medium">Total Payable</h2>
-          <p className="text-3xl font-extrabold">₹{breakdown.total}</p>
-        </div>
-
-        <div
-          className="flex items-center text-sm font-semibold cursor-pointer"
-          onClick={() => setSummaryExpanded(!summaryExpanded)}
-        >
-          <span>{summaryExpanded ? "Hide details" : "View details"}</span>
-          {summaryExpanded ? <ChevronUp size={16} className="ml-1" /> : <ChevronDown size={16} className="ml-1" />}
+    <div className="payment-details payment-section">
+      <div className="section-card">
+        <div className="summary-header" onClick={() => setSummaryExpanded(!summaryExpanded)}>
+          <IndianRupee size={18} />
+          <span className="payment-total-price">Total: ₹{breakdown.total}</span>
+          <span className="toggle-icon">{summaryExpanded ? "▲" : "▼"}</span>
         </div>
 
         {summaryExpanded && (
-           <div className="border-t border-black/50 pt-4">
+          <div className="summary-details">
             {loadingPrices ? (
-              <p className="text-center">Loading breakdown...</p>
+              <p>Loading breakdown...</p>
             ) : (
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between"><span>Original Price</span><span>₹{breakdown.originalTotal}</span></li>
-                <li className="flex justify-between"><span>Product Discount</span><span>-₹{breakdown.originalTotal - breakdown.productTotal}</span></li>
+              <ul className="price-list">
+                <li><strong>Original:</strong> ₹{breakdown.originalTotal}</li>
+                <li><strong>Discount:</strong> -₹{breakdown.originalTotal - breakdown.productTotal}</li>
                 {appliedCoupon && (
-                  <li className="flex justify-between font-bold"><span>Coupon ({appliedCoupon.code})</span><span>-₹{breakdown.discountAmount}</span></li>
+                  <li style={{ color: "green", fontWeight: 600 }}>
+                    <strong>Coupon ({appliedCoupon.code}):</strong> -₹{breakdown.discountAmount}
+                  </li>
                 )}
-                <li className="flex justify-between"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></li>
+                <li><strong>Delivery:</strong> ₹{breakdown.deliveryCharge}</li>
+                <li className="total-line">
+                  <strong>Total:</strong> ₹{breakdown.total}
+                </li>
               </ul>
             )}
-           </div>
+          </div>
         )}
       </div>
 
-      <hr className="border-black/50 my-6" />
-
-      {/* Payment Method Section */}
-      <div className="space-y-5">
-        <h3 className="flex items-center gap-3 font-bold text-lg">
-          <CreditCard size={20} />
-          Select a Payment Method
-        </h3>
-        <div className="space-y-3">
-          {availablePaymentMethods.map((method, index) => (
-            <div key={method}>
+      <div className="section-card payment-methods">
+        <h3><CreditCard size={18} /> Choose Payment Method</h3>
+        <div className="payment-method-selection">
+          {availablePaymentMethods.map((method) => (
+            <label key={method} className="payment-option">
               <input
                 type="radio"
-                id={`paymentMethod-${index}`}
                 name="paymentMethod"
                 value={method}
                 checked={paymentMethod === method}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="sr-only peer" // Hide the default radio button
               />
-              <label
-                htmlFor={`paymentMethod-${index}`}
-                className="flex justify-between items-center p-4 border border-black rounded-lg cursor-pointer transition-all peer-checked:border-2"
-              >
-                <span className="font-semibold">{method}</span>
-                <div className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-black">
-                    <div className="w-2.5 h-2.5 rounded-full bg-transparent peer-checked:bg-black transition-colors"></div>
-                </div>
-              </label>
-            </div>
+              {method}
+            </label>
           ))}
         </div>
-      </div>
 
-      {/* Action Button Section */}
-      <div className="mt-8">
+        <div className="payment-action">
           {paymentMethod === "Razorpay" && (
             <button
               onClick={handleRazorpayPayment}
-              className="w-full bg-black text-white font-bold py-4 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading}
+              className="btn btn-primary"
+              disabled={loading} // ✅ disable on loading
             >
-              {loading ? "Processing..." : `Pay ₹${breakdown.total}`}
+              {loading ? "Processing..." : "Pay Now"}
             </button>
           )}
 
           {paymentMethod === "Cash on Delivery" && (
-            <div className="space-y-4 text-center">
-              <p className="text-xs flex items-center justify-center gap-2 p-2 rounded-md">
-                <Truck size={16} />
-                You will pay on delivery.
+            <div className="cod-content">
+              <p>
+                <Truck size={16} style={{ marginRight: "6px" }} />
+                Cash on Delivery selected. Please have exact change ready.
               </p>
               <button
                 onClick={handlePlaceOrder}
-                className="w-full bg-black text-white font-bold py-4 px-4 rounded-lg transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
+                className="btn btn-success"
+                disabled={loading} // ✅ disable COD button too
               >
-                {loading ? "Placing Order..." : "Confirm Order"}
+                {loading ? "Placing Order..." : "Place Order"}
               </button>
             </div>
           )}
         </div>
+      </div>
     </div>
   );
 }
