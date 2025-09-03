@@ -33,7 +33,7 @@
   background-color: var(--bg-page);
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 @media (min-width: 768px) {
@@ -126,22 +126,7 @@
   font-weight: 600;
 }
 
-/* ───────────── 5. Scoped Content Panels (Main & Summary) ───────────── */
-.checkout-wrapper .checkout-main,
-.checkout-wrapper .checkout-summary {
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  padding: 5px;
-}
 
-@media (min-width: 640px) {
-  .checkout-wrapper .checkout-main,
-  .checkout-wrapper .checkout-summary {
-    padding: 2rem;
-  }
-}
 
 .checkout-wrapper .checkout-summary {
   position: sticky;
@@ -159,9 +144,9 @@
 }
 
 .checkout-wrapper .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.8rem;
   border-radius: 0.5rem;
   border: 1px solid transparent;
   cursor: pointer;
