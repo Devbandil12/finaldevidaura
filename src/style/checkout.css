@@ -1,175 +1,225 @@
-/* checkout.css */
+/* ───────────── Modern Checkout Redesign ───────────── */
 
 :root {
-  --primary-color: #4A90E2;
-  --secondary-color: #F1F5F9;
-  --text-color: #334155;
-  --light-text-color: #64748B;
-  --bg-color: #F8FAFC;
-  --card-bg: #FFFFFF;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --color-primary: #1e293b; /* Dark Slate */
+  --color-primary-hover: #0f172a; /* Nearly Black */
+  --color-secondary: #f1f5f9; /* Light Gray */
+  --color-secondary-hover: #e2e8f0; /* Darker Gray */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b; /* Mid Gray for subtitles */
+  --text-on-primary: #ffffff;
+  --bg-page: #f8fafc; /* Page background */
+  --bg-panel: #ffffff; /* Card/Panel background */
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-.checkout-wrapper {
+.checkout-page-wrapper {
   font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text-color);
-  max-width: 1200px;
-  margin: 100px auto 40px;
-  padding: 24px;
-  background-color: var(--bg-color);
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-.checkout-wrapper .checkout-header {
-  margin-bottom: 2rem;
+@media (min-width: 768px) {
+  .checkout-page-wrapper {
+    padding: 2rem;
+  }
 }
 
-.checkout-wrapper .checkout-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+/* --- REDESIGNED HEADER --- */
+.checkout-header {
+  margin: 2rem auto 3rem;
   text-align: center;
-  color: var(--primary-color);
 }
 
-/* Progress Indicator */
-.checkout-wrapper .progress-indicator {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-top: 20px;
-}
-
-.checkout-wrapper .progress-step {
-  text-align: center;
-  opacity: 0.6;
-  transition: opacity 0.3s ease-in-out;
-  font-weight: 500;
-  color: var(--light-text-color);
-  position: relative;
-}
-
-.checkout-wrapper .progress-step.active {
-  opacity: 1;
-  color: var(--text-color);
-}
-
-.checkout-wrapper .progress-step span {
-  background: var(--secondary-color);
-  color: var(--light-text-color);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
+.header-title {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  margin: 0 auto 8px;
-  transition: background 0.3s ease-in-out;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
 }
 
-.checkout-wrapper .progress-step.active span {
-  background: var(--primary-color);
-  color: var(--card-bg);
+.header-title h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-/* Layout */
-.checkout-wrapper .checkout-body {
+.header-title .lock-icon {
+  color: var(--text-secondary);
+}
+
+/* --- New Progress Stepper --- */
+.progress-stepper {
+  display: flex;
+  justify-content: space-between;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* The connecting line */
+.progress-stepper::before {
+  content: '';
+  position: absolute;
+  top: 18px; /* Vertically center with the circle */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--border-color);
+  z-index: 1;
+}
+
+.progress-step {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 2;
+  position: relative;
+  background-color: var(--bg-page); /* Cover the line underneath */
+  padding: 0 0.5rem;
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-panel);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+/* Active Step Styling */
+.progress-step.active .step-circle {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+.progress-step.active .step-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Completed Step Styling */
+.progress-step.completed .step-circle {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+.progress-step.completed .step-label {
+  color: var(--text-primary);
+}
+
+/* --- REDESIGNED LAYOUT --- */
+.checkout-body {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 2rem;
   align-items: flex-start;
 }
 
-@media (min-width: 768px) {
-  .checkout-wrapper .checkout-body {
-    flex-direction: row;
+@media (min-width: 1024px) {
+  .checkout-body {
+    grid-template-columns: 2fr 1fr; /* 2/3 for main, 1/3 for summary */
+    gap: 3rem;
   }
 }
 
-.checkout-wrapper .checkout-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.checkout-wrapper .checkout-summary {
+.checkout-main {
   width: 100%;
 }
 
-@media (min-width: 768px) {
-  .checkout-wrapper .checkout-summary {
-    max-width: 400px;
+/* New Panel Style for each step */
+.checkout-step-panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 640px) {
+  .checkout-step-panel {
+    padding: 2rem;
   }
 }
 
-/* Nav Buttons */
-.checkout-wrapper .checkout-nav-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  flex-wrap: wrap;
+/* Summary Card */
+.summary-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  position: sticky;
+  top: 2rem; /* Make summary sticky on scroll for desktop */
 }
 
-/* Buttons */
-.checkout-wrapper .btn {
-  padding: 12px 24px;
+/* --- REDESIGNED BUTTONS --- */
+.checkout-nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
   font-weight: 600;
   font-size: 1rem;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   box-shadow: var(--shadow-sm);
 }
-
-.checkout-wrapper .btn-outline {
-  background: var(--card-bg);
-  border-color: var(--light-text-color);
-  color: var(--light-text-color);
-}
-
-.checkout-wrapper .btn-outline:hover {
-  background: var(--secondary-color);
-  color: var(--text-color);
-  border-color: var(--secondary-color);
+.btn:hover {
+  transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-.checkout-wrapper .btn-primary {
-  background: var(--primary-color);
-  color: var(--card-bg);
-  border-color: var(--primary-color);
+.btn-secondary {
+  background: var(--bg-panel);
+  border-color: #cbd5e1; /* Mid Gray Border */
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
 }
 
-.checkout-wrapper .btn-primary:hover {
-  background: #3A7AD1;
-  border-color: #3A7AD1;
-  box-shadow: var(--shadow-md);
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary);
 }
-
-.checkout-wrapper .btn-primary:disabled {
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+.btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
   box-shadow: none;
-}
-
-/* Responsive */
-@media (max-width: 767px) {
-  .checkout-wrapper {
-    padding: 16px;
-    margin: 40px auto;
-  }
-  .checkout-wrapper .checkout-header h1 {
-    font-size: 2rem;
-  }
-  .checkout-wrapper .checkout-body {
-    flex-direction: column;
-  }
-  .checkout-wrapper .checkout-main {
-    width: 100%;
-  }
-  .checkout-wrapper .checkout-summary {
-    max-width: 100%;
-  }
+  transform: translateY(0);
 }
