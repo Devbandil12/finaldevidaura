@@ -45,19 +45,15 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* * FIXED: Merged and corrected Address Card styles.
- * This is now the single source of truth for the address card appearance.
-*/
-
 /* Main card container */
 .address-selection .address-card {
   background-color: #fff;
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  display: flex; /* Changed from column to row for side-by-side layout */
-  align-items: flex-start; /* Aligns radio button with the top of the content */
-  gap: 1rem; /* Space between radio and details */
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
   border: 1px solid #e5e7eb;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -69,10 +65,10 @@
 }
 
 .address-selection .address-details {
-  flex: 1; /* Allows details to take up remaining space */
+  flex: 1;
 }
 
-/* Top section with name and default badge */
+/* Card Content Styles */
 .address-selection .address-card-top {
   display: flex;
   justify-content: space-between;
@@ -89,7 +85,6 @@
   margin-top: 4px;
 }
 
-/* Default badge */
 .address-selection .address-card-default-badge span {
   font-size: 0.75rem;
   padding: 2px 8px;
@@ -98,14 +93,12 @@
   color: #fff;
 }
 
-/* Phone number section */
 .address-selection .address-card-phone {
   font-size: 0.875rem;
   color: #475569;
   margin-top: 8px;
 }
 
-/* Action buttons section */
 .address-selection .address-card-actions {
   display: flex;
   gap: 0.5rem;
@@ -149,7 +142,7 @@
   gap: 20px;
 }
 
-/* Input Group - For floating labels */
+/* Floating Label Input Styles */
 .address-selection .input-group {
   position: relative;
   flex: 1;
@@ -198,7 +191,7 @@
   color: #242D4C;
 }
 
-/* Row for grouped inputs */
+/* Form Row Styles */
 .address-selection .row {
   display: flex;
   gap: 20px;
@@ -224,13 +217,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
-  height: 42px; /* Align with input field height */
+  height: 42px;
 }
 .address-selection .postal-row button:hover {
   background: #1c223d;
 }
 
-/* Address Type Radio Buttons */
+/* Fieldset and Radio Button Styles */
 .address-selection .address-form fieldset {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -258,17 +251,11 @@
   height: 16px;
 }
 
-/* * FIXED: This selector now correctly bolds the label text 
- * when the radio button inside it is checked. 
-*/
 .address-selection .address-form fieldset label:has(input[type="radio"]:checked) {
   color: #242D4C;
   font-weight: 600;
 }
 
-/* * FIXED: This selector now correctly targets the custom address
- * text input without relying on a specific class name.
-*/
 .address-selection .address-form fieldset input[type="text"] {
   width: 100%;
   padding: 10px 12px;
@@ -286,7 +273,7 @@
   outline: none;
 }
 
-/* Form Actions */
+/* Form Action Buttons */
 .address-selection .form-buttons {
   display: flex;
   justify-content: flex-end;
