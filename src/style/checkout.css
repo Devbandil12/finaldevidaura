@@ -24,12 +24,7 @@
   --transition: all 0.2s ease-in-out;
 }
 
-/* ───────────── 2. Global Reset (Optional but safe) ───────────── */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+
 
 /* ───────────── 3. Scoped Layout & Wrapper ───────────── */
 .checkout-wrapper {
