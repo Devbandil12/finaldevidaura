@@ -1,23 +1,23 @@
-/* ───────────── Modern & Responsive AddressSelection Styles ───────────── */
+/* ───────────── Modern Black & White AddressSelection Styles ───────────── */
 
 /* Overall component container with a light background */
 .address-selection {
-  background-color: #f8fafc; /* Light grey background (bg-slate-50) */
+  background-color: #f8fafc; /* Light grey background (slate-50) */
   font-family: 'Inter', system-ui, sans-serif;
-  color: #070D0D;
-  padding: 1rem; /* Add some padding for smaller screens */
+  color: #0f172a; /* Darkest slate for primary text */
+  padding: 1rem;
 }
 
 @media (min-width: 640px) {
   .address-selection {
-    padding: 2rem; /* Increase padding on larger screens */
+    padding: 2rem;
   }
 }
 
 /* Page Heading */
 .address-selection h2 {
-  font-size: 1.875rem; /* Larger, more prominent heading */
-  color: #1e293b; /* Darker slate color */
+  font-size: 1.875rem;
+  color: #1e293b;
   margin-bottom: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -37,11 +37,12 @@
   color: #334155;
 }
 
-/* NEW: Style for the 'Change' button */
+/* 'Change' button style */
 .address-selection .change-address-btn {
   background: none;
   border: none;
-  color: #4f46e5; /* Indigo color for accent */
+  /* CHANGED: Replaced indigo with a dark slate color */
+  color: #1e293b;
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
@@ -51,52 +52,52 @@
 }
 
 .address-selection .change-address-btn:hover {
-  background-color: #eef2ff; /* Light indigo background on hover */
+  /* CHANGED: Replaced light indigo with light gray */
+  background-color: #f1f5f9;
 }
 
 
 /* --- Address List & Cards --- */
 
-/* FIXED: Removed max-height and overflow to allow the list to expand. */
-/* NEW: Converted to a responsive grid layout. */
 .address-selection .address-list {
   display: grid;
   grid-template-columns: 1fr; /* 1 column on mobile */
   gap: 1rem;
 }
 
-/* On screens larger than 768px, switch to a 2-column grid */
 @media (min-width: 768px) {
   .address-selection .address-list {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* REDESIGNED: Modern card styles */
 .address-selection .address-card {
   background-color: #fff;
-  border-radius: 0.75rem; /* Softer, larger radius */
-  padding: 1.25rem; /* Increased padding */
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  border: 1px solid #e2e8f0; /* Lighter border color */
+  border: 1px solid #e2e8f0;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .address-selection .address-card:hover {
-  border-color: #c7d2fe; /* Lighter indigo on hover */
+  /* CHANGED: Replaced light indigo with a mid-gray */
+  border-color: #cbd5e1;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
 .address-selection .address-card.active {
-  border-color: #4f46e5; /* Indigo accent for active state */
-  box-shadow: 0 0 0 2px #c7d2fe; /* Ring effect */
+  /* CHANGED: Replaced indigo accent with nearly black */
+  border-color: #0f172a;
+  /* CHANGED: Ring effect is now a lighter gray */
+  box-shadow: 0 0 0 2px #d1d5db;
 }
 
-/* Card Content Styles (tweaked for better typography) */
+/* Card Content Styles */
 .address-selection .address-details {
   flex: 1;
 }
@@ -123,13 +124,14 @@
   font-weight: 500;
   padding: 0.125rem 0.625rem;
   border-radius: 9999px;
-  background-color: #eef2ff;
-  color: #3730a3;
+  /* CHANGED: Badge colors are now grayscale */
+  background-color: #e2e8f0;
+  color: #1e293b;
 }
 
 .address-selection .address-card-body {
   font-size: 0.875rem;
-  color: #475569; /* Slightly darker for better contrast */
+  color: #475569;
   line-height: 1.5;
   margin-top: 0.25rem;
 }
@@ -144,7 +146,7 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 1rem;
-  justify-content: flex-end; /* Align buttons to the right */
+  justify-content: flex-end;
 }
 
 .address-selection .address-card-actions button {
@@ -172,10 +174,11 @@
   color: #b91c1c;
 }
 
-/* --- Form Styles (Modernized) --- */
+/* --- Form Styles (Black & White) --- */
 .address-selection .add-new-btn {
   width: 100%;
-  background: #4f46e5;
+  /* CHANGED: Replaced indigo with dark slate */
+  background: #1e293b;
   color: #fff;
   padding: 0.75rem 1rem;
   border: none;
@@ -186,7 +189,8 @@
   margin-top: 1.5rem;
 }
 .address-selection .add-new-btn:hover {
-  background: #4338ca;
+  /* CHANGED: Replaced dark indigo with nearly black */
+  background: #0f172a;
 }
 
 .address-selection .address-form {
@@ -199,9 +203,6 @@
   margin-bottom: 1.5rem;
   color: #1e293b;
 }
-
-/* Other form styles like inputs, fieldsets, etc. remain largely the same but would benefit from this new color scheme. */
-/* The provided form CSS is already quite good, so we'll just keep it. */
 
 .address-selection .form-grid {
   display: flex;
@@ -228,8 +229,9 @@
 .address-selection .input-group input:focus,
 .address-selection .input-group textarea:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 2px #c7d2fe;
+  /* CHANGED: Focus color is now dark slate */
+  border-color: #0f172a;
+  box-shadow: 0 0 0 2px #cbd5e1;
 }
 
 .address-selection .input-group label {
@@ -253,7 +255,8 @@
 .address-selection .input-group textarea:not(:placeholder-shown) + label {
   top: 0px;
   font-size: 0.75rem;
-  color: #4f46e5;
+  /* CHANGED: Active label color is now nearly black */
+  color: #0f172a;
   font-weight: 500;
 }
 
@@ -318,13 +321,15 @@
   font-size: 0.875rem;
 }
 .address-selection .address-form fieldset input[type="radio"] {
-  accent-color: #4f46e5;
+  /* CHANGED: Radio accent color is now dark slate */
+  accent-color: #1e293b;
   cursor: pointer;
   width: 1rem;
   height: 1rem;
 }
 .address-selection .address-form fieldset label:has(input[type="radio"]:checked) {
-  color: #4f46e5;
+  /* CHANGED: Checked label is now dark slate */
+  color: #1e293b;
 }
 
 .address-selection .address-form fieldset input[type="text"] {
@@ -344,12 +349,20 @@
   border-radius: 0.5rem;
   border: none;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 .address-selection .form-buttons button:last-child {
-  background: #4f46e5;
+  /* CHANGED: Primary button is now dark slate */
+  background: #1e293b;
   color: #fff;
+}
+.address-selection .form-buttons button:last-child:hover {
+    background: #0f172a;
 }
 .address-selection .form-buttons button:first-child {
   background: #e2e8f0;
   color: #334155;
+}
+.address-selection .form-buttons button:first-child:hover {
+    background-color: #cbd5e1;
 }
