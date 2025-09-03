@@ -307,7 +307,10 @@ const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => (
       <div>
         <div className="font-medium">{addr.name}</div>
         <div className="text-sm text-slate-500">
-          {addr.address}, {addr.city}
+          <div>{addr.address}</div>
+          {addr.landmark && <div>{addr.landmark}</div>}
+          <div>{`${addr.city}, ${addr.state} - ${addr.postalCode}`}</div>
+          <div>{addr.country}</div>
         </div>
       </div>
       <div className="text-right">
@@ -338,6 +341,7 @@ const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => (
     </div>
   </div>
 );
+
 
 const OrderRow = ({ o, onOpen }) => (
   <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-between">
