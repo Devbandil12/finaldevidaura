@@ -301,46 +301,53 @@ const ProfileCard = ({
   );
 };
 
-const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => (
-  <div className="bg-white rounded-lg p-4 shadow-sm flex flex-col gap-2">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="font-medium">{addr.name}</div>
-        <div className="text-sm text-slate-500">
-          <div>{addr.address}</div>
-          {addr.landmark && <div>{addr.landmark}</div>}
-          <div>{`${addr.city}, ${addr.state} - ${addr.postalCode}`}</div>
-          <div>{addr.country}</div>
+const AddressCard = ({ addr, onEdit, onDelete, onSetDefault }) => {
+  // Combine address parts into a single string, filtering out any empty fields
+  const fullAddress = [
+    addr.address,
+    addr.landmark,
+    `${addr.city}, ${addr.state} - ${addr.postalCode}`,
+    addr.country
+  ].filter(Boolean).join(", ");
+
+  return (
+    <div className="bg-white rounded-lg p-4 shadow-sm flex flex-col gap-2">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="font-medium">{addr.name}</div>
+          <div className="text-sm text-slate-500">
+            {fullAddress}
+          </div>
+        </div>
+        <div className="text-right">
+          {addr.isDefault && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-white">Default</span>
+          )}
         </div>
       </div>
-      <div className="text-right">
-        {addr.isDefault && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-900 text-white">Default</span>
+      <div className="text-sm text-slate-600">
+        📞 {addr.phone}{" "}
+        {addr.altPhone && <span className="text-slate-500">(Alt: {addr.altPhone})</span>}
+      </div>
+      <div className="flex gap-2 mt-2">
+        {!addr.isDefault && (
+          <button onClick={() => onSetDefault(addr.id)} className="px-3 py-1 rounded-md border text-sm">
+            Set Default
+          </button>
         )}
+        <button onClick={() => onEdit(addr)} className="px-3 py-1 rounded-md border text-sm">
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(addr.id)}
+          className="px-3 py-1 rounded-md border text-sm text-red-600"
+        >
+          Delete
+        </button>
       </div>
     </div>
-    <div className="text-sm text-slate-600">
-      📞 {addr.phone}{" "}
-      {addr.altPhone && <span className="text-slate-500">(Alt: {addr.altPhone})</span>}
-    </div>
-    <div className="flex gap-2 mt-2">
-      {!addr.isDefault && (
-        <button onClick={() => onSetDefault(addr.id)} className="px-3 py-1 rounded-md border text-sm">
-          Set Default
-        </button>
-      )}
-      <button onClick={() => onEdit(addr)} className="px-3 py-1 rounded-md border text-sm">
-        Edit
-      </button>
-      <button
-        onClick={() => onDelete(addr.id)}
-        className="px-3 py-1 rounded-md border text-sm text-red-600"
-      >
-        Delete
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 
 const OrderRow = ({ o, onOpen }) => (
