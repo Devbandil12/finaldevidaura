@@ -1,6 +1,9 @@
-/* checkout.css - Modern Slate Design for Original Component Structure */
+/* checkout.css - Modern Slate Design (Scoped Version)
+  All styles are prefixed with '.checkout-wrapper' to prevent them
+  from affecting other pages on your site.
+*/
 
-/* ───────────── 1. Design System & Variables ───────────── */
+/* ───────────── 1. Design System & Variables (Global) ───────────── */
 :root {
   /* Colors */
   --color-primary: #1e293b;        /* Dark Slate */
@@ -21,21 +24,18 @@
   --transition: all 0.2s ease-in-out;
 }
 
-/* ───────────── 2. Global & Body Styles ───────────── */
+/* ───────────── 2. Global Reset (Optional but safe) ───────────── */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
+/* ───────────── 3. Scoped Layout & Wrapper ───────────── */
+.checkout-wrapper {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
   background-color: var(--bg-page);
-}
-
-/* ───────────── 3. Main Layout & Wrapper ───────────── */
-.checkout-wrapper {
   max-width: 1280px;
   margin: 0 auto;
   padding: 1rem;
@@ -47,7 +47,7 @@ body {
   }
 }
 
-.checkout-body {
+.checkout-wrapper .checkout-body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
@@ -55,20 +55,20 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .checkout-body {
-    grid-template-columns: 2fr 1fr; /* 2/3 for main, 1/3 for summary */
+  .checkout-wrapper .checkout-body {
+    grid-template-columns: 2fr 1fr;
     gap: 3rem;
   }
 }
 
-/* ───────────── 4. Header & Progress Indicator ───────────── */
-.checkout-header {
+/* ───────────── 4. Scoped Header & Progress Indicator ───────────── */
+.checkout-wrapper .checkout-header {
   padding: 2rem;
   margin-bottom: 3rem;
   text-align: center;
 }
 
-.progress-indicator {
+.checkout-wrapper .progress-indicator {
   display: flex;
   justify-content: space-between;
   max-width: 600px;
@@ -76,11 +76,10 @@ body {
   position: relative;
 }
 
-/* The connecting line */
-.progress-indicator::before {
+.checkout-wrapper .progress-indicator::before {
   content: '';
   position: absolute;
-  top: 18px; /* Vertically center with the circle */
+  top: 18px;
   left: 0;
   right: 0;
   height: 2px;
@@ -88,18 +87,18 @@ body {
   z-index: 1;
 }
 
-.progress-step {
+.checkout-wrapper .progress-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   z-index: 2;
   position: relative;
-  background-color: var(--bg-page); /* Cover the line underneath */
+  background-color: var(--bg-page);
   padding: 0 0.5rem;
 }
 
-.progress-step span { /* This targets the number circle */
+.checkout-wrapper .progress-step span {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -114,26 +113,27 @@ body {
   transition: var(--transition);
 }
 
-.progress-step p { /* This targets the label */
+.checkout-wrapper .progress-step p {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-secondary);
   transition: color 0.3s ease;
 }
 
-/* Active/Completed Step Styling */
-.progress-step.active span {
+.checkout-wrapper .progress-step.active span {
   border-color: var(--color-primary);
   background-color: var(--color-primary);
   color: var(--text-on-primary);
 }
-.progress-step.active p {
+
+.checkout-wrapper .progress-step.active p {
   color: var(--text-primary);
   font-weight: 600;
 }
 
-/* ───────────── 5. Content Panels (Main & Summary) ───────────── */
-.checkout-main, .checkout-summary {
+/* ───────────── 5. Scoped Content Panels (Main & Summary) ───────────── */
+.checkout-wrapper .checkout-main,
+.checkout-wrapper .checkout-summary {
   background-color: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
@@ -142,18 +142,19 @@ body {
 }
 
 @media (min-width: 640px) {
-  .checkout-main, .checkout-summary {
+  .checkout-wrapper .checkout-main,
+  .checkout-wrapper .checkout-summary {
     padding: 2rem;
   }
 }
 
-.checkout-summary {
+.checkout-wrapper .checkout-summary {
   position: sticky;
-  top: 2rem; /* Make summary sticky on scroll for desktop */
+  top: 2rem;
 }
 
-/* ───────────── 6. Buttons ───────────── */
-.checkout-nav-buttons {
+/* ───────────── 6. Scoped Buttons ───────────── */
+.checkout-wrapper .checkout-nav-buttons {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
@@ -162,7 +163,7 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
-.btn {
+.checkout-wrapper .btn {
   padding: 0.75rem 1.5rem;
   font-weight: 600;
   font-size: 1rem;
@@ -175,34 +176,35 @@ body {
   align-items: center;
   justify-content: center;
 }
-.btn:hover {
+
+.checkout-wrapper .btn:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
-/* This styles your .btn-outline class */
-.btn-outline {
+.checkout-wrapper .btn-outline {
   background: var(--bg-panel);
   border-color: var(--color-secondary-btn-border);
   color: var(--text-primary);
 }
-.btn-outline:hover {
+
+.checkout-wrapper .btn-outline:hover {
   background: var(--color-secondary-btn-bg);
   border-color: var(--color-secondary-btn-border);
 }
 
-/* This styles your .btn-primary class */
-.btn-primary {
+.checkout-wrapper .btn-primary {
   background: var(--color-primary);
   color: var(--text-on-primary);
   border-color: var(--color-primary);
 }
-.btn-primary:hover {
+
+.checkout-wrapper .btn-primary:hover {
   background: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }
 
-.btn:disabled {
+.checkout-wrapper .btn:disabled {
   background-color: #e2e8f0;
   border-color: #e2e8f0;
   color: #94a3b8;
