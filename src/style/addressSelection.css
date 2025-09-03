@@ -266,3 +266,87 @@
   box-shadow: 0 0 0 3px rgba(36, 45, 76, 0.15);
   outline: none;
 }
+
+
+/*
+ * Styles to make AddressSelection.jsx cards look like UserPage.jsx cards
+ */
+
+/* Main card container */
+.address-card {
+  background-color: #fff;
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 1rem; /* p-4 */
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* gap-2 */
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.address-card.active {
+  border-color: #111827; /* slate-900 */
+}
+
+/* Top section with name and default badge */
+.address-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.address-card-name {
+  font-weight: 500; /* font-medium */
+}
+
+.address-card-body {
+  font-size: 0.875rem; /* text-sm */
+  color: #64748b; /* text-slate-500 */
+  margin-top: 4px;
+}
+
+/* Default badge */
+.address-card-default-badge span {
+  font-size: 0.75rem; /* text-xs */
+  padding: 2px 8px; /* px-2 py-0.5 */
+  border-radius: 9999px; /* rounded-full */
+  background-color: #111827; /* bg-slate-900 */
+  color: #fff; /* text-white */
+}
+
+/* Phone number section */
+.address-card-phone {
+  font-size: 0.875rem; /* text-sm */
+  color: #475569; /* text-slate-600 */
+}
+
+.address-card-alt-phone {
+  color: #64748b; /* text-slate-500 */
+}
+
+/* Action buttons section */
+.address-card-actions {
+  display: flex;
+  gap: 0.5rem; /* gap-2 */
+  margin-top: 0.5rem; /* mt-2 */
+}
+
+.address-card-actions button {
+  padding: 0.25rem 0.75rem; /* px-3 py-1 */
+  border-radius: 0.375rem; /* rounded-md */
+  border: 1px solid #e5e7eb;
+  font-size: 0.875rem; /* text-sm */
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.address-card-actions button:hover {
+  background-color: #f9fafb;
+}
+
+.address-card-actions button.delete-btn {
+  color: #dc2626; /* text-red-600 */
+}
