@@ -1,7 +1,4 @@
-/* checkout.css - Modern Slate Design (Scoped Version)
-  All styles are prefixed with '.checkout-wrapper' to prevent them
-  from affecting other pages on your site.
-*/
+/* checkout.css - Modern Slate Design (Scoped Version with Progress Bar) */
 
 /* ───────────── 1. Design System & Variables (Global) ───────────── */
 :root {
@@ -24,13 +21,18 @@
   --transition: all 0.2s ease-in-out;
 }
 
-
+/* ───────────── 2. Global Reset (Optional but safe) ───────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 /* ───────────── 3. Scoped Layout & Wrapper ───────────── */
 .checkout-wrapper {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--text-primary);
-  background-color: var(--bg-panel);
+  background-color: var(--bg-page);
   max-width: 1280px;
   margin: 0 auto;
   padding: 1rem;
@@ -56,11 +58,17 @@
   }
 }
 
-/* ───────────── 4. Scoped Header & Progress Indicator ───────────── */
+
+/* ───────────── 4. NEW PROGRESS BAR STYLE ───────────── */
+
+/* The header is now a styled panel */
 .checkout-wrapper .checkout-header {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
   padding: 2rem;
-  margin: 1.5rem 0;
-  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .checkout-wrapper .progress-indicator {
@@ -68,29 +76,38 @@
   justify-content: space-between;
   max-width: 600px;
   margin: 0 auto;
-  position: relative;
 }
 
-.checkout-wrapper .progress-indicator::before {
-  content: '';
-  position: absolute;
-  top: 18px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--border-color);
-  z-index: 1;
-}
-
+/* We now create the line segment on each step individually, instead of one long line */
 .checkout-wrapper .progress-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  z-index: 2;
   position: relative;
-  background-color: var(--bg-page);
-  padding: 0 0.5rem;
+  /* Make each step take up equal space */
+  flex: 1 1 0%;
+}
+
+/* The line segment connecting to the PREVIOUS step */
+/* We hide it on the first step */
+.checkout-wrapper .progress-step:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  /* Position the line from the center of the previous step to this step's center */
+  right: 50%;
+  top: 18px; /* Vertically center with the circle */
+  height: 2px;
+  width: 100%;
+  background-color: var(--border-color);
+  transition: background-color 0.4s ease;
+  /* Place the line behind the circle */
+  z-index: -1;
+}
+
+/* This is the magic: when a step is active, the line BEFORE it becomes colored */
+.checkout-wrapper .progress-step.active::before {
+  background-color: var(--color-primary);
 }
 
 .checkout-wrapper .progress-step span {
@@ -106,6 +123,9 @@
   background-color: var(--bg-panel);
   color: var(--text-secondary);
   transition: var(--transition);
+  /* Add z-index to ensure the circle is on top of the line */
+  position: relative;
+  z-index: 1;
 }
 
 .checkout-wrapper .progress-step p {
@@ -127,6 +147,22 @@
 }
 
 
+/* ───────────── 5. Scoped Content Panels (Main & Summary) ───────────── */
+.checkout-wrapper .checkout-main,
+.checkout-wrapper .checkout-summary {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 640px) {
+  .checkout-wrapper .checkout-main,
+  .checkout-wrapper .checkout-summary {
+    padding: 2rem;
+  }
+}
 
 .checkout-wrapper .checkout-summary {
   position: sticky;
@@ -144,9 +180,9 @@
 }
 
 .checkout-wrapper .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 1rem;
   border-radius: 0.5rem;
   border: 1px solid transparent;
   cursor: pointer;
