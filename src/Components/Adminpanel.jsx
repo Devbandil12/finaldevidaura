@@ -20,9 +20,9 @@ const OrderDetailsPopup = ({ order, onClose }) => {
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh] relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">×</button>
-        
+
         <h2 className="text-xl font-bold mb-4">Order Details (#{order.id})</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">Customer & Payment</h3>
@@ -137,34 +137,34 @@ const AdminPanel = () => {
 
   // --- Functions (existing) ---
   const handleProductUpdate = async () => {
-  setLoading(true);
-  try {
-    // Create a new object to hold the updated data
-    let updatedData = {
-      ...editingProduct,
-      discount: Number(editingProduct.discount),
-      oprice: Number(editingProduct.oprice),
-      size: Number(editingProduct.size),
-      quantity: Number(editingProduct.quantity),
-      stock: Number(editingProduct.stock) // Ensure stock is a number
-    };
+    setLoading(true);
+    try {
+      // Create a new object to hold the updated data
+      let updatedData = {
+        ...editingProduct,
+        discount: Number(editingProduct.discount),
+        oprice: Number(editingProduct.oprice),
+        size: Number(editingProduct.size),
+        quantity: Number(editingProduct.quantity),
+        stock: Number(editingProduct.stock) // Ensure stock is a number
+      };
 
-    // Check if imageurl is a string (indicating a single new image from the file input)
-    if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
-      // Convert the single image URL into an array
-      updatedData.imageurl = [updatedData.imageurl];
+      // Check if imageurl is a string (indicating a single new image from the file input)
+      if (typeof updatedData.imageurl === 'string' && updatedData.imageurl.startsWith('blob:')) {
+        // Convert the single image URL into an array
+        updatedData.imageurl = [updatedData.imageurl];
+      }
+
+      await updateProduct(updatedData.id, updatedData);
+      setEditingProduct(null);
+      toast.success("Product updated successfully!");
+    } catch (error) {
+      console.error("❌ Error updating product:", error);
+      toast.error("Failed to update product.");
+    } finally {
+      setLoading(false);
     }
-    
-    await updateProduct(updatedData.id, updatedData);
-    setEditingProduct(null);
-    toast.success("Product updated successfully!");
-  } catch (error) {
-    console.error("❌ Error updating product:", error);
-    toast.error("Failed to update product.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleProductDelete = async (productId) => {
     const confirmation = window.confirm("Are you sure you want to delete this product?");
@@ -181,7 +181,7 @@ const AdminPanel = () => {
       }
     }
   };
-  
+
   const handleorderdetails = async (order) => {
     setDetailsLoading(true);
     try {
@@ -206,7 +206,7 @@ const AdminPanel = () => {
   const handleEditUser = (user) => {
     setEditingUser(user);
   };
-  
+
   const handleSaveUser = async () => {
     try {
       const res = await fetch(`${BASE}/api/users/${editingUser.id}`, {
@@ -243,15 +243,19 @@ const AdminPanel = () => {
     // 🟢 Call the update function and get the new order data
     const updatedOrder = await updateOrderStatus(orderId, newStatus);
     if (updatedOrder) {
-        // 🟢 Update the local orders state with the new data
-        setOrders(prevOrders => prevOrders.map(order => 
-            order.id === orderId ? updatedOrder.updatedOrder : order
-        ));
+      // 🟢 Update the local orders state with the new data
+      setOrders(prevOrders => prevOrders.map(order =>
+        order.id === orderId ? updatedOrder.updatedOrder : order
+      ));
     }
-};
+  };
 
-  const handleCancelOrder = async (orderId) => {
-    await cancelOrder(orderId);
+  const handleCancelOrder = async (order) => {
+    // Check for confirmation (good practice)
+    if (!window.confirm(`Are you sure you want to cancel Order #${order.id}?`)) return;
+
+    // Pass the full details to the context, indicating it's an Admin action (true)
+    await cancelOrder(order.id, order.paymentMode, order.totalAmount);
   };
 
   const handleTabClick = (tabName) => {
@@ -307,7 +311,7 @@ const AdminPanel = () => {
         <div className="flex-1 p-8 overflow-y-auto">
           {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
           {selectedOrder && <OrderDetailsPopup order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
-          
+
           {/* Main content sections */}
           {activeTab === "dashboard" && (
             <div className="space-y-8">
@@ -365,7 +369,7 @@ const AdminPanel = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Price</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size (ml)</th>
-                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -374,36 +378,36 @@ const AdminPanel = () => {
                       editingProduct && editingProduct.id === product.id ? (
                         <tr key={product.id}>
                           <td className="px-6 py-4 whitespace-nowrap">{product.id}</td>
-                   <td className="px-6 py-4 whitespace-nowrap">
-              <img src={editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
-              <input
-                type="file"
-                accept="image/*"
-                // Change the onChange handler here
-                onChange={(e) => {
-                  const files = e.target.files;
-                  if (files.length > 0) {
-                    const newImageUrl = URL.createObjectURL(files[0]);
-                    setEditingProduct({
-                      ...editingProduct,
-                      imageurl: [newImageUrl], // ALWAYS wrap the new URL in an array
-                    });
-                  }
-                }}
-                className="mt-2 text-xs"
-              />
-            </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <img src={editingProduct.imageurl} alt={editingProduct.name} className="w-12 h-12 object-cover rounded-md" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              // Change the onChange handler here
+                              onChange={(e) => {
+                                const files = e.target.files;
+                                if (files.length > 0) {
+                                  const newImageUrl = URL.createObjectURL(files[0]);
+                                  setEditingProduct({
+                                    ...editingProduct,
+                                    imageurl: [newImageUrl], // ALWAYS wrap the new URL in an array
+                                  });
+                                }
+                              }}
+                              className="mt-2 text-xs"
+                            />
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="text" value={editingProduct.name} onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} className="border rounded px-2 py-1 w-full" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.oprice} onChange={(e) => setEditingProduct({ ...editingProduct, oprice: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-24" /></td>
                           <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.discount} onChange={(e) => setEditingProduct({ ...editingProduct, discount: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
-                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td> 
-                         <td className="px-6 py-4 whitespace-nowrap">
-  <input
-    type="number"
-    value={editingProduct.stock}
-    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })}
-    className="border rounded px-2 py-1 w-16"
-  /></td>
+                          <td className="px-6 py-4 whitespace-nowrap"><input type="number" value={editingProduct.size} onChange={(e) => setEditingProduct({ ...editingProduct, size: parseFloat(e.target.value) })} className="border rounded px-2 py-1 w-16" /></td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="number"
+                              value={editingProduct.stock}
+                              onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseFloat(e.target.value) })}
+                              className="border rounded px-2 py-1 w-16"
+                            /></td>
                           <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={handleProductUpdate} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button><button onClick={() => setEditingProduct(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button></td>
                         </tr>
                       ) : (
@@ -415,10 +419,10 @@ const AdminPanel = () => {
                           <td className="px-6 py-4 whitespace-nowrap">{product.discount}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.size}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{product.stock}</td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct({ 
-  ...product, 
-  imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl] 
-})} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
+                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingProduct({
+                            ...product,
+                            imageurl: Array.isArray(product.imageurl) ? product.imageurl : [product.imageurl]
+                          })} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => handleProductDelete(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">{loading ? "deleting" : "delete"}</button></td>
                         </tr>
                       )
                     )}
@@ -524,16 +528,23 @@ const AdminPanel = () => {
                       </div>
                       <p><strong>Date:</strong> {order.createdAt}</p>
                       <p><strong>Total:</strong> ₹{order.totalAmount}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <label className="text-sm font-medium">Update Status:</label>
-                        <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="border rounded-lg px-2 py-1">
-                          <option value="Order Placed">Order Placed</option>
-                          <option value="Processing">Processing</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                        </select>
-                        <button onClick={() => handleCancelOrder(order.id)} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Cancel Order</button>
-                      </div>
+                      {(order.status !== "Order Cancelled" && order.status !== "Delivered") && (// Check against the standardized status
+                        <div className="flex items-center space-x-2 mt-2">
+                          <label className="text-sm font-medium">Update Status:</label>
+                          <select value={order.status} onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)} className="border rounded-lg px-2 py-1">
+                            <option value="Order Placed">Order Placed</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
+                          <button
+                            onClick={() => handleCancelOrder(order)}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                          >
+                            Cancel Order
+                          </button>
+                        </div>
+                      )}
                       <button onClick={() => handleorderdetails(order)} className="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">See More Details</button>
                     </div>
                   ))}
@@ -612,14 +623,14 @@ const AdminPanel = () => {
               <div className="space-y-4">
                 {queries?.length > 0 ? (
                   queries?.filter(q => q.email.toLowerCase().includes(querySearch.toLowerCase()) || q.phone.includes(querySearch) || (q.date && q.date.includes(querySearch)))
-                  ?.map((query, index) => (
-                    <div key={index} className="bg-white p-6 rounded-lg shadow-md space-y-1">
-                      <p><strong>Email:</strong> {query.email}</p>
-                      <p><strong>Phone:</strong> {query.phone}</p>
-                      {query.date && <p><strong>Date:</strong> {query.date}</p>}
-                      <p><strong>Message:</strong> {query.message}</p>
-                    </div>
-                  ))
+                    ?.map((query, index) => (
+                      <div key={index} className="bg-white p-6 rounded-lg shadow-md space-y-1">
+                        <p><strong>Email:</strong> {query.email}</p>
+                        <p><strong>Phone:</strong> {query.phone}</p>
+                        {query.date && <p><strong>Date:</strong> {query.date}</p>}
+                        <p><strong>Message:</strong> {query.message}</p>
+                      </div>
+                    ))
                 ) : (
                   <p className="text-center text-gray-500">No queries found.</p>
                 )}

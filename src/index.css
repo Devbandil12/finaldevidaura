@@ -1,5 +1,7 @@
 @import "tailwindcss";
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @font-face {
   font-family: Luxury;
   src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
@@ -11,7 +13,9 @@ html {
 body {
   overflow-x: hidden !important;
   font-family: "Luxury";
-  background: white !important;
+  /* Use CSS design tokens for background and foreground so components (hero, etc.) inherit correct theme colors */
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 /* Scrollbar container */
@@ -86,3 +90,240 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out;
 }
+
+
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    /* Luxury Perfume Theme - Light */
+    --cream: 45 25% 97%;
+    --cream-dark: 45 20% 92%;
+    --luxury-dark: 240 20% 15%;
+    --luxury-darker: 240 25% 8%;
+    --gold: 38 92% 50%;
+    --gold-light: 45 100% 65%;
+    --gold-dark: 32 85% 45%;
+    --rose: 340 82% 52%;
+    --rose-light: 340 75% 65%;
+    --bronze: 30 60% 48%;
+    --navy: 240 40% 25%;
+    --navy-light: 240 30% 40%;
+    
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(var(--gold-dark)), hsl(var(--gold)), hsl(var(--gold-light)));
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--cream)), hsl(var(--cream-dark)));
+    --gradient-rose: linear-gradient(135deg, hsl(var(--rose)), hsl(var(--rose-light)));
+    
+    /* Shadows */
+    --shadow-glow: 0 0 60px hsl(var(--gold) / 0.4);
+    --shadow-luxury: 0 30px 80px -10px hsl(var(--gold) / 0.3);
+    --shadow-soft: 0 10px 40px -5px hsl(var(--luxury-dark) / 0.1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 45 100% 51%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 10% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 10% 15%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 45 100% 51%;
+    --accent-foreground: 240 10% 8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 45 100% 51%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  /* Fallback to CSS vars directly to ensure styles apply even if Tailwind classes are not generated yet */
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Utilities / fallbacks for dynamic Tailwind classes used in HeroSection that
+   may not be present until Tailwind generates them. These ensure the hero
+   renders correctly during development and in environments where JIT classes
+   aren't generated yet. */
+
+/* shimmer animation fallback (matches tailwind.config.js) */
+@keyframes shimmer {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s linear infinite;
+  background-repeat: no-repeat;
+}
+
+/* bg-clip-text fallback (some browsers need -webkit- prefix) */
+.bg-clip-text {
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* text-luxury-dark fallback maps to the CSS variable defined in :root */
+.text-luxury-dark {
+  color: hsl(var(--luxury-dark));
+}
+
+/* Ensure gold utility fallbacks (for bg-gold, text-gold, border-gold) */
+.bg-gold { background-color: hsl(var(--gold)); }
+.text-gold { color: hsl(var(--gold)); }
+.border-gold { border-color: hsl(var(--gold)); }
+
+/* Allow opacity variations like bg-gold/20 as fallback by providing
+   semi-transparent helper classes used in templates */
+.bg-gold-10 { background-color: hsl(var(--gold) / 0.1); }
+.bg-gold-20 { background-color: hsl(var(--gold) / 0.2); }
+.bg-gold-30 { background-color: hsl(var(--gold) / 0.3); }
+.bg-gold-50 { background-color: hsl(var(--gold) / 0.5); }
+
+/* Targeted gradient text fallbacks used by the hero so important lines show
+   gold/rose gradients even when Tailwind JIT classes aren't present. */
+.text-gradient-only-felt {
+  background-image: linear-gradient(90deg, hsl(var(--gold)), hsl(var(--rose)), hsl(var(--gold-light)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.text-gradient-leaves {
+  background-image: linear-gradient(90deg, hsl(var(--gold)), hsl(var(--rose)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Escaped variants for Tailwind-style opacity shorthand (eg. bg-gold/30) used in templates.
+   These provide fallbacks when Tailwind's JIT hasn't generated the exact utilities. */
+.bg-gold\/30 { background-color: hsl(var(--gold) / 0.3); }
+.bg-gold\/20 { background-color: hsl(var(--gold) / 0.2); }
+.bg-gold\/10 { background-color: hsl(var(--gold) / 0.1); }
+.border-gold\/30 { border-color: hsl(var(--gold) / 0.3); }
+.border-gold\/20 { border-color: hsl(var(--gold) / 0.2); }
+.from-gold\/5 { --tw-gradient-from: hsl(var(--gold) / 0.05); }
+.from-gold\/10 { --tw-gradient-from: hsl(var(--gold) / 0.1); }
+.from-gold\/20 { --tw-gradient-from: hsl(var(--gold) / 0.2); }
+.via-gold\/10 { --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold) / 0.1), var(--tw-gradient-to); }
+
+/* Gradient direction fallbacks (use --tw-gradient-* variables set by from-/via-/to- helpers) */
+.bg-gradient-to-r { background-image: linear-gradient(90deg, var(--tw-gradient-stops)); }
+.bg-gradient-to-br { background-image: linear-gradient(135deg, var(--tw-gradient-stops)); }
+.bg-gradient-to-t { background-image: linear-gradient(0deg, var(--tw-gradient-stops)); }
+
+/* Simple gradient stop utilities for common tokens used in Hero */
+.from-gold { --tw-gradient-from: hsl(var(--gold)); --tw-gradient-to: hsl(var(--gold)); }
+.via-gold-light { --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold-light)), var(--tw-gradient-to); }
+.to-gold { --tw-gradient-to: hsl(var(--gold)); }
+.from-rose { --tw-gradient-from: hsl(var(--rose)); }
+.to-rose { --tw-gradient-to: hsl(var(--rose)); }
+.from-cream { --tw-gradient-from: hsl(var(--cream)); }
+
+/* Small pulse fallback for the dot inside the premium badge */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .6; transform: scale(.85); }
+}
+
+/* CTA arrow fallback to ensure visibility against gradient buttons */
+.cta-arrow {
+  display: inline-block;
+  color: white; /* default on gold gradient */
+  transform-origin: center;
+  animation: cta-bob 1.5s ease-in-out infinite;
+}
+@keyframes cta-bob {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+

@@ -49,7 +49,7 @@ export default function PaymentDetails({
           user: {
             id: userdetails.id,
             fullName: userdetails.name,
-            primaryEmailAddress: { emailAddress: userdetails.email },
+            email: userdetails.email,
           },
           phone: selectedAddress.phone,
           couponCode: appliedCoupon?.code,

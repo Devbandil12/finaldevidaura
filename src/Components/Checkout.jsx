@@ -19,7 +19,7 @@ export default function Checkout() {
 
   // --- Contexts ---
   const { getorders } = useContext(OrderContext);
-  const { setCart } = useContext(CartContext); // Used to clear cart state on success
+  const { clearCart } = useContext(CartContext); 
   const { userdetails } = useContext(UserContext);
 
   // --- Component State ---
@@ -121,9 +121,9 @@ export default function Checkout() {
   const cleanupAfterOrder = useCallback(async () => {
     localStorage.removeItem("selectedItems");
     localStorage.removeItem("appliedCoupon");
-    setCart([]); // Clear cart from global context
+    clearCart(); // Clear cart state using context function
     await getorders(); // Refresh the user's orders list
-  }, [getorders, setCart]);
+  }, [getorders, clearCart]);
 
   // --- Event Handlers ---
 

@@ -67,9 +67,18 @@ const Navbar = ({ onVisibilityChange }) => {
   // -------------------------
   // Hamburger toggle (logic unchanged)
   // -------------------------
+  // 1. Function to OPEN/CLOSE from the hamburger (Toggles state, keeps crash-proof)
   const toggleSidebar = (e) => {
-    e.preventDefault();
+    // Crash fix: safely prevent default if event object exists.
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     setIsOpen((v) => !v);
+  };
+
+  // 2. Function to close the sidebar RELIABLY (Explicitly sets state to false)
+  const closeSidebar = () => {
+    setIsOpen(false);
   };
 
   // Prevent background scroll when sidebar is open
@@ -133,7 +142,7 @@ const Navbar = ({ onVisibilityChange }) => {
   // ===========================================================
   const updateSidebarOffset = useCallback(() => {
     const mainBar = document.getElementById("navbar"); // top fixed bar
-    
+
 
     const visibleHeight = (el) => {
       if (!el) return 0;
@@ -159,9 +168,9 @@ const Navbar = ({ onVisibilityChange }) => {
 
     const ro = new ResizeObserver(updateSidebarOffset);
     const mainBar = document.getElementById("navbar");
-    
+
     if (mainBar) ro.observe(mainBar);
-    
+
 
     return () => {
       window.removeEventListener("resize", onRes);
@@ -179,68 +188,76 @@ const Navbar = ({ onVisibilityChange }) => {
   // GSAP: Page-load stagger
   // =======================
   useLayoutEffect(() => {
-  const prefersReduced =
-    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (prefersReduced) return;
+    const prefersReduced =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
 
-  const ctx = gsap.context(() => {
-    gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-      willChange: "transform, opacity",
-      force3D: true,
-    });
-
-    const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-
-    tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
-      .from(
-        ".nav-links li",
-        { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
-        "-=0.06"
-      )
-      .from(
-        ".icons > *",
-        { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
-        "-=0.1"
-      )
-      .add(() => {
-        gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
-          willChange: "auto",
-        });
+    const ctx = gsap.context(() => {
+      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+        willChange: "transform, opacity",
+        force3D: true,
       });
-  }, navRef);
 
-  return () => ctx.revert();
-}, []);
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
+      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
+        .from(
+          ".nav-links li",
+          { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 },
+          "-=0.06"
+        )
+        .from(
+          ".icons > *",
+          { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 },
+          "-=0.1"
+        )
+        .add(() => {
+          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], {
+            willChange: "auto",
+          });
+        });
+    }, navRef);
+
+    return () => ctx.revert();
+  }, []);
 
 
 
   // =======================
   // GSAP: Sidebar stagger (start immediately)
   // =======================
+
   useEffect(() => {
     if (!isOpen) return;
-  
+
     const prefersReduced =
       window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
-  
+
     const ctx = gsap.context(() => {
       const headerSel = ".sidebar-header";
       const itemsSel = ".sidebar-nav li";
-      const footerSel = ".sidebar-footer";
-  
+      const footerSel = ".sidebar-footer"; // Selector definition remains
+
       // Reset any leftover styles
       gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-  
+
       // Start stagger *immediately* when sidebar opens
       const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+
       tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 })
-        .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04")
-        .from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
+        .from(itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04");
+
+      // --- FIX: Check the state before adding the footer animation ---
+      if (isLoggedIn) {
+        tl.from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
+      }
+      // -----------------------------------------------------------
+
     }, sidebarScopeRef);
-  
+
     return () => ctx.revert();
-  }, [isOpen]);
+  }, [isOpen, isLoggedIn]); // <-- IMPORTANT: Added isLoggedIn dependency here
 
 
   // ==============================
@@ -426,11 +443,11 @@ const Navbar = ({ onVisibilityChange }) => {
                 </div>
               </div>
             ) : (
-            <div id="loginSignupButtons" className="desktop-login-signup">
-  <button id="loginButton" onClick={() => navigate("/login")}>
-    <span className="btn-text">Sign Up</span>
-  </button>
-</div>
+              <div id="loginSignupButtons" className="desktop-login-signup">
+                <button id="loginButton" onClick={() => navigate("/login")}>
+                  <span className="btn-text">Sign Up</span>
+                </button>
+              </div>
 
             )}
 
@@ -450,50 +467,71 @@ const Navbar = ({ onVisibilityChange }) => {
                   {/* Sidebar */}
                   <div className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar">
                     <header className="sidebar-header">
- <div className="sidebar-user-avt-img">
-                      <img src={UserIcon} alt="User" />
-<h4>{userdetails?.name || "Guest"}</h4>
-</div>
-                      {isLoggedIn ? (
-                        <div className="sidebar-user">
- 
-                          <p>{user?.primaryEmailAddress?.emailAddress || "N/A"}</p>
+                      <div className="profile-card-container">
+                        {/* Avatar + Name */}
+                        <div className="sidebar-user-details">
+                          <img
+                            src={isLoggedIn ? user?.imageUrl || UserIcon : UserIcon}
+                            alt={isLoggedIn ? "User Profile" : "Guest"}
+                            className="user-avatar"
+                          />
+                          <div className="user-info">
+                            <h4>{isLoggedIn ? userdetails?.name || user?.name : "Guest Account"}</h4>
+                            <p className="user-email">
+                              {isLoggedIn
+                                ? user?.email
+                                : "Login to personalize your experience"}
+                            </p>
+                            {/* Optional: quick info */}
+                            {isLoggedIn && (
+                              <p className="user-role">{userdetails?.role || 'User'}</p>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                       <button className="sidebar-signin" onClick={() => navigate("/login")}>
-  Login / Sign Up
-</button>
 
-                      )}
-                      <button className="sidebar-close" onClick={toggleSidebar}>
-                        âœ•
-                      </button>
+                        {/* Action Button */}
+                        <button
+                          className={`sidebar-action-btn ${isLoggedIn ? "sidebar-view-account" : "sidebar-signin"
+                            }`}
+                          onClick={() => {
+                            navigate(isLoggedIn ? "/myaccount" : "/login");
+                            if (isLoggedIn) closeSidebar();
+                          }}
+                        >
+                          {isLoggedIn ? "View Profile" : "Login / Sign Up"}
+                        </button>
+                      </div>
                     </header>
+
+
 
                     <nav className="sidebar-nav">
                       <ul>
                         <li
-                          onClick={() => {
+                          onClick={(e) => {
                             navigate("/myorder");
-                            toggleSidebar();
+                            e.stopPropagation();
+                            closeSidebar();
                           }}
                         >
                           <img src={MyOrderIcon} alt="" />
                           <span>My Orders</span>
                         </li>
                         <li
-                          onClick={() => {
+                          onClick={(e) => {
                             navigate("/wishlist");
-                            toggleSidebar();
+                            e.stopPropagation();
+                            closeSidebar();
                           }}
                         >
                           <img src={WishlistIcon} alt="" />
                           <span>Wishlist</span>
                         </li>
                         <li
-                          onClick={() => {
+                          onClick={(e) => {
                             navigate("/cart");
-                            toggleSidebar();
+                            e.stopPropagation();
+                            closeSidebar();
                           }}
                         >
                           <img src={CartIcon} alt="" />
@@ -501,9 +539,10 @@ const Navbar = ({ onVisibilityChange }) => {
                         </li>
                         {isLoggedIn && userdetails?.role === "admin" && (
                           <li
-                            onClick={() => {
+                            onClick={(e) => {
                               navigate("/admin");
-                              toggleSidebar();
+                              e.stopPropagation();
+                              closeSidebar();
                             }}
                           >
                             <img src={AdminIcon} alt="" />
@@ -511,9 +550,10 @@ const Navbar = ({ onVisibilityChange }) => {
                           </li>
                         )}
                         <li
-                          onClick={() => {
+                          onClick={(e) => {
                             navigate("/contact");
-                            toggleSidebar();
+                            e.stopPropagation();
+                            closeSidebar();
                           }}
                         >
                           <img src={MailUsIcon} alt="" />
@@ -528,7 +568,7 @@ const Navbar = ({ onVisibilityChange }) => {
                           onClick={async (e) => {
                             e.preventDefault();
                             await signOut({ redirectUrl: "/" });
-                            toggleSidebar();
+                            closeSidebar();
                           }}
                         >
                           <img src={LogOutIcon} alt="Log out" />

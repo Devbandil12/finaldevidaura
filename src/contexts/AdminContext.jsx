@@ -106,8 +106,11 @@ export const AdminProvider = ({ children }) => {
 
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      if (paymentMode === "razorpay" || paymentMode === "online") {
-        // Refund for prepaid
+      // 🟢 FIX: Use a robust, case-insensitive check to cover variations like 
+      const isOnlinePayment = paymentMode.toLowerCase().includes("online") || paymentMode.toLowerCase().includes("razorpay");
+
+      if (isOnlinePayment) {
+        // Refund for prepaid (Online orders)
         const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -116,7 +119,7 @@ export const AdminProvider = ({ children }) => {
         if (!res.ok) throw new Error("Refund failed");
         toast.success(`Refund initiated for Order #${orderId}`);
       } else {
-        // COD
+        // COD (or any other mode)
         const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, { method: "PUT" });
         if (!res.ok) throw new Error("Cancel failed");
         toast.success(`Order #${orderId} cancelled`);

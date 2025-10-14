@@ -19,15 +19,37 @@ const marqueeLines = [
 
 // Highlight styles mapping
 const highlightStyles = {
-  refunds: "highlight-red",
-  refund: "highlight-red",
-  trusted: "highlight-green",
-  luxury: "highlight-purple",
-  success: "highlight-yellow",
-  confidence: "highlight-blue",
-  expensive: "highlight-gold",
-  power: "highlight-dark",
-  "Long-lasting": "highlight-gold"
+  // --- Core Brand Concepts ---
+  trusted: "highlight-green",      // Green for safety and trust
+  success: "highlight-yellow",     // Yellow/Gold for achievement
+  confidence: "highlight-blue",      // Blue for stability and trust
+  Honesty: "highlight-blue",       // Blue for integrity and trust
+  power: "highlight-dark",         // Dark for strength and authority
+  luxury: "highlight-purple",      // Purple for premium and high quality
+  Memorable: "highlight-purple",   // Purple is distinctive and rich
+
+  // --- Product Features & Benefits ---
+  "Long-lasting": "highlight-gold",// Gold for quality and value
+  day: "highlight-gold",           // Complements "Long-lasting"
+  last: "highlight-gray",        // Neutral gray for durability
+  expensive: "highlight-gold",     // Gold for high value
+  less: "highlight-green",         // Green for savings and money
+  bold: "highlight-maroon",      // Deep red for a strong, confident scent
+  Masculine: "highlight-dark",     // Complements "power"
+  smart: "highlight-blue",         // Blue for intelligence and tech
+  tech: "highlight-blue",          // Complements "smart"
+  
+  // --- Trust & Policy Keywords ---
+  // CHANGED: Red can imply a warning. Blue aligns refunds with trust and honesty.
+  refunds: "highlight-blue",
+  refund: "highlight-blue",
+  
+  stress: "highlight-red",         // Red correctly highlights the negative word being solved ("Zero stress")
+  drama: "highlight-orange",       // Orange correctly highlights the problem being solved ("no drama")
+  Instant: "highlight-cyan",       // Bright, energetic color for speed
+  Tested: "highlight-green",       // Green for "pass" / "safe"
+  Verified: "highlight-green",     // Green for "pass" / "safe"
+  Approved: "highlight-green",     // Green for "pass" / "safe"
 };
 
 export default function DualMarquee() {
@@ -98,10 +120,14 @@ export default function DualMarquee() {
     });
   };
 
-  const pauseTop = () => topTween.current?.pause();
-  const resumeTop = () => topTween.current?.play();
-  const pauseBottom = () => bottomTween.current?.pause();
-  const resumeBottom = () => bottomTween.current?.play();
+ // Slow down marquee on hover instead of pausing
+const slowDown = (tween) => tween?.timeScale(0.1); // 10% speed
+const speedUp = (tween) => tween?.timeScale(1);    // normal speed
+
+const pauseTop = () => slowDown(topTween.current);
+const resumeTop = () => speedUp(topTween.current);
+const pauseBottom = () => slowDown(bottomTween.current);
+const resumeBottom = () => speedUp(bottomTween.current);
 
   return (
     <div className="dual-marquee-container">

@@ -1,11 +1,10 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
 .dual-marquee-container {
   background: white;
-  padding: 2rem 0;
-  font-size: 1.5rem;
+  padding: 1rem 0;
+  font-size: 1rem;
   font-weight: 600;
   color: #000;
   user-select: none;
@@ -22,19 +21,19 @@
 /* Responsive font sizes */
 @media (min-width: 640px) {
   .dual-marquee-container {
-    font-size: 1.75rem;
+    font-size: 1rem;
   }
 }
 
 @media (min-width: 768px) {
   .dual-marquee-container {
-    font-size: 2rem;
+    font-size: 1rem;
   }
 }
 
 @media (min-width: 1024px) {
   .dual-marquee-container {
-    font-size: 2.25rem;
+    font-size: 1rem;
   }
 }
 
@@ -43,7 +42,7 @@
   white-space: nowrap;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 2.5s ease;
 }
 
 .marquee-wrapper:hover {
@@ -60,7 +59,7 @@
 
 .marquee-content {
   display: flex;
-  gap: 3rem;
+  gap: 1rem;
   width: max-content;
   will-change: transform;
 }
@@ -70,7 +69,7 @@
 }
 
 .marquee-line {
-  padding: 0.5rem 1.5rem;
+  padding: 0.2rem 1.5rem;
   word-spacing: 0.5rem;
   position: relative;
   overflow: hidden;
@@ -144,15 +143,15 @@
     font-size: 1.25rem;
     gap: 1rem;
   }
-  
+
   .marquee-line {
     padding: 0.4rem 1rem;
   }
-  
+
   .marquee-content {
     gap: 2rem;
   }
-  
+
   .highlight-red,
   .highlight-green,
   .highlight-purple,
@@ -163,4 +162,139 @@
     padding: 3px 8px;
     font-size: 0.9em;
   }
+}
+
+/* --- Base Styles & Shimmer Effect (with new classes added) --- */
+
+/* Glassy translucent highlights with shimmer */
+.highlight-red,
+.highlight-green,
+.highlight-purple,
+.highlight-yellow,
+.highlight-blue,
+.highlight-gold,
+.highlight-dark,
+.highlight-gray,
+/* new */
+.highlight-orange,
+/* new */
+.highlight-cyan,
+/* new */
+.highlight-maroon
+
+/* new */
+  {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.95em;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer effect */
+.highlight-red::before,
+.highlight-green::before,
+.highlight-purple::before,
+.highlight-yellow::before,
+.highlight-blue::before,
+.highlight-gold::before,
+.highlight-dark::before,
+.highlight-gray::before,
+/* new */
+.highlight-orange::before,
+/* new */
+.highlight-cyan::before,
+/* new */
+.highlight-maroon::before
+
+/* new */
+  {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(120deg,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.2) 40%,
+      rgba(255, 255, 255, 0) 70%);
+  transform: skewX(-20deg);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-20deg);
+  }
+
+  100% {
+    transform: translateX(100%) skewX(-20deg);
+  }
+}
+
+
+/* --- Color Palette Definitions --- */
+
+/* Existing light-themed highlight colors */
+.highlight-red {
+  background: rgba(255, 107, 107, 0.15);
+  color: #c92a2a;
+}
+
+.highlight-green {
+  background: rgba(81, 207, 102, 0.15);
+  color: #2f9e44;
+}
+
+.highlight-purple {
+  background: rgba(132, 94, 194, 0.15);
+  color: #7048a0;
+}
+
+.highlight-yellow {
+  background: rgba(255, 212, 59, 0.2);
+  color: #f08c00;
+}
+
+.highlight-blue {
+  background: rgba(51, 154, 240, 0.15);
+  color: #1864ab;
+}
+
+.highlight-gold {
+  background: rgba(255, 217, 61, 0.2);
+  color: #e67700;
+}
+
+.highlight-dark {
+  background: rgba(73, 80, 87, 0.15);
+  color: #343a40;
+}
+
+/* NEW color definitions */
+.highlight-gray {
+  background: rgba(173, 181, 189, 0.15);
+  color: #5f656d;
+}
+
+.highlight-orange {
+  background: rgba(253, 126, 20, 0.15);
+  color: #e8590c;
+}
+
+.highlight-cyan {
+  background: rgba(22, 163, 196, 0.15);
+  color: #0c8599;
+}
+
+.highlight-maroon {
+  background: rgba(194, 54, 107, 0.15);
+  color: #a61e4d;
 }

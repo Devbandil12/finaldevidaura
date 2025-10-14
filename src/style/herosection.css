@@ -6,13 +6,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 100px 50px;
-  background: white ;
+  /* Use theme variables so the hero inherits the app's color scheme */
+  background: transparent;
   font-family: 'Inter', sans-serif;
-  color: #1f1f1f;
+  color: hsl(var(--sidebar-foreground));
   gap: 50px;
   padding-top:100px;
   min-height:450px;
- 
 }
 
 .hero-content {
@@ -21,10 +21,10 @@
 
 .hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #101010;
+  color: hsl(var(--luxury-dark));
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -37,12 +37,12 @@
   font-weight: 600;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #333;
+  color: hsl(var(--luxury-dark));
   margin-bottom: 2rem;
 }
 
 .highlight {
-  color: #c89b3c; /* Gold */
+  color: hsl(var(--gold)); /* Gold */
   font-weight: 600;
   text-shadow: 0 0 1px rgba(200, 155, 60, 0.3);
 }

@@ -199,7 +199,7 @@ export default function MyOrders() {
     );
   };
 
-  const isOnlinePayment = modalOrder?.paymentMode === "Online Payment";
+  const isOnlinePayment = modalOrder?.paymentMode === "Online";
 
   const renderModalContent = () => {
     if (!modalOrder) return null;
@@ -365,7 +365,7 @@ export default function MyOrders() {
 
               {cancellationMessages[order.id]}
 
-              {isExpanded && order.status !== "cancelled" && (
+              {isExpanded && order.status !== "Order Cancelled" && (
                 <div className="order-progress">
                   {renderStepProgress(order.progressStep, order.status)}
                 </div>
