@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -6,8 +6,6 @@ import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
-
-
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -24,9 +22,32 @@ const ProductDetail = () => {
   
   const { productId } = useParams();
   
-  const product = products.find((p) => p.id === productId);
+  // --- HOOKS ---
+  // All hooks are now at the top level, before any conditional returns.
+  const [product, setProduct] = useState(null);
+  const [isFindingProduct, setIsFindingProduct] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [currentImg, setCurrentImg] = useState(0);
 
-  if (productsLoading) {
+  useEffect(() => {
+    // This effect finds the product once the main product list is loaded.
+    if (!productsLoading) {
+      const foundProduct = products.find((p) => p.id === productId);
+      setProduct(foundProduct);
+      setIsFindingProduct(false);
+    }
+  }, [productId, products, productsLoading]);
+
+  useEffect(() => {
+    // This effect runs only after a product has been successfully found.
+    if (product) {
+      window.scrollTo(0, 0);
+    }
+  }, [product]); // Depend on 'product' to ensure it runs at the right time.
+
+  // --- LOADING & NOT FOUND STATES ---
+  // These conditional returns are now placed *after* all hooks have been called.
+  if (productsLoading || isFindingProduct) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p>Loading product details...</p>
@@ -38,36 +59,30 @@ const ProductDetail = () => {
     return <div className="text-center p-8">Product not found.</div>;
   }
 
-  // =========================================================
-  // ===  BULLETPROOF IMAGE LOGIC ===
-  // =========================================================
-  let allImages = [];
-  if (product.imageurl) {
+  // --- DERIVED STATE & LOGIC ---
+  // This logic will only run if a product is found and we don't return early.
+  
+  // Safely parse image URLs
+  const allImages = (() => {
+    if (!product.imageurl) return [];
     try {
-      // Attempt to parse the imageurl if it's a string
-      allImages = typeof product.imageurl === 'string' ? JSON.parse(product.imageurl) : product.imageurl;
+      return typeof product.imageurl === 'string' 
+        ? JSON.parse(product.imageurl) 
+        : product.imageurl;
     } catch (e) {
       console.error("Failed to parse imageurl string:", e);
-      allImages = [];
+      return [];
     }
-  }
+  })();
   
-  // =========================================================
-
   const isInCart = cart?.some((i) => i.product?.id === product.id);
   const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
-
-  const [quantity, setQuantity] = useState(1);
-  const [currentImg, setCurrentImg] = useState(0);
 
   const basePrice = Math.floor(Number(product.oprice) || 0);
   const discount = Math.floor(Number(product.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [productId]);
-
+  // --- HANDLER FUNCTIONS ---
   const changeImage = (delta) =>
     setCurrentImg((idx) => (idx + delta + allImages.length) % allImages.length);
 
@@ -109,6 +124,7 @@ const ProductDetail = () => {
     }
   };
 
+  // --- RENDER ---
   return (
     <div className="product-page-container bg-white min-h-screen">
       <div className="product-main-content bg-white rounded-lg max-w-7xl mx-auto p-4 md:p-8 mt-[50px]">
