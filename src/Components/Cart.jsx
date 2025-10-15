@@ -18,7 +18,9 @@ const ShoppingCart = () => {
   const location = useLocation();
   const { isSignedIn } = useUser();
   const [checkoutError, setCheckoutError] = useState("");
-
+  const [pincode, setPincode] = useState("");
+  const [pincodeDetails, setPincodeDetails] = useState(null);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
@@ -42,7 +44,11 @@ const ShoppingCart = () => {
 
   const isBuyNowActive = !!buyNow;
   const itemsToRender = isBuyNowActive ? [buyNow] : cart;
-  
+
+
+  // Add this line near your other imports at the top of Cart.jsx
+  const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+
   // Load coupons when user details are available.
   useEffect(() => {
     if (userdetails?.id) {
@@ -72,8 +78,47 @@ const ShoppingCart = () => {
     }
   }, [itemsToRender, setCheckoutError]);
 
+  const handlePincodeChange = (e) => {
+    const value = e.target.value;
+
+    // Allow only digits
+    if (/^\d*$/.test(value)) {
+      setPincode(value);
+
+      // Clear old messages when the user retypes or edits the pincode
+      if (pincodeDetails) {
+        setPincodeDetails(null);
+      }
+    }
+  };
+
+
+  async function checkDeliveryAvailability() {
+    if (!/^\d{6}$/.test(pincode)) {
+      return toast.error("Please enter a valid 6-digit pincode.");
+    }
+    setPincodeLoading(true);
+    setPincodeDetails(null);
+    try {
+      // Correct the URL here
+      const res = await fetch(`${API_BASE}/api/address/pincode/${pincode}`);
+      const data = await res.json();
+      if (data.success) {
+        setPincodeDetails(data.data);
+      } else {
+        toast.error(data.msg || "Failed to check pincode");
+      }
+    } catch (err) {
+      console.error("checkDeliveryAvailability error:", err);
+      toast.error("Network error while checking pincode");
+    } finally {
+      setPincodeLoading(false);
+    }
+  }
+
+
   const handleCheckout = () => {
-   setCheckoutError(""); // Clear any previous errors
+    setCheckoutError(""); // Clear any previous errors
 
     if (!itemsToRender.length) {
       toast.error("Your cart is empty.");
@@ -118,7 +163,7 @@ const ShoppingCart = () => {
       navigate("/login", { replace: true });
       return;
     }
-    
+
     sessionStorage.setItem("checkout_intent", JSON.stringify({ ts: Date.now() }));
     navigate("/checkout");
   };
@@ -152,7 +197,7 @@ const ShoppingCart = () => {
       }
       toast.success("Moved to wishlist");
     } else {
-       toast.info("Already in wishlist");
+      toast.info("Already in wishlist");
     }
   };
 
@@ -188,72 +233,72 @@ const ShoppingCart = () => {
   };
 
   const renderRemainingProducts = () =>
-  !isBuyNowActive &&
-  products
-    .filter((p) => !cart.some((c) => c.product?.id === p.id))
-    .map((product) => {
-      const price = Math.trunc(
-        product.oprice * (1 - product.discount / 100)
-      );
-      return (
-        <div
-          className="product-card w-72 rounded-lg bg-white overflow-hidden"
-          key={product.id}
-        >
-          <div className="product-thumb">
-            <img
-              src={product.imageurl[0]}
-              alt={product.name}
-              className="product-img"
-              data-product-id={product.id}
-              onClick={() => navigate(`/product/${product.id}`)}
-            />
-            <div
-              className="img-overlay"
-              onClick={() => navigate(`/product/${product.id}`)}
-            >
-              <span className="overlay-text">Quick View</span>
-            </div>
-          </div>
-
-          <div className="p-4 flex flex-col gap-2">
-            <div className="flex justify-between items-start">
-              <h3
-                className="text-lg font-semibold cursor-pointer hover:underline"
+    !isBuyNowActive &&
+    products
+      .filter((p) => !cart.some((c) => c.product?.id === p.id))
+      .map((product) => {
+        const price = Math.trunc(
+          product.oprice * (1 - product.discount / 100)
+        );
+        return (
+          <div
+            className="product-card w-72 rounded-lg bg-white overflow-hidden"
+            key={product.id}
+          >
+            <div className="product-thumb">
+              <img
+                src={product.imageurl[0]}
+                alt={product.name}
+                className="product-img"
+                data-product-id={product.id}
+                onClick={() => navigate(`/product/${product.id}`)}
+              />
+              <div
+                className="img-overlay"
                 onClick={() => navigate(`/product/${product.id}`)}
               >
-                {product.name}
-              </h3>
-              {/* Note: Wishlist icon is not included here to keep it simple. */}
+                <span className="overlay-text">Quick View</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-              <p>Rs {price}</p>
-              <p className="line-through-price text-gray-400">
-                Rs {product.oprice}
+            <div className="p-4 flex flex-col gap-2">
+              <div className="flex justify-between items-start">
+                <h3
+                  className="text-lg font-semibold cursor-pointer hover:underline"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  {product.name}
+                </h3>
+                {/* Note: Wishlist icon is not included here to keep it simple. */}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                <p>Rs {price}</p>
+                <p className="line-through-price text-gray-400">
+                  Rs {product.oprice}
+                </p>
+                <span className="text-xs text-green-600 font-semibold">
+                  ({product.discount}% OFF)
+                </span>
+              </div>
+              <p className="text-sm font-normal text-red-700 mt-1">
+                {product.stockStatus}
               </p>
-              <span className="text-xs text-green-600 font-semibold">
-                ({product.discount}% OFF)
-              </span>
+              <p className="text-xs text-gray-400">{product.description}</p>
             </div>
-                  <p className="text-sm font-normal text-red-700 mt-1">
-  {product.stockStatus}
-</p>
-            <p className="text-xs text-gray-400">{product.description}</p>
-          </div>
 
-          <div className="p-4 pt-0">
-            <HeroButton
-              onClick={() => addToCart(product, 1)}
-              className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
-            >
-              Add to Cart
+            <div className="p-4 pt-0">
+              <HeroButton
+                onClick={() => addToCart(product, 1)}
+                className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+              >
+                Add to Cart
                 <img src={CartImage} alt="Cart" className="w-7 h-7" />
-            </HeroButton>
+              </HeroButton>
+            </div>
           </div>
-        </div>
-      );
-    });
+        );
+      });
 
   const activeCart = itemsToRender;
   const totalOriginal = activeCart.reduce(
@@ -341,94 +386,166 @@ const ShoppingCart = () => {
           </div>
 
           <div className="cart-summary">
-<h2 className="summary-title">Order Summary</h2>
-<div className="cart-summary-price">
-  <h3 className="row total">
-    <span>Total:</span> <span>₹{totalOriginal}</span>
-  </h3>
-  <h3 className={`row final ${appliedCoupon ? "with-coupon" : ""}`}>
-    <span>Final Price:</span> <span>₹{finalPrice}</span>
-  </h3>
-</div>
+            <h2 className="summary-title">Order Summary</h2>
+            <div className="cart-summary-price">
+              <h3 className="row total">
+                <span>Total:</span> <span>₹{totalOriginal}</span>
+              </h3>
+              <h3 className={`row final ${appliedCoupon ? "with-coupon" : ""}`}>
+                <span>Final Price:</span> <span>₹{finalPrice}</span>
+              </h3>
+            </div>
 
             <div className="cart-coupons">
-  <h4>Apply Coupon</h4>
+              <h4>Apply Coupon</h4>
 
-  {/* Manual input always visible */}
-  <div className="coupon-box manual-input">
-    <input
-      type="text"
-      placeholder="Enter coupon code"
-      value={manualCouponCode}
-      onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
-    />
-    <HeroButton onClick={handleManualApply}>Apply</HeroButton>
-  </div>
+              {/* Manual input always visible */}
+              <div className="coupon-box manual-input">
+                <input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={manualCouponCode}
+                  onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
+                />
+                <HeroButton onClick={handleManualApply}>Apply</HeroButton>
+              </div>
 
-  {/* If coupon is applied, show as a pill/tag */}
-  {appliedCoupon && (
-    <div className="applied-tag">
-      <span>{appliedCoupon.code}</span>
-      <button onClick={() => setAppliedCoupon(null)}>×</button>
-    </div>
-  )}
+              {/* If coupon is applied, show as a pill/tag */}
+              {appliedCoupon && (
+                <div className="applied-tag">
+                  <span>{appliedCoupon.code}</span>
+                  <button onClick={() => setAppliedCoupon(null)}>×</button>
+                </div>
+              )}
 
-  {/* Available coupons list */}
-  <div className="available-coupons-section">
-    <h4>Available Coupons</h4>
-    {availableCoupons.length > 0 ? (
-      availableCoupons.map((coupon) => {
-        const isSelected = appliedCoupon?.id === coupon.id;
-        return (
-          <div
-            key={coupon.id}
-            className={`coupon-item ${isSelected ? "selected" : ""}`}
-            onClick={async () => {
-              if (isSelected) {
-                setAppliedCoupon(null);
-                toast.info("Coupon removed.");
-              } else {
-                await handleApplyCoupon(coupon);
-              }
-            }}
-          >
-            <strong>{coupon.code}</strong> –{" "}
-            {coupon.discountType === "percent"
-              ? `${coupon.discountValue}% off`
-              : `₹${coupon.discountValue} off`}
-            <br />
-            <small>{coupon.description}</small>
-          </div>
-        );
-      })
-    ) : (
-      <small>No coupons available right now</small>
-    )}
-  </div>
-</div>
+              {/* Available coupons list */}
+              <div className="available-coupons-section">
+                <h4>Available Coupons</h4>
+                {availableCoupons.length > 0 ? (
+                  availableCoupons.map((coupon) => {
+                    const isSelected = appliedCoupon?.id === coupon.id;
+                    return (
+                      <div
+                        key={coupon.id}
+                        className={`coupon-item ${isSelected ? "selected" : ""}`}
+                        onClick={async () => {
+                          if (isSelected) {
+                            setAppliedCoupon(null);
+                            toast.info("Coupon removed.");
+                          } else {
+                            await handleApplyCoupon(coupon);
+                          }
+                        }}
+                      >
+                        <strong>{coupon.code}</strong> –{" "}
+                        {coupon.discountType === "percent"
+                          ? `${coupon.discountValue}% off`
+                          : `₹${coupon.discountValue} off`}
+                        <br />
+                        <small>{coupon.description}</small>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <small>No coupons available right now</small>
+                )}
+              </div>
+            </div>
 
 
             <div className="cart-summary-button">
 
-               {checkoutError && (
-    <div className="text-red-600 text-sm font-semibold p-2 bg-red-100 rounded-md mb-4 text-center">
-      {checkoutError}
-    </div>
-  )}
+              {checkoutError && (
+                <div className="text-red-600 text-sm font-semibold p-2 bg-red-100 rounded-md mb-4 text-center">
+                  {checkoutError}
+                </div>
+              )}
 
               {!isBuyNowActive && (
                 <HeroButton id="clear-cart" onClick={clearCart}>Clear Cart</HeroButton>
-)}
+              )}
 
-<HeroButton id="checkout-button"
-                className="checkout"  onClick={handleCheckout}>
-  {isBuyNowActive ? "Buy Now" : "Checkout"}
-</HeroButton>
+              <HeroButton id="checkout-button"
+                className="checkout" onClick={handleCheckout}>
+                {isBuyNowActive ? "Buy Now" : "Checkout"}
+              </HeroButton>
 
             </div>
           </div>
         </div>
       </main>
+      {/* --- Option 2: Refined & Friendly Delivery Checker --- */}
+      <div className="w-[90%] lg:w-[70%] mx-auto p-5 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-1 text-center">
+          🚚 Check Delivery Availability
+        </h3>
+        <p className="text-sm text-gray-500 mb-4 text-center">
+          Enter your pincode to see if we can reach your doorstep.
+        </p>
+
+        <div className="flex items-center space-x-2">
+          <input
+            id="pincode-input"
+            type="text"
+            value={pincode}
+            onChange={handlePincodeChange}
+            placeholder="Enter Pincode"
+            onKeyDown={(e) => e.key === 'Enter' && checkDeliveryAvailability()}
+            maxLength="6"
+            className="flex-grow w-full px-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 shadow-inner 
+focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300 focus:bg-white placeholder-gray-400 transition-all"
+          />
+
+          <button
+            onClick={checkDeliveryAvailability}
+            disabled={pincodeLoading}
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all disabled:bg-gray-400"
+          >
+            {pincodeLoading ? "..." : "Check"}
+          </button>
+        </div>
+
+        {pincode.length > 0 && !/^\d{6}$/.test(pincode) && (
+          <p className="text-xs text-red-500 mt-1 text-center">
+            Please enter a valid 6-digit pincode.
+          </p>
+        )}
+
+        {pincodeDetails && (
+          <div
+            className={`mt-4 text-sm rounded-xl p-4 text-center shadow-inner transition-all ${pincodeDetails.isServiceable
+              ? "bg-green-50 text-green-800 border border-green-100"
+              : "bg-red-50 text-red-800 border border-red-100"
+              }`}
+          >
+            {pincodeDetails.isServiceable ? (
+              <div>
+                <p className="font-semibold text-green-900">
+                  🎉 Great news! We deliver to <strong>{pincode}</strong>.
+                </p>
+                <ul className="text-xs list-disc list-inside text-left mt-2 text-gray-700 space-y-1 pl-4">
+                  <li>
+                    Delivery Charge: <strong>₹{pincodeDetails.deliveryCharge}</strong>
+                  </li>
+                  <li>
+                    Payment Options: <strong>{pincodeDetails.codAvailable ? 'Cash on Delivery & Online' : 'Online Only'}</strong>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <div>
+                <p className="font-medium">
+                  😔 Sorry! We don’t deliver to <strong>{pincode}</strong> yet.
+                </p>
+                <p className="text-xs mt-1 text-red-600">
+                  Stay tuned — we’re expanding to your area soon!
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
 
       {!isBuyNowActive && (
         <div id="remaining-products-container">

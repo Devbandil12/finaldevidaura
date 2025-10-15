@@ -9,9 +9,10 @@ import { CouponContext } from "../contexts/CouponContext";
 import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
+import PincodeManager from "./PincodeManager";
 import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
-import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes } from 'react-icons/fa';
+import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaHeart, FaBars, FaTimes,  FaMapMarkerAlt } from 'react-icons/fa';
 
 // Placeholder components for the new UI
 const OrderDetailsPopup = ({ order, onClose }) => {
@@ -304,6 +305,9 @@ const AdminPanel = () => {
             </button>
             <button onClick={() => handleTabClick("carts")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "carts" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
               <FaShoppingCart /><span>Carts & Wishlists</span>
+            </button>
+            <button onClick={() => handleTabClick("pincodes")} className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${activeTab === "pincodes" ? "bg-indigo-600 text-white" : "hover:bg-gray-200"}`}>
+              <FaMapMarkerAlt /><span>Pincodes</span>
             </button>
           </nav>
         </div>
@@ -640,6 +644,8 @@ const AdminPanel = () => {
 
           {/* Carts & Wishlists Tab */}
           {activeTab === "carts" && <CartsWishlistsTab />}
+
+          {activeTab === "pincodes" && <PincodeManager />}
         </div>
       </div>
     )
