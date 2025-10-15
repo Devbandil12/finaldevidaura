@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   // The key change to fix the refresh issue is correctly implemented here
-  base: './',
+  base: '/',
   
   plugins: [
     react(),
