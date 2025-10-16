@@ -25,9 +25,6 @@ import BillCreator from "./Components/BillCreator";
 import PrivacyPolicy from "./Components/PrivacyPolicy";
 import TermsAndConditions from "./Components/TermsAndConditions";
 
-// Styles
-import "./style/adminPanel.css";
-
 // Utilities & Contexts
 import ScrollToTop from "./ScrollToTop";
 import { ProductProvider } from "./contexts/productContext";

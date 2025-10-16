@@ -399,6 +399,15 @@ const Navbar = ({ onVisibilityChange }) => {
                     <ul>
                       <li
                         onClick={() => {
+                          navigate("/myaccount");
+                          setIsProfileOpen(false);
+                        }}
+                      >
+                        <img src={ProfileIcon} alt="" />
+                        <a>My Account</a>
+                      </li>
+                      <li
+                        onClick={() => {
                           navigate("/myorder");
                           setIsProfileOpen(false);
                         }}
