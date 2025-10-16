@@ -12,6 +12,7 @@ import CartImage from "../assets/cart-svgrepo-com copy.svg";
 import { toast } from "react-toastify";
 import Loader from "./Loader";
 import HeroButton from "./HeroButton";
+import { FaShoppingCart } from "react-icons/fa";
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -335,6 +336,13 @@ const ShoppingCart = () => {
   return (
     <>
       <main className="main-container">
+        <div className="flex items-center justify-between  p-4 rounded-2xl ">
+          <div className="flex items-center gap-3">
+            <FaShoppingCart className="text-gray-700 text-2xl hover:text-gray-900 transition-colors" />
+            <h2 className="text-2xl font-semibold text-gray-800">Your Cart</h2>
+          </div>
+          {/* <span className="text-sm text-gray-500">{cart.length >= 0 ? cart.length : ""} items</span> */}
+        </div>
         <div className="cart-item-summary-container">
           <div className="cart-items-box">
             {activeCart.length > 0 ? (
@@ -473,78 +481,79 @@ const ShoppingCart = () => {
             </div>
           </div>
         </div>
-      </main>
-      {/* --- Option 2: Refined & Friendly Delivery Checker --- */}
-      <div className="w-[90%] lg:w-[70%] mx-auto p-5 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-1 text-center">
-          🚚 Check Delivery Availability
-        </h3>
-        <p className="text-sm text-gray-500 mb-4 text-center">
-          Enter your pincode to see if we can reach your doorstep.
-        </p>
-
-        <div className="flex items-center space-x-2">
-          <input
-            id="pincode-input"
-            type="text"
-            value={pincode}
-            onChange={handlePincodeChange}
-            placeholder="Enter Pincode"
-            onKeyDown={(e) => e.key === 'Enter' && checkDeliveryAvailability()}
-            maxLength="6"
-            className="flex-grow w-full px-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 shadow-inner 
-focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300 focus:bg-white placeholder-gray-400 transition-all"
-          />
-
-          <button
-            onClick={checkDeliveryAvailability}
-            disabled={pincodeLoading}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all disabled:bg-gray-400"
-          >
-            {pincodeLoading ? "..." : "Check"}
-          </button>
-        </div>
-
-        {pincode.length > 0 && !/^\d{6}$/.test(pincode) && (
-          <p className="text-xs text-red-500 mt-1 text-center">
-            Please enter a valid 6-digit pincode.
+        {/* --- Option 2: Refined & Friendly Delivery Checker --- */}
+        <div className="w-[96%] mx-auto p-5 bg-white rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.03)] ">
+          <h3 className="text-lg font-semibold text-gray-800 mb-1 text-center">
+            🚚 Check Delivery Availability
+          </h3>
+          <p className="text-sm text-gray-500 mb-4 text-center">
+            Enter your pincode to see if we can reach your doorstep.
           </p>
-        )}
 
-        {pincodeDetails && (
-          <div
-            className={`mt-4 text-sm rounded-xl p-4 text-center shadow-inner transition-all ${pincodeDetails.isServiceable
-              ? "bg-green-50 text-green-800 border border-green-100"
-              : "bg-red-50 text-red-800 border border-red-100"
-              }`}
-          >
-            {pincodeDetails.isServiceable ? (
-              <div>
-                <p className="font-semibold text-green-900">
-                  🎉 Great news! We deliver to <strong>{pincode}</strong>.
-                </p>
-                <ul className="text-xs list-disc list-inside text-left mt-2 text-gray-700 space-y-1 pl-4">
-                  <li>
-                    Delivery Charge: <strong>₹{pincodeDetails.deliveryCharge}</strong>
-                  </li>
-                  <li>
-                    Payment Options: <strong>{pincodeDetails.codAvailable ? 'Cash on Delivery & Online' : 'Online Only'}</strong>
-                  </li>
-                </ul>
-              </div>
-            ) : (
-              <div>
-                <p className="font-medium">
-                  😔 Sorry! We don’t deliver to <strong>{pincode}</strong> yet.
-                </p>
-                <p className="text-xs mt-1 text-red-600">
-                  Stay tuned — we’re expanding to your area soon!
-                </p>
-              </div>
-            )}
+          <div className="flex items-center space-x-2">
+            <input
+              id="pincode-input"
+              type="text"
+              value={pincode}
+              onChange={handlePincodeChange}
+              placeholder="Enter Pincode"
+              onKeyDown={(e) => e.key === 'Enter' && checkDeliveryAvailability()}
+              maxLength="6"
+              className="flex-grow w-full px-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 shadow-inner 
+focus:outline-none focus:border-black-400 focus:ring-1 focus:ring-black-300 focus:bg-white placeholder-gray-400 transition-all"
+            />
+
+            <button
+              onClick={checkDeliveryAvailability}
+              disabled={pincodeLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg shadow  disabled:bg-gray-400"
+            >
+              {pincodeLoading ? "..." : "Check"}
+            </button>
           </div>
-        )}
-      </div>
+
+          {pincode.length > 0 && !/^\d{6}$/.test(pincode) && (
+            <p className="text-xs text-red-500 mt-1 text-center">
+              Please enter a valid 6-digit pincode.
+            </p>
+          )}
+
+          {pincodeDetails && (
+            <div
+              className={`mt-4 text-sm rounded-xl p-4 text-center shadow-inner transition-all ${pincodeDetails.isServiceable
+                ? "bg-green-50 text-green-800 border border-green-100"
+                : "bg-red-50 text-red-800 border border-red-100"
+                }`}
+            >
+              {pincodeDetails.isServiceable ? (
+                <div>
+                  <p className="font-semibold text-green-900">
+                    🎉 Great news! We deliver to <strong>{pincode}</strong>.
+                  </p>
+                  <ul className="text-xs list-disc list-inside text-left mt-2 text-gray-700 space-y-1 pl-4">
+                    <li>
+                      Delivery Charge: <strong>₹{pincodeDetails.deliveryCharge}</strong>
+                    </li>
+                    <li>
+                      Payment Options: <strong>{pincodeDetails.codAvailable ? 'Cash on Delivery & Online' : 'Online Only'}</strong>
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <div>
+                  <p className="font-medium">
+                    😔 Sorry! We don’t deliver to <strong>{pincode}</strong> yet.
+                  </p>
+                  <p className="text-xs mt-1 text-red-600">
+                    Stay tuned — we’re expanding to your area soon!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+
 
 
       {!isBuyNowActive && (

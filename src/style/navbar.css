@@ -5,7 +5,7 @@ header {
   width: 100%;
   display: flex;
   justify-content: center;
-  position: absolute;
+  /* position: absolute; */
   align-items: center;
   z-index: 9999;
 }

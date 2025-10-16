@@ -9,9 +9,10 @@ export const AdminProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reportOrders, setReportOrders] = useState([]);
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
-
+  const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   /* -------------------- USERS -------------------- */
   const getAllUsers = useCallback(async () => {
     try {
@@ -156,6 +157,22 @@ export const AdminProvider = ({ children }) => {
     console.log("Exporting orders:", selectedOrders);
   };
 
+
+  const getReportData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${BASE}/api/orders/details/for-reports`);
+      if (!res.ok) throw new Error("Failed to fetch report data");
+      const data = await res.json();
+      setReportOrders(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not load report data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [BASE]);
+
   /* -------------------- EFFECT -------------------- */
   useEffect(() => {
     getAllUsers();
@@ -173,11 +190,13 @@ export const AdminProvider = ({ children }) => {
         deleteUser,
         exportUsers,
         getAllOrders,
-        getSingleOrderDetails, // Add the new function to the context value
+        getSingleOrderDetails,
         updateOrderStatus,
         cancelOrder,
         exportOrders,
         createCoupon,
+        reportOrders,
+        getReportData,
       }}
     >
       {children}
