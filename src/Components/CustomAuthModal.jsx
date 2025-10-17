@@ -1,276 +1,273 @@
-// src/components/CustomAuthPage.jsx
-
 import React, { useState, useRef, useEffect } from "react";
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import gsap from "gsap";
-import "../style/CustomAuthModal.css";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle } from "lucide-react";
 
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
 import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
 import GoogleIcon from "../assets/images/google.png";
 
 export default function CustomAuthPage() {
-  const [isSignUp, setIsSignUp] = useState(true);
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [otpSent, setOtpSent] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [error, setError] = useState("");
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [formLoading, setFormLoading] = useState(false);
-  const [verified, setVerified] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [isSignUp, setIsSignUp] = useState(true);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState(Array(6).fill(""));
+  const [otpSent, setOtpSent] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
-  const { signUp, setActive: setSignUpActive } = useSignUp();
-  const { signIn, setActive: setSignInActive } = useSignIn();
-  const navigate = useNavigate();
+  const { signUp, setActive: setSignUpActive } = useSignUp();
+  const { signIn, setActive: setSignInActive } = useSignIn();
+  const navigate = useNavigate();
 
-  const fieldsRef = useRef();
-  const imageRef = useRef();
-  const otpRefs = useRef([]);
+  const otpRefs = useRef([]);
 
-  const isMobile = () => window.innerWidth <= 768;
-
-  useEffect(() => {
-    if (isMobile()) {
-      gsap.set(fieldsRef.current, { y: "0%" });
-      gsap.set(imageRef.current, { y: "0%" });
-    } else {
-      gsap.set(fieldsRef.current, { x: isSignUp ? "0%" : "100%" });
-      gsap.set(imageRef.current, { x: isSignUp ? "0%" : "-100%" });
-    }
-  }, [isSignUp]);
-
-  const handleToggle = () => {
-    const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.inOut" } });
-    if (isMobile()) {
-      tl.to(imageRef.current, { y: "-130%" }, 0);
-      tl.to(fieldsRef.current, { y: "130%" }, 0);
-      tl.add(() => setIsSignUp(prev => !prev), 0.3);
-      tl.to(fieldsRef.current, { y: "0%" }, 0.5);
-      tl.to(imageRef.current, { y: "0%" }, 0.5);
-    } else {
-      tl.to(fieldsRef.current, { x: isSignUp ? "100%" : "0%" }, 0);
-      tl.to(imageRef.current, { x: isSignUp ? "-100%" : "0%" }, 0);
-      tl.add(() => setIsSignUp(prev => !prev), 0.3);
-    }
-    setOtp(["", "", "", "", "", ""]);
-    setOtpSent(false);
-    setError("");
-    setSendingOtp(false);
-    setFormLoading(false);
-    setVerified(false);
-  };
-
-  useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [cooldown]);
-
-  const handleSendOtp = async () => {
-    if (!email) return;
-    setError("");
-    setSendingOtp(true);
-    try {
-      if (isSignUp) {
-        await signUp.create({ emailAddress: email, firstName, lastName });
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      } else {
-        await signIn.create({ identifier: email, strategy: "email_code" });
-      }
-      setOtpSent(true);
-      setCooldown(30); // 30-second resend cooldown
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Failed to send OTP.");
-    } finally {
-      setSendingOtp(false);
-    }
-  };
-
-  const handleOtpChange = (val, idx) => {
-    const newOtp = [...otp];
-    newOtp[idx] = val;
-    setOtp(newOtp);
-
-    if (val && idx < 5) {
-      otpRefs.current[idx + 1]?.focus();
-    }
-
-    if (newOtp.every(d => d.length === 1)) {
-      verifyOtp(newOtp.join(""));
-    }
-  };
-
-  const verifyOtp = async (code) => {
-    setFormLoading(true);
-    setError("");
-    try {
-      let result;
-      if (isSignUp) {
-        result = await signUp.attemptEmailAddressVerification({ code });
-        if (result.status === "complete") {
-          await setSignUpActive({ session: result.createdSessionId });
-          setVerified(true);
-          setTimeout(() => navigate("/"), 1200);
-        }
-      } else {
-        result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
-        if (result.status === "complete") {
-          await setSignInActive({ session: result.createdSessionId });
-          setVerified(true);
-          setTimeout(() => navigate("/"), 1200);
-        }
-      }
-    } catch (err) {
-      const msg = err.errors?.[0]?.message;
-      if (msg?.includes("Too many requests")) {
-        setError("Too many attempts. Please try again later.");
-      } else {
-        setError(msg || "OTP verification failed.");
-      }
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs.current[0]?.focus();
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleGoogle = async () => {
+  const handleToggle = () => {
+    setIsSignUp(prev => !prev);
+    // Reset all form fields
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setOtp(Array(6).fill(""));
+    setOtpSent(false);
     setError("");
-    setFormLoading(true);
+    setSendingOtp(false);
+    setVerifying(false);
+    setVerified(false);
+    setCooldown(0);
+  };
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  const handleSendOtp = async () => {
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+    setError("");
+    setSendingOtp(true);
+    try {
+      if (isSignUp) {
+        await signUp.create({ emailAddress: email, firstName, lastName });
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      } else {
+        await signIn.create({ identifier: email, strategy: "email_code" });
+      }
+      setOtpSent(true);
+      setCooldown(30);
+    } catch (err) {
+      setError(err.errors?.[0]?.message || "Failed to send OTP.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleOtpChange = (e, idx) => {
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    if (value.length > 1) return;
+
+    const newOtp = [...otp];
+    newOtp[idx] = value;
+    setOtp(newOtp);
+
+    if (value && idx < 5) {
+      otpRefs.current[idx + 1]?.focus();
+    }
+
+    if (newOtp.join("").length === 6) {
+      verifyOtp(newOtp.join(""));
+    }
+  };
+  
+  const handleKeyDown = (e, idx) => {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      otpRefs.current[idx - 1]?.focus();
+    }
+  };
+
+  const verifyOtp = async (code) => {
+    setVerifying(true);
+    setError("");
+    try {
+      let result;
+      if (isSignUp) {
+        result = await signUp.attemptEmailAddressVerification({ code });
+        if (result.status === "complete") {
+          await setSignUpActive({ session: result.createdSessionId });
+          setVerified(true);
+          setTimeout(() => navigate(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
+          sessionStorage.removeItem("post_login_redirect");
+        }
+      } else {
+        result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
+        if (result.status === "complete") {
+          await setSignInActive({ session: result.createdSessionId });
+          setVerified(true);
+          setTimeout(() => navigate(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
+          sessionStorage.removeItem("post_login_redirect");
+        }
+      }
+    } catch (err) {
+      const msg = err.errors?.[0]?.message;
+      setError(msg?.includes("Too many requests") ? "Too many attempts. Please try again later." : (msg || "OTP verification failed."));
+      setOtp(Array(6).fill(""));
+      otpRefs.current[0]?.focus();
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError("");
+    const redirectUrl = sessionStorage.getItem("post_login_redirect") || "/";
     try {
       if (isSignUp) {
         await signUp.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/"
+          redirectUrlComplete: redirectUrl,
         });
       } else {
         await signIn.authenticateWithRedirect({
           strategy: "oauth_google",
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/"
+          redirectUrlComplete: redirectUrl,
         });
       }
+      sessionStorage.removeItem("post_login_redirect");
     } catch (err) {
-      setError(err.errors?.[0]?.message || "Google auth failed");
-    } finally {
-      setFormLoading(false);
+      setError(err.errors?.[0]?.message || "Google authentication failed.");
     }
   };
 
+  const animationVariants = {
+    initial: (isSignUp) => ({
+      x: isSignUp ? "100%" : "-100%",
+      opacity: 0,
+    }),
+    animate: {
+      x: "0%",
+      opacity: 1,
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }, // Slower speed
+    },
+    exit: (isSignUp) => ({
+      x: isSignUp ? "-100%" : "100%",
+      opacity: 0,
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }, // Slower speed
+    }),
+  };
 
-  return (
-    <div className="auth-modal-main-container">
-      <div className="auth-modal-container">
-        <div className="auth-fields" ref={fieldsRef}>
-          <h2>{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 mt-[25px]">
+      <div className="w-full max-w-4xl min-h-[650px] bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
+        <AnimatePresence initial={false} mode="wait">
+          <motion.div
+            key={isSignUp ? "signup" : "login"}
+            custom={isSignUp}
+            variants={animationVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="w-full flex flex-col md:flex-row"
+          >
+            {/* Form Panel */}
+            <div className={`w-full md:w-1/2 flex flex-col justify-center p-8 md:p-12 ${isSignUp ? 'md:order-1' : 'md:order-2'}`}>
+                <h2 className="text-3xl font-bold text-zinc-900 mb-6">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+                <button
+                    onClick={handleGoogle}
+                    className="flex items-center justify-center gap-3 w-full py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                    <img src={GoogleIcon} alt="Google" className="w-5 h-5" />
+                    {isSignUp ? "Sign up with Google" : "Sign in with Google"}
+                </button>
+                <div className="flex items-center my-6">
+                    <div className="flex-grow h-px bg-gray-200"></div>
+                    <span className="px-2 text-xs text-gray-400 font-medium">OR</span>
+                    <div className="flex-grow h-px bg-gray-200"></div>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
+                    {isSignUp && (
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="relative">
+                            <input id="fname" type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="First Name" required />
+                            <label htmlFor="fname" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">First Name</label>
+                        </div>
+                        <div className="relative">
+                            <input id="lname" type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Last Name" required />
+                            <label htmlFor="lname" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Last Name</label>
+                        </div>
+                        </div>
+                    )}
+                    <div className="relative mb-4">
+                        <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Email Address" required />
+                        <label htmlFor="email" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Email Address</label>
+                    </div>
+                    {!otpSent ? (
+                        <button type="submit" disabled={sendingOtp} className="w-full bg-black text-white py-3 rounded-lg font-semibold text-sm hover:bg-zinc-800 transition-colors disabled:bg-gray-300">
+                        {sendingOtp ? "Sending..." : "Continue"}
+                        </button>
+                    ) : (
+                        <div className="text-center">
+                        <p className="text-sm text-gray-600 mb-4">Enter the code sent to your email.</p>
+                        <div className="flex justify-center gap-2 mb-4">
+                            {otp.map((digit, i) => (
+                            <input
+                                key={i}
+                                ref={el => (otpRefs.current[i] = el)}
+                                type="tel"
+                                maxLength={1}
+                                value={digit}
+                                onChange={e => handleOtpChange(e, i)}
+                                onKeyDown={e => handleKeyDown(e, i)}
+                                className={`w-12 h-14 text-center text-2xl font-semibold border-2 rounded-lg transition-all duration-300 ${verified ? 'border-green-500 bg-green-50' : 'border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500'}`}
+                                disabled={verifying || verified}
+                            />
+                            ))}
+                        </div>
+                        {verified ? (
+                            <div className="flex items-center justify-center gap-2 text-green-600 font-semibold">
+                            <CheckCircle size={20} /> Verified! Redirecting...
+                            </div>
+                        ) : (
+                            <button type="button" onClick={handleSendOtp} disabled={sendingOtp || cooldown > 0} className="text-sm text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline">
+                            {sendingOtp ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+                            </button>
+                        )}
+                        </div>
+                    )}
+                </form>
+                {error && <p className="text-red-600 text-sm mt-4 text-center">{error}</p>}
+                <p className="text-center text-sm text-gray-600 mt-8">
+                {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                <span onClick={handleToggle} className="font-semibold text-indigo-600 cursor-pointer hover:underline">
+                    {isSignUp ? "Log In" : "Sign Up"}
+                </span>
+                </p>
+            </div>
 
-          <button className="google-btn" onClick={handleGoogle}>
-            <img src={GoogleIcon} alt="Google" className="google-icon" />
-            {isSignUp ? "Sign up with Google" : "Sign in with Google"}
-          </button>
-
-          <div className="divider"><span>OR</span></div>
-
-          {isSignUp && (
-            <div className="name-row">
-              <div className="floating-group">
-                <input
-                  type="text"
-                  placeholder="First Name"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  required
-                />
-                <label>First Name</label>
-              </div>
-              <div className="floating-group">
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  required
-                />
-                <label>Last Name</label>
-              </div>
-            </div>
-          )}
-
-          <div className="floating-group">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <label>Email Address</label>
-          </div>
-
-          <div className="otp-row">
-            <div className="otp-boxes">
-              {[0, 1, 2, 3, 4, 5].map((_, i) => (
-               <input
-  key={i}
-  type="tel"
-  inputMode="numeric"
-  pattern="\d{1}"
-  maxLength={1}
-  ref={el => (otpRefs.current[i] = el)}
-  value={otp[i]}
-  onChange={e => handleOtpChange(e.target.value, i)}
-  className={`otp-input ${verified ? "otp-verified" : ""}`}
-  autoComplete="one-time-code"
-  aria-label={`OTP digit ${i + 1}`}
-/>
-
-              ))}
-            </div>
-            <button
-              type="button"
-              className="send-otp-btn"
-              onClick={handleSendOtp}
-              disabled={sendingOtp || cooldown > 0}
-            >
-              {sendingOtp
-                ? "Sending..."
-                : otpSent
-                ? cooldown > 0
-                  ? `Resend in ${cooldown}s`
-                  : "Resend OTP"
-                : "Send OTP"}
-            </button>
-          </div>
-
-          {error && <div className="error">{error}</div>}
-
-          <p className="toggle-text">
-            {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <span onClick={handleToggle}>
-              {isSignUp ? "Log in" : "Sign up"}
-            </span>
-          </p>
-        </div>
-
-        <div className="auth-image" ref={imageRef}>
-          <img
-            src={isSignUp ? SignUpImage : SignInImage}
-            alt="Auth Visual"
-            className="cutout-img"
-          />
-          <div className="image-overlay-text">
-            {isSignUp
-              ? "Join the fragrance revolution."
-              : "Welcome back! Great to see you again."}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+            {/* Image Panel */}
+            <div className={`relative w-full md:w-1/2 h-64 md:h-full ${isSignUp ? 'md:order-2' : 'md:order-1'}`}>
+                <img src={isSignUp ? SignUpImage : SignInImage} alt="Authentication" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/30"></div>
+                <div className="absolute bottom-0 left-0 p-8 md:p-12">
+                    <h3 className="text-white text-2xl md:text-3xl font-semibold leading-tight max-w-sm text-shadow">
+                        {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
+                    </h3>
+                </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
 }

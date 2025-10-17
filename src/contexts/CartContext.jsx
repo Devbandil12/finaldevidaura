@@ -332,6 +332,33 @@ export const CartProvider = ({ children }) => {
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
   
+  // NEW FUNCTION: clearWishlist
+  const clearWishlist = useCallback(async () => {
+    if (!isSignedIn) {
+      setWishlist([]);
+      writeLS(LS_WISHLIST_KEY, []);
+      toast.info("Wishlist cleared.");
+      return;
+    }
+
+    if (!userdetails?.id) {
+      toast.error("Please sign in to clear your wishlist.");
+      return;
+    }
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to clear wishlist");
+      setWishlist([]);
+      toast.info("Wishlist cleared.");
+    } catch (e) {
+      console.error("clearWishlist error:", e);
+      toast.error("Failed to clear wishlist.");
+      await getwishlist();
+    }
+  }, [isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]);
+  
   const toggleWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
@@ -382,9 +409,7 @@ export const CartProvider = ({ children }) => {
   const mergedOnceRef = useRef(false);
   
   useEffect(() => {
-    // This effect ensures the loading state is always handled.
     if (isSignedIn && userdetails?.id) {
-      // User is signed in and details are available, fetch from DB
       getCartitems();
       getwishlist();
 
@@ -396,13 +421,10 @@ export const CartProvider = ({ children }) => {
         })();
       }
     } else if (!isSignedIn) {
-      // User is not signed in, set loading to false and use local storage
       setIsCartLoading(false);
       setIsWishlistLoading(false);
       mergedOnceRef.current = false;
     }
-    // The case where isSignedIn is true but userdetails.id is null is handled by the initial state
-    // and this effect simply waits for userdetails.id to become available.
   }, [isSignedIn, userdetails?.id, getCartitems, getwishlist, mergeGuestCartIntoDB, mergeGuestWishlistIntoDB]);
 
   const startBuyNow = useCallback((product, quantity) => {
@@ -432,6 +454,7 @@ export const CartProvider = ({ children }) => {
         getwishlist,
         addToWishlist,
         removeFromWishlist,
+        clearWishlist, 
         toggleWishlist,
         startBuyNow,
         clearBuyNow,
