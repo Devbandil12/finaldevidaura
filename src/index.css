@@ -2,6 +2,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* For floating labels on inputs */
+  .form-input {
+    @apply block w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg appearance-none;
+    @apply focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black;
+  }
+
+  .floating-label {
+    @apply absolute top-3 left-4 text-base text-slate-400 pointer-events-none transition-all duration-200 ease-in-out;
+    @apply peer-placeholder-shown:text-base peer-placeholder-shown:top-3;
+    @apply peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-black;
+    @apply peer-[:not(:placeholder-shown)]:-top-2.5 peer-[:not(:placeholder-shown)]:text-xs peer-[:not(:placeholder-shown)]:text-black bg-white px-1;
+  }
+}
+
 @font-face {
   font-family: Luxury;
   src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
@@ -10,6 +26,7 @@
 html {
   overflow-x: hidden !important;
 }
+
 body {
   overflow-x: hidden !important;
   font-family: "Luxury";
@@ -20,7 +37,8 @@ body {
 
 /* Scrollbar container */
 ::-webkit-scrollbar {
-  width: 6px; /* width for vertical scrollbar */
+  width: 6px;
+  /* width for vertical scrollbar */
   margin-right: 5px;
 }
 
@@ -49,8 +67,10 @@ body {
 }
 
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 
@@ -83,8 +103,15 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
@@ -142,12 +169,12 @@ All colors MUST be HSL.
     --bronze: 30 60% 48%;
     --navy: 240 40% 25%;
     --navy-light: 240 30% 40%;
-    
+
     /* Gradients */
     --gradient-gold: linear-gradient(135deg, hsl(var(--gold-dark)), hsl(var(--gold)), hsl(var(--gold-light)));
     --gradient-luxury: linear-gradient(135deg, hsl(var(--cream)), hsl(var(--cream-dark)));
     --gradient-rose: linear-gradient(135deg, hsl(var(--rose)), hsl(var(--rose-light)));
-    
+
     /* Shadows */
     --shadow-glow: 0 0 60px hsl(var(--gold) / 0.4);
     --shadow-luxury: 0 30px 80px -10px hsl(var(--gold) / 0.3);
@@ -207,9 +234,12 @@ All colors MUST be HSL.
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+
 }
 
 @layer base {
+
   /* Fallback to CSS vars directly to ensure styles apply even if Tailwind classes are not generated yet */
   * {
     border-color: hsl(var(--border));
@@ -228,8 +258,13 @@ All colors MUST be HSL.
 
 /* shimmer animation fallback (matches tailwind.config.js) */
 @keyframes shimmer {
-  0% { background-position: -100% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -100% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-shimmer {
@@ -249,16 +284,35 @@ All colors MUST be HSL.
 }
 
 /* Ensure gold utility fallbacks (for bg-gold, text-gold, border-gold) */
-.bg-gold { background-color: hsl(var(--gold)); }
-.text-gold { color: hsl(var(--gold)); }
-.border-gold { border-color: hsl(var(--gold)); }
+.bg-gold {
+  background-color: hsl(var(--gold));
+}
+
+.text-gold {
+  color: hsl(var(--gold));
+}
+
+.border-gold {
+  border-color: hsl(var(--gold));
+}
 
 /* Allow opacity variations like bg-gold/20 as fallback by providing
    semi-transparent helper classes used in templates */
-.bg-gold-10 { background-color: hsl(var(--gold) / 0.1); }
-.bg-gold-20 { background-color: hsl(var(--gold) / 0.2); }
-.bg-gold-30 { background-color: hsl(var(--gold) / 0.3); }
-.bg-gold-50 { background-color: hsl(var(--gold) / 0.5); }
+.bg-gold-10 {
+  background-color: hsl(var(--gold) / 0.1);
+}
+
+.bg-gold-20 {
+  background-color: hsl(var(--gold) / 0.2);
+}
+
+.bg-gold-30 {
+  background-color: hsl(var(--gold) / 0.3);
+}
+
+.bg-gold-50 {
+  background-color: hsl(var(--gold) / 0.5);
+}
 
 /* Targeted gradient text fallbacks used by the hero so important lines show
    gold/rose gradients even when Tailwind JIT classes aren't present. */
@@ -282,48 +336,117 @@ All colors MUST be HSL.
 
 /* Escaped variants for Tailwind-style opacity shorthand (eg. bg-gold/30) used in templates.
    These provide fallbacks when Tailwind's JIT hasn't generated the exact utilities. */
-.bg-gold\/30 { background-color: hsl(var(--gold) / 0.3); }
-.bg-gold\/20 { background-color: hsl(var(--gold) / 0.2); }
-.bg-gold\/10 { background-color: hsl(var(--gold) / 0.1); }
-.border-gold\/30 { border-color: hsl(var(--gold) / 0.3); }
-.border-gold\/20 { border-color: hsl(var(--gold) / 0.2); }
-.from-gold\/5 { --tw-gradient-from: hsl(var(--gold) / 0.05); }
-.from-gold\/10 { --tw-gradient-from: hsl(var(--gold) / 0.1); }
-.from-gold\/20 { --tw-gradient-from: hsl(var(--gold) / 0.2); }
-.via-gold\/10 { --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold) / 0.1), var(--tw-gradient-to); }
+.bg-gold\/30 {
+  background-color: hsl(var(--gold) / 0.3);
+}
+
+.bg-gold\/20 {
+  background-color: hsl(var(--gold) / 0.2);
+}
+
+.bg-gold\/10 {
+  background-color: hsl(var(--gold) / 0.1);
+}
+
+.border-gold\/30 {
+  border-color: hsl(var(--gold) / 0.3);
+}
+
+.border-gold\/20 {
+  border-color: hsl(var(--gold) / 0.2);
+}
+
+.from-gold\/5 {
+  --tw-gradient-from: hsl(var(--gold) / 0.05);
+}
+
+.from-gold\/10 {
+  --tw-gradient-from: hsl(var(--gold) / 0.1);
+}
+
+.from-gold\/20 {
+  --tw-gradient-from: hsl(var(--gold) / 0.2);
+}
+
+.via-gold\/10 {
+  --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold) / 0.1), var(--tw-gradient-to);
+}
 
 /* Gradient direction fallbacks (use --tw-gradient-* variables set by from-/via-/to- helpers) */
-.bg-gradient-to-r { background-image: linear-gradient(90deg, var(--tw-gradient-stops)); }
-.bg-gradient-to-br { background-image: linear-gradient(135deg, var(--tw-gradient-stops)); }
-.bg-gradient-to-t { background-image: linear-gradient(0deg, var(--tw-gradient-stops)); }
+.bg-gradient-to-r {
+  background-image: linear-gradient(90deg, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-br {
+  background-image: linear-gradient(135deg, var(--tw-gradient-stops));
+}
+
+.bg-gradient-to-t {
+  background-image: linear-gradient(0deg, var(--tw-gradient-stops));
+}
 
 /* Simple gradient stop utilities for common tokens used in Hero */
-.from-gold { --tw-gradient-from: hsl(var(--gold)); --tw-gradient-to: hsl(var(--gold)); }
-.via-gold-light { --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold-light)), var(--tw-gradient-to); }
-.to-gold { --tw-gradient-to: hsl(var(--gold)); }
-.from-rose { --tw-gradient-from: hsl(var(--rose)); }
-.to-rose { --tw-gradient-to: hsl(var(--rose)); }
-.from-cream { --tw-gradient-from: hsl(var(--cream)); }
+.from-gold {
+  --tw-gradient-from: hsl(var(--gold));
+  --tw-gradient-to: hsl(var(--gold));
+}
+
+.via-gold-light {
+  --tw-gradient-stops: var(--tw-gradient-from), hsl(var(--gold-light)), var(--tw-gradient-to);
+}
+
+.to-gold {
+  --tw-gradient-to: hsl(var(--gold));
+}
+
+.from-rose {
+  --tw-gradient-from: hsl(var(--rose));
+}
+
+.to-rose {
+  --tw-gradient-to: hsl(var(--rose));
+}
+
+.from-cream {
+  --tw-gradient-from: hsl(var(--cream));
+}
 
 /* Small pulse fallback for the dot inside the premium badge */
 .animate-pulse {
-  animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+  animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;
 }
+
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: .6; transform: scale(.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .6;
+    transform: scale(.85);
+  }
 }
 
 /* CTA arrow fallback to ensure visibility against gradient buttons */
 .cta-arrow {
   display: inline-block;
-  color: white; /* default on gold gradient */
+  color: white;
+  /* default on gold gradient */
   transform-origin: center;
   animation: cta-bob 1.5s ease-in-out infinite;
 }
+
 @keyframes cta-bob {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
 }
-
-

@@ -4,33 +4,71 @@ import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
-import { ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+// --- A mock Button component to replicate the style of shadcn/ui ---
+// In a real project, you would import this from your actual UI library
+const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children }) => {
+  const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
+
+  const sizeStyles = {
+    default: "h-10 py-2 px-4",
+    sm: "h-9 px-3 rounded-md",
+    lg: "h-11 px-8 rounded-md",
+    icon: "h-10 w-10",
+  };
+
+  const variantStyles = {
+    primary: "bg-gray-900 text-gray-50 hover:bg-gray-900/90", // Mapped to 'primary'
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-100/80", // Mapped to 'secondary'
+    destructive: "bg-red-600 text-gray-50 hover:bg-red-600/90", // Mapped to 'destructive'
+    ghost: "hover:bg-gray-100 hover:text-gray-900",
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
+
+// --- Animation Variants for Buttons ---
+const buttonVariants = {
+  hover: {
+    scale: 1.03,
+    transition: { type: "spring", stiffness: 400, damping: 15 }
+  },
+  tap: {
+    scale: 0.97
+  }
+};
+
+const iconVariants = {
+  tap: {
+    scale: 1.2,
+    rotate: -10,
+    transition: { type: "spring", stiffness: 300, damping: 10 }
+  }
+};
+
 
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
-  const { 
-    cart, 
-    wishlist, 
-    addToCart, 
-    removeFromCart, 
-    toggleWishlist, 
-    startBuyNow 
-  } = useContext(CartContext);
-  
+  const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+
   const { productId } = useParams();
-  
-  // --- HOOKS ---
-  // All hooks are now at the top level, before any conditional returns.
   const [product, setProduct] = useState(null);
   const [isFindingProduct, setIsFindingProduct] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
 
   useEffect(() => {
-    // This effect finds the product once the main product list is loaded.
     if (!productsLoading) {
       const foundProduct = products.find((p) => p.id === productId);
       setProduct(foundProduct);
@@ -39,275 +77,274 @@ const ProductDetail = () => {
   }, [productId, products, productsLoading]);
 
   useEffect(() => {
-    // This effect runs only after a product has been successfully found.
     if (product) {
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [product]); // Depend on 'product' to ensure it runs at the right time.
+  }, [product]);
 
-  // --- LOADING & NOT FOUND STATES ---
-  // These conditional returns are now placed *after* all hooks have been called.
   if (productsLoading || isFindingProduct) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Loading product details...</p>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-transparent rounded-full animate-spin" />
+          <p className="text-lg text-gray-800 font-medium">Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (!product) {
-    return <div className="text-center p-8">Product not found.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white px-4">
+        <div className="text-center p-8 bg-gray-50 rounded-xl shadow-lg max-w-md">
+          <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">Product Not Found</h2>
+          <p className="text-gray-500 mb-6">The fragrance you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate("/")}>Return Home</Button>
+        </div>
+      </div>
+    );
   }
 
-  // --- DERIVED STATE & LOGIC ---
-  // This logic will only run if a product is found and we don't return early.
-  
-  // Safely parse image URLs
   const allImages = (() => {
-    if (!product.imageurl) return [];
     try {
-      return typeof product.imageurl === 'string' 
-        ? JSON.parse(product.imageurl) 
-        : product.imageurl;
+      return typeof product.imageurl === "string" ? JSON.parse(product.imageurl) : product.imageurl || [];
     } catch (e) {
-      console.error("Failed to parse imageurl string:", e);
+      console.error("Error parsing imageurl", e);
       return [];
     }
   })();
-  
   const isInCart = cart?.some((i) => i.product?.id === product.id);
   const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
-
   const basePrice = Math.floor(Number(product.oprice) || 0);
   const discount = Math.floor(Number(product.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
-
-  // --- HANDLER FUNCTIONS ---
-  const changeImage = (delta) =>
-    setCurrentImg((idx) => (idx + delta + allImages.length) % allImages.length);
-
+  const changeImage = (newIndex) => setCurrentImg(newIndex);
   const handleAddToCart = async () => {
-    if (isInCart) {
-      await removeFromCart(product);
-    } else {
-      await addToCart(product, quantity);
-    }
+    isInCart ? await removeFromCart(product) : await addToCart(product, quantity);
   };
-
   const handleBuyNow = async () => {
     startBuyNow(product, quantity);
-    navigate("/cart", { replace: true });
+    navigate("/cart", {
+      replace: true,
+      state: { isBuyNow: true }
+    });
   };
-
-  const handleToggleWishlist = () => {
-    toggleWishlist(product);
-  };
-
+  const handleToggleWishlist = () => toggleWishlist(product);
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: product.name,
-          text: `Check out this product: ${product.name}`,
-          url: window.location.href,
-        });
+        await navigator.share({ title: product.name, text: `Discover ${product.name}`, url: window.location.href });
       } catch (error) {
         console.error("Error sharing:", error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        alert("Product link copied to clipboard!");
-      }, (err) => {
-        console.error("Could not copy text: ", err);
-        alert("Failed to copy link. Please try again.");
-      });
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
     }
   };
 
-  // --- RENDER ---
   return (
-    <div className="product-page-container bg-white min-h-screen">
-      <div className="product-main-content bg-white rounded-lg max-w-7xl mx-auto p-4 md:p-8 mt-[50px]">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Image Gallery */}
-          <div className="lg:w-1/2">
-            <div className="relative mb-4">
-              {allImages.length > 0 && (
-                <img
-                  src={allImages[currentImg]}
-                  alt={product.name}
-                  className="w-full h-[350px] md:h-[450px] lg:h-[600px] object-cover md:object-contain rounded-lg shadow-md"
-                />
-              )}
-              {allImages.length > 1 && (
-                <>
-                  <button className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10 hover:bg-white transition-colors" onClick={() => changeImage(-1)}>
-                    <ChevronLeft size={24} />
-                  </button>
-                  <button className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md z-10 hover:bg-white transition-colors" onClick={() => changeImage(1)}>
-                    <ChevronRight size={24} />
-                  </button>
-                </>
-              )}
-            </div>
-            {allImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto p-2 justify-center">
-                {allImages.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img}
-                    alt={`Thumbnail ${idx + 1}`}
-                    className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 transition-all ${currentImg === idx ? "border-gray-900 scale-105" : "border-transparent opacity-70"}`}
-                    onClick={() => setCurrentImg(idx)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Product Info & Actions */}
-          <div className="lg:w-1/2 flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleToggleWishlist}
-                    className="p-3 transition-colors duration-200"
-                    title="Add to Wishlist"
-                  >
-                    <Heart size={24} fill={isInWishlist ? 'red' : 'none'} stroke={isInWishlist ? 'red' : 'gray'} />
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="p-3 transition-colors duration-200 "
-                    title="Share Product"
-                  >
-                    <Share2 size={24} />
-                  </button>
+    <div className="min-h-screen bg-white text-gray-800 font-sans">
+      <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
+        <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16"
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="lg:sticky lg:top-24 h-fit"
+            >
+              <div className="flex flex-col-reverse lg:flex-row gap-4">
+                {allImages.length > 1 && (
+                  <div className="hidden lg:flex flex-col gap-3">
+                    {allImages.slice(0, 5).map((img, idx) => (
+                      <motion.div
+                        key={idx}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => changeImage(idx)}
+                        className={`w-20 h-20 rounded-lg cursor-pointer bg-gray-100 overflow-hidden transition-all duration-300 ${currentImg === idx ? 'ring-2 ring-teal-500 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
+                      >
+                        <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+                <div className="relative w-full aspect-square rounded-2xl bg-gray-100 overflow-hidden shadow-lg shadow-gray-200/50 flex-1">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentImg}
+                      src={allImages.length > 0 ? allImages[currentImg] : "/placeholder.svg"}
+                      alt={product.name}
+                      initial={{ opacity: 0, scale: 1.1 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.4 }}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </AnimatePresence>
+                  {allImages.length > 1 && (
+                    <>
+                      <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="absolute top-1/2 left-4 -translate-y-1/2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md">
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      <Button onClick={() => changeImage((currentImg + 1) % allImages.length)} variant="secondary" size="icon" className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md">
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium text-gray-800">
+                        {currentImg + 1} / {allImages.length}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-             
-                                <p className="text-sm font-normal text-red-700 mt-1">
-  {product.stockStatus}
-</p>
+              {allImages.length > 1 && (
+                <div className="mt-4 flex lg:hidden gap-3 overflow-x-auto pb-2">
+                  {allImages.slice(0, 5).map((img, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => changeImage(idx)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg cursor-pointer bg-gray-100 overflow-hidden transition-all duration-300 ${currentImg === idx ? 'ring-2 ring-teal-500' : 'opacity-60'}`}
+                    >
+                      <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
 
-              {/* Price & Discount */}
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-2xl font-extrabold text-green-600">₹{discountedPrice}</span>
-                {discount > 0 && (
-                  <>
-                    <span className="text-lg text-gray-500 line-through">₹{basePrice}</span>
-                    <span className="text-md font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">{discount}% OFF</span>
-                  </>
-                )}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col"
+            >
+              <div className="mb-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
+                      {product.name}
+                    </h1>
+                    {product.stockStatus && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-600">
+                        <Sparkles className="h-3 w-3" />
+                        {product.stockStatus}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <Button onClick={handleToggleWishlist} variant="secondary" size="icon" className="rounded-full">
+                      <Heart className={`h-5 w-5 transition-colors ${isInWishlist ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
+                    </Button>
+                    <Button onClick={handleShare} variant="secondary" size="icon" className="rounded-full">
+                      <Share2 className="h-5 w-5 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-baseline gap-3 flex-wrap mb-6">
+                  <span className="text-4xl font-bold text-teal-600">
+                    ₹{discountedPrice.toLocaleString("en-IN")}
+                  </span>
+                  {discount > 0 && (
+                    <>
+                      <span className="text-xl text-gray-400 line-through">
+                        ₹{basePrice.toLocaleString("en-IN")}
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-600 text-white">
+                        {discount}% OFF
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pb-6 border-b border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Quantity:</span>
+                    <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                      <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="sm" className="rounded-none h-10 w-10 text-lg">－</Button>
+                      <span className="px-6 font-semibold text-gray-900">{quantity}</span>
+                      <Button onClick={() => setQuantity(quantity + 1)} variant="ghost" size="sm" className="rounded-none h-10 w-10 text-lg">＋</Button>
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-gray-500">Size: </span>
+                    <span className="font-semibold text-gray-900">{product.size || 100}ml</span>
+                  </div>
+                </div>
               </div>
 
-<div className="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
-  {/* Decrease */}
-  <button
-    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
-  >
-    −
-  </button>
-
-  {/* Quantity display */}
-  <span className="w-12 text-center text-lg font-semibold select-none">
-    {quantity}
-  </span>
-
-  {/* Increase */}
-  <button
-    onClick={() => setQuantity((q) => q + 1)}
-    className="w-10 h-10 flex items-center justify-center text-xl font-bold hover:bg-gray-100"
-  >
-    +
-  </button>
-</div>
-
-              {/* Description & Other Notes */}
-              <div className="space-y-4 text-gray-800 mt-[30px]">
-                {product.description && (
-                  <div>
-                    <h3 className="font-bold text-lg">Description</h3>
-                    
-                    <p className="leading-relaxed">{product.description}</p>
+              <div className="space-y-8 mb-8">
+                <div>
+                  <h2 className="text-2xl font-serif font-semibold text-gray-900 mb-3">About This Fragrance</h2>
+                  <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-xl font-serif font-semibold text-gray-900">Fragrance Profile</h3>
+                  <div className="grid gap-4">
+                    <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
+                      <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Top Notes</div>
+                      <div className="text-sm text-gray-600">{product.composition}</div>
+                    </div>
+                    <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
+                      <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Heart Notes</div>
+                      <div className="text-sm text-gray-600">{product.fragrance}</div>
+                    </div>
+                    <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
+                      <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Base Notes</div>
+                      <div className="text-sm text-gray-600">{product.fragranceNotes}</div>
+                    </div>
                   </div>
-                )}
-
-                {product.composition && (
-                  <div>
-                    <h3 className="font-bold text-lg">Top Notes</h3>
-                    <p>{product.composition}</p>
-                  </div>
-                )}
-
-                {product.fragrance && (
-                  <div>
-                    <h3 className="font-bold text-lg">Heart Notes</h3>
-                   
-                    <p>{product.fragrance}</p>
-                  </div>
-                )}
-{product.fragranceNotes && (
-                  <div>
-                    <h3 className="font-bold text-lg">Base Notes</h3>
-                    <p>{product.fragranceNotes}</p>
-                  </div>
-                )}
+                </div>
               </div>
+
+              <div className="mt-auto space-y-3 pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <motion.button
+                    onClick={handleAddToCart}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    // ✅ FIX: Replaced h-12 with responsive padding for all screen sizes
+                    className={`flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md transition-colors ${isInCart ? "bg-red-600 text-white hover:bg-red-600/90" : "bg-gray-100 text-gray-900 hover:bg-gray-100/80"}`}
+                  >
+                    <motion.div variants={iconVariants} className="mr-2">
+                      <ShoppingCart className="h-5 w-5" />
+                    </motion.div>
+                    {isInCart ? "Remove from Cart" : "Add to Cart"}
+                  </motion.button>
+                  <motion.button
+                    onClick={handleBuyNow}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
+                    // ✅ FIX: Replaced h-12 with responsive padding for all screen sizes
+                    className="flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md bg-gray-900 text-gray-50 hover:bg-gray-900/90"
+                  >
+                    Buy Now
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-20 lg:mt-24"
+          >
+            <h2 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
+            <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50 p-6 md:p-10">
+              <ReviewComponent productId={product.id} userdetails={userdetails} />
             </div>
-
-            {/* CTA buttons */}
-            
-
-    <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full">
-      {/* Add / Remove from Cart */}
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        whileHover={{ scale: 1.03 }}
-        onClick={handleAddToCart}
-        className={`w-full sm:flex-1 py-3 px-6 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm ${
-          isInCart
-            ? "bg-red-800 text-neutral-100 hover:bg-redd-900"
-            : "bg-gray-100 text-neutral-900 hover:bg-gray-200"
-        }`}
-      >
-        <motion.div
-          animate={{ rotate: [0, -10, 10, 0] }}
-          transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
-        >
-          <ShoppingCart size={20} />
-        </motion.div>
-        {isInCart ? "Remove from Cart" : "Add to Cart"}
-      </motion.button>
-
-      {/* Buy Now */}
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        whileHover={{ scale: 1.03 }}
-        onClick={handleBuyNow}
-        className="w-full sm:flex-1 py-3 px-6 font-medium rounded-xl bg-neutral-900 text-gray-100 hover:bg-neutral-950 transition-all duration-200 flex items-center justify-center gap-2 shadow-md"
-      >
-        <motion.div
-          animate={{ y: [0, -3, 0] }}
-          transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-        >
-          <ShoppingCart size={20} />
-        </motion.div>
-        Buy Now
-      </motion.button>
-    </div>
-  
-
-          </div>
-        </div>
-      </div>
-      
-      {/* Review Section */}
-      <div className="product-reviews-section bg-white rounded-lg max-w-7xl mx-auto mt-8">
-        <ReviewComponent productId={product.id} userdetails={userdetails} />
+          </motion.div>
+        </main>
       </div>
     </div>
   );

@@ -281,7 +281,7 @@ export default function MyOrders() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden transition-shadow hover:shadow-lg"
+                    className="bg-white border rounded-xl overflow-hidden border border-gray-100 shadow-gray-200/50 shadow-lg transition-shadow transition-shadow hover:shadow-lg"
                   >
                     {/* Order Header */}
                     <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -289,7 +289,7 @@ export default function MyOrders() {
                         <h3 className="font-bold text-lg text-zinc-900">Order #{order.id}</h3>
                         <p className="text-xs text-gray-500 mt-1">
                           Placed on {formatDateTime(order.createdAt)}
-                        </p>
+                        </p> 
                       </div>
                       <div className="flex items-center flex-wrap gap-2 text-xs font-medium">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-800">

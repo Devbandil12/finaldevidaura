@@ -1,85 +1,56 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
 import Confirmation from "./Confirmation";
-import "../style/checkout.css";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, CreditCard, CheckCircle, ArrowLeft } from "lucide-react";
 
-// Centralized backend URL from environment variables
-const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
+const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
-// --- Main Checkout Component ---
 export default function Checkout() {
   const navigate = useNavigate();
-
-  // --- Contexts ---
-  const { getorders } = useContext(OrderContext);
-  const { clearCart } = useContext(CartContext); 
+  const { clearCart, getorders } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
 
-  // --- Component State ---
   const [step, setStep] = useState(1);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  
-  // State for pricing and API call status
-  const [breakdown, setBreakdown] = useState({
-    productTotal: 0,
-    deliveryCharge: 0,
-    discountAmount: 0,
-    total: 0,
-  });
-  const [loadingPrices, setLoadingPrices] = useState(true); // Start as true
-  const [isSubmitting, setIsSubmitting] = useState(false); // For order placement loading state
-
-  // State for payment details (passed down to PaymentDetails component)
-  const [paymentMethod, setPaymentMethod] = useState("Razorpay");
-  const [upiId, setUpiId] = useState("");
-  const [transactionId, setTransactionId] = useState("");
-  // Note: These states are kept for prop compatibility with your PaymentDetails component
-  const [verifiedUpi] = useState(false);
-  const [selectedUpiApp, setSelectedUpiApp] = useState("PhonePe");
+  const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false }); const [loadingPrices, setLoadingPrices] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentVerified, setPaymentVerified] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
 
-  // --- Effects ---
-
-  // Effect to load checkout state from localStorage on initial render
   useEffect(() => {
     try {
-      const items = localStorage.getItem("selectedItems");
-      const parsedItems = items ? JSON.parse(items) : [];
-
-      if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-        setSelectedItems(parsedItems);
+      const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
+      if (items.length > 0) {
+        setSelectedItems(items);
       } else {
-        // If cart is empty, there's nothing to check out. Redirect back.
-        toast.warn("Your cart is empty. Redirecting...");
+        window.toast.warn("Your cart is empty. Redirecting...");
         navigate("/cart");
         return;
       }
-
-      const storedCoupon = localStorage.getItem("appliedCoupon");
-      if (storedCoupon) {
-        setAppliedCoupon(JSON.parse(storedCoupon));
-      }
+      const coupon = localStorage.getItem("appliedCoupon");
+      if (coupon) setAppliedCoupon(JSON.parse(coupon));
     } catch (error) {
       console.error("Failed to parse data from localStorage", error);
-      toast.error("There was an issue loading your cart.");
+      window.toast.error("There was an issue loading your cart.");
       navigate("/cart");
     }
   }, [navigate]);
 
-  // Effect to fetch price breakdown whenever items or coupon change
   useEffect(() => {
     const fetchBreakdown = async () => {
-      if (selectedItems.length === 0) return;
-
+      // 📝 Don't run the fetch if items or an address haven't been selected yet.
+      if (selectedItems.length === 0 || !selectedAddress) {
+        setLoadingPrices(false);
+        return;
+      }
       setLoadingPrices(true);
       try {
         const res = await fetch(`${BACKEND}/api/payments/breakdown`, {
@@ -88,14 +59,14 @@ export default function Checkout() {
           body: JSON.stringify({
             cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
             couponCode: appliedCoupon?.code || null,
+            // ✨ Send the pincode from the selected address
+            pincode: selectedAddress.postalCode,
           }),
         });
-
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.msg || "Failed to fetch price details.");
         }
-
         const data = await res.json();
         if (data.success) {
           setBreakdown(data.breakdown);
@@ -104,55 +75,41 @@ export default function Checkout() {
         }
       } catch (error) {
         console.error('Price breakdown error:', error);
-        toast.error(`Could not load price details: ${error.message}`);
+        window.toast.error(`Could not load price details: ${error.message}`);
       } finally {
         setLoadingPrices(false);
       }
     };
-
     fetchBreakdown();
-  }, [selectedItems, appliedCoupon]);
+    // 👇 Add `selectedAddress` to the dependency array
+  }, [selectedItems, appliedCoupon, selectedAddress]);
 
-  // --- Helper Functions ---
-
-  /**
-   * Clears cart-related data from state and localStorage after a successful order.
-   */
   const cleanupAfterOrder = useCallback(async () => {
     localStorage.removeItem("selectedItems");
     localStorage.removeItem("appliedCoupon");
-    clearCart(); // Clear cart state using context function
-    await getorders(); // Refresh the user's orders list
+    clearCart();
+    if (getorders) await getorders();
   }, [getorders, clearCart]);
 
-  // --- Event Handlers ---
-
-  /**
-   * Handles successful payment via Razorpay.
-   */
   const handleRazorpaySuccess = useCallback(async () => {
     setIsSubmitting(true);
     try {
       await cleanupAfterOrder();
-      setStep(3); // Move to confirmation screen
+      setStep(3);
     } catch (error) {
       console.error("Error after Razorpay success:", error);
-      toast.error("Order processed, but failed to update your session. Please check your orders.");
+      window.toast.error("Order processed, but failed to update your session.");
     } finally {
       setIsSubmitting(false);
     }
   }, [cleanupAfterOrder]);
 
-  /**
-   * Handles placing an order with Cash on Delivery (COD).
-   */
   const handlePlaceOrderCOD = useCallback(async () => {
-    if (isSubmitting) return; // Prevent multiple submissions
+    if (isSubmitting) return;
     if (!selectedAddress) {
-      toast.error("Please select a delivery address.");
+      window.toast.error("Please select a delivery address.");
       return;
     }
-    
     setIsSubmitting(true);
     try {
       const res = await fetch(`${BACKEND}/api/payments/createOrder`, {
@@ -167,135 +124,134 @@ export default function Checkout() {
           userAddressId: selectedAddress.id,
         }),
       });
-
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(errorText || "Server error while placing order.");
       }
-
       await cleanupAfterOrder();
-      toast.success("Order placed successfully!");
+      window.toast.success("Order placed successfully!");
       setStep(3);
     } catch (err) {
       console.error(err);
-      toast.error(`Could not place order: ${err.message}`);
+      window.toast.error(`Could not place order: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   }, [selectedItems, selectedAddress, userdetails, appliedCoupon, cleanupAfterOrder, isSubmitting]);
 
-  /**
-   * Moves to the next step in the checkout process.
-   */
   const handleNext = useCallback(() => {
     if (step === 1 && !selectedAddress) {
-      toast.warn("Please select a delivery address before proceeding.");
+      window.toast.warn("Please select a delivery address.");
       return;
     }
     setStep((prev) => Math.min(prev + 1, 3));
   }, [step, selectedAddress]);
 
-  /**
-   * Moves to the previous step or navigates back to the cart.
-   */
   const handlePrev = useCallback(() => {
-    if (step === 1) {
-      navigate("/cart");
-    } else {
-      setStep((prev) => Math.max(prev - 1, 1));
-    }
+    if (step === 1) navigate("/cart");
+    else setStep((prev) => Math.max(prev - 1, 1));
   }, [step, navigate]);
 
-  /**
-   * Resets the checkout flow to the first step.
-   */
   const resetCheckout = useCallback(() => setStep(1), []);
 
-  // --- Render Logic ---
+  const steps = [
+    { name: "Address", icon: MapPin },
+    { name: "Payment", icon: CreditCard },
+    { name: "Confirmation", icon: CheckCircle },
+  ];
+
   return (
-    <div className="checkout-wrapper">
-      <div className="checkout-header">
-        <ToastContainer position="top-center" autoClose={3000} hideProgressBar={false} />
-        <div className="progress-indicator">
-          {["Address", "Payment", "Confirmation"].map((label, idx) => (
-            <div
-              key={idx}
-              className={`progress-step ${step >= idx + 1 ? "active" : ""}`} // Mark completed steps as active
-            >
-              <span>{idx + 1}</span>
-              <p>{label}</p>
+    <div className="min-h-screen bg-slate-50 pt-16 sm:pt-24 pb-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <div className="relative">
+            <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-200" />
+            <motion.div
+              className="absolute top-5 left-0 h-0.5 bg-black"
+              initial={{ width: '0%' }}
+              animate={{ width: `${step > 1 ? ((step - 2) / (steps.length - 2)) * 100 : 0}%` }}
+              transition={{ ease: "easeInOut", duration: 0.5 }}
+            />
+            <div className="relative flex items-center justify-between">
+              {steps.map((s, index) => {
+                const status = step > index + 1 ? "completed" : step === index + 1 ? "active" : "upcoming";
+                return (
+                  <div key={s.name} className="flex flex-col items-center gap-2">
+                    <motion.div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors duration-300 ${status === 'completed' ? 'bg-black border-black' :
+                        status === 'active' ? 'bg-white border-black' : 'bg-white border-slate-300'
+                        }`}
+                      animate={{ scale: status === 'active' ? 1.1 : 1 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      <s.icon className={`w-5 h-5 ${status === 'completed' ? 'text-white' :
+                        status === 'active' ? 'text-black' : 'text-slate-400'
+                        }`} />
+                    </motion.div>
+                    <p className={`text-xs sm:text-sm font-semibold transition-colors duration-300 ${status === 'active' || status === 'completed' ? 'text-black' : 'text-slate-400'
+                      }`}>
+                      {s.name}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="checkout-body">
-        <div className="checkout-main">
-          {step === 1 && (
-            <AddressSelection
-              userId={userdetails?.id}
-              selectedAddressId={selectedAddress?.id}
-              onSelect={setSelectedAddress}
-            />
-          )}
-
-          {step === 2 && (
-            <PaymentDetails
-              paymentMethod={paymentMethod}
-              setPaymentMethod={setPaymentMethod}
-              transactionId={transactionId}
-              setTransactionId={setTransactionId}
-              upiId={upiId}
-              setUpiId={setUpiId}
-              verifiedUpi={verifiedUpi}
-              selectedUpiApp={selectedUpiApp}
-              setSelectedUpiApp={setSelectedUpiApp}
-              onPaymentVerified={setPaymentVerified}
-              paymentVerified={paymentVerified}
-              selectedAddress={selectedAddress}
-              userdetails={userdetails}
-              selectedItems={selectedItems}
-              appliedCoupon={appliedCoupon}
-              breakdown={breakdown}
-              loadingPrices={loadingPrices}
-              isSubmitting={isSubmitting} // Pass submitting state to disable buttons
-              onRazorpaySuccess={handleRazorpaySuccess}
-              handlePlaceOrder={handlePlaceOrderCOD}
-            />
-          )}
-
-          {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
-
-          <div className="checkout-nav-buttons">
-            <button 
-              onClick={handlePrev} 
-              className="btn btn-outline"
-              disabled={isSubmitting}
-            >
-              {step === 1 ? "Back to Cart" : "Back"}
-            </button>
-            
-            {step === 1 && (
-              <button 
-                onClick={handleNext} 
-                className="btn btn-primary"
-                disabled={!selectedAddress || isSubmitting} // Disable if no address is selected
-              >
-                Proceed to Payment
-              </button>
-            )}
           </div>
         </div>
 
-        <aside className="checkout-summary">
-          <OrderSummary
-            selectedAddress={selectedAddress}
-            selectedItems={selectedItems}
-            appliedCoupon={appliedCoupon}
-            breakdown={breakdown}
-            loadingPrices={loadingPrices}
-          />
-        </aside>
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-8">
+          <main className="lg:col-span-2">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ ease: "easeInOut", duration: 0.4 }}
+              >
+                {step === 1 && <AddressSelection userId={userdetails?.id} onSelect={setSelectedAddress} />}
+                {step === 2 && (
+                  <PaymentDetails
+                    selectedAddress={selectedAddress} userdetails={userdetails} selectedItems={selectedItems}
+                    appliedCoupon={appliedCoupon} breakdown={breakdown} loadingPrices={loadingPrices}
+                    isSubmitting={isSubmitting} onRazorpaySuccess={handleRazorpaySuccess} handlePlaceOrder={handlePlaceOrderCOD}
+                    onPaymentVerified={setPaymentVerified} paymentVerified={paymentVerified} setTransactionId={setTransactionId}
+                  />
+                )}
+                {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
+              </motion.div>
+            </AnimatePresence>
+
+            {step < 3 && (
+              <div className="mt-6 flex items-center justify-between">
+                <motion.button
+                  onClick={handlePrev} disabled={isSubmitting}
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-black transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {step === 1 ? "Back to Cart" : "Back"}
+                </motion.button>
+                {step === 1 && (
+                  <motion.button
+                    onClick={handleNext} disabled={!selectedAddress || isSubmitting}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="px-6 py-3 bg-black text-white font-semibold rounded-lg shadow-md hover:bg-slate-800 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed"
+                  >
+                    Proceed to Payment
+                  </motion.button>
+                )}
+              </div>
+            )}
+          </main>
+
+          <aside className="lg:col-span-1 mt-8 lg:mt-0">
+            <OrderSummary
+              selectedAddress={selectedAddress} selectedItems={selectedItems} appliedCoupon={appliedCoupon}
+              breakdown={breakdown} loadingPrices={loadingPrices}
+            />
+          </aside>
+        </div>
       </div>
     </div>
   );

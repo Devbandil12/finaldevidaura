@@ -65,6 +65,7 @@ export default function CustomAuthPage() {
       }
       setOtpSent(true);
       setCooldown(30);
+      window.toast.success("An OTP has been sent to your email.");
     } catch (err) {
       setError(err.errors?.[0]?.message || "Failed to send OTP.");
     } finally {
@@ -105,6 +106,7 @@ export default function CustomAuthPage() {
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
           setVerified(true);
+          window.toast.success("Account created successfully!");
           setTimeout(() => navigate(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
           sessionStorage.removeItem("post_login_redirect");
         }
@@ -113,6 +115,7 @@ export default function CustomAuthPage() {
         if (result.status === "complete") {
           await setSignInActive({ session: result.createdSessionId });
           setVerified(true);
+          window.toast.success("Welcome back!");
           setTimeout(() => navigate(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
           sessionStorage.removeItem("post_login_redirect");
         }
@@ -158,12 +161,12 @@ export default function CustomAuthPage() {
     animate: {
       x: "0%",
       opacity: 1,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }, // Slower speed
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
     },
     exit: (isSignUp) => ({
       x: isSignUp ? "-100%" : "100%",
       opacity: 0,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }, // Slower speed
+      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
     }),
   };
 

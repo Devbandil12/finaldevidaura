@@ -2,32 +2,27 @@ import React, { useContext } from "react";
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { CartContext } from "../contexts/CartContext";
 import Loader from "./Loader";
-import { motion, AnimatePresence } from "framer-motion"; // Added for animations
+import { motion, AnimatePresence } from "framer-motion";
 
 const Wishlist = () => {
   const {
     wishlist,
     isWishlistLoading,
-    addToCart,
     removeFromWishlist,
     clearWishlist,
+    moveFromWishlistToCart, // Using the new context function
   } = useContext(CartContext);
 
-  const handleMoveToCart = async (wishlistItem) => {
-    await addToCart(wishlistItem.product);
-    await removeFromWishlist(wishlistItem.product);
+  const handleMoveToCart = (wishlistItem) => {
+    moveFromWishlistToCart(wishlistItem.product);
   };
 
-  const handleRemoveItem = async (wishlistItem) => {
-    await removeFromWishlist(wishlistItem.product);
+  const handleRemoveItem = (wishlistItem) => {
+    removeFromWishlist(wishlistItem.product);
   };
 
   const handleClearWishlist = () => {
-    if (clearWishlist) {
-      clearWishlist();
-    } else {
-      console.error("clearWishlist function is not provided by CartContext");
-    }
+    clearWishlist();
   };
 
   if (isWishlistLoading) {
@@ -93,7 +88,7 @@ const Wishlist = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                    className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                    className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition-shadow"
                     aria-labelledby={`wl-${item?.id}-name`}
                   >
                     {/* Left: Image */}

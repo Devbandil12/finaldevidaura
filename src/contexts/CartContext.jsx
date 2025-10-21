@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
-import { toast } from "react-toastify";
 
 export const CartContext = createContext();
 
@@ -57,7 +56,7 @@ export const CartProvider = ({ children }) => {
       setCart(rows);
     } catch (e) {
       console.error("getCartitems error:", e);
-      toast.error("Failed to load cart.");
+      window.toast.error("Failed to load cart.");
       setCart([]);
     } finally {
       setIsCartLoading(false);
@@ -73,7 +72,7 @@ export const CartProvider = ({ children }) => {
       setWishlist(rows);
     } catch (e) {
       console.error("getwishlist error:", e);
-      toast.error("Failed to load wishlist.");
+      window.toast.error("Failed to load wishlist.");
       setWishlist([]);
     } finally {
       setIsWishlistLoading(false);
@@ -97,18 +96,17 @@ export const CartProvider = ({ children }) => {
         }
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        toast.success("Added to Cart!");
+        window.toast.success(`${product.name} added to cart.`);
         return true;
       }
       
       if (!userdetails?.id) {
-        toast.error("Please sign in to add items to your cart.");
+        window.toast.error("Please sign in to add items to your cart.");
         return false;
       }
 
       const existing = cart.find((i) => i.product?.id === product.id);
       const qtyToAdd = Number(quantity || 1);
-
       const optimisticUpdate = existing
         ? cart.map((item) =>
             item.product.id === product.id
@@ -116,32 +114,29 @@ export const CartProvider = ({ children }) => {
               : item
           )
         : [...cart, { product, quantity: qtyToAdd }];
-
       setCart(optimisticUpdate);
 
       try {
         if (existing) {
           const newQty = Number(existing.quantity || 1) + qtyToAdd;
-          const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+          await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ quantity: newQty }),
           });
-          if (!res.ok) throw new Error("Failed to update cart item");
         } else {
-          const res = await fetch(`${BACKEND_URL}/api/cart`, {
+          await fetch(`${BACKEND_URL}/api/cart`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: userdetails.id, productId: product.id, quantity: qtyToAdd }),
           });
-          if (!res.ok) throw new Error("Failed to add new cart item");
         }
         await getCartitems();
-        toast.success("Added to Cart!");
+        window.toast.success(`${product.name} added to cart.`);
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
-        toast.error("Failed to add to cart.");
+        window.toast.error(`Failed to add ${product.name} to cart.`);
         await getCartitems();
         return false;
       }
@@ -155,12 +150,12 @@ export const CartProvider = ({ children }) => {
         const newCart = cart.filter((item) => item.product.id !== product.id);
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        toast.info("Item removed from cart.");
+        window.toast.info(`${product.name} removed from cart.`);
         return;
       }
 
       if (!userdetails?.id) {
-        toast.error("Please sign in to remove items from your cart.");
+        window.toast.error("Please sign in to remove items from your cart.");
         return;
       }
 
@@ -168,15 +163,14 @@ export const CartProvider = ({ children }) => {
       setCart(optimisticUpdate);
 
       try {
-        const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+        await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
-        if (!res.ok) throw new Error("Failed to remove cart item");
         await getCartitems();
-        toast.info("Item removed from cart.");
+        window.toast.info(`${product.name} removed from cart.`);
       } catch (e) {
         console.error("removeFromCart error:", e);
-        toast.error("Failed to remove from cart.");
+        window.toast.error(`Failed to remove ${product.name} from cart.`);
         await getCartitems();
       }
     },
@@ -185,44 +179,39 @@ export const CartProvider = ({ children }) => {
 
   const changeCartQuantity = useCallback(
     async (product, nextQty) => {
+      if (nextQty <= 0) {
+        removeFromCart(product);
+        return;
+      }
       if (!isSignedIn) {
-        if (nextQty <= 0) {
-          removeFromCart(product);
-        } else {
-          const newCart = cart.map((item) =>
-            item.product.id === product.id ? { ...item, quantity: nextQty } : item
-          );
-          setCart(newCart);
-          writeLS(LS_CART_KEY, newCart);
-        }
+        const newCart = cart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: nextQty } : item
+        );
+        setCart(newCart);
+        writeLS(LS_CART_KEY, newCart);
         return;
       }
 
       if (!userdetails?.id) {
-        toast.error("Please sign in to update your cart.");
+        window.toast.error("Please sign in to update your cart.");
         return;
       }
-
-      if (nextQty <= 0) {
-        removeFromCart(product);
-      } else {
-        const optimisticUpdate = cart.map((item) =>
-          item.product?.id === product.id ? { ...item, quantity: nextQty } : item
-        );
-        setCart(optimisticUpdate);
-        try {
-          const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quantity: nextQty }),
-          });
-          if (!res.ok) throw new Error("Failed to update cart quantity");
-          await getCartitems();
-        } catch (e) {
-          console.error("changeCartQuantity error:", e);
-          toast.error("Failed to update quantity.");
-          await getCartitems();
-        }
+      
+      const optimisticUpdate = cart.map((item) =>
+        item.product?.id === product.id ? { ...item, quantity: nextQty } : item
+      );
+      setCart(optimisticUpdate);
+      try {
+        await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quantity: nextQty }),
+        });
+        await getCartitems();
+      } catch (e) {
+        console.error("changeCartQuantity error:", e);
+        window.toast.error("Failed to update quantity.");
+        await getCartitems();
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, removeFromCart, BACKEND_URL]
@@ -232,69 +221,60 @@ export const CartProvider = ({ children }) => {
     if (!isSignedIn) {
       setCart([]);
       writeLS(LS_CART_KEY, []);
-      toast.info("Cart cleared.");
+      window.toast.info("Cart cleared.");
       return;
     }
 
     if (!userdetails?.id) {
-      toast.error("Please sign in to clear your cart.");
+      window.toast.error("Please sign in to clear your cart.");
       return;
     }
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
+      await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to clear cart");
       setCart([]);
-      toast.info("Cart cleared.");
+      window.toast.info("Cart cleared.");
     } catch (e) {
       console.error("clearCart error:", e);
-      toast.error("Failed to clear cart.");
+      window.toast.error("Failed to clear cart.");
       await getCartitems();
     }
   }, [isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]);
 
   const addToWishlist = useCallback(
     async (product) => {
+      const existing = wishlist.some((item) => (item.productId ?? item.product?.id) === product.id);
+      if (existing) {
+        window.toast.info(`${product.name} is already in your wishlist!`);
+        return false;
+      }
+
       if (!isSignedIn) {
-        const existing = wishlist.some((item) => item.product?.id === product.id);
-        if (existing) {
-          toast.info("Item is already in your wishlist!");
-          return false;
-        }
         const newWishlist = [...wishlist, { product, productId: product.id }];
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
-        toast.success("Added to wishlist!");
+        window.toast.success(`${product.name} added to wishlist.`);
         return true;
       }
 
       if (!userdetails?.id) {
-        toast.error("Please sign in to add to your wishlist.");
+        window.toast.error("Please sign in to add to your wishlist.");
         return false;
       }
       
       try {
-        const existing = wishlist.some((item) => item.product?.id === product.id);
-        if(existing) {
-          toast.info("Item is already in your wishlist!");
-          return false;
-        }
-
-        const res = await fetch(`${BACKEND_URL}/api/wishlist`, {
+        await fetch(`${BACKEND_URL}/api/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
         });
-        
-        if (!res.ok) throw new Error("Failed to add to wishlist");
-        
         await getwishlist();
-        toast.success("Added to wishlist!");
+        window.toast.success(`${product.name} added to wishlist.`);
         return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
-        toast.error("Failed to add to wishlist.");
+        window.toast.error(`Failed to add ${product.name} to wishlist.`);
         await getwishlist();
         return false;
       }
@@ -305,15 +285,15 @@ export const CartProvider = ({ children }) => {
   const removeFromWishlist = useCallback(
     async (product) => {
       if (!isSignedIn) {
-        const newWishlist = wishlist.filter((item) => item.product?.id !== product.id);
+        const newWishlist = wishlist.filter((item) => (item.productId ?? item.product?.id) !== product.id);
         setWishlist(newWishlist);
         writeLS(LS_WISHLIST_KEY, newWishlist);
-        toast.info("Item removed from wishlist.");
+        window.toast.info(`${product.name} removed from wishlist.`);
         return;
       }
       
       if (!userdetails?.id) {
-        toast.error("Please sign in to remove from your wishlist.");
+        window.toast.error("Please sign in to remove from your wishlist.");
         return;
       }
       
@@ -322,61 +302,60 @@ export const CartProvider = ({ children }) => {
           method: "DELETE",
         });
         await getwishlist();
-        toast.info("Item removed from wishlist.");
+        window.toast.info(`${product.name} removed from wishlist.`);
       } catch (e) {
         console.error("removeFromWishlist error:", e);
-        toast.error("Failed to remove from wishlist.");
+        window.toast.error(`Failed to remove ${product.name} from wishlist.`);
         await getwishlist();
       }
     },
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
+
+  const moveToWishlist = useCallback(
+    async (product) => {
+      const addedSuccessfully = await addToWishlist(product);
+      if (!addedSuccessfully) {
+        return false;
+      }
+      // Unlike addToWishlist, removeFromCart does not return a boolean, so we just call it.
+      await removeFromCart(product);
+      // We override the separate toasts with one clear confirmation message.
+      window.toast.success(`${product.name} moved to wishlist.`);
+      return true;
+    },
+    [addToWishlist, removeFromCart]
+  );
   
-  // NEW FUNCTION: clearWishlist
   const clearWishlist = useCallback(async () => {
     if (!isSignedIn) {
       setWishlist([]);
       writeLS(LS_WISHLIST_KEY, []);
-      toast.info("Wishlist cleared.");
+      window.toast.info("Wishlist cleared.");
       return;
     }
 
     if (!userdetails?.id) {
-      toast.error("Please sign in to clear your wishlist.");
+      window.toast.error("Please sign in to clear your wishlist.");
       return;
     }
     try {
-      const res = await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}`, {
+      await fetch(`${BACKEND_URL}/api/wishlist/${userdetails.id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to clear wishlist");
       setWishlist([]);
-      toast.info("Wishlist cleared.");
+      window.toast.info("Wishlist cleared.");
     } catch (e) {
       console.error("clearWishlist error:", e);
-      toast.error("Failed to clear wishlist.");
+      window.toast.error("Failed to clear wishlist.");
       await getwishlist();
     }
   }, [isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]);
   
   const toggleWishlist = useCallback(
     async (product) => {
-      if (!isSignedIn) {
-        if (wishlist?.some((item) => item.product?.id === product.id)) {
-          removeFromWishlist(product);
-        } else {
-          addToWishlist(product);
-        }
-        return;
-      }
-  
-      if (!userdetails?.id) {
-        toast.error("Please sign in to manage your wishlist.");
-        return;
-      }
-  
       const isAlreadyInWishlist = wishlist?.some(
-        (item) => item.product?.id === product.id
+        (item) => (item.productId ?? item.product?.id) === product.id
       );
   
       if (isAlreadyInWishlist) {
@@ -385,8 +364,30 @@ export const CartProvider = ({ children }) => {
         await addToWishlist(product);
       }
     },
-    [wishlist, isSignedIn, userdetails?.id, addToWishlist, removeFromWishlist]
+    [wishlist, addToWishlist, removeFromWishlist]
   );
+
+    const moveFromWishlistToCart = useCallback(
+  async (product) => {
+    // First, try to add the item to the cart.
+    const addedSuccessfully = await addToCart(product);
+
+    // If it failed (e.g., user not signed in and an error occurred), stop here.
+    // The addToCart function will have already shown an error toast.
+    if (!addedSuccessfully) {
+      return false;
+    }
+
+    // If added successfully, now remove it from the wishlist.
+    // We don't need a toast here because the final toast below covers it.
+    await removeFromWishlist(product);
+
+    // Finally, show a single, clear confirmation toast.
+    window.toast.success(`${product.name} moved to cart.`);
+    return true;
+  },
+  [addToCart, removeFromWishlist]
+);
   
   const mergeGuestCartIntoDB = useCallback(async () => {
     const guestCart = readLS(LS_CART_KEY);
@@ -395,6 +396,7 @@ export const CartProvider = ({ children }) => {
       await addToCart(item.product, item.quantity);
     }
     removeLS(LS_CART_KEY);
+    window.toast.info("Your guest cart has been merged.");
   }, [addToCart]);
 
   const mergeGuestWishlistIntoDB = useCallback(async () => {
@@ -456,6 +458,8 @@ export const CartProvider = ({ children }) => {
         removeFromWishlist,
         clearWishlist, 
         toggleWishlist,
+        moveToWishlist,
+        moveFromWishlistToCart,
         startBuyNow,
         clearBuyNow,
       }}

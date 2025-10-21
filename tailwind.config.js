@@ -49,7 +49,7 @@ module.exports = {
         'sidebar-border': 'hsl(var(--sidebar-border) / <alpha-value>)',
         'sidebar-ring': 'hsl(var(--sidebar-ring) / <alpha-value>)',
       },
-      
+
       // Add the shimmer keyframes & animation used by the hero text
       keyframes: {
         shimmer: {
@@ -59,6 +59,9 @@ module.exports = {
       },
       animation: {
         shimmer: 'shimmer 3s linear infinite',
+      },
+      screens: {
+        'xs': '480px',
       },
     },
   },
