@@ -14,8 +14,8 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 /* ============================
-   Small UI atoms
-   ============================ */
+    Small UI atoms
+    ============================ */
 const IconBtn = ({ children, onClick, title = "", className = "" }) => (
   <button
     onClick={onClick}
@@ -84,9 +84,8 @@ const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
                 onChange(opt);
                 setOpen(false);
               }}
-              className={`px-4 py-2 text-sm cursor-pointer ${
-                value === opt ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"
-              }`}
+              className={`px-4 py-2 text-sm cursor-pointer ${value === opt ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-700"
+                }`}
             >
               {opt}
             </li>
@@ -122,8 +121,8 @@ const toInputDate = (val) => {
 };
 
 /* ============================
-   Components
-   ============================ */
+    Components
+    ============================ */
 
 const ProfileCard = ({
   userdetails,
@@ -289,7 +288,7 @@ const ProfileCard = ({
         </button>
       </div>
 
-     <div className="mt-1 flex justify-end">
+      <div className="mt-1 flex justify-end">
         <button
           onClick={onEdit}
           className="px-6 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
@@ -370,8 +369,8 @@ const OrderRow = ({ o, onOpen }) => (
 );
 
 /* ============================
-   Main Page
-   ============================ */
+    Main Page
+    ============================ */
 export default function UserPage() {
   const {
     userdetails,
@@ -406,56 +405,56 @@ export default function UserPage() {
   } = useForm({ defaultValues: { name: "", phone: "", dob: "", gender: "" } });
 
   // Add Address form
-const {
-  register: regNewAddr,
-  handleSubmit: submitNewAddr,
-  reset: resetNewAddr,
-  formState: { errors: newAddrErrors },
-  setValue: setNewAddrValue,
-  watch: watchNewAddr,
-  control: controlNewAddr,
-} = useForm({
-  defaultValues: {
-    name: "",
-    phone: "",
-    altPhone: "",
-    address: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "India",
-    landmark: "",
-    addressType: "Home",
-    latitude: null, 
-    longitude: null,
-  },
-});
+  const {
+    register: regNewAddr,
+    handleSubmit: submitNewAddr,
+    reset: resetNewAddr,
+    formState: { errors: newAddrErrors },
+    setValue: setNewAddrValue,
+    watch: watchNewAddr,
+    control: controlNewAddr,
+  } = useForm({
+    defaultValues: {
+      name: "",
+      phone: "",
+      altPhone: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "India",
+      landmark: "",
+      addressType: "Home",
+      latitude: null,
+      longitude: null,
+    },
+  });
 
-// Edit Address form
-const {
-  register: regEditAddr,
-  handleSubmit: submitEditAddr,
-  reset: resetEditAddr,
-  formState: { errors: editAddrErrors },
-  setValue: setEditAddrValue,
-  watch: watchEditAddr,
-  control: controlEditAddr,
-} = useForm({
-  defaultValues: {
-    name: "",
-    phone: "",
-    altPhone: "",
-    address: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    country: "India",
-    landmark: "",
-    addressType: "Home",
-    latitude: null, 
-    longitude: null,
-  },
-});
+  // Edit Address form
+  const {
+    register: regEditAddr,
+    handleSubmit: submitEditAddr,
+    reset: resetEditAddr,
+    formState: { errors: editAddrErrors },
+    setValue: setEditAddrValue,
+    watch: watchEditAddr,
+    control: controlEditAddr,
+  } = useForm({
+    defaultValues: {
+      name: "",
+      phone: "",
+      altPhone: "",
+      address: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      country: "India",
+      landmark: "",
+      addressType: "Home",
+      latitude: null,
+      longitude: null,
+    },
+  });
 
   const productMap = useMemo(() => {
     const m = new Map();
@@ -480,11 +479,16 @@ const {
   }, [userdetails]);
 
   useEffect(() => {
-  if (editingAddr) resetEditAddr(editingAddr);
-}, [editingAddr, resetEditAddr]);
+    if (editingAddr) resetEditAddr(editingAddr);
+  }, [editingAddr, resetEditAddr]);
 
   if (!userdetails || productsLoading || loadingOrders || isWishlistLoading || loadingReviews) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <>
+        <title>Loading Account... | Devid Aura</title>
+        <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      </>
+    );
   }
 
   // Handlers
@@ -522,56 +526,56 @@ const {
   };
 
   const onAddAddress = async (data) => {
-  try {
-    const payload = { ...data };
-    const added = await addAddress(payload); // context handles userId & getUserAddress()
-    if (added) {
-      toast.success("Address added");
-      setIsAdding(false);
-      resetNewAddr();
-    } else {
+    try {
+      const payload = { ...data };
+      const added = await addAddress(payload); // context handles userId & getUserAddress()
+      if (added) {
+        toast.success("Address added");
+        setIsAdding(false);
+        resetNewAddr();
+      } else {
+        toast.error("Failed to add address");
+      }
+    } catch (e) {
+      console.error("Error adding address:", e);
       toast.error("Failed to add address");
     }
-  } catch (e) {
-    console.error("Error adding address:", e);
-    toast.error("Failed to add address");
-  }
-};
+  };
 
-const onDeleteAddress = async (id) => {
-  if (!confirm("Delete this address?")) return;
-  try {
-    // Capture the result object from the context function
-    const result = await deleteAddress(id); 
-    if (result.success) {
-      toast.success("Address deleted");
-    } else {
-      // Display the specific error message from the backend
-      toast.error(result.message);
+  const onDeleteAddress = async (id) => {
+    if (!confirm("Delete this address?")) return;
+    try {
+      // Capture the result object from the context function
+      const result = await deleteAddress(id);
+      if (result.success) {
+        toast.success("Address deleted");
+      } else {
+        // Display the specific error message from the backend
+        toast.error(result.message);
+      }
+    } catch (e) {
+      console.error("Error deleting address:", e);
+      toast.error("Failed to delete address");
     }
-  } catch (e) {
-    console.error("Error deleting address:", e);
-    toast.error("Failed to delete address");
-  }
-};
+  };
 
 
-const onEditAddressSave = async (data) => {
-  if (!editingAddr) return;
-  try {
-    const updated = await editAddress(editingAddr.id, data); // context handles getUserAddress()
-    if (updated) {
-      toast.success("Address updated");
-      setEditingAddr(null);
-      resetEditAddr();
-    } else {
+  const onEditAddressSave = async (data) => {
+    if (!editingAddr) return;
+    try {
+      const updated = await editAddress(editingAddr.id, data); // context handles getUserAddress()
+      if (updated) {
+        toast.success("Address updated");
+        setEditingAddr(null);
+        resetEditAddr();
+      } else {
+        toast.error("Failed to update address");
+      }
+    } catch (e) {
+      console.error("Error updating address:", e);
       toast.error("Failed to update address");
     }
-  } catch (e) {
-    console.error("Error updating address:", e);
-    toast.error("Failed to update address");
-  }
-};
+  };
 
 
   const onSetDefault = async (id) => {
@@ -584,288 +588,186 @@ const onEditAddressSave = async (data) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 mt-[60px]">
-        {/* Left sidebar */}
-        <div className="lg:col-span-4">
-          <ProfileCard
-            userdetails={userdetails}
-            wishlist={wishlist}
-            cart={cart}
-            onEdit={() => setShowProfileModal(true)}
-            onProfileImageChange={onProfileImageChange}
-            onGoWishlist={() => navigate("/wishlist")}
-            onGoCart={() => navigate("/cart")}
-          />
+    <>
+      {/* --- NEW: Meta Tags --- */}
+      <title>My Account | Devid Aura</title>
+      <meta name="description" content="Manage your profile, addresses, orders, and reviews. Your personal hub for everything Devid Aura." />
 
-          <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-slate-700 mb-3">Shortcuts</h4>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => navigate("/orders")}
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
-              >
-                View all orders
-              </button>
-              <button
-                onClick={() => navigate("/wishlist")}
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
-              >
-                Wishlist
-              </button>
-              <button
-                onClick={() => navigate("/cart")}
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
-              >
-                Cart
-              </button>
-              <button
-                onClick={() => navigate("/settings")}
-                className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
-              >
-                Security & Settings
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-slate-50 p-6 md:p-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 mt-[60px]">
+          {/* Left sidebar */}
+          <div className="lg:col-span-4">
+            <ProfileCard
+              userdetails={userdetails}
+              wishlist={wishlist}
+              cart={cart}
+              onEdit={() => setShowProfileModal(true)}
+              onProfileImageChange={onProfileImageChange}
+              onGoWishlist={() => navigate("/wishlist")}
+              onGoCart={() => navigate("/cart")}
+            />
 
-        {/* Main content */}
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-2xl p-6 shadow">
-           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
-              <h2 className="text-xl font-semibold">My Account</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                {["orders", "addresses", "reviews", "queries"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setActiveTab(t)}
-                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${
-                      activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
+            <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
+              <h4 className="text-sm font-medium text-slate-700 mb-3">Shortcuts</h4>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => navigate("/orders")}
+                  className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+                >
+                  View all orders
+                </button>
+                <button
+                  onClick={() => navigate("/wishlist")}
+                  className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+                >
+                  Wishlist
+                </button>
+                <button
+                  onClick={() => navigate("/cart")}
+                  className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+                >
+                  Cart
+                </button>
+                <button
+                  onClick={() => navigate("/settings")}
+                  className="w-full text-left px-4 py-2 rounded-md hover:bg-slate-50"
+                >
+                  Security & Settings
+                </button>
               </div>
             </div>
+          </div>
 
-            {/* Tab content */}
-            <div>
-              {activeTab === "orders" && (
-                <div className="grid grid-cols-1 gap-4">
-                  {orders.length === 0 ? (
-                    <div className="text-slate-500">No orders found</div>
-                  ) : (
-                    orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />)
-                  )}
-                </div>
-              )}
-
-              {activeTab === "addresses" && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium">Addresses</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setIsAdding((v) => !v);
-                          setEditingAddr(null);
-                        }}
-                        className="px-3 py-1 rounded-md border"
-                      >
-                        {isAdding ? "Close" : "Add Address"}
-                      </button>
-                    </div>
-                  </div>
-
-                  {isAdding && (
-                    <form
-                      onSubmit={submitNewAddr(onAddAddress)}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
+          {/* Main content */}
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-2xl p-6 shadow">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+                <h2 className="text-xl font-semibold">My Account</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  {["orders", "addresses", "reviews", "queries"].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setActiveTab(t)}
+                      className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${activeTab === t ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"
+                        }`}
                     >
-                      <FloatingInput
-                        label="Full name"
-                        {...regNewAddr("name", { required: "Name required" })}
-                        error={newAddrErrors.name?.message}
-                      />
-                      <FloatingInput
-                        label="Phone"
-                        {...regNewAddr("phone", {
-                          required: "Phone required",
-                          minLength: { value: 6, message: "Phone too short" },
-                        })}
-                        error={newAddrErrors.phone?.message}
-                      />
-                      <FloatingInput
-                        label="Alternate Phone"
-                        {...regNewAddr("altPhone")}
-                        error={newAddrErrors.altPhone?.message}
-                      />
-                      <FloatingInput
-                        label="Address"
-                        className="md:col-span-2"
-                        {...regNewAddr("address", { required: "Address required" })}
-                        error={newAddrErrors.address?.message}
-                      />
-                      <FloatingInput
-  label="Landmark"
-  {...regNewAddr("landmark")}
-  error={newAddrErrors.landmark?.message}
-/>
-                      <FloatingInput
-                        label="City"
-                        {...regNewAddr("city", { required: "City required" })}
-                        error={newAddrErrors.city?.message}
-                      />
-                      <FloatingInput label="State" {...regNewAddr("state", { required: "State is required" })} error={newAddrErrors.state?.message} />
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                     <FloatingInput
-  label="Postal Code"
-  {...regNewAddr("postalCode", { 
-    required: "Postal code required",
-    pattern: {
-      value: /^\d{6}$/,
-      message: "Please enter a valid 6-digit Indian pincode."
-    }
-  })}
-  error={newAddrErrors.postalCode?.message}
-/>
+              {/* Tab content */}
+              <div>
+                {activeTab === "orders" && (
+                  <div className="grid grid-cols-1 gap-4">
+                    {orders.length === 0 ? (
+                      <div className="text-slate-500">No orders found</div>
+                    ) : (
+                      orders.map((o) => <OrderRow key={o.id} o={o} onOpen={setDrawerOrder} />)
+                    )}
+                  </div>
+                )}
 
-                     <FloatingInput
-  label="Country"
-  {...regNewAddr("country")}
-  error={newAddrErrors.country?.message}
-  readOnly 
-/>
-
-                     <Controller
-  control={controlNewAddr}
-  name="addressType"
-  render={({ field }) => (
-    <FloatingDropdown
-      label="Address Type"
-      value={field.value}
-      onChange={field.onChange}
-      options={["Home", "Work", "Other"]}
-    />
-  )}
-/>
-
-                      <div className="md:col-span-2 flex gap-2 mt-2">
-                        <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
-                          Save
-                        </button>
+                {activeTab === "addresses" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Addresses</h3>
+                      <div className="flex gap-2">
                         <button
-                          type="button"
                           onClick={() => {
-                            setIsAdding(false);
-                            resetNewAddr();
+                            setIsAdding((v) => !v);
+                            setEditingAddr(null);
                           }}
-                          className="px-4 py-2 rounded-md border"
+                          className="px-3 py-1 rounded-md border"
                         >
-                          Cancel
+                          {isAdding ? "Close" : "Add Address"}
                         </button>
                       </div>
-                    </form>
-                  )}
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {address.map((a) => (
-                      <AddressCard
-                        key={a.id}
-                        addr={a}
-                        onEdit={(x) => {
-                          setEditingAddr(x);
-                          setIsAdding(false);
-                        }}
-                        onDelete={onDeleteAddress}
-                        onSetDefault={onSetDefault}
-                      />
-                    ))}
-                  </div>
-
-                  {editingAddr && (
-                    <div className="mt-4 p-4 bg-slate-50 rounded-md">
-                      <h4 className="font-medium mb-2">Edit Address</h4>
+                    {isAdding && (
                       <form
-                        onSubmit={submitEditAddr(onEditAddressSave)}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                        onSubmit={submitNewAddr(onAddAddress)}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-slate-50 p-4 rounded-md"
                       >
                         <FloatingInput
                           label="Full name"
-                          {...regEditAddr("name", { required: "Name required" })}
-                          error={editAddrErrors.name?.message}
+                          {...regNewAddr("name", { required: "Name required" })}
+                          error={newAddrErrors.name?.message}
                         />
                         <FloatingInput
                           label="Phone"
-                          {...regEditAddr("phone", { required: "Phone required" })}
-                          error={editAddrErrors.phone?.message}
+                          {...regNewAddr("phone", {
+                            required: "Phone required",
+                            minLength: { value: 6, message: "Phone too short" },
+                          })}
+                          error={newAddrErrors.phone?.message}
                         />
                         <FloatingInput
                           label="Alternate Phone"
-                          {...regEditAddr("altPhone")}
-                          error={editAddrErrors.altPhone?.message}
+                          {...regNewAddr("altPhone")}
+                          error={newAddrErrors.altPhone?.message}
                         />
                         <FloatingInput
                           label="Address"
                           className="md:col-span-2"
-                          {...regEditAddr("address", { required: "Address required" })}
-                          error={editAddrErrors.address?.message}
+                          {...regNewAddr("address", { required: "Address required" })}
+                          error={newAddrErrors.address?.message}
                         />
                         <FloatingInput
-  label="Landmark"
-  {...regEditAddr("landmark")}
-  error={editAddrErrors.landmark?.message}
-/>
+                          label="Landmark"
+                          {...regNewAddr("landmark")}
+                          error={newAddrErrors.landmark?.message}
+                        />
                         <FloatingInput
                           label="City"
-                          {...regEditAddr("city", { required: "City required" })}
-                          error={editAddrErrors.city?.message}
+                          {...regNewAddr("city", { required: "City required" })}
+                          error={newAddrErrors.city?.message}
+                        />
+                        <FloatingInput label="State" {...regNewAddr("state", { required: "State is required" })} error={newAddrErrors.state?.message} />
+
+                        <FloatingInput
+                          label="Postal Code"
+                          {...regNewAddr("postalCode", {
+                            required: "Postal code required",
+                            pattern: {
+                              value: /^\d{6}$/,
+                              message: "Please enter a valid 6-digit Indian pincode."
+                            }
+                          })}
+                          error={newAddrErrors.postalCode?.message}
                         />
 
-                        <FloatingInput label="State" {...regEditAddr("state", { required: "State is required" })} error={editAddrErrors.state?.message} />
+                        <FloatingInput
+                          label="Country"
+                          {...regNewAddr("country")}
+                          error={newAddrErrors.country?.message}
+                          readOnly
+                        />
 
-                       <FloatingInput
-  label="Postal Code"
-  {...regEditAddr("postalCode", { 
-    required: "Postal code required",
-    pattern: {
-      value: /^\d{6}$/,
-      message: "Please enter a valid 6-digit Indian pincode."
-    }
-  })}
-  error={editAddrErrors.postalCode?.message}
-/>
-
-                       <FloatingInput
-  label="Country"
-  {...regEditAddr("country")}
-  error={editAddrErrors.country?.message}
-  readOnly 
-/>
-
-                      <Controller
-  control={controlEditAddr}
-  name="addressType"
-  render={({ field }) => (
-    <FloatingDropdown
-      label="Address Type"
-      value={field.value}
-      onChange={field.onChange}
-      options={["Home", "Work", "Other"]}
-    />
-  )}
-/>
+                        <Controller
+                          control={controlNewAddr}
+                          name="addressType"
+                          render={({ field }) => (
+                            <FloatingDropdown
+                              label="Address Type"
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={["Home", "Work", "Other"]}
+                            />
+                          )}
+                        />
 
                         <div className="md:col-span-2 flex gap-2 mt-2">
                           <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
-                            Update
+                            Save
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              setEditingAddr(null);
-                              resetEditAddr();
+                              setIsAdding(false);
+                              resetNewAddr();
                             }}
                             className="px-4 py-2 rounded-md border"
                           >
@@ -873,142 +775,249 @@ const onEditAddressSave = async (data) => {
                           </button>
                         </div>
                       </form>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
 
-              {activeTab === "reviews" && (
-                <div className="grid grid-cols-1 gap-3">
-                  {userReviews.length === 0 ? (
-                    <div className="text-slate-500">No reviews</div>
-                  ) : (
-                    userReviews.map((r) => (
-                      <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
-                            <div className="text-xs text-slate-400">
-                              {new Date(r.createdAt).toLocaleDateString()}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {address.map((a) => (
+                        <AddressCard
+                          key={a.id}
+                          addr={a}
+                          onEdit={(x) => {
+                            setEditingAddr(x);
+                            setIsAdding(false);
+                          }}
+                          onDelete={onDeleteAddress}
+                          onSetDefault={onSetDefault}
+                        />
+                      ))}
+                    </div>
+
+                    {editingAddr && (
+                      <div className="mt-4 p-4 bg-slate-50 rounded-md">
+                        <h4 className="font-medium mb-2">Edit Address</h4>
+                        <form
+                          onSubmit={submitEditAddr(onEditAddressSave)}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                        >
+                          <FloatingInput
+                            label="Full name"
+                            {...regEditAddr("name", { required: "Name required" })}
+                            error={editAddrErrors.name?.message}
+                          />
+                          <FloatingInput
+                            label="Phone"
+                            {...regEditAddr("phone", { required: "Phone required" })}
+                            error={editAddrErrors.phone?.message}
+                          />
+                          <FloatingInput
+                            label="Alternate Phone"
+                            {...regEditAddr("altPhone")}
+                            error={editAddrErrors.altPhone?.message}
+                          />
+                          <FloatingInput
+                            label="Address"
+                            className="md:col-span-2"
+                            {...regEditAddr("address", { required: "Address required" })}
+                            error={editAddrErrors.address?.message}
+                          />
+                          <FloatingInput
+                            label="Landmark"
+                            {...regEditAddr("landmark")}
+                            error={editAddrErrors.landmark?.message}
+                          />
+                          <FloatingInput
+                            label="City"
+                            {...regEditAddr("city", { required: "City required" })}
+                            error={editAddrErrors.city?.message}
+                          />
+
+                          <FloatingInput label="State" {...regEditAddr("state", { required: "State is required" })} error={editAddrErrors.state?.message} />
+
+                          <FloatingInput
+                            label="Postal Code"
+                            {...regEditAddr("postalCode", {
+                              required: "Postal code required",
+                              pattern: {
+                                value: /^\d{6}$/,
+                                message: "Please enter a valid 6-digit Indian pincode."
+                              }
+                            })}
+                            error={editAddrErrors.postalCode?.message}
+                          />
+
+                          <FloatingInput
+                            label="Country"
+                            {...regEditAddr("country")}
+                            error={editAddrErrors.country?.message}
+                            readOnly
+                          />
+
+                          <Controller
+                            control={controlEditAddr}
+                            name="addressType"
+                            render={({ field }) => (
+                              <FloatingDropdown
+                                label="Address Type"
+                                value={field.value}
+                                onChange={field.onChange}
+                                options={["Home", "Work", "Other"]}
+                              />
+                            )}
+                          />
+
+                          <div className="md:col-span-2 flex gap-2 mt-2">
+                            <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                              Update
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingAddr(null);
+                                resetEditAddr();
+                              }}
+                              className="px-4 py-2 rounded-md border"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "reviews" && (
+                  <div className="grid grid-cols-1 gap-3">
+                    {userReviews.length === 0 ? (
+                      <div className="text-slate-500">No reviews</div>
+                    ) : (
+                      userReviews.map((r) => (
+                        <div key={r.id} className="p-4 bg-white rounded-lg shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{findProduct(r.productId)?.name || "Product"}</div>
+                              <div className="text-xs text-slate-400">
+                                {new Date(r.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
+                                />
+                              ))}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
-                              />
-                            ))}
-                          </div>
+                          <p className="mt-2 text-slate-700">{r.comment}</p>
                         </div>
-                        <p className="mt-2 text-slate-700">{r.comment}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {activeTab === "queries" && (
-                <div className="grid gap-3">
-                  {queries.length === 0 ? (
-                    <div className="text-slate-500">No queries</div>
-                  ) : (
-                    queries.map((q) => (
-                      <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
-                        <div className="font-semibold">Message</div>
-                        <div className="text-slate-700 mt-1">{q.message}</div>
-                        <div className="text-xs text-slate-400 mt-2">Submitted on {q.createdAt}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Order Drawer */}
-      {drawerOrder && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="w-full lg:w-1/3 ml-auto bg-white shadow-xl p-6 overflow-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Order #{drawerOrder.id}</h3>
-              <button onClick={() => setDrawerOrder(null)} className="text-slate-500">
-                Close
-              </button>
-            </div>
-            <div className="mt-4">
-              {drawerOrder.items?.map((it) => (
-                <div key={it.id} className="flex items-center gap-3 py-3 border-b">
-                  <img
-                    src={
-                      (findProduct(it.productId)?.imageurl &&
-                        (Array.isArray(findProduct(it.productId)?.imageurl)
-                          ? findProduct(it.productId)?.imageurl?.[0]
-                          : findProduct(it.productId)?.imageurl)) || ""
-                    }
-                    alt=""
-                    className="w-12 h-12 rounded object-cover"
-                  />
-                  <div>
-                    <div className="font-medium">{findProduct(it.productId)?.name}</div>
-                    <div className="text-sm text-slate-500">Qty: {it.qty}</div>
+                      ))
+                    )}
                   </div>
-                </div>
-              ))}
+                )}
+
+                {activeTab === "queries" && (
+                  <div className="grid gap-3">
+                    {queries.length === 0 ? (
+                      <div className="text-slate-500">No queries</div>
+                    ) : (
+                      queries.map((q) => (
+                        <div key={q.id || q.createdAt} className="p-4 bg-white rounded-lg shadow-sm">
+                          <div className="font-semibold">Message</div>
+                          <div className="text-slate-700 mt-1">{q.message}</div>
+                          <div className="text-xs text-slate-400 mt-2">Submitted on {q.createdAt}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex-1" onClick={() => setDrawerOrder(null)} aria-hidden></div>
         </div>
-      )}
 
-      {/* Profile Modal (centered card, not fullscreen) */}
-      {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <FocusLock returnFocus autoFocus>
-            <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
-              <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
-              <form onSubmit={submitProfile(onProfileSave)} className="grid gap-3">
-                <FloatingInput
-                  label="Name"
-                  {...regProfile("name", { required: "Name required" })}
-                  error={profileErrors.name?.message}
-                />
-                <FloatingInput
-                  label="Phone"
-                  {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })}
-                  error={profileErrors.phone?.message}
-                />
-                <FloatingInput
-                  label="Date of Birth"
-                  type="date"
-                  {...regProfile("dob")}
-                />
-                <FloatingDropdown
-                  label="Gender"
-                  value={watchProfile("gender")}
-                  onChange={(val) => setProfileValue("gender", val)}
-                  options={["Male", "Female", "Other"]}
-                />
-
-                <div className="flex gap-2 mt-3">
-                  <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowProfileModal(false)}
-                    className="px-4 py-2 rounded-md border"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+        {/* Order Drawer */}
+        {drawerOrder && (
+          <div className="fixed inset-0 z-50 flex">
+            <div className="w-full lg:w-1/3 ml-auto bg-white shadow-xl p-6 overflow-auto">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Order #{drawerOrder.id}</h3>
+                <button onClick={() => setDrawerOrder(null)} className="text-slate-500">
+                  Close
+                </button>
+              </div>
+              <div className="mt-4">
+                {drawerOrder.items?.map((it) => (
+                  <div key={it.id} className="flex items-center gap-3 py-3 border-b">
+                    <img
+                      src={
+                        (findProduct(it.productId)?.imageurl &&
+                          (Array.isArray(findProduct(it.productId)?.imageurl)
+                            ? findProduct(it.productId)?.imageurl?.[0]
+                            : findProduct(it.productId)?.imageurl)) || ""
+                      }
+                      alt=""
+                      className="w-12 h-12 rounded object-cover"
+                    />
+                    <div>
+                      <div className="font-medium">{findProduct(it.productId)?.name}</div>
+                      <div className="text-sm text-slate-500">Qty: {it.qty}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </FocusLock>
-        </div>
-      )}
-    </div>
+            <div className="flex-1" onClick={() => setDrawerOrder(null)} aria-hidden></div>
+          </div>
+        )}
+
+        {/* Profile Modal (centered card, not fullscreen) */}
+        {showProfileModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <FocusLock returnFocus autoFocus>
+              <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl">
+                <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
+                <form onSubmit={submitProfile(onProfileSave)} className="grid gap-3">
+                  <FloatingInput
+                    label="Name"
+                    {...regProfile("name", { required: "Name required" })}
+                    error={profileErrors.name?.message}
+                  />
+                  <FloatingInput
+                    label="Phone"
+                    {...regProfile("phone", { minLength: { value: 6, message: "Phone too short" } })}
+                    error={profileErrors.phone?.message}
+                  />
+                  <FloatingInput
+                    label="Date of Birth"
+                    type="date"
+                    {...regProfile("dob")}
+                  />
+                  <FloatingDropdown
+                    label="Gender"
+                    value={watchProfile("gender")}
+                    onChange={(val) => setProfileValue("gender", val)}
+                    options={["Male", "Female", "Other"]}
+                  />
+
+                  <div className="flex gap-2 mt-3">
+                    <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md">
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowProfileModal(false)}
+                      className="px-4 py-2 rounded-md border"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </FocusLock>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

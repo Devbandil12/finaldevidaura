@@ -1,31 +1,34 @@
 // src/App.jsx
-import React, { useState, useEffect, useCallback } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+import React, { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-// Layout & pages
+// --- Statically Imported Components (for initial load) ---
 import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
-import HeroSection from "./Components/HeroSection";
 import Footer from "./Components/Footer";
-import Login from "./Components/CustomAuthModal";
+import HeroSection from "./Components/HeroSection";
 import Products from "./Components/Products";
-import MyOrder from "./Components/MyOrder";
-import Wishlist from "./Components/Wishlist";
-import Cart from "./Components/Cart";
-import Checkout from "./Components/Checkout";
-import Adminpannel from "./Components/Adminpanel";
-import ContactUs from "./Components/ContactUs";
-import CheckoutGuard from "./CheckoutGuard";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
-import ProductDetail from "./Components/ProductDetail";
-import UserPage from "./Components/UserPage";
-import BillCreator from "./Components/BillCreator";
-import PrivacyPolicy from "./Components/PrivacyPolicy";
-import TermsAndConditions from "./Components/TermsAndConditions";
+import Loader from "./Components/Loader"; // Your fallback component
+
+// --- Dynamically Imported (Lazy-Loaded) Components ---
+const Adminpannel = lazy(() => import("./Components/Adminpanel"));
+const ProductDetail = lazy(() => import("./Components/ProductDetail"));
+const MyOrder = lazy(() => import("./Components/MyOrder"));
+const Wishlist = lazy(() => import("./Components/Wishlist"));
+const Cart = lazy(() => import("./Components/Cart"));
+const Checkout = lazy(() => import("./Components/Checkout"));
+const UserPage = lazy(() => import("./Components/UserPage"));
+const ContactUs = lazy(() => import("./Components/ContactUs"));
+const BillCreator = lazy(() => import("./Components/BillCreator"));
+const PrivacyPolicy = lazy(() => import("./Components/PrivacyPolicy"));
+const TermsAndConditions = lazy(() => import("./Components/TermsAndConditions"));
+const Login = lazy(() => import("./Components/CustomAuthModal"));
 
 // Utilities & Contexts
+import CheckoutGuard from "./CheckoutGuard";
 import ScrollToTop from "./ScrollToTop";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/OrderContext";
@@ -35,14 +38,12 @@ import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { ReviewProvider } from "./contexts/ReviewContext";
-
 import { useUser } from "@clerk/clerk-react";
 
-// Utilities: Global error reporting
+// --- Global Error Reporting (no changes needed here) ---
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";
 
-// helper: send error to backend
 function reportError(type, details) {
   try {
     fetch(LOG_ERROR_URL, {
@@ -61,9 +62,7 @@ function reportError(type, details) {
   }
 }
 
-// Global error + unhandled rejection handler
 if (typeof window !== "undefined") {
-  // Runtime errors
   window.onerror = function (msg, url, lineNo, columnNo, error) {
     const details = {
       message: msg,
@@ -72,28 +71,24 @@ if (typeof window !== "undefined") {
       column: columnNo,
       stack: error?.stack || "N/A",
     };
-
     console.error("Global Error Handler:", details);
     reportError("runtime", details);
-    return false; // prevent default browser popup
+    return false;
   };
 
-  // Unhandled Promise rejections
   window.onunhandledrejection = function (event) {
     const details = {
       reason: event.reason?.message || event.reason || "Unknown",
       stack: event.reason?.stack || "N/A",
     };
-
     console.error("Unhandled Promise Rejection:", details);
     reportError("promiseRejection", details);
   };
 }
+// --- End Error Reporting ---
 
 
-
-
-
+// --- Helper Component for Post-Login Redirection ---
 function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,7 +96,6 @@ function PostLoginRedirector() {
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
-
     const target = sessionStorage.getItem("post_login_redirect");
     if (target) {
       sessionStorage.removeItem("post_login_redirect");
@@ -113,11 +107,37 @@ function PostLoginRedirector() {
   return null;
 }
 
+// --- Main Layout Component ---
+const MainLayout = () => {
+  return (
+    <>
+      <title>Devid Aura | Exquisite Perfumes & Fragrances</title>
+      <meta name="description" content="More than perfume, Devid Aura is an invisible aura of confidence and artistry. Discover masterfully crafted fragrances that leave a memorable impression. Your signature scent awaits." />
+
+      <Navbar isVisible={true} />
+      <MobileBackBar />
+      <main>
+        <Outlet />
+      </main>
+      <Footer />
+    </>
+  );
+};
+
+// --- Home Page Component ---
+const HomePage = () => (
+  <>
+    <HeroSection />
+    <DualMarquee />
+    <ProductShowcaseCarousel />
+    <Products />
+    <TestimonialsSection />
+  </>
+);
+
+
+// --- App Component with Code Splitting ---
 const App = () => {
-  const { user } = useUser();
-  const [isNavbarVisible, setNavbarVisible] = useState(true);
-
-
   return (
     <UserProvider>
       <ProductProvider>
@@ -126,59 +146,44 @@ const App = () => {
             <CouponProvider>
               <ContactProvider>
                 <ReviewProvider>
-                <Router>
-                  <ScrollToTop />
-                  <PostLoginRedirector />
-                  <Navbar isVisible={isNavbarVisible} />
-                  <MobileBackBar />
-                  <Routes>
-                    {/* Public: Main pages */}
-                    <Route
-                      path="/"
-                      element={
-                        <>
-                          <HeroSection />
-                          <DualMarquee />
-                          <ProductShowcaseCarousel />
-                          {/* Products no longer receives props */}
-                          <Products />
-                          <TestimonialsSection />
-                        </>
-                      }
-                    />
+                  <Router>
+                    <ScrollToTop />
+                    <PostLoginRedirector />
+                    {/* ✅ Wrap all routes in a single Suspense */}
+                    <Suspense fallback={<Loader text="Loading Page..." />}>
+                      <Routes>
+                        <Route element={<MainLayout />}>
+                          <Route path="/" element={<HomePage />} />
+                          <Route path="/products" element={<Products />} />
+                          <Route path="/privacy" element={<PrivacyPolicy />} />
+                          <Route path="/terms" element={<TermsAndConditions />} />
+                          <Route path="/myorder" element={<MyOrder />} />
+                          <Route path="/product/:productId" element={<ProductDetail />} />
+                          <Route path="/wishlist" element={<Wishlist />} />
+                          <Route path="/cart" element={<Cart />} />
+                          <Route path="/myaccount" element={<UserPage />} />
+                          <Route path="/contact" element={<ContactUs />} />
+                          <Route path="/bill" element={<BillCreator />} />
+                          
+                          <Route
+                            path="/Admin"
+                            element={
+                              <AdminProvider>
+                                <Adminpannel />
+                              </AdminProvider>
+                            }
+                          />
+                          
+                          <Route element={<CheckoutGuard />}>
+                            <Route path="/checkout" element={<Checkout />} />
+                          </Route>
+                        </Route>
 
-                    {/* Public: Auth & other pages */}
-                    <Route path="/privacy" element={<PrivacyPolicy />} />
-                    <Route path="/terms" element={<TermsAndConditions />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/myorder" element={<MyOrder />} />
-                    <Route path="/product/:productId" element={<ProductDetail />} />
-                    {/* Wishlist no longer receives props */}
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    {/* Cart no longer receives props */}
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/myaccount" element={<UserPage />} />
-                    {/* Admin route now wrapped with AdminProvider */}
-                    <Route
-                      path="/Admin"
-                      element={
-                        <AdminProvider>
-                          <Adminpannel />
-                        </AdminProvider>
-                      }
-                    />
-                    <Route path="/bill" element={<BillCreator />} />
-                    <Route path="/contact" element={<ContactUs />} />
-
-                    {/* Checkout: guarded by intent, never open directly */}
-                    <Route element={<CheckoutGuard />}>
-                      <Route path="/checkout" element={<Checkout />} />
-                    </Route>
-                  </Routes>
-
-                  <Footer />
-                </Router>
-               </ReviewProvider>
+                        <Route path="/login" element={<Login />} />
+                      </Routes>
+                    </Suspense>
+                  </Router>
+                </ReviewProvider>
               </ContactProvider>
             </CouponProvider>
           </CartProvider>

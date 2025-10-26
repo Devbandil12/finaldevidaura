@@ -295,7 +295,7 @@ const Navbar = ({ onVisibilityChange }) => {
         {/* LEFT: Brand */}
         <div className="part-1 nav-brand">
           <a className="logo" onClick={() => navigate("/")}>
-            <h1>DEVIDAURA</h1>
+            <h1>Devid Aura</h1>
           </a>
         </div>
 

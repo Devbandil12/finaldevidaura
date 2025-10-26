@@ -44,11 +44,10 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
     processed: {
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       title: `Refund Processed: ${formattedAmount}`,
-      details: `The amount was credited on ${formatDateTime(refund_completed_at)}. ${
-        speed === "optimum"
+      details: `The amount was credited on ${formatDateTime(refund_completed_at)}. ${speed === "optimum"
           ? "This was an instant refund."
           : "It may take 5-7 days to reflect in your account."
-      }`,
+        }`,
       classes: "bg-green-50 border-green-200 text-green-800",
     },
     pending: {
@@ -97,7 +96,7 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
 export default function MyOrders() {
   const { orders, setOrders, cancelOrder, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
-  
+
   const [expandedOrders, setExpandedOrders] = useState({});
   const [modalOrder, setModalOrder] = useState(null);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
@@ -123,21 +122,21 @@ export default function MyOrders() {
 
   const reorder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
-     if (!order) return;
-     const items = order.orderItems.map((item) => ({
-       product: {
-         id: item.productId,
-         name: item.productName,
-         oprice: item.price,
-         discount: item.discount || 0,
-         quantity: item.quantity,
-         imageurl: item.img,
-         size: item.size || "100",
-       },
-       quantity: item.quantity,
-     }));
-     localStorage.setItem("selectedItems", JSON.stringify(items));
-     window.location.href = "/checkout";
+    if (!order) return;
+    const items = order.orderItems.map((item) => ({
+      product: {
+        id: item.productId,
+        name: item.productName,
+        oprice: item.price,
+        discount: item.discount || 0,
+        quantity: item.quantity,
+        imageurl: item.img,
+        size: item.size || "100",
+      },
+      quantity: item.quantity,
+    }));
+    localStorage.setItem("selectedItems", JSON.stringify(items));
+    window.location.href = "/checkout";
   };
 
   const toggleTrackOrder = (orderId) =>
@@ -156,7 +155,7 @@ export default function MyOrders() {
       setRefreshingStatusId(null);
     }
   };
-  
+
   const renderStepProgress = (progressStep, status) => {
     const steps = [
       { label: "Placed", icon: <Package size={20} /> },
@@ -164,7 +163,7 @@ export default function MyOrders() {
       { label: "Shipped", icon: <Truck size={20} /> },
       { label: "Delivered", icon: <CheckCircle size={20} /> },
     ];
-    
+
     const isCancelled = status.toLowerCase().includes('cancelled');
     const currentStepIndex = isCancelled ? -1 : (status === "delivered" ? 3 : (progressStep || 1) - 1);
 
@@ -174,7 +173,7 @@ export default function MyOrders() {
           {steps.map((step, idx) => {
             const isCompleted = idx < currentStepIndex;
             const isCurrent = idx === currentStepIndex;
-            
+
             const stepColor = isCompleted ? 'text-black' : isCurrent ? 'text-indigo-600' : 'text-gray-400';
             const iconBgColor = isCompleted ? 'bg-black' : isCurrent ? 'bg-indigo-600' : 'bg-gray-300';
             const lineColor = isCompleted ? 'bg-black' : 'bg-gray-300';
@@ -188,9 +187,9 @@ export default function MyOrders() {
                   <p className={`text-xs font-semibold mt-2 ${stepColor}`}>{step.label}</p>
                 </div>
                 {idx < steps.length - 1 && (
-                    <div className="flex-1 h-0.5 mt-5 bg-gray-300">
-                        <div className={`h-full ${lineColor} transition-all duration-500`} style={{ width: idx < currentStepIndex ? '100%' : '0%' }}></div>
-                    </div>
+                  <div className="flex-1 h-0.5 mt-5 bg-gray-300">
+                    <div className={`h-full ${lineColor} transition-all duration-500`} style={{ width: idx < currentStepIndex ? '100%' : '0%' }}></div>
+                  </div>
                 )}
               </React.Fragment>
             );
@@ -199,7 +198,7 @@ export default function MyOrders() {
       </div>
     );
   };
-  
+
   const renderCancellationModal = () => {
     if (!modalOrder) return null;
 
@@ -237,156 +236,160 @@ export default function MyOrders() {
       document.body
     );
   };
-  
+
   return (
-    <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
-      {renderCancellationModal()}
-      
-      {/* Header */}
-      <div className="flex justify-between items-center pb-4 border-b border-gray-200 mt-[50px]">
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-          <Package />
-          My Orders
-        </h1>
-      </div>
+    <>
+      <title>My Orders | Devid Aura</title>
+      <meta name="description" content="Track your order history and view the status of your purchases. Manage your past and present orders with Devid Aura." />
+      <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
+        {renderCancellationModal()}
 
-      {/* Orders List */}
-      <AnimatePresence>
-        {sortedOrders.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center border-2 border-dashed border-gray-300 rounded-xl p-12 bg-white"
-          >
-            <Package className="mx-auto h-12 w-12 text-gray-400" strokeWidth={1} />
-            <h2 className="mt-4 text-xl font-semibold text-zinc-800">No Orders Yet</h2>
-            <p className="mt-2 text-sm text-gray-500">Your past orders will appear here.</p>
-          </motion.div>
-        ) : (
-          <motion.div layout className="space-y-6">
-            <AnimatePresence>
-              {sortedOrders.map((order) => {
-                const totalItems = order.orderItems.reduce((sum, i) => sum + i.quantity, 0);
-                const isExpanded = !!expandedOrders[order.id];
-                const refundInfo = order.refund_status ? {
-                  status: order.refund_status, amount: order.refund_amount,
-                  refund_completed_at: order.refund_completed_at, speed: order.refund_speed,
-                } : null;
+        {/* Header */}
+        <div className="flex justify-between items-center pb-4 border-b border-gray-200 mt-[50px]">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <Package />
+            My Orders
+          </h1>
+        </div>
 
-                return (
-                  <motion.div
-                    layout
-                    key={order.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="bg-white border rounded-xl overflow-hidden border border-gray-100 shadow-gray-200/50 shadow-lg transition-shadow transition-shadow hover:shadow-lg"
-                  >
-                    {/* Order Header */}
-                    <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <div>
-                        <h3 className="font-bold text-lg text-zinc-900">Order #{order.id}</h3>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Placed on {formatDateTime(order.createdAt)}
-                        </p> 
-                      </div>
-                      <div className="flex items-center flex-wrap gap-2 text-xs font-medium">
+        {/* Orders List */}
+        <AnimatePresence>
+          {sortedOrders.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center border-2 border-dashed border-gray-300 rounded-xl p-12 bg-white"
+            >
+              <Package className="mx-auto h-12 w-12 text-gray-400" strokeWidth={1} />
+              <h2 className="mt-4 text-xl font-semibold text-zinc-800">No Orders Yet</h2>
+              <p className="mt-2 text-sm text-gray-500">Your past orders will appear here.</p>
+            </motion.div>
+          ) : (
+            <motion.div layout className="space-y-6">
+              <AnimatePresence>
+                {sortedOrders.map((order) => {
+                  const totalItems = order.orderItems.reduce((sum, i) => sum + i.quantity, 0);
+                  const isExpanded = !!expandedOrders[order.id];
+                  const refundInfo = order.refund_status ? {
+                    status: order.refund_status, amount: order.refund_amount,
+                    refund_completed_at: order.refund_completed_at, speed: order.refund_speed,
+                  } : null;
+
+                  return (
+                    <motion.div
+                      layout
+                      key={order.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="bg-white border rounded-xl overflow-hidden border border-gray-100 shadow-gray-200/50 shadow-lg transition-shadow transition-shadow hover:shadow-lg"
+                    >
+                      {/* Order Header */}
+                      <div className="p-4 bg-gray-50/70 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                          <h3 className="font-bold text-lg text-zinc-900">Order #{order.id}</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Placed on {formatDateTime(order.createdAt)}
+                          </p>
+                        </div>
+                        <div className="flex items-center flex-wrap gap-2 text-xs font-medium">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-800">
-                              {totalItems} {totalItems > 1 ? "items" : "item"}
+                            {totalItems} {totalItems > 1 ? "items" : "item"}
                           </span>
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 capitalize">
-                              {order.status}
+                            {order.status}
                           </span>
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-800">
-                              {order.paymentMode}
+                            {order.paymentMode}
                           </span>
-                      </div>
-                    </div>
-
-                    {/* Order Body */}
-                    <div className="p-4">
-                      {/* Items List */}
-                      <div className="divide-y divide-gray-200">
-                        {order.orderItems.map((item, i) => (
-                          <div key={i} className="flex items-start gap-4 py-3">
-                            <img
-                              src={item.img || "/fallback.png"}
-                              alt={item.productName}
-                              className="h-16 w-16 object-contain bg-gray-100 rounded-md p-1"
-                            />
-                            <div className="flex-grow">
-                              <p className="font-semibold text-sm text-zinc-800">{item.productName}</p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item.size && `Size: ${item.size}ml • `}Qty: {item.quantity}
-                              </p>
-                            </div>
-                            <p className="font-semibold text-sm text-zinc-900">₹{item.price * item.quantity}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {refundInfo && (
-                         <RefundStatusDisplay refund={refundInfo} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
-                      )}
-
-                      {/* Order Footer */}
-                      <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <p className="font-bold text-lg">
-                          Total: <span className="text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {order.status === "Order Placed" && !refundInfo && (
-                            cancellingOrderId === order.id ? (
-                              <MiniLoader text="Cancelling..." />
-                            ) : (
-                              <button onClick={() => setModalOrder(order)} className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                                Cancel Order
-                              </button>
-                            )
-                          )}
-                          {order.status === "delivered" && (
-                            <button onClick={() => reorder(order.id)} className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-                              <Repeat size={14} /> Reorder
-                            </button>
-                          )}
-                           {order.status !== "Order Cancelled" && (
-                            <button onClick={() => toggleTrackOrder(order.id)} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                              {isExpanded ? "Hide Tracking" : "Track Order"}
-                              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                            </button>
-                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Expanded Tracking View with Animation */}
-                    <AnimatePresence>
-                      {isExpanded && order.status !== "Order Cancelled" && (
-                        <motion.section
-                          initial="collapsed"
-                          animate="open"
-                          exit="collapsed"
-                          variants={{
-                            open: { opacity: 1, height: "auto" },
-                            collapsed: { opacity: 0, height: 0 },
-                          }}
-                          transition={{ duration: 0.3, ease: "easeInOut" }}
-                          className="overflow-hidden"
-                        >
-                          <div className="bg-gray-50/70 p-4 border-t border-gray-200">
-                            {renderStepProgress(order.progressStep, order.status)}
+                      {/* Order Body */}
+                      <div className="p-4">
+                        {/* Items List */}
+                        <div className="divide-y divide-gray-200">
+                          {order.orderItems.map((item, i) => (
+                            <div key={i} className="flex items-start gap-4 py-3">
+                              <img
+                                src={item.img || "/fallback.png"}
+                                alt={item.productName}
+                                className="h-16 w-16 object-contain bg-gray-100 rounded-md p-1"
+                              />
+                              <div className="flex-grow">
+                                <p className="font-semibold text-sm text-zinc-800">{item.productName}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {item.size && `Size: ${item.size}ml • `}Qty: {item.quantity}
+                                </p>
+                              </div>
+                              <p className="font-semibold text-sm text-zinc-900">₹{item.price * item.quantity}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {refundInfo && (
+                          <RefundStatusDisplay refund={refundInfo} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
+                        )}
+
+                        {/* Order Footer */}
+                        <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                          <p className="font-bold text-lg">
+                            Total: <span className="text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
+                          </p>
+                          <div className="flex items-center gap-2">
+                            {order.status === "Order Placed" && !refundInfo && (
+                              cancellingOrderId === order.id ? (
+                                <MiniLoader text="Cancelling..." />
+                              ) : (
+                                <button onClick={() => setModalOrder(order)} className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                                  Cancel Order
+                                </button>
+                              )
+                            )}
+                            {order.status === "delivered" && (
+                              <button onClick={() => reorder(order.id)} className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+                                <Repeat size={14} /> Reorder
+                              </button>
+                            )}
+                            {order.status !== "Order Cancelled" && (
+                              <button onClick={() => toggleTrackOrder(order.id)} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                {isExpanded ? "Hide Tracking" : "Track Order"}
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            )}
                           </div>
-                        </motion.section>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </main>
+                        </div>
+                      </div>
+
+                      {/* Expanded Tracking View with Animation */}
+                      <AnimatePresence>
+                        {isExpanded && order.status !== "Order Cancelled" && (
+                          <motion.section
+                            initial="collapsed"
+                            animate="open"
+                            exit="collapsed"
+                            variants={{
+                              open: { opacity: 1, height: "auto" },
+                              collapsed: { opacity: 0, height: 0 },
+                            }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="bg-gray-50/70 p-4 border-t border-gray-200">
+                              {renderStepProgress(order.progressStep, order.status)}
+                            </div>
+                          </motion.section>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </>
   );
 }
