@@ -1,6 +1,5 @@
 import React, { useState, useContext } from "react";
 import useCloudinary from "../utils/useCloudinary";
-import { toast } from "react-toastify";
 import { ProductContext } from "../contexts/productContext";
 
 const ImageUploadModal = ({ isopen, onClose }) => {
@@ -41,7 +40,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   const handleFileChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 10) {
-      toast.error("You can upload a maximum of 10 images.");
+      window.toast.error("You can upload a maximum of 10 images.");
       setImages([]);
     } else {
       setImages(files);
@@ -49,7 +48,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   };
 
   const handleUpload = async () => {
-    if (images.length === 0) return toast.error("Please select images.");
+    if (images.length === 0) return window.toast.error("Please select images.");
 
     try {
       const urls = [];
@@ -60,10 +59,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
 
       setUploadedUrls(urls);
       setStep(2);
-      toast.success("Images uploaded successfully!");
+      window.toast.success("Images uploaded successfully!");
     } catch (err) {
       console.error("Image upload failed:", err);
-      toast.error("Image upload failed.");
+      window.toast.error("Image upload failed.");
     }
   };
 
@@ -74,27 +73,27 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     ];
     for (const f of required) {
       if (!product[f] && product[f] !== 0) { // Check for empty string or null, allow 0
-        return toast.error(`Please fill in '${f}'`);
+        return window.toast.error(`Please fill in '${f}'`);
       }
     }
 
     if (product.stock < 0 || product.costPrice < 0 || product.oprice < 0) {
-      return toast.error("Prices and stock cannot be negative.");
+      return window.toast.error("Prices and stock cannot be negative.");
     }
 
     if (uploadedUrls.length === 0) {
-      return toast.error("Please upload images before submitting.");
+      return window.toast.error("Please upload images before submitting.");
     }
 
     const payload = { ...product, imageurl: uploadedUrls };
     const success = await addProduct(payload);
 
     if (success) {
-      toast.success("✅ Product added successfully!");
+      window.toast.success("✅ Product added successfully!");
       setIsOpen(false);
       onClose();
     } else {
-      toast.error("❌ Failed to add product.");
+      window.toast.error("❌ Failed to add product.");
     }
 
     // reset state

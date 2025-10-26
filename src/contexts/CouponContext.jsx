@@ -1,6 +1,5 @@
 // src/contexts/CouponContext.js
 import React, { createContext, useState, useEffect, useCallback } from "react";
-import { toast } from "react-toastify";
 
 export const CouponContext = createContext({
   coupons: [],
@@ -33,7 +32,7 @@ export const CouponProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.error("[CouponContext] failed to load:", err);
-      toast.error("Could not load coupons");
+      window.toast.error("Could not load coupons");
     }
   }, [BASE_URL]);
 
@@ -44,7 +43,7 @@ export const CouponProvider = ({ children }) => {
 
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
-      return toast.error("Code is required");
+      return window.toast.error("Code is required");
     }
 
     // Correctly format the date strings from the form into Date objects
@@ -73,11 +72,11 @@ export const CouponProvider = ({ children }) => {
         body: JSON.stringify(formattedPayload), // Use the formattedPayload
       });
       if (!res.ok) throw new Error();
-      toast.success(editingCoupon.id ? "Coupon updated" : "Coupon added");
+      window.toast.success(editingCoupon.id ? "Coupon updated" : "Coupon added");
       setEditingCoupon(null);
       await refreshCoupons();
     } catch {
-      toast.error("Save failed");
+      window.toast.error("Save failed");
     }
   };
 
@@ -88,10 +87,10 @@ export const CouponProvider = ({ children }) => {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
-      toast.success("Coupon deleted");
+      window.toast.success("Coupon deleted");
       await refreshCoupons();
     } catch {
-      toast.error("Delete failed");
+      window.toast.error("Delete failed");
     }
   };
 
@@ -107,23 +106,23 @@ export const CouponProvider = ({ children }) => {
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
     if (coupon.minOrderValue && totalValue < coupon.minOrderValue) {
-      toast.error(`Minimum order value ₹${coupon.minOrderValue} required`);
+      window.toast.error(`Minimum order value ₹${coupon.minOrderValue} required`);
       return false;
     }
 
     if (coupon.minItemCount && totalItems < coupon.minItemCount) {
-      toast.error(`Minimum ${coupon.minItemCount} items required`);
+      window.toast.error(`Minimum ${coupon.minItemCount} items required`);
       return false;
     }
 
     const now = new Date();
     if (coupon.validFrom && new Date(coupon.validFrom) > now) {
-      toast.error(`Coupon is not active yet`);
+      window.toast.error(`Coupon is not active yet`);
       return false;
     }
 
     if (coupon.validUntil && new Date(coupon.validUntil) < now) {
-      toast.error(`Coupon has expired`);
+      window.toast.error(`Coupon has expired`);
       return false;
     }
 
@@ -139,13 +138,13 @@ export const CouponProvider = ({ children }) => {
     });
     const data = await res.json();
     if (!res.ok || !data.code) { // <--- Added !data.code check here
-      toast.error(data.message || "Invalid coupon code");
+      window.toast.error(data.message || "Invalid coupon code");
       return null;
     }
     return data;
   } catch (err) {
     console.error("[CouponContext] validation failed:", err);
-    toast.error("Validation failed. Please try again.");
+    window.toast.error("Validation failed. Please try again.");
     return null;
   }
 }, [BASE_URL]);
@@ -159,7 +158,7 @@ export const CouponProvider = ({ children }) => {
       setAvailableCoupons(data);
     } catch (err) {
       console.error("[CouponContext] failed to load available coupons:", err);
-      toast.error("Could not load available coupons");
+      window.toast.error("Could not load available coupons");
     }
   }, [BASE_URL]);
 

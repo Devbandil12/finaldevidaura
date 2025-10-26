@@ -1,6 +1,5 @@
 // src/contexts/AdminContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { toast } from "react-toastify";
 
 export const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
@@ -23,7 +22,7 @@ export const AdminProvider = ({ children }) => {
       setUsers(data);
     } catch (err) {
       console.error("❌ getAllUsers failed:", err);
-      toast.error("Failed to fetch users");
+      window.toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -37,11 +36,11 @@ export const AdminProvider = ({ children }) => {
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update user");
-      toast.success("User updated");
+      window.toast.success("User updated");
       await getAllUsers();
     } catch (err) {
       console.error("❌ updateUser failed:", err);
-      toast.error("Failed to update user");
+      window.toast.error("Failed to update user");
     }
   };
 
@@ -49,12 +48,12 @@ export const AdminProvider = ({ children }) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete user");
-      toast.success("User deleted");
+      window.toast.success("User deleted");
       await getAllUsers();
       // ⚠️ To also delete from Clerk, you’ll need Clerk Admin API here
     } catch (err) {
       console.error("❌ deleteUser failed:", err);
-      toast.error("Failed to delete user");
+      window.toast.error("Failed to delete user");
     }
   };
 
@@ -68,7 +67,7 @@ export const AdminProvider = ({ children }) => {
       setOrders(data);
     } catch (err) {
       console.error("❌ getAllOrders failed:", err);
-      toast.error("Failed to fetch orders");
+      window.toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -82,7 +81,7 @@ export const AdminProvider = ({ children }) => {
       return await res.json();
     } catch (error) {
       console.error("❌ Error fetching single order details:", error);
-      toast.error("Failed to load order details.");
+      window.toast.error("Failed to load order details.");
       return null;
     }
   };
@@ -96,12 +95,12 @@ export const AdminProvider = ({ children }) => {
       });
       if (!res.ok) throw new Error("Failed to update order");
       const updatedOrder = await res.json();
-      toast.success(`Order #${orderId} updated`);
+      window.toast.success(`Order #${orderId} updated`);
       await getAllOrders();
       return updatedOrder;
     } catch (err) {
       console.error("❌ updateOrderStatus failed:", err);
-      toast.error("Failed to update order");
+      window.toast.error("Failed to update order");
     }
   };
 
@@ -118,17 +117,17 @@ export const AdminProvider = ({ children }) => {
           body: JSON.stringify({ orderId, amount }),
         });
         if (!res.ok) throw new Error("Refund failed");
-        toast.success(`Refund initiated for Order #${orderId}`);
+        window.toast.success(`Refund initiated for Order #${orderId}`);
       } else {
         // COD (or any other mode)
         const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, { method: "PUT" });
         if (!res.ok) throw new Error("Cancel failed");
-        toast.success(`Order #${orderId} cancelled`);
+        window.toast.success(`Order #${orderId} cancelled`);
       }
       await getAllOrders();
     } catch (err) {
       console.error("❌ cancelOrder failed:", err);
-      toast.error("Failed to cancel order");
+      window.toast.error("Failed to cancel order");
     }
   };
 
@@ -141,10 +140,10 @@ export const AdminProvider = ({ children }) => {
         body: JSON.stringify(couponData),
       });
       if (!res.ok) throw new Error("Failed to create coupon");
-      toast.success("Coupon created");
+      window.toast.success("Coupon created");
     } catch (err) {
       console.error("❌ createCoupon failed:", err);
-      toast.error("Failed to create coupon");
+      window.toast.error("Failed to create coupon");
     }
   };
 
@@ -167,7 +166,7 @@ export const AdminProvider = ({ children }) => {
       setReportOrders(data);
     } catch (error) {
       console.error(error);
-      toast.error("Could not load report data.");
+      window.toast.error("Could not load report data.");
     } finally {
       setLoading(false);
     }

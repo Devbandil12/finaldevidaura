@@ -9,9 +9,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import useCloudinary from "../utils/useCloudinary";
-import { Pencil, Plus, ChevronRight, Star } from "lucide-react";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Pencil, Plus, ChevronRight, Star } from "lucide-react";import { useNavigate } from "react-router-dom";
 
 /* ============================
     Small UI atoms
@@ -167,10 +165,10 @@ const ProfileCard = ({
       const url = await uploadImage(f);
       await onProfileImageChange(url);
       setLocalUrl(url);
-      toast.success("Profile updated");
+      window.toast.success("Profile updated");
     } catch (err) {
       console.error(err);
-      toast.error("Upload failed");
+      window.toast.error("Upload failed");
     } finally {
       setUploading(false);
       setMenuOpen(false);
@@ -183,10 +181,10 @@ const ProfileCard = ({
     setLocalUrl(null);
     try {
       await onProfileImageChange(null);
-      toast.success("Profile removed");
+      window.toast.success("Profile removed");
     } catch (e) {
       setLocalUrl(prev);
-      toast.error("Failed to remove");
+      window.toast.error("Failed to remove");
     } finally {
       setMenuOpen(false);
     }
@@ -501,7 +499,7 @@ export default function UserPage() {
       };
       const ok = await updateUser(payload);
       if (ok) {
-        toast.success("Profile updated");
+        window.toast.success("Profile updated");
         // re-apply formatted DOB to keep it visible immediately
         resetProfile({
           name: payload.name,
@@ -510,18 +508,18 @@ export default function UserPage() {
           gender: payload.gender || "",
         });
         setShowProfileModal(false);
-      } else toast.error("Failed");
+      } else window.toast.error("Failed");
     } catch (e) {
-      toast.error("Error");
+      window.toast.error("Error");
     }
   };
 
   const onProfileImageChange = async (urlOrNull) => {
     try {
       const ok = await updateUser({ profileImage: urlOrNull });
-      if (!ok) toast.error("Failed to save profile image");
+      if (!ok) window.toast.error("Failed to save profile image");
     } catch (e) {
-      toast.error("Error");
+      window.toast.error("Error");
     }
   };
 
@@ -530,15 +528,15 @@ export default function UserPage() {
       const payload = { ...data };
       const added = await addAddress(payload); // context handles userId & getUserAddress()
       if (added) {
-        toast.success("Address added");
+        window.toast.success("Address added");
         setIsAdding(false);
         resetNewAddr();
       } else {
-        toast.error("Failed to add address");
+        window.toast.error("Failed to add address");
       }
     } catch (e) {
       console.error("Error adding address:", e);
-      toast.error("Failed to add address");
+      window.toast.error("Failed to add address");
     }
   };
 
@@ -548,14 +546,14 @@ export default function UserPage() {
       // Capture the result object from the context function
       const result = await deleteAddress(id);
       if (result.success) {
-        toast.success("Address deleted");
+        window.toast.success("Address deleted");
       } else {
         // Display the specific error message from the backend
-        toast.error(result.message);
+        window.toast.error(result.message);
       }
     } catch (e) {
       console.error("Error deleting address:", e);
-      toast.error("Failed to delete address");
+      window.toast.error("Failed to delete address");
     }
   };
 
@@ -565,15 +563,15 @@ export default function UserPage() {
     try {
       const updated = await editAddress(editingAddr.id, data); // context handles getUserAddress()
       if (updated) {
-        toast.success("Address updated");
+        window.toast.success("Address updated");
         setEditingAddr(null);
         resetEditAddr();
       } else {
-        toast.error("Failed to update address");
+        window.toast.error("Failed to update address");
       }
     } catch (e) {
       console.error("Error updating address:", e);
-      toast.error("Failed to update address");
+      window.toast.error("Failed to update address");
     }
   };
 
@@ -581,9 +579,9 @@ export default function UserPage() {
   const onSetDefault = async (id) => {
     try {
       await setDefaultAddress(id);
-      toast.success("Default set");
+      window.toast.success("Default set");
     } catch (e) {
-      toast.error("Failed");
+      window.toast.error("Failed");
     }
   };
 

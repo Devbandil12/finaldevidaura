@@ -1,6 +1,5 @@
 // src/components/Adminpanel.jsx
 import React, { useState, useContext, useEffect } from "react";
-import "react-toastify/dist/ReactToastify.css";
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
@@ -10,7 +9,6 @@ import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 import ImageUploadModal from "./ImageUploadModal";
 import PincodeManager from "./PincodeManager";
-import { toast, ToastContainer } from "react-toastify";
 import OrderChart from "./OrderChart";
 import Reports from "./Reports";
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaMoneyBillWave, FaBars, FaTimes, FaMapMarkerAlt, FaTimesCircle, FaFlagCheckered, FaDownload, FaPercentage, FaUserPlus, FaUserCheck } from 'react-icons/fa'; import { Line, Pie } from 'react-chartjs-2';
@@ -40,7 +38,7 @@ ChartJS.register(
 // --- CSV Export Utility ---
 const downloadCSV = (data, filename = 'export.csv') => {
   if (!data || data.length === 0) {
-    toast.error("No data available to export.");
+    window.toast.error("No data available to export.");
     return;
   }
   // Flatten complex objects for better CSV readability
@@ -288,10 +286,10 @@ const AdminPanel = () => {
 
       await updateProduct(updatedData.id, updatedData);
       setEditingProduct(null);
-      toast.success("Product updated successfully!");
+      window.toast.success("Product updated successfully!");
     } catch (error) {
       console.error("❌ Error updating product:", error);
-      toast.error("Failed to update product.");
+      window.toast.error("Failed to update product.");
     } finally {
       setLoading(false);
     }
@@ -304,11 +302,11 @@ const AdminPanel = () => {
       try {
         await deleteProduct(productId);
         setLoading(false);
-        toast.success("Product deleted successfully!");
+        window.toast.success("Product deleted successfully!");
       } catch (error) {
         console.error("❌ Error deleting product:", error);
         setLoading(false);
-        toast.error("Failed to delete product.");
+        window.toast.error("Failed to delete product.");
       }
     }
   };
@@ -322,7 +320,7 @@ const AdminPanel = () => {
       }
     } catch (error) {
       console.error("Error fetching order products:", error);
-      toast.error("Failed to load order details.");
+      window.toast.error("Failed to load order details.");
     } finally {
       setDetailsLoading(false);
     }
@@ -346,12 +344,12 @@ const AdminPanel = () => {
         body: JSON.stringify(editingUser),
       });
       if (!res.ok) throw new Error("Failed to update user");
-      toast.success("User updated successfully!");
+      window.toast.success("User updated successfully!");
       setEditingUser(null);
       getAllUsers();
     } catch (error) {
       console.error("Failed to update user:", error);
-      toast.error("Failed to update user.");
+      window.toast.error("Failed to update user.");
     }
   };
 
@@ -362,11 +360,11 @@ const AdminPanel = () => {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete user");
-      toast.success("User deleted successfully!");
+      window.toast.success("User deleted successfully!");
       getAllUsers();
     } catch (error) {
       console.error("Failed to delete user:", error);
-      toast.error("Failed to delete user.");
+      window.toast.error("Failed to delete user.");
     }
   };
 
@@ -411,7 +409,6 @@ const AdminPanel = () => {
         <title>{dynamicTitle()}</title>
         <meta name="description" content={`Manage ${activeTab} for Devid Aura. Access all administrative tools and analytics.`} />
         <div className="flex min-h-screen bg-gray-100 text-gray-800 pt-[60px]">
-          <ToastContainer />
 
           {/* Hamburger Menu Icon for mobile */}
           <div className="md:hidden absolute top-[50px] right-[5px] p-4 z-100">

@@ -1,7 +1,6 @@
 // src/contexts/OrderContext.js
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { UserContext } from "./UserContext";
-import { toast } from "react-toastify";
 
 export const OrderContext = createContext();
 
@@ -48,10 +47,10 @@ export const OrderProvider = ({ children }) => {
       });
       if (!res.ok) throw new Error("Failed to update order status");
       await getorders(true, true); // admin updates
-      toast.success(`Order ${orderId} updated to ${newStatus}`);
+      window.toast.success(`Order ${orderId} updated to ${newStatus}`);
     } catch (error) {
       console.error("❌ Failed to update order status:", error);
-      toast.error("Failed to update order status.");
+      window.toast.error("Failed to update order status.");
     }
   };
 
@@ -72,11 +71,11 @@ export const OrderProvider = ({ children }) => {
           method: "PUT", // 🟢 This should be a PUT request
         });
       }
-      toast.success(`Order ${orderId} canceled successfully.`);
+      window.toast.success(`Order ${orderId} canceled successfully.`);
       await getorders(true, isAdmin);
     } catch (error) {
       console.error("❌ Failed to cancel order:", error);
-      toast.error("Failed to cancel order.");
+      window.toast.error("Failed to cancel order.");
     }
   };
 
@@ -88,7 +87,7 @@ export const OrderProvider = ({ children }) => {
       return await res.json();
     } catch (error) {
       console.error("❌ Error fetching order details:", error);
-      toast.error("Failed to load order details.");
+      window.toast.error("Failed to load order details.");
       return null;
     }
   };

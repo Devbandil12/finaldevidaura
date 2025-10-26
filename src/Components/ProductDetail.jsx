@@ -6,7 +6,6 @@ import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import { Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify"; // Assuming you use react-toastify
 
 // --- A mock Button component to replicate the style of shadcn/ui ---
 const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children }) => {
@@ -155,7 +154,7 @@ const ProductDetail = () => {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+      window.toast.success("Link copied to clipboard!");
     }
   };
 
