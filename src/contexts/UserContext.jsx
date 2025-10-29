@@ -1,4 +1,3 @@
-// File: src/contexts/UserContext.jsx
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 
@@ -26,146 +25,151 @@ export const UserProvider = ({ children }) => {
       if (!email || !clerkId) return;
 
       const res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
-      if (!res.ok && res.status !== 404) throw new Error("Failed to fetch user");
-      const data = await res.json();
 
-      if (data && data.id) {
-        setUserdetails(data);
-      } else {
-        // Create user
+      // ✅ Case 1: Existing user is found
+      if (res.ok) {
+        const data = await res.json();
+        // Mark as not new (no guest cart merge)
+        setUserdetails({ ...data, isNew: false });
+
+        // ✅ Case 2: User does not exist (404) → create new user
+      } else if (res.status === 404) {
         const postRes = await fetch(`${BACKEND_URL}/api/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, clerkId }),
         });
-        if (!postRes.ok) throw new Error("Failed to create user");
+
         const postData = await postRes.json();
-        setUserdetails(postData);
+
+        // ✅ Only mark as new if backend actually created the user (201)
+        const isNew = postRes.status === 201;
+
+        setUserdetails({ ...postData, isNew });
+
+        // ✅ Case 3: Handle other potential errors
+      } else {
+        throw new Error("Failed to fetch user");
       }
+
     } catch (err) {
       console.error("❌ Error in getUserDetail:", err);
     }
   }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
-  
+
+
+  // --- No changes are needed for the functions below this line ---
+
   // Update User Details
   const updateUser = useCallback(async (updatedData) => {
-  if (!userdetails?.id) return null;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedData),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
+    if (!userdetails?.id) return null;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+      if (!res.ok) throw new Error("Failed to update user");
 
-    const data = await res.json();
-    // Merge updated fields locally
-    setUserdetails(prev => ({ ...prev, ...updatedData }));
-    return data;
-  } catch (error) {
-    console.error("❌ Failed to update user:", error);
-    return null;
-  }
-}, [userdetails?.id, BACKEND_URL]);
-
-
-  // Corrected Address APIs in UserContext.jsx
-
-// Fetch addresses (match Checkout)
-const getUserAddress = useCallback(async () => {
-  if (!userdetails?.id) return;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`);
-    if (!res.ok) throw new Error("Failed to fetch addresses");
-    const data = await res.json();
-    setAddress(Array.isArray(data.data) ? data.data : []);
-  } catch (error) {
-    console.error("❌ Failed to get user addresses:", error);
-  }
-}, [userdetails?.id, BACKEND_URL]);
-
-// Add Address (match Checkout payload + endpoint)
-const addAddress = useCallback(async (newAddress) => {
-  if (!userdetails?.id) return null;
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      await getUserAddress();
-      return data.data;
+      const data = await res.json();
+      setUserdetails(prev => ({ ...prev, ...updatedData }));
+      return data;
+    } catch (error) {
+      console.error("❌ Failed to update user:", error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error("❌ Failed to add address:", error);
-    return null;
-  }
-}, [userdetails?.id, BACKEND_URL, getUserAddress]);
+  }, [userdetails?.id, BACKEND_URL]);
 
-// Edit Address
-const editAddress = useCallback(async (addressId, updatedFields) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedFields),
-    });
-    const data = await res.json();
-    if (data.success) {
-      await getUserAddress();
-      return data.data;
+  // Fetch addresses
+  const getUserAddress = useCallback(async () => {
+    if (!userdetails?.id) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`);
+      if (!res.ok) throw new Error("Failed to fetch addresses");
+      const data = await res.json();
+      setAddress(Array.isArray(data.data) ? data.data : []);
+    } catch (error) {
+      console.error("❌ Failed to get user addresses:", error);
     }
-    return null;
-  } catch (error) {
-    console.error("❌ Failed to edit address:", error);
-    return null;
-  }
-}, [BACKEND_URL, getUserAddress]);
+  }, [userdetails?.id, BACKEND_URL]);
 
-// Delete Address
-const deleteAddress = useCallback(async (addressId) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
-      method: "DELETE",
-    });
-    const data = await res.json();
-    if (data.success) {
-      await getUserAddress();
-      return true;
+  // Add Address
+  const addAddress = useCallback(async (newAddress) => {
+    if (!userdetails?.id) return null;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await getUserAddress();
+        return data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Failed to add address:", error);
+      return null;
     }
-    return false;
-  } catch (error) {
-    console.error("❌ Failed to delete address:", error);
-    return false;
-  }
-}, [BACKEND_URL, getUserAddress]);
+  }, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
-// Set Default Address
-const setDefaultAddress = useCallback(async (addressId) => {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
-      method: "PUT",
-    });
-    const data = await res.json();
-    if (data.success) {
-      await getUserAddress();
-      
-      return data.data;
+  // Edit Address
+  const editAddress = useCallback(async (addressId, updatedFields) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedFields),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await getUserAddress();
+        return data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Failed to edit address:", error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error("❌ Failed to set default address:", error);
-    return null;
-  }
-}, [BACKEND_URL, getUserAddress]);
+  }, [BACKEND_URL, getUserAddress]);
 
+  // Delete Address
+  const deleteAddress = useCallback(async (addressId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        await getUserAddress();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("❌ Failed to delete address:", error);
+      return false;
+    }
+  }, [BACKEND_URL, getUserAddress]);
 
-
-
+  // Set Default Address
+  const setDefaultAddress = useCallback(async (addressId) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
+        method: "PUT",
+      });
+      const data = await res.json();
+      if (data.success) {
+        await getUserAddress();
+        return data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Failed to set default address:", error);
+      return null;
+    }
+  }, [BACKEND_URL, getUserAddress]);
 
   useEffect(() => {
     getUserDetail();
@@ -181,6 +185,7 @@ const setDefaultAddress = useCallback(async (addressId) => {
     <UserContext.Provider
       value={{
         userdetails,
+        isSignedIn,
         address,
         setAddress,
         getUserDetail,
