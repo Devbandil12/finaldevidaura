@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Leaf, Link2, Shield, Sparkles, Crown, Heart } from 'lucide-react';
-import HeroImage from "../assets/images/Gemini_Generated_Image_sj8c8msj8c8msj8c.png";
+import HeroImage from "../assets/images/our-story.png";
 
 // Royalty-free Unsplash image URLs
 const FOUNDERS_IMG = 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?auto=format&fit=crop&w=1600&q=80';
@@ -47,7 +47,7 @@ export default function AboutUs() {
                 <motion.img
                     src={HeroImage}
                     alt="Luxury perfume bottle with artistic shadows"
-                    className="absolute inset-0 w-full h-full object-cover object-bottom"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
                     initial={{ scale: 1.1, opacity: 0 }}
                     whileInView={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 1.5, ease: 'easeOut' }}
