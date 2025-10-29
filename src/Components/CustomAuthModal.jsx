@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 
 import SignUpImage from "../assets/New folder/Adobe Express - file.png";
-import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892.jpg";
+import SignInImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892-removebg-preview (1).png";
 import GoogleIcon from "../assets/images/google.png";
 
 export default function CustomAuthPage() {
