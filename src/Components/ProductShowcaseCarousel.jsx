@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { ProductContext } from "../contexts/productContext";
@@ -13,26 +12,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /* ------------------ DATA (Keep this as is) ------------------ */
 const scentDetails = {
-  SHADOW: {
-    slogan: "Where silence lingers longer than light.",
-    story: `Crafted for those who speak softly and leave echoes. SHADOW is the fragrance of quiet strength — the scent of velvet evenings, of mysteries half-told. It begins with a crisp, cooling rush of peppermint and lavender, stirring curiosity. As it unfolds, earthy oakmoss and sensual sandalwood emerge, grounding the fragrance in sophistication. A warm finish of amber and musk cloaks the wearer like midnight silk. Best worn in evening hours, when the world slows and presence becomes power.`,
-    notes: ["Peppermint", "Lavender Burst", "Oakmoss", "Geranium", "Sandalwood", "Amber", "Musk Facets"],
-  },
-  SUNSET: {
-    slogan: "Where golden light melts into longing.",
-    story: `SUNSET is the perfume of tender transitions — from heat to hush, from glance to embrace. It opens with a vivid burst of saffron and grapefruit, laced with sage and bergamot, evoking the golden glow of dusk. The heart blooms with soft magnolia and jasmine, kissed by a hint of pepper — warm, intimate, alive. As it deepens, a rich foundation of oud and patchouli anchors the scent in sensual memory. Best worn at twilight, when the day exhales and romance begins to stir.`,
-    notes: ["Saffron", "Sage", "Bergamot", "Grapefruit", "Magnolia", "Pepper", "Jasmine", "Oud", "Cedarwood", "Sandalwood", "Patchouli"],
-  },
-  VIGOR: {
-    slogan: "Where boldness breaks like sunrise.",
-    story: `VIGOR is a surge of momentum — a scent for those who lead with presence and move with purpose. It opens in a blaze of grapefruit and pepper, charged with the cool clarity of violet leaves. At its core, clary sage and French lavender pulse with herbal strength, while a powerful base of amber wood and tonka grounds the composition in warmth and persistence. Designed for daylight hours, when ambition sharpens and confidence commands the room.`,
-    notes: ["Grapefruit", "Violet Leaves", "Sichuan Pepper", "Clary Sage", "Geranium", "French Lavender", "Amber Wood", "Tonka Bean", "Cristal Moss"],
-  },
-  "OUD HORIZON": {
-    slogan: "Where tropics meet twilight — bold, bright, unforgettable.",
-    story: `OUD HORIZON is an exploration in contrast — where sunlit fruits meet deep, grounding woods. It begins with a burst of tropical exuberance: juicy mandarin, pineapple, and papaya, spiced gently by cardamom. A heart of sandalwood and amber follows, warm and magnetic, before settling into a complex tapestry of cedar, musk, and oud — refined, exotic, and lingering. Worn to make an impression, this scent is your signature when you want to arrive without speaking.`,
-    notes: ["Mandarin Orange", "Papaya", "Bergamot", "Pineapple", "Cardamom", "Sandalwood", "Amber", "Musk", "Cedar", "Oakmoss", "Nutmeg", "Violet", "Orris Root", "Jasmine", "Lily-of-the-Valley"],
-  },
+  SHADOW: { slogan: "Where silence lingers longer than light.", story: `Crafted for those who speak softly and leave echoes. SHADOW is the fragrance of quiet strength — the scent of velvet evenings, of mysteries half-told. It begins with a crisp, cooling rush of peppermint and lavender, stirring curiosity. As it unfolds, earthy oakmoss and sensual sandalwood emerge, grounding the fragrance in sophistication. A warm finish of amber and musk cloaks the wearer like midnight silk. Best worn in evening hours, when the world slows and presence becomes power.`, notes: ["Peppermint", "Lavender Burst", "Oakmoss", "Geranium", "Sandalwood", "Amber", "Musk Facets"] },
+  SUNSET: { slogan: "Where golden light melts into longing.", story: `SUNSET is the perfume of tender transitions — from heat to hush, from glance to embrace. It opens with a vivid burst of saffron and grapefruit, laced with sage and bergamot, evoking the golden glow of dusk. The heart blooms with soft magnolia and jasmine, kissed by a hint of pepper — warm, intimate, alive. As it deepens, a rich foundation of oud and patchouli anchors the scent in sensual memory. Best worn at twilight, when the day exhales and romance begins to stir.`, notes: ["Saffron", "Sage", "Bergamot", "Grapefruit", "Magnolia", "Pepper", "Jasmine", "Oud", "Cedarwood", "Sandalwood", "Patchouli"] },
+  VIGOR: { slogan: "Where boldness breaks like sunrise.", story: `VIGOR is a surge of momentum — a scent for those who lead with presence and move with purpose. It opens in a blaze of grapefruit and pepper, charged with the cool clarity of violet leaves. At its core, clary sage and French lavender pulse with herbal strength, while a powerful base of amber wood and tonka grounds the composition in warmth and persistence. Designed for daylight hours, when ambition sharpens and confidence commands the room.`, notes: ["Grapefruit", "Violet Leaves", "Sichuan Pepper", "Clary Sage", "Geranium", "French Lavender", "Amber Wood", "Tonka Bean", "Cristal Moss"] },
+  "OUD HORIZON": { slogan: "Where tropics meet twilight — bold, bright, unforgettable.", story: `OUD HORIZON is an exploration in contrast — where sunlit fruits meet deep, grounding woods. It begins with a burst of tropical exuberance: juicy mandarin, pineapple, and papaya, spiced gently by cardamom. A heart of sandalwood and amber follows, warm and magnetic, before settling into a complex tapestry of cedar, musk, and oud — refined, exotic, and lingering. Worn to make an impression, this scent is your signature when you want to arrive without speaking.`, notes: ["Mandarin Orange", "Papaya", "Bergamot", "Pineapple", "Cardamom", "Sandalwood", "Amber", "Musk", "Cedar", "Oakmoss", "Nutmeg", "Violet", "Orris Root", "Jasmine", "Lily-of-the-Valley"] },
 };
 const NOTE_EMOJI = { PEPPERMINT: "🌿", SAGE: "🌿", "CLARY SAGE": "🌿", "FRENCH LAVENDER": "💜", LAVENDER: "💜", "LAVENDER BURST": "💜", JASMINE: "🌸", MAGNOLIA: "🌼", "LILY-OF-THE-VALLEY": "🌼", VIOLET: "💜", "VIOLET LEAVES": "💜", GERANIUM: "🌺", "ORRIS ROOT": "🌼", BERGAMOT: "🍋", GRAPEFRUIT: "🍊", "MANDARIN ORANGE": "🍊", PINEAPPLE: "🍍", PAPAYA: "🥭", MANGO: "🥭", TANGERINE: "🍊", SAFFRON: "🌾", "SICHUAN PEPPER": "🌶️", PEPPER: "🌶️", CARDAMOM: "🧂", NUTMEG: "🌰", "TONKA BEAN": "🫘", TONKA: "🫘", SANDALWOOD: "🪵", CEDARWOOD: "🌲", OUD: "🪵", "OUD HORIZON": "🪵", OAKMOSS: "🍃", "CRISTAL MOSS": "🍃", AMBER: "🟠", "AMBER WOOD": "🟠", MUSK: "🌫️", "MUSK FACETS": "🌫️", PATCHOULI: "🌿", VANILLA: "🍮", CEDAR: "🌲", DEFAULT: "✨" };
 function normalize(str) { return String(str || "").trim().toUpperCase(); }
@@ -47,62 +30,22 @@ const ACCENT_MAP = {
 
 /* ------------------ ANIMATION VARIANTS ------------------ */
 const wrapperVariants = {
-  enter: (direction) => ({
-    x: direction > 0 ? "100%" : "-100%",
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    transition: { duration: 0.5, ease: [0.45, 0, 0.55, 1] },
-  },
-  exit: (direction) => ({
-    x: direction < 0 ? "100%" : "-100%",
-    opacity: 0,
-    transition: { duration: 0.5, ease: [0.45, 0, 0.55, 1] },
-  }),
+  enter: (direction) => ({ x: direction > 0 ? "100%" : "-100%", opacity: 0 }),
+  center: { x: 0, opacity: 1, transition: { duration: 0.5, ease: [0.45, 0, 0.55, 1] } },
+  exit: (direction) => ({ x: direction < 0 ? "100%" : "-100%", opacity: 0, transition: { duration: 0.5, ease: [0.45, 0, 0.55, 1] } }),
 };
-
 const imageVariants = {
-  enter: (direction) => ({
-    opacity: 0,
-    scale: 0.8,
-    rotateY: direction > 0 ? -45 : 45,
-  }),
-  center: {
-    opacity: 1,
-    scale: 1,
-    rotateY: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 },
-  },
-  exit: (direction) => ({
-    opacity: 0,
-    scale: 0.8,
-    rotateY: direction > 0 ? 45 : -45,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-  }),
+  enter: (direction) => ({ opacity: 0, scale: 0.8, rotateY: direction > 0 ? -45 : 45 }),
+  center: { opacity: 1, scale: 1, rotateY: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 } },
+  exit: (direction) => ({ opacity: 0, scale: 0.8, rotateY: direction > 0 ? 45 : -45, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }),
 };
-
 const infoVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.5,
-      ease: "easeOut",
-      staggerChildren: 0.08, // This makes child elements animate in sequence
-      delayChildren: 0.2,
-    },
-  },
+  visible: { opacity: 1, transition: { duration: 0.5, ease: "easeOut", staggerChildren: 0.08, delayChildren: 0.2 } },
 };
-
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
 /* ------------------ MAIN COMPONENT ------------------ */
@@ -120,9 +63,7 @@ export default function ImmersiveProductShowcase() {
 
   const onPrev = useCallback(() => {
     setDirection(-1);
-    setActiveIdx((i) =>
-      products.length ? (i - 1 + products.length) % products.length : 0
-    );
+    setActiveIdx((i) => (products.length ? (i - 1 + products.length) % products.length : 0));
     setStoryExpanded(false);
   }, [products.length]);
 
@@ -154,7 +95,6 @@ export default function ImmersiveProductShowcase() {
 
   const product = products[activeIdx] || {};
   const scent = scentDetails[normalize(product.name)];
-
   const accent = useMemo(() => {
     const key = normalize(product.name);
     return ACCENT_MAP[key] || ACCENT_MAP.DEFAULT;
@@ -166,42 +106,31 @@ export default function ImmersiveProductShowcase() {
 
   return (
     <>
+      <div className="text-center px-4">
+        <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-wider drop-shadow-lg">
+          Explore Our Scents
+        </h2>
+        <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
+          An immersive journey into our signature fragrances.
+        </p>
+      </div>
 
-      <h2
-        className="
-    text-lg md:text-2xl lg:text-6xl
-    font-extrabold uppercase tracking-wider
-    block px-3 py-1
-    transition-transform duration-200 ease-out
-    motion-reduce:transition-none motion-reduce:transform-none
-    mx-auto text-center mb-8 mt-18
-  "
-      >
-        EXPLORE OUR SCENTS
-      </h2>
-
-      <section
-        className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden rounded-md font-sans transition-colors duration-700"
-        style={{
-          background: `radial-gradient(circle at 50% 50%, ${accent.accent}15, ${accent.primary}40, transparent 70%), #f8f9fa`
-        }}
-      >
-
+      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden rounded-md font-sans transition-colors duration-700">
         <div
-          className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-8 px-4 py-16"
+          className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-8 px-4"
           {...swipeHandlers}
         >
-
           {/* --- LEFT / INFO PANEL --- */}
           <motion.div
             key={activeIdx}
             className="w-full h-full flex flex-col justify-center text-center lg:text-left relative z-10"
             variants={infoVariants}
             initial="hidden"
-            animate="visible"
+            // ✅ CHANGE HERE: Use whileInView to trigger animation on scroll
+            whileInView="visible"
+            // ✅ CHANGE HERE: Configure the trigger behavior
+            viewport={{ once: true, amount: 0.3 }}
           >
-
-
             <div className="relative">
               <AnimatePresence mode="wait">
                 <motion.h1
@@ -249,7 +178,6 @@ export default function ImmersiveProductShowcase() {
               ))}
             </motion.div>
 
-            {/* Pagination Dots */}
             <motion.div variants={itemVariants} className="flex justify-center lg:justify-start gap-3 mt-10">
               {products.map((_, i) => (
                 <button
@@ -265,13 +193,14 @@ export default function ImmersiveProductShowcase() {
 
           {/* --- RIGHT / IMAGE CAROUSEL --- */}
           <div className="relative w-full h-[450px] md:h-[600px] flex items-center justify-center perspective-1200">
-            {/* Background Typography */}
             <AnimatePresence>
               <motion.div
                 key={`${activeIdx}-bg-text`}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 initial={{ opacity: 0, scale: 1.2 }}
-                animate={{ opacity: 1, scale: 1 }}
+                // ✅ CHANGE HERE: Also animate this element when in view
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, amount: 0.2 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               >
@@ -281,7 +210,6 @@ export default function ImmersiveProductShowcase() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Image */}
             <AnimatePresence custom={direction} mode="wait">
               <motion.div
                 key={product.id ?? product.name ?? activeIdx}
@@ -289,7 +217,9 @@ export default function ImmersiveProductShowcase() {
                 variants={imageVariants}
                 custom={direction}
                 initial="enter"
-                animate="center"
+                // ✅ CHANGE HERE: The main image will now animate in on scroll
+                whileInView="center"
+                viewport={{ once: true, amount: 0.2 }}
                 exit="exit"
               >
                 <div
@@ -306,7 +236,6 @@ export default function ImmersiveProductShowcase() {
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation Arrows */}
             <div className="absolute inset-0 z-20 flex justify-between items-center pointer-events-none px-[-1rem] md:px-0">
               <motion.button
                 onClick={onPrev}
@@ -326,7 +255,6 @@ export default function ImmersiveProductShowcase() {
               </motion.button>
             </div>
           </div>
-
         </div>
       </section>
     </>

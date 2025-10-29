@@ -109,17 +109,17 @@ const ContactUs = () => {
 
   return (
     // Added pb-16, sm:pb-20, and lg:pb-24 for bottom padding
-    <div className="bg-gray-50 min-h-screen pt-16 sm:pt-20 lg:pt-24 pb-16 sm:pb-20 lg:pb-24">
+    <div className="bg-gray-50 min-h-screen pt-16 sm:pt-20 lg:pt-18 pb-16 sm:pb-20 lg:pb-24">
       <div className="max-w-6xl mx-auto px-4">
-        
+
         {/* Page Header */}
-        <div className="text-center pb-6 mb-4">
-            <h1 className="text-4xl font-bold tracking-tighter text-zinc-900">
-                Contact Us
-            </h1>
-            <p className="mt-2 text-md text-gray-500">
-                We're here to help. Reach out to us anytime.
-            </p>
+        <div className="text-center">
+          <h2 className="text-5xl md:text-6xl font-black text-gray-900 drop-shadow-lg">
+            Get In Touch
+          </h2>
+          <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
+            We'd love to hear from you. Whether you have a question, comment, or just want to say hello, we're here to help.
+          </p>
         </div>
 
         <div className="relative bg-white w-full shadow-lg rounded-lg overflow-hidden lg:flex">

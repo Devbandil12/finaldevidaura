@@ -7,6 +7,7 @@ import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import Footer from "./Components/Footer";
 import HeroSection from "./Components/HeroSection";
+import AboutUs from "./Components/AboutUs";
 import Products from "./Components/Products";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
@@ -22,7 +23,6 @@ const Cart = lazy(() => import("./Components/Cart"));
 const Checkout = lazy(() => import("./Components/Checkout"));
 const UserPage = lazy(() => import("./Components/UserPage"));
 const ContactUs = lazy(() => import("./Components/ContactUs"));
-const BillCreator = lazy(() => import("./Components/BillCreator"));
 const PrivacyPolicy = lazy(() => import("./Components/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./Components/TermsAndConditions"));
 const Login = lazy(() => import("./Components/CustomAuthModal"));
@@ -129,6 +129,7 @@ const HomePage = () => (
   <>
     <HeroSection />
     <DualMarquee />
+    <AboutUs />
     <ProductShowcaseCarousel />
     <Products />
     <TestimonialsSection />
@@ -162,9 +163,7 @@ const App = () => {
                           <Route path="/wishlist" element={<Wishlist />} />
                           <Route path="/cart" element={<Cart />} />
                           <Route path="/myaccount" element={<UserPage />} />
-                          <Route path="/contact" element={<ContactUs />} />
-                          <Route path="/bill" element={<BillCreator />} />
-                          
+                          <Route path="/contact" element={<ContactUs />} />                          
                           <Route
                             path="/Admin"
                             element={

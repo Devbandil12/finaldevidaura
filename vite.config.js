@@ -1,30 +1,27 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite"; // ✅ Add this line
 
 export default defineConfig({
-  // The key change to fix the refresh issue is correctly implemented here
-  base: '/',
-  
+  base: "/",
   plugins: [
     react(),
-    // Remove the tailwindcss plugin, as Vite uses PostCSS for this
+    tailwindcss(), // ✅ Enable Tailwind plugin
   ],
 
   server: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
+      "/api": {
+        target: "http://localhost:3000",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
       },
     },
   },
 
-
-build: {
-    sourcemap: true, 
+  build: {
+    sourcemap: true,
   },
-
 });
