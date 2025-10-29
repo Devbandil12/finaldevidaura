@@ -21,7 +21,7 @@
 /* Body Font (Sans-Serif) */
 @font-face {
   font-family: 'Luxury';
-  src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
+  src: url(public/fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
   font-weight: normal;
   font-style: normal;
 }
@@ -29,14 +29,14 @@
 /* Heading Font (Serif) */
 @font-face {
   font-family: 'Libre Baskerville';
-  src: url(fonts/LibreBaskerville-Regular.ttf); /* Make sure this path is correct */
+  src: url(public/fonts/LibreBaskerville-Regular.ttf); /* Make sure this path is correct */
   font-weight: normal; /* 400 */
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Libre Baskerville';
-  src: url(fonts/LibreBaskerville-Bold.ttf); /* Make sure this path is correct */
+  src: url(public/fonts/LibreBaskerville-Bold.ttf); /* Make sure this path is correct */
   font-weight: bold; /* 700 */
   font-style: normal;
 }
