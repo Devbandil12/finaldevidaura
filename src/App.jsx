@@ -125,16 +125,38 @@ const MainLayout = () => {
 };
 
 // --- Home Page Component ---
-const HomePage = () => (
-  <>
-    <HeroSection />
-    <DualMarquee />
-    <AboutUs />
-    <ProductShowcaseCarousel />
-    <Products />
-    <TestimonialsSection />
-  </>
-);
+const HomePage = () => {
+  useEffect(() => {
+    const target = sessionStorage.getItem("scrollToSection");
+    if (target) {
+      const el = document.getElementById(target);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: "smooth" });
+        }, 300); // wait a bit for page render
+      }
+      sessionStorage.removeItem("scrollToSection");
+    }
+  }, []);
+
+  return (
+    <>
+      <HeroSection />
+      <DualMarquee />
+      <div id="about-section">
+        <AboutUs />
+      </div>
+      <div id="scents-section">
+        <ProductShowcaseCarousel />
+      </div>
+      <div id="collection-section">
+        <Products />
+      </div>
+      <TestimonialsSection />
+    </>
+  );
+};
+
 
 
 // --- App Component with Code Splitting ---
@@ -163,7 +185,7 @@ const App = () => {
                           <Route path="/wishlist" element={<Wishlist />} />
                           <Route path="/cart" element={<Cart />} />
                           <Route path="/myaccount" element={<UserPage />} />
-                          <Route path="/contact" element={<ContactUs />} />                          
+                          <Route path="/contact" element={<ContactUs />} />
                           <Route
                             path="/Admin"
                             element={
@@ -172,7 +194,7 @@ const App = () => {
                               </AdminProvider>
                             }
                           />
-                          
+
                           <Route element={<CheckoutGuard />}>
                             <Route path="/checkout" element={<Checkout />} />
                           </Route>

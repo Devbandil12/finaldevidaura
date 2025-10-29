@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import gsap from "gsap";
 import bottleImage from "../assets/images/bottle-perfume-isolated-white-background_977935-10892-removebg-preview (1).png";
+import { useNavigate } from "react-router-dom";
 
 // Design system values moved from index.css into a theme object
 const theme = {
@@ -32,6 +33,22 @@ const keyframes = `
 `;
 
 const HeroSection = () => {
+
+    const navigate = useNavigate();
+
+    const scrollOrNavigate = (sectionId) => {
+        if (window.location.pathname !== "/") {
+            sessionStorage.setItem("scrollToSection", sectionId);
+            navigate("/");
+        } else {
+            const el = document.getElementById(sectionId);
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth" });
+            }
+        }
+    };
+
+
     const bottleRef = useRef(null);
     const circleRefs = useRef([]);
 
@@ -139,38 +156,60 @@ const HeroSection = () => {
                                     </motion.span>
                                 </h1>
                             </motion.div>
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="space-y-4">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="space-y-2">
                                 <p className="text-xl sm:text-2xl font-serif italic" style={{ color: `hsl(${theme.colors.navy})` }}>
                                     In every breath he <span className="font-bold not-italic" style={leavesStyles}>leaves</span> behind.
                                 </p>
                                 <p className="text-lg font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed" style={{ color: `hsla(${theme.colors.navy}, 0.7)` }}>
                                     Fragrances that whisper stories — crafted from the rarest essences and wrapped in glass like a secret.                                </p>
                             </motion.div>
-                            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }} className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                                <button className="group relative overflow-hidden text-white font-semibold text-lg rounded-full transition-all duration-500"
+                            <motion.div
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.2 }}
+                                className="flex flex-wrap gap-4 justify-center lg:justify-start"
+                            >
+                                {/* Explore Collection → Products */}
+                                <button
+                                    onClick={() => scrollOrNavigate("collection-section")}
+                                    className="group relative overflow-hidden text-white font-normal text-lg rounded-full transition-all duration-500"
                                     style={{
-                                        padding: '1rem 2.5rem',
+                                        padding: "1rem 2.5rem",
                                         backgroundImage: `linear-gradient(to right, hsl(${theme.colors.gold}), hsl(${theme.colors.goldLight}), hsl(${theme.colors.gold}))`,
-                                        boxShadow: theme.shadows.button,
                                     }}
                                 >
-                                    <motion.span className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, hsl(${theme.colors.rose}), hsl(${theme.colors.gold}))` }} initial={{ x: "-100%" }} whileHover={{ x: "0%" }} transition={{ duration: 0.6 }} />
+                                    <motion.span
+                                        className="absolute inset-0"
+                                        style={{
+                                            backgroundImage: `linear-gradient(to right, hsl(${theme.colors.rose}), hsl(${theme.colors.gold}))`,
+                                        }}
+                                        initial={{ x: "-100%" }}
+                                        whileHover={{ x: "0%" }}
+                                        transition={{ duration: 0.6 }}
+                                    />
                                     <span className="relative z-10 flex items-center gap-2">
                                         Explore Collection
-                                        <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>→</motion.span>
+                                        <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                                            →
+                                        </motion.span>
                                     </span>
                                 </button>
-                                <button className="group relative overflow-hidden backdrop-blur-sm font-semibold text-lg rounded-full transition-all duration-300"
+
+                                {/* Our Scents → Carousel */}
+                                <button
+                                    onClick={() => scrollOrNavigate("scents-section")}
+                                    className="group relative overflow-hidden backdrop-blur-sm font-normal text-lg rounded-full transition-all duration-300"
                                     style={{
-                                        padding: '1rem 2.5rem',
-                                        backgroundColor: 'hsla(0, 0%, 100%, 0.8)',
+                                        padding: "1rem 2.5rem",
+                                        backgroundColor: "hsla(0, 0%, 100%, 0.8)",
                                         border: `2px solid hsl(${theme.colors.gold})`,
                                         color: `hsl(${theme.colors.luxuryDark})`,
                                     }}
                                 >
-                                    <span className="relative z-10">View Catalog</span>
+                                    <span className="relative z-10">Our Scents</span>
                                 </button>
                             </motion.div>
+
                         </motion.div>
 
                         {/* Right - Bottle showcase */}

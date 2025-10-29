@@ -283,6 +283,23 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => ctx.revert();
   }, [isProfileOpen]);
 
+
+
+  const handleNavScroll = (targetId) => {
+    if (window.location.pathname !== "/") {
+      // Save the target section so homepage can scroll after redirect
+      sessionStorage.setItem("scrollToSection", targetId);
+      navigate("/"); // Go to home
+    } else {
+      // Already on homepage → scroll directly
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
+
   return (
     <header ref={navRef}>
       <nav
@@ -307,26 +324,19 @@ const Navbar = ({ onVisibilityChange }) => {
             </li>
             <li>
               <a
-                onClick={() =>
-                  document
-                    .getElementById("products-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                onClick={() => handleNavScroll("about-section")}
               >
-                Collection
+                About
               </a>
             </li>
             <li>
               <a
-                onClick={() =>
-                  document
-                    .getElementById("shop-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                onClick={() => handleNavScroll("collection-section")}
               >
-                Shop
+                Collection
               </a>
             </li>
+
           </ul>
         </div>
 

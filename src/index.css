@@ -2,6 +2,7 @@
 
 
 @layer components {
+
   /* For floating labels on inputs */
   .form-input {
     @apply block w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg appearance-none;
@@ -45,7 +46,10 @@
 
 html {
   overflow-x: hidden !important;
+  scroll-behavior: smooth;
+
 }
+
 
 body {
   overflow-x: hidden !important;
@@ -55,15 +59,20 @@ body {
 }
 
 /* Apply the heading font to all heading tags */
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Libre Baskerville Bold"; 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Libre Baskerville Bold";
   font-weight: 600;
 }
 
 /* Paragraphs and Spans will inherit the body font ("Luxury") by default */
 p {
   font-family: "Libre Baskerville Italic";
-  line-height: 1.6; 
+  line-height: 1.6;
   font-weight: 400;
 }
 
@@ -175,4 +184,50 @@ span {
   .custom-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
+
+
+/* Shimmer container */
+.shimmer-wrapper {
+  position: relative;
+}
+
+/* Gold shimmer animation */
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Heading shimmer */
+.shimmer-text {
+  background: linear-gradient(90deg,
+      #b8860b 0%,
+      #ffd700 25%,
+      #fff5cc 50%,
+      #ffd700 75%,
+      #b8860b 100%);
+  background-size: 300% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: goldShimmer 4s linear infinite;
+}
+
+/* Subtext shimmer (softer) */
+.shimmer-subtext {
+  background: linear-gradient(90deg,
+      #d4af37 0%,
+      #fff8dc 50%,
+      #d4af37 100%);
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: goldShimmer 6s linear infinite;
+  opacity: 0.9;
 }

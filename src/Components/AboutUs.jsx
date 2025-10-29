@@ -1,195 +1,364 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { Leaf, Droplet, Shield, Sparkles, Crown, Heart } from 'lucide-react';
+import { Leaf, Link2, Shield, Sparkles, Crown, Heart } from 'lucide-react';
+import HeroImage from "../assets/images/Gemini_Generated_Image_sj8c8msj8c8msj8c.png";
 
-// Image paths — keep these in public/assets or update paths to imports
-const HERO_IMG = '/assets/hero-perfume-DQj9vy7X.jpg';
-const FOUNDER_IMG = '/assets/founder-portrait-BO_Bk75A.jpg';
-const BOTANICALS_IMG = '/assets/botanicals-C3IDq9Eo.jpg';
+// Royalty-free Unsplash image URLs
+const FOUNDERS_IMG = 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?auto=format&fit=crop&w=1600&q=80';
+const BOTANICALS_IMG = 'https://images.unsplash.com/photo-1526045612212-70caf35c14df?auto=format&fit=crop&w=1600&q=80';
 
 export default function AboutUs() {
-    useEffect(() => {
-        AOS.init({ duration: 900, once: true, easing: 'ease-in-out' });
-    }, []);
+    const cardVariants = {
+        hidden: { opacity: 0, y: 40 },
+        visible: (i) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.2,
+                duration: 0.8,
+                ease: [0.25, 0.1, 0.25, 1],
+            },
+        }),
+    };
+
+    const pillars = [
+        {
+            icon: <Leaf className="h-12 w-12" />,
+            title: 'Purity',
+            text: 'Every drop is crafted with natural precision and unfiltered authenticity. No excess, no compromise — just the true spirit of nature refined into scent.',
+        },
+        {
+            icon: <Link2 className="h-12 w-12" />,
+            title: 'Bond',
+            text: 'Devid Aura is built on connection — between friends, creators, and every soul who wears it. A shared essence that unites individuality through emotion.',
+        },
+        {
+            icon: <Shield className="h-12 w-12" />,
+            title: 'Trust',
+            text: 'Born from sincerity and perseverance, our promise is transparency — every note, every story, told with honesty and grace.',
+        },
+    ];
 
     return (
-        <div className="relative overflow-hidden bg-background text-foreground font-sans">
+        <div className="relative overflow-hidden bg-white text-gray-900 py-12">
+            {/* Hero Section */}
+            <section className="relative h-[50vh] flex flex-col items-center justify-center text-center overflow-hidden">
+                {/* Background image with smooth zoom + fade animation */}
+                <motion.img
+                    src={HeroImage}
+                    alt="Luxury perfume bottle with artistic shadows"
+                    className="absolute inset-0 w-full h-full object-cover object-bottom"
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    viewport={{ once: true }}
+                />
 
-            {/* fixed gradient glow layer (uses global .gradient-glow) */}
-            <div
-                className="fixed top-0 left-0 w-full h-[150vh] gradient-glow pointer-events-none -z-10"
-                style={{ transform: 'translateY(20%)' }}
-                aria-hidden
-            />
+                {/* Gradient overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
 
-            <div className="text-center pt-24 px-4">
-                <h2
-                    className="text-5xl md:text-6xl font-black text-gray-900 drop-shadow-lg"
-                    data-aos="fade-down"
+                {/* Text content */}
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="relative z-10 px-6 max-w-4xl mx-auto text-white"
                 >
-                    Our Story
-                </h2>
-                <p
-                    className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600"
-                    data-aos="fade-down"
-                    data-aos-delay="100"
-                >
-                    The journey of resilience, artistry, and authenticity behind every bottle.
-                </p>
-            </div>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.3 }}
+                        viewport={{ once: true }}
+                        className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
+                    >
+                        Our Story
+                    </motion.h1>
 
-            {/* FOUNDER / ORIGIN */}
-            <section className="relative py-32 px-6 md:px-12">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.6 }}
+                        viewport={{ once: true }}
+                        className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed"
+                    >
+                        The bond of two friends, a shared dream, and the fragrance that became their aura.
+                    </motion.p>
+                </motion.div>
+            </section>
 
-                        <div data-aos="fade-right" className="relative">
-                            <div className="relative rounded-3xl overflow-hidden bg-card shadow-medium group">
-                                <img src={FOUNDER_IMG} alt="David Laurent, Master Perfumer and Founder" className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent" />
-                                <div className="absolute bottom-8 left-8 text-primary-foreground">
-                                    <h3 className="font-display text-3xl font-bold mb-2">David Laurent</h3>
-                                    <p className="text-secondary text-sm tracking-widest uppercase">Founder &amp; Master Perfumer</p>
-                                </div>
-                            </div>
-                            <div className="absolute -top-8 -right-8 w-32 h-32 bg-accent/20 rounded-full blur-3xl" />
-                        </div>
-
-                        <div data-aos="fade-left" className="space-y-6">
-                            <div className="inline-block">
-                                <span className="text-accent text-sm font-semibold tracking-widest uppercase">The Origin Story</span>
-                            </div>
-
-                            <h2 className="text-3xl md:text-5xl font-display font-bold leading-tight">From Ashes to Artistry</h2>
-                            <div className="w-20 h-1 bg-gradient-to-r from-secondary to-accent rounded-full" />
-
-                            <blockquote className="border-l-4 border-accent pl-6 italic text-lg text-muted-foreground my-8">"When the world felt devoid of meaning, I turned to scent. It became my anchor, my way of reclaiming beauty in a fractured world."</blockquote>
-
-                            <div className="space-y-4 text-foreground/80 leading-relaxed">
-                                <p>
-                                    David Laurent's journey began not in a laboratory, but in the depths of personal struggle. Confronted by loss and searching for meaning, he discovered that fragrance could capture what words could not—the essence of memory, emotion, and hope.
+            {/* Founders Section */}
+            <section className="relative py-12 px-6 md:px-12">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, x: -50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="relative"
+                    >
+                        <div className="rounded-3xl overflow-hidden shadow-2xl group">
+                            <img
+                                src={FOUNDERS_IMG}
+                                alt="Founders of Devid Aura"
+                                className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                            <div className="absolute bottom-8 left-8 text-white">
+                                <h3 className="font-display text-3xl font-bold mb-2">
+                                    Harshvardhan Singh Jadon & Yomesh Chaudhary
+                                </h3>
+                                <p className="text-gray-300 text-sm tracking-widest uppercase">
+                                    Co-Founders & Dreamers
                                 </p>
-                                <p>
-                                    Rejecting mass production and synthetic shortcuts, David embarked on a global quest to source the purest, most ethically harvested botanicals. From remote mountainsides to ancient forests, each ingredient tells a story of preservation and respect.
-                                </p>
-                                <p className="font-medium text-foreground">Devid Aura is not just a brand—it's a testament to resilience, a celebration of authenticity, and an invitation to discover your own unique essence.</p>
                             </div>
                         </div>
+                    </motion.div>
 
-                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, x: 50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="space-y-6"
+                    >
+                        <span className="text-gray-500 text-sm font-semibold tracking-widest uppercase">
+                            The Beginning
+                        </span>
+                        <h2 className="text-3xl md:text-5xl font-display font-bold leading-tight">
+                            From Friendship to Fragrance
+                        </h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-gray-800 to-gray-400 rounded-full" />
+
+                        <blockquote className="border-l-4 border-gray-800 pl-6 italic text-lg text-gray-600 my-8">
+                            "We didn’t know how to start a business, but we knew what we wanted to create — a scent that carries emotion, trust, and identity."
+                        </blockquote>
+
+                        <div className="space-y-4 text-gray-700 leading-relaxed">
+                            <p>
+                                Devid Aura was born from the unwavering trust between two childhood friends. United by a dream and guided by passion, Harshvardhan and Yomesh built more than a perfume brand — they built an experience that reflects who you are.
+                            </p>
+                            <p>
+                                With no roadmap but endless determination, their journey transformed mistakes into lessons and curiosity into art. Every bottle of Devid Aura holds that story — a blend of purity, bond, and trust.
+                            </p>
+                            <p className="font-medium text-gray-900">
+                                This is not just fragrance. It’s aura — your essence, reimagined.
+                            </p>
+                        </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* PILLARS */}
-            <section className="relative py-32 px-6 md:px-12 bg-gradient-to-b from-muted/30 to-background">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-20" data-aos="fade-up">
-                        <span className="text-accent text-sm font-semibold tracking-widest uppercase">Our Pillars</span>
-                        <h2 className="text-3xl md:text-6xl font-display font-bold mt-4 mb-6">Built on Truth</h2>
-                        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Every bottle of Devid Aura embodies these unwavering principles</p>
-                    </div>
+            {/* Pillars Section */}
+            <section className="relative py-12 px-6 md:px-12 overflow-hidden">
+                <div className="max-w-7xl mx-auto text-center mb-24">
+                    <motion.span
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="text-gray-500 text-sm font-semibold tracking-widest uppercase"
+                    >
+                        Our Pillars
+                    </motion.span>
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1 }}
+                        viewport={{ once: true }}
+                        className="text-4xl md:text-6xl font-display font-bold mt-4 mb-6"
+                    >
+                        Built on Essence
+                    </motion.h2>
+                    <motion.div
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        whileInView={{ opacity: 1, scaleX: 1 }}
+                        transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
+                        viewport={{ once: true }}
+                        className="mx-auto w-24 h-[2px] bg-gradient-to-r from-black via-gray-600 to-gray-400 rounded-full mb-8"
+                    />
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.4 }}
+                        viewport={{ once: true }}
+                        className="text-lg text-gray-600 max-w-2xl mx-auto"
+                    >
+                        The foundation of Devid Aura — crafted from conviction, connection, and clarity.
+                    </motion.p>
+                </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-
-                        <div data-aos="fade-up" data-aos-delay="0" className="relative group">
-                            <div className="bg-card rounded-3xl p-10 shadow-soft hover:shadow-gold transition-all border border-border h-full">
-                                <div className="text-accent mb-6 transform group-hover:scale-110 transition-transform"><Leaf className="h-12 w-12" /></div>
-                                <h3 className="text-2xl font-display font-bold mb-4">Purity</h3>
-                                <p className="text-muted-foreground leading-relaxed">We source only the finest, ethically harvested natural essences from untouched corners of the earth. No compromises, no shortcuts—just nature's truest expression.</p>
-                                <div className="absolute -z-10 top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-accent/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+                    {pillars.map((pillar, i) => (
+                        <motion.div
+                            key={pillar.title}
+                            custom={i}
+                            variants={cardVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: '-100px' }}
+                            className="relative bg-white/80 backdrop-blur-md border border-gray-200 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1"
+                        >
+                            <div className="p-10 flex flex-col items-center text-center space-y-6">
+                                <div className="text-gray-900">{pillar.icon}</div>
+                                <h3 className="text-2xl font-bold font-display">{pillar.title}</h3>
+                                <p className="text-gray-600 leading-relaxed">{pillar.text}</p>
                             </div>
-                        </div>
-
-                        <div data-aos="fade-up" data-aos-delay="100" className="relative group">
-                            <div className="bg-card rounded-3xl p-10 shadow-soft hover:shadow-gold transition-all border border-border h-full">
-                                <div className="text-accent mb-6 transform group-hover:scale-110 transition-transform"><Droplet className="h-12 w-12" /></div>
-                                <h3 className="text-2xl font-display font-bold mb-4">Uniqueness</h3>
-                                <p className="text-muted-foreground leading-relaxed">Each fragrance is a singular creation, never replicated. We celebrate individuality, crafting scents that resonate with your soul's unique frequency.</p>
-                                <div className="absolute -z-10 top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-accent/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                        </div>
-
-                        <div data-aos="fade-up" data-aos-delay="200" className="relative group">
-                            <div className="bg-card rounded-3xl p-10 shadow-soft hover:shadow-gold transition-all border border-border h-full">
-                                <div className="text-accent mb-6 transform group-hover:scale-110 transition-transform"><Shield className="h-12 w-12" /></div>
-                                <h3 className="text-2xl font-display font-bold mb-4">Trust</h3>
-                                <p className="text-muted-foreground leading-relaxed">Born from struggle, our brand stands on transparency and integrity. Every promise kept, every ingredient disclosed, every story truthfully told.</p>
-                                <div className="absolute -z-10 top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-accent/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                        </div>
-
-                    </div>
+                        </motion.div>
+                    ))}
                 </div>
             </section>
 
-            {/* PROCESS / CREATION */}
-            <section className="relative py-32 px-6 md:px-12">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Process Section */}
+            <section className="relative py-12 px-6 md:px-12">
+                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+                    <motion.div
+                        initial={{ opacity: 0, x: -40 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="space-y-6"
+                    >
+                        <span className="text-gray-500 text-sm font-semibold tracking-widest uppercase">
+                            The Process
+                        </span>
+                        <h2 className="text-3xl md:text-5xl font-display font-bold leading-tight">
+                            The Craft of Aura
+                        </h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-gray-800 to-gray-400 rounded-full" />
 
-                        <div data-aos="fade-right" className="space-y-6 lg:order-1 order-2">
-                            <span className="text-accent text-sm font-semibold tracking-widest uppercase">The Process</span>
-                            <h2 className="text-3xl md:text-5xl font-display font-bold leading-tight">The Art of Creation</h2>
-                            <div className="w-20 h-1 bg-gradient-to-r from-secondary to-accent rounded-full" />
-
-                            <div className="space-y-6 mt-8">
-                                <div className="flex gap-4 items-start group">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-primary transition-all"><Sparkles className="h-6 w-6" /></div>
-                                    <div>
-                                        <h4 className="font-display font-semibold text-lg mb-2">Ethical Sourcing</h4>
-                                        <p className="text-muted-foreground leading-relaxed">We journey to the world's most pristine locations, working directly with farmers and harvesters who share our commitment to sustainability.</p>
-                                    </div>
+                        <div className="space-y-6 mt-8">
+                            <div className="flex gap-4 items-start group">
+                                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-800 group-hover:bg-gray-800 group-hover:text-white transition-all">
+                                    <Sparkles className="h-6 w-6" />
                                 </div>
-
-                                <div className="flex gap-4 items-start group">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-primary transition-all"><Crown className="h-6 w-6" /></div>
-                                    <div>
-                                        <h4 className="font-display font-semibold text-lg mb-2">Master Blending</h4>
-                                        <p className="text-muted-foreground leading-relaxed">David personally crafts each formula, balancing rare essences with intuition honed through years of struggle and discovery.</p>
-                                    </div>
+                                <div>
+                                    <h4 className="font-display font-semibold text-lg mb-2">Ethical Origins</h4>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Our ingredients are gathered from ethical sources worldwide — distilled with respect for both craft and planet.
+                                    </p>
                                 </div>
+                            </div>
 
-                                <div className="flex gap-4 items-start group">
-                                    <div className="flex-shrink-0 w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-primary transition-all"><Heart className="h-6 w-6" /></div>
-                                    <div>
-                                        <h4 className="font-display font-semibold text-lg mb-2">Patient Maturation</h4>
-                                        <p className="text-muted-foreground leading-relaxed">Like fine wine, our fragrances age in carefully controlled environments, allowing notes to harmonize into timeless compositions.</p>
-                                    </div>
+                            <div className="flex gap-4 items-start group">
+                                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-800 group-hover:bg-gray-800 group-hover:text-white transition-all">
+                                    <Crown className="h-6 w-6" />
                                 </div>
+                                <div>
+                                    <h4 className="font-display font-semibold text-lg mb-2">Artisanal Blending</h4>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Each blend is balanced through instinct and memory — where science meets soul to create timeless harmony.
+                                    </p>
+                                </div>
+                            </div>
 
+                            <div className="flex gap-4 items-start group">
+                                <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-800 group-hover:bg-gray-800 group-hover:text-white transition-all">
+                                    <Heart className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-display font-semibold text-lg mb-2">Aged in Emotion</h4>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        Every fragrance matures in time, absorbing depth and character — much like the journey that created it.
+                                    </p>
+                                </div>
                             </div>
                         </div>
+                    </motion.div>
 
-                        <div data-aos="fade-left" className="relative lg:order-2 order-1">
-                            <div className="relative rounded-3xl overflow-hidden bg-card shadow-medium">
-                                <img src={BOTANICALS_IMG} alt="Pure botanical ingredients for luxury perfume" className="w-full h-[600px] object-cover" />
-                            </div>
-                            <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-secondary/20 rounded-full blur-3xl" />
+                    <motion.div
+                        initial={{ opacity: 0, x: 50 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8 }}
+                        viewport={{ once: true }}
+                        className="relative"
+                    >
+                        <div className="rounded-3xl overflow-hidden shadow-xl">
+                            <img
+                                src={BOTANICALS_IMG}
+                                alt="Botanical perfume creation"
+                                className="w-full h-[600px] object-cover"
+                            />
                         </div>
-
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* CTA / DISCOVER */}
-            <section className="relative py-32 px-6 md:px-12 overflow-hidden">
-                <div className="absolute inset-0 gradient-gold opacity-20 -z-10" />
-                <div className="max-w-4xl mx-auto text-center" data-aos="fade-up">
-                    <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">Discover Your Signature</h2>
-                    <p className="text-lg text-muted-foreground mb-12 leading-relaxed max-w-2xl mx-auto">Every soul has a scent story waiting to be told. Let Devid Aura guide you to a fragrance as unique and authentic as you are.</p>
-                    <motion.button whileHover={{ scale: 1.05 }} className="cta-btn inline-flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-accent text-primary-foreground font-semibold px-12 py-4 text-lg rounded-full shadow-gold hover:shadow-2xl transition-all">
-                        Explore Our Collection
+            {/* CTA Section */}
+            <section className="relative py-12 px-6 md:px-12 text-center overflow-hidden">
+                <div className="max-w-4xl mx-auto">
+                    <motion.h2
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1 }}
+                        viewport={{ once: true }}
+                        className="text-3xl md:text-5xl font-display font-bold mb-6"
+                    >
+                        Find the Aura Within
+                    </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.3 }}
+                        viewport={{ once: true }}
+                        className="text-lg text-gray-600 mb-12 leading-relaxed max-w-2xl mx-auto"
+                    >
+                        Devid Aura isn’t worn — it’s felt. Discover the fragrance that mirrors your soul and transforms presence into poetry.
+                    </motion.p>
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        className="inline-flex items-center justify-center gap-2 bg-black text-white font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:shadow-2xl transition-all"
+                    >
+                        Explore Collection
                     </motion.button>
-
-                    {/* decorative floating dots */}
-                    <div className="absolute top-1/2 left-10 w-2 h-2 bg-accent rounded-full animate-float" />
-                    <div className="absolute top-1/4 right-20 w-3 h-3 bg-secondary rounded-full animate-float" style={{ animationDelay: '1s' }} />
-                    <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-accent rounded-full animate-float" style={{ animationDelay: '2s' }} />
                 </div>
             </section>
+            {/* Emotional Outro Section */}
+            <section className="relative h-[50vh] flex flex-col items-center justify-center text-center overflow-hidden">
+                {/* Background image */}
+                <motion.img
+                    src="https://images.unsplash.com/photo-1621311290280-7d1469c2d575?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170"
+                    alt="Feel the Aura background"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    viewport={{ once: true }}
+                />
 
+                {/* Overlay for readability */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
+
+                {/* Content */}
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="relative z-10 px-6 max-w-4xl mx-auto text-white"
+                >
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.3 }}
+                        viewport={{ once: true }}
+                        className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
+                    >
+                        Feel the Aura
+                    </motion.h2>
+
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 1, delay: 0.6 }}
+                        viewport={{ once: true }}
+                        className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed mb-10"
+                    >
+                        More than a perfume — it’s a presence that moves with you.
+                        A silent language of confidence, elegance, and truth.
+                    </motion.p>
+                </motion.div>
+            </section>
         </div>
     );
 }
