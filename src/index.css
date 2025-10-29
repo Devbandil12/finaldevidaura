@@ -30,13 +30,11 @@
 @font-face {
   font-family: 'Libre Baskerville';
   src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
-  font-weight: 300;
 }
 
 @font-face {
   font-family: 'Libre Baskerville Bold';
   src: url('/fonts/LibreBaskerville-Bold.ttf') format('truetype');
-  font-weight: 700;
 }
 
 @font-face {
@@ -51,25 +49,28 @@ html {
 
 body {
   overflow-x: hidden !important;
-  font-family: "Luxury"; /* Fallback to sans-serif */
+  /* font-family: "Luxury"; Fallback to sans-serif */
   background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  /* color: hsl(var(--foreground)); */
 }
 
 /* Apply the heading font to all heading tags */
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Libre Baskerville"; /* Fallback to serif */
-  font-weight: 300;
-  /* font-style: italic; */
+  font-family: "Libre Baskerville Bold"; 
+  font-weight: 600;
 }
 
 /* Paragraphs and Spans will inherit the body font ("Luxury") by default */
 p {
-  font-family: "Luxury";
-  line-height: 1.6; /* Improve readability */
+  font-family: "Libre Baskerville Italic";
+  line-height: 1.6; 
+  font-weight: 400;
 }
 
-/* Spans will inherit the font of their parent element. */
+span {
+  font-family: "Libre Baskerville";
+}
+
 
 
 /* --- SCROLLBAR AND OTHER STYLES --- */

@@ -31,7 +31,6 @@ header {
 
 #navbar a {
   text-decoration: none;
-  font-weight: 600;
 }
 
 /* ===========================
@@ -78,14 +77,15 @@ header {
 .nav-links li {
   list-style: none;
   font-size: 1.2rem;
-  font-weight: 600;
-  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  font-weight: 200;
+  font-family: "Libre Baskerville Italic";
   cursor: pointer;
 }
 
 .nav-links li a {
   text-decoration: none;
   color: black;
+  font-weight: 200;
 }
 
 /* underline hover effect (kept, smoothed) */
@@ -94,6 +94,7 @@ header {
   color: #000;
   text-decoration: none !important;
   position: relative;
+  font-weight: 200;
 }
 
 .part-2 a::after {
