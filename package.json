@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "npx git-lfs install && npx git-lfs pull",
+    "prebuild": "apt-get update && apt-get install -y git-lfs && git-lfs install && git-lfs pull",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
