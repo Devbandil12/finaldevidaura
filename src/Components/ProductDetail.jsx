@@ -245,7 +245,7 @@ const ProductDetail = () => {
                 className="flex flex-col"
               >
                 <div className="mb-6">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-4 mt-8">
                     <div className="flex-1">
                       <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
                         {product.name}
@@ -283,7 +283,7 @@ const ProductDetail = () => {
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pb-6 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center ">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">Quantity:</span>
                       <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
@@ -323,7 +323,7 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                <div className="mt-auto space-y-3 pt-6 border-t border-gray-200">
+                <div className="mt-auto space-y-3 ">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       onClick={handleAddToCart}

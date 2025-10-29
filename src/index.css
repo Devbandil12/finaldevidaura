@@ -21,28 +21,29 @@
 /* Body Font (Sans-Serif) */
 /* --- FONT SETUP --- */
 
-/* Body Font (Sans-Serif) */
 @font-face {
   font-family: 'Luxury';
   src: url('/fonts/NunitoSans-VariableFont.ttf') format('truetype');
-
+  font-weight: 100 900;
 }
 
-/* Heading Font (Serif) */
 @font-face {
   font-family: 'Libre Baskerville';
   src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
+  font-weight: 300;
 }
 
 @font-face {
-  font-family: 'Libre Baskerville';
+  font-family: 'Libre Baskerville Bold';
   src: url('/fonts/LibreBaskerville-Bold.ttf') format('truetype');
+  font-weight: 700;
 }
 
 @font-face {
-  font-family: 'Libre Baskerville-italic';
+  font-family: 'Libre Baskerville Italic';
   src: url('/fonts/LibreBaskerville-Italic.ttf') format('truetype');
 }
+
 
 html {
   overflow-x: hidden !important;
@@ -58,6 +59,7 @@ body {
 /* Apply the heading font to all heading tags */
 h1, h2, h3, h4, h5, h6 {
   font-family: "Libre Baskerville"; /* Fallback to serif */
+  font-weight: 300;
   /* font-style: italic; */
 }
 

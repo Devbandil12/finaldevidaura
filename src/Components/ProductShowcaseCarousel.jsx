@@ -107,7 +107,7 @@ export default function ImmersiveProductShowcase() {
   return (
     <>
       <div className="text-center px-4">
-        <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-wider drop-shadow-lg">
+        <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-wider drop-shadow-lg ">
           Explore Our Scents
         </h2>
         <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
