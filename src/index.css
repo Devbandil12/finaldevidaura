@@ -16,10 +16,38 @@
   }
 }
 
+/* --- FONT SETUP --- */
+
+/* Body Font (Sans-Serif) */
 @font-face {
-  font-family: Luxury;
+  font-family: 'Luxury';
   src: url(fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf);
+  font-weight: normal;
+  font-style: normal;
 }
+
+/* Heading Font (Serif) */
+@font-face {
+  font-family: 'Libre Baskerville';
+  src: url(fonts/LibreBaskerville-Regular.ttf); /* Make sure this path is correct */
+  font-weight: normal; /* 400 */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Libre Baskerville';
+  src: url(fonts/LibreBaskerville-Bold.ttf); /* Make sure this path is correct */
+  font-weight: bold; /* 700 */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Libre Baskerville';
+  src: url(fonts/LibreBaskerville-Italic.ttf); /* Make sure this path is correct */
+  font-weight: normal; /* 400 */
+  font-style: italic;
+}
+
 
 html {
   overflow-x: hidden !important;
@@ -27,16 +55,31 @@ html {
 
 body {
   overflow-x: hidden !important;
-  font-family: "Luxury";
-  /* Use CSS design tokens for background and foreground so components (hero, etc.) inherit correct theme colors */
+  font-family: "Luxury"; /* Fallback to sans-serif */
   background: hsl(var(--background));
   color: hsl(var(--foreground));
 }
 
+/* Apply the heading font to all heading tags */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Libre Baskerville"; /* Fallback to serif */
+  /* font-style: italic; */
+}
+
+/* Paragraphs and Spans will inherit the body font ("Luxury") by default */
+p {
+  font-family: "Luxury";
+  line-height: 1.6; /* Improve readability */
+}
+
+/* Spans will inherit the font of their parent element. */
+
+
+/* --- SCROLLBAR AND OTHER STYLES --- */
+
 /* Scrollbar container */
 ::-webkit-scrollbar {
   width: 6px;
-  /* width for vertical scrollbar */
   margin-right: 5px;
 }
 
@@ -56,19 +99,13 @@ body {
   background: #555;
 }
 
-
-
-
-/* styles.css */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
 .scrollbar-hide {
   -ms-overflow-style: none;
-  /* IE and Edge */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 
@@ -117,7 +154,6 @@ body {
 }
 
 /* product.jsx css */
-
 .custom-grid {
   display: grid;
   gap: 2rem;
@@ -141,4 +177,3 @@ body {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
-

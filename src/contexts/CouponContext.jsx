@@ -23,7 +23,6 @@ export const CouponProvider = ({ children }) => {
   
   const refreshCoupons = useCallback(async () => {
     const endpoint = `${BASE_URL}/api/coupons`;
-    console.log("🔍 [CouponContext] fetching coupons from:", endpoint);
     try {
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error(`Status ${res.status}`);
