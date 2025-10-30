@@ -834,3 +834,92 @@ header {
     padding-top: 50px;
   }
 }
+/* =======================================
+   Fix: Profile Dropdown & Sidebar Text Overflow
+   ======================================= */
+
+/* --- Profile Dropdown (Desktop) --- */
+.desktop-profile-info .user-data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0; /* for ellipsis to work properly in flex containers */
+}
+
+.desktop-profile-info .user-data .user-name-role h3,
+.desktop-profile-info .user-data h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: normal; /* allow wrapping */
+  word-wrap: break-word;
+  text-align: left;
+}
+
+.desktop-profile-info .user-data p,
+.desktop-profile-info .user-data #profile-email {
+  font-size: 0.9rem;
+  color: #666;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* show ... when overflowing */
+  text-align: left;
+}
+
+/* --- Sidebar User Info (Mobile) --- */
+.sidebar-user-details {
+  align-items: center;
+  text-align: left;
+}
+
+.sidebar-user-details .user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0; /* required for ellipsis inside flexbox */
+}
+
+.sidebar-user-details .user-info h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: normal; /* wraps to next line if too long */
+  word-wrap: break-word;
+  text-align: left;
+}
+
+.sidebar-user-details .user-info .user-email {
+  font-size: 0.85rem;
+  color: #777;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* adds ... at the end */
+  text-align: left;
+}
+
+/* =======================================
+   Guest User Text Wrapping Fix
+   ======================================= */
+
+/* Profile dropdown (desktop) for guest */
+.guest .desktop-profile-info .user-data p,
+.guest .desktop-profile-info .user-data #profile-email {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
+}
+
+/* Sidebar (mobile) for guest */
+.guest .sidebar-user-details .user-info .user-email {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-wrap: break-word;
+}

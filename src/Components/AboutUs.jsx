@@ -1,12 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Leaf, Link2, Shield, Sparkles, Crown, Heart } from 'lucide-react';
+// Assuming HeroImage is a small, optimized placeholder or necessary eager load for LCP
 import HeroImage from "../assets/images/our-story.png";
 
 // Royalty-free Unsplash image URLs
 const FOUNDERS_IMG = 'https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?auto=format&fit=crop&w=1600&q=80';
 const BOTANICALS_IMG = 'https://images.unsplash.com/photo-1526045612212-70caf35c14df?auto=format&fit=crop&w=1600&q=80';
+const OUTRO_IMG = 'https://images.unsplash.com/photo-1621311290280-7d1469c2d575?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170';
 
+// --- Reusable Skeleton/Lazy Image Component for performance ---
+const LazyImage = ({ src, alt, className, eager = false, loading: loadingProp, ...rest }) => {
+    const [isLoaded, setIsLoaded] = useState(eager);
+    const loadingStrategy = eager ? 'eager' : (loadingProp || 'lazy');
+
+    return (
+        // Container maintains size to prevent Cumulative Layout Shift (CLS)
+        <div className={`relative ${className} bg-gray-100`}>
+            <img
+                src={src}
+                alt={alt}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                loading={loadingStrategy}
+                onLoad={() => setIsLoaded(true)}
+                {...rest}
+            />
+            {/* Skeleton/Shimmer effect (only visible when not loaded) */}
+            {!isLoaded && (
+                <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+            )}
+        </div>
+    );
+};
+
+// --- Main AboutUs Component ---
 export default function AboutUs() {
     const cardVariants = {
         hidden: { opacity: 0, y: 40 },
@@ -39,69 +66,79 @@ export default function AboutUs() {
         },
     ];
 
+    // Responsive padding and spacing adjustments based on the image
+    const sectionPadding = "py-16 md:py-24 px-4 md:px-8";
+
     return (
-        <div className="relative overflow-hidden bg-white text-gray-900 py-12">
-            {/* Hero Section */}
-            <section className="relative h-[50vh] flex flex-col items-center justify-center text-center overflow-hidden">
-                {/* Background image with smooth zoom + fade animation */}
-                <motion.img
-                    src={HeroImage}
-                    alt="Luxury perfume bottle with artistic shadows"
-                    className="absolute inset-0 w-full h-full object-cover object-center"
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 1.5, ease: 'easeOut' }}
-                    viewport={{ once: true }}
-                />
+        <div className="relative overflow-hidden bg-white text-gray-900">
 
-                {/* Gradient overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
-
-                {/* Text content */}
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1 }}
-                    viewport={{ once: true }}
-                    className="relative z-10 px-6 max-w-4xl mx-auto text-white"
-                >
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.3 }}
+            {/* Hero Section - Card 1 */}
+            <section className={`w-full ${sectionPadding} pt-0`} >
+                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-2xl relative h-[50vh] flex flex-col items-center justify-center text-center">
+                    {/* Background image: LCP Optimized & Eager Loaded. No scale animation. */}
+                    <motion.div
+                        className="absolute inset-0 w-full h-full"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        transition={{ duration: 1.5, ease: 'easeOut' }}
                         viewport={{ once: true }}
-                        className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
                     >
-                        Our Story
-                    </motion.h1>
+                        <img
+                            src={HeroImage}
+                            alt="Luxury perfume bottle with artistic shadows - Devid Aura"
+                            className="w-full h-full object-cover object-center"
+                            loading="eager"
+                            fetchpriority="high"
+                        />
+                    </motion.div>
 
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
+                    {/* Gradient overlay and Text content */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.6 }}
+                        transition={{ duration: 1 }}
                         viewport={{ once: true }}
-                        className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed"
+                        className="relative z-10 px-6 max-w-4xl mx-auto text-white"
                     >
-                        The bond of two friends, a shared dream, and the fragrance that became their aura.
-                    </motion.p>
-                </motion.div>
+                        <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, delay: 0.3 }}
+                            viewport={{ once: true }}
+                            className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
+                        >
+                            Our Story
+                        </motion.h1>
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, delay: 0.6 }}
+                            viewport={{ once: true }}
+                            className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed"
+                        >
+                            The bond of two friends, a shared dream, and the fragrance that became their aura.
+                        </motion.p>
+                    </motion.div>
+                </div>
             </section>
 
             {/* Founders Section */}
-            <section className="relative py-12 px-6 md:px-12">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+            <section className="relative py-12 px-6 md:px-12 bg-white">
+                <div className="max-w-8xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     <motion.div
                         initial={{ opacity: 0, x: -50 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8 }}
-                        viewport={{ once: true }}
+                        viewport={{ once: true, amount: 0.2 }}
                         className="relative"
                     >
-                        <div className="rounded-3xl overflow-hidden shadow-2xl group">
-                            <img
+                        <div className="rounded-3xl overflow-hidden shadow-2xl group relative h-[600px]">
+                            <LazyImage
                                 src={FOUNDERS_IMG}
-                                alt="Founders of Devid Aura"
-                                className="w-full h-[600px] object-cover transition-transform duration-700 group-hover:scale-105"
+                                alt="Founders of Devid Aura: Harshvardhan Singh Jadon and Yomesh Chaudhary"
+                                className="w-full h-full transition-transform duration-700 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                             <div className="absolute bottom-8 left-8 text-white">
@@ -115,6 +152,7 @@ export default function AboutUs() {
                         </div>
                     </motion.div>
 
+                    {/* Text content */}
                     <motion.div
                         initial={{ opacity: 0, x: 50 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -150,68 +188,72 @@ export default function AboutUs() {
             </section>
 
             {/* Pillars Section */}
-            <section className="relative py-12 px-6 md:px-12 overflow-hidden">
-                <div className="max-w-7xl mx-auto text-center mb-24">
+            <section className="relative py-24 px-6 md:px-12 bg-white">
+
+                {/* Heading */}
+                <div className="max-w-5xl mx-auto text-center mb-20">
                     <motion.span
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
+                        transition={{ duration: 0.6 }}
                         viewport={{ once: true }}
-                        className="text-gray-500 text-sm font-semibold tracking-widest uppercase"
+                        className="text-gray-500 text-xs tracking-[0.25em] uppercase"
                     >
                         Our Pillars
                     </motion.span>
+
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1 }}
+                        transition={{ duration: 0.8 }}
                         viewport={{ once: true }}
-                        className="text-4xl md:text-6xl font-display font-bold mt-4 mb-6"
+                        className="text-4xl md:text-6xl font-display font-semibold tracking-tight mt-3"
                     >
                         Built on Essence
                     </motion.h2>
-                    <motion.div
-                        initial={{ opacity: 0, scaleX: 0 }}
-                        whileInView={{ opacity: 1, scaleX: 1 }}
-                        transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
-                        viewport={{ once: true }}
-                        className="mx-auto w-24 h-[2px] bg-gradient-to-r from-black via-gray-600 to-gray-400 rounded-full mb-8"
-                    />
+
                     <motion.p
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.4 }}
+                        transition={{ duration: 1 }}
                         viewport={{ once: true }}
-                        className="text-lg text-gray-600 max-w-2xl mx-auto"
+                        className="text-gray-600 text-lg max-w-2xl mx-auto mt-6 leading-relaxed"
                     >
                         The foundation of Devid Aura — crafted from conviction, connection, and clarity.
                     </motion.p>
                 </div>
 
-                <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+                {/* Premium Cards */}
+                <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-14">
                     {pillars.map((pillar, i) => (
                         <motion.div
                             key={pillar.title}
-                            custom={i}
-                            variants={cardVariants}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true, margin: '-100px' }}
-                            className="relative bg-white/80 backdrop-blur-md border border-gray-200 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-500 hover:-translate-y-1"
+                            initial={{ opacity: 0, y: 60 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.7, delay: i * 0.15 }}
+                            viewport={{ once: true }}
+                            className="
+          bg-white border border-black/5 
+          rounded-2xl shadow-sm hover:shadow-md 
+          transition-all duration-400 hover:-translate-y-1 
+          p-10 text-center
+        "
                         >
-                            <div className="p-10 flex flex-col items-center text-center space-y-6">
-                                <div className="text-gray-900">{pillar.icon}</div>
-                                <h3 className="text-2xl font-bold font-display">{pillar.title}</h3>
-                                <p className="text-gray-600 leading-relaxed">{pillar.text}</p>
-                            </div>
+                            <div className="text-gray-900 text-4xl mb-6">{pillar.icon}</div>
+                            <h3 className="text-2xl font-medium tracking-tight">{pillar.title}</h3>
+                            <p className="text-gray-600 text-base leading-relaxed mt-4">
+                                {pillar.text}
+                            </p>
                         </motion.div>
                     ))}
                 </div>
+
             </section>
+
 
             {/* Process Section */}
             <section className="relative py-12 px-6 md:px-12">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+                <div className="max-w-8xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
                     <motion.div
                         initial={{ opacity: 0, x: -40 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -245,6 +287,7 @@ export default function AboutUs() {
                                     <Crown className="h-6 w-6" />
                                 </div>
                                 <div>
+                                    {/* FIX APPLIED: Added missing closing quote mark here: mb-2" */}
                                     <h4 className="font-display font-semibold text-lg mb-2">Artisanal Blending</h4>
                                     <p className="text-gray-600 leading-relaxed">
                                         Each blend is balanced through instinct and memory — where science meets soul to create timeless harmony.
@@ -257,6 +300,7 @@ export default function AboutUs() {
                                     <Heart className="h-6 w-6" />
                                 </div>
                                 <div>
+                                    {/* FIX APPLIED: Added missing closing quote mark here: mb-2" */}
                                     <h4 className="font-display font-semibold text-lg mb-2">Aged in Emotion</h4>
                                     <p className="text-gray-600 leading-relaxed">
                                         Every fragrance matures in time, absorbing depth and character — much like the journey that created it.
@@ -270,94 +314,79 @@ export default function AboutUs() {
                         initial={{ opacity: 0, x: 50 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.8 }}
-                        viewport={{ once: true }}
+                        viewport={{ once: true, amount: 0.2 }}
                         className="relative"
                     >
-                        <div className="rounded-3xl overflow-hidden shadow-xl">
-                            <img
+                        <div className="rounded-3xl overflow-hidden shadow-xl relative h-[600px]">
+                            <LazyImage
                                 src={BOTANICALS_IMG}
-                                alt="Botanical perfume creation"
-                                className="w-full h-[600px] object-cover"
+                                alt="Botanical perfume creation with natural ingredients"
+                                className="w-full h-full"
                             />
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="relative py-12 px-6 md:px-12 text-center overflow-hidden">
-                <div className="max-w-4xl mx-auto">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 30 }}
+
+            {/* CTA / Emotional Outro Section - Card 4 */}
+            <section className={`w-full ${sectionPadding} pt-0 pb-16`}>
+                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-2xl relative h-[50vh] flex flex-col items-center justify-center text-center">
+                    {/* Background image: Lazy Loaded. No scale animation. */}
+                    <motion.div
+                        className="absolute inset-0 w-full h-full"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        transition={{ duration: 1.5, ease: 'easeOut' }}
+                        viewport={{ once: true }}
+                    >
+                        <LazyImage
+                            src={OUTRO_IMG}
+                            alt="Background of a person feeling confident to 'Feel the Aura'"
+                            className="w-full h-full"
+                            loading="lazy"
+                            eager={false}
+                        />
+                    </motion.div>
+
+
+                    {/* Overlay and Content */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 1 }}
                         viewport={{ once: true }}
-                        className="text-3xl md:text-5xl font-display font-bold mb-6"
+                        className="relative z-10 px-6 max-w-4xl mx-auto text-white"
                     >
-                        Find the Aura Within
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.3 }}
-                        viewport={{ once: true }}
-                        className="text-lg text-gray-600 mb-12 leading-relaxed max-w-2xl mx-auto"
-                    >
-                        Devid Aura isn’t worn — it’s felt. Discover the fragrance that mirrors your soul and transforms presence into poetry.
-                    </motion.p>
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        className="inline-flex items-center justify-center gap-2 bg-black text-white font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:shadow-2xl transition-all"
-                    >
-                        Explore Collection
-                    </motion.button>
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, delay: 0.3 }}
+                            viewport={{ once: true }}
+                            className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
+                        >
+                            Feel the Aura
+                        </motion.h2>
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, delay: 0.6 }}
+                            viewport={{ once: true }}
+                            className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed mb-10"
+                        >
+                            More than a perfume — it’s a presence that moves with you.
+                            A silent language of confidence, elegance, and truth.
+                        </motion.p>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:shadow-2xl transition-all"
+                        >
+                            Explore Collection
+                        </motion.button>
+                    </motion.div>
                 </div>
-            </section>
-            {/* Emotional Outro Section */}
-            <section className="relative h-[50vh] flex flex-col items-center justify-center text-center overflow-hidden">
-                {/* Background image */}
-                <motion.img
-                    src="https://images.unsplash.com/photo-1621311290280-7d1469c2d575?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1170"
-                    alt="Feel the Aura background"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 1.5, ease: 'easeOut' }}
-                    viewport={{ once: true }}
-                />
-
-                {/* Overlay for readability */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/30" />
-
-                {/* Content */}
-                <motion.div
-                    initial={{ opacity: 0, y: 40 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1 }}
-                    viewport={{ once: true }}
-                    className="relative z-10 px-6 max-w-4xl mx-auto text-white"
-                >
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.3 }}
-                        viewport={{ once: true }}
-                        className="text-5xl md:text-7xl font-black mb-6 tracking-tight drop-shadow-lg"
-                    >
-                        Feel the Aura
-                    </motion.h2>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 1, delay: 0.6 }}
-                        viewport={{ once: true }}
-                        className="max-w-2xl mx-auto text-lg md:text-2xl text-gray-200 leading-relaxed mb-10"
-                    >
-                        More than a perfume — it’s a presence that moves with you.
-                        A silent language of confidence, elegance, and truth.
-                    </motion.p>
-                </motion.div>
             </section>
         </div>
     );

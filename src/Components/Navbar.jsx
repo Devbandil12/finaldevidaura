@@ -82,6 +82,15 @@ const Navbar = ({ onVisibilityChange }) => {
   }, []);
 
   useEffect(() => {
+  if (isLoggedIn) {
+    document.body.classList.remove("guest");
+  } else {
+    document.body.classList.add("guest");
+  }
+}, [isLoggedIn]);
+
+
+  useEffect(() => {
     if (isOpen) {
       previouslyFocusedRef.current = document.activeElement;
       // prevent scrolling

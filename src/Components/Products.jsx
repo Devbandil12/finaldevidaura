@@ -1,7 +1,7 @@
 // src/pages/Products.js
 import React, { useContext, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion"; // Make sure motion is imported
+import { motion } from "framer-motion"; 
 
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -13,7 +13,6 @@ import CartImage from "../assets/cart-svgrepo-com copy.svg";
 import { gsap } from "gsap";
 import HeroButton from "./HeroButton";
 
-// ✅ UPDATED ANIMATION VARIANT FOR EACH CARD
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: {
@@ -98,7 +97,6 @@ const Products = () => {
             Quality products curated just for you.
           </p>
         </div>
-        {/* ✅ The grid container is now a regular div */}
         <div className="custom-grid">
           {products.map((product) => {
             const inWishlist = isProductInWishlist(product.id);
@@ -106,16 +104,14 @@ const Products = () => {
             const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
 
             return (
-              // ✅ Animation props are now on the card itself
               <motion.div
                 key={product.id}
                 variants={cardVariants}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }} // Triggers when 20% of the card is visible
+                viewport={{ once: true, amount: 0.2 }}
                 className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                {/* Image container */}
                 <div
                   className="relative overflow-hidden aspect-square cursor-pointer"
                   onClick={() => handleSlideClick(product)}
@@ -133,7 +129,6 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* Content area */}
                 <div className="p-4 flex flex-col gap-2 flex-grow">
                   <div className="flex justify-between items-start">
                     <h3
@@ -165,7 +160,6 @@ const Products = () => {
                   </p>
                 </div>
 
-                {/* Button container */}
                 <div className="p-4 pt-0">
                   {inCart ? (
                     <HeroButton
