@@ -94,14 +94,14 @@ const HeroSection = () => {
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="container mx-auto px-6 lg:px-20 py-16 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-14 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
 
             {/* ✅ LEFT SIDE */}
             <motion.div
               initial={{ opacity: 0, x: -80 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 1 }}
-              className="space-y-10 text-center lg:text-left"
+              className="space-y-6 text-center lg:text-left"
             >
               <motion.div
                 className="absolute left-0 top-10 w-52 h-52 bg-gradient-to-br from-gold/10 to-transparent rounded-full blur-3xl pointer-events-none"
