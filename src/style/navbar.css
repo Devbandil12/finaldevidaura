@@ -499,7 +499,8 @@ header {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
   padding: 0;
   margin-top: -10px;
-  /* overflow-y: auto; */
+  border-radius: 30px;
+  
 }
 .sidebar.open {
   left: calc(100% - min(70vw, 300px));
