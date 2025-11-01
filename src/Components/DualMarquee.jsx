@@ -84,7 +84,7 @@ export default function DualMarquee() {
         (word) => word.toLowerCase() === part.toLowerCase()
       );
       return (
-        <span key={i} className={key ? highlightStyles[key] : ""}>
+        <span key={i} className={key ? highlightStyles[key] : ""} >
           {part}
         </span>
       );
@@ -96,7 +96,7 @@ export default function DualMarquee() {
       <div className="marquee-wrapper">
         <div ref={topRef} className="marquee-content">
           {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
-            <div key={`top-${idx}`} className="marquee-line">
+            <div key={`top-${idx}`} className="marquee-line text-2xl">
               {renderLine(line)}
             </div>
           ))}
@@ -106,7 +106,7 @@ export default function DualMarquee() {
       <div className="marquee-wrapper bottom-marquee">
         <div ref={bottomRef} className="marquee-content reverse-direction">
           {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
-            <div key={`bottom-${idx}`} className="marquee-line">
+            <div key={`bottom-${idx}`} className="marquee-line text-2xl">
               {renderLine(line)}
             </div>
           ))}

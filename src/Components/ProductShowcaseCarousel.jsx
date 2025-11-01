@@ -106,8 +106,8 @@ export default function ImmersiveProductShowcase() {
 
   return (
     <>
-      <div className="text-center px-4">
-        <h2 className="text-5xl md:text-6xl font-black text-gray-900 tracking-wider drop-shadow-lg ">
+      <div className="text-center px-4 mb-15 lg:mb-0">
+        <h2 className="text-5xl md:text-6xl mt-25  font-black text-gray-900 tracking-wider drop-shadow-lg ">
           Explore Our Scents
         </h2>
         <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
@@ -126,23 +126,22 @@ export default function ImmersiveProductShowcase() {
             className="w-full h-full flex flex-col justify-center text-center lg:text-left relative z-10"
             variants={infoVariants}
             initial="hidden"
-            // ✅ CHANGE HERE: Use whileInView to trigger animation on scroll
             whileInView="visible"
-            // ✅ CHANGE HERE: Configure the trigger behavior
             viewport={{ once: true, amount: 0.3 }}
           >
+            {/* ✅ FIXED: Removed the <AnimatePresence> wrapper from around the h1 */}
             <div className="relative">
-              <AnimatePresence mode="wait">
-                <motion.h1
-                  key={product.name || activeIdx}
-                  className="text-5xl md:text-7xl font-extrabold tracking-tighter uppercase"
-                  style={{ color: accent.primary }}
-                  variants={itemVariants}
-                >
-                  {product.name || "Untitled Scent"}
-                </motion.h1>
-              </AnimatePresence>
+              <motion.h1
+                // Removed the 'key' prop
+                className="text-5xl md:text-7xl font-extrabold tracking-tighter uppercase"
+                style={{ color: accent.primary }}
+                variants={itemVariants} // This variant will now be correctly triggered by the parent
+              >
+                {product.name || "Untitled Scent"}
+              </motion.h1>
             </div>
+            {/* End of fix */}
+
             <motion.p variants={itemVariants} className="font-serif text-xl italic mb-2" style={{ color: accent.primary }}>
               {scent?.slogan || "An unforgettable essence"}
             </motion.p>
@@ -198,7 +197,6 @@ export default function ImmersiveProductShowcase() {
                 key={`${activeIdx}-bg-text`}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 initial={{ opacity: 0, scale: 1.2 }}
-                // ✅ CHANGE HERE: Also animate this element when in view
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, amount: 0.2 }}
                 exit={{ opacity: 0, scale: 0.8 }}
@@ -217,7 +215,6 @@ export default function ImmersiveProductShowcase() {
                 variants={imageVariants}
                 custom={direction}
                 initial="enter"
-                // ✅ CHANGE HERE: The main image will now animate in on scroll
                 whileInView="center"
                 viewport={{ once: true, amount: 0.2 }}
                 exit="exit"

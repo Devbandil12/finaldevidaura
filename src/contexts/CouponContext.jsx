@@ -31,7 +31,6 @@ export const CouponProvider = ({ children }) => {
       return data;
     } catch (err) {
       console.error("[CouponContext] failed to load:", err);
-      window.toast.error("Could not load coupons");
     }
   }, [BASE_URL]);
 
@@ -157,7 +156,6 @@ export const CouponProvider = ({ children }) => {
       setAvailableCoupons(data);
     } catch (err) {
       console.error("[CouponContext] failed to load available coupons:", err);
-      window.toast.error("Could not load available coupons");
     }
   }, [BASE_URL]);
 

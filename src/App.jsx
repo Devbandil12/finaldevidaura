@@ -144,7 +144,6 @@ const HomePage = () => {
       <HeroSection />
       <DualMarquee />
       <div id="about-section">
-        <AboutUs />
       </div>
       <div id="scents-section">
         <ProductShowcaseCarousel />
@@ -152,6 +151,7 @@ const HomePage = () => {
       <div id="collection-section">
         <Products />
       </div>
+        <AboutUs />
       <TestimonialsSection />
     </>
   );
