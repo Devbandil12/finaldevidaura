@@ -17,30 +17,23 @@
   }
 }
 
-/* --- FONT SETUP --- */
-
-/* Body Font (Sans-Serif) */
-/* --- FONT SETUP --- */
-
-@font-face {
-  font-family: 'Luxury';
-  src: url('/fonts/NunitoSans-VariableFont.ttf') format('truetype');
-  font-weight: 100 900;
-}
 
 @font-face {
   font-family: 'Libre Baskerville';
   src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Libre Baskerville Bold';
   src: url('/fonts/LibreBaskerville-Bold.ttf') format('truetype');
+  font-display: swap;
 }
 
 @font-face {
   font-family: 'Libre Baskerville Italic';
   src: url('/fonts/LibreBaskerville-Italic.ttf') format('truetype');
+  font-display: swap;
 }
 
 
