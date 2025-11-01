@@ -16,30 +16,15 @@ const marqueeLines = [
 ];
 
 const highlightStyles = {
+  refunds: "highlight-red",
+  refund: "highlight-red",
   trusted: "highlight-green",
+  luxury: "highlight-purple",
   success: "highlight-yellow",
   confidence: "highlight-blue",
-  Honesty: "highlight-blue",
-  power: "highlight-dark",
-  luxury: "highlight-purple",
-  Memorable: "highlight-purple",
-  "Long-lasting": "highlight-gold",
-  day: "highlight-gold",
-  last: "highlight-gray",
   expensive: "highlight-gold",
-  less: "highlight-green",
-  bold: "highlight-maroon",
-  Masculine: "highlight-dark",
-  smart: "highlight-blue",
-  tech: "highlight-blue",
-  refunds: "highlight-blue",
-  refund: "highlight-blue",
-  stress: "highlight-red",
-  drama: "highlight-orange",
-  Instant: "highlight-cyan",
-  Tested: "highlight-green",
-  Verified: "highlight-green",
-  Approved: "highlight-green",
+  power: "highlight-dark",
+  "Long-lasting": "highlight-gold"
 };
 
 export default function DualMarquee() {
@@ -48,10 +33,8 @@ export default function DualMarquee() {
   const topTween = useRef(null);
   const bottomTween = useRef(null);
 
-  // Create left-moving marquee
-  const createLeftMarquee = (element, width, duration) => {
-    return gsap.fromTo(
-      element,
+  const createLeftMarquee = (element, width, duration = 50) => {
+    return gsap.fromTo(element, 
       { x: 0 },
       {
         x: -width / 2,
@@ -62,10 +45,8 @@ export default function DualMarquee() {
     );
   };
 
-  // Create right-moving marquee (opposite direction)
-  const createRightMarquee = (element, width, duration) => {
-    return gsap.fromTo(
-      element,
+  const createRightMarquee = (element, width, duration = 50) => {
+    return gsap.fromTo(element,
       { x: -width / 2 },
       {
         x: 0,
@@ -85,16 +66,8 @@ export default function DualMarquee() {
     const topWidth = topEl.scrollWidth;
     const bottomWidth = bottomEl.scrollWidth;
 
-    // 🧮 Base speed multiplier (smaller = slower)
-    const baseSpeed = 0.009;
-
-    // Dynamically calculate duration based on width
-    const topDuration = topWidth * baseSpeed;
-    const bottomDuration = bottomWidth * baseSpeed;
-
-    // Start animations
-    topTween.current = createLeftMarquee(topEl, topWidth, topDuration);
-    bottomTween.current = createRightMarquee(bottomEl, bottomWidth, bottomDuration);
+    topTween.current = createLeftMarquee(topEl, topWidth, 60);
+    bottomTween.current = createRightMarquee(bottomEl, bottomWidth, 60);
 
     return () => {
       topTween.current?.kill();
@@ -120,7 +93,6 @@ export default function DualMarquee() {
 
   return (
     <div className="dual-marquee-container">
-      {/* Top Marquee - Moving Left */}
       <div className="marquee-wrapper">
         <div ref={topRef} className="marquee-content">
           {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
@@ -131,7 +103,6 @@ export default function DualMarquee() {
         </div>
       </div>
 
-      {/* Bottom Marquee - Moving Right */}
       <div className="marquee-wrapper bottom-marquee">
         <div ref={bottomRef} className="marquee-content reverse-direction">
           {[...marqueeLines, ...marqueeLines, ...marqueeLines].map((line, idx) => (
