@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react"; 
 import { motion } from "framer-motion";
-import gsap from "gsap";
 import bottleImage from "../assets/images/bottle-perfume.webp";
 import { useNavigate } from "react-router-dom";
 
@@ -29,7 +28,7 @@ const keyframes = `
 
 const HeroSection = () => {
     const navigate = useNavigate();
-    const bottleRef = useRef(null);
+    const bottleRef = useRef(null); 
 
     const scrollOrNavigate = (sectionId) => {
         if (window.location.pathname !== "/") {
@@ -40,50 +39,7 @@ const HeroSection = () => {
         }
     };
 
-    /** ✅ Floating + mouse tracking (disabled on small screens) */
-    useEffect(() => {
-        if (!bottleRef.current) return;
 
-        const isDesktop = window.innerWidth > 768;
-        let tl;
-
-        // ✅ Floating animation only on desktop
-        if (isDesktop) {
-            tl = gsap.timeline({ repeat: -1, yoyo: true });
-            tl.to(bottleRef.current, {
-                y: -25,
-                duration: 3,
-                ease: "power1.inOut",
-            });
-        }
-
-        // ✅ Mouse move animation only on desktop
-        const move = (e) => {
-            if (!isDesktop) return;
-
-            const xP = e.clientX / window.innerWidth - 0.5;
-            const yP = e.clientY / window.innerHeight - 0.5;
-
-            gsap.to(bottleRef.current, {
-                x: xP * 35,
-                y: yP * 35,
-                rotationY: xP * 12,
-                rotationX: -yP * 12,
-                duration: 0.6,
-                ease: "power2.out",
-            });
-        };
-
-        window.addEventListener("mousemove", move);
-
-        return () => {
-            window.removeEventListener("mousemove", move);
-            if (tl) tl.kill();
-        };
-    }, []);
-
-
-    /** ✅ Gradient text styles */
     const onlyFeltStyles = {
         backgroundImage: `linear-gradient(90deg, hsl(${theme.colors.gold}), hsl(${theme.colors.rose}), hsl(${theme.colors.goldLight}))`,
         WebkitBackgroundClip: "text",
@@ -107,7 +63,6 @@ const HeroSection = () => {
                 <div className="container mx-auto px-6 lg:px-20 py-16 relative z-10">
                     <div className="grid lg:grid-cols-2 gap-8 items-center">
 
-                        {/* ✅ LEFT SIDE */}
                         <motion.div
                             initial={{ opacity: 0, x: -80 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -120,7 +75,6 @@ const HeroSection = () => {
                                 transition={{ duration: 5, repeat: Infinity }}
                             />
 
-                            {/* Badge */}
                             <div
                                 className="inline-flex items-center gap-2 px-4 py-1 rounded-full"
                                 style={{
@@ -144,7 +98,6 @@ const HeroSection = () => {
                                 </span>
                             </div>
 
-                            {/* Headline */}
                             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-serif font-bold leading-tight">
                                 <span style={{ color: `hsl(${theme.colors.luxuryDark})` }}>
                                     Not seen,
@@ -176,7 +129,6 @@ const HeroSection = () => {
                                 essences and wrapped in glass like a secret.
                             </p>
 
-                            {/* Buttons */}
                             <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
                                 <button
                                     onClick={() => scrollOrNavigate("collection-section")}
@@ -201,32 +153,24 @@ const HeroSection = () => {
                             </div>
                         </motion.div>
 
-                        {/* ✅ RIGHT SIDE BOTTLE */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.8, x: 80 }}
                             animate={{ opacity: 1, scale: 1, x: 0 }}
                             transition={{ duration: 1 }}
-                            className="relative flex justify-center items-center"
+                            className="relative flex justify-center items-center p-8 rounded-lg" // Added padding and rounded
+                            style={{
+                                background: `linear-gradient(to bottom right, hsla(${theme.colors.gold}, 0.1), hsla(${theme.colors.rose}, 0.1), hsla(${theme.colors.goldLight}, 0.1))`
+                            }}
                         >
                             <div
                                 ref={bottleRef}
                                 className="relative z-10"
-                                style={{ transformStyle: "preserve-3d" }}
                             >
-                                <img
-                                    src={bottleImage}
-                                    alt="Luxury Perfume Bottle"
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-64 sm:w-80 lg:w-[26rem] object-contain drop-shadow-xl"
-                                />
+                                 <img src={bottleImage} alt="Luxury Perfume Bottle" className="w-72 sm:w-96 lg:w-[28rem] h-auto object-contain" style={{ filter: 'drop-shadow(0 30px 60px rgba(212,175,55,0.4))' }} />
                             </div>
 
-                            {/* Floating bubbles */}
                             <motion.div
                                 className="absolute top-10 -left-8 px-6 py-2 rounded-full shadow-lg bg-white/90 backdrop-blur"
-                                animate={{ y: [0, -10, 0] }}
-                                transition={{ duration: 3, repeat: Infinity }}
                             >
                                 <span
                                     className="text-sm font-semibold"
@@ -238,8 +182,6 @@ const HeroSection = () => {
 
                             <motion.div
                                 className="absolute bottom-20 -right-8 px-6 py-2 rounded-full shadow-lg bg-white/90 backdrop-blur"
-                                animate={{ y: [0, 10, 0] }}
-                                transition={{ duration: 3, repeat: Infinity }}
                             >
                                 <span
                                     className="text-sm font-semibold"
