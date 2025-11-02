@@ -5,6 +5,8 @@ export const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
 
 export const AdminProvider = ({ children }) => {
+  const [abandonedCarts, setAbandonedCarts] = useState([]);
+  const [wishlistStats, setWishlistStats] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +174,29 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BASE]);
 
+  const getAbandonedCarts = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/cart/admin/abandoned`);
+      if (!res.ok) throw new Error("Failed to fetch abandoned carts");
+      const data = await res.json();
+      setAbandonedCarts(data);
+    } catch (err) {
+      console.error("❌ getAbandonedCarts failed:", err);
+      // Don't show toast for this, it's a bg task
+    }
+  }, [BACKEND_URL]);
+
+  const getWishlistStats = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/cart/admin/wishlist-stats`);
+      if (!res.ok) throw new Error("Failed to fetch wishlist stats");
+      const data = await res.json();
+      setWishlistStats(data);
+    } catch (err) {
+      console.error("❌ getWishlistStats failed:", err);
+    }
+  }, [BACKEND_URL]);
+
   /* -------------------- EFFECT -------------------- */
  useEffect(() => {
     // Wait for user loading to finish
@@ -185,15 +210,19 @@ export const AdminProvider = ({ children }) => {
       // User is an admin, fetch all data
       getAllUsers();
       getAllOrders();
+      getAbandonedCarts(); 
+      getWishlistStats();
       // setLoading(false) is handled inside these functions
     } else {
       // User is NOT an admin, clear data and stop loading
       setUsers([]);
       setOrders([]);
       setReportOrders([]);
+      setAbandonedCarts([]); 
+      setWishlistStats([]);
       setLoading(false);
     }
-  }, [isUserLoading, userdetails, getAllUsers, getAllOrders]);
+  }, [isUserLoading, userdetails, getAllUsers, getAllOrders, getAbandonedCarts, getWishlistStats]);
 
   return (
     <AdminContext.Provider
@@ -213,6 +242,8 @@ export const AdminProvider = ({ children }) => {
         createCoupon,
         reportOrders,
         getReportData,
+        abandonedCarts,
+        wishlistStats,
       }}
     >
       {children}

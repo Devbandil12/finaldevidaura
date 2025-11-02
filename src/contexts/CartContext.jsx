@@ -215,13 +215,13 @@ export const CartProvider = ({ children }) => {
             body: JSON.stringify({ userId: userdetails.id, productId: product.id, quantity: qtyToAdd }),
           });
         }
-        await getCartitems();
+        // 🟢 REMOVED: await getCartitems();
         window.toast.success(`${product.name} added to cart.`);
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
         window.toast.error(`Failed to add ${product.name} to cart.`);
-        await getCartitems();
+        await getCartitems(); // 🟢 KEPT: Revert on failure
         return false;
       }
     },
@@ -250,12 +250,12 @@ export const CartProvider = ({ children }) => {
         await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
-        await getCartitems();
+        // 🟢 REMOVED: await getCartitems();
         window.toast.info(`${product.name} removed from cart.`);
       } catch (e) {
         console.error("removeFromCart error:", e);
         window.toast.error(`Failed to remove ${product.name} from cart.`);
-        await getCartitems();
+        await getCartitems(); // 🟢 KEPT: Revert on failure
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]
@@ -291,11 +291,11 @@ export const CartProvider = ({ children }) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quantity: nextQty }),
         });
-        await getCartitems();
+        // 🟢 REMOVED: await getCartitems();
       } catch (e) {
         console.error("changeCartQuantity error:", e);
         window.toast.error("Failed to update quantity.");
-        await getCartitems();
+        await getCartitems(); // 🟢 KEPT: Revert on failure
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, removeFromCart, BACKEND_URL]
@@ -313,18 +313,24 @@ export const CartProvider = ({ children }) => {
       window.toast.error("Please sign in to clear your cart.");
       return;
     }
+
+    // 🟢 IMPROVED: Optimistic update
+    const oldCart = cart; // Save the old cart
+    setCart([]); // Optimistically clear it
+
     try {
       await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
         method: "DELETE",
       });
-      setCart([]);
+      // 🟢 REMOVED: setCart([]);
       window.toast.info("Cart cleared.");
     } catch (e) {
       console.error("clearCart error:", e);
       window.toast.error("Failed to clear cart.");
-      await getCartitems();
+      setCart(oldCart); // 🟢 Revert to old cart on failure
+      // 🟢 REMOVED: await getCartitems();
     }
-  }, [isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]);
+  }, [cart, isSignedIn, userdetails?.id, BACKEND_URL]); // 🟢 Updated dependencies
 
   const addToWishlist = useCallback(
     async (product) => {
@@ -347,19 +353,23 @@ export const CartProvider = ({ children }) => {
         return false;
       }
 
+      // 🟢 IMPROVED: Optimistic update for wishlist
+      const optimisticUpdate = [...wishlist, { product, productId: product.id, userId: userdetails.id }];
+      setWishlist(optimisticUpdate);
+
       try {
         await fetch(`${BACKEND_URL}/api/cart/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: userdetails.id, productId: product.id }),
         });
-        await getwishlist();
+        // 🟢 REMOVED: await getwishlist();
         window.toast.success(`${product.name} added to wishlist.`);
         return true;
       } catch (e) {
         console.error("addToWishlist error:", e);
         window.toast.error(`Failed to add ${product.name} to wishlist.`);
-        await getwishlist();
+        await getwishlist(); // 🟢 KEPT: Revert on failure
         return false;
       }
     },
@@ -381,16 +391,20 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
+      // 🟢 IMPROVED: Optimistic update for wishlist
+      const optimisticUpdate = wishlist.filter((item) => (item.productId ?? item.product?.id) !== product.id);
+      setWishlist(optimisticUpdate);
+
       try {
         await fetch(`${BACKEND_URL}/api/cart/wishlist/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
-        await getwishlist();
+        // 🟢 REMOVED: await getwishlist();
         window.toast.info(`${product.name} removed from wishlist.`);
       } catch (e) {
         console.error("removeFromWishlist error:", e);
         window.toast.error(`Failed to remove ${product.name} from wishlist.`);
-        await getwishlist();
+        await getwishlist(); // 🟢 KEPT: Revert on failure
       }
     },
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
@@ -400,7 +414,8 @@ export const CartProvider = ({ children }) => {
     async (product) => {
       const addedSuccessfully = await addToWishlist(product);
       if (!addedSuccessfully) {
-        return false;
+        // This will prevent removing from cart if wishlist add fails (e.g., already exists)
+        return false; 
       }
       await removeFromCart(product);
       window.toast.success(`${product.name} moved to wishlist.`);
@@ -421,18 +436,23 @@ export const CartProvider = ({ children }) => {
       window.toast.error("Please sign in to clear your wishlist.");
       return;
     }
+
+    // 🟢 IMPROVED: Optimistic update
+    const oldWishlist = wishlist;
+    setWishlist([]);
+
     try {
       await fetch(`${BACKEND_URL}/api/cart/wishlist/${userdetails.id}`, {
         method: "DELETE",
       });
-      setWishlist([]);
+      // 🟢 REMOVED: setWishlist([]);
       window.toast.info("Wishlist cleared.");
     } catch (e) {
       console.error("clearWishlist error:", e);
       window.toast.error("Failed to clear wishlist.");
-      await getwishlist();
+      setWishlist(oldWishlist); // 🟢 Revert on failure
     }
-  }, [isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]);
+  }, [wishlist, isSignedIn, userdetails?.id, BACKEND_URL]); // 🟢 Updated dependencies
 
   const toggleWishlist = useCallback(
     async (product) => {
@@ -453,6 +473,7 @@ export const CartProvider = ({ children }) => {
     async (product) => {
       const addedSuccessfully = await addToCart(product);
       if (!addedSuccessfully) {
+        // This will prevent removing from wishlist if cart add fails (e.g., out of stock)
         return false;
       }
       await removeFromWishlist(product);

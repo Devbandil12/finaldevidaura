@@ -1,5 +1,5 @@
 // src/components/Adminpanel.jsx
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useMemo } from "react"; // 🟢 Import useMemo
 import { UserContext } from "../contexts/UserContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
@@ -11,7 +11,8 @@ import ImageUploadModal from "./ImageUploadModal";
 import PincodeManager from "./PincodeManager";
 import OrderChart from "./OrderChart";
 import Reports from "./Reports";
-import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaMoneyBillWave, FaBars, FaTimes, FaMapMarkerAlt, FaTimesCircle, FaFlagCheckered, FaDownload, FaPercentage, FaUserPlus, FaUserCheck } from 'react-icons/fa'; import { Line, Pie } from 'react-chartjs-2';
+import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaMoneyBillWave, FaBars, FaTimes, FaMapMarkerAlt, FaTimesCircle, FaFlagCheckered, FaDownload, FaPercentage, FaUserPlus, FaUserCheck, FaHeart } from 'react-icons/fa';
+import { Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -127,17 +128,155 @@ const OrderDetailsPopup = ({ order, onClose }) => {
   );
 };
 
-const CartsWishlistsTab = () => {
+const CartsWishlistsTab = ({ flatCarts, stats }) => {
+  // Group the flat cart items by user
+  const abandonedCarts = useMemo(() => {
+    if (!flatCarts) return [];
+
+    const userMap = new Map();
+    flatCarts.forEach(item => {
+      const { user, product, cartItem } = item;
+
+      if (!userMap.has(user.id)) {
+        userMap.set(user.id, {
+          user: user,
+          items: [],
+          totalValue: 0,
+          lastActivity: new Date(0),
+        });
+      }
+
+      const cart = userMap.get(user.id);
+      // Ensure product is valid before calculating value
+      const price = product?.oprice ?? 0;
+      const discount = product?.discount ?? 0;
+      const itemValue = (price * (1 - discount / 100)) * cartItem.quantity;
+
+      cart.items.push({
+        ...(product || {}), // Spread product safely
+        id: product?.id || cartItem.productId, // Ensure a key
+        name: product?.name || "Unknown Product", // Fallback name
+        imageurl: product?.imageurl || [], // Fallback to empty array
+        quantity: cartItem.quantity,
+        itemValue,
+      });
+
+      cart.totalValue += itemValue;
+      const itemDate = new Date(cartItem.addedAt);
+      if (itemDate > cart.lastActivity) {
+        cart.lastActivity = itemDate;
+      }
+    });
+    // Return as an array, sorted by most recent activity
+    return Array.from(userMap.values()).sort((a, b) => b.lastActivity - a.lastActivity);
+  }, [flatCarts]);
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold">Carts & Wishlists Analytics</h2>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-4">Abandoned Carts</h3>
-        <p className="text-gray-500">This section would list the contents of abandoned carts to help with sales recovery. (Future Feature)</p>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold">Carts & Wishlists Analytics</h2>
+        {/* You could add an export button here later */}
       </div>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-4">Most Popular Wishlist Items</h3>
-        <p className="text-gray-500">This section would show which products are most frequently added to wishlists. (Future Feature)</p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        {/* Abandoned Carts Section */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-semibold flex items-center gap-3">
+            <FaShoppingCart className="text-red-500" />
+            Abandoned Carts
+          </h3>
+          <div className="bg-white p-6 rounded-lg shadow-md space-y-4 max-h-[800px] overflow-y-auto">
+            {abandonedCarts.length === 0 && <p className="text-gray-500">No abandoned carts found.</p>}
+            {abandonedCarts.map(cart => (
+              <div key={cart.user.id} className="border border-gray-200 p-4 rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold">{cart.user.name}</p>
+                    <p className="text-sm text-gray-600">{cart.user.email}</p>
+                    <p className="text-xs text-gray-500">
+                      Last Activity: {cart.lastActivity.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-lg">₹{cart.totalValue.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">{cart.items.length} items</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mt-3 pt-3 border-t border-gray-100">
+                  {cart.items.map(item => (
+                    <div key={item.id} className="flex items-center gap-3">
+                      <img
+                        src={(Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl) || "/fallback.png"}
+                        alt={item.name}
+                        className="w-10 h-10 rounded object-cover bg-gray-100"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                        <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 ml-auto">
+                        ₹{item.itemValue.toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                
+                <button className="mt-4 px-3 py-1 text-xs font-medium text-white bg-indigo-600 rounded-full hover:bg-indigo-700">
+                  Send Recovery Email
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Wishlist Stats Section */}
+        <div className="space-y-6">
+          <h3 className="text-2xl font-semibold flex items-center gap-3">
+            <FaHeart className="text-pink-500" />
+            Most Wishlisted Items
+          </h3>
+          <div className="bg-white p-6 rounded-lg shadow-md max-h-[800px] overflow-y-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Times Added</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {stats.length === 0 && (
+                  <tr>
+                    <td colSpan="2" className="py-4 text-center text-gray-500">No wishlist data found.</td>
+                  </tr>
+                )}
+                {stats.map(item => (
+                  <tr key={item.productId}>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {/* 🟢 FIXED: Use the correct variables */}
+                          <img 
+                            className="h-10 w-10 rounded-md object-cover" 
+                            src={item.productImage[0] || "/fallback.png"} // Use item.productImage
+                            alt={item.productName} // Use item.productName
+                          />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{item.productName}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className="text-lg font-semibold">{item.count}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -165,9 +304,10 @@ const SalesChart = ({ orders }) => {
   );
 };
 
-const NewVsReturningCustomersChart = ({ orders, users }) => {
+// 🟢 MODIFIED: This component now receives props instead of calculating logic
+const NewVsReturningCustomersChart = ({ newCustomers, returningCustomers }) => {
   // Guard against missing data
-  if (!orders || !users || users.length === 0) {
+  if (newCustomers === 0 && returningCustomers === 0) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4">New vs. Returning Customers</h3>
@@ -176,20 +316,11 @@ const NewVsReturningCustomersChart = ({ orders, users }) => {
     );
   }
 
-  // Count how many orders each user has
-  const orderCountsByUserId = orders.reduce((acc, order) => {
-    acc[order.userId] = (acc[order.userId] || 0) + 1;
-    return acc;
-  }, {});
-
-  const newCustomerCount = Object.values(orderCountsByUserId).filter(count => count === 1).length;
-  const returningCustomerCount = Object.values(orderCountsByUserId).filter(count => count > 1).length;
-
   const newVsReturningData = {
     labels: ['New Customers', 'Returning Customers'],
     datasets: [
       {
-        data: [newCustomerCount, returningCustomerCount],
+        data: [newCustomers, returningCustomers],
         backgroundColor: ['#FF6384', '#36A2EB'],
         hoverBackgroundColor: ['#FF6384', '#36A2EB'],
       },
@@ -212,13 +343,15 @@ const AdminPanel = () => {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar
 
+  // 🟢 ADD THIS STATE
+  const [timeRangeInDays, setTimeRangeInDays] = useState(30);
+
   // Contexts
   const { products, updateProduct, deleteProduct } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const { queries, getquery } = useContext(ContactContext);
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
-  const { users, orders, getAllUsers, getAllOrders, updateOrderStatus, getSingleOrderDetails, reportOrders, getReportData, cancelOrder, loading: adminLoading } = useContext(AdminContext);
-
+  const { users, orders, getAllUsers, getAllOrders, updateOrderStatus, getSingleOrderDetails, reportOrders, getReportData, cancelOrder, loading: adminLoading, abandonedCarts, wishlistStats } = useContext(AdminContext);
   const { user } = useUser();
   const [editingUser, setEditingUser] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -242,7 +375,7 @@ const AdminPanel = () => {
     getAllOrders();
     getquery();
     refreshCoupons();
-  }, []);
+  }, [getAllUsers, getAllOrders, getquery, refreshCoupons]); // 🟢 Added dependencies
 
   // --- Analysis Data Calculation ---
   const successfulOrders = orders?.filter(order => order.status !== "Order Cancelled");
@@ -258,8 +391,64 @@ const AdminPanel = () => {
   const processingOrders = orders?.filter(o => o.status === "Processing" || o.status === "Order Placed" || o.status === "Shipped")?.length;
   const totalRevenue = successfulOrders?.reduce((sum, order) => sum + order.totalAmount, 0);
   const averageOrderValue = successfulOrders?.length > 0 ? totalRevenue / successfulOrders.length : 0;
-  const conversionRate = totalUsers > 0 ? (successfulOrders.length / totalUsers) * 100 : 0; const newCustomers = users?.filter(u => u.orders?.length === 1).length;
-  const returningCustomers = users?.filter(u => u.orders?.length > 1).length;
+  const conversionRate = totalUsers > 0 ? (successfulOrders.length / totalUsers) * 100 : 0;
+
+  // 🔴 REMOVE OLD LOGIC:
+  // const newCustomers = users?.filter(u => u.orders?.length === 1).length;
+  // const returningCustomers = users?.filter(u => u.orders?.length > 1).length;
+
+  // 🟢 ADDED: Correct e-commerce calculation logic
+  const { newCustomers, returningCustomers } = useMemo(() => {
+    if (!orders || orders.length === 0 || !users || users.length === 0) {
+      return { newCustomers: 0, returningCustomers: 0 };
+    }
+
+    // 1. Get the date threshold
+    const now = new Date();
+    const thresholdDate = new Date();
+    thresholdDate.setDate(now.getDate() - timeRangeInDays);
+
+    // 2. Find all orders placed *within* the time range
+    const ordersInPeriod = orders.filter(o => {
+      const orderDate = new Date(o.createdAt);
+      return orderDate >= thresholdDate && orderDate <= now;
+    });
+
+    // 3. Get all unique users who placed those orders
+    const userIdsInPeriod = [...new Set(ordersInPeriod.map(o => o.userId))];
+
+    let newCount = 0;
+    let returningCount = 0;
+
+    // 4. Create a map of users for efficient lookup
+    const usersMap = new Map(users.map(u => [u.id, u]));
+
+    // 5. Loop through users who ordered *in the period*
+    for (const userId of userIdsInPeriod) {
+      const user = usersMap.get(userId);
+      // Ensure user exists and has orders to check
+      if (!user || !user.orders || user.orders.length === 0) continue;
+
+      // Find the user's *very first order* from their full history
+      const firstOrder = user.orders.reduce((earliest, current) => {
+        return new Date(current.createdAt) < new Date(earliest.createdAt) ? current : earliest;
+      }, user.orders[0]);
+
+      const firstOrderDate = new Date(firstOrder.createdAt);
+
+      // 6. Classify them
+      if (firstOrderDate >= thresholdDate && firstOrderDate <= now) {
+        // Their first order was *within* the time range
+        newCount++;
+      } else {
+        // Their first order was *before* the time range
+        returningCount++;
+      }
+    }
+
+    return { newCustomers: newCount, returningCustomers: returningCount };
+
+  }, [orders, users, timeRangeInDays]); // Recalculates when data changes
 
 
   // --- Functions (existing) ---
@@ -459,6 +648,7 @@ const AdminPanel = () => {
             {activeTab === "dashboard" && (
               <div className="space-y-8">
                 <h2 className="text-3xl font-bold">Admin Dashboard</h2>
+                {/* You can add a dropdown here to control 'timeRangeInDays' */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* KPI Cards */}
                   <div className="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
@@ -477,6 +667,8 @@ const AdminPanel = () => {
                     <div><h3 className="text-lg font-semibold text-gray-500">Avg. Order Value</h3><p className="text-3xl font-bold">₹{averageOrderValue?.toFixed(2)}</p></div>
                     <FaTicketAlt className="text-4xl text-purple-400 opacity-50" />
                   </div>
+
+                  {/* 🟢 MODIFIED: These cards now show the correct data */}
                   <div className="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
                     <div><h3 className="text-lg font-semibold text-gray-500">New Customers</h3><p className="text-3xl font-bold">{newCustomers}</p></div>
                     <FaUserPlus className="text-4xl text-indigo-400 opacity-50" />
@@ -485,6 +677,7 @@ const AdminPanel = () => {
                     <div><h3 className="text-lg font-semibold text-gray-500">Returning Customers</h3><p className="text-3xl font-bold">{returningCustomers}</p></div>
                     <FaUserCheck className="text-4xl text-teal-400 opacity-50" />
                   </div>
+
                   <div className="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
                     <div><h3 className="text-lg font-semibold text-gray-500">Cancelled Orders Value</h3><p className="text-3xl font-bold">₹{cancelledOrdersValue?.toFixed(2)}</p></div>
                     <FaTimesCircle className="text-4xl text-red-400 opacity-50" />
@@ -496,7 +689,8 @@ const AdminPanel = () => {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SalesChart orders={successfulOrders} />
-                  <NewVsReturningCustomersChart users={users} orders={orders} />
+                  {/* 🟢 MODIFIED: Pass the new props to the chart */}
+                  <NewVsReturningCustomersChart newCustomers={newCustomers} returningCustomers={returningCustomers} />
                 </div>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
@@ -877,7 +1071,12 @@ const AdminPanel = () => {
             )}
 
             {/* Carts & Wishlists Tab */}
-            {activeTab === "carts" && <CartsWishlistsTab />}
+            {activeTab === "carts" && (
+              <CartsWishlistsTab
+                flatCarts={abandonedCarts}
+                stats={wishlistStats}
+              />
+            )}
 
             {activeTab === "pincodes" && <PincodeManager />}
           </div>
