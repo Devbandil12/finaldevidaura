@@ -5,7 +5,7 @@ import { UserContext } from "./UserContext";
 export const ReviewContext = createContext();
 
 export const ReviewProvider = ({ children }) => {
-    const { userdetails } = useContext(UserContext);
+    const { userdetails, isUserLoading } = useContext(UserContext);
     const [userReviews, setUserReviews] = useState([]);
     const [loadingReviews, setLoadingReviews] = useState(true);
     const [error, setError] = useState(null); // ✅ 1. ADDED: State to hold potential errors
@@ -32,10 +32,21 @@ export const ReviewProvider = ({ children }) => {
     }, [userdetails?.id, BACKEND_URL]); // Dependencies for useCallback
 
     useEffect(() => {
+        // Wait for user loading to finish
+        if (isUserLoading) {
+            setLoadingReviews(true);
+            return;
+        }
+
+        // Now, we have a stable user state
         if (userdetails?.id) {
             getReviewsByUser();
+        } else {
+            // No user, no reviews. Stop loading.
+            setUserReviews([]);
+            setLoadingReviews(false);
         }
-    }, [userdetails?.id, getReviewsByUser]); // Added getReviewsByUser to dependency array
+    }, [isUserLoading, userdetails?.id, getReviewsByUser]); // Added getReviewsByUser to dependency array
 
     return (
         <ReviewContext.Provider value={{ userReviews, loadingReviews, error, getReviewsByUser }}>

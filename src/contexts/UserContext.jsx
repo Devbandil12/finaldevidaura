@@ -10,10 +10,14 @@ export const UserProvider = ({ children }) => {
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
   // Fetch or create user in DB
   const getUserDetail = useCallback(async () => {
+    setIsUserLoading(true);
     if (!isLoaded || !isSignedIn) {
       setUserdetails(null);
+      setIsUserLoading(false);
       return;
     }
 
@@ -22,7 +26,10 @@ export const UserProvider = ({ children }) => {
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
       const clerkId = user?.id;
 
-      if (!email || !clerkId) return;
+      if (!email || !clerkId){
+        setIsUserLoading(false);
+        return;
+      }
 
       const res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
 
@@ -54,6 +61,8 @@ export const UserProvider = ({ children }) => {
 
     } catch (err) {
       console.error("❌ Error in getUserDetail:", err);
+    }finally {
+      setIsUserLoading(false);
     }
   }, [user, isLoaded, isSignedIn, BACKEND_URL]);
 
@@ -185,6 +194,7 @@ export const UserProvider = ({ children }) => {
     <UserContext.Provider
       value={{
         userdetails,
+        isUserLoading,
         isSignedIn,
         address,
         setAddress,

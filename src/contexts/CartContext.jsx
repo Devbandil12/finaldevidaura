@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import { UserContext } from "./UserContext";
+import { useUser } from "@clerk/clerk-react";
 
 export const CartContext = createContext();
 
@@ -35,17 +36,19 @@ const removeLS = (key) => {
 };
 
 export const CartProvider = ({ children }) => {
-  const { userdetails, isSignedIn } = useContext(UserContext);
+  const { userdetails, isSignedIn, isUserLoading } = useContext(UserContext);
+  const { isLoaded } = useUser();
   const [cart, setCart] = useState(() => readLS(LS_CART_KEY));
   const [wishlist, setWishlist] = useState(() => readLS(LS_WISHLIST_KEY));
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
   const [buyNow, setBuyNow] = useState(() => readLS(LS_BUY_NOW_KEY));
 
+
   // This ref ensures the merge operation only runs ONCE per new user account
   const mergeRanForId = useRef(null);
 
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   const getCartitems = useCallback(async () => {
     if (!userdetails?.id) return;
@@ -84,6 +87,9 @@ const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   // This is the core logic for session management
   useEffect(() => {
+    if (!isLoaded || isUserLoading) {
+      return; 
+    }
     // If a user is signed in
     if (isSignedIn && userdetails?.id) {
       // Check if the user is new AND we haven't already merged for this user ID

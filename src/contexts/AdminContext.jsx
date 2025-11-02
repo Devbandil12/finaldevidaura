@@ -1,15 +1,15 @@
 // src/contexts/AdminContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-
+import { UserContext } from "./UserContext";
 export const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
 
 export const AdminProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [reportOrders, setReportOrders] = useState([]);
-
+  const { userdetails, isUserLoading } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   /* -------------------- USERS -------------------- */
@@ -173,10 +173,27 @@ export const AdminProvider = ({ children }) => {
   }, [BASE]);
 
   /* -------------------- EFFECT -------------------- */
-  useEffect(() => {
-    getAllUsers();
-    getAllOrders();
-  }, [getAllUsers, getAllOrders]);
+ useEffect(() => {
+    // Wait for user loading to finish
+    if (isUserLoading) {
+      setLoading(true); // Keep admin context loading
+      return;
+    }
+    
+    // Now, we have a stable user state
+    if (userdetails?.role === "admin") {
+      // User is an admin, fetch all data
+      getAllUsers();
+      getAllOrders();
+      // setLoading(false) is handled inside these functions
+    } else {
+      // User is NOT an admin, clear data and stop loading
+      setUsers([]);
+      setOrders([]);
+      setReportOrders([]);
+      setLoading(false);
+    }
+  }, [isUserLoading, userdetails, getAllUsers, getAllOrders]);
 
   return (
     <AdminContext.Provider

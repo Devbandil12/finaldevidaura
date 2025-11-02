@@ -1,26 +1,28 @@
 // src/contexts/CouponContext.js
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
+import { UserContext } from "./UserContext";
 
 export const CouponContext = createContext({
   coupons: [],
   editingCoupon: null,
-  setEditingCoupon: () => { },
-  refreshCoupons: () => { },
-  saveCoupon: () => { },
-  deleteCoupon: () => { },
+  setEditingCoupon: () => {},
+  refreshCoupons: () => {},
+  saveCoupon: () => {},
+  deleteCoupon: () => {},
   isCouponValid: () => false,
-  loadAvailableCoupons: () => { },
+  loadAvailableCoupons: () => {},
   validateCoupon: () => null,
 });
-
 
 export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
-
+  const { userdetails, isUserLoading } = useContext(UserContext);
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
-  
+
+  // --- 1. MOVED THESE FUNCTIONS UP ---
+
   const refreshCoupons = useCallback(async () => {
     const endpoint = `${BASE_URL}/api/coupons`;
     try {
@@ -34,10 +36,39 @@ export const CouponProvider = ({ children }) => {
     }
   }, [BASE_URL]);
 
+  const loadAvailableCoupons = useCallback(async (userId) => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`${BASE_URL}/api/coupons/available?userId=${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch available coupons");
+      const data = await res.json();
+      setAvailableCoupons(data);
+    } catch (err) {
+      console.error("[CouponContext] failed to load available coupons:", err);
+    }
+  }, [BASE_URL]);
+
+  // --- 2. NOW THIS useEffect CAN SAFELY ACCESS THE FUNCTIONS ---
 
   useEffect(() => {
-    refreshCoupons();
-  }, [refreshCoupons]);
+    // Wait for user loading to finish
+    if (isUserLoading) {
+      return;
+    }
+
+    // Now, we have a stable user state
+    if (userdetails?.role === 'admin') {
+      // Admin: fetch all coupons
+      refreshCoupons();
+    } else if (userdetails?.id) {
+      // Logged-in user: fetch their available coupons
+      loadAvailableCoupons(userdetails.id);
+    } else {
+      // Guest: clear all coupon data
+      setCoupons([]);
+      setAvailableCoupons([]);
+    }
+  }, [isUserLoading, userdetails, refreshCoupons, loadAvailableCoupons]); // This is now safe
 
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
@@ -128,34 +159,22 @@ export const CouponProvider = ({ children }) => {
   }, []);
 
   const validateCoupon = useCallback(async (code, userId) => {
-  try {
-    const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, userId }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.code) { // <--- Added !data.code check here
-      window.toast.error(data.message || "Invalid coupon code");
-      return null;
-    }
-    return data;
-  } catch (err) {
-    console.error("[CouponContext] validation failed:", err);
-    window.toast.error("Validation failed. Please try again.");
-    return null;
-  }
-}, [BASE_URL]);
-
-  const loadAvailableCoupons = useCallback(async (userId) => {
-    if (!userId) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/coupons/available?userId=${userId}`);
-      if (!res.ok) throw new Error("Failed to fetch available coupons");
+      const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, userId }),
+      });
       const data = await res.json();
-      setAvailableCoupons(data);
+      if (!res.ok || !data.code) { // <--- Added !data.code check here
+        window.toast.error(data.message || "Invalid coupon code");
+        return null;
+      }
+      return data;
     } catch (err) {
-      console.error("[CouponContext] failed to load available coupons:", err);
+      console.error("[CouponContext] validation failed:", err);
+      window.toast.error("Validation failed. Please try again.");
+      return null;
     }
   }, [BASE_URL]);
 
@@ -170,7 +189,7 @@ export const CouponProvider = ({ children }) => {
         saveCoupon,
         deleteCoupon,
         isCouponValid,
-        loadAvailableCoupons,
+        loadAvailableCoupons, 
         validateCoupon,
       }}
     >

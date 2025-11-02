@@ -7,7 +7,7 @@ export const OrderContext = createContext();
 export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const { userdetails } = useContext(UserContext);
+  const { userdetails, isUserLoading } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // 🔹 Fetch orders (user → only own, admin → all)
@@ -93,8 +93,21 @@ export const OrderProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (userdetails) getorders();
-  }, [userdetails]);
+    // Wait for user loading to finish
+    if (isUserLoading) {
+      setLoadingOrders(true); // Keep loading
+      return;
+    }
+
+    // Now, we have a stable user state
+    if (userdetails?.id) {
+      getorders(); // Fetch orders for this user
+    } else {
+      // No user, so no orders. Stop loading.
+      setOrders([]);
+      setLoadingOrders(false);
+    }
+  }, [isUserLoading, userdetails]); // 3. Update dependencies
 
   return (
     <OrderContext.Provider
