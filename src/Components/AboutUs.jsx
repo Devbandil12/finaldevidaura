@@ -202,7 +202,7 @@ export default function AboutUs() {
 
             {/* Hero Section - Card 1 */}
             <section className={`w-full ${sectionPadding} pt-0`} >
-                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-xl shadow-black/5 relative h-[50vh] flex flex-col items-center justify-center text-center">
+                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] relative h-[50vh] flex flex-col items-center justify-center text-center">
                     <div
                         ref={heroImageRef}
                         style={animStyle}
@@ -249,7 +249,7 @@ export default function AboutUs() {
                         style={animStyle}
                         className="relative"
                     >
-                        <div className="rounded-3xl overflow-hidden shadow-xl shadow-black/5 group relative h-[600px]">
+                        <div className="rounded-3xl overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] group relative h-[600px]">
                             <LazyImage
                                 src={FOUNDERS_IMG}
                                 alt="Founders of Devid Aura: Harshvardhan Singh Jadon and Yomesh Chaudhary"
@@ -332,7 +332,7 @@ export default function AboutUs() {
                                 style={animStyle} 
                                 className={`flex justify-center ${pillar.order}`}
                             >
-                                <div className="w-full max-w-xs lg:max-w-none h-64 lg:h-80 bg-neutral-100 rounded-3xl flex items-center justify-center text-neutral-600 p-6">
+                                <div className="w-full max-w-xs lg:max-w-none h-64 lg:h-80 bg-neutral-100 rounded-3xl flex items-center justify-center text-neutral-600 p-6 shadow-[0_8px_12px_rgba(230,229,229,0.3)]">
                                     {pillar.icon}
                                 </div>
                             </div>
@@ -419,7 +419,7 @@ export default function AboutUs() {
 
             {/* CTA / Emotional Outro Section - Card 4 */}
             <section className={`w-full ${sectionPadding} pt-0 pb-16`}>
-                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-xl shadow-black/5 relative h-[50vh] flex flex-col items-center justify-center text-center">
+                <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] relative h-[50vh] flex flex-col items-center justify-center text-center">
                     <div
                         ref={outroImageRef}
                         style={animStyle}
@@ -457,7 +457,7 @@ export default function AboutUs() {
                         <button
                             ref={outroButtonRef}
                             style={animStyle}
-                            className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:shadow-xl hover:shadow-black/10 transition-all hover:scale-105"
+                            className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:shadow-[0_8px_12px_rgba(230,229,229,0.3)] hover:shadow-black/10 transition-all hover:scale-105"
                         >
                             Explore Collection
                         </button>

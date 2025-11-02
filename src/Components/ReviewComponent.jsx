@@ -42,7 +42,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         type="button"
-        className="inline-flex justify-between items-center w-full rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+        className="inline-flex justify-between items-center w-full rounded-md border border-slate-100 px-4 py-2 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 "
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedOption.label}
@@ -57,8 +57,8 @@ const CustomDropdown = ({ options, value, onChange }) => {
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)] bg-white"
           >
             <div className="py-1">
               {options.map((option) => (
@@ -310,14 +310,11 @@ const ReviewComponent = ({ productId, userdetails }) => {
   const getPercent = (count) => totalReviews > 0 ? ((count / totalReviews) * 100).toFixed(0) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto font-sans p-4">
+    <div className="max-w-4xl mx-auto py-5">
       {/* Header and Filter */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-        <h2 className="text-2xl lg:text-3xl font-serif font-bold text-zinc-900 mb-4 md:mb-0">
-          Customer Reviews
-        </h2>
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-600">
+          <label className="text-sm font-medium text-slate-800">
             Filter by:
           </label>
           <CustomDropdown
@@ -337,7 +334,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
 
       {/* Review Summary */}
       {starFilter === null && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 p-6 bg-slate-50 rounded-lg border border-slate-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 p-6 bg-slate-50 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)]">
           <div className="flex flex-col items-center md:items-start justify-center gap-2">
             <div className="text-5xl font-extrabold text-zinc-900">
               {averageRating.toFixed(1)}

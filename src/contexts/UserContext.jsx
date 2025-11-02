@@ -7,70 +7,82 @@ export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
   const { user, isLoaded, isSignedIn } = useUser();
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-  const [isUserLoading, setIsUserLoading] = useState(true);
+  useEffect(() => {
+    const fetchUser = async () => {
+      setIsUserLoading(true);
 
-  // Fetch or create user in DB
-  const getUserDetail = useCallback(async () => {
-    setIsUserLoading(true);
-    if (!isLoaded || !isSignedIn) {
-      setUserdetails(null);
-      setIsUserLoading(false);
-      return;
-    }
+      if (!isLoaded) {
+        return;
+      }
 
-    try {
-      const email = user?.primaryEmailAddress?.emailAddress;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-      const clerkId = user?.id;
-
-      if (!email || !clerkId){
+      if (!isSignedIn) {
+        setUserdetails(null);
         setIsUserLoading(false);
         return;
       }
 
-      const res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
+      try {
+        const email = user?.primaryEmailAddress?.emailAddress;
+        const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+        const clerkId = user?.id;
 
-      // ✅ Case 1: Existing user is found
-      if (res.ok) {
-        const data = await res.json();
-        // Mark as not new (no guest cart merge)
-        setUserdetails({ ...data, isNew: false });
+        if (!email || !clerkId) {
+          throw new Error("Clerk user is signed in but has no email or ID.");
+        }
 
-        // ✅ Case 2: User does not exist (404) → create new user
-      } else if (res.status === 404) {
-        const postRes = await fetch(`${BACKEND_URL}/api/users`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, clerkId }),
-        });
+        const res = await fetch(`${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${clerkId}`);
 
-        const postData = await postRes.json();
-
-        // ✅ Only mark as new if backend actually created the user (201)
-        const isNew = postRes.status === 201;
-
-        setUserdetails({ ...postData, isNew });
-
-        // ✅ Case 3: Handle other potential errors
-      } else {
-        throw new Error("Failed to fetch user");
+        if (res.ok) {
+          const data = await res.json();
+          setUserdetails({ ...data, isNew: false });
+        } else if (res.status === 404) {
+          const postRes = await fetch(`${BACKEND_URL}/api/users`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, clerkId }),
+          });
+          const postData = await postRes.json();
+          const isNew = postRes.status === 201;
+          setUserdetails({ ...postData, isNew });
+        } else {
+          throw new Error("Failed to fetch user");
+        }
+      } catch (err) {
+        console.error("❌ Error in fetchUser:", err);
+        setUserdetails(null);
+      } finally {
+        setIsUserLoading(false);
       }
-
-    } catch (err) {
-      console.error("❌ Error in getUserDetail:", err);
-    }finally {
-      setIsUserLoading(false);
+    };
+    
+    fetchUser();
+    
+  }, [isLoaded, isSignedIn, user, BACKEND_URL]);
+  
+  
+  const getUserAddress = useCallback(async () => {
+    if (!userdetails?.id) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`);
+      if (!res.ok) throw new Error("Failed to fetch addresses");
+      const data = await res.json();
+      setAddress(Array.isArray(data.data) ? data.data : []);
+    } catch (error) {
+      console.error("❌ Failed to get user addresses:", error);
     }
-  }, [user, isLoaded, isSignedIn, BACKEND_URL]);
+  }, [userdetails?.id, BACKEND_URL]);
+
+  useEffect(() => {
+    if (userdetails) {
+      getUserAddress();
+    }
+  }, [userdetails, getUserAddress]);
 
 
-
-  // --- No changes are needed for the functions below this line ---
-
-  // Update User Details
   const updateUser = useCallback(async (updatedData) => {
     if (!userdetails?.id) return null;
     try {
@@ -90,20 +102,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // Fetch addresses
-  const getUserAddress = useCallback(async () => {
-    if (!userdetails?.id) return;
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`);
-      if (!res.ok) throw new Error("Failed to fetch addresses");
-      const data = await res.json();
-      setAddress(Array.isArray(data.data) ? data.data : []);
-    } catch (error) {
-      console.error("❌ Failed to get user addresses:", error);
-    }
-  }, [userdetails?.id, BACKEND_URL]);
-
-  // Add Address
   const addAddress = useCallback(async (newAddress) => {
     if (!userdetails?.id) return null;
     try {
@@ -124,7 +122,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL, getUserAddress]);
 
-  // Edit Address
   const editAddress = useCallback(async (addressId, updatedFields) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
@@ -144,7 +141,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getUserAddress]);
 
-  // Delete Address
   const deleteAddress = useCallback(async (addressId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
@@ -162,7 +158,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getUserAddress]);
 
-  // Set Default Address
   const setDefaultAddress = useCallback(async (addressId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
@@ -180,15 +175,6 @@ export const UserProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getUserAddress]);
 
-  useEffect(() => {
-    getUserDetail();
-  }, [getUserDetail]);
-
-  useEffect(() => {
-    if (userdetails) {
-      getUserAddress();
-    }
-  }, [userdetails, getUserAddress]);
 
   return (
     <UserContext.Provider
@@ -198,7 +184,6 @@ export const UserProvider = ({ children }) => {
         isSignedIn,
         address,
         setAddress,
-        getUserDetail,
         getUserAddress,
         updateUser,
         addAddress,

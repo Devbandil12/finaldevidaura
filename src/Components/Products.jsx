@@ -110,7 +110,7 @@ const Products = () => {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
-                className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] hover:-translate-y-1 transition-all duration-300"
               >
                 <div
                   className="relative overflow-hidden aspect-square cursor-pointer"

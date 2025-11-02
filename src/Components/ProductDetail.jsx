@@ -166,7 +166,7 @@ const ProductDetail = () => {
 
       <div className="min-h-screen bg-white text-gray-800 font-sans">
         <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
-          <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+          <main className="relative max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-16">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -358,7 +358,7 @@ const ProductDetail = () => {
               className="mt-20 lg:mt-24"
             >
               <h2 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
-              <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50 p-6 md:p-10">
+              <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50  md:p-10">
                 <ReviewComponent productId={product.id} userdetails={userdetails} />
               </div>
             </motion.div>
