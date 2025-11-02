@@ -8,7 +8,7 @@ const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
 const LS_BUY_NOW_KEY = "buyNowItem";
 
-// Helper functions to read/write/remove from Local Storage
+// Helper functions (no changes needed)
 const readLS = (key) => {
   try {
     const serializedState = localStorage.getItem(key);
@@ -34,18 +34,17 @@ const removeLS = (key) => {
     console.error("Error removing from local storage:", err);
   }
 };
+// End of helper functions
 
 export const CartProvider = ({ children }) => {
   const { userdetails, isSignedIn, isUserLoading } = useContext(UserContext);
-  const { isLoaded } = useUser();
+  const { isLoaded } = useUser(); // Get Clerk's own loaded state
   const [cart, setCart] = useState(() => readLS(LS_CART_KEY));
   const [wishlist, setWishlist] = useState(() => readLS(LS_WISHLIST_KEY));
   const [isCartLoading, setIsCartLoading] = useState(true);
   const [isWishlistLoading, setIsWishlistLoading] = useState(true);
   const [buyNow, setBuyNow] = useState(() => readLS(LS_BUY_NOW_KEY));
 
-
-  // This ref ensures the merge operation only runs ONCE per new user account
   const mergeRanForId = useRef(null);
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -71,7 +70,6 @@ export const CartProvider = ({ children }) => {
     if (!userdetails?.id) return;
     setIsWishlistLoading(true);
     try {
-      // ✅ FIXED: Corrected API endpoint for wishlist
       const res = await fetch(`${BACKEND_URL}/api/cart/wishlist/${userdetails.id}`);
       if (!res.ok) throw new Error("Failed to fetch wishlist");
       const rows = await res.json();
@@ -85,23 +83,31 @@ export const CartProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // This is the core logic for session management
+
+  // --- 
+  // --- THIS IS THE CORRECTED LOGIC ---
+  // --- 
   useEffect(() => {
+    // Wait for BOTH Clerk to be loaded AND our user fetch to be complete.
     if (!isLoaded || isUserLoading) {
-      return; 
+      setIsCartLoading(true); // Keep showing loading
+      setIsWishlistLoading(true);
+      return; // Do nothing, we are waiting for user state
     }
-    // If a user is signed in
+
+    // --- At this point, auth is STABLE ---
+
     if (isSignedIn && userdetails?.id) {
-      // Check if the user is new AND we haven't already merged for this user ID
+      // User IS logged in
       if (userdetails.isNew && mergeRanForId.current !== userdetails.id) {
-        mergeRanForId.current = userdetails.id; // Mark merge as complete for this user
+        mergeRanForId.current = userdetails.id; // Mark merge as complete
 
         const mergeGuestData = async () => {
           console.log("New user detected, attempting to merge guest data...");
           const guestCart = readLS(LS_CART_KEY);
           const guestWishlist = readLS(LS_WISHLIST_KEY);
 
-          // Merge Cart using the efficient backend endpoint
+          // Merge Cart
           if (guestCart.length > 0) {
             const payload = guestCart.map(item => ({ productId: item.product.id, quantity: item.quantity }));
             await fetch(`${BACKEND_URL}/api/cart/merge`, {
@@ -113,10 +119,9 @@ export const CartProvider = ({ children }) => {
             window.toast.info("Your guest cart has been saved to your new account.");
           }
 
-          // Merge Wishlist using the efficient backend endpoint
+          // Merge Wishlist
           if (guestWishlist.length > 0) {
             const payload = guestWishlist.map(item => item.product.id);
-            // ✅ FIXED: Corrected API endpoint for wishlist merge
             await fetch(`${BACKEND_URL}/api/cart/wishlist/merge`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -125,7 +130,7 @@ export const CartProvider = ({ children }) => {
             removeLS(LS_WISHLIST_KEY);
           }
 
-          // After merging, fetch the final state from the database
+          // Fetch the final, merged state from the database
           await getCartitems();
           await getwishlist();
         };
@@ -137,22 +142,28 @@ export const CartProvider = ({ children }) => {
         getwishlist();
       }
     } else {
-      // If no user is signed in, load from local storage
+      // User is NOT signed in (is a guest)
       setIsCartLoading(false);
       setIsWishlistLoading(false);
       setCart(readLS(LS_CART_KEY));
       setWishlist(readLS(LS_WISHLIST_KEY));
-      // On logout, we can reset the ref if needed, although the ID check is sufficient
-      mergeRanForId.current = null;
+      mergeRanForId.current = null; // On logout, reset the merge guard
     }
-  }, [isSignedIn, userdetails, getCartitems, getwishlist, BACKEND_URL]);
+  }, [
+    isLoaded,         // From Clerk
+    isUserLoading,    // From UserContext
+    isSignedIn,       // From UserContext
+    userdetails,      // From UserContext
+    getCartitems, 
+    getwishlist, 
+    BACKEND_URL
+  ]);
 
 
-  // All other functions (addToCart, removeFromCart, etc.) are correct
-  // and do not need to be changed.
+  // --- All other functions (addToCart, removeFromCart, etc.) are fine ---
+
   const addToCart = useCallback(
     async (product, quantity = 1) => {
-      console.log("addToCart called. User state:", { isSignedIn, userdetails });
       if (!isSignedIn) {
         const existing = cart.find((i) => i.product.id === product.id);
         const qtyToAdd = Number(quantity || 1);
@@ -188,7 +199,7 @@ export const CartProvider = ({ children }) => {
         )
         : [...cart, { product, quantity: qtyToAdd }];
       setCart(optimisticUpdate);
-      console.log("Frontend Sending ->", { userId: userdetails.id, productId: product.id, quantity: qtyToAdd }); // ✅ ADD THIS
+
       try {
         if (existing) {
           const newQty = Number(existing.quantity || 1) + qtyToAdd;
@@ -337,7 +348,6 @@ export const CartProvider = ({ children }) => {
       }
 
       try {
-        // ✅ FIXED: Corrected API endpoint for wishlist
         await fetch(`${BACKEND_URL}/api/cart/wishlist`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -372,7 +382,6 @@ export const CartProvider = ({ children }) => {
       }
 
       try {
-        // ✅ FIXED: Corrected API endpoint for wishlist
         await fetch(`${BACKEND_URL}/api/cart/wishlist/${userdetails.id}/${product.id}`, {
           method: "DELETE",
         });
@@ -413,7 +422,6 @@ export const CartProvider = ({ children }) => {
       return;
     }
     try {
-      // ✅ FIXED: Corrected API endpoint for wishlist
       await fetch(`${BACKEND_URL}/api/cart/wishlist/${userdetails.id}`, {
         method: "DELETE",
       });

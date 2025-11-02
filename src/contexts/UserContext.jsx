@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect, useCallback, useMemo } from "react"; // 1. Import useMemo
 import { useUser } from "@clerk/clerk-react";
 
 export const UserContext = createContext();
@@ -11,6 +11,7 @@ export const UserProvider = ({ children }) => {
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+  // This useEffect is correct and fetches the user.
   useEffect(() => {
     const fetchUser = async () => {
       setIsUserLoading(true);
@@ -64,6 +65,7 @@ export const UserProvider = ({ children }) => {
   }, [isLoaded, isSignedIn, user, BACKEND_URL]);
   
   
+  // This useCallback is fine
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) return;
     try {
@@ -76,13 +78,17 @@ export const UserProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
+  // This useEffect for addresses is also fine
   useEffect(() => {
     if (userdetails) {
       getUserAddress();
+    } else {
+      // Clear address when user logs out
+      setAddress([]);
     }
   }, [userdetails, getUserAddress]);
 
-
+  // All other useCallback functions (updateUser, addAddress, etc.) are fine
   const updateUser = useCallback(async (updatedData) => {
     if (!userdetails?.id) return null;
     try {
@@ -92,7 +98,6 @@ export const UserProvider = ({ children }) => {
         body: JSON.stringify(updatedData),
       });
       if (!res.ok) throw new Error("Failed to update user");
-
       const data = await res.json();
       setUserdetails(prev => ({ ...prev, ...updatedData }));
       return data;
@@ -176,22 +181,36 @@ export const UserProvider = ({ children }) => {
   }, [BACKEND_URL, getUserAddress]);
 
 
+  // --- 2. WRAP THE `value` PROP IN `useMemo` ---
+  // This ensures the value object's identity is stable, preventing
+  // unnecessary re-renders and fixing stale state issues in consumers.
+  const contextValue = useMemo(() => ({
+    userdetails,
+    isUserLoading,
+    isSignedIn,
+    address,
+    setAddress,
+    getUserAddress,
+    updateUser,
+    addAddress,
+    editAddress,
+    deleteAddress,
+    setDefaultAddress,
+  }), [
+    userdetails, 
+    isUserLoading, 
+    isSignedIn, 
+    address, 
+    getUserAddress, 
+    updateUser, 
+    addAddress, 
+    editAddress, 
+    deleteAddress, 
+    setDefaultAddress
+  ]);
+
   return (
-    <UserContext.Provider
-      value={{
-        userdetails,
-        isUserLoading,
-        isSignedIn,
-        address,
-        setAddress,
-        getUserAddress,
-        updateUser,
-        addAddress,
-        editAddress,
-        deleteAddress,
-        setDefaultAddress,
-      }}
-    >
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
