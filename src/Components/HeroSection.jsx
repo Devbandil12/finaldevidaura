@@ -314,7 +314,8 @@ const HeroSection = () => {
                   src={bottleImage}
                   alt="Luxury Perfume Bottle"
                   className="w-72 sm:w-96 lg:w-[28rem] h-auto object-contain"
-                  loading="lazy"
+                  loading="eager"
+                  fetchPriority="high"
                   width="600"
                   height="800"
                 />

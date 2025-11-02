@@ -142,17 +142,19 @@ const HomePage = () => {
   return (
     <>
       <HeroSection />
-      <DualMarquee />
-      <div id="about-section">
-      </div>
-      <div id="scents-section">
-        <ProductShowcaseCarousel />
-      </div>
-      <div id="collection-section">
-        <Products />
-      </div>
-        <AboutUs />
-      <TestimonialsSection />
+      <Suspense fallback={null}> {/* Use null or a minimal loader */}
+        <DualMarquee />
+        <div id="scents-section">
+          <ProductShowcaseCarousel />
+        </div>
+        <div id="collection-section">
+          <Products />
+        </div>
+        <div id="about-section">
+          <AboutUs />
+        </div>
+        <TestimonialsSection />
+      </Suspense>
     </>
   );
 };
