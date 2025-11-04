@@ -1,4 +1,5 @@
-import React, { useState, useContext, useEffect } from "react";
+// src/pages/ProductDetail.jsx
+import React, { useState, useContext, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -7,52 +8,34 @@ import ReviewComponent from "./ReviewComponent";
 import { Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- A mock Button component to replicate the style of shadcn/ui ---
-const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children }) => {
+// --- A mock Button component (Unchanged) ---
+const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children, disabled }) => {
   const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
-
-  const sizeStyles = {
-    default: "h-10 py-2 px-4",
-    sm: "h-9 px-3 rounded-md",
-    lg: "h-11 px-8 rounded-md",
-    icon: "h-10 w-10",
-  };
-
+  const sizeStyles = { default: "h-10 py-2 px-4", sm: "h-9 px-3 rounded-md", lg: "h-11 px-8 rounded-md", icon: "h-10 w-10" };
   const variantStyles = {
     primary: "bg-gray-900 text-gray-50 hover:bg-gray-900/90",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-100/80",
     destructive: "bg-red-600 text-gray-50 hover:bg-red-600/90",
     ghost: "hover:bg-gray-100 hover:text-gray-900",
   };
-
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
     >
       {children}
     </button>
   );
 };
-
-// --- Animation Variants for Buttons ---
 const buttonVariants = {
-  hover: {
-    scale: 1.03,
-    transition: { type: "spring", stiffness: 400, damping: 15 }
-  },
-  tap: {
-    scale: 0.97
-  }
+  hover: { scale: 1.03, transition: { type: "spring", stiffness: 400, damping: 15 } },
+  tap: { scale: 0.97 }
 };
-
 const iconVariants = {
-  tap: {
-    scale: 1.2,
-    rotate: -10,
-    transition: { type: "spring", stiffness: 300, damping: 10 }
-  }
+  tap: { scale: 1.2, rotate: -10, transition: { type: "spring", stiffness: 300, damping: 10 } }
 };
+// --- End of Button ---
 
 
 const ProductDetail = () => {
@@ -63,14 +46,27 @@ const ProductDetail = () => {
 
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
+  
+  // 🟢 NEW: State for selected variant
+  const [selectedVariant, setSelectedVariant] = useState(null); 
+  
   const [isFindingProduct, setIsFindingProduct] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
 
+  // 🟢 MODIFIED: Effect to find product and set default variant
   useEffect(() => {
     if (!productsLoading) {
+      // This now gets the product *with* its 'variants' array
       const foundProduct = products.find((p) => p.id === productId);
       setProduct(foundProduct);
+      
+      // 🟢 NEW: Set the first variant as the default
+      if (foundProduct && foundProduct.variants && foundProduct.variants.length > 0) {
+        setSelectedVariant(foundProduct.variants[0]);
+      } else {
+        setSelectedVariant(null); // No variants found
+      }
       setIsFindingProduct(false);
     }
   }, [productId, products, productsLoading]);
@@ -81,12 +77,11 @@ const ProductDetail = () => {
     }
   }, [product]);
 
+  // 🟢 MODIFIED: Loading/Error states
   if (productsLoading || isFindingProduct) {
     return (
       <>
-        {/* --- NEW: Meta Tags for Loading State --- */}
         <title>Loading Fragrance... | Devid Aura</title>
-
         <div className="flex items-center justify-center min-h-screen bg-white">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-transparent rounded-full animate-spin" />
@@ -97,17 +92,16 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) {
+  // 🟢 MODIFIED: Check for product OR variant
+  if (!product || !selectedVariant) {
     return (
       <>
-        {/* --- NEW: Meta Tags for Not Found State --- */}
         <title>Product Not Found | Devid Aura</title>
         <meta name="description" content="The fragrance you are looking for could not be found. Please return to our home page to explore our collection." />
-
         <div className="flex items-center justify-center min-h-screen bg-white px-4">
           <div className="text-center p-8 bg-gray-50 rounded-xl shadow-lg max-w-md">
             <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">Product Not Found</h2>
-            <p className="text-gray-500 mb-6">The fragrance you're looking for doesn't exist.</p>
+            <p className="text-gray-500 mb-6">The fragrance you're looking for doesn't exist or has no variants.</p>
             <Button onClick={() => navigate("/")}>Return Home</Button>
           </div>
         </div>
@@ -115,35 +109,44 @@ const ProductDetail = () => {
     );
   }
 
-  const allImages = (() => {
-    try {
-      return typeof product.imageurl === "string" ? JSON.parse(product.imageurl) : product.imageurl || [];
-    } catch (e) {
-      console.error("Error parsing imageurl", e);
-      return [];
-    }
-  })();
+  // All images from main product
+  const allImages = product.imageurl || [];
 
-  const isInCart = cart?.some((i) => i.product?.id === product.id);
-  const isInWishlist = wishlist?.some((w) => (w.productId ?? w.product?.id) === product.id);
-  const basePrice = Math.floor(Number(product.oprice) || 0);
-  const discount = Math.floor(Number(product.discount) || 0);
+  // 🟢 MODIFIED: Cart/Wishlist checks now use variantId
+  const isInCart = cart?.some((i) => i.variant?.id === selectedVariant.id);
+  const isInWishlist = wishlist?.some((w) => (w.variantId ?? w.variant?.id) === selectedVariant.id);
+
+  // 🟢 MODIFIED: Price is now read from the *selected variant*
+  const basePrice = Math.floor(Number(selectedVariant.oprice) || 0);
+  const discount = Math.floor(Number(selectedVariant.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
+
   const changeImage = (newIndex) => setCurrentImg(newIndex);
 
+  // 🟢 MODIFIED: Handlers now pass the correct (product, variant) order
   const handleAddToCart = async () => {
-    isInCart ? await removeFromCart(product) : await addToCart(product, quantity);
+    if (selectedVariant.stock <= 0) {
+      window.toast.error("This item is currently out of stock.");
+      return;
+    }
+    isInCart 
+      ? await removeFromCart(selectedVariant) // Pass variant object
+      : await addToCart(product, selectedVariant, quantity); // Pass (product, variant, qty)
   };
 
   const handleBuyNow = async () => {
-    startBuyNow(product, quantity);
+    if (selectedVariant.stock <= 0) {
+      window.toast.error("This item is currently out of stock.");
+      return;
+    }
+    startBuyNow(product, selectedVariant, quantity); // 🟢 FIXED: Pass (product, variant, qty)
     navigate("/cart", {
       replace: true,
       state: { isBuyNow: true }
     });
   };
 
-  const handleToggleWishlist = () => toggleWishlist(product);
+  const handleToggleWishlist = () => toggleWishlist(product, selectedVariant); // 🟢 FIXED: Pass (product, variant)
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -157,10 +160,16 @@ const ProductDetail = () => {
       window.toast.success("Link copied to clipboard!");
     }
   };
+  
+  // 🟢 MODIFIED: Get stock status from the variant
+  const stockStatus = selectedVariant.stock === 0 
+    ? "Out of Stock" 
+    : selectedVariant.stock <= 10 
+    ? `Only ${selectedVariant.stock} left!`
+    : "In Stock";
 
   return (
     <>
-      {/* --- NEW: Dynamic Meta Tags --- */}
       <title>{`${product.name} | Devid Aura`}</title>
       <meta name="description" content={`Discover ${product.name}, a captivating fragrance by Devid Aura. ${product.description || 'Experience a scent that defines you.'}`} />
 
@@ -173,6 +182,7 @@ const ProductDetail = () => {
               transition={{ duration: 0.6 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16"
             >
+              {/* --- Image Carousel --- */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -238,6 +248,7 @@ const ProductDetail = () => {
                 )}
               </motion.div>
 
+              {/* --- Product Info Column --- */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -250,12 +261,10 @@ const ProductDetail = () => {
                       <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
                         {product.name}
                       </h1>
-                      {product.stockStatus && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-600">
-                          <Sparkles className="h-3 w-3" />
-                          {product.stockStatus}
-                        </span>
-                      )}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${selectedVariant.stock > 0 ? 'bg-teal-500/10 text-teal-600' : 'bg-red-500/10 text-red-600'}`}>
+                        <Sparkles className="h-3 w-3" />
+                        {stockStatus}
+                      </span>
                     </div>
                     <div className="flex gap-2 ml-4">
                       <Button onClick={handleToggleWishlist} variant="secondary" size="icon" className="rounded-full">
@@ -283,6 +292,26 @@ const ProductDetail = () => {
                     )}
                   </div>
 
+                  <div className="mb-6">
+                    <span className="text-sm font-semibold text-gray-900 mb-2 block">
+                      Size: {selectedVariant.name}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {product.variants.map((variant) => (
+                        <Button
+                          key={variant.id}
+                          onClick={() => setSelectedVariant(variant)}
+                          variant={selectedVariant.id === variant.id ? 'primary' : 'secondary'}
+                          className={`rounded-full ${selectedVariant.id === variant.id ? 'ring-2 ring-offset-2 ring-gray-900' : ''} ${variant.stock === 0 ? 'relative opacity-50' : ''}`}
+                          disabled={variant.stock === 0}
+                        >
+                          {variant.name}
+                          {variant.stock === 0 && <span className="absolute -top-1.5 -right-1.5 text-xs bg-red-600 text-white px-1 rounded-full leading-none"></span>}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center ">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">Quantity:</span>
@@ -294,11 +323,12 @@ const ProductDetail = () => {
                     </div>
                     <div className="text-sm">
                       <span className="text-gray-500">Size: </span>
-                      <span className="font-semibold text-gray-900">{product.size || 100}ml</span>
+                      <span className="font-semibold text-gray-900">{selectedVariant.size || 100}ml</span>
                     </div>
                   </div>
                 </div>
 
+                {/* --- Description & Fragrance Profile (Unchanged) --- */}
                 <div className="space-y-8 mb-8">
                   <div>
                     <h2 className="text-2xl font-serif font-semibold text-gray-900 mb-3">About This Fragrance</h2>
@@ -323,34 +353,38 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
+                {/* --- Action Buttons --- */}
                 <div className="mt-auto space-y-3 ">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <motion.button
                       onClick={handleAddToCart}
+                      disabled={selectedVariant.stock === 0}
                       variants={buttonVariants}
                       whileHover="hover"
                       whileTap="tap"
-                      className={`flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md transition-colors ${isInCart ? "bg-red-600 text-white hover:bg-red-600/90" : "bg-gray-100 text-gray-900 hover:bg-gray-100/80"}`}
+                      className={`flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md transition-colors ${isInCart ? "bg-red-600 text-white hover:bg-red-600/90" : "bg-gray-100 text-gray-900 hover:bg-gray-100/80"} disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       <motion.div variants={iconVariants} className="mr-2">
                         <ShoppingCart className="h-5 w-5" />
                       </motion.div>
-                      {isInCart ? "Remove from Cart" : "Add to Cart"}
+                      {isInCart ? "Remove from Cart" : (selectedVariant.stock === 0 ? "Out of Stock" : "Add to Cart")}
                     </motion.button>
                     <motion.button
                       onClick={handleBuyNow}
+                      disabled={selectedVariant.stock === 0}
                       variants={buttonVariants}
                       whileHover="hover"
                       whileTap="tap"
-                      className="flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md bg-gray-900 text-gray-50 hover:bg-gray-900/90"
+                      className="flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md bg-gray-900 text-gray-50 hover:bg-gray-900/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Buy Now
+                      {selectedVariant.stock === 0 ? "Out of Stock" : "Buy Now"}
                     </motion.button>
                   </div>
                 </div>
               </motion.div>
             </motion.div>
 
+            {/* --- Review Component (Unchanged) --- */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}

@@ -1,3 +1,5 @@
+// src/pages/Wishlist.jsx
+
 import React, { useContext } from "react";
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { CartContext } from "../contexts/CartContext";
@@ -10,15 +12,19 @@ const Wishlist = () => {
     isWishlistLoading,
     removeFromWishlist,
     clearWishlist,
-    moveFromWishlistToCart, // Using the new context function
+    moveFromWishlistToCart, 
   } = useContext(CartContext);
 
+  // 🟢 FIXED: Pass product and variant objects
   const handleMoveToCart = (wishlistItem) => {
-    moveFromWishlistToCart(wishlistItem.product);
+    // moveFromWishlistToCart expects (product, variant)
+    moveFromWishlistToCart(wishlistItem.product, wishlistItem.variant);
   };
 
+  // 🟢 FIXED: Pass variant object
   const handleRemoveItem = (wishlistItem) => {
-    removeFromWishlist(wishlistItem.product);
+    // removeFromWishlist expects (variant)
+    removeFromWishlist(wishlistItem.variant);
   };
 
   const handleClearWishlist = () => {
@@ -28,7 +34,6 @@ const Wishlist = () => {
   if (isWishlistLoading) {
     return (
       <>
-        {/* --- NEW: Meta Tags for Loading State --- */}
         <title>Loading Wishlist... | Devid Aura</title>
         <Loader text="Loading wishlist..." />
       </>
@@ -37,7 +42,6 @@ const Wishlist = () => {
 
   return (
     <>
-      {/* --- NEW: Meta Tags --- */}
       <title>My Wishlist | Devid Aura</title>
       <meta name="description" content="View and manage your saved items. Keep track of all your favorite fragrances from Devid Aura." />
 
@@ -87,26 +91,40 @@ const Wishlist = () => {
             <motion.div layout className="space-y-4">
               <AnimatePresence>
                 {wishlist.map((wishlistItem) => {
-                  const item = wishlistItem.product || {};
-                  const discountedPrice = Math.trunc(
-                    item.oprice - (item.oprice * item.discount) / 100
+                  // Destructuring is correct
+                  const { product, variant, wishlistId } = wishlistItem;
+
+                  if (!product || !variant) {
+                    console.error("Invalid wishlist item found:", wishlistItem);
+                    return null;
+                  }
+                  
+                  // Price/stock logic is correct
+                  const discountedPrice = Math.floor(
+                    variant.oprice * (1 - variant.discount / 100)
                   );
+                  
+                  const stockStatus = variant.stock === 0
+                    ? "Out of Stock"
+                    : variant.stock <= 10
+                    ? `Only ${variant.stock} left!`
+                    : "In Stock"; 
 
                   return (
                     <motion.article
-                      key={item?.id}
+                      key={wishlistId} // Use unique wishlistId
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
                       className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition-shadow"
-                      aria-labelledby={`wl-${item?.id}-name`}
+                      aria-labelledby={`wl-${product.id}-name`}
                     >
                       {/* Left: Image */}
                       <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center">
                         <img
-                          src={Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl}
-                          alt={item.name}
+                          src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                          alt={product.name}
                           className="h-20 w-20 object-contain"
                           loading="lazy"
                         />
@@ -117,21 +135,19 @@ const Wishlist = () => {
                         {/* Text Section */}
                         <div className="flex-grow">
                           <h3
-                            id={`wl-${item?.id}-name`}
+                            id={`wl-${product.id}-name`}
                             className="text-lg font-semibold text-zinc-800"
-                            title={item.name}
+                            title={product.name}
                           >
-                            {item.name}
+                            {product.name}
                           </h3>
                           
-                          {item.size && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              {item.size}ml
-                            </p>
-                          )}
+                          <p className="text-sm text-gray-500 mt-1">
+                           {variant.size}ml
+                          </p>
 
-                          <p className="mt-1 text-sm font-medium text-red-600">
-                            {item.stockStatus}
+                          <p className={`mt-1 text-sm font-medium ${variant.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {stockStatus}
                           </p>
                           
                           <div className="mt-2 flex items-baseline justify-between min-[570px]:justify-start min-[570px]:gap-2">
@@ -140,12 +156,12 @@ const Wishlist = () => {
                                 ₹{discountedPrice}
                               </span>
                               <span className="text-sm line-through text-gray-400">
-                                ₹{item.oprice}
+                                ₹{variant.oprice}
                               </span>
                             </div>
-                            {item.discount > 0 && (
+                            {variant.discount > 0 && (
                               <span className="text-sm font-semibold text-green-600">
-                                ({item.discount}% OFF)
+                                ({variant.discount}% OFF)
                               </span>
                             )}
                           </div>
@@ -154,15 +170,16 @@ const Wishlist = () => {
                         {/* Buttons Section */}
                         <div className="w-full min-[570px]:w-auto flex items-center gap-3 mt-4 min-[570px]:mt-0">
                           <button
-                            onClick={() => handleMoveToCart(wishlistItem)}
+                            onClick={() => handleMoveToCart(wishlistItem)} // 🟢 Pass full item
                             aria-label="Move to Bag"
-                            className="flex-1 min-[570px]:flex-initial w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-medium py-2 px-4 rounded-md hover:opacity-90 transition-opacity"
+                            disabled={variant.stock === 0} 
+                            className="flex-1 min-[570px]:flex-initial w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-medium py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:bg-gray-400 disabled:cursor-not-allowed"
                           >
                             <ShoppingBag className="h-4 w-4" />
-                            Move to Bag
+                            {variant.stock === 0 ? "Out of Stock" : "Move to Bag"}
                           </button>
                           <button
-                            onClick={() => handleRemoveItem(wishlistItem)}
+                            onClick={() => handleRemoveItem(wishlistItem)} // 🟢 Pass full item
                             aria-label="Remove from Wishlist"
                             className="p-2 text-gray-500 border border-gray-300 rounded-md hover:bg-gray-100 hover:text-zinc-800 transition-colors"
                           >

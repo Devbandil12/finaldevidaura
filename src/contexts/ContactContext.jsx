@@ -1,5 +1,5 @@
 // src/contexts/ContactContext.js
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback } from "react"; // 👈 IMPORT useCallback
 
 export const ContactContext = createContext();
 
@@ -7,7 +7,7 @@ export const ContactProvider = ({ children }) => {
   const [queries, setQueries] = useState([]);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  const getquery = async () => {
+  const getquery = useCallback(async () => { // 👈 WRAP
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact`);
       if (!res.ok) throw new Error("Failed to fetch queries");
@@ -16,9 +16,9 @@ export const ContactProvider = ({ children }) => {
     } catch (error) {
       console.error("❌ Failed to fetch queries:", error);
     }
-  };
+  }, [BACKEND_URL]); // 👈 ADD DEPENDENCIES
 
-  const deleteQuery = async (id) => {
+  const deleteQuery = useCallback(async (id) => { // 👈 WRAP
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact/${id}`, {
         method: "DELETE",
@@ -28,9 +28,9 @@ export const ContactProvider = ({ children }) => {
     } catch (error) {
       console.error("❌ Failed to delete query:", error);
     }
-  };
+  }, [BACKEND_URL, getquery]); // 👈 ADD DEPENDENCIES
 
-  const addQuery = async (newQuery) => {
+  const addQuery = useCallback(async (newQuery) => { // 👈 WRAP
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact`, {
         method: "POST",
@@ -42,10 +42,10 @@ export const ContactProvider = ({ children }) => {
     } catch (error) {
       console.error("❌ Failed to add query:", error);
     }
-  };
+  }, [BACKEND_URL, getquery]); // 👈 ADD DEPENDENCIES
 
 
-    const getQueriesByUser = async (email) => {
+    const getQueriesByUser = useCallback(async (email) => { // 👈 WRAP
         if (!email) return;
         try {
             const res = await fetch(`${BACKEND_URL}/api/contact/user/${email}`);
@@ -55,7 +55,7 @@ export const ContactProvider = ({ children }) => {
         } catch (error) {
             console.error("❌ Failed to fetch user queries:", error);
         }
-    };
+    }, [BACKEND_URL]); // 👈 ADD DEPENDENCIES
 
 
 

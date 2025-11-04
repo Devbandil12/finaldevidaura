@@ -22,9 +22,9 @@ const ShoppingCart = () => {
   const [pincode, setPincode] = useState("");
   const [pincodeDetails, setPincodeDetails] = useState(null);
   const [pincodeLoading, setPincodeLoading] = useState(false);
-  const [addingProductId, setAddingProductId] = useState(null);
+  const [addingProductId, setAddingProductId] = useState(null); 
 
-  const { products } = useContext(ProductContext);
+  const { products } = useContext(ProductContext); 
   const { userdetails } = useContext(UserContext);
   const {
     cart,
@@ -50,20 +50,26 @@ const ShoppingCart = () => {
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-  useEffect(() => {
+
+ useEffect(() => {
     if (userdetails?.id) {
       loadAvailableCoupons(userdetails.id);
     }
   }, [userdetails?.id, loadAvailableCoupons]);
-
   useEffect(() => {
+    // Check for valid items. If buyNow is active but item is null, redirect.
+    if (isBuyNowActive && !buyNow) {
+      navigate("/cart", { replace: true, state: {} });
+      return;
+    }
+    
     const isAnyItemOutOfStock = itemsToRender.some(
-      (item) => item.product.stock <= 0
+      (item) => item.variant && item.variant.stock <= 0
     );
     if (!isAnyItemOutOfStock) {
       setCheckoutError("");
     }
-  }, [itemsToRender, setCheckoutError]);
+  }, [itemsToRender, isBuyNowActive, buyNow, navigate, setCheckoutError]);
 
   const handlePincodeChange = (e) => {
     const value = e.target.value;
@@ -104,27 +110,35 @@ const ShoppingCart = () => {
       return;
     }
     const outOfStockItem = itemsToRender.find(
-      (item) => item.product.stock <= 0
+      (item) => item.variant.stock <= 0
     );
     if (outOfStockItem) {
       setCheckoutError(
-        `Sorry, the product "${outOfStockItem.product.name}" is out of stock. Please remove it to proceed.`
+        `Sorry, "${outOfStockItem.product.name} (${outOfStockItem.variant.name})" is out of stock. Please remove it.`
       );
       return;
     }
+
     const fullCartItems = itemsToRender.map((item) => {
       const price = Math.floor(
-        item.product.oprice * (1 - item.product.discount / 100)
+        item.variant.oprice * (1 - item.variant.discount / 100)
       );
+      const imageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0) 
+                       ? item.product.imageurl[0] 
+                       : null;
       return {
-        product: {
+        product: { 
           id: item.product.id,
           name: item.product.name,
-          imageurl: item.product.imageurl[0],
-          size: item.product.size,
-          oprice: item.product.oprice,
-          discount: item.product.discount,
-          price,
+          imageurl: imageUrl, 
+        },
+        variant: { 
+          id: item.variant.id,
+          name: item.variant.name,
+          size: item.variant.size,
+          oprice: item.variant.oprice,
+          discount: item.variant.discount,
+          price: price, 
         },
         quantity: item.quantity || 1,
         totalPrice: price * (item.quantity || 1),
@@ -132,6 +146,7 @@ const ShoppingCart = () => {
     });
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
+    
     if (!isSignedIn) {
       sessionStorage.setItem("post_login_redirect", "/checkout");
       navigate("/login", { replace: true });
@@ -141,12 +156,15 @@ const ShoppingCart = () => {
     navigate("/checkout");
   };
 
+  // 🟢 FIXED: Swapped item.product and item.variant
   const handleQuantityChange = (item, delta) => {
     const nextQty = Math.max(1, (item.quantity || 1) + delta);
     if (isBuyNowActive) {
-      startBuyNow(item.product, nextQty);
+      // startBuyNow expects (product, variant, qty)
+      startBuyNow(item.product, item.variant, nextQty);
     } else {
-      changeCartQuantity(item.product, nextQty);
+      // changeCartQuantity expects (variant, qty)
+      changeCartQuantity(item.variant, nextQty);
     }
   };
 
@@ -154,13 +172,12 @@ const ShoppingCart = () => {
     if (isBuyNowActive) {
       clearBuyNow();
     } else {
-      removeFromCart(item.product);
+      removeFromCart(item.variant);
     }
   };
 
   const handleMoveToWishlist = async (entry) => {
-    const { product } = entry;
-    const ok = await moveToWishlist(product);
+    const ok = await moveToWishlist(entry.product, entry.variant); 
     if (ok && isBuyNowActive) {
       clearBuyNow();
     }
@@ -197,10 +214,10 @@ const ShoppingCart = () => {
     }
   };
 
-  const handleAddToCart = (product) => {
+  const handleAddToCart = (variant, product) => {
     if (addingProductId) return;
-    setAddingProductId(product.id);
-    addToCart(product, 1);
+    setAddingProductId(variant.id); 
+    addToCart(product, variant, 1); 
     setTimeout(() => {
       setAddingProductId(null);
     }, 1500);
@@ -214,22 +231,35 @@ const ShoppingCart = () => {
   const renderRemainingProducts = () =>
     !isBuyNowActive &&
     products
-      .filter((p) => !cart.some((c) => c.product?.id === p.id))
+      .filter((p) => p.variants && p.variants.length > 0) 
       .map((product) => {
-        const price = Math.trunc(
-          product.oprice * (1 - product.discount / 100)
+        const cheapestVariant = product.variants.reduce(
+          (cheapest, current) => (current.oprice < cheapest.oprice ? current : cheapest),
+          product.variants[0]
         );
-        const isAdding = addingProductId === product.id;
+        
+        const inCart = cart.some((c) => c.variant?.id === cheapestVariant.id);
+        if (inCart) return null; 
+        
+        const price = Math.trunc(
+          cheapestVariant.oprice * (1 - cheapestVariant.discount / 100)
+        );
+        const isAdding = addingProductId === cheapestVariant.id;
+
+        // Add fallback for product image here
+        const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
+                         ? product.imageurl[0]
+                         : "/placeholder.png"; 
 
         return (
           <motion.div
-            key={product.id}
+            key={product.id} 
             className="bg-white rounded-xl overflow-hidden flex flex-col transition-shadow shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow duration-300 group"
             layout
           >
             <div className="relative overflow-hidden">
               <img
-                src={product.imageurl[0]}
+                src={imageUrl} // Use the safe imageUrl
                 alt={product.name}
                 className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
                 onClick={() => navigate(`/product/${product.id}`)}
@@ -250,21 +280,21 @@ const ShoppingCart = () => {
                   >
                     {product.name}
                   </h3>
-                  <span className="text-xs text-gray-500">({product.size} ml)</span>
+                  <span className="text-xs text-gray-500">{cheapestVariant.size} ml</span>
                 </div>
 
                 <div className="flex justify-between items-baseline mb-4">
                   <div className="flex items-baseline gap-2">
                     <p className="font-bold text-base">₹{price}</p>
-                    <p className="text-sm text-gray-500 line-through">₹{product.oprice}</p>
+                    <p className="text-sm text-gray-500 line-through">₹{cheapestVariant.oprice}</p>
                   </div>
                   <span className="text-green-600 text-sm font-semibold">
-                    {product.discount}% OFF
+                    {cheapestVariant.discount}% OFF
                   </span>
                 </div>
               </div>
               <HeroButton
-                onClick={() => handleAddToCart(product)}
+                onClick={() => handleAddToCart(cheapestVariant, product)} 
                 disabled={isAdding}
                 className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? '!bg-green-600 !text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
               >
@@ -292,12 +322,12 @@ const ShoppingCart = () => {
 
   const activeCart = itemsToRender;
   const totalOriginal = activeCart.reduce(
-    (sum, i) => sum + (i.product?.oprice ?? 0) * (i.quantity || 1),
+    (sum, i) => sum + (i.variant?.oprice ?? 0) * (i.quantity || 1),
     0
   );
   const totalDiscounted = activeCart.reduce((sum, i) => {
     const price = Math.floor(
-      (i.product?.oprice ?? 0) * (1 - (i.product?.discount ?? 0) / 100)
+      (i.variant?.oprice ?? 0) * (1 - (i.variant?.discount ?? 0) / 100)
     );
     return sum + price * (i.quantity || 1);
   }, 0);
@@ -322,7 +352,6 @@ const ShoppingCart = () => {
 
   return (
     <>
-      {/* --- REFACTORED: Unified Meta Tags --- */}
       <title>
         {isLoading
           ? "Loading Cart... | Devid Aura"
@@ -369,45 +398,57 @@ const ShoppingCart = () => {
             <motion.div layout className="flex flex-col gap-6">
               <AnimatePresence>
                 {activeCart.length > 0 ? (
-                  activeCart.map((item) => (
-                    <motion.div
-                      key={item.product.id}
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    >
-                      <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
-                        <img
-                          src={item.product.imageurl[0]}
-                          alt={item.product.name}
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
-                        />
-                        <div className="flex-grow w-full text-left">
-                          <h2 className="text-base sm:text-lg font-semibold mb-1">{item.product.name}</h2>
-                          <p className="text-xs sm:text-sm text-gray-500">{item.product.size} ml</p>
-                          <div className="flex items-baseline gap-2 mt-2 justify-start">
-                            <span className="text-sm sm:text-base font-bold">
-                              ₹{Math.floor(item.product.oprice * (1 - item.product.discount / 100))}
-                            </span>
-                            <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.product.oprice}</span>
+                  activeCart.map((item) => {
+                    // This check prevents crash if item is null or malformed
+                    if (!item || !item.product || !item.variant) {
+                      return null;
+                    }
+
+                    // Add fallback for cart item image
+                    const itemImageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0)
+                                         ? item.product.imageurl[0]
+                                         : "/placeholder.png"; 
+
+                    return (
+                      <motion.div
+                        key={item.variant.id} // Use variant.id as key
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      >
+                        <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
+                          <img
+                            src={itemImageUrl} // Use the safe itemImageUrl
+                            alt={item.product.name}
+                            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
+                          />
+                          <div className="flex-grow w-full text-left">
+                            <h2 className="text-base sm:text-lg font-semibold mb-1">{item.product.name}</h2>
+                            <p className="text-xs sm:text-sm text-gray-500">{item.variant.size} ml</p>
+                            <div className="flex items-baseline gap-2 mt-2 justify-start">
+                              <span className="text-sm sm:text-base font-bold">
+                                ₹{Math.floor(item.variant.oprice * (1 - item.variant.discount / 100))}
+                              </span>
+                              <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.variant.oprice}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
+                            <div className="flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden">
+                              <button onClick={() => handleQuantityChange(item, -1)} disabled={item.quantity <= 1} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">–</button>
+                              <span className="font-semibold min-w-[20px] text-center text-sm sm:text-base">{item.quantity}</span>
+                              <button onClick={() => handleQuantityChange(item, 1)} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100">+</button>
+                            </div>
+                            <div className="flex gap-4 sm:gap-6 pt-3">
+                              <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
+                              <button onClick={() => handleMoveToWishlist(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Wishlist</button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
-                          <div className="flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden">
-                            <button onClick={() => handleQuantityChange(item, -1)} disabled={item.quantity <= 1} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">–</button>
-                            <span className="font-semibold min-w-[20px] text-center text-sm sm:text-base">{item.quantity}</span>
-                            <button onClick={() => handleQuantityChange(item, 1)} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100">+</button>
-                          </div>
-                          <div className="flex gap-4 sm:gap-6 pt-3">
-                            <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
-                            <button onClick={() => handleMoveToWishlist(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Wishlist</button>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
+                      </motion.div>
+                    )
+                  })
                 ) : (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-8 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 transition-shadow">
                     <h3 className="text-lg mb-2">Your cart is empty.</h3>

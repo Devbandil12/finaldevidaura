@@ -16,6 +16,7 @@ export default function PaymentDetails({
     loadingPrices,
     isSubmitting,
     onPaymentVerified,
+    paymentVerified, // 🟢 Get this prop
     setTransactionId,
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
@@ -29,10 +30,8 @@ export default function PaymentDetails({
         }
     }, [paymentMethod, onPaymentVerified]);
 
-    // ✨ 1. ADD THIS useEffect TO HANDLE DYNAMIC COD AVAILABILITY
+    // ✨ 1. Handle dynamic COD availability
     useEffect(() => {
-        // If COD becomes unavailable while it was the selected method,
-        // automatically switch to Razorpay and notify the user.
         if (!breakdown.codAvailable && paymentMethod === "Cash on Delivery") {
             setPaymentMethod("Razorpay");
             window.toast.info("Cash on Delivery is not available for this address. Switched to online payment.");
@@ -41,8 +40,14 @@ export default function PaymentDetails({
 
 
     const handleRazorpayPayment = async () => {
-        // This function remains unchanged
         try {
+            // 🟢 MODIFIED: Send the correct cartItems payload
+            const cartItemsPayload = selectedItems.map(item => ({ 
+              variantId: item.variant.id, 
+              quantity: item.quantity,
+              productId: item.product.id
+            }));
+
             const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -51,7 +56,7 @@ export default function PaymentDetails({
                     phone: selectedAddress.phone,
                     couponCode: appliedCoupon?.code,
                     paymentMode: "Razorpay",
-                    cartItems: selectedItems.map(item => ({ id: item.product.id, quantity: item.quantity })),
+                    cartItems: cartItemsPayload, // 🟢 Pass new payload
                     userAddressId: selectedAddress.id,
                 }),
             });
@@ -78,6 +83,8 @@ export default function PaymentDetails({
                 },
                 handler: async function (response) {
                     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
+                    
+                    // 🟢 MODIFIED: Send cartItems to verify-payment
                     const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -86,7 +93,11 @@ export default function PaymentDetails({
                             razorpay_payment_id,
                             razorpay_signature,
                             orderId: orderData.orderId,
-                            userAddressId: selectedAddress.id, // Pass address ID for verification
+                            userAddressId: selectedAddress.id,
+                            user: { id: userdetails.id, fullName: userdetails.name },
+                            phone: selectedAddress.phone,
+                            cartItems: cartItemsPayload, // 🟢 Pass payload
+                            couponCode: appliedCoupon?.code,
                         }),
                     });
 
@@ -97,7 +108,7 @@ export default function PaymentDetails({
                         window.toast.success("Payment successful!");
                         onRazorpaySuccess();
                     } else {
-                        window.toast.error("Invalid payment. Please contact support.");
+                        window.toast.error(verifyData.error || "Invalid payment. Please contact support.");
                     }
                 },
                 modal: {
@@ -114,16 +125,43 @@ export default function PaymentDetails({
         }
     };
 
-    // ✨ 2. REMOVE OLD HARDCODED LOGIC
-    // const isCODAllowed = selectedAddress?.city?.toLowerCase() === "gwalior";
-    // const availablePaymentMethods = ["Razorpay"].concat(isCODAllowed ? ["Cash on Delivery"] : []);
     const productDiscount = breakdown.originalTotal - breakdown.productTotal;
 
     return (
         <div className="space-y-6">
-            {/* Price Summary Dropdown (Unchanged) */}
+            {/* Price Summary Dropdown */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                {/* ... existing button and motion.div for summary ... */}
+                <button 
+                    onClick={() => setSummaryExpanded(!summaryExpanded)}
+                    className="flex justify-between items-center w-full p-4"
+                >
+                    <div className="flex items-center gap-3">
+                        {summaryExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        <span className="font-semibold text-black">
+                            {summaryExpanded ? "Hide Full Summary" : "Show Full Summary"}
+                        </span>
+                    </div>
+                    <span className="text-lg font-bold">₹{breakdown.total}</span>
+                </button>
+
+                <AnimatePresence>
+                    {summaryExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="text-sm space-y-2 p-4 border-t border-slate-200">
+                                <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
+                                <div className="flex justify-between text-slate-600"><span>Product Discount</span><span>-₹{productDiscount}</span></div>
+                                {appliedCoupon && <div className="flex justify-between font-semibold text-green-600"><span>Coupon ({appliedCoupon.code})</span><span>-₹{breakdown.discountAmount}</span></div>}
+                                <div className="flex justify-between text-slate-600"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></div>
+                                <div className="flex justify-between font-bold text-lg text-black border-t border-slate-200 pt-3 mt-3"><span>Total Amount</span><span>₹{breakdown.total}</span></div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Payment Methods Card */}
@@ -133,7 +171,7 @@ export default function PaymentDetails({
                 </h3>
 
                 <div className="flex flex-col gap-3">
-                    {/* Razorpay Option (Unchanged) */}
+                    {/* Razorpay Option */}
                     <label
                         key="Razorpay"
                         className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition ${
@@ -143,10 +181,10 @@ export default function PaymentDetails({
                         }`}
                     >
                         <input type="radio" name="paymentMethod" value="Razorpay" checked={paymentMethod === "Razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 accent-black" />
-                        <span className="font-medium text-black">Razorpay</span>
+                        <span className="font-medium text-black">Razorpay (Online Payment)</span>
                     </label>
 
-                    {/* ✨ 3. MODIFY THE COD OPTION TO BE DYNAMIC */}
+                    {/* ✨ COD Option is now dynamic */}
                     <label
                         key="Cash on Delivery"
                         className={`flex flex-col items-start gap-1 p-4 border rounded-xl transition ${
@@ -180,27 +218,25 @@ export default function PaymentDetails({
                 </div>
 
                 <div className="pt-2">
-                    {/* Razorpay Button (Unchanged) */}
                     {paymentMethod === "Razorpay" && (
                         <motion.button
                             onClick={handleRazorpayPayment}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || loadingPrices}
                             className="w-full py-3 rounded-lg bg-black text-white font-semibold transition-colors hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? "Processing..." : `Pay ₹${breakdown.total}`}
+                            {isSubmitting ? "Processing..." : (loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`)}
                         </motion.button>
                     )}
 
-                    {/* COD Button (Unchanged, will now only show if COD is selected) */}
                     {paymentMethod === "Cash on Delivery" && (
                         <div className="space-y-3">
                             <p className="flex items-center text-sm text-slate-600"><Truck className="w-4 h-4 mr-2" /> You can pay via cash upon delivery.</p>
                             <motion.button
                                 onClick={handlePlaceOrder}
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || loadingPrices}
                                 className="w-full py-3 rounded-lg bg-black text-white font-semibold transition-colors hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? "Placing Order..." : "Place Order (COD)"}
+                                {isSubmitting ? "Placing Order..." : (loadingPrices ? "Loading Prices..." : "Place Order (COD)")}
                             </motion.button>
                         </div>
                     )}

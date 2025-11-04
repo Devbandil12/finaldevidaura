@@ -1,5 +1,5 @@
 // src/contexts/OrderContext.js
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react"; // 👈 IMPORT useCallback
 import { UserContext } from "./UserContext";
 
 export const OrderContext = createContext();
@@ -11,7 +11,7 @@ export const OrderProvider = ({ children }) => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // 🔹 Fetch orders (user → only own, admin → all)
-  const getorders = async (showLoader = true, isAdmin = false) => {
+  const getorders = useCallback(async (showLoader = true, isAdmin = false) => { // 👈 WRAP
     if (!isAdmin && !userdetails?.id) return;
     if (showLoader) setLoadingOrders(true);
 
@@ -35,10 +35,10 @@ export const OrderProvider = ({ children }) => {
     } finally {
       if (showLoader) setLoadingOrders(false);
     }
-  };
+  }, [BACKEND_URL, userdetails?.id]); // 👈 ADD DEPENDENCIES
 
   // 🔹 Update order status
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = useCallback(async (orderId, newStatus) => { // 👈 WRAP
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
@@ -52,15 +52,15 @@ export const OrderProvider = ({ children }) => {
       console.error("❌ Failed to update order status:", error);
       window.toast.error("Failed to update order status.");
     }
-  };
+  }, [BACKEND_URL, getorders]); // 👈 ADD DEPENDENCIES
 
   // 🔹 Cancel order (COD + prepaid via refund API)
-  const cancelOrder = async (orderId, paymentMode, amount, isAdmin = false) => {
+  const cancelOrder = useCallback(async (orderId, paymentMode, amount, isAdmin = false) => { // 👈 WRAP
     try {
       if (paymentMode === "online") {
         // Refund prepaid
         const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-          method: "POST", // 🟢 This must be a POST request to match your backend
+          method: "POST", 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId, amount }),
         });
@@ -68,7 +68,7 @@ export const OrderProvider = ({ children }) => {
       } else {
         // COD → just cancel
         await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
-          method: "PUT", // 🟢 This should be a PUT request
+          method: "PUT",
         });
       }
       window.toast.success(`Order ${orderId} canceled successfully.`);
@@ -77,10 +77,10 @@ export const OrderProvider = ({ children }) => {
       console.error("❌ Failed to cancel order:", error);
       window.toast.error("Failed to cancel order.");
     }
-  };
+  }, [BACKEND_URL, getorders]); // 👈 ADD DEPENDENCIES
 
   // 🔹 Single order details
-  const getSingleOrderDetails = async (orderId) => {
+  const getSingleOrderDetails = useCallback(async (orderId) => { // 👈 WRAP
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
       if (!res.ok) throw new Error("Failed to fetch order details");
@@ -90,7 +90,7 @@ export const OrderProvider = ({ children }) => {
       window.toast.error("Failed to load order details.");
       return null;
     }
-  };
+  }, [BACKEND_URL]); // 👈 ADD DEPENDENCIES
 
   useEffect(() => {
     // Wait for user loading to finish
@@ -107,7 +107,7 @@ export const OrderProvider = ({ children }) => {
       setOrders([]);
       setLoadingOrders(false);
     }
-  }, [isUserLoading, userdetails]); // 3. Update dependencies
+  }, [isUserLoading, userdetails, getorders]); // 👈 UPDATE DEPENDENCIES
 
   return (
     <OrderContext.Provider
@@ -117,7 +117,7 @@ export const OrderProvider = ({ children }) => {
         getorders,
         setOrders,
         updateOrderStatus,
-        cancelOrder, // ✅ fixed typo
+        cancelOrder,
         getSingleOrderDetails,
       }}
     >

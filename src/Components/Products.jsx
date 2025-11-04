@@ -1,5 +1,5 @@
 // src/pages/Products.js
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion"; 
 
@@ -12,6 +12,7 @@ import CartImage from "../assets/cart-svgrepo-com copy.svg";
 
 import { gsap } from "gsap";
 import HeroButton from "./HeroButton";
+import { ArrowRight } from "lucide-react"; // 🟢 ADDED THIS IMPORT
 
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -27,7 +28,7 @@ const cardVariants = {
 
 const Products = () => {
   const { products } = useContext(ProductContext);
-  const { cart, wishlist, addToCart, toggleWishlist } = useContext(CartContext);
+  const { wishlist, toggleWishlist } = useContext(CartContext); 
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,53 +39,31 @@ const Products = () => {
 
   const handleSlideClick = (product) => navigate(`/product/${product.id}`);
 
-  const handleAdd = async (product, quantity = 1) => {
-    await addToCart(product, quantity);
-    try {
-      const productImg = document.querySelector(
-        `img[data-product-id="${product.id}"]`
-      );
-      const cartBtn = document.getElementById("cart-icon");
-      if (!productImg || !cartBtn) return;
-      const imgRect = productImg.getBoundingClientRect();
-      const cartRect = cartBtn.getBoundingClientRect();
-      const startX = imgRect.left + imgRect.width / 2;
-      const startY = imgRect.top + imgRect.height / 2;
-      const endX = cartRect.left + cartRect.width / 2;
-      const endY = cartRect.top + cartRect.height / 2;
-      const flyImg = productImg.cloneNode(true);
-      flyImg.style.position = "fixed";
-      flyImg.style.top = `${startY}px`;
-      flyImg.style.left = `${startX}px`;
-      flyImg.style.width = "50px";
-      flyImg.style.height = "50px";
-      flyImg.style.borderRadius = "50%";
-      flyImg.style.objectFit = "cover";
-      flyImg.style.zIndex = "1000";
-      document.body.appendChild(flyImg);
-      gsap.to(flyImg, {
-        x: endX - startX,
-        y: endY - startY,
-        scale: 0.2,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power2.inOut",
-        onComplete: () => flyImg.remove(),
-      });
-    } catch (error) {
-      console.error("GSAP animation failed:", error);
+  const handleSelectOptions = (product) => {
+    navigate(`/product/${product.id}`);
+  };
+
+  const handleToggleWishlist = (e, product) => {
+    e.stopPropagation(); 
+    if (product.variants && product.variants.length > 0) {
+      const cheapestVariant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
+      // 🟢 FIXED: Pass (product, variant) in the correct order
+      toggleWishlist(product, cheapestVariant); 
+    } else {
+      window.toast.error("This product has no variants to wishlist.");
     }
   };
 
-  const handleToggleWishlist = (product) => {
-    toggleWishlist(product);
+  const isProductInWishlist = (product) => {
+    if (!product.variants || product.variants.length === 0) return false;
+    const variantIds = product.variants.map(v => v.id);
+    return wishlist?.some((item) => variantIds.includes(item.variantId ?? item.variant?.id));
   };
 
-  const isProductInCart = (productId) =>
-    cart?.some((item) => item.product?.id === productId);
-
-  const isProductInWishlist = (productId) =>
-    wishlist?.some((item) => (item.productId ?? item.product?.id) === productId);
+  const getDisplayVariant = (product) => {
+    if (!product.variants || product.variants.length === 0) return null;
+    return product.variants.sort((a, b) => a.oprice - b.oprice)[0];
+  };
 
   return (
     <>
@@ -99,9 +78,21 @@ const Products = () => {
         </div>
         <div className="custom-grid">
           {products.map((product) => {
-            const inWishlist = isProductInWishlist(product.id);
-            const inCart = isProductInCart(product.id);
-            const discountedPrice = Math.floor(product.oprice * (1 - product.discount / 100));
+            const displayVariant = getDisplayVariant(product);
+            if (!displayVariant) return null; 
+
+            const inWishlist = isProductInWishlist(product);
+            const discountedPrice = Math.floor(displayVariant.oprice * (1 - displayVariant.discount / 100));
+            const stockStatus = displayVariant.stock === 0 
+              ? "Out of Stock" 
+              : displayVariant.stock <= 10 
+              ? `Only ${displayVariant.stock} left!`
+              : null;
+            
+            // 🟢 ADDED: Image fallback
+            const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
+                             ? product.imageurl[0]
+                             : "/placeholder.png";
 
             return (
               <motion.div
@@ -117,7 +108,7 @@ const Products = () => {
                   onClick={() => handleSlideClick(product)}
                 >
                   <img
-                    src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
+                    src={imageUrl} // 🟢 Use safe URL
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     data-product-id={product.id}
@@ -137,7 +128,7 @@ const Products = () => {
                     >
                       {product.name}
                     </h3>
-                    <div onClick={() => handleToggleWishlist(product)}>
+                    <div onClick={(e) => handleToggleWishlist(e, product)}>
                       <img
                         src={inWishlist ? WishlistFilledImage : WishlistImage}
                         alt="Wishlist"
@@ -146,38 +137,31 @@ const Products = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <span className="text-xs text-gray-500">From</span>
                     <p className="text-base font-bold text-gray-800">₹{discountedPrice}</p>
-                    <p className="line-through text-gray-400">₹{product.oprice}</p>
+                    <p className="line-through text-gray-400">₹{displayVariant.oprice}</p>
                     <span className="text-xs text-green-600 font-semibold">
-                      ({product.discount}% OFF)
+                      ({displayVariant.discount}% OFF)
                     </span>
                   </div>
-                  <p className="text-sm font-normal text-red-700 mt-1">
-                    {product.stockStatus}
-                  </p>
+                  {stockStatus && (
+                    <p className="text-sm font-normal text-red-700 mt-1">
+                      {stockStatus}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                     {product.description}
                   </p>
                 </div>
 
                 <div className="p-4 pt-0">
-                  {inCart ? (
-                    <HeroButton
-                      onClick={() => navigate("/cart")}
-                      className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
-                    >
-                      View Cart
-                      <img src={CartImage} alt="Cart" className="w-7 h-7" />
-                    </HeroButton>
-                  ) : (
-                    <HeroButton
-                      onClick={() => handleAdd(product, 1)}
-                      className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
-                    >
-                      Add to Cart
-                      <img src={CartImage} alt="Cart" className="w-7 h-7" />
-                    </HeroButton>
-                  )}
+                  {/* 🟢 MODIFIED: Changed text and added icon */}
+                  <HeroButton
+                    onClick={() => handleSelectOptions(product)}
+                    className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+                  >
+                    Shop Now <ArrowRight className="w-5 h-5" />
+                  </HeroButton>
                 </div>
               </motion.div>
             );

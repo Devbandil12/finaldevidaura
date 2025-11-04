@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
+import { OrderContext } from "../contexts/OrderContext"; // 🟢 ADDED
 import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
@@ -13,7 +14,9 @@ const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { clearCart, getorders } = useContext(CartContext);
+  // 🟢 MODIFIED: getorders is in OrderContext
+  const { clearCart } = useContext(CartContext);
+  const { getorders } = useContext(OrderContext); 
   const { userdetails } = useContext(UserContext);
 
   const [step, setStep] = useState(1);
@@ -28,6 +31,7 @@ export default function Checkout() {
 
   useEffect(() => {
     try {
+      // 🟢 This now reads the new structure: [{ product: {...}, variant: {...}, quantity: ... }]
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
       if (items.length > 0) {
         setSelectedItems(items);
@@ -57,7 +61,12 @@ export default function Checkout() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+            // 🟢 MODIFIED: Send the correct payload
+            cartItems: selectedItems.map(i => ({ 
+              variantId: i.variant.id, 
+              quantity: i.quantity,
+              productId: i.product.id
+            })),
             couponCode: appliedCoupon?.code || null,
             pincode: selectedAddress.postalCode,
           }),
@@ -86,7 +95,7 @@ export default function Checkout() {
     localStorage.removeItem("selectedItems");
     localStorage.removeItem("appliedCoupon");
     clearCart();
-    if (getorders) await getorders();
+    if (getorders) await getorders(); // This will now work
   }, [getorders, clearCart]);
 
   const handleRazorpaySuccess = useCallback(async () => {
@@ -118,13 +127,18 @@ export default function Checkout() {
           phone: selectedAddress.phone,
           paymentMode: "cod",
           couponCode: appliedCoupon?.code || null,
-          cartItems: selectedItems.map(i => ({ id: i.product.id, quantity: i.quantity })),
+          // 🟢 MODIFIED: Send the correct payload
+          cartItems: selectedItems.map(i => ({ 
+            variantId: i.variant.id, 
+            quantity: i.quantity,
+            productId: i.product.id
+          })),
           userAddressId: selectedAddress.id,
         }),
       });
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || "Server error while placing order.");
+        const errorData = await res.json();
+        throw new Error(errorData.msg || "Server error while placing order.");
       }
       await cleanupAfterOrder();
       window.toast.success("Order placed successfully!");
@@ -158,7 +172,6 @@ export default function Checkout() {
     { name: "Confirmation", icon: CheckCircle },
   ];
   
-  // --- NEW: Dynamic Title based on step ---
   const dynamicTitle = () => {
     switch (step) {
         case 1: return "Select Address | Checkout";
@@ -170,7 +183,6 @@ export default function Checkout() {
 
   return (
     <>
-        {/* --- NEW: Meta Tags --- */}
         <title>{`${dynamicTitle()} | Devid Aura`}</title>
         <meta name="description" content="Complete your order securely. Select your address, choose a payment method, and confirm your purchase with Devid Aura." />
 
@@ -231,7 +243,7 @@ export default function Checkout() {
                         onPaymentVerified={setPaymentVerified} paymentVerified={paymentVerified} setTransactionId={setTransactionId}
                     />
                     )}
-                    {step === 3 && <Confirmation resetCheckout={resetCheckout} />}
+                    {step === 3 && <Confirmation resetCheckout={resetCheckout} transactionId={transactionId} />}
                 </motion.div>
                 </AnimatePresence>
 

@@ -1,15 +1,13 @@
-// src/Components/Reports.jsx
 import React from 'react';
 import { FaCrown, FaUserTag, FaTicketAlt, FaChartPie, FaDollarSign } from 'react-icons/fa';
 import { Pie } from 'react-chartjs-2';
 
 const Reports = ({ products, users, orders }) => {
 
-  // --- Sales by Category ---
+  // --- Sales by Category (This is CORRECT) ---
   const salesByCategory = (orders || [])
     .filter(order => order.status !== "Order Cancelled")
     .reduce((acc, order) => {
-      // Check if products array exists
       if (order.products && Array.isArray(order.products)) {
         order.products.forEach(p => {
           const category = p.category || 'Uncategorized';
@@ -24,14 +22,13 @@ const Reports = ({ products, users, orders }) => {
     datasets: [{ data: Object.values(salesByCategory), backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }],
   };
 
-  // --- Total Profit Calculation ---
-  const totalProfit = (orders || []) // Add a fallback to an empty array
+  // --- Total Profit Calculation (This is CORRECT) ---
+  const totalProfit = (orders || [])
     .filter(order => order.status !== "Order Cancelled" && order.status !== "order placed")
     .reduce((total, order) => {
-      // Check if products array exists
       if (order.products && Array.isArray(order.products)) {
         const orderProfit = order.products.reduce((sum, p) => {
-          const cost = p.costPrice || 0;
+          const cost = p.costPrice || 0; // costPrice is on the merged product
           return sum + ((p.price - cost) * p.quantity);
         }, 0);
         return total + orderProfit;
@@ -39,18 +36,24 @@ const Reports = ({ products, users, orders }) => {
       return total;
     }, 0);
 
-  // --- Top Selling Products ---
+  // 🟢 FIXED: Top Selling Products ---
   const topProducts = products
-    .sort((a, b) => (b.sold || 0) - (a.sold || 0)) // Safely handle undefined 'sold' property
+    .map(product => {
+      // Calculate total sold by summing up all its variants
+      const totalSold = (product.variants || []).reduce((sum, variant) => sum + (variant.sold || 0), 0);
+      return {
+        ...product,
+        totalSold: totalSold, // Add the new calculated property
+      };
+    })
+    .sort((a, b) => b.totalSold - a.totalSold) // Sort by the new property
     .slice(0, 5);
 
-  // --- CORRECTED Top Customers Calculation ---
-  // --- Top Customers (by total spend) ---
-  const customerSpending = orders
-    .filter(order => order.status !== "Order Cancelled") // Only count successful orders
+  // --- Top Customers (This is CORRECT) ---
+  const customerSpending = (orders || [])
+    .filter(order => order.status !== "Order Cancelled")
     .reduce((acc, order) => {
       const userId = order.userId;
-      // Find the user's name from the users array
       const user = users.find(u => u.id === userId);
       const name = user ? user.name : 'Unknown User';
 
@@ -71,8 +74,8 @@ const Reports = ({ products, users, orders }) => {
       totalSpent: data.totalSpent,
     }));
 
-  // --- Most Used Coupons ---
-  const couponUsage = orders.reduce((acc, order) => {
+  // --- Most Used Coupons (This is CORRECT) ---
+  const couponUsage = (orders || []).reduce((acc, order) => {
     if (order.couponCode) {
       acc[order.couponCode] = (acc[order.couponCode] || 0) + 1;
     }
@@ -111,7 +114,8 @@ const Reports = ({ products, users, orders }) => {
               {topProducts.map(p => (
                 <li key={p.id} className="flex items-center justify-between">
                   <span>{p.name}</span>
-                  <span className="font-bold text-green-600">{p.sold || 0} sold</span>
+                  {/* 🟢 FIXED: Use the new totalSold property */}
+                  <span className="font-bold text-green-600">{p.totalSold || 0} sold</span>
                 </li>
               ))}
             </ul>
