@@ -158,25 +158,33 @@ export const CouponProvider = ({ children }) => {
     return true;
   }, []);
 
-  const validateCoupon = useCallback(async (code, userId) => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/coupons/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, userId }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.code) { // <--- Added !data.code check here
-        window.toast.error(data.message || "Invalid coupon code");
-        return null;
-      }
-      return data;
-    } catch (err) {
-      console.error("[CouponContext] validation failed:", err);
-      window.toast.error("Validation failed. Please try again.");
+// ✅ THIS IS THE FIX
+const validateCoupon = useCallback(async (code, userId) => {
+  if (!code || !userId) {
+    window.toast.error("Coupon code and user are required.");
+    return null;
+  }
+  
+  try {
+    // 1. Data is now in the URL as query parameters
+    const res = await fetch(`${BASE_URL}/api/coupons/validate?code=${code}&userId=${userId}`, {
+      method: "GET", // 2. Method is GET
+      // 3. No 'headers' or 'body' are needed
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok || !data.code) { 
+      window.toast.error(data.message || "Invalid coupon code");
       return null;
     }
-  }, [BASE_URL]);
+    return data;
+  } catch (err) {
+    console.error("[CouponContext] validation failed:", err);
+    window.toast.error("Validation failed. Please try again.");
+    return null;
+  }
+}, [BASE_URL]);
 
   return (
     <CouponContext.Provider
