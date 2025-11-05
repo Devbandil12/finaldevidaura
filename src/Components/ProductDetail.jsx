@@ -342,12 +342,12 @@ const ProductDetail = () => {
                         <div className="text-sm text-gray-600">{product.composition}</div>
                       </div>
                       <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
-                        <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Heart Notes</div>
-                        <div className="text-sm text-gray-600">{product.fragrance}</div>
-                      </div>
-                      <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
                         <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Base Notes</div>
                         <div className="text-sm text-gray-600">{product.fragranceNotes}</div>
+                      </div>
+                      <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
+                        <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Heart Notes</div>
+                        <div className="text-sm text-gray-600">{product.fragrance}</div>
                       </div>
                     </div>
                   </div>

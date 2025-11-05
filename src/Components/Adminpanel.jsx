@@ -342,7 +342,7 @@ const TextAreaField = ({ label, name, value, onChange, placeholder, span = "col-
   </div>
 );
 
-// GREEN 4. MODIFIED: ProductVariantEditor (All Fixes Included)
+// GREEN 4. MODIFIED: ProductVariantEditor (Stuck Zero & Auto-scroll Fix)
 const ProductVariantEditor = ({ product, onClose }) => {
   const {
     updateProduct,
@@ -515,19 +515,21 @@ const ProductVariantEditor = ({ product, onClose }) => {
         <div className="flex border-b border-gray-300">
           <button
             onClick={() => setActiveTab("general")}
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "general"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "general"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             General
           </button>
           <button
             onClick={() => setActiveTab("variants")}
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "variants"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "variants"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             Variants ({variants.length})
           </button>
@@ -616,10 +618,11 @@ const ProductVariantEditor = ({ product, onClose }) => {
                     // 🔽 5. ATTACH THE REF
                     ref={index === newVariantIndex ? newVariantCardRef : null}
                     key={variant.id || `new-${index}`}
-                    className={`rounded-lg relative ${variant.isArchived
-                      ? "bg-gray-200 opacity-70"
-                      : "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                      }`}
+                    className={`rounded-lg relative ${
+                      variant.isArchived
+                        ? "bg-gray-200 opacity-70"
+                        : "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                    }`}
                   >
                     {/* --- DEDICATED HEADER (Unchanged) --- */}
                     <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -649,14 +652,13 @@ const ProductVariantEditor = ({ product, onClose }) => {
                             <FaUndo size={12} />
                           </button>
                         ) : (
-                          // 🔽 6. USE FaTrash ICON
                           <button
                             onClick={() => handleArchiveVariant(index)}
                             disabled={isSaving}
                             title="Archive"
                             className="p-2 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 disabled:bg-red-300"
                           >
-                            <FaTrash size={12} />
+                            <FaArchive size={12} />
                           </button>
                         )}
                       </div>

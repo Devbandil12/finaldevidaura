@@ -231,18 +231,18 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                 <h2 className="text-xl font-semibold mb-4">Step 2: Enter Product Details</h2>
                 <div className="grid grid-cols-2 gap-3 mt-4 max-h-96 overflow-y-auto pr-2">
                   {[
-                    { name: "name", type: "text", span: 2 },
-                    { name: "category", type: "text", span: 2 },
-                    { name: "description", type: "text", span: 2 },
-                    { name: "composition", type: "text", span: 1 },
-                    { name: "fragrance", type: "text", span: 1 },
-                    { name: "fragranceNotes", type: "text", span: 2 },
+                    { name: "name", type: "text", span: 2, label: "Product Name" },
+                    { name: "category", type: "text", span: 2, label: "Category" },
+                    { name: "description", type: "text", span: 2, label: "Description" },
+                    { name: "composition", type: "text", span: 1, label: "Top Notes" },
+                    { name: "fragranceNotes", type: "text", span: 2, label: "Base Notes" },
+                    { name: "fragrance", type: "text", span: 1, label: "Heart Notes " },
                   ].map((field) => (
                     <div key={field.name} className={field.span === 2 ? "col-span-2" : ""}>
-                      <label className="text-xs font-medium text-gray-600 capitalize">{field.name.replace(/([A-Z])/g, ' $1')}</label>
+                      <label className="text-xs font-medium text-gray-600 capitalize">{field.label.replace(/([A-Z])/g, ' $1')}</label>
                       <input
                         name={field.name}
-                        placeholder={field.name.replace(/([A-Z])/g, ' $1')}
+                        placeholder={field.label.replace(/([A-Z])/g, ' $1')}
                         type={field.type}
                         value={product[field.name]}
                         onChange={handleChange}
