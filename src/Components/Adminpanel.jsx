@@ -564,26 +564,25 @@ const ProductVariantEditor = ({ product, onClose }) => {
                   span="md:col-span-2"
                 />
                 <InputField
-                  label="Composition"
+                  label="Top Notes"
                   name="composition"
                   value={parentData.composition}
                   onChange={handleParentChange}
-                  placeholder="Composition"
+                  placeholder="Top Notes"
                 />
                 <InputField
-                  label="Fragrance"
-                  name="fragrance"
-                  value={parentData.fragrance}
-                  onChange={handleParentChange}
-                  placeholder="Fragrance"
-                />
-                <TextAreaField
-                  label="Fragrance Notes"
+                  label="Base Notes"
                   name="fragranceNotes"
                   value={parentData.fragranceNotes}
                   onChange={handleParentChange}
-                  placeholder="Fragrance Notes"
-                  span="md:col-span-2"
+                  placeholder="Base Notes"
+                />
+                <InputField
+                  label="Heart Notes"
+                  name="fragrance"
+                  value={parentData.fragrance}
+                  onChange={handleParentChange}
+                  placeholder="Heart Notes"
                 />
               </div>
               <button
