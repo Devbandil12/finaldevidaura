@@ -1,7 +1,7 @@
 // src/pages/Products.js
 import React, { useContext, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion"; 
+import { motion } from "framer-motion";
 
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -28,7 +28,7 @@ const cardVariants = {
 
 const Products = () => {
   const { products } = useContext(ProductContext);
-  const { wishlist, toggleWishlist } = useContext(CartContext); 
+  const { wishlist, toggleWishlist } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,11 +44,11 @@ const Products = () => {
   };
 
   const handleToggleWishlist = (e, product) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     if (product.variants && product.variants.length > 0) {
       const cheapestVariant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
       // 🟢 FIXED: Pass (product, variant) in the correct order
-      toggleWishlist(product, cheapestVariant); 
+      toggleWishlist(product, cheapestVariant);
     } else {
       window.toast.error("This product has no variants to wishlist.");
     }
@@ -68,31 +68,31 @@ const Products = () => {
   return (
     <>
       <section className="px-5 py-8 md:px-10">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
+        <div className="text-center mb-16 px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
             Discover Our Collection
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-600">
+          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
             Quality products curated just for you.
           </p>
         </div>
         <div className="custom-grid">
-          {products.map((product) => {
+          {products.filter(p => p.category !== "Template").map((product) => {
             const displayVariant = getDisplayVariant(product);
-            if (!displayVariant) return null; 
+            if (!displayVariant) return null;
 
             const inWishlist = isProductInWishlist(product);
             const discountedPrice = Math.floor(displayVariant.oprice * (1 - displayVariant.discount / 100));
-            const stockStatus = displayVariant.stock === 0 
-              ? "Out of Stock" 
-              : displayVariant.stock <= 10 
-              ? `Only ${displayVariant.stock} left!`
-              : null;
-            
+            const stockStatus = displayVariant.stock === 0
+              ? "Out of Stock"
+              : displayVariant.stock <= 10
+                ? `Only ${displayVariant.stock} left!`
+                : null;
+
             // 🟢 ADDED: Image fallback
             const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
-                             ? product.imageurl[0]
-                             : "/placeholder.png";
+              ? product.imageurl[0]
+              : "/placeholder.png";
 
             return (
               <motion.div

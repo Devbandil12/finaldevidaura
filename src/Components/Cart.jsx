@@ -12,7 +12,82 @@ import Loader from "./Loader";
 import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
-import { FiGift, FiCheckCircle, FiX } from "react-icons/fi";
+// 🟢 NEW: Import Bell icon
+import { FiGift, FiCheckCircle, FiX, FiBell } from "react-icons/fi";
+
+// 🟢 --- NEW HELPER COMPONENT ---
+// This component "builds" the instruction text based on the offer rules
+const OfferInstructionCard = ({ offer }) => {
+
+  // This function reads the rules and generates a human-readable string
+  const generateInstruction = () => {
+    const {
+      discountType, discountValue, minOrderValue,
+      cond_requiredCategory, cond_requiredSize,
+      action_targetSize, action_targetMaxPrice,
+      action_buyX, action_getY
+    } = offer;
+
+    // --- Offer: Free Item with Category (e.g., Free 30ml with Combo) ---
+    if (discountType === 'free_item' && cond_requiredCategory && action_targetSize && !action_buyX) {
+      let text = `Add any item from the "${cond_requiredCategory}" category and a ${action_targetSize}ml perfume`;
+      if (action_targetMaxPrice) {
+        text += ` (up to ₹${action_targetMaxPrice})`;
+      }
+      text += " to your cart to get the perfume for free!";
+      return text;
+    }
+
+    // --- Offer: Buy X of Size A, Get Y of Size B Free ---
+    if (discountType === 'free_item' && action_buyX && action_getY && cond_requiredSize && action_targetSize) {
+      let text = `Buy ${action_buyX} perfume(s) of ${cond_requiredSize}ml, and get ${action_getY} perfume(s) of ${action_targetSize}ml for free`;
+      if (action_targetMaxPrice) {
+        text += ` (up to ₹${action_targetMaxPrice} value)`;
+      }
+      text += ". Add all items to your cart to apply.";
+      return text;
+    }
+
+    // --- Offer: BOGO (e.g., Buy 2 20ml, Get 1 20ml Free) ---
+    if (discountType === 'free_item' && action_buyX && action_getY && action_targetSize && !cond_requiredSize) {
+      let text = `Buy ${action_buyX} ${action_targetSize}ml perfume(s), get ${action_getY} free! Add all ${action_buyX + action_getY} items to your cart to apply.`;
+      return text;
+    }
+
+    // --- Offer: Automatic Percent Off ---
+    if (discountType === 'percent') {
+      let text = `Get ${discountValue}% off your order`;
+      if (minOrderValue > 0) {
+        text += ` when you spend ₹${minOrderValue} or more`;
+      }
+      text += ". Applied automatically at checkout.";
+      return text;
+    }
+
+    // --- Offer: Automatic Flat Off ---
+    if (discountType === 'flat') {
+      let text = `Get ₹${discountValue} off your order`;
+      if (minOrderValue > 0) {
+        text += ` when you spend ₹${minOrderValue} or more`;
+      }
+      text += ". Applied automatically at checkout.";
+      return text;
+    }
+
+    // Fallback to the manual description if no logic matches
+    return offer.description || "Special offer available.";
+  };
+
+  return (
+    <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+      <p className="font-semibold text-indigo-800">{offer.code}</p>
+      {/* 🟢 This now shows the auto-generated instruction */}
+      <p className="text-sm text-indigo-700">{generateInstruction()}</p>
+    </div>
+  );
+};
+// 🟢 --- END HELPER COMPONENT ---
+
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -22,9 +97,9 @@ const ShoppingCart = () => {
   const [pincode, setPincode] = useState("");
   const [pincodeDetails, setPincodeDetails] = useState(null);
   const [pincodeLoading, setPincodeLoading] = useState(false);
-  const [addingProductId, setAddingProductId] = useState(null); 
+  const [addingProductId, setAddingProductId] = useState(null);
 
-  const { products } = useContext(ProductContext); 
+  const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const {
     cart,
@@ -38,11 +113,20 @@ const ShoppingCart = () => {
     addToCart,
     moveToWishlist,
   } = useContext(CartContext);
-  const { availableCoupons, isCouponValid, loadAvailableCoupons, validateCoupon } =
-    useContext(CouponContext);
+
+  // 🟢 This now holds the full offer objects
+  const {
+    availableCoupons,
+    isCouponValid,
+    loadAvailableCoupons,
+    validateCoupon,
+    autoOfferInstructions
+  } = useContext(CouponContext);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
+
+  const [showOffers, setShowOffers] = useState(false);
 
   const isBuyNowFromNavigation = location.state?.isBuyNow;
   const isBuyNowActive = isBuyNowFromNavigation || !!buyNow;
@@ -50,19 +134,69 @@ const ShoppingCart = () => {
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+  const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
+  const [loadingPrices, setLoadingPrices] = useState(true);
 
- useEffect(() => {
+
+  useEffect(() => {
+    if (isCartLoading || itemsToRender.length === 0) {
+      setLoadingPrices(false);
+      if (itemsToRender.length === 0) {
+        setBreakdown({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
+      }
+      return;
+    }
+
+    const fetchBreakdown = async () => {
+      setLoadingPrices(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/payments/breakdown`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartItems: itemsToRender.map(i => ({
+              variantId: i.variant.id,
+              quantity: i.quantity,
+              productId: i.product.id
+            })),
+            couponCode: appliedCoupon?.code || null,
+            pincode: pincode || null,
+          }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.msg || "Failed to fetch price details.");
+        }
+        const data = await res.json();
+        if (data.success) {
+          setBreakdown(data.breakdown);
+        } else {
+          throw new Error(data.msg || 'Price breakdown error.');
+        }
+      } catch (error) {
+        console.error('Price breakdown error:', error);
+      } finally {
+        setLoadingPrices(false);
+      }
+    };
+
+    const timer = setTimeout(() => fetchBreakdown(), 300);
+    return () => clearTimeout(timer);
+
+  }, [itemsToRender, appliedCoupon, pincode, isCartLoading, API_BASE]);
+
+
+  useEffect(() => {
     if (userdetails?.id) {
       loadAvailableCoupons(userdetails.id);
     }
   }, [userdetails?.id, loadAvailableCoupons]);
+
   useEffect(() => {
-    // Check for valid items. If buyNow is active but item is null, redirect.
     if (isBuyNowActive && !buyNow) {
       navigate("/cart", { replace: true, state: {} });
       return;
     }
-    
     const isAnyItemOutOfStock = itemsToRender.some(
       (item) => item.variant && item.variant.stock <= 0
     );
@@ -123,30 +257,32 @@ const ShoppingCart = () => {
       const price = Math.floor(
         item.variant.oprice * (1 - item.variant.discount / 100)
       );
-      const imageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0) 
-                       ? item.product.imageurl[0] 
-                       : null;
+      const imageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0)
+        ? item.product.imageurl[0]
+        : null;
       return {
-        product: { 
+        product: {
           id: item.product.id,
           name: item.product.name,
-          imageurl: imageUrl, 
+          imageurl: imageUrl,
         },
-        variant: { 
+        variant: {
           id: item.variant.id,
           name: item.variant.name,
           size: item.variant.size,
           oprice: item.variant.oprice,
           discount: item.variant.discount,
-          price: price, 
+          price: price,
         },
         quantity: item.quantity || 1,
         totalPrice: price * (item.quantity || 1),
+        isBundle: item.isBundle || false,
+        contents: item.contents || [],
       };
     });
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
-    
+
     if (!isSignedIn) {
       sessionStorage.setItem("post_login_redirect", "/checkout");
       navigate("/login", { replace: true });
@@ -156,14 +292,15 @@ const ShoppingCart = () => {
     navigate("/checkout");
   };
 
-  // 🟢 FIXED: Swapped item.product and item.variant
   const handleQuantityChange = (item, delta) => {
     const nextQty = Math.max(1, (item.quantity || 1) + delta);
     if (isBuyNowActive) {
-      // startBuyNow expects (product, variant, qty)
-      startBuyNow(item.product, item.variant, nextQty);
+      if (item.isBundle) {
+        startBuyNow({ ...item, quantity: nextQty });
+      } else {
+        startBuyNow(item.product, item.variant, nextQty);
+      }
     } else {
-      // changeCartQuantity expects (variant, qty)
       changeCartQuantity(item.variant, nextQty);
     }
   };
@@ -177,7 +314,7 @@ const ShoppingCart = () => {
   };
 
   const handleMoveToWishlist = async (entry) => {
-    const ok = await moveToWishlist(entry.product, entry.variant); 
+    const ok = await moveToWishlist(entry.product, entry.variant);
     if (ok && isBuyNowActive) {
       clearBuyNow();
     }
@@ -186,7 +323,8 @@ const ShoppingCart = () => {
   const handleApplyCoupon = useCallback(async (coupon) => {
     const validated = await validateCoupon(coupon.code, userdetails?.id);
     if (validated) {
-      if (isCouponValid(validated, itemsToRender)) {
+      const postOfferTotal = breakdown.productTotal - breakdown.offerDiscount;
+      if (isCouponValid(validated, itemsToRender, postOfferTotal)) {
         setAppliedCoupon(validated);
         window.toast.success(`Coupon ${validated.code} applied!`);
       } else {
@@ -195,7 +333,7 @@ const ShoppingCart = () => {
     } else {
       setAppliedCoupon(null);
     }
-  }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon]);
+  }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon, breakdown]);
 
   const handleManualApply = async () => {
     if (!manualCouponCode) {
@@ -203,7 +341,8 @@ const ShoppingCart = () => {
     }
     const validated = await validateCoupon(manualCouponCode, userdetails?.id);
     if (validated) {
-      if (isCouponValid(validated, itemsToRender)) {
+      const postOfferTotal = breakdown.productTotal - breakdown.offerDiscount;
+      if (isCouponValid(validated, itemsToRender, postOfferTotal)) {
         setAppliedCoupon(validated);
         window.toast.success(`Coupon ${validated.code} applied!`);
       } else {
@@ -216,8 +355,8 @@ const ShoppingCart = () => {
 
   const handleAddToCart = (variant, product) => {
     if (addingProductId) return;
-    setAddingProductId(variant.id); 
-    addToCart(product, variant, 1); 
+    setAddingProductId(variant.id);
+    addToCart(product, variant, 1);
     setTimeout(() => {
       setAddingProductId(null);
     }, 1500);
@@ -231,35 +370,38 @@ const ShoppingCart = () => {
   const renderRemainingProducts = () =>
     !isBuyNowActive &&
     products
-      .filter((p) => p.variants && p.variants.length > 0) 
+      .filter((p) =>
+        p.variants &&
+        p.variants.length > 0 &&
+        p.category !== "Template"
+      )
       .map((product) => {
         const cheapestVariant = product.variants.reduce(
           (cheapest, current) => (current.oprice < cheapest.oprice ? current : cheapest),
           product.variants[0]
         );
-        
+
         const inCart = cart.some((c) => c.variant?.id === cheapestVariant.id);
-        if (inCart) return null; 
-        
+        if (inCart) return null;
+
         const price = Math.trunc(
           cheapestVariant.oprice * (1 - cheapestVariant.discount / 100)
         );
         const isAdding = addingProductId === cheapestVariant.id;
 
-        // Add fallback for product image here
         const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
-                         ? product.imageurl[0]
-                         : "/placeholder.png"; 
+          ? product.imageurl[0]
+          : "/placeholder.png";
 
         return (
           <motion.div
-            key={product.id} 
+            key={product.id}
             className="bg-white rounded-xl overflow-hidden flex flex-col transition-shadow shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow duration-300 group"
             layout
           >
             <div className="relative overflow-hidden">
               <img
-                src={imageUrl} // Use the safe imageUrl
+                src={imageUrl}
                 alt={product.name}
                 className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
                 onClick={() => navigate(`/product/${product.id}`)}
@@ -294,7 +436,7 @@ const ShoppingCart = () => {
                 </div>
               </div>
               <HeroButton
-                onClick={() => handleAddToCart(cheapestVariant, product)} 
+                onClick={() => handleAddToCart(cheapestVariant, product)}
                 disabled={isAdding}
                 className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? '!bg-green-600 !text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
               >
@@ -320,33 +462,14 @@ const ShoppingCart = () => {
         );
       });
 
-  const activeCart = itemsToRender;
-  const totalOriginal = activeCart.reduce(
-    (sum, i) => sum + (i.variant?.oprice ?? 0) * (i.quantity || 1),
-    0
-  );
-  const totalDiscounted = activeCart.reduce((sum, i) => {
-    const price = Math.floor(
-      (i.variant?.oprice ?? 0) * (1 - (i.variant?.discount ?? 0) / 100)
-    );
-    return sum + price * (i.quantity || 1);
-  }, 0);
-
-  let finalPrice = totalDiscounted;
-  if (appliedCoupon) {
-    const discountValue = appliedCoupon.discountValue ?? 0;
-    finalPrice =
-      appliedCoupon.discountType === "percent"
-        ? Math.floor(finalPrice * (1 - discountValue / 100))
-        : Math.max(0, finalPrice - discountValue);
-  }
+  const productDiscount = breakdown.originalTotal - breakdown.productTotal;
+  const finalPrice = breakdown.total;
 
   useEffect(() => {
-    if (appliedCoupon && !isCouponValid(appliedCoupon, activeCart)) {
+    if (appliedCoupon && !isCouponValid(appliedCoupon, itemsToRender, breakdown.productTotal - breakdown.offerDiscount)) {
       setAppliedCoupon(null);
-      window.toast.info("Coupon no longer valid");
     }
-  }, [activeCart, appliedCoupon, isCouponValid]);
+  }, [itemsToRender, appliedCoupon, isCouponValid, breakdown]);
 
   const isLoading = !isBuyNowActive && isCartLoading;
 
@@ -356,10 +479,51 @@ const ShoppingCart = () => {
         {isLoading
           ? "Loading Cart... | Devid Aura"
           : isBuyNowActive
-          ? "Buy Now | Devid Aura"
-          : "Shopping Cart | Devid Aura"}
+            ? "Buy Now | Devid Aura"
+            : "Shopping Cart | Devid Aura"}
       </title>
       <meta name="description" content="Review your selected items, apply coupons, and proceed to a secure checkout. Manage your Devid Aura shopping experience." />
+
+      {/* 🟢 NEW: Offer Modal */}
+      <AnimatePresence>
+        {showOffers && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4"
+            onClick={() => setShowOffers(false)}
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-lg w-full max-w-md p-6"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <FiGift className="text-indigo-600" />
+                  Available Offers
+                </h3>
+                <button onClick={() => setShowOffers(false)} className="text-gray-400 hover:text-black">
+                  <FiX />
+                </button>
+              </div>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {autoOfferInstructions.length > 0 ? (
+                  autoOfferInstructions.map(offer => (
+                    // 🟢 NEW: Use the OfferInstructionCard component
+                    <OfferInstructionCard key={offer.id} offer={offer} />
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">There are no special offers available right now.</p>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isLoading ? (
         <Loader text="Loading cart..." />
@@ -371,47 +535,67 @@ const ShoppingCart = () => {
               {isBuyNowActive ? "Buy Now" : "Shopping Cart"}
             </h1>
 
-            {!isBuyNowActive && cart.length > 0 && (
-              <motion.button
-                onClick={clearCart}
-                className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaTrashAlt /> <span className="hidden sm:inline">Clear Cart</span>
-              </motion.button>
-            )}
+            {/* 🟢 NEW: Header Buttons Wrapper */}
+            <div className="flex items-center gap-4">
+              {/* 🟢 NEW: Notification Icon */}
+              {autoOfferInstructions.length > 0 && !isBuyNowActive && (
+                <motion.button
+                  onClick={() => setShowOffers(true)}
+                  className="relative text-gray-500 hover:text-black"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <FiBell className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {autoOfferInstructions.length}
+                  </span>
+                </motion.button>
+              )}
 
-            {isBuyNowActive && (
-              <motion.button
-                onClick={handleExitBuyNow}
-                className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-800"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiX /> <span className="hidden sm:inline">Exit Buy Now</span>
-              </motion.button>
-            )}
+              {!isBuyNowActive && cart.length > 0 && (
+                <motion.button
+                  onClick={clearCart}
+                  className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaTrashAlt /> <span className="hidden sm:inline">Clear Cart</span>
+                </motion.button>
+              )}
+
+              {isBuyNowActive && (
+                <motion.button
+                  onClick={handleExitBuyNow}
+                  className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-800"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FiX /> <span className="hidden sm:inline">Exit Buy Now</span>
+                </motion.button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-8">
             <motion.div layout className="flex flex-col gap-6">
               <AnimatePresence>
-                {activeCart.length > 0 ? (
-                  activeCart.map((item) => {
-                    // This check prevents crash if item is null or malformed
+                {itemsToRender.length > 0 ? (
+                  itemsToRender.map((item) => {
                     if (!item || !item.product || !item.variant) {
                       return null;
                     }
 
-                    // Add fallback for cart item image
                     const itemImageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0)
-                                         ? item.product.imageurl[0]
-                                         : "/placeholder.png"; 
+                      ? item.product.imageurl[0]
+                      : "/placeholder.png";
+
+                    const isFree = breakdown.appliedOffers?.some(offer =>
+                      offer.appliesToVariantId === item.variant.id
+                    );
 
                     return (
                       <motion.div
-                        key={item.variant.id} // Use variant.id as key
+                        key={item.variant.id}
                         layout
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -420,19 +604,38 @@ const ShoppingCart = () => {
                       >
                         <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
                           <img
-                            src={itemImageUrl} // Use the safe itemImageUrl
+                            src={itemImageUrl}
                             alt={item.product.name}
                             className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
                           />
                           <div className="flex-grow w-full text-left">
                             <h2 className="text-base sm:text-lg font-semibold mb-1">{item.product.name}</h2>
-                            <p className="text-xs sm:text-sm text-gray-500">{item.variant.size} ml</p>
+                            {item.isBundle ? (
+                              <div className="pl-4 mt-1">
+                                <span className="text-xs font-semibold text-gray-600">Contains:</span>
+                                <ul className="list-disc list-inside text-xs text-gray-500">
+                                  {item.contents?.map((content, idx) => (
+                                    <li key={idx}>
+                                      {content.name} ({content.variantName})
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : (
+                              <p className="text-xs sm:text-sm text-gray-500">{item.variant.size} ml</p>
+                            )}
+
                             <div className="flex items-baseline gap-2 mt-2 justify-start">
-                              <span className="text-sm sm:text-base font-bold">
-                                ₹{Math.floor(item.variant.oprice * (1 - item.variant.discount / 100))}
-                              </span>
+                              {isFree ? (
+                                <span className="text-sm sm:text-base font-bold text-green-600">Free</span>
+                              ) : (
+                                <span className="text-sm sm:text-base font-bold">
+                                  ₹{Math.floor(item.variant.oprice * (1 - item.variant.discount / 100))}
+                                </span>
+                              )}
                               <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.variant.oprice}</span>
                             </div>
+
                           </div>
                           <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
                             <div className="flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden">
@@ -461,11 +664,34 @@ const ShoppingCart = () => {
             <div className="sticky top-6">
               <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
                 <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
-                <div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Total MRP</span> <span className="font-semibold">₹{totalOriginal}</span></div>
-                <div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Discount</span> <span className="font-semibold text-green-600">- ₹{totalOriginal - totalDiscounted}</span></div>
-                {appliedCoupon && (<div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Coupon Discount</span> <span className="font-semibold text-green-600">- ₹{totalDiscounted - finalPrice}</span></div>)}
-                <hr className="border-t border-gray-200 my-4" />
-                <div className="flex justify-between mb-4 text-lg font-bold"><span >Final Amount</span> <span>₹{finalPrice}</span></div>
+
+                {loadingPrices ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="w-6 h-6 border-2 border-slate-200 border-t-black rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Original Price</span> <span className="font-semibold line-through">₹{breakdown.originalTotal}</span></div>
+
+                    {productDiscount > 0 && (
+                      <div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Product Discount</span> <span className="font-semibold text-green-600">- ₹{productDiscount.toFixed(2)}</span></div>
+                    )}
+
+                    {breakdown.appliedOffers && breakdown.appliedOffers.map((offer, index) => (
+                      <div key={index} className="flex justify-between mb-4 text-base">
+                        <span className="font-semibold text-green-600">{offer.title}</span>
+                        <span className="font-semibold text-green-600">- ₹{offer.amount}</span>
+                      </div>
+                    ))}
+
+                    {appliedCoupon && (
+                      <div className="flex justify-between mb-4 text-base"><span className="text-gray-500">Coupon Discount</span> <span className="font-semibold text-green-600">- ₹{breakdown.discountAmount}</span></div>
+                    )}
+
+                    <hr className="border-t border-gray-200 my-4" />
+                    <div className="flex justify-between mb-4 text-lg font-bold"><span >Final Amount</span> <span>₹{finalPrice}</span></div>
+                  </>
+                )}
 
                 <div className="mt-6">
                   <h3 className="flex items-center gap-2 font-semibold mb-4"><FiGift /> Apply Coupon</h3>
@@ -550,7 +776,7 @@ const ShoppingCart = () => {
                     {pincodeDetails.isServiceable ? (
                       <>
                         <p>🎉 Great news! We deliver to <strong>{pincode}</strong>.</p>
-                        <p className="text-xs mt-1">Delivery Charge: <strong>₹{pincodeDetails.deliveryCharge}</strong> | Payment: <strong>{pincodeDetails.codAvailable ? 'COD & Online' : 'Online Only'}</strong></p>
+                        <p className="text-xs mt-1">Delivery Charge: <strong>₹{breakdown.deliveryCharge}</strong> | Payment: <strong>{breakdown.codAvailable ? 'COD & Online' : 'Online Only'}</strong></p>
                       </>
                     ) : (
                       <p>😔 Sorry! We don’t deliver to <strong>{pincode}</strong> yet.</p>

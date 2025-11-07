@@ -25,6 +25,8 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+// 🟢 NEW: Import motion
+import { motion, AnimatePresence } from "framer-motion";
 
 ChartJS.register(
   CategoryScale,
@@ -365,7 +367,6 @@ const ProductVariantEditor = ({ product, onClose }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
 
-  // 🔽 1. ADD STATE AND REF FOR AUTO-SCROLL
   const [newVariantIndex, setNewVariantIndex] = useState(-1);
   const newVariantCardRef = useRef(null);
 
@@ -375,25 +376,20 @@ const ProductVariantEditor = ({ product, onClose }) => {
     setParentData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 🔽 2. FIX "STUCK ZERO" BUG
   const handleVariantChange = (index, e) => {
     const { name, value } = e.target;
     const newVariants = [...variants];
 
     if (["oprice", "costPrice", "discount", "size", "stock"].includes(name)) {
-      // If value is empty string, keep it. Otherwise, convert to Number.
       newVariants[index][name] = value === "" ? "" : Number(value);
     } else {
-      // This is a text field
       newVariants[index][name] = value;
     }
 
     setVariants(newVariants);
   };
 
-  // 🔽 3. MODIFY FOR AUTO-SCROLL
   const handleAddNewVariant = () => {
-    // Set the index of the item we're about to add
     setNewVariantIndex(variants.length);
 
     setVariants([
@@ -485,18 +481,15 @@ const ProductVariantEditor = ({ product, onClose }) => {
     }
   };
 
-  // 🔽 4. ADD EFFECT FOR AUTO-SCROLL
   useEffect(() => {
     if (newVariantCardRef.current) {
-      // If the ref is attached, scroll to it
       newVariantCardRef.current.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
       });
-      // Reset the index so it doesn't fire again
       setNewVariantIndex(-1);
     }
-  }, [newVariantIndex]); // Runs only when newVariantIndex changes
+  }, [newVariantIndex]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-[60] bg-black bg-opacity-50">
@@ -515,21 +508,19 @@ const ProductVariantEditor = ({ product, onClose }) => {
         <div className="flex border-b border-gray-300">
           <button
             onClick={() => setActiveTab("general")}
-            className={`px-4 py-2 text-sm font-medium ${
-              activeTab === "general"
-                ? "border-b-2 border-indigo-600 text-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-4 py-2 text-sm font-medium ${activeTab === "general"
+              ? "border-b-2 border-indigo-600 text-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             General
           </button>
           <button
             onClick={() => setActiveTab("variants")}
-            className={`px-4 py-2 text-sm font-medium ${
-              activeTab === "variants"
-                ? "border-b-2 border-indigo-600 text-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-4 py-2 text-sm font-medium ${activeTab === "variants"
+              ? "border-b-2 border-indigo-600 text-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             Variants ({variants.length})
           </button>
@@ -614,14 +605,12 @@ const ProductVariantEditor = ({ product, onClose }) => {
               <div className="space-y-4">
                 {variants.map((variant, index) => (
                   <div
-                    // 🔽 5. ATTACH THE REF
                     ref={index === newVariantIndex ? newVariantCardRef : null}
                     key={variant.id || `new-${index}`}
-                    className={`rounded-lg relative ${
-                      variant.isArchived
-                        ? "bg-gray-200 opacity-70"
-                        : "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                    }`}
+                    className={`rounded-lg relative ${variant.isArchived
+                      ? "bg-gray-200 opacity-70"
+                      : "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                      }`}
                   >
                     {/* --- DEDICATED HEADER (Unchanged) --- */}
                     <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -773,7 +762,9 @@ const AdminPanel = () => {
 
   // 🟢 6. NEW STATE FOR ARCHIVED TOGGLE
   const [showArchived, setShowArchived] = useState(false);
-  // We can use the main 'loading' from ProductContext
+
+  // 🟢 7. NEW STATE FOR COUPON SUB-TABS
+  const [couponSubTab, setCouponSubTab] = useState("manual");
 
   const navigate = useNavigate();
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -798,7 +789,6 @@ const AdminPanel = () => {
 
   // --- Analysis Data Calculation (Unchanged) ---
   const successfulOrders = orders?.filter(order => order.status !== "Order Cancelled");
-  // ... (all other calculations are correct) ...
   const totalOrders = orders?.length;
   const totalProducts = products?.length;
   const totalUsers = users?.length;
@@ -847,14 +837,12 @@ const AdminPanel = () => {
 
 
   // --- Functions ---
-
-  // 🟢 7. RENAME/UPDATE FUNCTION AND TEXT
   const handleProductArchive = async (productId) => {
     const confirmation = window.confirm("Are you sure you want to ARCHIVE this product? It will be hidden from your store.");
     if (confirmation) {
       setLoading(true);
       try {
-        await deleteProduct(productId); // This calls the context's archive function
+        await deleteProduct(productId);
         window.toast.success("Product archived successfully!");
       } catch (error) {
         console.error("❌ Error archiving product:", error);
@@ -865,13 +853,11 @@ const AdminPanel = () => {
     }
   };
 
-  // 🟢 8. NEW HANDLER for unarchiving
   const handleProductUnarchive = async (productId) => {
     if (!window.confirm("Are you sure you want to unarchive this product? It will become visible on your store.")) return;
     setLoading(true);
     try {
       await unarchiveProduct(productId);
-      // Both lists are refreshed by the context
     } catch (error) {
       console.error("❌ Error unarchiving product:", error);
       window.toast.error("Failed to unarchive product.");
@@ -952,14 +938,12 @@ const AdminPanel = () => {
     await cancelOrder(order.id, order.paymentMode, order.totalAmount);
   };
 
-  // 🟢 9. UPDATE TABS
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
     setIsSidebarOpen(false);
     if (tabName === "reports") {
       getReportData();
     }
-    // 🟢 Fetch archived list when clicking "products" tab
     if (tabName === "products") {
       getArchivedProducts();
     }
@@ -1040,12 +1024,12 @@ const AdminPanel = () => {
                 product={editingProduct}
                 onClose={() => {
                   setEditingProduct(null);
-                  getArchivedProducts(); // Also refresh archived list on close
+                  getArchivedProducts();
                 }}
               />
             )}
 
-            {/* --- Dashboard Tab (Correct & Unchanged) --- */}
+            {/* --- Dashboard Tab (Unchanged) --- */}
             {activeTab === "dashboard" && (
               <div className="space-y-8">
                 <h2 className="text-3xl font-bold">Admin Dashboard</h2>
@@ -1102,7 +1086,7 @@ const AdminPanel = () => {
               />
             )}
 
-            {/* 🟢 10. MODIFIED: Products Tab */}
+            {/* --- Products Tab (Unchanged) --- */}
             {activeTab === "products" && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -1116,8 +1100,6 @@ const AdminPanel = () => {
                     </button>
                   </div>
                 </div>
-
-                {/* --- Main Active Products Table --- */}
                 <div className="overflow-x-auto bg-white rounded-lg shadow-md">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -1146,7 +1128,6 @@ const AdminPanel = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap space-x-2">
                             <button onClick={() => setEditingProduct(product)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button>
-                            {/* 🟢 MODIFIED: Button text and function */}
                             <button onClick={() => handleProductArchive(product.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1">
                               <FaArchive className="w-3 h-3" /> {loading ? "Archiving..." : "Archive"}
                             </button>
@@ -1156,8 +1137,6 @@ const AdminPanel = () => {
                     </tbody>
                   </table>
                 </div>
-
-                {/* 🟢 11. NEW: Archived Products Section */}
                 <div className="mt-12">
                   <h3 className="text-2xl font-bold mb-4">Archived Products</h3>
                   <button
@@ -1166,10 +1145,8 @@ const AdminPanel = () => {
                   >
                     <FaArchive /> {showArchived ? "Hide" : "Show"} Archived Products ({archivedProducts.length})
                   </button>
-
                   {showArchived && (
                     <div className="overflow-x-auto bg-white rounded-lg shadow-md">
-                      {/* 🟢 Use the main 'loading' from ProductContext */}
                       {loading ? <p className="p-4">Loading archived products...</p> :
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
@@ -1209,68 +1186,463 @@ const AdminPanel = () => {
                 </div>
               </div>
             )}
-            {/* --- Coupons Tab (Correct & Unchanged) --- */}
+
+            {/* 🟢 --- START: NEW COUPONS TAB --- 🟢 */}
             {activeTab === "coupons" && (
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-3xl font-bold">Manage Coupon Codes</h2>
-                  <button onClick={() => setEditingCoupon({ code: "", discountType: "percent", discountValue: 0, minOrderValue: 0, minItemCount: 0, description: "", validFrom: "", validUntil: "", firstOrderOnly: false })} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Add New Coupon</button>
+
+                {/* --- 1. Sub-Tab Navigation --- */}
+                <div className="flex w-full max-w-md p-1 bg-gray-100 rounded-lg space-x-1">
+                  <button
+                    onClick={() => { setCouponSubTab("manual"); setEditingCoupon(null); }}
+                    className={`w-1/2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${couponSubTab === "manual"
+                        ? "bg-white text-indigo-700 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-200"
+                      }`}
+                  >
+                    Manual Coupons
+                  </button>
+                  <button
+                    onClick={() => { setCouponSubTab("auto"); setEditingCoupon(null); }}
+                    className={`w-1/2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${couponSubTab === "auto"
+                        ? "bg-white text-indigo-700 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-200"
+                      }`}
+                  >
+                    Automatic Promotions
+                  </button>
                 </div>
-                <div className="overflow-x-auto bg-white rounded-lg shadow-md">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min ₹</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Items</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Usage/User</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Order Only</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid From</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {editingCoupon && (
-                        <tr>
-                          <td className="p-2"><input placeholder="Code" value={editingCoupon.code || ""} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, code: e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><select value={editingCoupon.discountType} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, discountType: e.target.value }))} className="border rounded px-2 py-1 w-full"><option value="percent">percent</option><option value="flat">flat</option></select></td>
-                          <td className="p-2"><input type="number" placeholder="Value" value={editingCoupon.discountValue ?? 0} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, discountValue: +e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><input type="number" placeholder="Min ₹" value={editingCoupon.minOrderValue ?? 0} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, minOrderValue: +e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><input type="number" placeholder="Min Items" value={editingCoupon.minItemCount ?? 0} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, minItemCount: +e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><input placeholder="Description" value={editingCoupon.description} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, description: e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><input type="number" placeholder="Max usage" value={editingCoupon.maxUsagePerUser ?? ""} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, maxUsagePerUser: e.target.value === "" ? null : +e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2 text-center"><input type="checkbox" checked={editingCoupon.firstOrderOnly ?? false} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, firstOrderOnly: e.target.checked }))} /></td>
-                          <td className="p-2"><input type="date" value={editingCoupon.validFrom ? new Date(editingCoupon.validFrom).toISOString().split("T")[0] : ""} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, validFrom: e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2"><input type="date" value={editingCoupon.validUntil ? new Date(editingCoupon.validUntil).toISOString().split("T")[0] : ""} onChange={(e) => setEditingCoupon((ec) => ({ ...ec, validUntil: e.target.value }))} className="border rounded px-2 py-1 w-full" /></td>
-                          <td className="p-2 space-x-2"><button onClick={saveCoupon} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Save</button><button onClick={() => setEditingCoupon(null)} className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button></td>
-                        </tr>
-                      )}
-                      {coupons?.map((c) => (
-                        <tr key={c.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.code}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.discountType}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.discountType === "percent" ? `${c.discountValue}%` : `₹${c.discountValue}`}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">₹{c.minOrderValue}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.minItemCount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.description}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{c.maxUsagePerUser ?? "∞"}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">{c.firstOrderOnly ? "✅" : "❌"}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{new Date(c.validFrom).toLocaleDateString()}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{new Date(c.validUntil).toLocaleDateString()}</td>
-                          <td className="px-6 py-4 whitespace-nowrap space-x-2"><button onClick={() => setEditingCoupon({ ...c })} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Edit</button><button onClick={() => deleteCoupon(c.id)} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Delete</button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+
+                {/* --- 2. Add/Edit Form (with Per-Field Instructions) --- */}
+                <AnimatePresence>
+                  {editingCoupon && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -20, height: 0 }}
+                      className="p-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+                    >
+                      <h3 className="text-xl font-bold mb-6">
+                        {editingCoupon.id ? "Edit" : "Create"}
+                        {editingCoupon.isAutomatic ? " Promotion" : " Manual Coupon"}
+                      </h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+
+                        {/* --- Column 1: Details & Action --- */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Details</h4>
+                          {/* Field: Code */}
+                          <div>
+                            <InputField
+                              label={editingCoupon.isAutomatic ? "Promotion Name (e.g., FREE30ML)" : "Coupon Code *"}
+                              name="code"
+                              value={editingCoupon.code || ""}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, code: e.target.value.toUpperCase() }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              <b>Manual:</b> The code customers enter (e.g., `SAVE10`). <b>Auto:</b> A display name for the cart (e.g., `BOGO_OFFER`).
+                            </p>
+                          </div>
+                          {/* Field: Description */}
+                          <div>
+                            <TextAreaField
+                              label="Description"
+                              name="description"
+                              value={editingCoupon.description || ""}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, description: e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Internal note for your reference (e.g., "Diwali Promo"). Not shown to customers.</p>
+                          </div>
+
+                          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-4">Action</h4>
+                          {/* Field: Discount Type */}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Discount Type *</label>
+                            <select
+                              value={editingCoupon.discountType || "percent"}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, discountType: e.target.value }))}
+                              className="border rounded px-2 py-2 w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                              <option value="percent">Percent (%)</option>
+                              <option value="flat">Flat (₹)</option>
+                              <option value="free_item">Free Item</option>
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">The type of discount to apply.</p>
+                          </div>
+                          {/* Field: Discount Value */}
+                          <div>
+                            <InputField
+                              label={editingCoupon.discountType === 'percent' ? "Percentage (e.g., 10)" : (editingCoupon.discountType === 'free_item' ? "Discount Value (usually 0)" : "Value (e.g., 100)")}
+                              name="discountValue"
+                              type="number"
+                              value={editingCoupon.discountValue ?? 0}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, discountValue: +e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">The numeric value (e.g., `10` for 10% or `100` for ₹100). Use `0` for Free Item promos.</p>
+                          </div>
+                          {/* Field: Max Discount Amount */}
+                          {editingCoupon.discountType === 'percent' && (
+                            <div>
+                              <InputField
+                                label="Max Discount Amount (₹)"
+                                name="maxDiscountAmount"
+                                type="number"
+                                placeholder="e.g., 300 (0 for no cap)"
+                                value={editingCoupon.maxDiscountAmount ?? ""}
+                                onChange={(e) => setEditingCoupon((ec) => ({ ...ec, maxDiscountAmount: e.target.value === "" ? null : +e.target.value }))}
+                              />
+                              <p className="text-xs text-gray-500 mt-1">The maximum discount in ₹. (e.g., 10% off, max ₹300). Leave empty or `0` for no cap.</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* --- Column 2: Rules & Validity --- */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Basic Rules</h4>
+                          {/* Field: Min Order Value */}
+                          <div>
+                            <InputField
+                              label="Min. Order Value (₹)"
+                              name="minOrderValue"
+                              type="number"
+                              value={editingCoupon.minOrderValue ?? 0}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, minOrderValue: +e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Cart subtotal must be at least this much. Set `0` for no minimum.</p>
+                          </div>
+                          {/* Field: Min Item Count */}
+                          <div>
+                            <InputField
+                              label="Min. Item Count"
+                              name="minItemCount"
+                              type="number"
+                              value={editingCoupon.minItemCount ?? 0}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, minItemCount: +e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Cart must have at least this many items. Set `0` for no minimum.</p>
+                          </div>
+                          {/* Field: Max Usage Per User */}
+                          <div>
+                            <InputField
+                              label="Max Usage Per User"
+                              name="maxUsagePerUser"
+                              type="number"
+                              placeholder="1 (Leave empty for no limit)"
+                              value={editingCoupon.maxUsagePerUser ?? ""}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, maxUsagePerUser: e.target.value === "" ? null : +e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Max times one logged-in customer can use this. Leave empty for unlimited.</p>
+                          </div>
+                          {/* Field: First Order Only */}
+                          <div>
+                            <label className="flex items-start gap-2 p-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                              <input
+                                type="checkbox"
+                                className="rounded text-indigo-600 focus:ring-indigo-500 mt-0.5"
+                                checked={editingCoupon.firstOrderOnly ?? false}
+                                onChange={(e) => setEditingCoupon((ec) => ({ ...ec, firstOrderOnly: e.target.checked }))}
+                              />
+                              <span>
+                                Apply to First Order Only
+                                <span className="block text-xs text-gray-500">If checked, this will not work for returning customers.</span>
+                              </span>
+                            </label>
+                          </div>
+
+                          <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider pt-4">Validity</h4>
+                          {/* Field: Valid From */}
+                          <div>
+                            <InputField
+                              label="Valid From"
+                              name="validFrom"
+                              type="date"
+                              value={editingCoupon.validFrom ? new Date(editingCoupon.validFrom).toISOString().split("T")[0] : ""}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, validFrom: e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Optional: Date the coupon becomes active.</p>
+                          </div>
+                          {/* Field: Valid Until */}
+                          <div>
+                            <InputField
+                              label="Valid Until"
+                              name="validUntil"
+                              type="date"
+                              value={editingCoupon.validUntil ? new Date(editingCoupon.validUntil).toISOString().split("T")[0] : ""}
+                              onChange={(e) => setEditingCoupon((ec) => ({ ...ec, validUntil: e.target.value }))}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Optional: Date the coupon expires (at the end of this day).</p>
+                          </div>
+                        </div>
+
+                        {/* --- Row 2: Automatic Rules (with Per-Field Instructions) --- */}
+                        {editingCoupon.isAutomatic && (
+                          <div className="lg:col-span-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-3">Automatic Promotion Rules</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                              {/* Field: Req. Category */}
+                              <div>
+                                <InputField
+                                  label="Req. Category (e.g., Template)"
+                                  name="cond_requiredCategory"
+                                  value={editingCoupon.cond_requiredCategory || ""}
+                                  onChange={(e) => setEditingCoupon((ec) => ({ ...ec, cond_requiredCategory: e.target.value }))}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Cart must contain an item from this category.</p>
+                              </div>
+                              {/* Field: Req. Size */}
+                              <div>
+                                <InputField
+                                  label="Req. 'Buy' Size (e.g., 100)"
+                                  name="cond_requiredSize"
+                                  type="number"
+                                  value={editingCoupon.cond_requiredSize ?? ""}
+                                  onChange={(e) => setEditingCoupon((ec) => ({ ...ec, cond_requiredSize: e.target.value === "" ? null : +e.target.value }))}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">The size of the "Buy" item (e.g., 100ml).</p>
+                              </div>
+                              {/* Field: Tgt. Size */}
+                              <div>
+                                <InputField
+                                  label="Tgt. 'Get' Size (e.g., 30)"
+                                  name="action_targetSize"
+                                  type="number"
+                                  value={editingCoupon.action_targetSize ?? ""}
+                                  onChange={(e) => setEditingCoupon((ec) => ({ ...ec, action_targetSize: e.target.value === "" ? null : +e.target.value }))}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">The size of the "Get" item (e.g., 30ml).</p>
+                              </div>
+                              {/* Field: Tgt. Max Price */}
+                              <div>
+                                <InputField
+                                  label="Tgt. Item Max Price (e.g., 600)"
+                                  name="action_targetMaxPrice"
+                                  type="number"
+                                  value={editingCoupon.action_targetMaxPrice ?? ""}
+                                  onChange={(e) => setEditingCoupon((ec) => ({ ...ec, action_targetMaxPrice: e.target.value === "" ? null : +e.target.value }))}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Safety cap price for the "Get" item.</p>
+                              </div>
+                              {/* Field: Buy X / Get Y */}
+                              <div>
+                                <div className="flex gap-2">
+                                  <InputField
+                                    label="Buy X"
+                                    name="action_buyX"
+                                    type="number"
+                                    value={editingCoupon.action_buyX ?? ""}
+                                    onChange={(e) => setEditingCoupon((ec) => ({ ...ec, action_buyX: e.target.value === "" ? null : +e.target.value }))}
+                                  />
+                                  <InputField
+                                    label="Get Y"
+                                    name="action_getY"
+                                    type="number"
+                                    value={editingCoupon.action_getY ?? ""}
+                                    onChange={(e) => setEditingCoupon((ec) => ({ ...ec, action_getY: e.target.value === "" ? null : +e.target.value }))}
+                                  />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">For "Buy X, Get Y" offers (e.g., Buy 2, Get 1).</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* --- Row 3: Form Actions --- */}
+                        <div className="lg:col-span-2 flex items-center justify-end gap-3 pt-6 border-t border-gray-200 mt-4">
+                          <button onClick={() => setEditingCoupon(null)} className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200 transition-colors">Cancel</button>
+                          <button onClick={saveCoupon} className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors">Save</button>
+                        </div>
+
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* --- 3. Manual Coupons Table --- */}
+                {couponSubTab === 'manual' && (
+                  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">Manage Manual Coupons</h2>
+                        <p className="text-sm text-gray-500">These codes must be manually entered by the customer at checkout.</p>
+                      </div>
+                      <button
+                        onClick={() => setEditingCoupon({
+                          code: "", discountType: "percent", discountValue: 10, isAutomatic: false,
+                          minOrderValue: 0, minItemCount: 0, maxDiscountAmount: null, firstOrderOnly: false, maxUsagePerUser: 1
+                        })}
+                        className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                      >
+                        Add New Coupon
+                      </button>
+                    </div>
+
+                    {/* --- Instructions Box (General Examples) --- */}
+                    <div className="p-4 bg-blue-50 border border-blue-200 text-sm text-blue-900 rounded-lg">
+                      <h4 className="font-bold">How Manual Coupons Work:</h4>
+                      <ul className="list-disc list-inside pl-2 mt-2 space-y-1">
+                        <li>Customers must **manually enter the "Coupon Code"** at checkout.</li>
+                        <li>**`Discount Type`**: Choose `Percent` (e.g., 10% off), `Flat` (e.g., ₹100 off), or `Free Item`.</li>
+                        <li>**`Max Discount`**: Only applies to `Percent` types. Set `0` or leave empty for no cap.</li>
+                        <li>**`Basic Rules`**: Use `Min. Order Value` or `Min. Item Count` to set requirements.</li>
+                        <li>**`Max Usage Per User`**: Set how many times one customer can use the code (e.g., `1` for a welcome discount).</li>
+                      </ul>
+                    </div>
+
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code / Desc</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type / Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rules</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validity</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {coupons.filter(c => !c.isAutomatic).map((c) => (
+                            <tr key={c.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="font-semibold">{c.code}</div>
+                                <div className="text-xs text-gray-500 truncate max-w-xs">{c.description}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div><span className="font-medium capitalize">{c.discountType}</span></div>
+                                <div className="text-sm">{c.discountType === "percent" ? `${c.discountValue}%` : `₹${c.discountValue}`}</div>
+                                {c.discountType === 'percent' && c.maxDiscountAmount > 0 && (
+                                  <div className="text-xs text-red-600">(Max: ₹{c.maxDiscountAmount})</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                <div>Min: <strong>₹{c.minOrderValue}</strong></div>
+                                <div>Min Items: <strong>{c.minItemCount}</strong></div>
+                                <div>Usage: <strong>{c.maxUsagePerUser ?? "∞"}</strong> / user</div>
+                                <div>{c.firstOrderOnly ? <span className="text-xs font-medium text-indigo-600">First Order Only</span> : ""}</div>
+                              </td>
+                              <td className="px-6 py-4 text-xs whitespace-nowrap">
+                                <div>From: {c.validFrom ? new Date(c.validFrom).toLocaleDateString() : 'N/A'}</div>
+                                <div>Until: {c.validUntil ? new Date(c.validUntil).toLocaleDateString() : 'N/A'}</div>
+                              </td>
+                              <td className="px-6 py-4 space-x-2 whitespace-nowrap">
+                                <button
+                                  onClick={() => setEditingCoupon({ ...c })}
+                                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => deleteCoupon(c.id)}
+                                  className="px-4 py-2 bg-white text-red-600 border border-red-400 rounded-lg text-sm font-medium hover:bg-red-50"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- 4. Automatic Promotions Table --- */}
+                {couponSubTab === 'auto' && (
+                  <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900">Manage Automatic Promotions</h2>
+                        <p className="text-sm text-gray-500">These offers apply automatically in the cart if their rules are met.</p>
+                      </div>
+                      <button
+                        onClick={() => setEditingCoupon({
+                          code: "NEW_OFFER", discountType: "free_item", discountValue: 0, isAutomatic: true,
+                          minOrderValue: 0, minItemCount: 0, maxDiscountAmount: null, cond_requiredCategory: "Template",
+                          action_targetSize: 30, action_targetMaxPrice: 600
+                        })}
+                        className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                      >
+                        Add New Promotion
+                      </button>
+                    </div>
+
+                    {/* Instructions Box (General Examples) */}
+                    <div className="p-4 bg-blue-50 border border-blue-200 text-sm text-blue-900 rounded-lg">
+                      <h4 className="font-bold">How Promotions Work:</h4>
+                      <ul className="list-disc list-inside pl-2 mt-2 space-y-1">
+                        <li>The "Code" is just a **display name** for the cart (e.g., "FREE_30ML").</li>
+                        <li>**Example (Free 30ml with Combo):** Type: `free_item`, Req. Category: `Template`, Tgt. Size: `30`, Tgt. Max Price: `600`.</li>
+                        <li>**Example (Buy 2 100ml, Get 1 20ml Free):** Type: `free_item`, Req. Size: `100`, Tgt. Size: `20`, Buy X: `2`, Get Y: `1`.</li>
+                        <li>**Example (20% Off):** Type: `percent`, Value: `20`, Max Discount: `300` (0 for no cap).</li>
+                      </ul>
+                    </div>
+
+                    {/* Auto-Promotions Table */}
+                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name / Desc</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type / Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Rules</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Automatic Rules</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validity</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {coupons.filter(c => c.isAutomatic).map((c) => (
+                            <tr key={c.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="font-semibold">{c.code}</div>
+                                <div className="text-xs text-gray-500 truncate max-w-xs">{c.description}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div><span className="font-medium capitalize">{c.discountType.replace('_', ' ')}</span></div>
+                                <div className="text-sm">{c.discountType === "percent" ? `${c.discountValue}%` : (c.discountType === 'free_item' ? 'Free Item' : `₹${c.discountValue}`)}</div>
+                                {c.discountType === 'percent' && c.maxDiscountAmount > 0 && (
+                                  <div className="text-xs text-red-600">(Max: ₹{c.maxDiscountAmount})</div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                <div>Min: <strong>₹{c.minOrderValue}</strong></div>
+                                <div>Min Items: <strong>{c.minItemCount}</strong></div>
+                                <div>Usage: <strong>{c.maxUsagePerUser ?? "∞"}</strong> / user</div>
+                                <div>{c.firstOrderOnly ? <span className="text-xs font-medium text-indigo-600">First Order Only</span> : ""}</div>
+                              </td>
+                              <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                {c.cond_requiredCategory && <div>Req. Category: <strong>{c.cond_requiredCategory}</strong></div>}
+                                {c.cond_requiredSize && <div>Req. Size: <strong>{c.cond_requiredSize}ml</strong></div>}
+                                {c.action_targetSize && <div>Tgt. Size: <strong>{c.action_targetSize}ml</strong> (Max ₹{c.action_targetMaxPrice})</div>}
+                                {c.action_buyX && <div>BOGO: <strong>Buy {c.action_buyX} Get {c.action_getY}</strong></div>}
+                              </td>
+                              <td className="px-6 py-4 text-xs whitespace-nowrap">
+                                <div>From: {c.validFrom ? new Date(c.validFrom).toLocaleDateString() : 'N/A'}</div>
+                                <div>Until: {c.validUntil ? new Date(c.validUntil).toLocaleDateString() : 'N/A'}</div>
+                              </td>
+                              <td className="px-6 py-4 space-x-2 whitespace-nowrap">
+                                <button
+                                  onClick={() => setEditingCoupon({ ...c })}
+                                  className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => deleteCoupon(c.id)}
+                                  className="px-4 py-2 bg-white text-red-600 border border-red-400 rounded-lg text-sm font-medium hover:bg-red-50"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-
-            {/* --- Orders Tab (Correct & Unchanged) --- */}
+            {/* --- Orders Tab (Unchanged) --- */}
             {activeTab === "orders" && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
@@ -1335,7 +1707,7 @@ const AdminPanel = () => {
               </div>
             )}
 
-            {/* --- Users Tab (Correct & Unchanged) --- */}
+            {/* --- Users Tab (Unchanged) --- */}
             {activeTab === "users" && (
               <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
                 <div className="flex justify-between items-center">
@@ -1453,7 +1825,7 @@ const AdminPanel = () => {
             )}
 
 
-            {/* --- Queries Tab (Correct & Unchanged) --- */}
+            {/* --- Queries Tab (Unchanged) --- */}
             {activeTab === "queries" && (
               <div className="space-y-6">
                 <h2 className="text-3xl font-bold">User Queries</h2>
@@ -1476,7 +1848,7 @@ const AdminPanel = () => {
               </div>
             )}
 
-            {/* --- Carts & Wishlists Tab (Correct & Unchanged) --- */}
+            {/* --- Carts & Wishlists Tab (Unchanged) --- */}
             {activeTab === "carts" && (
               <CartsWishlistsTab
                 flatCarts={abandonedCarts}
@@ -1484,7 +1856,7 @@ const AdminPanel = () => {
               />
             )}
 
-            {/* --- Pincodes Tab (Correct & Unchanged) --- */}
+            {/* --- Pincodes Tab (Unchanged) --- */}
             {activeTab === "pincodes" && <PincodeManager />}
 
           </div>

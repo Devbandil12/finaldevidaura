@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
-import { OrderContext } from "../contexts/OrderContext"; // 🟢 ADDED
+import { OrderContext } from "../contexts/OrderContext";
 import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
@@ -14,8 +14,7 @@ const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
 export default function Checkout() {
   const navigate = useNavigate();
-  // 🟢 MODIFIED: getorders is in OrderContext
-  const { clearCart } = useContext(CartContext);
+  const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext); 
   const { userdetails } = useContext(UserContext);
 
@@ -23,7 +22,8 @@ export default function Checkout() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false });
+  // 🟢 NEW: Updated the default state to include the new 'appliedOffers' array
+  const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
   const [loadingPrices, setLoadingPrices] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentVerified, setPaymentVerified] = useState(false);
@@ -31,7 +31,6 @@ export default function Checkout() {
 
   useEffect(() => {
     try {
-      // 🟢 This now reads the new structure: [{ product: {...}, variant: {...}, quantity: ... }]
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
       if (items.length > 0) {
         setSelectedItems(items);
@@ -52,6 +51,10 @@ export default function Checkout() {
   useEffect(() => {
     const fetchBreakdown = async () => {
       if (selectedItems.length === 0 || !selectedAddress) {
+        // 🟢 Reset breakdown if conditions aren't met
+        if (selectedItems.length > 0) {
+            setBreakdown(prev => ({ ...prev, deliveryCharge: 0, total: prev.productTotal - prev.offerDiscount - prev.discountAmount }));
+        }
         setLoadingPrices(false);
         return;
       }
@@ -61,7 +64,6 @@ export default function Checkout() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            // 🟢 MODIFIED: Send the correct payload
             cartItems: selectedItems.map(i => ({ 
               variantId: i.variant.id, 
               quantity: i.quantity,
@@ -89,16 +91,17 @@ export default function Checkout() {
       }
     };
     fetchBreakdown();
-  }, [selectedItems, appliedCoupon, selectedAddress]);
+  }, [selectedItems, appliedCoupon, selectedAddress]); // This is correct
 
   const cleanupAfterOrder = useCallback(async () => {
     localStorage.removeItem("selectedItems");
     localStorage.removeItem("appliedCoupon");
-    clearCart();
-    if (getorders) await getorders(); // This will now work
-  }, [getorders, clearCart]);
+    await getCartitems(); // Re-syncs the cart
+    if (getorders) await getorders(); 
+  }, [getorders, getCartitems]);
 
   const handleRazorpaySuccess = useCallback(async () => {
+    // This is called by PaymentDetails component after Razorpay's *handler*
     setIsSubmitting(true);
     try {
       await cleanupAfterOrder();
@@ -127,13 +130,16 @@ export default function Checkout() {
           phone: selectedAddress.phone,
           paymentMode: "cod",
           couponCode: appliedCoupon?.code || null,
-          // 🟢 MODIFIED: Send the correct payload
+          // 🟢 Pass the full cart items
           cartItems: selectedItems.map(i => ({ 
+            ...i, // Pass the full item so backend can get price, etc.
             variantId: i.variant.id, 
             quantity: i.quantity,
             productId: i.product.id
           })),
           userAddressId: selectedAddress.id,
+          // 🟢 Pass the breakdown so the backend can VERIFY it
+          breakdown: breakdown
         }),
       });
       if (!res.ok) {
@@ -149,7 +155,7 @@ export default function Checkout() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, cleanupAfterOrder, isSubmitting]);
+  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, cleanupAfterOrder, isSubmitting]); // 🟢 Add breakdown
 
   const handleNext = useCallback(() => {
     if (step === 1 && !selectedAddress) {

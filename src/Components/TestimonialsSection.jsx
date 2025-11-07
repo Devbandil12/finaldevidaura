@@ -93,12 +93,12 @@ export default function TestimonialsSection() {
 
   return (
     <section className="testimonial-section">
-      <div className="text-center py-16 px-4 fade-up">
-        <h2 className="text-5xl md:text-6xl font-black text-gray-900 drop-shadow-lg">
-          What Our Customers Say
+      <div className="text-center mb-16 px-4">
+        <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
+          The Devid Aura Sensation
         </h2>
-        <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
-          Real stories from our valued community.
+        <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
+          The aura they found. The presence they feel. The stories they now tell.
         </p>
       </div>
 

@@ -106,11 +106,11 @@ export default function ImmersiveProductShowcase() {
 
   return (
     <>
-      <div className="text-center px-4 mb-15 lg:mb-0">
-        <h2 className="text-5xl md:text-6xl mt-25  font-black text-gray-900 tracking-wider drop-shadow-lg ">
+      <div className="text-center px-4 mt-34">
+        <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
           Explore Our Scents
         </h2>
-        <p className="mt-4 max-w-3xl mx-auto text-lg md:text-xl text-gray-600">
+        <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
           An immersive journey into our signature fragrances.
         </p>
       </div>

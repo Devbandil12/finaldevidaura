@@ -9,7 +9,6 @@ const formatAddress = (address) => {
 export default function OrderSummary({ selectedAddress, selectedItems, breakdown, loadingPrices, appliedCoupon }) {
     const itemCount = selectedItems.reduce((acc, i) => acc + (i.quantity || 1), 0);
     
-    // 🟢 This calculation is now correct because the breakdown object is correct
     const productDiscount = breakdown.originalTotal - breakdown.productTotal;
 
     return (
@@ -29,22 +28,49 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                 </div>
             </div>
             
-            {/* 🟢 MODIFIED: Read from the new item structure */}
             <div className="space-y-3">
-                {selectedItems.map((item) => (
-                    <div key={item.variant.id} className="flex items-center gap-4">
-                        <img 
-                          src={item.product.imageurl || "/fallback.png"} // Use main product image
-                          alt={item.product.name} 
-                          className="w-14 h-14 rounded-lg object-cover border border-slate-200" 
-                        />
-                        <div className="flex-1">
-                            <p className="font-semibold text-sm text-slate-800 leading-tight">{item.product.name}</p>
-                            <p className="text-xs text-slate-500">{item.variant.name} (Qty: {item.quantity || 1})</p>
+                {selectedItems.map((item) => {
+                    // 🟢 --- START FIX ---
+                    // Check if the backend specifically marked THIS variantId as free
+                    const isFree = breakdown.appliedOffers?.some(offer => 
+                      offer.appliesToVariantId === item.variant.id
+                    );
+                    // 🟢 --- END FIX ---
+
+                    return (
+                        <div key={item.variant.id} className="flex items-center gap-4">
+                            <img 
+                              src={item.product.imageurl || "/fallback.png"}
+                              alt={item.product.name} 
+                              className="w-14 h-14 rounded-lg object-cover border border-slate-200 flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-slate-800 leading-tight truncate">{item.product.name}</p>
+                                
+                                {item.isBundle ? (
+                                  <div className="pl-4 mt-1">
+                                    <ul className="list-disc list-inside text-xs text-slate-500">
+                                      {item.contents?.map((content, idx) => (
+                                        <li key={idx} className="truncate">
+                                          {content.name} ({content.variantName})
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-500">{item.variant.name} (Qty: {item.quantity || 1})</p>
+                                )}
+                            </div>
+                            
+                            {/* This check is now correct and specific */}
+                            {isFree ? (
+                                <span className="font-semibold text-sm text-green-600">Free</span>
+                            ) : (
+                                <p className="font-semibold text-sm text-slate-800 ml-auto">₹{item.variant.price}</p>
+                            )}
                         </div>
-                        <p className="font-semibold text-sm">₹{item.variant.price}</p>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
             
             <div className="text-sm space-y-2 border-t border-slate-200 pt-4">
@@ -54,11 +80,33 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                     </div>
                 ) : (
                     <>
-                        <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
-                        <div className="flex justify-between text-slate-600"><span>Product Discount</span><span>-₹{productDiscount.toFixed(2)}</span></div>
-                        {appliedCoupon && <div className="flex justify-between font-semibold text-green-600"><span>Coupon ({appliedCoupon.code})</span><span>-₹{breakdown.discountAmount}</span></div>}
+                        <div className="flex justify-between text-slate-600"><span>Original Price</span><span>₹{breakdown.originalTotal}</span></div>
+                        
+                        {productDiscount > 0 && (
+                            <div className="flex justify-between text-slate-600"><span>Product Discount</span><span className="text-green-600">-₹{productDiscount.toFixed(2)}</span></div>
+                        )}
+                        
+                        {/* This part was already correct and will show the list of offers */}
+                        {breakdown.appliedOffers && breakdown.appliedOffers.map((offer, index) => (
+                            <div key={index} className="flex justify-between font-semibold text-green-600">
+                                <span>{offer.title}</span>
+                                <span>-₹{offer.amount}</span>
+                            </div>
+                        ))}
+
+                        {appliedCoupon && (
+                            <div className="flex justify-between font-semibold text-green-600">
+                                <span>Coupon ({appliedCoupon.code})</span>
+                                <span>-₹{breakdown.discountAmount}</span>
+                            </div>
+                        )}
+                        
                         <div className="flex justify-between text-slate-600"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></div>
-                        <div className="flex justify-between font-bold text-lg text-black border-t border-slate-200 pt-3 mt-3"><span>Total Amount</span><span>₹{breakdown.total}</span></div>
+                        
+                        <div className="flex justify-between font-bold text-lg text-black border-t border-slate-200 pt-3 mt-3">
+                            <span>Total Amount</span>
+                            <span>₹{breakdown.total}</span>
+                        </div>
                     </>
                 )}
             </div>

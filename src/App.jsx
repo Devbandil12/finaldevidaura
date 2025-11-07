@@ -12,7 +12,8 @@ import Products from "./Components/Products";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
-import Loader from "./Components/Loader"; // Your fallback component
+import Loader from "./Components/Loader"; 
+import CustomComboBuillder from "./Components/CustomComboBuilder"; 
 
 // --- Dynamically Imported (Lazy-Loaded) Components ---
 const Adminpannel = lazy(() => import("./Components/Adminpanel"));
@@ -149,6 +150,9 @@ const HomePage = () => {
         </div>
         <div id="collection-section">
           <Products />
+        </div>
+        <div id="custom-combo-section">
+          <CustomComboBuillder />
         </div>
         <div id="about-section">
           <AboutUs />

@@ -6,6 +6,7 @@ import { useUser } from "@clerk/clerk-react";
 
 export const CartContext = createContext();
 
+// ... (LS_CART_KEY and helper functions are unchanged) ...
 const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
 const LS_BUY_NOW_KEY = "buyNowItem";
@@ -38,6 +39,7 @@ const removeLS = (key) => {
 };
 // End of helper functions
 
+
 export const CartProvider = ({ children }) => {
   const { userdetails, isSignedIn, isUserLoading } = useContext(UserContext);
   const { isLoaded } = useUser();
@@ -50,27 +52,27 @@ export const CartProvider = ({ children }) => {
   const mergeRanForId = useRef(null);
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-  // 🟢 CORRECT: The backend route already returns the correct new shape
+  // 🟢 MODIFIED: getCartitems now returns the fetched rows
   const getCartitems = useCallback(async () => {
-    if (!userdetails?.id) return;
+    if (!userdetails?.id) return []; // Return empty array if no user
     setIsCartLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`);
       if (!res.ok) throw new Error("Failed to fetch cart");
       const rows = await res.json();
-      // rows is now an array of:
-      // { quantity, cartId, variant: {...}, product: {...} }
       setCart(rows);
+      return rows; // 👈 RETURN THE ROWS
     } catch (e) {
       console.error("getCartitems error:", e);
       window.toast.error("Failed to load cart.");
       setCart([]);
+      return []; // Return empty array on failure
     } finally {
       setIsCartLoading(false);
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // 🟢 CORRECT: The backend route already returns the correct new shape
+  // ... (getwishlist and useEffect logic are unchanged) ...
   const getwishlist = useCallback(async () => {
     if (!userdetails?.id) return;
     setIsWishlistLoading(true);
@@ -90,9 +92,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  // --- 
-  // --- THIS IS THE CORRECTED MERGE LOGIC ---
-  // --- 
   useEffect(() => {
     if (!isLoaded || isUserLoading) {
       setIsCartLoading(true);
@@ -167,7 +166,7 @@ export const CartProvider = ({ children }) => {
     BACKEND_URL
   ]);
 
-  // 🟢 MODIFIED: Now accepts product AND variant
+  // ... (addToCart is unchanged) ...
   const addToCart = useCallback(
     async (product, variant, quantity = 1) => {
       if (!variant || !variant.id) {
@@ -250,7 +249,6 @@ export const CartProvider = ({ children }) => {
     [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]
   );
 
-  // 🟢 MODIFIED: Now accepts a variant
   const removeFromCart = useCallback(
     async (variant) => {
       if (!isSignedIn) {
@@ -258,7 +256,8 @@ export const CartProvider = ({ children }) => {
         const newCart = cart.filter((item) => item.variant.id !== variant.id);
         setCart(newCart);
         writeLS(LS_CART_KEY, newCart);
-        window.toast.info(`Item removed from cart.`);
+        // Don't toast for buy now clearing
+        // window.toast.info(`Item removed from cart.`); 
         return;
       }
 
@@ -273,7 +272,8 @@ export const CartProvider = ({ children }) => {
         await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${variant.id}`, {
           method: "DELETE",
         });
-        window.toast.info(`Item removed from cart.`);
+        // Don't toast for buy now clearing
+        // window.toast.info(`Item removed from cart.`);
       } catch (e) {
         console.error("removeFromCart error:", e);
         window.toast.error(`Failed to remove item from cart.`);
@@ -283,7 +283,6 @@ export const CartProvider = ({ children }) => {
     [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL]
   );
 
-  // 🟢 MODIFIED: Now accepts a variant
   const changeCartQuantity = useCallback(
     async (variant, nextQty) => {
       if (nextQty <= 0) {
@@ -346,7 +345,7 @@ export const CartProvider = ({ children }) => {
     }
   }, [cart, isSignedIn, userdetails?.id, BACKEND_URL]);
 
-  // 🟢 MODIFIED: Now accepts product AND variant
+  // ... (wishlist functions are unchanged) ...
   const addToWishlist = useCallback(
     async (product, variant) => {
       if (!variant || !variant.id) {
@@ -399,7 +398,6 @@ export const CartProvider = ({ children }) => {
     [wishlist, isSignedIn, userdetails?.id, getwishlist, BACKEND_URL]
   );
 
-  // 🟢 MODIFIED: Now accepts a variant
   const removeFromWishlist = useCallback(
     async (variant) => {
       if (!isSignedIn) {
@@ -455,7 +453,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [wishlist, isSignedIn, userdetails?.id, BACKEND_URL]);
 
-  // 🟢 MODIFIED: Now accepts product AND variant
   const toggleWishlist = useCallback(
     async (product, variant) => {
       const isAlreadyInWishlist = wishlist?.some(
@@ -471,21 +468,19 @@ export const CartProvider = ({ children }) => {
     [wishlist, addToWishlist, removeFromWishlist]
   );
 
-  // 🟢 MODIFIED: Now accepts product AND variant
   const moveToWishlist = useCallback(
     async (product, variant) => {
       const addedSuccessfully = await addToWishlist(product, variant);
       if (!addedSuccessfully) {
         return false;
       }
-      await removeFromCart(variant);
+      await removeFromCart(variant); // This correctly removes it from the main cart
       window.toast.success(`${product.name} (${variant.name}) moved to wishlist.`);
       return true;
     },
     [addToWishlist, removeFromCart]
   );
 
-  // 🟢 MODIFIED: Now accepts product AND variant
   const moveFromWishlistToCart = useCallback(
     async (product, variant) => {
       // 🟢 Pass all params to addToCart
@@ -500,17 +495,100 @@ export const CartProvider = ({ children }) => {
     [addToCart, removeFromWishlist]
   );
 
-  // 🟢 MODIFIED: Now accepts product, variant, AND quantity
-  const startBuyNow = useCallback((product, variant, quantity) => {
-    const item = { product, variant, quantity };
+  // 🟢 --- FIX 1 ---
+  // Updated startBuyNow to handle both simple products and full combo objects
+  const startBuyNow = useCallback((productOrItem, variant, quantity) => {
+    let item;
+    if (variant && quantity !== undefined) {
+      // This is the old call: startBuyNow(product, variant, quantity)
+      // This is for simple products. We assume it's not a bundle.
+      item = { 
+        product: productOrItem, 
+        variant, 
+        quantity, 
+        isBundle: false, // Default to false for simple products
+        contents: []      // Default to empty for simple products
+      };
+    } else {
+      // This is the new call: startBuyNow(fullItem)
+      // This is for our custom bundle, which already has isBundle and contents.
+      item = productOrItem; // productOrItem is the full newItem object
+    }
     setBuyNow(item);
     writeLS(LS_BUY_NOW_KEY, item);
   }, []);
 
+  // 🟢 --- FIX 2 ---
+  // Updated clearBuyNow to also remove the item from the main cart
   const clearBuyNow = useCallback(() => {
+    const itemToClear = buyNow || readLS(LS_BUY_NOW_KEY); // Get from state or LS
+    if (itemToClear && itemToClear.variant) {
+      // If a buyNow item exists, call removeFromCart with its variant.
+      // This removes it from the database AND the local 'cart' state.
+      removeFromCart(itemToClear.variant);
+    }
+    // Then, clear the buyNow state and local storage as before.
     setBuyNow(null);
     removeLS(LS_BUY_NOW_KEY);
-  }, []);
+  }, [buyNow, removeFromCart]); // 👈 Add 'buyNow' and 'removeFromCart' dependencies
+  // 🟢 --- END FIXES ---
+
+  // 🟢 MODIFIED: addCustomBundle now returns the new item
+  const addCustomBundle = useCallback(async (templateVariantId, contentVariantIds) => {
+    if (!userdetails?.id) {
+      window.toast.error("Please log in to build a bundle.");
+      return false;
+    }
+
+    if (!templateVariantId || !Array.isArray(contentVariantIds) || contentVariantIds.length === 0) {
+      window.toast.error("Invalid bundle configuration.");
+      return false;
+    }
+
+    try {
+      // 1. Call the API to create the bundle
+      const res = await fetch(`${BACKEND_URL}/api/cart/add-custom-bundle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userdetails.id,
+          templateVariantId: templateVariantId,
+          contentVariantIds: contentVariantIds,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create custom bundle");
+      }
+      
+      // 2. Get the new cart item row (e.g., { id, variantId, ... })
+      const newCartItemRow = await res.json(); 
+
+      // 3. CRITICAL: Refresh the entire cart. This function now returns the refreshed cart.
+      const refreshedCart = await getCartitems(); 
+      
+      // 4. Find the full, joined item in the refreshed cart
+      const fullNewItem = refreshedCart.find(
+        (item) => item.variant.id === newCartItemRow.variantId
+      );
+
+      if (fullNewItem) {
+        window.toast.success("Custom bundle added to cart!");
+        return fullNewItem; // 👈 RETURN THE FULL ITEM
+      } else {
+        // This is a fallback in case the item isn't found,
+        // which shouldn't happen but protects against errors.
+        console.error("Failed to find new bundle in refreshed cart.");
+        window.toast.success("Custom bundle added to cart!");
+        return true; // 👈 Return true as a fallback
+      }
+
+    } catch (err) {
+      console.error("addCustomBundle error:", err);
+      window.toast.error(err.message || "Failed to add bundle to cart.");
+      return false; // 👈 Return false on failure
+    }
+  }, [userdetails?.id, BACKEND_URL, getCartitems]);
 
   return (
     <CartContext.Provider
@@ -532,8 +610,9 @@ export const CartProvider = ({ children }) => {
         toggleWishlist,
         moveToWishlist,
         moveFromWishlistToCart,
-        startBuyNow,
-        clearBuyNow,
+        startBuyNow,      // Updated
+        clearBuyNow,      // Updated
+        addCustomBundle,
       }}
     >
       {children}

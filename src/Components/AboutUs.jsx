@@ -36,17 +36,17 @@ const LazyImage = ({ src, alt, className, eager = false, loading: loadingProp, .
 
 // --- Main AboutUs Component ---
 export default function AboutUs() {
-    
+
     // Refs for all animated elements
     const mainRef = useRef(null);
     const heroImageRef = useRef(null);
     const heroTextRef = useRef(null);
     const heroHeadingRef = useRef(null);
     const heroSubheadingRef = useRef(null);
-    
+
     const foundersImageRef = useRef(null);
     const foundersTextRef = useRef(null);
-    
+
     // --- REFS FOR NEW PILLAR DESIGN ---
     const pillarsHeadingRef = useRef(null);
     const pillarsSubheadingRef = useRef(null);
@@ -57,10 +57,10 @@ export default function AboutUs() {
     const pillar2TextRef = useRef(null);
     const pillar3IconRef = useRef(null);
     const pillar3TextRef = useRef(null);
-    
+
     const processTextRef = useRef(null);
     const processImageRef = useRef(null);
-    
+
     const outroImageRef = useRef(null);
     const outroTextRef = useRef(null);
     const outroHeadingRef = useRef(null);
@@ -69,12 +69,12 @@ export default function AboutUs() {
 
     useEffect(() => {
         let ctx = gsap.context(() => {
-            
-            const smoothEase = 'power4.out'; 
-            const gpuBoost = { force3D: true }; 
-            const animStyle = { 
-                visibility: 'hidden', 
-                willChange: 'transform, opacity' 
+
+            const smoothEase = 'power4.out';
+            const gpuBoost = { force3D: true };
+            const animStyle = {
+                visibility: 'hidden',
+                willChange: 'transform, opacity'
             };
 
             // --- Hero Section (Animate on Load) ---
@@ -156,10 +156,10 @@ export default function AboutUs() {
                 .fromTo(outroSubheadingRef.current, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1.5, ease: smoothEase, ...gpuBoost }, "-=1.2")
                 .fromTo(outroButtonRef.current, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, duration: 1.0, ease: smoothEase, ...gpuBoost }, "-=1.2");
 
-        }, mainRef); 
-        
+        }, mainRef);
+
         return () => ctx.revert();
-    }, []); 
+    }, []);
 
     // --- NEW PILLAR CONTENT ---
     const pillars = [
@@ -190,18 +190,26 @@ export default function AboutUs() {
     ];
 
     const sectionPadding = "py-16 md:py-24 px-4 md:px-8";
-    
+
     // This style prop will be added to all animated elements
-    const animStyle = { 
-        visibility: 'hidden', 
-        willChange: 'transform, opacity' 
+    const animStyle = {
+        visibility: 'hidden',
+        willChange: 'transform, opacity'
     };
 
     return (
-        <div ref={mainRef} className="relative overflow-hidden bg-neutral-50 text-neutral-800">
+        <div ref={mainRef} className="relative overflow-hidden ">
 
             {/* Hero Section - Card 1 */}
             <section className={`w-full ${sectionPadding} pt-0`} >
+                <div className="text-center mb-10 px-4 mt-24">
+                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
+                        Our Scent Philosophy
+                    </h2>
+                    <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
+                        A commitment to quality, artistry, and the moments that define you.
+                    </p>
+                </div>
                 <div className="max-w-9xl mx-auto rounded-3xl overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] relative h-[50vh] flex flex-col items-center justify-center text-center">
                     <div
                         ref={heroImageRef}
@@ -327,9 +335,9 @@ export default function AboutUs() {
                     {pillars.map((pillar) => (
                         <div key={pillar.title} className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                             {/* Icon Column */}
-                            <div 
-                                ref={pillar.refIcon} 
-                                style={animStyle} 
+                            <div
+                                ref={pillar.refIcon}
+                                style={animStyle}
                                 className={`flex justify-center ${pillar.order}`}
                             >
                                 <div className="w-full max-w-xs lg:max-w-none h-64 lg:h-80 bg-neutral-100 rounded-3xl flex items-center justify-center text-neutral-600 p-6 shadow-[0_8px_12px_rgba(230,229,229,0.3)]">
