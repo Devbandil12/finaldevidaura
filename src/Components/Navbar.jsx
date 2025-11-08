@@ -25,10 +25,13 @@ import { UserContext } from "../contexts/UserContext";
 // GSAP
 import { gsap } from "gsap";
 
-
+// Icons
 import { BiHomeHeart } from "react-icons/bi";
 import { TbPerfume } from "react-icons/tb";
 import { Feather } from "lucide-react";
+
+// === NEW: Import Custom Auth Modal ===
+import CustomAuthModal from "./CustomAuthModal";
 
 const SidebarItem = ({ icon: Icon, label, onClick, badge }) => (
   <li className="sidebar-item" onClick={onClick} role="button" tabIndex={0}>
@@ -53,6 +56,8 @@ const Navbar = ({ onVisibilityChange }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false); // sidebar
   const [navbarVisible, setNavbarVisible] = useState(true);
+  // === NEW STATE ===
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); 
 
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
@@ -65,7 +70,6 @@ const Navbar = ({ onVisibilityChange }) => {
   const sidebarScopeRef = useRef(null);
   const profileWrapperRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
-  // NOTE: profileAnimScopeRef, profileContainerRef, and hamburgerRef were not essential to the sidebar logic but are kept for potential future use or original template structure.
 
   const cartCount = cart?.length || 0;
   const wishCount = wishlist?.length || 0;
@@ -81,6 +85,25 @@ const Navbar = ({ onVisibilityChange }) => {
     if (previouslyFocusedRef.current) previouslyFocusedRef.current.focus?.();
   }, []);
 
+  // === NEW HANDLER FOR MODAL ===
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    // Restore scrolling
+    document.body.style.overflow = "auto";
+    document.documentElement.style.overflow = "auto";
+  }, []);
+
+  const openAuthModal = () => {
+    setIsAuthModalOpen(true);
+    // Optionally close sidebar/profile if open
+    setIsOpen(false);
+    setIsProfileOpen(false);
+    // Prevent scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  };
+  // =============================
+
   useEffect(() => {
   if (isLoggedIn) {
     document.body.classList.remove("guest");
@@ -90,12 +113,15 @@ const Navbar = ({ onVisibilityChange }) => {
 }, [isLoggedIn]);
 
 
+  // Effect for Sidebar opening/closing (modified for modal conflict)
   useEffect(() => {
     if (isOpen) {
       previouslyFocusedRef.current = document.activeElement;
-      // prevent scrolling
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
+      // prevent scrolling only if modal is NOT open
+      if (!isAuthModalOpen) {
+          document.body.style.overflow = "hidden";
+          document.documentElement.style.overflow = "hidden";
+      }
 
       // focus first focusable in sidebar
       window.setTimeout(() => {
@@ -103,10 +129,13 @@ const Navbar = ({ onVisibilityChange }) => {
         el?.focus?.();
       }, 50);
     } else {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
+      // restore scroll only if modal is NOT open
+      if (!isAuthModalOpen) {
+          document.body.style.overflow = "auto";
+          document.documentElement.style.overflow = "auto";
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isAuthModalOpen]);
 
   // OUTSIDE CLICK to close sidebar
   useEffect(() => {
@@ -127,11 +156,13 @@ const Navbar = ({ onVisibilityChange }) => {
       if (e.key === "Escape") {
         if (isOpen) closeSidebar();
         if (isProfileOpen) setIsProfileOpen(false);
+        // === NEW: Close modal on ESC ===
+        if (isAuthModalOpen) closeAuthModal();
       }
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen, isProfileOpen, closeSidebar]);
+  }, [isOpen, isProfileOpen, isAuthModalOpen, closeSidebar, closeAuthModal]);
 
   // Navbar visibility on scroll
   useEffect(() => {
@@ -148,11 +179,6 @@ const Navbar = ({ onVisibilityChange }) => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
-
-  // ==========================================================
-  // REMOVED: updateSidebarOffset, useLayoutEffect for offset,
-  // and useEffect([navbarVisible, updateSidebarOffset])
-  // ==========================================================
 
   // GSAP entry animations (unmodified logic)
   useLayoutEffect(() => {
@@ -215,21 +241,23 @@ const Navbar = ({ onVisibilityChange }) => {
   // Profile dropdown outside click / scroll closure
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileWrapperRef.current && !profileWrapperRef.current.contains(event.target)) {
+      // Check if the click is outside the profile dropdown and the profile is open
+      if (isProfileOpen && profileWrapperRef.current && !profileWrapperRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside, true);
     return () => document.removeEventListener("mousedown", handleClickOutside, true);
-  }, []);
+  }, [isProfileOpen]);
 
   useEffect(() => {
     const handleScrollProfile = () => {
-      if (isProfileOpen) setIsProfileOpen(false);
+      // Close profile dropdown on scroll *unless* the auth modal is open (if the modal is scrollable itself)
+      if (isProfileOpen && !isAuthModalOpen) setIsProfileOpen(false);
     };
     window.addEventListener("scroll", handleScrollProfile);
     return () => window.removeEventListener("scroll", handleScrollProfile);
-  }, [isProfileOpen]);
+  }, [isProfileOpen, isAuthModalOpen]);
 
   const handleNavScroll = (targetId) => {
     if (window.location.pathname !== "/") {
@@ -369,7 +397,8 @@ const Navbar = ({ onVisibilityChange }) => {
                         </li>
                       </>
                     ) : (
-                      <li onClick={() => { navigate("/login"); setIsProfileOpen(false); }}>
+                      // === MODIFIED: Open modal instead of navigating ===
+                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}> 
                         <img src={ProfileIcon} alt="Login" />
                         <a>Login / Sign Up</a>
                       </li>
@@ -426,7 +455,19 @@ const Navbar = ({ onVisibilityChange }) => {
                       </div>
 
                       <div className="sidebar-actions">
-                        <button className={`sidebar-action-btn ${isLoggedIn ? 'sidebar-view-account' : 'sidebar-signin'}`} onClick={() => { navigate(isLoggedIn ? '/myaccount' : '/login'); if (isLoggedIn) closeSidebar(); }}>
+                        <button 
+                            className={`sidebar-action-btn ${isLoggedIn ? 'sidebar-view-account' : 'sidebar-signin'}`} 
+                            onClick={() => { 
+                                // === MODIFIED: Open modal if not logged in ===
+                                if (isLoggedIn) {
+                                    navigate('/myaccount'); 
+                                    closeSidebar(); 
+                                } else {
+                                    openAuthModal();
+                                    closeSidebar();
+                                }
+                            }}
+                        >
                           {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
                         </button>
                       </div>
@@ -481,6 +522,13 @@ const Navbar = ({ onVisibilityChange }) => {
           </div>
         </div>
       </nav>
+
+      {/* === NEW: Render CustomAuthModal as a Pop-up === */}
+      {isAuthModalOpen && (
+        <CustomAuthModal 
+            onClose={closeAuthModal} 
+        />
+      )}
     </header>
   );
 };

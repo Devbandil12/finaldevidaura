@@ -1,6 +1,11 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+// src/Components/MobileBackBar.jsx
+import React, { useContext } from 'react'; // 🟢 ADDED: useContext
+import { useLocation, useNavigate, matchPath } from 'react-router-dom'; // 🟢 ADDED: matchPath
+import { ProductContext } from "../contexts/productContext"; // 🟢 ADDED: ProductContext
 import "../style/MobileBackBar.css";
+
+// 🟢 NEW: Product Detail Route Pattern
+const PRODUCT_DETAIL_PATH = "/product/:productId";
 
 const pageTitles = {
   "/login": "Login",
@@ -17,12 +22,39 @@ const pageTitles = {
 const MobileBackBar = ({ isNavbarVisible }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  // 🟢 NEW: Get products from context
+  const { products } = useContext(ProductContext); 
 
   const currentPath = location.pathname;
-  const currentTitle = pageTitles[currentPath] || 'Page';
+  let currentTitle = pageTitles[currentPath];
 
   const handleBack = () => navigate(-1);
   const isMobile = window.innerWidth <= 768;
+
+  // 🟢 NEW: Logic to determine if it's the Product Detail Page
+  const match = matchPath(PRODUCT_DETAIL_PATH, currentPath);
+
+  if (match && match.params.productId && !currentTitle) {
+    // This is the Product Detail page, try to find the product name
+    const productId = match.params.productId;
+    const product = products.find(p => p.id === productId);
+
+    if (product) {
+        currentTitle = product.name;
+    } else {
+        // Fallback title while product is loading or not found
+        currentTitle = "Product Detail";
+    }
+  }
+
+  // Fallback for other pages not in pageTitles
+  if (!currentTitle && currentPath.includes('/product/')) {
+      currentTitle = "Product Detail";
+  } else if (!currentTitle && currentPath !== '/') {
+      // Default for other non-home, non-product dynamic routes like /myaccount
+      currentTitle = "Page"; 
+  }
+
 
   if (!isMobile || currentPath === '/') return null;
 

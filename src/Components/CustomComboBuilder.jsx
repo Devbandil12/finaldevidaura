@@ -2,17 +2,15 @@ import React, { useState, useContext, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-// 1. CONTEXTS
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-// 2. ICONS
 import { FaTimes, FaCheckCircle, FaShoppingCart } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
 import { HiOutlineCubeTransparent } from "react-icons/hi";
+import { Laugh } from "lucide-react";
 
-// 3. COMPONENTS (Unchanged)
 const HeroButton = ({ children, ...props }) => (
     <button
         {...props}
@@ -35,67 +33,91 @@ const Loader = ({ text = "Loading..." }) => (
         <span className="mt-4 text-lg font-semibold text-gray-700">{text}</span>
     </div>
 );
-// --- End of assumed components ---
 
-
-/**
- * 4. ⭐️ REDESIGNED: PerfumeSelectItem
- */
+// ⭐️ Redesigned small card for perfume options
 const PerfumeSelectItem = ({ variant, product, isSelected, onSelect, isDisabled }) => {
-    const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
-        ? product.imageurl[0]
-        : "/placeholder.png";
+    const imageUrl =
+        Array.isArray(product.imageurl) && product.imageurl.length > 0
+            ? product.imageurl[0]
+            : "/placeholder.png";
 
-    return (
-        <motion.div
-            layout
-            animate={{ opacity: 1 }}
-            initial={{ opacity: 0 }}
-            exit={{ opacity: 0 }}
-            onClick={onSelect}
-            className={`relative p-3 border-2 rounded-xl transition-all duration-200 text-center ${isSelected
-                ? "border-indigo-600 bg-indigo-50" // Selected: Blue border, light bg
-                : "border-gray-200 bg-white"      // Default: Gray border, white bg
-                } ${isDisabled
-                    ? 'opacity-50 cursor-not-allowed'   // Disabled: Faded
-                    : 'cursor-pointer'                    // Enabled: Pointer
-                }`}
-        >
-            {isDisabled && !isSelected && ( // Show "FULL" only if it's disabled AND not selected
-                <div className="absolute inset-0 bg-gray-800 bg-opacity-20 rounded-xl flex items-center justify-center z-10">
-                    <span className="text-white text-xs font-bold bg-black bg-opacity-50 px-2 py-0.5 rounded-full">FULL</span>
-                </div>
-            )}
-            <img
-                src={imageUrl}
-                alt={product.name}
-                className="w-full h-20 sm:h-24 object-cover rounded-md mb-2 mx-auto" // Added mx-auto
-            />
-            <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{product.name}</p>
-            <p className="text-xs text-gray-500">{variant.name}</p>
-        </motion.div>
-    );
+    const oprice = variant.oprice || product.oprice || 0;
+    const discount = variant.discount || product.discount || 0;
+    const finalPrice = Math.floor(oprice * (1 - discount / 100));
+
+return (
+  <motion.div
+    layout
+    animate={{ opacity: 1 }}
+    initial={{ opacity: 0 }}
+    exit={{ opacity: 0 }}
+    onClick={!isDisabled ? onSelect : undefined}
+    className={`relative rounded-2xl border border-gray-100 shadow-xs overflow-hidden 
+      transition-all duration-300 w-[155px]
+      ${isDisabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+      ${isSelected ? "bg-indigo-50 shadow-xs" : "hover:scale-[1.02]"}
+    `}
+  >
+    {/* Disabled blur overlay */}
+    {isDisabled && !isSelected && (
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-[3px] flex items-center justify-center z-10">
+        <span className="flex items-center gap-1 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full border border-gray-300/40 bg-white/50 shadow-sm">
+          That’s it, scent addict
+          <span className="text-lg">😂</span>
+        </span>
+      </div>
+    )}
+
+    {/* Overlay when item is selected */}
+    {isSelected && (
+      <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] flex items-center justify-center z-10">
+        <span className="flex items-center gap-2 text-gray-800 text-xs font-semibold px-4 py-2 rounded-full border border-gray-400/30 bg-white/50 shadow-md">
+          In the mix! 🤩
+        </span>
+      </div>
+    )}
+
+    {/* Image */}
+    <div className="relative w-full h-40 overflow-hidden">
+      <img
+        src={imageUrl}
+        alt={product.name}
+        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+      />
+    </div>
+
+    {/* Info */}
+    <div className="p-3">
+      <div className="flex items-center justify-between mb-1">
+        <h4 className="text-sm font-semibold text-gray-800 truncate">{product.name}</h4>
+        <p className="text-xs text-gray-500">{variant.size}ml</p>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 items-baseline text-gray-400">
+          <span className="text-sm font-bold text-gray-800">₹{finalPrice}</span>
+          <span className="text-xs line-through">₹{oprice}</span>
+        </div>
+        <span className="text-xs text-green-600">{discount}% OFF</span>
+      </div>
+    </div>
+  </motion.div>
+);
+
 };
 
-/**
- * 5. The Main Combo Builder Component
- */
+
 const CustomComboBuilder = () => {
     const navigate = useNavigate();
-
-    // --- Contexts ---
     const { products, loading: productsLoading } = useContext(ProductContext);
     const { addCustomBundle, startBuyNow } = useContext(CartContext);
     const { userdetails } = useContext(UserContext);
 
-    // --- State ---
     const [selectedPerfumes, setSelectedPerfumes] = useState([]);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
-    // --- Data Logic ---
     const { templateVariant, comboOriginalPrice, comboFinalPrice, comboDiscount } = useMemo(() => {
-        const templateProduct = products.find(p => p.category === "Template");
+        const templateProduct = products.find((p) => p.category === "Template");
         if (templateProduct && templateProduct.variants.length > 0) {
             const tv = templateProduct.variants[0];
             const oprice = tv.oprice || 0;
@@ -105,7 +127,7 @@ const CustomComboBuilder = () => {
                 templateVariant: tv,
                 comboOriginalPrice: oprice,
                 comboFinalPrice: finalPrice,
-                comboDiscount: discount
+                comboDiscount: discount,
             };
         }
         return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0, comboDiscount: 0 };
@@ -121,11 +143,9 @@ const CustomComboBuilder = () => {
             );
     }, [products]);
 
-    // --- Selection Logic ---
     const handleSelectPerfume = useCallback((variant) => {
         setSelectedPerfumes((prev) => {
             const isAlreadySelected = prev.some((v) => v.id === variant.id);
-
             if (isAlreadySelected) {
                 return prev.filter((v) => v.id !== variant.id);
             } else {
@@ -142,7 +162,6 @@ const CustomComboBuilder = () => {
         setSelectedPerfumes((prev) => prev.filter((v) => v.id !== variantIdToRemove));
     };
 
-    // --- Action Button Handlers ---
     const handleAddToCart = async () => {
         if (selectedPerfumes.length !== 4) {
             window.toast.error("Please select exactly 4 perfumes.");
@@ -150,15 +169,9 @@ const CustomComboBuilder = () => {
         }
 
         setIsAddingToCart(true);
-        const success = await addCustomBundle(
-            templateVariant.id,
-            selectedPerfumes.map(v => v.id)
-        );
+        const success = await addCustomBundle(templateVariant.id, selectedPerfumes.map((v) => v.id));
         setIsAddingToCart(false);
-
-        if (success) {
-            navigate("/cart");
-        }
+        if (success) navigate("/cart");
     };
 
     const handleBuyNow = async () => {
@@ -174,17 +187,13 @@ const CustomComboBuilder = () => {
 
         setIsBuyingNow(true);
         try {
-            const newItem = await addCustomBundle(
-                templateVariant.id,
-                selectedPerfumes.map(v => v.id)
-            );
-
-            if (newItem && typeof newItem === 'object') {
+            const newItem = await addCustomBundle(templateVariant.id, selectedPerfumes.map((v) => v.id));
+            if (newItem && typeof newItem === "object") {
                 startBuyNow(newItem);
-                navigate('/cart', { state: { isBuyNow: true } });
+                navigate("/cart", { state: { isBuyNow: true } });
             } else if (newItem === true) {
                 window.toast.info("Bundle added! Proceeding to cart...");
-                navigate('/cart');
+                navigate("/cart");
             }
         } catch (err) {
             console.error(err);
@@ -194,19 +203,12 @@ const CustomComboBuilder = () => {
         }
     };
 
-    // --- Render ---
     const isSelectionFull = selectedPerfumes.length === 4;
 
-    // ⭐️ We'll put the conditional content into a variable
-    let mainContent;
+    if (productsLoading) return <Loader text="Loading Combo Builder..." />;
 
-    // Loading state
-    if (productsLoading) {
-        mainContent = <Loader text="Loading Combo Builder..." />;
-    }
-    // Error state
-    else if (!templateVariant) {
-        mainContent = (
+    if (!templateVariant)
+        return (
             <div className="bg-white p-6 rounded-xl shadow-lg border border-red-200 shadow-gray-200/50 flex flex-col items-center text-center">
                 <FiAlertTriangle className="text-5xl text-red-500 mb-4" />
                 <h2 className="text-2xl font-bold text-red-600">Error: Combo Template Not Found</h2>
@@ -215,11 +217,10 @@ const CustomComboBuilder = () => {
                 </p>
             </div>
         );
-    }
-    // ⭐️ Main successful render
-    else {
-        mainContent = (
-            <div className="bg-white p-4 sm:p-8 rounded-xl ">
+
+    return (
+        <section>
+            <div className="bg-white p-4 sm:p-8 rounded-xl mt-10">
                 <div className="text-center mb-16 px-4">
                     <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
                         Design Your Signature Set
@@ -228,28 +229,30 @@ const CustomComboBuilder = () => {
                         Select four fragrances to compose your personal collection.
                     </p>
                 </div>
-                {/* --- 2. RESPONSIVE MAIN BUILDER GRID (Unchanged) --- */}
+
+                {/* Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
-
-                    {/* --- COLUMN 1: AVAILABLE PERFUMES ("Palette") --- */}
+                    {/* LEFT COLUMN */}
                     <div className="md:col-span-3">
-
                         <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1">
                             Step 1: Choose Your Perfumes
                         </h3>
                         <p className="text-sm text-gray-500 mb-4">
-                            {isSelectionFull
-                                ? "Your combo is full!"
-                                : `Select ${4 - selectedPerfumes.length} more.`
-                            }
+                            {isSelectionFull ? "Your combo is full!" : `Select ${4 - selectedPerfumes.length} more.`}
                         </p>
 
                         {availablePerfumes.length === 0 ? (
                             <p className="text-gray-500 text-sm">No 30ml perfumes are currently available.</p>
                         ) : (
-                            <div className="max-h-[600px] overflow-y-auto pr-2 -mr-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div
+                                className=" p-1 overflow-y-auto grid gap-1 justify-center"
+                                style={{
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))",
+                                }}
+                            >
+
                                 {availablePerfumes.map(({ product, variant }) => {
-                                    const isSelected = selectedPerfumes.some(v => v.id === variant.id);
+                                    const isSelected = selectedPerfumes.some((v) => v.id === variant.id);
                                     const isDisabled = isSelectionFull && !isSelected;
 
                                     return (
@@ -261,10 +264,12 @@ const CustomComboBuilder = () => {
                                             isDisabled={isDisabled}
                                             onSelect={() => {
                                                 if (isDisabled && !isSelected) {
-                                                    window.toast.error("You can only select 4 perfumes. De-select one to choose another.");
+                                                    window.toast.error(
+                                                        "You can only select 4 perfumes. De-select one to choose another."
+                                                    );
                                                     return;
                                                 }
-                                                handleSelectPerfume(variant)
+                                                handleSelectPerfume(variant);
                                             }}
                                         />
                                     );
@@ -273,11 +278,9 @@ const CustomComboBuilder = () => {
                         )}
                     </div>
 
-                    {/* --- COLUMN 2: SELECTIONS & ACTIONS ("Canvas") --- */}
+                    {/* RIGHT COLUMN */}
                     <div className="md:col-span-2 relative">
                         <div className="sticky top-24 space-y-6">
-
-                            {/* --- A: REDESIGNED "SLOTS" --- */}
                             <div>
                                 <div className="flex justify-between items-center">
                                     <h3 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -299,13 +302,16 @@ const CustomComboBuilder = () => {
                                 <div className="space-y-3">
                                     {[...Array(4)].map((_, index) => {
                                         const variant = selectedPerfumes[index];
-                                        const productInfo = variant ? availablePerfumes.find(p => p.variant.id === variant.id) : null;
+                                        const productInfo = variant
+                                            ? availablePerfumes.find((p) => p.variant.id === variant.id)
+                                            : null;
 
                                         if (variant && productInfo) {
-                                            // --- FILLED SLOT ---
-                                            const imageUrl = (Array.isArray(productInfo.product.imageurl) && productInfo.product.imageurl.length > 0)
-                                                ? productInfo.product.imageurl[0]
-                                                : "/placeholder.png";
+                                            const imageUrl =
+                                                Array.isArray(productInfo.product.imageurl) &&
+                                                    productInfo.product.imageurl.length > 0
+                                                    ? productInfo.product.imageurl[0]
+                                                    : "/placeholder.png";
 
                                             return (
                                                 <motion.div
@@ -314,12 +320,18 @@ const CustomComboBuilder = () => {
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     exit={{ opacity: 0, x: 20 }}
-                                                    className="flex items-center gap-3 p-2.5 bg-white border border-gray-200 rounded-lg shadow-sm"
+                                                    className="flex items-center gap-3 p-2.5 bg-white"
                                                 >
                                                     <span className="text-sm font-semibold text-gray-500">{index + 1}.</span>
-                                                    <img src={imageUrl} alt={productInfo.product.name} className="w-10 h-10 object-cover rounded-md flex-shrink-0" />
+                                                    <img
+                                                        src={imageUrl}
+                                                        alt={productInfo.product.name}
+                                                        className="w-10 h-10 object-cover rounded-md flex-shrink-0"
+                                                    />
                                                     <div className="flex-grow min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-800 truncate">{productInfo.product.name}</p>
+                                                        <p className="text-sm font-semibold text-gray-800 truncate">
+                                                            {productInfo.product.name}
+                                                        </p>
                                                         <p className="text-xs text-gray-500">{variant.name}</p>
                                                     </div>
                                                     <button
@@ -332,7 +344,6 @@ const CustomComboBuilder = () => {
                                                 </motion.div>
                                             );
                                         } else {
-                                            // --- EMPTY SLOT ---
                                             return (
                                                 <motion.div
                                                     key={index}
@@ -355,10 +366,8 @@ const CustomComboBuilder = () => {
                                 </div>
                             </div>
 
-                            {/* --- B: Footer Actions (Price & Buttons) --- */}
-                            <div className="pt-6 border-t border-gray-200">
-
-                                {/* Price box (Unchanged) */}
+                            {/* Footer */}
+                            <div className="pt-6 ">
                                 {isSelectionFull && (
                                     <div className="space-y-2 mb-4">
                                         <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600">
@@ -371,21 +380,28 @@ const CustomComboBuilder = () => {
                                                 <span>{comboDiscount}% OFF</span>
                                             </div>
                                         )}
-                                        <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+                                        <div className="flex justify-between items-center mt-2 pt-2 ">
                                             <span className="text-base sm:text-lg font-bold text-gray-900">Final Price:</span>
-                                            <span className="text-xl sm:text-2xl font-bold text-gray-900">₹{comboFinalPrice}</span>
+                                            <span className="text-xl sm:text-2xl font-bold text-gray-900">
+                                                ₹{comboFinalPrice}
+                                            </span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Buttons (Unchanged) */}
                                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     <HeroButton
                                         onClick={handleAddToCart}
                                         disabled={!isSelectionFull || isAddingToCart || isBuyingNow}
                                         className="w-full py-2.5 sm:py-3 text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:opacity-50"
                                     >
-                                        {isAddingToCart ? <MiniLoader /> : <><FaShoppingCart className="mr-2" /> Add to Cart</>}
+                                        {isAddingToCart ? (
+                                            <MiniLoader />
+                                        ) : (
+                                            <>
+                                                <FaShoppingCart className="mr-2" /> Add to Cart
+                                            </>
+                                        )}
                                     </HeroButton>
                                     <HeroButton
                                         onClick={handleBuyNow}
@@ -396,34 +412,22 @@ const CustomComboBuilder = () => {
                                     </HeroButton>
                                 </div>
 
-                                {/* Ready message (Unchanged) */}
                                 {isSelectionFull && !isAddingToCart && !isBuyingNow && (
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="flex items-center justify-center gap-2 text-green-600 mt-4 text-xs sm:text-sm"
+                                        className="flex items-center justify-center gap-2 text-green-600 mt-8 text-xs sm:text-sm"
                                     >
                                         <FaCheckCircle />
                                         <span>Ready to add!</span>
                                     </motion.div>
                                 )}
                             </div>
-
-                        </div> {/* End sticky wrapper */}
-                    </div> {/* End column 2 */}
-                </div> {/* End grid */}
+                        </div>
+                    </div>
+                </div>
             </div>
-        );
-    }
-
-    // ⭐️ RETURN THE NEW WRAPPER
-    return (
-        <div className="w-full"> {/* This is the new outer wrapper */}
-
-            {/* Render the conditional content (loading, error, or builder) */}
-            {mainContent}
-
-        </div>
+        </section>
     );
 };
 

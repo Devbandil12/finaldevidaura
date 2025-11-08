@@ -421,7 +421,7 @@ header {
   border: none;
   padding: 0;
   cursor: pointer;
-  z-index: 999999;
+  z-index: 9999;
   pointer-events: auto !important;
 }
 

@@ -100,6 +100,37 @@ export default function ImmersiveProductShowcase() {
     return ACCENT_MAP[key] || ACCENT_MAP.DEFAULT;
   }, [product]);
 
+  // --- START: LOGIC FOR DYNAMIC FONT SIZE BASED ON TEXT LENGTH (CORRECTED) ---
+  const productNameLength = (product.name || "").length;
+
+  const { bgTextSizeClass, bgTextMdSizeClass } = useMemo(() => {
+    let baseClass; // For small screens (default size)
+    let mdClass;   // For large screens (md breakpoint size)
+
+    // 1. Determine the Mobile/Base Class (Default is text-[6rem])
+    if (productNameLength > 6) {
+      baseClass = "text-[3.1rem]"; // e.g., "OUD HORIZON"
+    } else {
+      baseClass = "text-[4.6rem]"; // e.g., "SHADOW"
+    }
+
+    // 2. Determine the Desktop Class (Default is md:text-[9rem])
+    if (productNameLength > 10) {
+      mdClass = "md:text-[8rem]";
+    } else if (productNameLength > 7) {
+      mdClass = "md:text-[6.5rem]";
+    } else {
+      mdClass = "md:text-[9rem]";
+    }
+
+    return {
+      bgTextSizeClass: baseClass, // e.g., "text-[8rem]"
+      bgTextMdSizeClass: mdClass  // e.g., "md:text-[12rem]"
+    };
+  }, [productNameLength]);
+  // --- END: LOGIC FOR DYNAMIC FONT SIZE BASED ON TEXT LENGTH (CORRECTED) ---
+
+
   const storyText = (scent && scent.story) || product.description || "";
   const teaser = storyText.slice(0, 150).trim();
   const isLongStory = storyText && storyText.length > 150;
@@ -117,7 +148,7 @@ export default function ImmersiveProductShowcase() {
 
       <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden rounded-md font-sans transition-colors duration-700">
         <div
-          className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-8 px-4"
+          className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-22 px-4"
           {...swipeHandlers}
         >
           {/* --- LEFT / INFO PANEL --- */}
@@ -129,23 +160,23 @@ export default function ImmersiveProductShowcase() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
           >
-            {/* ✅ FIXED: Removed the <AnimatePresence> wrapper from around the h1 */}
+            {/* H1 for Product Name */}
             <div className="relative">
               <motion.h1
-                // Removed the 'key' prop
                 className="text-5xl md:text-7xl font-extrabold tracking-tighter uppercase"
                 style={{ color: accent.primary }}
-                variants={itemVariants} // This variant will now be correctly triggered by the parent
+                variants={itemVariants}
               >
                 {product.name || "Untitled Scent"}
               </motion.h1>
             </div>
-            {/* End of fix */}
 
+            {/* Slogan */}
             <motion.p variants={itemVariants} className="font-serif text-xl italic mb-2" style={{ color: accent.primary }}>
               {scent?.slogan || "An unforgettable essence"}
             </motion.p>
 
+            {/* Story/Description */}
             <motion.div variants={itemVariants} className="mt-6 text-base text-gray-700 max-w-lg mx-auto lg:mx-0">
               <p id="scent-story" className="transition-all duration-500">
                 {storyExpanded ? storyText : teaser + (isLongStory ? "…" : "")}
@@ -162,6 +193,7 @@ export default function ImmersiveProductShowcase() {
               )}
             </motion.div>
 
+            {/* Notes/Accords */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 gap-x-6 gap-y-3 mt-8 max-w-sm mx-auto lg:mx-0">
               {(scent?.notes || []).slice(0, 6).map((note, i) => (
                 <motion.div
@@ -177,6 +209,7 @@ export default function ImmersiveProductShowcase() {
               ))}
             </motion.div>
 
+            {/* Pagination Dots */}
             <motion.div variants={itemVariants} className="flex justify-center lg:justify-start gap-3 mt-10">
               {products.map((_, i) => (
                 <button
@@ -192,6 +225,8 @@ export default function ImmersiveProductShowcase() {
 
           {/* --- RIGHT / IMAGE CAROUSEL --- */}
           <div className="relative w-full h-[450px] md:h-[600px] flex items-center justify-center perspective-1200">
+
+            {/* Background Text H1 (Dynamically Sized) */}
             <AnimatePresence>
               <motion.div
                 key={`${activeIdx}-bg-text`}
@@ -202,12 +237,20 @@ export default function ImmersiveProductShowcase() {
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               >
-                <h1 className="text-[6rem] md:text-[11rem] font-black uppercase text-center leading-none" style={{ color: `${accent.primary}10` }}>
+                <h1
+                  // ✅ Combining the static classes, the dynamic base size, and the dynamic desktop size
+                  className={`font-black uppercase text-center leading-none ${bgTextSizeClass} ${bgTextMdSizeClass}`}
+                  style={{
+                    // ONLY keep the dynamic color with opacity here. Remove fontSize!
+                    color: `${accent.primary}10`,
+                  }}
+                >
                   {(product.name || "").slice(0,)}
                 </h1>
               </motion.div>
             </AnimatePresence>
 
+            {/* Product Image Motion Div */}
             <AnimatePresence custom={direction} mode="wait">
               <motion.div
                 key={product.id ?? product.name ?? activeIdx}
@@ -233,6 +276,7 @@ export default function ImmersiveProductShowcase() {
               </motion.div>
             </AnimatePresence>
 
+            {/* Navigation Buttons */}
             <div className="absolute inset-0 z-20 flex justify-between items-center pointer-events-none px-[-1rem] md:px-0">
               <motion.button
                 onClick={onPrev}
