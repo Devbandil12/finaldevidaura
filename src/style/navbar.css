@@ -187,8 +187,8 @@ header {
   font-size: 8px;
   font-weight: 400;
   color: #fff;
-  background: #dc3545;
-  border-radius: 999px;
+  background: #e84b5b;
+  border-radius: 99px;
   text-align: center;
 }
 
@@ -275,25 +275,9 @@ header {
   list-style: none;
   margin: 0;
   padding: 8px;
-
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #ccc #f0f0f0;
 }
 
-.profile-content ul::-webkit-scrollbar {
-  width: 8px;
-}
 
-.profile-content ul::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 4px;
-}
-
-.profile-content ul::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  border-radius: 4px;
-}
 
 .profile-content ul li {
   padding: 12px;
@@ -383,7 +367,7 @@ header {
   min-height: 350px;
   max-height: 350px;
   right: 80px;
-  
+
 }
 
 /* Header: "Notifications", "Mark read", "Clear All" */
@@ -393,12 +377,13 @@ header {
   align-items: center;
   padding: 12px 16px;
   background-color: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0a3;
+  box-shadow: 0 4px 12px rgba(53, 52, 52, 0.055);
 }
 
 .notification-header h3 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 800;
   color: #1a1a1a;
   margin: 0;
 }
@@ -433,22 +418,9 @@ header {
   padding: 8px;
   max-height: 300px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #ccc #f0f0f0;
-}
-.notification-list::-webkit-scrollbar {
-  width: 2px;
 }
 
-.notification-list::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 4px;
-}
 
-.notification-list::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  border-radius: 4px;
-}
 
 /* Time Group Headers (e.g., "Today") */
 .notification-group-header {
@@ -937,9 +909,9 @@ header {
 
   .notification-dropdown {
 
-  right: 50px;
-  
-}
+    right: 50px;
+
+  }
 }
 
 /* ===========================
