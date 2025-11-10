@@ -313,7 +313,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
     <div className="max-w-4xl mx-auto py-5">
       {/* Header and Filter */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-6">
           <label className="text-sm font-medium text-slate-800">
             Filter by:
           </label>

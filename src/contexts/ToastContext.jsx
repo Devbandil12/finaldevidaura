@@ -72,8 +72,7 @@ const Toast = ({ toast, index, removeToast }) => {
 
       {/* PROGRESS BAR */}
       {toast.duration > 0 && (
-         <motion.div
-            // ✅ CHANGED: Replaced h-1 with h-px for a thinner line
+          <motion.div
             className="h-px bg-teal-500"
             style={{ transformOrigin: 'left' }}
             initial={{ scaleX: 1 }}
@@ -111,13 +110,19 @@ export function ToastProvider({ children, position = "bottom-right" }) {
     };
   }, [addToast]);
   
+  // ✅ UPDATED: Classes are now mobile-first (no 'sm:' prefix)
+  // This makes them apply to all screen sizes.
   const positionClasses = {
-    "top-left": "sm:items-start sm:justify-start",
-    "top-center": "sm:items-center sm:justify-start",
-    "top-right": "sm:items-end sm:justify-start",
-    "bottom-left": "sm:items-start sm:justify-end",
-    "bottom-center": "sm:items-center sm:justify-end",
-    "bottom-right": "sm:items-end sm:justify-end",
+    "top-left": "items-start justify-start",
+    "top-center": "items-center justify-start",
+    "top-right": "items-end justify-start",
+    "bottom-left": "items-start justify-end",
+    "bottom-center": "items-center justify-end",
+    
+    // ✅ UPDATED: This specific class is now responsive:
+    // Mobile (default): items-end (right) + justify-start (top)   = TOP-RIGHT
+    // Desktop (sm:):    items-end (right) + sm:justify-end (bottom) = BOTTOM-RIGHT
+    "bottom-right": "items-end justify-start sm:justify-end",
   };
 
   return (
@@ -126,7 +131,8 @@ export function ToastProvider({ children, position = "bottom-right" }) {
       
       <div
         aria-live="assertive"
-        className={`fixed inset-0 flex flex-col gap-3 p-4 sm:p-4 pointer-events-none ${positionClasses[position]}`}
+        // ✅ UPDATED: Added z-[99999] for visibility
+        className={`fixed inset-0 flex flex-col gap-3 p-4 sm:p-4 pointer-events-none ${positionClasses[position]} z-[99999]`}
         style={{ perspective: "1000px" }}
       >
         <AnimatePresence>

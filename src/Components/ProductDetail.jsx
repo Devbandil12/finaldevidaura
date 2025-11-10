@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // --- A mock Button component (Unchanged) ---
 const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children, disabled }) => {
   const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
-  const sizeStyles = { default: "h-10 py-2 px-4", sm: "h-9 px-3 rounded-md", lg: "h-11 px-8 rounded-md", icon: "h-10 w-10" };
+  const sizeStyles = { default: "h-10 py-2 px-4", sm: "h-7 px-3 rounded-md", lg: "h-11 px-8 rounded-md", icon: "h-10 w-10" };
   const variantStyles = {
     primary: "bg-gray-900 text-gray-50 hover:bg-gray-900/90",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-100/80",
@@ -253,7 +253,7 @@ const ProductDetail = () => {
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="flex flex-col"
+                className="flex flex-col px-4 "
               >
                 <div className="mb-6">
                   <div className="flex items-start justify-between mb-4 mt-8">
@@ -312,18 +312,14 @@ const ProductDetail = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center ">
+                  <div className="flex flex-col sm:flex-row  items-start sm:items-center ">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">Quantity:</span>
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                        <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="sm" className="rounded-none h-10 w-10 text-lg">－</Button>
-                        <span className="px-6 font-semibold text-gray-900">{quantity}</span>
-                        <Button onClick={() => setQuantity(quantity + 1)} variant="ghost" size="sm" className="rounded-none h-10 w-10 text-lg">＋</Button>
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                        <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="sm" className="rounded-none h-3 w-8 text-lg">－</Button>
+                        <span className="px-2 font-600 text-gray-900">{quantity}</span>
+                        <Button onClick={() => setQuantity(quantity + 1)} variant="ghost" size="sm" className="rounded-none h-3 w-8 text-lg">＋</Button>
                       </div>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Size: </span>
-                      <span className="font-semibold text-gray-900">{selectedVariant.size || 100}ml</span>
                     </div>
                   </div>
                 </div>
@@ -389,9 +385,9 @@ const ProductDetail = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-20 lg:mt-24"
+              className="mt-20 lg:mt-24 "
             >
-              <h2 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
+              <h2 className="text-3xl px-4 lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
               <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50  md:p-10">
                 <ReviewComponent productId={product.id} userdetails={userdetails} />
               </div>
