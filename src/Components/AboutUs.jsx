@@ -266,10 +266,10 @@ export default function AboutUs() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                             <div className="absolute bottom-8 left-8 text-white">
                                 <h3 className="font-display text-3xl font-semibold mb-2">
-                                    Harshvardhan Singh Jadon & Yomesh Chaudhary
+                                    
                                 </h3>
                                 <p className="text-gray-300 text-sm tracking-widest uppercase">
-                                    Co-Founders & Dreamers
+                                
                                 </p>
                             </div>
                         </div>
@@ -291,7 +291,7 @@ export default function AboutUs() {
                         </blockquote>
                         <div className="space-y-4 text-neutral-700 leading-relaxed">
                             <p>
-                                Devid Aura was born from the unwavering trust between two childhood friends. United by a dream and guided by passion, Harshvardhan and Yomesh built more than a perfume brand — they built an experience that reflects who you are.
+                                Devid Aura was born from the unwavering trust between two childhood friends. United by a dream and guided by passion, They built more than a perfume brand — they built an experience that reflects who you are.
                             </p>
                             <p>
                                 With no roadmap but endless determination, their journey transformed mistakes into lessons and curiosity into art. Every bottle of Devid Aura holds that story.
