@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react"; // MODIFIED: Added useCallback
 import {
   Star,
   ArrowDown,
@@ -20,7 +20,7 @@ import imageCompression from 'browser-image-compression';
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
 
-// --- Custom Dropdown Component ---
+// --- Custom Dropdown Component (Unchanged) ---
 const CustomDropdown = ({ options, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -81,7 +81,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
   );
 };
 
-// --- Interactive Star Rating for Form ---
+// --- Interactive Star Rating for Form (Unchanged) ---
 const StarRatingInput = ({ rating, onChange }) => {
   const [hoverRating, setHoverRating] = useState(0);
   return (
@@ -110,7 +110,8 @@ const StarRatingInput = ({ rating, onChange }) => {
   );
 };
 
-const ReviewComponent = ({ productId, userdetails }) => {
+// MODIFICATION 1: Accept 'editReviewId' prop
+const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
   // --- States ---
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCounts, setRatingCounts] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
@@ -132,12 +133,14 @@ const ReviewComponent = ({ productId, userdetails }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const newImageFiles = useRef([]);
 
+  // MODIFICATION 2: Add state to track if initial edit is done
+  const [initEditDone, setInitEditDone] = useState(false);
+
   // --- Effects ---
   useEffect(() => {
     const performFetch = async () => {
       setIsLoading(true);
       try {
-        // ✅ FIX: Re-declared the missing variable.
         const isInitialLoad = activeCursor === null;
 
         const urlParams = new URLSearchParams({
@@ -283,7 +286,8 @@ const ReviewComponent = ({ productId, userdetails }) => {
     setFormOpen(false);
   };
 
-  const handleEdit = (review) => {
+  // MODIFICATION 3: Wrap handleEdit in useCallback
+  const handleEdit = useCallback((review) => {
     setFormOpen(true);
     setEditingReviewId(review.id);
     setName(review.name);
@@ -292,10 +296,26 @@ const ReviewComponent = ({ productId, userdetails }) => {
     setImages(review.photoUrls || []);
     setImagePreviews(review.photoUrls || []);
     newImageFiles.current = [];
-    document.getElementById('review-form-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
+    setTimeout(() => {
+      document.getElementById('review-form')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start' // Scroll to the top of the form
+      });
+    }, 100);
+  }, [setFormOpen, setEditingReviewId, setName, setRating, setComment, setImages, setImagePreviews]); // Added dependencies
 
-  // --- Helper Functions ---
+  // MODIFICATION 4: Add useEffect to handle auto-edit on load
+  useEffect(() => {
+    if (editReviewId && !initEditDone && reviews.length > 0) {
+      const reviewToEdit = reviews.find(r => r.id === editReviewId);
+      if (reviewToEdit) {
+        handleEdit(reviewToEdit);
+        setInitEditDone(true); // Mark as done to prevent re-triggering
+      }
+    }
+  }, [editReviewId, reviews, initEditDone, handleEdit]);
+
+  // --- Helper Functions (Unchanged) ---
   const openImagePreview = (idx, photoUrls) => setPreview({ images: photoUrls, index: idx });
   const closePreview = () => setPreview({ images: [], index: null });
   const handleImgError = (e) => { e.currentTarget.style.display = "none"; };
@@ -311,7 +331,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
 
   return (
     <div className="max-w-4xl mx-auto py-5">
-      {/* Header and Filter */}
+      {/* Header and Filter (Unchanged) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
         <div className="flex items-center gap-2 px-6">
           <label className="text-sm font-medium text-slate-800">
@@ -332,7 +352,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
         </div>
       </div>
 
-      {/* Review Summary */}
+      {/* Review Summary (Unchanged) */}
       {starFilter === null && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 p-6 bg-slate-50 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)]">
           <div className="flex flex-col items-center md:items-start justify-center gap-2">
@@ -367,7 +387,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
         </div>
       )}
 
-      {/* Loaders and Lists */}
+      {/* Loaders and Lists (Unchanged) */}
       {isLoading && reviews.length === 0 && (
         <div className="flex justify-center py-10">
           <Loader2 className="animate-spin text-slate-500" size={32} />
@@ -391,7 +411,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Review Content */}
+              {/* Review Content (Unchanged) */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center font-bold text-lg">
@@ -459,7 +479,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
         </AnimatePresence>
       </div>
 
-      {/* Pagination Controls */}
+      {/* Pagination Controls (Unchanged) */}
       <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-slate-200">
         {hasMore && !isLoading && (
           <button
@@ -475,6 +495,7 @@ const ReviewComponent = ({ productId, userdetails }) => {
         }
       </div>
 
+      {/* Write a Review Button (Unchanged) */}
       <div id="review-form-section" className="mt-12 text-center">
         {!formOpen && userdetails && (
           <motion.button
@@ -493,10 +514,11 @@ const ReviewComponent = ({ productId, userdetails }) => {
         )}
       </div>
 
-      {/* Form and Image Preview Modal */}
+      {/* Form and Image Preview Modal (Unchanged) */}
       <AnimatePresence>
         {userdetails && formOpen && (
           <motion.form
+            id="review-form"
             className="mt-8 p-6 bg-slate-50 rounded-lg border border-slate-200"
             onSubmit={handleSubmit}
             initial={{ opacity: 0, height: 0, y: -20 }}

@@ -1,6 +1,6 @@
 // src/pages/ProductDetail.jsx
 import React, { useState, useContext, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
@@ -40,27 +40,28 @@ const iconVariants = {
 
 const ProductDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
   const { productId } = useParams();
   const [product, setProduct] = useState(null);
-  
+
   // 🟢 NEW: State for selected variant
-  const [selectedVariant, setSelectedVariant] = useState(null); 
-  
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   const [isFindingProduct, setIsFindingProduct] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
-
+  const editReviewId = location.state?.editReviewId || null;
   // 🟢 MODIFIED: Effect to find product and set default variant
   useEffect(() => {
     if (!productsLoading) {
       // This now gets the product *with* its 'variants' array
       const foundProduct = products.find((p) => p.id === productId);
       setProduct(foundProduct);
-      
+
       // 🟢 NEW: Set the first variant as the default
       if (foundProduct && foundProduct.variants && foundProduct.variants.length > 0) {
         setSelectedVariant(foundProduct.variants[0]);
@@ -71,11 +72,12 @@ const ProductDetail = () => {
     }
   }, [productId, products, productsLoading]);
 
-  useEffect(() => {
-    if (product) {
+useEffect(() => {
+    // MODIFIED: Only scroll to top if we are NOT navigating here to edit a review.
+    if (product && !editReviewId) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [product]);
+  }, [product, editReviewId]);
 
   // 🟢 MODIFIED: Loading/Error states
   if (productsLoading || isFindingProduct) {
@@ -129,7 +131,7 @@ const ProductDetail = () => {
       window.toast.error("This item is currently out of stock.");
       return;
     }
-    isInCart 
+    isInCart
       ? await removeFromCart(selectedVariant) // Pass variant object
       : await addToCart(product, selectedVariant, quantity); // Pass (product, variant, qty)
   };
@@ -160,13 +162,13 @@ const ProductDetail = () => {
       window.toast.success("Link copied to clipboard!");
     }
   };
-  
+
   // 🟢 MODIFIED: Get stock status from the variant
-  const stockStatus = selectedVariant.stock === 0 
-    ? "Out of Stock" 
-    : selectedVariant.stock <= 10 
-    ? `Only ${selectedVariant.stock} left!`
-    : "In Stock";
+  const stockStatus = selectedVariant.stock === 0
+    ? "Out of Stock"
+    : selectedVariant.stock <= 10
+      ? `Only ${selectedVariant.stock} left!`
+      : "In Stock";
 
   return (
     <>
@@ -389,7 +391,7 @@ const ProductDetail = () => {
             >
               <h2 className="text-3xl px-4 lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
               <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50  md:p-10">
-                <ReviewComponent productId={product.id} userdetails={userdetails} />
+                <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
               </div>
             </motion.div>
           </main>

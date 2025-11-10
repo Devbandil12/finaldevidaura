@@ -9,7 +9,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import useCloudinary from "../utils/useCloudinary";
-import { Pencil, Plus, ChevronRight, Star } from "lucide-react";import { useNavigate } from "react-router-dom";
+import { Pencil, Plus, ChevronRight, Star } from "lucide-react"; import { useNavigate } from "react-router-dom";
 
 /* ============================
     Small UI atoms
@@ -898,14 +898,25 @@ export default function UserPage() {
                                 {new Date(r.createdAt).toLocaleDateString()}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
-                                />
-                              ))}
+                            {/* --- MODIFIED BLOCK --- */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${i < r.rating ? "text-amber-400" : "text-slate-300"}`}
+                                  />
+                                ))}
+                              </div>
+                              <button
+                                onClick={() => navigate(`/product/${r.productId}`, { state: { editReviewId: r.id } })}
+                                className="text-sm p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                title="Edit Review"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
                             </div>
+                            {/* --- END MODIFIED BLOCK --- */}
                           </div>
                           <p className="mt-2 text-slate-700">{r.comment}</p>
                         </div>

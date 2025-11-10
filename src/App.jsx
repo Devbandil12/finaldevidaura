@@ -12,8 +12,8 @@ import Products from "./Components/Products";
 import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
 import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
-import Loader from "./Components/Loader"; 
-import CustomComboBuillder from "./Components/CustomComboBuilder"; 
+import Loader from "./Components/Loader";
+import CustomComboBuillder from "./Components/CustomComboBuilder";
 
 // --- Dynamically Imported (Lazy-Loaded) Components ---
 const Adminpannel = lazy(() => import("./Components/Adminpanel"));
@@ -39,6 +39,7 @@ import { ContactProvider } from "./contexts/ContactContext";
 import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { ReviewProvider } from "./contexts/ReviewContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import { useUser } from "@clerk/clerk-react";
 
 // --- Global Error Reporting (no changes needed here) ---
@@ -175,41 +176,43 @@ const App = () => {
             <CouponProvider>
               <ContactProvider>
                 <ReviewProvider>
-                  <Router>
-                    <ScrollToTop />
-                    <PostLoginRedirector />
-                    {/* ✅ Wrap all routes in a single Suspense */}
-                    <Suspense fallback={<Loader text="Loading Page..." />}>
-                      <Routes>
-                        <Route element={<MainLayout />}>
-                          <Route path="/" element={<HomePage />} />
-                          <Route path="/products" element={<Products />} />
-                          <Route path="/privacy" element={<PrivacyPolicy />} />
-                          <Route path="/terms" element={<TermsAndConditions />} />
-                          <Route path="/myorder" element={<MyOrder />} />
-                          <Route path="/product/:productId" element={<ProductDetail />} />
-                          <Route path="/wishlist" element={<Wishlist />} />
-                          <Route path="/cart" element={<Cart />} />
-                          <Route path="/myaccount" element={<UserPage />} />
-                          <Route path="/contact" element={<ContactUs />} />
-                          <Route
-                            path="/Admin"
-                            element={
-                              <AdminProvider>
-                                <Adminpannel />
-                              </AdminProvider>
-                            }
-                          />
+                  <NotificationProvider>
+                    <Router>
+                      <ScrollToTop />
+                      <PostLoginRedirector />
+                      {/* ✅ Wrap all routes in a single Suspense */}
+                      <Suspense fallback={<Loader text="Loading Page..." />}>
+                        <Routes>
+                          <Route element={<MainLayout />}>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/products" element={<Products />} />
+                            <Route path="/privacy" element={<PrivacyPolicy />} />
+                            <Route path="/terms" element={<TermsAndConditions />} />
+                            <Route path="/myorder" element={<MyOrder />} />
+                            <Route path="/product/:productId" element={<ProductDetail />} />
+                            <Route path="/wishlist" element={<Wishlist />} />
+                            <Route path="/cart" element={<Cart />} />
+                            <Route path="/myaccount" element={<UserPage />} />
+                            <Route path="/contact" element={<ContactUs />} />
+                            <Route
+                              path="/Admin"
+                              element={
+                                <AdminProvider>
+                                  <Adminpannel />
+                                </AdminProvider>
+                              }
+                            />
 
-                          <Route element={<CheckoutGuard />}>
-                            <Route path="/checkout" element={<Checkout />} />
+                            <Route element={<CheckoutGuard />}>
+                              <Route path="/checkout" element={<Checkout />} />
+                            </Route>
                           </Route>
-                        </Route>
 
-                        <Route path="/login" element={<Login />} />
-                      </Routes>
-                    </Suspense>
-                  </Router>
+                          <Route path="/login" element={<Login />} />
+                        </Routes>
+                      </Suspense>
+                    </Router>
+                  </NotificationProvider>
                 </ReviewProvider>
               </ContactProvider>
             </CouponProvider>

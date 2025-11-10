@@ -21,7 +21,6 @@ header {
   gap: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   z-index: 9999;
-  /* Ensures navbar is on top of page content */
 }
 
 #navbar::before {
@@ -35,7 +34,6 @@ header {
   -webkit-backdrop-filter: saturate(180%) blur(6px);
   background: rgba(255, 255, 255, 0.85);
   z-index: -1;
-  /* Puts background layer behind navbar content */
 }
 
 #navbar a {
@@ -47,7 +45,6 @@ header {
    =========================== */
 .part-1 {
   display: flex;
-  /* FIX: Ensure contents of part-1 are vertically centered */
   align-items: center;
   font-size: 1.5rem;
   padding-left: 0;
@@ -131,96 +128,76 @@ header {
 .part-3 .icons {
   display: flex;
   align-items: center;
+  /* This is the key for vertical alignment */
   gap: 6px;
-}
-
-.part-3 .icons .profile-icon {
-  display: flex;
-  align-items: center;
 }
 
 .icon-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
 }
 
-.wishlist-icon {
-  width: 60px;
-  margin: 0;
+.icon-btn:hover {
+  background-color: #f0f0f0;
 }
 
-.wishlist-icon a {
-  text-decoration: none;
+/* Uniform Icon Sizing */
+.icon-btn img,
+.icon-btn svg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
-#wishlist-icon {
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
+/* Specific wrappers (no layout styles) */
+.wishlist-icon,
+.cart-icon,
+.notification-wrapper,
+.profile-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
 }
 
-#wishlist-count {
-  background-color: transparent;
-  color: black;
-  font-size: 12px;
-}
-
-.cart-icon {
-  width: 60px;
-}
-
+.wishlist-icon a,
 .cart-icon a {
   text-decoration: none;
 }
 
-#cart-icon {
-  background-color: transparent;
-  color: black;
-  border: none;
-  cursor: pointer;
+/* ===========================
+   Icon Badge
+   =========================== */
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-}
-
-#cart-count {
-  background-color: transparent;
-  color: black;
-  font-size: 12px;
-}
-
-#cart-icon #cart-count,
-#wishlist-icon #wishlist-count {
-  display: inline-block;
-  min-width: 18px;
-  height: 18px;
-  line-height: 18px;
-  padding: 0 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #111;
-  background: #f1f1f1;
+  min-width: 10px;
+  height: 12px;
+  padding: 0 3px;
+  font-size: 8px;
+  font-weight: 400;
+  color: #fff;
+  background: #dc3545;
   border-radius: 999px;
   text-align: center;
 }
 
-.profile-icon button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+/* Remove old/duplicate badge styles */
+#cart-icon #cart-count,
+#wishlist-icon #wishlist-count {
+  display: none;
 }
+
 
 /* ===========================
    Profile Dropdown 
@@ -273,6 +250,8 @@ header {
   flex-direction: column;
   gap: 2px;
   align-items: flex-start;
+  min-width: 0;
+  /* Fix text overflow */
 }
 
 .user-data h3 {
@@ -287,12 +266,33 @@ header {
   color: #666;
   font-weight: 400;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-content ul {
   list-style: none;
   margin: 0;
   padding: 8px;
+
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f0f0f0;
+}
+
+.profile-content ul::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-content ul::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.profile-content ul::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
 }
 
 .profile-content ul li {
@@ -351,52 +351,194 @@ header {
   filter: grayscale(0%);
 }
 
+.user-name-role {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: #eef2ff;
+  color: #4338ca;
+  text-transform: capitalize;
+  line-height: 1;
+}
+
+.user-role-badge.admin {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+
+
 /* ===========================
-   Login button
+   Notification Dropdown
    =========================== */
-#loginButton {
-  position: relative;
-  overflow: hidden;
-  padding: 5px 10px;
-  border: 1px solid rgb(0, 0, 0);
-  border-radius: 6px;
-  font-weight: bolder;
-  color: rgb(0, 0, 0);
-  font-size: 14px;
+.notification-dropdown {
+  min-width: 300px;
+  max-width: 300px;
+  min-height: 350px;
+  max-height: 350px;
+  right: 80px;
+  
 }
 
-#loginButton .btn-text {
-  position: relative;
-  z-index: 2;
+/* Header: "Notifications", "Mark read", "Clear All" */
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-#loginButton a {
-  text-decoration: none;
-  color: black;
+.notification-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
 }
 
-#loginButton::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #000000;
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform 0.6s ease-in-out;
-  z-index: 1;
+.notification-header .buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-#loginButton:hover {
-  color: #fff;
-  border: 1px solid black;
+.notification-header-btn {
+  font-size: 11px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 4px;
 }
 
-#loginButton:hover::after {
-  transform: scaleY(1);
+
+
+.notification-header-btn.danger {
+  color: #dc3545;
 }
+
+/* Scrolling List */
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f0f0f0;
+}
+.notification-list::-webkit-scrollbar {
+  width: 2px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
+}
+
+/* Time Group Headers (e.g., "Today") */
+.notification-group-header {
+  padding: 3px 12px !important;
+  font-size: 10px;
+  font-weight: bold;
+  color: #6c757d;
+  background-color: #fff;
+  pointer-events: none;
+}
+
+/* Individual Notification Items */
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 12px !important;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+}
+
+/* Emoji Icons */
+.notification-item::before {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  content: '🔔';
+  /* Default */
+}
+
+.notification-item[data-type="order"]::before {
+  content: '📦';
+  /* Box for orders */
+}
+
+.notification-item[data-type="system"]::before {
+  content: '🚚';
+  /* Truck for delivery/pincode */
+}
+
+.notification-item[data-type="coupon"]::before {
+  content: '🏷️';
+  /* Tag for coupons/promos */
+}
+
+/* Text Styling */
+.notification-item-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Fixes text overflow */
+}
+
+.notification-message {
+  font-size: 10px;
+  color: #333;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.notification-time {
+  font-size: 8px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+/* Unread / Read item styles */
+.notification-item.unread {
+  background-color: #f8f9fa;
+}
+
+.notification-item.unread .notification-message {
+  font-weight: 600;
+  color: #000;
+}
+
+.notification-item:hover {
+  background-color: #f0f0f0;
+}
+
+/* "No notifications" message */
+.notification-empty {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 12px;
+  pointer-events: none;
+}
+
 
 /* ===========================
    Mobile view & Hamburger
@@ -406,11 +548,9 @@ header {
   display: none;
 }
 
-
 .menu-icon {
   display: flex;
   align-items: center;
-
   position: relative;
   z-index: 1000;
   padding-right: 10px;
@@ -476,7 +616,6 @@ header {
 }
 
 
-
 /* ===========================
    Sidebar (Clean & Sectioned)
    =========================== */
@@ -500,15 +639,13 @@ header {
   padding: 0;
   margin-top: -10px;
   border-radius: 30px;
-  
 }
+
 .sidebar.open {
   left: calc(100% - min(70vw, 300px));
 }
 
-/* 1. Header Area: User Info */
 .sidebar-header {
-  /* FIX: Add padding equal to navbar height to push content down */
   padding-top: 50px;
   position: sticky;
   top: 0;
@@ -530,6 +667,7 @@ header {
 .sidebar-user-details {
   display: flex;
   align-items: center;
+  text-align: left;
 }
 
 .user-avatar {
@@ -541,12 +679,24 @@ header {
   box-shadow: 0 0 0 2px #fff;
 }
 
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+  /* required for ellipsis */
+}
+
 .user-info h4 {
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
   color: #1a1a1a;
   line-height: 1.2;
+  white-space: normal;
+  /* wraps to next line if too long */
+  word-wrap: break-word;
 }
 
 .user-info .user-email,
@@ -557,9 +707,9 @@ header {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+  max-width: 100%;
 }
 
-/* 2. Action Button (Below User Info) */
 .sidebar-action-btn {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -570,21 +720,6 @@ header {
   text-transform: capitalize;
   transition: all 0.2s ease;
 }
-
-.sidebar-item svg {
-  width: 22px;
-  height: 22px;
-  margin-right: 1rem;
-  color: #333;
-  flex-shrink: 0;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.sidebar-item:hover svg {
-  color: #000;
-  transform: scale(1.05);
-}
-
 
 .sidebar-view-account {
   background-color: #000;
@@ -606,7 +741,6 @@ header {
   background-color: #f5f5f5;
 }
 
-/* 3. Navigation Sections */
 .sidebar-nav {
   padding: 1rem 0;
   flex-grow: 1;
@@ -653,8 +787,20 @@ header {
   filter: grayscale(100%);
 }
 
-.sidebar-item:hover img {
+.sidebar-item .sidebar-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 1rem;
+  color: #333;
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-item:hover img,
+.sidebar-item:hover .sidebar-icon {
   filter: grayscale(0%);
+  color: #000;
+  transform: scale(1.05);
 }
 
 .sidebar-label {
@@ -673,7 +819,6 @@ header {
   border-radius: 12px;
 }
 
-/* 4. Footer */
 .sidebar-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid #f0f0f0;
@@ -694,31 +839,6 @@ header {
 
 .sidebar-footer img {
   width: 20px;
-}
-
-/* =======================================
-   Styles for Dropdown Roles
-   ======================================= */
-.user-name-role {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-role-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background-color: #eef2ff;
-  color: #4338ca;
-  text-transform: capitalize;
-  line-height: 1;
-}
-
-.user-role-badge.admin {
-  background-color: #fef9c3;
-  color: #854d0e;
 }
 
 /* ===========================
@@ -755,17 +875,6 @@ header {
   .part-2 a {
     font-size: 0.65rem;
   }
-
-  #loginButton {
-    padding: 8px 10px;
-    background-color: rgb(0, 0, 0);
-    border: 1px solid rgb(226, 226, 226);
-    border-radius: 99px;
-    transition: background 0.5s ease;
-    font-weight: bolder;
-    color: white;
-    font-size: 13px;
-  }
 }
 
 @media (max-width: 795px) {
@@ -785,21 +894,20 @@ header {
     display: none;
   }
 
-  .profile-icon {
-    display: none !important;
+  .profile-wrapper {
+    display: none;
+    /* Hide desktop profile icon */
   }
 
-  .desktop-login-signup {
-    display: none;
-  }
 
   .wishlist-icon {
     display: none;
   }
 
   .cart-icon {
-    width: 65px;
-    height: auto;
+    /* Keep cart icon visible */
+    margin-right: 10px;
+    /* Add space before hamburger */
   }
 
   .part-1 {
@@ -813,102 +921,37 @@ header {
 
   .mobile-view {
     display: block;
-    /* Show mobile menu */
   }
 
-  #loginSignupButtons {
-    display: none !important;
-  }
-
-  /* Restore mobile navbar styling */
   #navbar {
     width: 100%;
     padding: 0;
-    background-color: white;
     margin-top: 0px;
     border-radius: 0px;
-    border-bottom: 1px solid #eee;
     z-index: 9999;
   }
 
   .sidebar-header {
     padding-top: 50px;
   }
-}
-/* =======================================
-   Fix: Profile Dropdown & Sidebar Text Overflow
-   ======================================= */
 
-/* --- Profile Dropdown (Desktop) --- */
-.desktop-profile-info .user-data {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  min-width: 0; /* for ellipsis to work properly in flex containers */
+  .notification-dropdown {
+
+  right: 50px;
+  
+}
 }
 
-.desktop-profile-info .user-data .user-name-role h3,
-.desktop-profile-info .user-data h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  white-space: normal; /* allow wrapping */
-  word-wrap: break-word;
-  text-align: left;
+/* ===========================
+   Utility / Fixes
+   =========================== */
+
+/* Login button (no longer used?) */
+#loginButton {
+  display: none;
 }
 
-.desktop-profile-info .user-data p,
-.desktop-profile-info .user-data #profile-email {
-  font-size: 0.9rem;
-  color: #666;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* show ... when overflowing */
-  text-align: left;
-}
-
-/* --- Sidebar User Info (Mobile) --- */
-.sidebar-user-details {
-  align-items: center;
-  text-align: left;
-}
-
-.sidebar-user-details .user-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  min-width: 0; /* required for ellipsis inside flexbox */
-}
-
-.sidebar-user-details .user-info h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  white-space: normal; /* wraps to next line if too long */
-  word-wrap: break-word;
-  text-align: left;
-}
-
-.sidebar-user-details .user-info .user-email {
-  font-size: 0.85rem;
-  color: #777;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* adds ... at the end */
-  text-align: left;
-}
-
-/* =======================================
-   Guest User Text Wrapping Fix
-   ======================================= */
-
-/* Profile dropdown (desktop) for guest */
+/* Guest Text Wrapping */
 .guest .desktop-profile-info .user-data p,
 .guest .desktop-profile-info .user-data #profile-email {
   white-space: normal !important;
@@ -917,7 +960,6 @@ header {
   word-wrap: break-word;
 }
 
-/* Sidebar (mobile) for guest */
 .guest .sidebar-user-details .user-info .user-email {
   white-space: normal !important;
   overflow: visible !important;
