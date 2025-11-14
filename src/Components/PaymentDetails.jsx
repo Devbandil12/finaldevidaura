@@ -130,7 +130,7 @@ export default function PaymentDetails({
     return (
         <div className="space-y-6">
             {/* Price Summary Dropdown */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
                 <button 
                     onClick={() => setSummaryExpanded(!summaryExpanded)}
                     className="flex justify-between items-center w-full p-4"
@@ -152,12 +152,12 @@ export default function PaymentDetails({
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                         >
-                            <div className="text-sm space-y-2 p-4 border-t border-slate-200">
+                            <div className="text-sm space-y-2 p-4 border-t border-slate-100">
                                 <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
                                 <div className="flex justify-between text-slate-600"><span>Product Discount</span><span>-₹{productDiscount}</span></div>
                                 {appliedCoupon && <div className="flex justify-between font-semibold text-green-600"><span>Coupon ({appliedCoupon.code})</span><span>-₹{breakdown.discountAmount}</span></div>}
                                 <div className="flex justify-between text-slate-600"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></div>
-                                <div className="flex justify-between font-bold text-lg text-black border-t border-slate-200 pt-3 mt-3"><span>Total Amount</span><span>₹{breakdown.total}</span></div>
+                                <div className="flex justify-between font-bold text-lg text-black border-t border-slate-100 pt-3 mt-3"><span>Total Amount</span><span>₹{breakdown.total}</span></div>
                             </div>
                         </motion.div>
                     )}
@@ -165,7 +165,7 @@ export default function PaymentDetails({
             </div>
 
             {/* Payment Methods Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
                 <h3 className="flex items-center gap-3 text-xl font-bold text-slate-800">
                     <CreditCard className="w-6 h-6" /> Choose Payment Method
                 </h3>
@@ -177,7 +177,7 @@ export default function PaymentDetails({
                         className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition ${
                             paymentMethod === "Razorpay"
                                 ? "border-black bg-slate-50 ring-2 ring-black/20"
-                                : "border-slate-200 hover:border-slate-400"
+                                : "border-slate-100 hover:border-slate-400"
                         }`}
                     >
                         <input type="radio" name="paymentMethod" value="Razorpay" checked={paymentMethod === "Razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 accent-black" />
@@ -190,7 +190,7 @@ export default function PaymentDetails({
                         className={`flex flex-col items-start gap-1 p-4 border rounded-xl transition ${
                             paymentMethod === "Cash on Delivery" && breakdown.codAvailable
                                 ? "border-black bg-slate-50 ring-2 ring-black/20"
-                                : "border-slate-200"
+                                : "border-slate-100"
                         } ${
                             !breakdown.codAvailable
                                 ? "bg-slate-50 cursor-not-allowed opacity-60"

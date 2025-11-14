@@ -3,14 +3,10 @@ import React, { createContext, useState, useEffect, useContext, useCallback } fr
 import { UserContext } from './UserContext';
 
 // --------------------------------------------------
-// 🟢 1. NEW: localStorage helper functions
+// localStorage helper functions (These are correct)
 // --------------------------------------------------
 const DISMISSED_PROMOS_KEY = 'dismissedPromoIDs';
 
-/**
- * Reads the list of dismissed promo IDs from localStorage.
- * @returns {Array<string>} An array of promo IDs (e.g., ["promo-1", "promo-3"])
- */
 const getDismissedPromoIDs = () => {
   try {
     const item = localStorage.getItem(DISMISSED_PROMOS_KEY);
@@ -21,15 +17,10 @@ const getDismissedPromoIDs = () => {
   }
 };
 
-/**
- * Adds a new list of promo IDs to localStorage.
- * @param {Array<string>} newIDs - The promo IDs to add (e.g., ["promo-5", "promo-6"])
- */
 const addDismissedPromoIDs = (newIDs) => {
   if (!newIDs || newIDs.length === 0) return;
   try {
     const currentIDs = getDismissedPromoIDs();
-    // Use a Set to prevent duplicates
     const combinedIDs = [...new Set([...currentIDs, ...newIDs])];
     localStorage.setItem(DISMISSED_PROMOS_KEY, JSON.stringify(combinedIDs));
   } catch (error) {
@@ -37,7 +28,7 @@ const addDismissedPromoIDs = (newIDs) => {
   }
 };
 // --------------------------------------------------
-// 🟢 END: localStorage helper functions
+// END: localStorage helper functions
 // --------------------------------------------------
 
 export const NotificationContext = createContext({
@@ -57,6 +48,8 @@ export const NotificationProvider = ({ children }) => {
 
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
+  // This function is correct. It fetches personal alerts
+  // and filters out any dismissed promos from localStorage.
   const fetchNotifications = useCallback(async () => {
     if (!userdetails?.id) {
       setNotifications([]);
@@ -67,17 +60,12 @@ export const NotificationProvider = ({ children }) => {
 
     setIsLoading(true);
     try {
-      // 1. Fetch personal user alerts (unchanged)
       const res = await fetch(`${BASE_URL}/api/notifications/user/${userdetails.id}`);
       const data = await res.json(); 
-
-      // 2. Fetch global promos (unchanged)
+      
       const promoRes = await fetch(`${BASE_URL}/api/promos/latest-public`);
       const promos = await promoRes.json();
 
-      // --------------------------------------------------
-      // 🟢 3. MODIFIED: Filter out dismissed promos
-      // --------------------------------------------------
       const dismissedIDs = getDismissedPromoIDs();
 
       const promoNotifications = promos
@@ -91,17 +79,12 @@ export const NotificationProvider = ({ children }) => {
             message: message,
             link: '/cart',
             type: 'coupon',
-            // Use the promo's start date, or default to "now" if it's null
             createdAt: promo.validFrom || new Date().toISOString(), 
-            isRead: false // Virtual promos are always "unread" until dismissed
+            isRead: false
           };
         })
-        .filter(promo => !dismissedIDs.includes(promo.id)); // 👈 THE IMPORTANT FILTER
-      // --------------------------------------------------
-      // 🟢 END: MODIFIED
-      // --------------------------------------------------
+        .filter(promo => !dismissedIDs.includes(promo.id)); // 👈 Filters dismissed promos
 
-      // 4. Merge and sort lists (unchanged)
       const allNotifications = [...data.notifications, ...promoNotifications];
       allNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -115,78 +98,77 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [userdetails?.id, BASE_URL]);
 
+
   // --------------------------------------------------
-  // 🟢 4. MODIFIED: markAllAsRead
+  // 🟢 START: MODIFIED "Mark all as read"
   // --------------------------------------------------
+  // This function now ONLY affects personal alerts.
+  // It does NOT touch promos or localStorage.
   const markAllAsRead = useCallback(async () => {
-    if (!userdetails?.id) return;
+    if (!userdetails?.id || unreadCount === 0) return;
+
+    // 1. Optimistic update: Mark personal alerts as read, leave promos alone
+    setUnreadCount(0);
+    setNotifications(prev =>
+      prev.map(n => 
+        !String(n.id).startsWith('promo-') ? { ...n, isRead: true } : n
+      )
+    );
     
-    // 1. Get IDs of promos that are *currently* showing
-    const promoIdsToDismiss = notifications
-      .filter(n => String(n.id).startsWith('promo-'))
-      .map(n => n.id);
-
-    // 2. Add them to localStorage
-    if (promoIdsToDismiss.length > 0) {
-      addDismissedPromoIDs(promoIdsToDismiss);
+    // 2. Call API for personal alerts
+    try {
+      await fetch(`${BASE_URL}/api/notifications/mark-read/user/${userdetails.id}`, {
+        method: 'PUT'
+      });
+      // We don't need to re-fetch, the optimistic update is fine.
+      // Promos will remain visible.
+    } catch (err) {
+      console.error("[NotificationContext] Error marking as read:", err);
+      fetchNotifications(); // Re-fetch on error to re-sync
     }
-
-    // 3. Only run API call if there are personal alerts to mark as read
-    if (unreadCount > 0) {
-      setUnreadCount(0); // Optimistic update
-      try {
-        await fetch(`${BASE_URL}/api/notifications/mark-read/user/${userdetails.id}`, {
-          method: 'PUT'
-        });
-      } catch (err) {
-        console.error("[NotificationContext] Error marking as read:", err);
-      }
-    }
-    
-    // 4. Re-fetch everything. This will:
-    //    - Show personal alerts as "read"
-    //    - Hide the promos we just dismissed
-    fetchNotifications();
-
-  }, [userdetails?.id, unreadCount, BASE_URL, fetchNotifications, notifications]); // 👈 Added 'notifications'
+  }, [userdetails?.id, unreadCount, BASE_URL, fetchNotifications]);
+  // --------------------------------------------------
+  // 🟢 END: MODIFIED "Mark all as read"
+  // --------------------------------------------------
 
 
   // --------------------------------------------------
-  // 🟢 5. MODIFIED: clearAllNotifications
+  // 🟢 START: MODIFIED "Clear All"
   // --------------------------------------------------
+  // This function now clears BOTH personal alerts (from DB)
+  // AND promos (from localStorage).
   const clearAllNotifications = useCallback(async () => {
     if (!userdetails?.id) return;
     if (!window.confirm("Are you sure you want to clear all your notifications?")) return;
 
-    // 1. Get IDs of promos that are *currently* showing
+    //   Get IDs of promos that are *currently* showing
     const promoIdsToDismiss = notifications
       .filter(n => String(n.id).startsWith('promo-'))
       .map(n => n.id);
 
-    // 2. Add them to localStorage
+    //  Add them to localStorage to dismiss them
     if (promoIdsToDismiss.length > 0) {
       addDismissedPromoIDs(promoIdsToDismiss);
     }
     
-    // 3. Optimistic update: Show only promos (which fetchNotifications will then filter)
-    setNotifications(prev => prev.filter(n => String(n.id).startsWith('promo-')));
+    //  Optimistic update: clear everything from view
+    setNotifications([]);
     setUnreadCount(0);
     
     try {
-      // 4. Call the DELETE API for personal alerts
+      // Call the DELETE API (for personal alerts ONLY)
       await fetch(`${BASE_URL}/api/notifications/user/${userdetails.id}`, {
         method: 'DELETE'
       });
-      // 5. Re-fetch. This will clear the personal alerts AND the promos.
-      fetchNotifications();
+      // No need to re-fetch, we've already cleared everything locally
+      // Promos are handled via localStorage
+      fetchNotifications(); 
     } catch (err) {
       console.error("[NotificationContext] Error clearing notifications:", err);
-      fetchNotifications(); // Re-fetch on error
+      fetchNotifications(); 
     }
-  }, [userdetails?.id, BASE_URL, fetchNotifications, notifications]); // 👈 Added 'notifications'
+  }, [userdetails?.id, BASE_URL, fetchNotifications, notifications]);
 
-
-  // ... (useEffect is unchanged) ...
   useEffect(() => {
     if (isUserLoading) {
       setIsLoading(true);

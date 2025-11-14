@@ -18,7 +18,7 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                 <span className="text-sm font-medium text-slate-500">{itemCount} item{itemCount !== 1 && 's'}</span>
             </div>
 
-            <div className="text-sm border-t border-b border-slate-200 py-4">
+            <div className="text-sm border-t border-b border-slate-100 py-4">
                 <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
                     <div>
@@ -42,7 +42,7 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                             <img 
                               src={item.product.imageurl || "/fallback.png"}
                               alt={item.product.name} 
-                              className="w-14 h-14 rounded-lg object-cover border border-slate-200 flex-shrink-0"
+                              className="w-14 h-14 rounded-lg object-cover border border-slate-100 flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                                 <p className="font-semibold text-sm text-slate-800 leading-tight truncate">{item.product.name}</p>
@@ -73,10 +73,10 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                 })}
             </div>
             
-            <div className="text-sm space-y-2 border-t border-slate-200 pt-4">
+            <div className="text-sm space-y-2 border-t border-slate-100 pt-4">
                 {loadingPrices ? (
                     <div className="flex justify-center items-center py-8">
-                        <div className="w-6 h-6 border-2 border-slate-200 border-t-black rounded-full animate-spin"></div>
+                        <div className="w-6 h-6 border-2 border-slate-100 border-t-black rounded-full animate-spin"></div>
                     </div>
                 ) : (
                     <>
@@ -103,7 +103,7 @@ export default function OrderSummary({ selectedAddress, selectedItems, breakdown
                         
                         <div className="flex justify-between text-slate-600"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></div>
                         
-                        <div className="flex justify-between font-bold text-lg text-black border-t border-slate-200 pt-3 mt-3">
+                        <div className="flex justify-between font-bold text-lg text-black border-t border-slate-100 pt-3 mt-3">
                             <span>Total Amount</span>
                             <span>₹{breakdown.total}</span>
                         </div>

@@ -395,7 +395,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
       )}
       <div className="space-y-6">
         {!isLoading && reviews.length === 0 && (
-          <div className="text-center text-slate-500 py-10 border-t border-slate-200">
+          <div className="text-center text-slate-500 py-10 border-t border-slate-100">
             <MessageSquare size={40} className="mx-auto mb-4 text-slate-400" />
             <p className="font-semibold text-lg text-slate-700">No reviews yet</p>
             <p>Be the first to share your thoughts on this product!</p>
@@ -405,7 +405,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
           {reviews.map((r) => (
             <motion.div
               key={r.id}
-              className="py-6 border-t border-slate-200"
+              className="py-6 border-t border-slate-100"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -456,7 +456,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                           src={src}
                           alt={`Review image ${idx + 1}`}
                           effect="blur"
-                          className="w-full h-full object-cover rounded-md border border-slate-200 cursor-pointer"
+                          className="w-full h-full object-cover rounded-md border border-slate-100 cursor-pointer"
                           wrapperClassName="w-full h-full"
                           onClick={() => openImagePreview(idx, r.photoUrls)}
                           onError={handleImgError}
@@ -480,7 +480,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
       </div>
 
       {/* Pagination Controls (Unchanged) */}
-      <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-slate-200">
+      <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-slate-100">
         {hasMore && !isLoading && (
           <button
             onClick={() => setActiveCursor(nextCursor)}
@@ -519,7 +519,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
         {userdetails && formOpen && (
           <motion.form
             id="review-form"
-            className="mt-8 p-6 bg-slate-50 rounded-lg border border-slate-200"
+            className="mt-8 p-6 bg-slate-50 rounded-lg border border-slate-100"
             onSubmit={handleSubmit}
             initial={{ opacity: 0, height: 0, y: -20 }}
             animate={{ opacity: 1, height: "auto", y: 0 }}

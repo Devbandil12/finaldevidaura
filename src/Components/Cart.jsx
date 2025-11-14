@@ -667,7 +667,7 @@ const ShoppingCart = () => {
 
                 {loadingPrices ? (
                   <div className="flex justify-center items-center py-8">
-                    <div className="w-6 h-6 border-2 border-slate-200 border-t-black rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-slate-100 border-t-black rounded-full animate-spin"></div>
                   </div>
                 ) : (
                   <>

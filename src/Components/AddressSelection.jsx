@@ -22,7 +22,7 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
         className={`bg-white rounded-xl p-4 flex items-start gap-4 cursor-pointer transition-all duration-200 ${
           isSelected
             ? 'border-black ring-2 ring-black/20 shadow-lg' 
-            : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
+            : 'border border-slate-100 hover:border-slate-300 hover:shadow-md'
         }`}
       >
         <div className="mt-1 flex-shrink-0">
@@ -359,7 +359,7 @@ function useCurrentLocationInForm() {
             exit={{ opacity: 0, height: 0, marginTop: 0 }}
             className="overflow-hidden"
           >
-            <div className="pt-6 border-t border-slate-200">
+            <div className="pt-6 border-t border-slate-100">
               <h4 className="font-bold text-lg mb-4">{isEditing ? "Edit Address" : "Add New Address"}</h4>
               {formError && <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm font-medium">{formError}</div>}
               

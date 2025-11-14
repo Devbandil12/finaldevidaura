@@ -86,8 +86,10 @@ span {
 /* Track (background) */
 /* Track (background) */
 ::-webkit-scrollbar-track {
-  background: transparent; /* removes the white background */
-  border: none; /* ensures no border line shows up */
+  background: transparent;
+  /* removes the white background */
+  border: none;
+  /* ensures no border line shows up */
 }
 
 
@@ -177,7 +179,7 @@ span {
 
 
 section {
-  width:100%;
+  width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -211,4 +213,71 @@ section {
   -webkit-background-clip: text;
   animation: goldShimmer 6s linear infinite;
   opacity: 0.9;
+}
+
+/* ===========================
+   Modern Date Picker Styling (Full & Fixed)
+   =========================== */
+
+/* The calendar pop-up */
+.react-datepicker-popper {
+  z-index: 30 !important;
+}
+
+.react-datepicker {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  border-radius: 1rem !important;
+  /* 16px */
+  border: 1px solid #f0f0f0 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  padding: 8px !important;
+}
+
+/* * The header (which holds your CustomDatePickerHeader component)
+ * We make it transparent and remove padding/borders.
+ */
+.react-datepicker__header {
+  background-color: #ffffff !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+}
+
+/* This is the container for the "Su, Mo, Tu..." row */
+.react-datepicker__day-names {
+  margin-top: 8px; /* Adds a little space above the day names */
+  padding-bottom: 4px;
+  margin-bottom: 2px !important;
+}
+
+.react-datepicker__day-name {
+  /* --- FONT FIX --- */
+  font-family: inherit;
+  color: #334155;    
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  text-transform: none;
+  background-color: rgba(208, 204, 204, 0.203);
+  border-radius: 0.375rem;
+  padding: 2px;
+  width: 1.7rem;
+  line-height: 1.7rem;
+  margin: 0.166rem; 
+  text-align: center;
+}
+/* The day cells */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #4f46e5 !important;
+  /* Indigo color */
+  border-radius: 0.5rem !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #eef2ff !important;
+  border-radius: 0.5rem !important;
+}
+
+.react-datepicker__day--outside-month {
+  color: #cbd5e1;
+  /* slate-300 */
 }
