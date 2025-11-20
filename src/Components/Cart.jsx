@@ -12,14 +12,10 @@ import Loader from "./Loader";
 import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
-// 🟢 NEW: Import Bell icon
 import { FiGift, FiCheckCircle, FiX, FiBell } from "react-icons/fi";
 
-// 🟢 --- NEW HELPER COMPONENT ---
-// This component "builds" the instruction text based on the offer rules
+// --- HELPER COMPONENT: Offer Instructions ---
 const OfferInstructionCard = ({ offer }) => {
-
-  // This function reads the rules and generates a human-readable string
   const generateInstruction = () => {
     const {
       discountType, discountValue, minOrderValue,
@@ -28,66 +24,64 @@ const OfferInstructionCard = ({ offer }) => {
       action_buyX, action_getY
     } = offer;
 
-    // --- Offer: Free Item with Category (e.g., Free 30ml with Combo) ---
     if (discountType === 'free_item' && cond_requiredCategory && action_targetSize && !action_buyX) {
       let text = `Add any item from the "${cond_requiredCategory}" category and a ${action_targetSize}ml perfume`;
-      if (action_targetMaxPrice) {
-        text += ` (up to ₹${action_targetMaxPrice})`;
-      }
+      if (action_targetMaxPrice) text += ` (up to ₹${action_targetMaxPrice})`;
       text += " to your cart to get the perfume for free!";
       return text;
     }
-
-    // --- Offer: Buy X of Size A, Get Y of Size B Free ---
     if (discountType === 'free_item' && action_buyX && action_getY && cond_requiredSize && action_targetSize) {
       let text = `Buy ${action_buyX} perfume(s) of ${cond_requiredSize}ml, and get ${action_getY} perfume(s) of ${action_targetSize}ml for free`;
-      if (action_targetMaxPrice) {
-        text += ` (up to ₹${action_targetMaxPrice} value)`;
-      }
+      if (action_targetMaxPrice) text += ` (up to ₹${action_targetMaxPrice} value)`;
       text += ". Add all items to your cart to apply.";
       return text;
     }
-
-    // --- Offer: BOGO (e.g., Buy 2 20ml, Get 1 20ml Free) ---
     if (discountType === 'free_item' && action_buyX && action_getY && action_targetSize && !cond_requiredSize) {
-      let text = `Buy ${action_buyX} ${action_targetSize}ml perfume(s), get ${action_getY} free! Add all ${action_buyX + action_getY} items to your cart to apply.`;
-      return text;
+      return `Buy ${action_buyX} ${action_targetSize}ml perfume(s), get ${action_getY} free! Add all ${action_buyX + action_getY} items to your cart to apply.`;
     }
-
-    // --- Offer: Automatic Percent Off ---
     if (discountType === 'percent') {
       let text = `Get ${discountValue}% off your order`;
-      if (minOrderValue > 0) {
-        text += ` when you spend ₹${minOrderValue} or more`;
-      }
+      if (minOrderValue > 0) text += ` when you spend ₹${minOrderValue} or more`;
       text += ". Applied automatically at checkout.";
       return text;
     }
-
-    // --- Offer: Automatic Flat Off ---
     if (discountType === 'flat') {
       let text = `Get ₹${discountValue} off your order`;
-      if (minOrderValue > 0) {
-        text += ` when you spend ₹${minOrderValue} or more`;
-      }
+      if (minOrderValue > 0) text += ` when you spend ₹${minOrderValue} or more`;
       text += ". Applied automatically at checkout.";
       return text;
     }
-
-    // Fallback to the manual description if no logic matches
     return offer.description || "Special offer available.";
   };
 
   return (
     <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
       <p className="font-semibold text-indigo-800">{offer.code}</p>
-      {/* 🟢 This now shows the auto-generated instruction */}
       <p className="text-sm text-indigo-700">{generateInstruction()}</p>
     </div>
   );
 };
-// 🟢 --- END HELPER COMPONENT ---
 
+// --- ANIMATION VARIANTS ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, // Stagger effect for smooth entry
+      delayChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 50, damping: 15 }
+  }
+};
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
@@ -114,7 +108,6 @@ const ShoppingCart = () => {
     moveToWishlist,
   } = useContext(CartContext);
 
-  // 🟢 This now holds the full offer objects
   const {
     availableCoupons,
     isCouponValid,
@@ -125,7 +118,6 @@ const ShoppingCart = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
-
   const [showOffers, setShowOffers] = useState(false);
 
   const isBuyNowFromNavigation = location.state?.isBuyNow;
@@ -136,7 +128,6 @@ const ShoppingCart = () => {
 
   const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
   const [loadingPrices, setLoadingPrices] = useState(true);
-
 
   useEffect(() => {
     if (isCartLoading || itemsToRender.length === 0) {
@@ -184,7 +175,6 @@ const ShoppingCart = () => {
     return () => clearTimeout(timer);
 
   }, [itemsToRender, appliedCoupon, pincode, isCartLoading, API_BASE]);
-
 
   useEffect(() => {
     if (userdetails?.id) {
@@ -367,100 +357,100 @@ const ShoppingCart = () => {
     navigate('/cart', { replace: true, state: {} });
   };
 
-  const renderRemainingProducts = () =>
-    !isBuyNowActive &&
-    products
-      .filter((p) =>
-        p.variants &&
-        p.variants.length > 0 &&
-        p.category !== "Template"
-      )
+  // Helper to render suggested products
+  const renderRemainingProducts = () => {
+    if (isBuyNowActive) return null;
+
+    const items = products
+      .filter((p) => p.variants && p.variants.length > 0 && p.category !== "Template")
       .map((product) => {
         const cheapestVariant = product.variants.reduce(
           (cheapest, current) => (current.oprice < cheapest.oprice ? current : cheapest),
           product.variants[0]
         );
-
         const inCart = cart.some((c) => c.variant?.id === cheapestVariant.id);
         if (inCart) return null;
+        return { product, cheapestVariant };
+      })
+      .filter(Boolean); // Filter out nulls
 
-        const price = Math.trunc(
-          cheapestVariant.oprice * (1 - cheapestVariant.discount / 100)
-        );
-        const isAdding = addingProductId === cheapestVariant.id;
+    return items.map(({ product, cheapestVariant }) => {
+      const price = Math.trunc(cheapestVariant.oprice * (1 - cheapestVariant.discount / 100));
+      const isAdding = addingProductId === cheapestVariant.id;
+      const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
+        ? product.imageurl[0]
+        : "/placeholder.png";
 
-        const imageUrl = (Array.isArray(product.imageurl) && product.imageurl.length > 0)
-          ? product.imageurl[0]
-          : "/placeholder.png";
+      return (
+        <motion.div
+          key={product.id}
+          // 🟢 NEW: Apply child variants for staggered animation
+          variants={cardVariants}
+          className="bg-white rounded-xl overflow-hidden flex flex-col rounded-xl shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition duration-300 ease-in-out group"
+        >
+          <div className="relative overflow-hidden">
+            <img
+              src={imageUrl}
+              alt={product.name}
+              className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
+              onClick={() => navigate(`/product/${product.id}`)}
+            />
+            <div
+              className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+              onClick={() => navigate(`/product/${product.id}`)}
+            >
+              <span className="text-sm font-semibold">Quick View</span>
+            </div>
+          </div>
+          <div className="p-4 flex-grow flex flex-col justify-between text-left">
+            <div>
+              <div className="mb-2 flex justify-between items-baseline">
+                <h3
+                  className="font-semibold text-sm leading-tight inline cursor-pointer hover:underline"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  {product.name}
+                </h3>
+                <span className="text-xs text-gray-500">{cheapestVariant.size} ml</span>
+              </div>
 
-        return (
-          <motion.div
-            key={product.id}
-            className="bg-white rounded-xl overflow-hidden flex flex-col transition-shadow shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow duration-300 group"
-            layout
-          >
-            <div className="relative overflow-hidden">
-              <img
-                src={imageUrl}
-                alt={product.name}
-                className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
-                onClick={() => navigate(`/product/${product.id}`)}
-              />
-              <div
-                className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <span className="text-sm font-semibold">Quick View</span>
+              <div className="flex justify-between items-baseline mb-4">
+                <div className="flex items-baseline gap-2">
+                  <p className="font-bold text-base">₹{price}</p>
+                  <p className="text-sm text-gray-500 line-through">₹{cheapestVariant.oprice}</p>
+                </div>
+                <span className="text-green-600 text-sm font-semibold">
+                  {cheapestVariant.discount}% OFF
+                </span>
               </div>
             </div>
-            <div className="p-4 flex-grow flex flex-col justify-between text-left">
-              <div>
-                <div className="mb-2 flex justify-between items-baseline">
-                  <h3
-                    className="font-semibold text-sm leading-tight inline cursor-pointer hover:underline"
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  >
-                    {product.name}
-                  </h3>
-                  <span className="text-xs text-gray-500">{cheapestVariant.size} ml</span>
-                </div>
-
-                <div className="flex justify-between items-baseline mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <p className="font-bold text-base">₹{price}</p>
-                    <p className="text-sm text-gray-500 line-through">₹{cheapestVariant.oprice}</p>
-                  </div>
-                  <span className="text-green-600 text-sm font-semibold">
-                    {cheapestVariant.discount}% OFF
-                  </span>
-                </div>
-              </div>
-              <HeroButton
-                onClick={() => handleAddToCart(cheapestVariant, product)}
-                disabled={isAdding}
-                className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? '!bg-green-600 !text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={isAdding ? "adding" : "add"}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2"
-                  >
-                    {isAdding ? (
-                      <>Added <FiCheckCircle /></>
-                    ) : (
-                      <>Add to Cart <FaShoppingCart /></>
-                    )}
-                  </motion.span>
-                </AnimatePresence>
-              </HeroButton>
-            </div>
-          </motion.div>
-        );
-      });
+            <HeroButton
+              onClick={() => handleAddToCart(cheapestVariant, product)}
+              disabled={isAdding}
+              className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? '!bg-green-600 !text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+            >
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={isAdding ? "adding" : "add"}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-2"
+                >
+                  {isAdding ? (
+                    <>Added <FiCheckCircle /></>
+                  ) : (
+                    <>Add to Cart <FaShoppingCart /></>
+                  )}
+                </motion.span>
+              </AnimatePresence>
+            </HeroButton>
+          </div>
+        </motion.div>
+      );
+    });
+  };
 
   const productDiscount = breakdown.originalTotal - breakdown.productTotal;
   const finalPrice = breakdown.total;
@@ -484,7 +474,6 @@ const ShoppingCart = () => {
       </title>
       <meta name="description" content="Review your selected items, apply coupons, and proceed to a secure checkout. Manage your Devid Aura shopping experience." />
 
-      {/* 🟢 NEW: Offer Modal */}
       <AnimatePresence>
         {showOffers && (
           <motion.div
@@ -513,7 +502,6 @@ const ShoppingCart = () => {
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {autoOfferInstructions.length > 0 ? (
                   autoOfferInstructions.map(offer => (
-                    // 🟢 NEW: Use the OfferInstructionCard component
                     <OfferInstructionCard key={offer.id} offer={offer} />
                   ))
                 ) : (
@@ -529,15 +517,13 @@ const ShoppingCart = () => {
         <Loader text="Loading cart..." />
       ) : (
         <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
-          <div className="flex justify-between items-center pb-4 border-b border-gray-200 pt-[50px]">
+          <div className="flex justify-between items-center pb-4 border-b border-gray-100 pt-[50px]">
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
               <FaShoppingCart />
               {isBuyNowActive ? "Buy Now" : "Shopping Cart"}
             </h1>
 
-            {/* 🟢 NEW: Header Buttons Wrapper */}
             <div className="flex items-center gap-4">
-              {/* 🟢 NEW: Notification Icon */}
               {autoOfferInstructions.length > 0 && !isBuyNowActive && (
                 <motion.button
                   onClick={() => setShowOffers(true)}
@@ -577,13 +563,11 @@ const ShoppingCart = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-8">
-            <motion.div layout className="flex flex-col gap-6">
+            <motion.div layout className="flex flex-col gap-1">
               <AnimatePresence>
                 {itemsToRender.length > 0 ? (
                   itemsToRender.map((item) => {
-                    if (!item || !item.product || !item.variant) {
-                      return null;
-                    }
+                    if (!item || !item.product || !item.variant) return null;
 
                     const itemImageUrl = (Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0)
                       ? item.product.imageurl[0]
@@ -592,6 +576,8 @@ const ShoppingCart = () => {
                     const isFree = breakdown.appliedOffers?.some(offer =>
                       offer.appliesToVariantId === item.variant.id
                     );
+
+                    const isOutOfStock = item.variant.stock <= 0;
 
                     return (
                       <motion.div
@@ -602,14 +588,29 @@ const ShoppingCart = () => {
                         exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                       >
-                        <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
-                          <img
-                            src={itemImageUrl}
-                            alt={item.product.name}
-                            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg flex-shrink-0"
-                          />
+                        <div className=" flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
+
+                          {/* 🟢 IMAGE WRAPPER WITH OVERLAY */}
+                          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                            <img
+                              src={itemImageUrl}
+                              alt={item.product.name}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center z-10">
+                                <span className="text-[10px] font-bold text-red-900  px-1.5 py-0.5 text-center leading-tight">
+                                  OUT OF STOCK
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
                           <div className="flex-grow w-full text-left">
-                            <h2 className="text-base sm:text-lg font-semibold mb-1">{item.product.name}</h2>
+                            {/* Dim text if Out of stock */}
+                            <h2 className={`text-base sm:text-lg font-semibold mb-1 ${isOutOfStock ? 'text-gray-500' : ''}`}>
+                              {item.product.name}
+                            </h2>
                             {item.isBundle ? (
                               <div className="pl-4 mt-1">
                                 <span className="text-xs font-semibold text-gray-600">Contains:</span>
@@ -629,16 +630,19 @@ const ShoppingCart = () => {
                               {isFree ? (
                                 <span className="text-sm sm:text-base font-bold text-green-600">Free</span>
                               ) : (
-                                <span className="text-sm sm:text-base font-bold">
+                                <span className={`text-sm sm:text-base font-bold ${isOutOfStock ? 'text-gray-400' : ''}`}>
                                   ₹{Math.floor(item.variant.oprice * (1 - item.variant.discount / 100))}
                                 </span>
                               )}
                               <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.variant.oprice}</span>
                             </div>
 
+
+
                           </div>
                           <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
-                            <div className="flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden">
+                            {/* Disable Quantity controls if Out of Stock */}
+                            <div className={`flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden ${isOutOfStock ? 'opacity-50 pointer-events-none' : ''}`}>
                               <button onClick={() => handleQuantityChange(item, -1)} disabled={item.quantity <= 1} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">–</button>
                               <span className="font-semibold min-w-[20px] text-center text-sm sm:text-base">{item.quantity}</span>
                               <button onClick={() => handleQuantityChange(item, 1)} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100">+</button>
@@ -662,12 +666,25 @@ const ShoppingCart = () => {
             </motion.div>
 
             <div className="sticky top-6">
-              <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow">
+              <div className="bg-white p-6 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50">
                 <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
 
+                {/* 🟢 NEW: Skeleton Loader to prevent Layout Shifts */}
                 {loadingPrices ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="w-6 h-6 border-2 border-slate-100 border-t-black rounded-full animate-spin"></div>
+                  <div className="py-2 space-y-4 animate-pulse">
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/5"></div>
+                    </div>
+                    <hr className="border-t border-gray-200 my-4" />
+                    <div className="flex justify-between">
+                      <div className="h-6 bg-gray-300 rounded w-1/3"></div>
+                      <div className="h-6 bg-gray-300 rounded w-1/4"></div>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -749,7 +766,7 @@ const ShoppingCart = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-lg border border-gray-100 shadow-gray-200/50 transition-shadow p-6 rounded-xl text-center">
+          <div className="bg-white border border-gray-100 p-6 text-center rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 ">
             <h3 className="text-lg font-semibold mb-1">🚚 Check Delivery Availability</h3>
             <p className="text-gray-500 mb-4 text-sm">Enter your pincode to see if we can reach your doorstep.</p>
             <div className="flex max-w-sm mx-auto">
@@ -788,11 +805,18 @@ const ShoppingCart = () => {
           </div>
 
           {!isBuyNowActive && products.length > cart.length && (
-            <div className="pt-8 mt-8 border-t border-gray-200">
+            <div className="pt-8 mt-8 border-t border-gray-100">
               <h2 className="text-3xl font-bold text-center mb-8">Explore More Products</h2>
-              <div className="grid grid-cols-1 w-[80%] mx-auto min-[400px]:w-full min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 ">
+              {/* 🟢 NEW: Parent Motion Container with stagger variants */}
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: "-50px" }}
+                className="grid grid-cols-1 w-[80%] mx-auto min-[400px]:w-full min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 "
+              >
                 {renderRemainingProducts()}
-              </div>
+              </motion.div>
             </div>
           )}
         </main>

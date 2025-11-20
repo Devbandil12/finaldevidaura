@@ -117,7 +117,7 @@ const Wishlist = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                      className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition-shadow"
+                      className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition duration-300 ease-in-out"
                       aria-labelledby={`wl-${product.id}-name`}
                     >
                       {/* Left: Image */}
