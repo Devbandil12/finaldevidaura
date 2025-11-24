@@ -6,106 +6,139 @@ import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-import { FaTimes, FaCheckCircle, FaShoppingCart } from "react-icons/fa";
+import { FaTimes, FaCheck, FaLock, FaShoppingBag } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
-import { HiOutlineCubeTransparent } from "react-icons/hi";
-import { Laugh } from "lucide-react";
+import { HiOutlineSparkles } from "react-icons/hi";
+import { BsStars } from "react-icons/bs"; 
+import PageTransition from "./PageTransition";
 
-const HeroButton = ({ children, ...props }) => (
-    <button
-        {...props}
-        className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors disabled:cursor-not-allowed ${props.className}`}
-    >
-        {children}
-    </button>
-);
+// --- UI HELPERS ---
 
-const MiniLoader = ({ text = "" }) => (
-    <div className="flex items-center justify-center space-x-2">
-        <div className="w-4 h-4 border-2 border-dashed border-current rounded-full animate-spin"></div>
-        <span>{text}</span>
-    </div>
+const HeroButton = ({ children, className, variant = "primary", ...props }) => {
+    const baseStyle = "flex items-center justify-center px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed";
+    
+    const variants = {
+        primary: "bg-[#C5A059] text-black hover:bg-white hover:text-black shadow-lg shadow-[#C5A059]/20",
+        outline: "border border-white/20 text-white hover:bg-white hover:text-black hover:border-white"
+    };
+
+    return (
+        <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            {...props}
+            className={`${baseStyle} ${variants[variant]} ${className}`}
+        >
+            {children}
+        </motion.button>
+    );
+};
+
+const MiniLoader = () => (
+    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
 );
 
 const Loader = ({ text = "Loading..." }) => (
-    <div className="flex flex-col items-center justify-center p-10">
-        <div className="w-12 h-12 border-4 border-dashed border-indigo-600 rounded-full animate-spin"></div>
-        <span className="mt-4 text-lg font-semibold text-gray-700">{text}</span>
+    <div className="min-h-[400px] flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-2 border-[#121212] border-t-[#C5A059] rounded-full animate-spin mb-4"></div>
+        <span className="text-gray-400 font-serif italic tracking-wider text-sm">{text}</span>
     </div>
 );
 
-// ⭐️ Redesigned small card for perfume options
-const PerfumeSelectItem = ({ variant, product, isSelected, onSelect, isDisabled }) => {
-    const imageUrl =
-        Array.isArray(product.imageurl) && product.imageurl.length > 0
-            ? product.imageurl[0]
-            : "/placeholder.png";
+// --- ANIMATION VARIANTS ---
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: { staggerChildren: 0.05 }
+    }
+};
+
+const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { 
+        opacity: 1, 
+        y: 0, 
+        transition: { duration: 0.5, ease: "easeOut" } 
+    }
+};
+
+// --- PERFUME CARD COMPONENT ---
+const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => {
+    const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
+        ? product.imageurl[0]
+        : "/placeholder.png";
 
     const oprice = variant.oprice || product.oprice || 0;
     const discount = variant.discount || product.discount || 0;
-    const finalPrice = Math.floor(oprice * (1 - discount / 100));
+    const discountedPrice = Math.floor(oprice * (1 - discount / 100));
 
-return (
-  <motion.div
-    layout
-    animate={{ opacity: 1 }}
-    initial={{ opacity: 0 }}
-    exit={{ opacity: 0 }}
-    onClick={!isDisabled ? onSelect : undefined}
-    className={`relative rounded-2xl border border-gray-100 shadow-xs overflow-hidden 
-      transition-all duration-300 w-[155px]
-      ${isDisabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-      ${isSelected ? "bg-indigo-50 shadow-xs" : "hover:scale-[1.02]"}
-    `}
-  >
-    {/* Disabled blur overlay */}
-    {isDisabled && !isSelected && (
-      <div className="absolute inset-0 bg-white/20 backdrop-blur-[3px] flex items-center justify-center z-10">
-        <span className="flex items-center gap-1 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full border border-gray-300/40 bg-white/50 shadow-sm">
-          That’s it, scent addict
-          <span className="text-lg">😂</span>
-        </span>
-      </div>
-    )}
+    return (
+        <motion.div
+            variants={cardVariants}
+            onClick={!isDisabled ? onSelect : undefined}
+            className={`relative flex flex-col rounded-[2rem] overflow-hidden transition-all duration-300 group cursor-pointer
+            ${isSelected 
+                ? "ring-2 ring-[#C5A059] shadow-2xl shadow-[#C5A059]/10 bg-[#121212]" 
+                : "bg-[#121212] shadow-xl hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1"
+            }
+            ${isDisabled && !isSelected ? "opacity-40 grayscale cursor-not-allowed" : ""}
+            `}
+        >
+            {/* IMAGE */}
+            <div className="relative w-full h-48 overflow-hidden bg-[#0a0a0a]">
+                <img
+                    src={imageUrl}
+                    alt={product.name}
+                    className={`w-full h-full object-cover transition-all duration-700 ease-out
+                    ${isSelected ? "scale-105 opacity-100" : "opacity-80 group-hover:opacity-100 group-hover:scale-105"}
+                    `}
+                />
 
-    {/* Overlay when item is selected */}
-    {isSelected && (
-      <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] flex items-center justify-center z-10">
-        <span className="flex items-center gap-2 text-gray-800 text-xs font-semibold px-4 py-2 rounded-full border border-gray-400/30 bg-white/50 shadow-md">
-          In the mix! 🤩
-        </span>
-      </div>
-    )}
+                <AnimatePresence>
+                    {isSelected && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0 }}
+                            className="absolute top-3 right-3 w-6 h-6 bg-[#C5A059] text-black rounded-full flex items-center justify-center shadow-lg z-10"
+                        >
+                            <FaCheck size={10} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
-    {/* Image */}
-    <div className="relative w-full h-40 overflow-hidden">
-      <img
-        src={imageUrl}
-        alt={product.name}
-        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-      />
-    </div>
+            {/* Details */}
+            <div className="p-4 flex flex-col gap-1">
+                <div className="flex justify-between items-start">
+                    <p className="text-[#C5A059] text-[10px] font-serif italic tracking-wider opacity-90 pt-1">
+                        {variant.size} ml
+                    </p>
+                    
+                    {/* Price Display */}
+                    <div className="flex flex-col items-end leading-none">
+                        <span className={`text-sm font-medium ${isSelected ? "text-[#C5A059]" : "text-white"}`}>
+                            ₹{discountedPrice}
+                        </span>
+                        {discount > 0 && (
+                            <span className="text-[10px] text-gray-500 line-through mt-0.5">
+                                ₹{oprice}
+                            </span>
+                        )}
+                    </div>
+                </div>
 
-    {/* Info */}
-    <div className="p-3">
-      <div className="flex items-center justify-between mb-1">
-        <h4 className="text-sm font-semibold text-gray-800 truncate">{product.name}</h4>
-        <p className="text-xs text-gray-500">{variant.size}ml</p>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1 items-baseline text-gray-400">
-          <span className="text-sm font-bold text-gray-800">₹{finalPrice}</span>
-          <span className="text-xs line-through">₹{oprice}</span>
-        </div>
-        <span className="text-xs text-green-600">{discount}% OFF</span>
-      </div>
-    </div>
-  </motion.div>
-);
-
+                <h4 className={`text-sm font-medium leading-tight transition-colors line-clamp-1 ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
+                    {product.name}
+                </h4>
+            </div>
+        </motion.div>
+    );
 };
 
 
+// --- MAIN COMPONENT ---
 const CustomComboBuilder = () => {
     const navigate = useNavigate();
     const { products, loading: productsLoading } = useContext(ProductContext);
@@ -116,21 +149,32 @@ const CustomComboBuilder = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
-    const { templateVariant, comboOriginalPrice, comboFinalPrice, comboDiscount } = useMemo(() => {
+    // --- Data Logic ---
+    const { templateVariant, comboOriginalPrice, comboFinalPrice, comboDiscount, comboSavings } = useMemo(() => {
         const templateProduct = products.find((p) => p.category === "Template");
         if (templateProduct && templateProduct.variants.length > 0) {
             const tv = templateProduct.variants[0];
+            
             const oprice = tv.oprice || 0;
-            const discount = tv.discount || 0;
-            const finalPrice = Math.floor(oprice * (1 - discount / 100));
-            return {
-                templateVariant: tv,
-                comboOriginalPrice: oprice,
-                comboFinalPrice: finalPrice,
+            const discount = tv.discount || 0; 
+            
+            let finalPrice = tv.price || 0;
+            if (!finalPrice && discount) {
+                 finalPrice = Math.floor(oprice * (1 - discount / 100));
+            }
+            if (!finalPrice) finalPrice = oprice;
+
+            const savings = Math.max(0, oprice - finalPrice);
+
+            return { 
+                templateVariant: tv, 
+                comboOriginalPrice: oprice, 
+                comboFinalPrice: finalPrice, 
                 comboDiscount: discount,
+                comboSavings: savings 
             };
         }
-        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0, comboDiscount: 0 };
+        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0, comboDiscount: 0, comboSavings: 0 };
     }, [products]);
 
     const availablePerfumes = useMemo(() => {
@@ -145,29 +189,28 @@ const CustomComboBuilder = () => {
 
     const handleSelectPerfume = useCallback((variant) => {
         setSelectedPerfumes((prev) => {
-            const isAlreadySelected = prev.some((v) => v.id === variant.id);
-            if (isAlreadySelected) {
-                return prev.filter((v) => v.id !== variant.id);
-            } else {
-                if (prev.length >= 4) {
-                    window.toast.error("You can only select 4 perfumes.");
-                    return prev;
-                }
-                return [...prev, variant];
+            const exists = prev.some((v) => v.id === variant.id);
+            if (exists) return prev.filter((v) => v.id !== variant.id);
+            if (prev.length >= 4) {
+                window.toast?.error("Box full. Remove one to add another.") || alert("Box full");
+                return prev;
             }
+            return [...prev, variant];
         });
     }, []);
 
-    const handleRemoveFromSlot = (variantIdToRemove) => {
-        setSelectedPerfumes((prev) => prev.filter((v) => v.id !== variantIdToRemove));
+    const handleRemoveFromSlot = (id) => setSelectedPerfumes((prev) => prev.filter((v) => v.id !== id));
+
+    const validateAndProceed = () => {
+        if (selectedPerfumes.length !== 4) {
+            window.toast?.error("Please select 4 perfumes.") || alert("Please select 4 perfumes.");
+            return false;
+        }
+        return true;
     };
 
     const handleAddToCart = async () => {
-        if (selectedPerfumes.length !== 4) {
-            window.toast.error("Please select exactly 4 perfumes.");
-            return;
-        }
-
+        if (!validateAndProceed()) return;
         setIsAddingToCart(true);
         const success = await addCustomBundle(templateVariant.id, selectedPerfumes.map((v) => v.id));
         setIsAddingToCart(false);
@@ -175,259 +218,249 @@ const CustomComboBuilder = () => {
     };
 
     const handleBuyNow = async () => {
-        if (selectedPerfumes.length !== 4) {
-            window.toast.error("Please select exactly 4 perfumes.");
-            return;
-        }
+        if (!validateAndProceed()) return;
         if (!userdetails?.id) {
-            window.toast.error("Please log in to create a bundle.");
+            window.toast?.error("Please log in.") || alert("Please log in.");
             navigate("/login");
             return;
         }
-
         setIsBuyingNow(true);
         try {
             const newItem = await addCustomBundle(templateVariant.id, selectedPerfumes.map((v) => v.id));
-            if (newItem && typeof newItem === "object") {
-                startBuyNow(newItem);
+            if (newItem) {
+                if (typeof newItem === "object") startBuyNow(newItem);
                 navigate("/cart", { state: { isBuyNow: true } });
-            } else if (newItem === true) {
-                window.toast.info("Bundle added! Proceeding to cart...");
-                navigate("/cart");
             }
         } catch (err) {
             console.error(err);
-            window.toast.error(err.message || "Failed to create bundle.");
         } finally {
             setIsBuyingNow(false);
         }
     };
 
-    const isSelectionFull = selectedPerfumes.length === 4;
+    const isFull = selectedPerfumes.length === 4;
 
-    if (productsLoading) return <Loader text="Loading Combo Builder..." />;
+    if (productsLoading) return <Loader text="Curating Library..." />;
 
-    if (!templateVariant)
-        return (
-            <div className="bg-white p-6 rounded-xl shadow-lg border border-red-200 shadow-gray-200/50 flex flex-col items-center text-center">
-                <FiAlertTriangle className="text-5xl text-red-500 mb-4" />
-                <h2 className="text-2xl font-bold text-red-600">Error: Combo Template Not Found</h2>
-                <p className="text-gray-600 mt-2">
-                    Please ask the site administrator to create a "Template" product to enable this feature.
-                </p>
-            </div>
-        );
+    if (!templateVariant) return (
+        <div className="p-12 text-center text-gray-500 bg-gray-100 rounded-3xl m-4">
+            <FiAlertTriangle className="mx-auto text-4xl mb-4 opacity-20" />
+            <p>Combo Builder is currently unavailable.</p>
+        </div>
+    );
 
     return (
-        <section>
-            <div className="bg-white p-4 sm:p-8 rounded-xl mt-10">
-                <div className="text-center mb-16 px-4">
-                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
-                        Design Your Signature Set
-                    </h2>
-                    <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
-                        Select four fragrances to compose your personal collection.
-                    </p>
+        <PageTransition>
+            <section className="min-h-screen py-22 px-6 md:px-12">
+
+                {/* HEADER */}
+                <div className="max-w-4xl mx-auto mb-20 text-center">
+                     <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        {/* 🟢 HEADER SPAN: Bespoke Signature Set */}
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-xs font-bold tracking-widest uppercase mb-6">
+                            <BsStars size={12} className="text-yellow-600" />
+                            Bespoke Signature Set
+                        </span>
+                        <h1 className="text-5xl md:text-6xl font-serif font-medium mb-6 text-[#1a1a1a]">
+                            Build Your Collection
+                        </h1>
+                        <p className="text-gray-500 text-lg font-light max-w-2xl mx-auto">
+                            Select 4 signature scents to unlock the exclusive bundle price.
+                        </p>
+                    </motion.div>
                 </div>
 
-                {/* Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8">
-                    {/* LEFT COLUMN */}
-                    <div className="md:col-span-3">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1">
-                            Step 1: Choose Your Perfumes
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                            {isSelectionFull ? "Your combo is full!" : `Select ${4 - selectedPerfumes.length} more.`}
-                        </p>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start max-w-[1600px] mx-auto">
 
-                        {availablePerfumes.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No 30ml perfumes are currently available.</p>
-                        ) : (
-                            <div
-                                className=" p-1 overflow-y-auto grid gap-1 justify-center"
-                                style={{
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))",
-                                }}
-                            >
-
-                                {availablePerfumes.map(({ product, variant }) => {
-                                    const isSelected = selectedPerfumes.some((v) => v.id === variant.id);
-                                    const isDisabled = isSelectionFull && !isSelected;
-
-                                    return (
-                                        <PerfumeSelectItem
-                                            key={variant.id}
-                                            variant={variant}
-                                            product={product}
-                                            isSelected={isSelected}
-                                            isDisabled={isDisabled}
-                                            onSelect={() => {
-                                                if (isDisabled && !isSelected) {
-                                                    window.toast.error(
-                                                        "You can only select 4 perfumes. De-select one to choose another."
-                                                    );
-                                                    return;
-                                                }
-                                                handleSelectPerfume(variant);
-                                            }}
-                                        />
-                                    );
-                                })}
+                    {/* LEFT: SELECTION GRID */}
+                    <div className="lg:col-span-8">
+                        <div className="flex items-center justify-between mb-8 px-2">
+                            <div className="flex items-center gap-3">
+                                <HiOutlineSparkles className="text-[#C5A059]" />
+                                <span className="text-gray-400 font-medium uppercase tracking-widest text-xs">Available Library</span>
                             </div>
-                        )}
+                            <span className="text-xs font-bold text-[#1a1a1a] bg-gray-100 px-3 py-1 rounded-full">
+                                {4 - selectedPerfumes.length} SLOTS REMAINING
+                            </span>
+                        </div>
+
+                        <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show"
+                            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                        >
+                            {availablePerfumes.map(({ product, variant }) => (
+                                <PerfumeCard
+                                    key={variant.id}
+                                    variant={variant}
+                                    product={product}
+                                    isSelected={selectedPerfumes.some((v) => v.id === variant.id)}
+                                    isDisabled={isFull && !selectedPerfumes.some((v) => v.id === variant.id)}
+                                    onSelect={() => handleSelectPerfume(variant)}
+                                />
+                            ))}
+                        </motion.div>
                     </div>
 
-                    {/* RIGHT COLUMN */}
-                    <div className="md:col-span-2 relative">
-                        <div className="sticky top-24 space-y-6">
-                            <div>
-                                <div className="flex justify-between items-center">
-                                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                                        Step 2: Review Your Combo
-                                    </h3>
-                                    {selectedPerfumes.length > 0 && (
-                                        <button
-                                            onClick={() => setSelectedPerfumes([])}
-                                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                                        >
-                                            Clear All
-                                        </button>
-                                    )}
+                    {/* RIGHT: FLOATING SUMMARY BOX */}
+                    <div className="lg:col-span-4 lg:sticky lg:top-32">
+                        <div className="bg-[#121212] text-white rounded-[2rem] shadow-2xl shadow-black/20 p-8 relative overflow-hidden border border-white/10">
+
+                            {/* Header */}
+                            <div className="relative z-10 mb-8">
+                                <div className="flex justify-between items-center mb-1">
+                                    {/* 🟢 HEADER: Your Personal Set */}
+                                    <h3 className="text-2xl font-serif text-white">Your Personal Set</h3>
+                                    <FaShoppingBag className="text-[#C5A059]" />
                                 </div>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    {selectedPerfumes.length} of 4 items selected.
+                                
+                                {/* NEW: David Aura Personalized Text */}
+                                <p className="text-[#C5A059] text-xs font-serif italic mb-3">
+                                    The David Aura Signature Edit — Curated just for you.
                                 </p>
-
-                                <div className="space-y-3">
-                                    {[...Array(4)].map((_, index) => {
-                                        const variant = selectedPerfumes[index];
-                                        const productInfo = variant
-                                            ? availablePerfumes.find((p) => p.variant.id === variant.id)
-                                            : null;
-
-                                        if (variant && productInfo) {
-                                            const imageUrl =
-                                                Array.isArray(productInfo.product.imageurl) &&
-                                                    productInfo.product.imageurl.length > 0
-                                                    ? productInfo.product.imageurl[0]
-                                                    : "/placeholder.png";
-
-                                            return (
-                                                <motion.div
-                                                    key={variant.id}
-                                                    layout
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0, x: 20 }}
-                                                    className="flex items-center gap-3 p-2.5 bg-white"
-                                                >
-                                                    <span className="text-sm font-semibold text-gray-500">{index + 1}.</span>
-                                                    <img
-                                                        src={imageUrl}
-                                                        alt={productInfo.product.name}
-                                                        className="w-10 h-10 object-cover rounded-md flex-shrink-0"
-                                                    />
-                                                    <div className="flex-grow min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-800 truncate">
-                                                            {productInfo.product.name}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">{variant.name}</p>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleRemoveFromSlot(variant.id)}
-                                                        className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
-                                                        title="Remove item"
-                                                    >
-                                                        <FaTimes />
-                                                    </button>
-                                                </motion.div>
-                                            );
-                                        } else {
-                                            return (
-                                                <motion.div
-                                                    key={index}
-                                                    layout
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className="flex items-center gap-3 p-2.5 bg-gray-50 border border-gray-200 border-dashed rounded-lg"
-                                                >
-                                                    <span className="text-sm font-semibold text-gray-400">{index + 1}.</span>
-                                                    <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">
-                                                        <HiOutlineCubeTransparent className="w-5 h-5 text-gray-400" />
-                                                    </div>
-                                                    <div className="flex-grow">
-                                                        <p className="text-sm text-gray-400">Empty Slot</p>
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        }
-                                    })}
+                                
+                                {/* Progress Bar */}
+                                <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-[#C5A059]"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${(selectedPerfumes.length / 4) * 100}%` }}
+                                        transition={{ type: "spring", stiffness: 50 }}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Footer */}
-                            <div className="pt-6 ">
-                                {isSelectionFull && (
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600">
-                                            <span>Total MRP:</span>
-                                            <span className="line-through">₹{comboOriginalPrice}</span>
-                                        </div>
-                                        {comboDiscount > 0 && (
-                                            <div className="flex justify-between items-center text-xs sm:text-sm font-medium text-green-600">
-                                                <span>Combo Discount:</span>
-                                                <span>{comboDiscount}% OFF</span>
+                            {/* Visual Slots */}
+                            <div className="space-y-3 relative z-10">
+                                <AnimatePresence mode="popLayout">
+                                    {[...Array(4)].map((_, i) => {
+                                        const variant = selectedPerfumes[i];
+                                        const productInfo = variant ? availablePerfumes.find(p => p.variant.id === variant.id) : null;
+
+                                        return (
+                                            <div key={i}>
+                                                {variant && productInfo ? (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.9 }}
+                                                        className="flex items-center gap-4 bg-white/5 border border-white/10 p-2 rounded-2xl group"
+                                                    >
+                                                        <img
+                                                            src={productInfo.product.imageurl?.[0] || "/placeholder.png"}
+                                                            className="w-12 h-12 rounded-xl object-cover opacity-90"
+                                                            alt=""
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <h5 className="text-sm font-medium text-white truncate">{productInfo.product.name}</h5>
+                                                            <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleRemoveFromSlot(variant.id)}
+                                                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-500/20 hover:text-red-400 text-gray-500 transition-colors"
+                                                        >
+                                                            <FaTimes size={12} />
+                                                        </button>
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        className="flex items-center gap-4 p-2 rounded-2xl border border-dashed border-white/10"
+                                                    >
+                                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/20 text-sm font-bold font-serif">
+                                                            {i + 1}
+                                                        </div>
+                                                        <span className="text-xs text-white/30 uppercase tracking-widest">Empty Slot</span>
+                                                    </motion.div>
+                                                )}
                                             </div>
-                                        )}
-                                        <div className="flex justify-between items-center mt-2 pt-2 ">
-                                            <span className="text-base sm:text-lg font-bold text-gray-900">Final Price:</span>
-                                            <span className="text-xl sm:text-2xl font-bold text-gray-900">
-                                                ₹{comboFinalPrice}
-                                            </span>
+                                        );
+                                    })}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Pricing & Actions */}
+                            <div className="mt-10 pt-6 border-t border-white/10 relative z-10">
+
+                                {isFull ? (
+                                    <div className="mb-8">
+                                        <div className="mb-6 bg-white/5 p-5 rounded-2xl border border-white/10">
+                                            
+                                            {/* 1. Original Price Row (Value) */}
+                                            {comboDiscount > 0 && (
+                                                <div className="flex justify-between items-center mb-1 opacity-60">
+                                                    <span className="text-xs text-gray-400 uppercase tracking-widest">Total Value</span>
+                                                    <span className="text-sm text-gray-400 line-through decoration-white/30">₹{comboOriginalPrice}</span>
+                                                </div>
+                                            )}
+
+                                            {/* 2. Final Price Row */}
+                                            <div className="flex justify-between items-center mb-4">
+                                                {/* 🟢 CHANGED: Your Curated Price to Final Set Price */}
+                                                <span className="text-sm text-white font-medium">Final Combo Price</span>
+                                                <span className="text-3xl font-serif text-[#C5A059]">₹{comboFinalPrice}</span>
+                                            </div>
+
+                                            {/* 3. Savings Divider Section */}
+                                            {comboDiscount > 0 && (
+                                                <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                                                    {/* Discount Percentage */}
+                                                    <div className="flex items-center gap-2 text-green-400">
+                                                         <HiOutlineSparkles size={14} />
+                                                         <span className="text-xs font-bold tracking-wider uppercase">
+                                                             {comboDiscount}% OFF
+                                                         </span>
+                                                    </div>
+                                                    
+                                                    {/* Savings Value */}
+                                                    <span className="text-xs text-white/70">
+                                                        You save <span className="text-white font-bold">₹{comboSavings}</span>
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
+                                    </div>
+                                ) : (
+                                    <div className="mb-8 flex items-center justify-center gap-2 text-white/40 bg-white/5 py-4 rounded-xl border border-white/5">
+                                        <FaLock size={12} />
+                                        <span className="text-[10px] uppercase tracking-widest font-bold">
+                                            Add {4 - selectedPerfumes.length} more to unlock
+                                        </span>
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                                <div className="space-y-3">
                                     <HeroButton
-                                        onClick={handleAddToCart}
-                                        disabled={!isSelectionFull || isAddingToCart || isBuyingNow}
-                                        className="w-full py-2.5 sm:py-3 text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:opacity-50"
-                                    >
-                                        {isAddingToCart ? (
-                                            <MiniLoader />
-                                        ) : (
-                                            <>
-                                                <FaShoppingCart className="mr-2" /> Add to Cart
-                                            </>
-                                        )}
-                                    </HeroButton>
-                                    <HeroButton
+                                        variant="primary"
                                         onClick={handleBuyNow}
-                                        disabled={!isSelectionFull || isAddingToCart || isBuyingNow}
-                                        className="w-full py-2.5 sm:py-3 text-sm font-semibold bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-50"
+                                        disabled={!isFull || isBuyingNow}
+                                        className="w-full"
                                     >
-                                        {isBuyingNow ? <MiniLoader /> : "Buy Now"}
+                                        {isBuyingNow ? <MiniLoader /> : "Buy Bundle Now"}
+                                    </HeroButton>
+                                    
+                                    <HeroButton
+                                        variant="outline"
+                                        onClick={handleAddToCart}
+                                        disabled={!isFull || isAddingToCart}
+                                        className="w-full"
+                                    >
+                                        {isAddingToCart ? <MiniLoader /> : "Add to Cart"}
                                     </HeroButton>
                                 </div>
 
-                                {isSelectionFull && !isAddingToCart && !isBuyingNow && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="flex items-center justify-center gap-2 text-green-600 mt-8 text-xs sm:text-sm"
-                                    >
-                                        <FaCheckCircle />
-                                        <span>Ready to add!</span>
-                                    </motion.div>
-                                )}
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </PageTransition>
     );
 };
 

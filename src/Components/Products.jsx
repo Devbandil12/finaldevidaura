@@ -1,176 +1,259 @@
-import React, { useContext, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import React, { useContext, useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 
-import WishlistImage from "../assets/wishlist-svgrepo-com.svg";
-import WishlistFilledImage from "../assets/wishlist-svgrepo-com copy.svg";
-import CartImage from "../assets/cart-svgrepo-com copy.svg";
+import { Heart, Sparkles } from "lucide-react";
+import PageTransition from "./PageTransition";
 
-import HeroButton from "./HeroButton";
-import { ArrowRight } from "lucide-react";
-
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
+// --- Animation Variants ---
+const containerVariants = {
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    scale: 1,
-    transition: {
-      duration: 0.5,
-      ease: [0.4, 0, 0.2, 1],
-    },
-  },
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 60 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } 
+  }
 };
 
 const Products = () => {
   const { products } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
   const navigate = useNavigate();
-  const location = useLocation();
+  const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
-    document.body.style.overflow = "auto";
-    document.documentElement.style.overflow = "auto";
-  }, [location.pathname]);
+    window.scrollTo(0, 0);
+  }, []);
 
-  const handleSlideClick = (product) => navigate(`/product/${product.id}`);
-  const handleSelectOptions = (product) => navigate(`/product/${product.id}`);
+  // --- Helpers ---
+  const handleProductClick = (product) => navigate(`/product/${product.id}`);
 
   const handleToggleWishlist = (e, product) => {
     e.stopPropagation();
-    if (product.variants && product.variants.length > 0) {
-      const cheapestVariant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
-      toggleWishlist(product, cheapestVariant);
-    } else {
-      window.toast?.error?.("This product has no variants to wishlist.");
+    if (product.variants?.length) {
+      const variant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
+      toggleWishlist(product, variant);
     }
   };
 
   const isProductInWishlist = (product) => {
-    if (!product.variants || product.variants.length === 0) return false;
-    const variantIds = product.variants.map((v) => v.id);
-    return wishlist?.some((item) => variantIds.includes(item.variantId ?? item.variant?.id));
+    if (!product.variants) return false;
+    const variantIds = product.variants.map(v => v.id);
+    return wishlist?.some(item => variantIds.includes(item.variantId ?? item.variant?.id));
   };
 
   const getDisplayVariant = (product) => {
-    if (!product.variants || product.variants.length === 0) return null;
+    if (!product.variants?.length) return null;
     return product.variants.sort((a, b) => a.oprice - b.oprice)[0];
   };
 
+  // 🟢 1. DYNAMIC CATEGORY GENERATION
+  const categories = useMemo(() => {
+      const uniqueCategories = new Set(
+          products
+            .filter(p => p.category && p.category !== "Template")
+            .map(p => p.category.trim()) 
+      );
+      return ["All", ...Array.from(uniqueCategories).sort()];
+  }, [products]);
+
+  // 🟢 2. ROBUST FILTERING LOGIC
+  const displayProducts = useMemo(() => {
+      return products
+        .filter(p => p.category !== "Template")
+        .filter(p => {
+            if (activeCategory === "All") return true;
+            return p.category && p.category.toLowerCase() === activeCategory.toLowerCase();
+        });
+  }, [products, activeCategory]);
+
+
   return (
-    <>
-      <section className="px-1 py-8">
-        <div className="text-center mb-16 px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-gray-900 tracking-tight drop-shadow-md">
-            Discover Our Collection
-          </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600">
-            Quality products curated just for you.
-          </p>
-        </div>
+    <PageTransition>
+      <section className="min-h-screen text-[#1a1a1a] py-12 px-6 md:px-12">
+        
+        {/* --- HEADER --- */}
+        <div className="max-w-[1600px] mx-auto mb-20 text-center">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+            >
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-xs font-bold tracking-widest uppercase mb-6">
+                    <Sparkles size={12} className="text-yellow-600" />
+                    Olfactory Library
+                </span>
+                <h1 className="text-5xl md:text-7xl  font-medium mb-8 text-[#1a1a1a]">
+                    The Collection
+                </h1>
+            </motion.div>
 
-        {/* GRID LAYOUT: centers rows, last row left-aligned */}
-        <div
-          className="grid gap-6 justify-center"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit, 250px)",
-          }}
-        >
-          {products
-            .filter((p) => p.category !== "Template")
-            .map((product) => {
-              const displayVariant = getDisplayVariant(product);
-              if (!displayVariant) return null;
-
-              const inWishlist = isProductInWishlist(product);
-              const discountedPrice = Math.floor(
-                displayVariant.oprice * (1 - displayVariant.discount / 100)
-              );
-              const stockStatus =
-                displayVariant.stock === 0
-                  ? "Out of Stock"
-                  : displayVariant.stock <= 10
-                    ? `Only ${displayVariant.stock} left!`
-                    : null;
-
-              const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
-                ? product.imageurl[0]
-                : "/placeholder.png";
-
-              return (
-                <motion.div
-                  key={product.id}
-                  variants={cardVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-[0_8px_12px_rgba(230,229,229,0.3)] border border-gray-100 cursor-default"
-                >
-                  <div
-                    className="relative overflow-hidden h-48 cursor-pointer"
-                    onClick={() => handleSlideClick(product)}
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={product.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                      data-product-id={product.id}
-                    />
-                    <div className="absolute inset-0 bg-black/50 flex justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-white font-semibold border-2 border-gray-100 rounded-xl px-4 py-2">
-                        Quick View
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-2 flex flex-col gap-1 flex-grow">
-                    <div className="flex justify-between items-start">
-                      <h3
-                        className="text-lg font-semibold cursor-pointer"
-                        onClick={() => handleSlideClick(product)}
-                      >
-                        {product.name}
-                      </h3>
-                      <div onClick={(e) => handleToggleWishlist(e, product)}>
-                        <img
-                          src={inWishlist ? WishlistFilledImage : WishlistImage}
-                          alt="Wishlist"
-                          className="w-6 h-6 cursor-pointer flex-shrink-0"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xs text-gray-500 mr-1">From</span>
-                        <p className="font-bold text-gray-800">₹{discountedPrice}</p>
-                        <p className=" line-through text-gray-400">₹{displayVariant.oprice}</p>
-                      </div>
-                      <span className="text-md text-green-600 ">{displayVariant.discount}% off</span>
-                    </div>
-
-                    {stockStatus && (
-                      <p className="text-xs text-red-700 lowercase font-bolder">{stockStatus}</p>
-                    )}
-                    <p className="text-xs text-gray-500 mt-2 mb-2 line-clamp-2">{product.description}</p>
-                  </div>
-
-                  <div className="p-3 pt-0">
-                    <HeroButton
-                      onClick={() => handleSelectOptions(product)}
-                      className="w-full py-2 text-lg font-semibold flex items-center justify-center gap-2 bg-black text-white"
+            {/* TABS */}
+            <motion.div 
+                className="flex flex-wrap justify-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+            >
+                {categories.map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 
+                        ${activeCategory === cat 
+                            ? "bg-[#1a1a1a] text-white shadow-lg transform scale-105" 
+                            : "bg-white text-gray-500 hover:bg-gray-100 border border-transparent hover:border-gray-200"}`}
                     >
-                      Shop Now <ArrowRight className="w-5 h-5" />
-                    </HeroButton>
-                  </div>
-                </motion.div>
-              );
-            })}
+                        {cat}
+                    </button>
+                ))}
+            </motion.div>
         </div>
+
+        {/* --- STAGGERED GRID (4 COLUMNS) --- */}
+        {displayProducts.length > 0 ? (
+            <motion.div
+              key={activeCategory} 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-16 max-w-[1600px] mx-auto"
+            >
+              <AnimatePresence mode="wait">
+                {displayProducts.map((product, index) => {
+                  const displayVariant = getDisplayVariant(product);
+                  if (!displayVariant) return null;
+
+                  const inWishlist = isProductInWishlist(product);
+                  const discountedPrice = Math.floor(displayVariant.oprice * (1 - displayVariant.discount / 100));
+                  const imageUrl = product.imageurl?.[0] || "/placeholder.png";
+                  
+                  // 🟢 INFO LOGIC
+                  const variantCount = product.variants?.length || 0;
+                  const hasMoreVariants = variantCount > 1;
+                  
+                  // 🟢 UPDATED: Add "ml" to the size if it exists
+                  const sizeLabel = displayVariant.size 
+                      ? `${displayVariant.size} ml` 
+                      : (displayVariant.name || "Standard");
+
+                  const staggerClass = (index % 4 === 1 || index % 4 === 3) ? "lg:translate-y-12" : "";
+
+                  return (
+                    <motion.div
+                      key={product.id}
+                      layout
+                      variants={cardVariants}
+                      className={`group relative flex flex-col rounded-[2rem] overflow-hidden bg-[#121212] text-white shadow-xl hover:shadow-2xl hover:shadow-black/50 transition-all duration-300 ${staggerClass}`}
+                      onClick={() => handleProductClick(product)}
+                    >
+                      {/* --- Image Area --- */}
+                      <div className="relative w-full h-60 overflow-hidden bg-[#0a0a0a]">
+                        <img
+                          src={imageUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
+                        />
+                        
+                        {/* Discount Badge */}
+                        {displayVariant.discount > 0 && (
+                          <span className="absolute top-4 left-4 bg-[#C5A059] text-black text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                             {displayVariant.discount}% OFF
+                          </span>
+                        )}
+                      </div>
+
+                      {/* --- Content Area --- */}
+                      <div className="p-5 relative flex-1 flex flex-col">
+                        
+                        {/* Wishlist Button */}
+                        <button 
+                          onClick={(e) => handleToggleWishlist(e, product)}
+                          className="absolute -top-5 right-5 w-10 h-10 bg-[#1a1a1a] border-[4px] border-[#121212] rounded-full flex items-center justify-center shadow-lg group-hover:bg-[#C5A059] group-hover:text-black transition-colors z-10"
+                        >
+                          <Heart 
+                              size={16} 
+                              className={`transition-colors ${inWishlist ? "fill-current text-current" : "text-white group-hover:text-black"}`} 
+                          />
+                        </button>
+
+                        {/* Header with Size Only (Category Removed) */}
+                        <div className="mb-2">
+                           <div className="flex items-center justify-start gap-2 mb-2">
+                                {/* 🟢 SIZE INDICATOR */}
+                                <span className="text-[10px] font-mono text-[#C5A059] border border-[#C5A059]/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                                    {sizeLabel}
+                                </span>
+                                
+                                {/* 🟢 VARIANT INDICATOR */}
+                                {hasMoreVariants && (
+                                    <span className="text-[9px] text-gray-500 flex items-center gap-1">
+                                        + {variantCount - 1} Sizes
+                                    </span>
+                                )}
+                           </div>
+
+                           <h3 className="text-lg font-medium leading-tight text-white group-hover:text-[#C5A059] transition-colors">
+                               {product.name}
+                           </h3>
+                        </div>
+
+                        {/* Description */}
+                        <p className="text-gray-400 text-[11px] leading-relaxed line-clamp-2 mb-4">
+                           {product.description || "A signature fragrance featuring notes of rare woods and exotic spices."}
+                        </p>
+
+                        {/* Footer */}
+                        <div className="mt-auto pt-3 border-t border-white/10 flex items-end justify-between">
+                            <div className="flex flex-col leading-none">
+                                <span className="text-[10px] text-gray-500 mb-0.5">
+                                    Starting from
+                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-lg font-medium text-white">₹{discountedPrice}</span>
+                                    {displayVariant.discount > 0 && (
+                                        <span className="text-[10px] text-gray-500 line-through">₹{displayVariant.oprice}</span>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* View Icon */}
+                            <div className="w-7 h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#C5A059] group-hover:text-[#C5A059] transition-colors">
+                               <Sparkles size={12} />
+                            </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+        ) : (
+            // EMPTY STATE
+            <div className="h-[40vh] w-full flex flex-col items-center justify-center text-gray-400">
+                <p className="text-sm tracking-widest uppercase">No products found in "{activeCategory}"</p>
+                <button 
+                    onClick={() => setActiveCategory("All")}
+                    className="mt-4 text-xs border-b border-gray-400 text-gray-500 hover:text-black pb-1"
+                >
+                    View All Products
+                </button>
+            </div>
+        )}
+
       </section>
-    </>
+    </PageTransition>
   );
 };
 

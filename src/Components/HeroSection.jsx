@@ -1,357 +1,181 @@
-import { useRef, useState, useEffect } from "react";
-import bottleImage from "../assets/images/bottle-perfume.webp";
+import React, { useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-
-// --- 1. Import GSAP and required plugins ---
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+// NOTE: For the best effect, you need THREE DIFFERENT bottle images here. 
+// I am using the same one three times as a placeholder.
+import bottleMain from "../assets/images/bottle-perfume.webp"; 
+import bottleLayer1 from "../assets/images/bottle-perfume.webp"; // Replace with a different bottle image
+import bottleLayer2 from "../assets/images/bottle-perfume.webp"; // Replace with another different bottle image
 
-// --- 2. Register the plugins with GSAP ---
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
-
-const theme = {
-  colors: {
-    cream: "45 25% 97%",
-    creamDark: "45 20% 92%",
-    luxuryDark: "240 20% 15%",
-    gold: "38 92% 50%",
-    goldLight: "45 100% 65%",
-    rose: "340 82% 52%",
-    navy: "240 40% 25%",
-  },
-};
-
-const keyframes = `
-  @keyframes shimmer {
-    0% { background-position: -100% 0; }
-    100% { background-position: 200% 0; }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: .6; transform: scale(.85); }
-  }
-
-  @media (max-width: 768px) {
-    .mobile-no-blur {
-      backdrop-filter: none !important;
-      background-color: hsla(0, 0%, 100%, 0.9) !important;
-    }
-  }
-`;
-
-const HeroSection = () => {
+const DevidAuraLuxuryCombo = () => {
+  const comp = useRef(null);
   const navigate = useNavigate();
 
-  // --- 3. Refs for animated elements ---
-  const sectionRef = useRef(null);
-  const textPillRef = useRef(null);
-  const headingRef = useRef(null);
-  const subheadingRef = useRef(null);
-  const descriptionRef = useRef(null);
-  const buttonsRef = useRef(null);
-  const imageWrapperRef = useRef(null);
-  const bottleRef = useRef(null);
-  const pill1Ref = useRef(null);
-  const pill2Ref = useRef(null);
+  // --- ENTRANCE & FLOATING ANIMATION ---
+  useLayoutEffect(() => {
+    let ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-  const [isMobile, setIsMobile] = useState(false);
+      // 1. Brand Reveal
+      tl.from(".brand-title", { y: -30, opacity: 0, duration: 1.2, stagger: 0.1 });
 
-  // Mobile detection effect
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
+      // 2. Text Reveal (Staggered lines)
+      tl.from(".poetic-line", {
+        y: 80,
+        opacity: 0,
+        skewY: 3,
+        duration: 1.5,
+        stagger: 0.15,
+        ease: "expo.out"
+      }, "-=0.5")
+
+      // 3. The Combo Composition Reveal
+      // Main bottle
+      .from(".bottle-main", {
+        scale: 0.9,
+        opacity: 0,
+        y: 60,
+        duration: 1.8,
+        ease: "expo.out"
+      }, "-=1.2")
+      // Supporting bottles
+      .from([".bottle-layer-1", ".bottle-layer-2"], {
+        x: (index) => index === 0 ? -80 : 80, // Dynamic direction
+        opacity: 0,
+        rotation: (index) => index === 0 ? -10 : 10,
+        duration: 2,
+        ease: "expo.out"
+      }, "<") 
+      
+      // 4. CTA Reveal
+      .from(".cta-container", { opacity: 0, y: 20, duration: 0.8 }, "-=0.8");
+
+      // --- CONTINUOUS FLOATING AMBIANCE ---
+      gsap.to(".bottle-main", { y: -15, rotation: 1, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      gsap.to(".bottle-layer-1", { y: 20, rotation: -3, duration: 6, delay: 0.2, repeat: -1, yoyo: true, ease: "sine.inOut" });
+      gsap.to(".bottle-layer-2", { y: -20, rotation: 3, duration: 7, delay: 0.4, repeat: -1, yoyo: true, ease: "sine.inOut" });
+
+    }, comp);
+
+    return () => ctx.revert();
   }, []);
 
-  // --- 4. GSAP Animation Effect (Animates on Page Load) ---
-  useEffect(() => {
-    // GSAP context for safe cleanup
-    let ctx = gsap.context(() => {
-      // Set initial state (gsap.set runs before paint, but
-      // inline styles are safer for FOUC)
-      gsap.set(
-        [
-          textPillRef.current,
-          headingRef.current,
-          subheadingRef.current,
-          descriptionRef.current,
-          buttonsRef.current,
-        ],
-        { autoAlpha: 0, y: 50 } 
-      );
-      gsap.set(imageWrapperRef.current, { autoAlpha: 0 });
-      gsap.set(bottleRef.current, { autoAlpha: 0, scale: 0.8 });
-      gsap.set([pill1Ref.current, pill2Ref.current], {
-        autoAlpha: 0,
-        scale: 0.5,
-      });
-
-      // Timeline that plays on load
-      const tl = gsap.timeline({
-        delay: 0.3, // Small delay for page to paint
-      });
-
-      // Add animations to the timeline
-      tl.to(textPillRef.current, {
-        autoAlpha: 1,
-        y: 0,
-        duration: 0.5,
-        ease: "power2.out",
-      })
-        .to(
-          headingRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" },
-          "-=0.3"
-        )
-        .to(
-          subheadingRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" },
-          "-=0.4"
-        )
-        .to(
-          descriptionRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" },
-          "-=0.4"
-        )
-        .to(
-          buttonsRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" },
-          "-=0.4"
-        )
-        .to(
-          imageWrapperRef.current,
-          { autoAlpha: 1, duration: 0.8, ease: "power2.inOut" },
-          "-=0.8"
-        )
-        .to(
-          bottleRef.current,
-          { autoAlpha: 1, scale: 1, duration: 1, ease: "elastic.out(1, 0.75)" },
-          "-=0.5"
-        )
-        .to(
-          [pill1Ref.current, pill2Ref.current],
-          {
-            autoAlpha: 1,
-            scale: 1,
-            duration: 0.5,
-            ease: "back.out(1.7)",
-            stagger: 0.2, 
-          },
-          "-=0.6"
-        );
-    }, sectionRef); 
-
-    return () => ctx.revert(); // Cleanup
-  }, []); 
-
-  // --- 5. Modified scroll function using GSAP ---
-  const scrollOrNavigate = (sectionId) => {
-    if (window.location.pathname !== "/") {
-      sessionStorage.setItem("scrollToSection", sectionId);
-      navigate("/");
-    } else {
-      gsap.to(window, {
-        duration: 1.2,
-        scrollTo: {
-          y: `#${sectionId}`, 
-          offsetY: 80, 
-        },
-        ease: "power2.inOut",
-      });
-    }
-  };
-
-  const onlyFeltStyles = {
-    backgroundImage: `linear-gradient(90deg, hsl(${theme.colors.gold}), hsl(${theme.colors.rose}), hsl(${theme.colors.goldLight}))`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundSize: "200% 100%",
-    animation: "shimmer 3s linear infinite",
-    display: "inline-block",
-  };
-
-  const leavesStyles = {
-    backgroundImage: `linear-gradient(90deg, hsl(${theme.colors.gold}), hsl(${theme.colors.rose}))`,
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  };
-
   return (
-    <div>
-      <style>{keyframes}</style>
+    <div ref={comp} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center">
+      
+      {/* Load Luxury Font */}
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');
+      </style>
 
-      {/* --- 6. Parent section ref --- */}
-      <section
-        ref={sectionRef}
-        className="relative min-h-screen flex items-center justify-center overflow-hidden"
-        // NO style={{ visibility: "hidden" }} here!
-      >
-        <div className="container mx-auto px-6 lg:px-20 py-16 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4 text-center lg:text-left">
-              {!isMobile && (
-                <div
-                  className="absolute left-0 top-10 w-52 h-52 bg-gradient-to-br from-gold/10 to-transparent rounded-full blur-3xl pointer-events-none"
-                  style={{ opacity: 0.25 }}
-                />
-              )}
+      {/* --- BRANDING HEADER --- */}
+      <header className="w-full pt-16 pb-8 text-center relative z-20">
+        <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+          Devid Aura
+        </h1>
+        <div className="flex items-center justify-center gap-4 mt-3 opacity-60">
+           <span className="brand-title h-[1px] w-8 bg-black"></span>
+           <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">is himself a aura</p>
+           <span className="brand-title h-[1px] w-8 bg-black"></span>
+        </div>
+      </header>
 
-              {/* --- 7. Add inline visibility style to all animated elements --- */}
-              <div
-                ref={textPillRef}
-                className="inline-flex items-center gap-2 px-4 py-1 rounded-full mobile-no-blur max-sm:pt-8"
-                style={{
-                  visibility: "hidden", // <-- FIX for FOUC
-                  background: `linear-gradient(to right, hsla(${theme.colors.gold}, 0.2), hsla(${theme.colors.rose}, 0.2))`,
-                  backdropFilter: "blur(4px)",
-                  border: `1px solid hsla(${theme.colors.gold}, 0.3)`,
-                }}
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor: `hsl(${theme.colors.gold})`,
-                    animation: "pulse 2s infinite",
-                  }}
-                />
-                <span
-                  className="text-sm font-semibold tracking-wide"
-                  style={{ color: `hsl(${theme.colors.luxuryDark})` }}
-                >
-                  EXCLUSIVE COLLECTION
-                </span>
-              </div>
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-center relative z-10 pb-12">
+        
+        {/* LEFT: POETIC CONTENT & VALUE PROP */}
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mb-16 lg:mb-0 z-20">
+          
+          {/* The Hook */}
+          <h2 className="poetic-line text-xs lg:text-sm tracking-[0.4em] uppercase text-[#D4AF37] mb-6 font-bold border border-[#D4AF37]/30 px-4 py-2 rounded-full">
+            The Custom Atelier
+          </h2>
 
-              <h1
-                ref={headingRef}
-                style={{ visibility: "hidden" }} // <-- FIX for FOUC
-                className="text-5xl sm:text-6xl lg:text-7xl font-serif font-bold leading-tight"
-              >
-                <span style={{ color: `hsl(${theme.colors.luxuryDark})` }}>
-                  Not seen,
-                </span>
-                <br />
-                <span style={{ color: `hsl(${theme.colors.luxuryDark})` }}>
-                  not heard,
-                </span>
-                <br />
-                <span style={onlyFeltStyles}>only felt</span>
-              </h1>
-
-              <p
-                ref={subheadingRef}
-                style={{
-                  visibility: "hidden", // <-- FIX for FOUC
-                  color: `hsl(${theme.colors.navy})`,
-                }}
-                className="text-2xl sm:text-3xl font-serif italic"
-              >
-                In every breath he{" "}
-                <span style={leavesStyles} className="font-bold not-italic">
-                  leaves
-                </span>{" "}
-                behind.
-              </p>
-
-              <p
-                ref={descriptionRef}
-                style={{
-                  visibility: "hidden", // <-- FIX for FOUC
-                  color: `hsla(${theme.colors.navy}, 0.75)`,
-                }}
-                className="text-lg font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed pt-8"
-              >
-                Fragrances that whisper stories — crafted from the rarest
-                essences and wrapped in glass like a secret.
-              </p>
-
-              <div
-                ref={buttonsRef}
-                style={{ visibility: "hidden" }} // <-- FIX for FOUC
-                className="flex flex-wrap gap-4 justify-center lg:justify-start"
-              >
-                <button
-                  onClick={() => scrollOrNavigate("collection-section")}
-                  className="px-8 py-3 rounded-full text-white shadow-md transition-transform hover:scale-105 mr-auto sm:mr-0"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, hsl(${theme.colors.gold}), hsl(${theme.colors.goldLight}), hsl(${theme.colors.gold}))`,
-                  }}
-                >
-                  Explore Collection →
-                </button>
-
-                <button
-                  onClick={() => scrollOrNavigate("scents-section")}
-                  className="px-8 py-3 rounded-full bg-white border-2 transition-transform hover:scale-105 ml-auto sm:ml-0 "
-                  style={{
-                    borderColor: `hsl(${theme.colors.gold})`,
-                    color: `hsl(${theme.colors.luxuryDark})`,
-                  }}
-                >
-                  Our Scents
-                </button>
-              </div>
+          {/* The Powerful Headline */}
+          <div className="mb-8 space-y-2">
+            <div className="overflow-hidden">
+               <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                 Don't Wear
+               </h1>
             </div>
-
-            <div
-              ref={imageWrapperRef}
-              className="relative flex justify-center items-center p-8 rounded-lg"
-              style={{
-                visibility: "hidden", // <-- FIX for FOUC
-                background: `linear-gradient(to bottom right, hsla(${theme.colors.gold}, 0.1), hsla(${theme.colors.rose}, 0.1), hsla(${theme.colors.goldLight}, 0.1))`,
-              }}
-            >
-              <div
-                ref={bottleRef}
-                style={{ visibility: "hidden" }} // <-- FIX for FOUC
-                className="relative z-10"
-              >
-                <img
-                  src={bottleImage}
-                  alt="Luxury Perfume Bottle"
-                  className="w-72 sm:w-96 lg:w-[28rem] h-auto object-contain"
-                  loading="eager"
-                  fetchPriority="high"
-                  width="600"
-                  height="800"
-                />
-              </div>
-
-              <div
-                ref={pill1Ref}
-                style={{ visibility: "hidden" }} // <-- FIX for FOUC
-                className="absolute top-10 -left-8 px-6 py-2 rounded-full shadow-lg bg-white/90 backdrop-blur mobile-no-blur"
-              >
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: `hsl(${theme.colors.luxuryDark})` }}
-                >
-                  100% Natural
-                </span>
-              </div>
-
-              <div
-                ref={pill2Ref}
-                style={{ visibility: "hidden" }} // <-- FIX for FOUC
-                className="absolute bottom-20 -right-8 px-6 py-2 rounded-full shadow-lg bg-white/90 backdrop-blur mobile-no-blur"
-              >
-                <span
-                  className="text-sm font-semibold"
-                  style={{ color: `hsl(${theme.colors.luxuryDark})` }}
-                >
-                  Long Lasting
-                </span>
-              </div>
+            <div className="overflow-hidden">
+               <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                 A Scent.
+               </h1>
+            </div>
+             <div className="overflow-hidden pt-2">
+               <h1 className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+                 Build A Legacy.
+               </h1>
             </div>
           </div>
+
+          {/* The Persuasive Body Text */}
+          <div className="overflow-hidden max-w-lg">
+            <p className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+              Standard perfume is for the crowd. <br/>
+              Select your foundation, layer your heart notes, and crown it with an aura that belongs only to you. 
+              Create a chemistry that cannot be replicated.
+            </p>
+          </div>
+
+          {/* CTA: CURTAIN EFFECT BUTTON */}
+          <div className="cta-container mt-12">
+            <button 
+              onClick={() => navigate('/create-combo')}
+              // Layout & Border
+              className="group relative px-12 py-5 bg-transparent border border-black overflow-hidden"
+            >
+              {/* The Curtain (Slides up) */}
+              <div className="absolute inset-0 w-full h-full bg-[#1A1C20] translate-y-[101%] group-hover:translate-y-0 transition-transform duration-[600ms] ease-[cubic-bezier(0.23,1,0.32,1)]"></div>
+              
+              {/* The Text */}
+              <div className="relative z-10 flex items-center gap-3">
+                <span className="text-xs font-bold tracking-[0.3em] uppercase text-[#1A1C20] group-hover:text-white transition-colors duration-500 delay-75">
+                  Construct Your Signature
+                </span>
+                <span className="text-[#1A1C20] group-hover:text-[#D4AF37] transition-colors duration-500 delay-75">
+                    →
+                </span>
+              </div>
+            </button>
+          </div>
+
         </div>
-      </section>
+
+        {/* RIGHT: THE COMBO VISUAL */}
+        <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[70vh] flex items-center justify-center">
+           <div className="relative w-full h-full flex items-center justify-center">
+             
+             {/* Background Glow */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gray-100 rounded-full blur-3xl -z-10"></div>
+
+             {/* Layer 1 (Back Left) */}
+             <img src={bottleLayer1} alt="Base Note" 
+                  className="bottle-layer-1 absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-60 blur-[1px] brightness-110 grayscale-[100%]" 
+                  style={{ zIndex: 1 }} />
+                  
+             {/* Layer 2 (Back Right) */}
+             <img src={bottleLayer2} alt="Top Note" 
+                  className="bottle-layer-2 absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-60 blur-[1px] brightness-110 grayscale-[100%]" 
+                  style={{ zIndex: 2 }} />
+
+             {/* Main Bottle (Front Center) */}
+             <img src={bottleMain} alt="The Signature" 
+                  className="bottle-main relative h-[85%] object-contain drop-shadow-2xl grayscale-0" 
+                  style={{ zIndex: 3 }} />
+                  
+             {/* Interactive Label on Main Bottle */}
+             <div className="bottle-main absolute bottom-10 bg-white/80 backdrop-blur-sm border border-white px-6 py-2 shadow-sm rounded-full">
+                <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-black">The Masterpiece</span>
+             </div>
+           </div>
+        </div>
+
+      </main>
+
     </div>
   );
 };
 
-export default HeroSection;
+export default DevidAuraLuxuryCombo;

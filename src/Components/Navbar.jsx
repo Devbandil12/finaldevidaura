@@ -1,5 +1,6 @@
 // File: src/Components/Navbar.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo } from "react";
+import { createPortal } from "react-dom"; // Added for Sidebar Portal
 import { useNavigate } from "react-router-dom";
 
 // Assets
@@ -7,13 +8,12 @@ import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.p
 import MyOrderIcon from "../assets/order-svgrepo-com.svg";
 import MailUsIcon from "../assets/mail-svgrepo-com.svg";
 import LogOutIcon from "../assets/logout-svgrepo-com.svg";
-// import CartIcon from "../assets/cart-svgrepo-com.svg"; // 🟢 REMOVED
 import AdminIcon from "../assets/admin.png";
 import WishlistIcon from "../assets/wishlist-svgrepo-com.svg";
 import ProfileIcon from "../assets/profile-simple-svgrepo-com.svg";
 
 // CSS
-import "../style/navbar.css"; // Your main CSS file
+import "../style/navbar.css";
 
 // Clerk
 import { useUser, useClerk } from "@clerk/clerk-react";
@@ -29,16 +29,16 @@ import { gsap } from "gsap";
 // Icons
 import { BiHomeHeart } from "react-icons/bi";
 import { TbPerfume } from "react-icons/tb";
-import { Feather, Bell, ShoppingCart } from "lucide-react"; // 🟢 IMPORTED ShoppingCart
+import { Feather, Bell, ShoppingCart } from "lucide-react";
 
-// === NEW: Import Custom Auth Modal ===
+// Import Custom Auth Modal
 import CustomAuthModal from "./CustomAuthModal";
 
-// --- Time Grouping Helper Function ---
+// --- Time Helper Functions ---
 const getRelativeTimeGroup = (date, now) => {
   const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
   const diffInDays = Math.floor(diffInSeconds / (60 * 60 * 24));
-  
+
   if (diffInDays === 0) return "Today";
   if (diffInDays === 1) return "Yesterday";
   if (diffInDays <= 7) return "This Week";
@@ -52,21 +52,16 @@ const getRelativeTimeGroup = (date, now) => {
   return diffInYears <= 1 ? "1 year ago" : `${diffInYears} years ago`;
 };
 
-// --- Time Ago Helper Function (for individual items) ---
 const timeAgo = (date, now) => {
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
   if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours}h ago`;
-  
-  // Use the group's logic for older dates
   return getRelativeTimeGroup(date, now);
 };
 
-// ... (SidebarItem component) ...
 const SidebarItem = ({ icon: Icon, label, onClick, badge }) => (
   <li className="sidebar-item" onClick={onClick} role="button" tabIndex={0}>
     {Icon &&
@@ -82,28 +77,28 @@ const SidebarItem = ({ icon: Icon, label, onClick, badge }) => (
   </li>
 );
 
-
 const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
   const { userdetails } = useContext(UserContext);
   const { notifications, unreadCount, markAllAsRead, clearAllNotifications } = useContext(NotificationContext);
 
-  // ... (all states: isProfileOpen, isOpen, etc.) ...
+  // State
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // sidebar
+  const [isOpen, setIsOpen] = useState(false); // Sidebar
   const [navbarVisible, setNavbarVisible] = useState(true);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); 
+  const [isScrolled, setIsScrolled] = useState(false); // Track scroll position for Pill effect
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const isLoggedIn = isSignedIn;
-
   const navigate = useNavigate();
 
-  // ... (all refs: navRef, profileWrapperRef, etc.) ...
+  // Refs
   const navRef = useRef(null);
-  const sidebarScopeRef = useRef(null);
+  const sidebarScopeRef = useRef(null); // Will attach to the Portal Sidebar
+  const hamburgerRef = useRef(null); // Reference for the hamburger button
   const profileWrapperRef = useRef(null);
   const notificationRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -111,7 +106,7 @@ const Navbar = ({ onVisibilityChange }) => {
   const cartCount = cart?.length || 0;
   const wishCount = wishlist?.length || 0;
 
-  // ... (all functions: toggleSidebar, closeAuthModal, etc.) ...
+  // Handlers
   const toggleSidebar = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setIsOpen((v) => !v);
@@ -133,7 +128,7 @@ const Navbar = ({ onVisibilityChange }) => {
     document.documentElement.style.overflow = 'hidden';
   };
 
-  // --- Grouping Notifications with useMemo ---
+  // Grouping Notifications
   const groupedNotifications = useMemo(() => {
     const now = new Date();
     const processed = notifications.map(notif => ({
@@ -152,32 +147,40 @@ const Navbar = ({ onVisibilityChange }) => {
     }, {});
   }, [notifications]);
 
-  // Define the order of groups
   const groupOrder = ["Today", "Yesterday", "This Week", "This Month", "1 month ago", "2 months ago", "3 months ago", "6 months ago", "1 year ago"];
 
-  // ... (all useEffects: Sidebar, ESC key, Scroll, GSAP, etc.) ...
+  // --- Effects ---
   useEffect(() => {
     if (isOpen) {
       previouslyFocusedRef.current = document.activeElement;
       if (!isAuthModalOpen) {
-          document.body.style.overflow = "hidden";
-          document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
       }
+      // Focus management for accessibility inside portal
       window.setTimeout(() => {
         const el = sidebarScopeRef.current?.querySelector('button, [role="button"], a, input');
         el?.focus?.();
       }, 50);
     } else {
       if (!isAuthModalOpen) {
-          document.body.style.overflow = "auto";
-          document.documentElement.style.overflow = "auto";
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
       }
     }
   }, [isOpen, isAuthModalOpen]);
 
+  // Click Outside Handler (Updated for Portal)
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isOpen && sidebarScopeRef.current && !sidebarScopeRef.current.contains(event.target)) {
+      // Check if sidebar is open, and if click is NOT inside sidebar AND NOT inside hamburger
+      if (
+        isOpen &&
+        sidebarScopeRef.current &&
+        !sidebarScopeRef.current.contains(event.target) &&
+        hamburgerRef.current &&
+        !hamburgerRef.current.contains(event.target)
+      ) {
         closeSidebar();
       }
     };
@@ -198,19 +201,26 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, isProfileOpen, isAuthModalOpen, isNotificationOpen, closeSidebar, closeAuthModal]);
 
+  // Scroll Handler for "Pill" state and Visibility
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+      // Visibility Logic
       const isVisible = currentScroll < lastScrollTop;
       setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
       lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+
+      // Pill Logic: Trigger after 30px scroll
+      setIsScrolled(currentScroll > 30);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
 
+  // GSAP Init for Navbar elements
   useLayoutEffect(() => {
     const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
@@ -227,6 +237,7 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => ctx.revert();
   }, []);
 
+  // GSAP Init for Sidebar (Portal)
   useEffect(() => {
     if (!isOpen) return;
     const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -268,8 +279,7 @@ const Navbar = ({ onVisibilityChange }) => {
     window.addEventListener("scroll", handleScrollProfile);
     return () => window.removeEventListener("scroll", handleScrollProfile);
   }, [isProfileOpen, isNotificationOpen, isAuthModalOpen]);
-  
-  // ... (handleNavScroll) ...
+
   const handleNavScroll = (targetId) => {
     if (window.location.pathname !== "/") {
       sessionStorage.setItem("scrollToSection", targetId);
@@ -280,35 +290,47 @@ const Navbar = ({ onVisibilityChange }) => {
     }
   };
 
-  // --- Link Groups (Sidebar) ---
   const primaryLinks = [
     { label: "Home", icon: BiHomeHeart, onClick: () => { navigate("/"); closeSidebar(); } },
-    { 
-      label: "About", 
-      icon: (props) => <Feather {...props} strokeWidth={1.75} />, 
-      onClick: () => { handleNavScroll("about-section"); closeSidebar(); } 
+    {
+      label: "About",
+      icon: (props) => <Feather {...props} strokeWidth={1.75} />,
+      onClick: () => { handleNavScroll("about-section"); closeSidebar(); }
     },
     { label: "Collection", icon: TbPerfume, onClick: () => { handleNavScroll("collection-section"); closeSidebar(); } },
   ];
   const accountLinks = [
     ...(isLoggedIn ? [{ label: "My Orders", icon: MyOrderIcon, onClick: () => { navigate("/myorder"); closeSidebar(); } }] : []),
     { label: "Wishlist", icon: WishlistIcon, onClick: () => { navigate("/wishlist"); closeSidebar(); }, badge: wishCount },
-    { label: "Cart", icon: ShoppingCart, onClick: () => { navigate("/cart"); closeSidebar(); }, badge: cartCount }, // 🟢 CHANGED icon
+    { label: "Cart", icon: ShoppingCart, onClick: () => { navigate("/cart"); closeSidebar(); }, badge: cartCount },
   ];
   const supportLinks = [
     { label: "Contact Us", icon: MailUsIcon, onClick: () => { navigate("/contact"); closeSidebar(); } },
   ];
 
+  // Helper to calculate inline Top style based on state
+  const getNavbarTop = () => {
+    if (!navbarVisible) return "-150px"; // Hide completely out of view
+    if (isScrolled) return "15px"; // Float down slightly when scrolled
+    return "0px"; // Stick to top when at top
+  };
+
   return (
     <header ref={navRef}>
       <nav
         id="navbar"
-        style={{ top: navbarVisible ? "0" : "-50px", transition: "top 0.3s ease-in-out" }}
+        className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""}`}
+        style={{
+          top: getNavbarTop(),
+          transition: "top 0.5s cubic-bezier(0.4, 0, 0.2, 1), width 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
       >
-        {/* ... (part-1 and part-2) ... */}
+        {/* Left: Brand */}
         <div className="part-1 nav-brand">
           <a className="logo" onClick={() => navigate("/")}> <h1>Devid Aura</h1> </a>
         </div>
+
+        {/* Center: Links */}
         <div className="part-2">
           <ul className="nav-links">
             <li><a onClick={() => navigate("/")}>Home</a></li>
@@ -317,10 +339,10 @@ const Navbar = ({ onVisibilityChange }) => {
           </ul>
         </div>
 
-        {/* RIGHT: Icons */}
+        {/* Right: Icons */}
         <div className="part-3">
           <div className="icons">
-            {/* --- Wishlist Icon --- */}
+            {/* Wishlist */}
             <div className="wishlist-icon">
               <a onClick={() => navigate("/wishlist")}>
                 <button id="wishlist-icon" className="icon-btn" aria-label={`Wishlist (${wishCount})`}>
@@ -329,57 +351,39 @@ const Navbar = ({ onVisibilityChange }) => {
                 </button>
               </a>
             </div>
-            
-            {/* --- Cart Icon --- */}
+
+            {/* Cart */}
             <div className="cart-icon">
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon" className="icon-btn" aria-label={`Cart (${cartCount})`}>
-                  {/* 🟢 REPLACED IMG WITH LUCIDE ICON */}
-                  <ShoppingCart strokeWidth={1.2}  /> 
+                  <ShoppingCart strokeWidth={1.2} />
                   {cartCount > 0 && <span className="badge">{cartCount}</span>}
                 </button>
               </a>
             </div>
 
-            {/* --- Notification Dropdown --- */}
+            {/* Notification */}
             {isLoggedIn && (
               <div className="notification-wrapper" ref={notificationRef}>
                 <div className="notification-icon">
-                  <button 
-                    onClick={() => setIsNotificationOpen(v => !v)} 
-                    className="icon-btn" 
+                  <button
+                    onClick={() => setIsNotificationOpen(v => !v)}
+                    className="icon-btn"
                     aria-label={`Notifications (${unreadCount})`}
                   >
-                    <Bell strokeWidth={1.3} /> 
+                    <Bell strokeWidth={1.3} />
                     {unreadCount > 0 && (
                       <span className="badge">{unreadCount}</span>
                     )}
                   </button>
                 </div>
 
-                <div 
-                  className={`profile-content notification-dropdown ${isNotificationOpen ? "active" : "hidden"}`} 
-                  id="notificationContent"
-                >
+                <div className={`profile-content notification-dropdown ${isNotificationOpen ? "active" : "hidden"}`} id="notificationContent">
                   <div className="notification-header">
                     <h3>Notifications</h3>
                     <div className="buttons">
-                      {unreadCount > 0 && (
-                        <button 
-                          onClick={markAllAsRead} 
-                          className="notification-header-btn"
-                        >
-                          Mark all as read
-                        </button>
-                      )}
-                      {notifications.length > 0 && (
-                        <button 
-                          onClick={clearAllNotifications}
-                          className="notification-header-btn danger"
-                        >
-                          Clear All
-                        </button>
-                      )}
+                      {unreadCount > 0 && <button onClick={markAllAsRead} className="notification-header-btn">Mark all as read</button>}
+                      {notifications.length > 0 && <button onClick={clearAllNotifications} className="notification-header-btn danger">Clear All</button>}
                     </div>
                   </div>
 
@@ -391,30 +395,24 @@ const Navbar = ({ onVisibilityChange }) => {
                         .sort((a, b) => {
                           let aIndex = groupOrder.indexOf(a);
                           let bIndex = groupOrder.indexOf(b);
-                          if (aIndex === -1) aIndex = 99; 
+                          if (aIndex === -1) aIndex = 99;
                           if (bIndex === -1) bIndex = 99;
-                          
                           if (aIndex === 99 && bIndex === 99) {
                             let aNum = parseInt(a) || 0;
                             let bNum = parseInt(b) || 0;
                             if (a.includes('year')) aNum *= 12;
-                            if (b.includes('year')) bNum *= 12; 
-                            return aNum - bNum; 
+                            if (b.includes('year')) bNum *= 12;
+                            return aNum - bNum;
                           }
                           return aIndex - bIndex;
                         })
                         .map(groupKey => (
                           <React.Fragment key={groupKey}>
-                            <li className="notification-group-header">
-                              <a>{groupKey}</a>
-                            </li>
+                            <li className="notification-group-header"><a>{groupKey}</a></li>
                             {groupedNotifications[groupKey].map(notif => (
-                              <li 
-                                key={notif.id} 
-                                onClick={() => {
-                                  navigate(notif.link || '/');
-                                  setIsNotificationOpen(false);
-                                }}
+                              <li
+                                key={notif.id}
+                                onClick={() => { navigate(notif.link || '/'); setIsNotificationOpen(false); }}
                                 className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
                                 data-type={notif.type}
                               >
@@ -431,8 +429,8 @@ const Navbar = ({ onVisibilityChange }) => {
                 </div>
               </div>
             )}
-            
-            {/* --- Profile / Sign in --- */}
+
+            {/* Profile */}
             <div className="profile-wrapper" ref={profileWrapperRef}>
               <div className="profile-icon" id="profile-btn">
                 <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen} aria-controls="profileContent">
@@ -448,9 +446,7 @@ const Navbar = ({ onVisibilityChange }) => {
                       <div className="user-data">
                         <div className="user-name-role">
                           <h3 id="profile-name">{userdetails?.name}</h3>
-                          {userdetails?.role && (
-                            <span className={`user-role-badge ${userdetails.role === "admin" ? "admin" : ""}`}>{userdetails.role}</span>
-                          )}
+                          {userdetails?.role && <span className={`user-role-badge ${userdetails.role === "admin" ? "admin" : ""}`}>{userdetails.role}</span>}
                         </div>
                         <p id="profile-email">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
                       </div>
@@ -478,7 +474,7 @@ const Navbar = ({ onVisibilityChange }) => {
                         </li>
                       </>
                     ) : (
-                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}> 
+                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}>
                         <img src={ProfileIcon} alt="Login" />
                         <a>Login / Sign Up</a>
                       </li>
@@ -504,11 +500,12 @@ const Navbar = ({ onVisibilityChange }) => {
               </div>
             </div>
 
-            {/* ... (mobile-view part-1) ... */}
+            {/* Mobile View */}
             <div className="part-1">
-              <div className="mobile-view" ref={sidebarScopeRef}>
+              <div className="mobile-view">
                 <div className="menu-icon">
                   <button
+                    ref={hamburgerRef} // Ref for click-outside detection
                     className={`hamburger-btn`} id="hamburger-toggle"
                     aria-label={isOpen ? "Close menu" : "Open menu"}
                     aria-expanded={isOpen}
@@ -520,77 +517,88 @@ const Navbar = ({ onVisibilityChange }) => {
                       <div className="line" />
                     </div>
                   </button>
-                  <aside className={`sidebar ${isOpen ? "open" : ""}`} id="sidebar" role="dialog" aria-modal={isOpen} aria-labelledby="sidebarTitle">
-                    <header className="sidebar-header">
-                      <div className="sidebar-top">
-                        <div className="sidebar-user-details">
-                          <img src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon} alt={isLoggedIn ? "User Profile" : "Guest"} className="user-avatar" />
-                          <div className="user-info">
-                            <h4 id="sidebarTitle">{isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}</h4>
-                            <p className="user-email">{isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login to personalize your experience'}</p>
-                            {isLoggedIn && <p className="user-role">{userdetails?.role || 'User'}</p>}
+
+                  {/* PORTAL for Sidebar: Moves sidebar out of Navbar structure to the Body */}
+                  {createPortal(
+                    <aside
+                      ref={sidebarScopeRef} // Ref attached to Sidebar for GSAP and Click detection
+                      className={`sidebar ${isOpen ? "open" : ""}`}
+                      id="sidebar"
+                      role="dialog"
+                      aria-modal={isOpen}
+                      aria-labelledby="sidebarTitle"
+                    >
+                      <header className="sidebar-header">
+                        <div className="sidebar-top">
+                          <div className="sidebar-user-details">
+                            <img src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon} alt={isLoggedIn ? "User Profile" : "Guest"} className="user-avatar" />
+                            <div className="user-info">
+                              <h4 id="sidebarTitle">{isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}</h4>
+                              <p className="user-email">{isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login to personalize your experience'}</p>
+                              {isLoggedIn && <p className="user-role">{userdetails?.role || 'User'}</p>}
+                            </div>
                           </div>
                         </div>
 
-                      </div>
-
-                      <div className="sidebar-actions">
-                        <button 
-                            className={`sidebar-action-btn ${isLoggedIn ? 'sidebar-view-account' : 'sidebar-signin'}`} 
-                            onClick={() => { 
-                                if (isLoggedIn) {
-                                    navigate('/myaccount'); 
-                                    closeSidebar(); 
-                                } else {
-                                    openAuthModal();
-                                    closeSidebar();
-                                }
+                        <div className="sidebar-actions">
+                          <button
+                            className={`sidebar-action-btn ${isLoggedIn ? 'sidebar-view-account' : 'sidebar-signin'}`}
+                            onClick={() => {
+                              if (isLoggedIn) {
+                                navigate('/myaccount');
+                                closeSidebar();
+                              } else {
+                                openAuthModal();
+                                closeSidebar();
+                              }
                             }}
-                        >
-                          {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
-                        </button>
-                      </div>
-                    </header>
+                          >
+                            {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
+                          </button>
+                        </div>
+                      </header>
 
-                    <nav className="sidebar-nav">
-                      <div className="sidebar-section">
-                        <h5 className="section-title">Explore</h5>
-                        <ul>
-                          {primaryLinks.map((l) => (
-                            <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="sidebar-section">
-                        <h5 className="section-title">Account</h5>
-                        <ul>
-                          {accountLinks.map((l) => (
-                            <SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} onClick={l.onClick} />
-                          ))}
-                          {isLoggedIn && userdetails?.role === 'admin' && (
-                            <SidebarItem icon={AdminIcon} label={'Admin Panel'} onClick={() => { navigate('/admin'); closeSidebar(); }} />
-                          )}
-                        </ul>
-                      </div>
-                      <div className="sidebar-section">
-                        <h5 className="section-title">Support</h5>
-                        <ul>
-                          {supportLinks.map((l) => (
-                            <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
-                          ))}
-                        </ul>
-                      </div>
-                    </nav>
+                      <nav className="sidebar-nav">
+                        <div className="sidebar-section">
+                          <h5 className="section-title">Explore</h5>
+                          <ul>
+                            {primaryLinks.map((l) => (
+                              <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="sidebar-section">
+                          <h5 className="section-title">Account</h5>
+                          <ul>
+                            {accountLinks.map((l) => (
+                              <SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} onClick={l.onClick} />
+                            ))}
+                            {isLoggedIn && userdetails?.role === 'admin' && (
+                              <SidebarItem icon={AdminIcon} label={'Admin Panel'} onClick={() => { navigate('/admin'); closeSidebar(); }} />
+                            )}
+                          </ul>
+                        </div>
+                        <div className="sidebar-section">
+                          <h5 className="section-title">Support</h5>
+                          <ul>
+                            {supportLinks.map((l) => (
+                              <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
+                            ))}
+                          </ul>
+                        </div>
+                      </nav>
 
-                    {isLoggedIn && (
-                      <footer className="sidebar-footer">
-                        <button onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: '/' }); closeSidebar(); }}>
-                          <img src={LogOutIcon} alt="Log out" />
-                          <span>Log Out</span>
-                        </button>
-                      </footer>
-                    )}
-                  </aside>
+                      {isLoggedIn && (
+                        <footer className="sidebar-footer">
+                          <button onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: '/' }); closeSidebar(); }}>
+                            <img src={LogOutIcon} alt="Log out" />
+                            <span>Log Out</span>
+                          </button>
+                        </footer>
+                      )}
+                    </aside>,
+                    document.body // Portal Target
+                  )}
                 </div>
               </div>
             </div>
@@ -598,11 +606,8 @@ const Navbar = ({ onVisibilityChange }) => {
         </div>
       </nav>
 
-      {/* ... (CustomAuthModal) ... */}
       {isAuthModalOpen && (
-        <CustomAuthModal 
-            onClose={closeAuthModal} 
-        />
+        <CustomAuthModal onClose={closeAuthModal} />
       )}
     </header>
   );

@@ -1,162 +1,152 @@
+/* src/style/DualMarquee.css */
 
-.dual-marquee-container {
-  background: white;
+/* --- COLOR DEFINITIONS --- */
+/* Background: Creamy Champagne (#FBF6EF) */
+.dual-marquee-section {
+  position: relative;
+  width: 100%;
+  /* BACKGROUND COLOR: Creamy Champagne (#FBF6EF) */
+  overflow: hidden;
   padding: 2rem 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #000;
-  user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-
-
-/* Responsive font sizes */
-@media (min-width: 640px) {
-  .dual-marquee-container {
-    font-size: 1.75rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .dual-marquee-container {
-    font-size: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .dual-marquee-container {
-    font-size: 2.25rem;
-  }
-}
-
-.marquee-wrapper {
-  overflow: hidden;
-  white-space: nowrap;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.marquee-wrapper:hover {
-  transform: scale(1.02);
-}
-
-.marquee-wrapper.bottom-marquee {
-  transform: scaleY(-1);
-}
-
-.marquee-wrapper.bottom-marquee .marquee-line {
-  transform: scaleY(-1);
-}
-
-.marquee-content {
-  display: flex;
   gap: 3rem;
-  width: max-content;
+  /* This perspective gives the "tilt" depth */
+  perspective: 1200px; 
+  /* Ensure it sits above other content */
+  z-index: 10;
+}
+
+/* Row Wrapper (Unchanged) */
+.marquee-track-wrapper {
+  width: 100%;
+  display: flex;
   will-change: transform;
+  transform-origin: center;
+  background-color: transparent;
 }
 
-.marquee-content.reverse-direction {
-  flex-direction: row-reverse;
+/* Row 1 Tilt (Unchanged) */
+.marquee-track-wrapper.normal {
+  transform: rotate(-2deg) translateZ(0);
 }
 
-.marquee-line {
-  padding: 0.5rem 1.5rem;
-  word-spacing: 0.5rem;
-  position: relative;
-  overflow: hidden;
+/* Row 2 Tilt (Opposite - Unchanged) */
+.marquee-track-wrapper.reverse {
+  transform: rotate(2deg) translateZ(0);
+  margin-top: -1rem;
 }
 
-
-
-/* Enhanced highlight styles */
-.highlight-red {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
+/* The Moving Strip (Unchanged) */
+.marquee-track {
+  display: flex;
+  align-items: center;
+  /* IMPORTANT: 'max-content' ensures it doesn't wrap */
+  width: max-content; 
 }
 
-.highlight-green {
-  background: linear-gradient(135deg, #51cf66, #40c057);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
+/* Individual Items (Unchanged) */
+.marquee-item {
+  display: flex;
+  align-items: center;
+  /* Fixed padding ensures smooth loop calculation */
+  padding-right: 5rem; 
+  flex-shrink: 0;
 }
 
-.highlight-purple {
-  background: linear-gradient(135deg, #845ec2, #7048a0);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
+/* --- TYPOGRAPHY --- */
+
+.text-aesthetic {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 400;
+  font-style: italic;
+  /* TEXT COLOR: Deep Charcoal (#1A1C20) */
+  color: #1A1C20;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
 }
 
-.highlight-yellow {
-  background: linear-gradient(135deg, #ffd43b, #fab005);
-  color: #333;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-}
-
-.highlight-blue {
-  background: linear-gradient(135deg, #339af0, #228be6);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-}
-
-.highlight-gold {
-  background: linear-gradient(135deg, #ffec99, #ffd93d);
-  color: #333;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-}
-
-.highlight-dark {
-  background: linear-gradient(135deg, #495057, #343a40);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-weight: 700;
-}
-
-
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  .dual-marquee-container {
-    padding: 1.5rem 0;
-    font-size: 1.25rem;
-    gap: 1rem;
-  }
+/* --- THE GOLDEN STAMP (Coupon) --- */
+.offer-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   
-  .marquee-line {
-    padding: 0.4rem 1rem;
-  }
+  /* BACKGROUND: Deep Charcoal (#1A1C20) for high contrast stamp */
+  background: #1A1C20; 
+  /* TEXT COLOR: Creamy Champagne (#FBF6EF) */
+  color: #FBF6EF; 
+  /* BORDER: Vibrant Amber (#F0A500) */
+  border: 1px solid #F0A500; 
   
-  .marquee-content {
-    gap: 2rem;
-  }
+  padding: 0.8rem 2rem;
+  border-radius: 8px;
   
-  .highlight-red,
-  .highlight-green,
-  .highlight-purple,
-  .highlight-yellow,
-  .highlight-blue,
-  .highlight-gold,
-  .highlight-dark {
-    padding: 3px 8px;
-    font-size: 0.9em;
-  }
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+  
+  /* 3D Shadow using Deep Amber (#CF7500) */
+  box-shadow: 
+    4px 4px 0px rgba(207, 117, 0, 0.6), /* #CF7500 at 60% opacity */
+    0 5px 15px rgba(0,0,0,0.5);
+    
+  transform: rotate(-3deg);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.offer-stamp:hover {
+  transform: rotate(0deg) scale(1.05);
+  /* Hover Background: Deep Amber (#CF7500) */
+  background: #CF7500; 
+}
+
+.offer-main {
+  font-size: 1.4rem;
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+}
+
+.offer-sub {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 6px;
+  opacity: 0.8;
+  letter-spacing: 0.15em;
+  /* SUB TEXT COLOR: Vibrant Amber (#F0A500) */
+  color: #F0A500;
+}
+
+/* Separators */
+.shape-separator {
+  /* SEPARATOR COLOR: Vibrant Amber (#F0A500) */
+  color: #F0A500;
+  opacity: 0.4;
+  animation: spin-slow 12s linear infinite;
+}
+
+/* --- FLOAT ANIMATION (Unchanged) --- */
+.float-fast { animation: float-y 8s ease-in-out infinite; }
+.float-slow { animation: float-y 12s ease-in-out infinite reverse; }
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive (Unchanged) */
+@media (min-width: 768px) {
+  .text-aesthetic { font-size: 3rem; }
+  .offer-main { font-size: 1.6rem; }
+  .dual-marquee-section { padding: 1rem 0; gap: 4rem; }
 }

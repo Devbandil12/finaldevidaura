@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import "../style/testimonials.css";
 import { Star } from "lucide-react";
 import useCloudinary from "../utils/useCloudinary";
-
+import PageTransition from "./PageTransition";
 const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
 const FALLBACK_AVATAR = "/images/avatar-placeholder.webp"; // ✅ Add small placeholder
 
@@ -238,38 +238,40 @@ function TestimonialCard({ data }) {
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <div className="testimonial-card fade-up">
-      <div className="avatar-row">
-        {/* Skeleton shimmer until loaded */}
-        {!loaded && (
-          <div className="avatar skeleton" />
-        )}
+    <PageTransition>
+      <div className="testimonial-card fade-up">
+        <div className="avatar-row">
+          {/* Skeleton shimmer until loaded */}
+          {!loaded && (
+            <div className="avatar skeleton" />
+          )}
 
-        <img
-          src={data.avatar || FALLBACK_AVATAR}
-          alt={data.name}
-          loading="lazy"
-          className={`avatar ${loaded ? "opacity-100" : "opacity-0"}`}
-          onLoad={() => setLoaded(true)}
-        />
-
-        <div className="name">{data.name}</div>
-      </div>
-
-      <div className="rating">
-        {Array.from({ length: 5 }, (_, i) => (
-          <Star
-            key={i}
-            size={16}
-            fill={i < data.rating ? "#facc15" : "none"}
-            stroke={i < data.rating ? "none" : "#ccc"}
+          <img
+            src={data.avatar || FALLBACK_AVATAR}
+            alt={data.name}
+            loading="lazy"
+            className={`avatar ${loaded ? "opacity-100" : "opacity-0"}`}
+            onLoad={() => setLoaded(true)}
           />
-        ))}
+
+          <div className="name">{data.name}</div>
+        </div>
+
+        <div className="rating">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Star
+              key={i}
+              size={16}
+              fill={i < data.rating ? "#facc15" : "none"}
+              stroke={i < data.rating ? "none" : "#ccc"}
+            />
+          ))}
+        </div>
+
+        {data.title && <div className="title">{data.title}</div>}
+
+        <div className="feedback">"{data.text}"</div>
       </div>
-
-      {data.title && <div className="title">{data.title}</div>}
-
-      <div className="feedback">"{data.text}"</div>
-    </div>
+    </PageTransition>
   );
 }

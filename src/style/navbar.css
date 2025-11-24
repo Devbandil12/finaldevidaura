@@ -10,30 +10,136 @@ header {
 }
 
 #navbar {
+  /* Base State (Top of Page) */
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
-  height: 50px;
+  height: 50px; /* Original Height */
   display: flex;
   justify-content: space-between;
   padding: 0.2rem 2rem 0rem 2rem;
   align-items: center;
-  position: fixed;
-  transition: top 0.3s ease-in-out;
-  gap: 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  
+  /* Transparent Background */
+  background-color: white;
+  
+  border-radius: 0px;
   z-index: 9999;
+
+  /* Smooth Transitions */
+  transition:
+    top 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.5s ease-in-out,
+    box-shadow 0.5s ease-in-out;
 }
 
+/* ===========================
+   1. TOP STATE (Black Text, Transparent BG)
+   =========================== */
+
+/* When NOT scrolled: Force BLACK Text */
+#navbar:not(.scrolled) .nav-links li a,
+#navbar:not(.scrolled) .logo h1,
+#navbar:not(.scrolled) .part-1 {
+  color: #000000 !important; /* CHANGED TO BLACK */
+  text-shadow: none !important;
+  mix-blend-mode: normal;
+}
+
+/* Icons (SVG & Images) - Force BLACK */
+#navbar:not(.scrolled) .icon-btn {
+  color: #000000; /* CHANGED TO BLACK */
+  filter: none !important;
+  mix-blend-mode: normal;
+}
+
+#navbar:not(.scrolled) .icon-btn svg {
+  stroke: #000000; /* CHANGED TO BLACK */
+  color: #000000;
+  mix-blend-mode: normal;
+}
+
+#navbar:not(.scrolled) .icon-btn img {
+  filter: none; /* No inversion, keeps original black icons */
+  mix-blend-mode: normal;
+}
+
+/* Hamburger Lines BLACK at Top */
+#navbar:not(.scrolled) .hamburger .line {
+  background-color: #000000; /* CHANGED TO BLACK */
+  box-shadow: none !important;
+  mix-blend-mode: normal;
+}
+
+/* Underline animation color */
+#navbar:not(.scrolled) .part-2 a::after {
+  background-color: #000000; /* CHANGED TO BLACK */
+  box-shadow: none !important;
+  mix-blend-mode: normal;
+}
+
+/* ===========================
+   2. SCROLLED STATE (The Pill)
+   =========================== */
+
+#navbar.scrolled {
+  width: 90%;
+  border-radius: 50px;
+  padding: 5px;
+  /* Glass Effect */
+  background: rgba(255, 255, 255, 0.347);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+
+  /* Shadows */
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  
+  color: #000;
+}
+
+/* Force elements to Black when scrolled */
+#navbar.scrolled .part-1 .logo h1,
+#navbar.scrolled .nav-links li a,
+#navbar.scrolled .part-1 {
+  color: #000000 !important;
+  text-shadow: none;
+  font-weight: 800;
+}
+
+#navbar.scrolled .nav-links li a::after {
+  background-color: #000000;
+}
+
+#navbar.scrolled .icon-btn {
+  color: #000000;
+  filter: none;
+}
+
+#navbar.scrolled .icon-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+#navbar.scrolled .icon-btn svg {
+  stroke: #000000;
+  color: #000000;
+}
+
+#navbar.scrolled .icon-btn img {
+  filter: brightness(0); /* Force Black */
+}
+
+#navbar.scrolled .hamburger .line {
+  background-color: #000;
+  box-shadow: none;
+}
+
+/* Remove old background pseudo-element */
 #navbar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: saturate(180%) blur(6px);
-  -webkit-backdrop-filter: saturate(180%) blur(6px);
-  background: rgba(255, 255, 255, 0.85);
-  z-index: -1;
+  display: none;
 }
 
 #navbar a {
@@ -48,7 +154,6 @@ header {
   align-items: center;
   font-size: 1.5rem;
   padding-left: 0;
-  color: black;
 }
 
 .part-1.nav-brand h1 {
@@ -60,7 +165,6 @@ header {
 
 .logo {
   text-decoration: none;
-  color: black;
   cursor: pointer;
 }
 
@@ -91,13 +195,11 @@ header {
 
 .nav-links li a {
   text-decoration: none;
-  color: black;
   font-weight: 200;
 }
 
 .part-2 a {
   font-size: 16px;
-  color: #000;
   text-decoration: none !important;
   position: relative;
   font-weight: 200;
@@ -110,7 +212,6 @@ header {
   bottom: -2px;
   width: 0;
   height: 2px;
-  background-color: currentColor;
   transition: width 0.5s ease-in-out;
 }
 
@@ -128,7 +229,6 @@ header {
 .part-3 .icons {
   display: flex;
   align-items: center;
-  /* This is the key for vertical alignment */
   gap: 6px;
 }
 
@@ -146,18 +246,17 @@ header {
 }
 
 .icon-btn:hover {
-  background-color: #f0f0f0;
+  background-color: rgba(255,255,255, 0.2);
 }
 
-/* Uniform Icon Sizing */
+/* Original Icon Size */
 .icon-btn img,
 .icon-btn svg {
-  width: 24px;
+  width: 24px; 
   height: 24px;
   object-fit: contain;
 }
 
-/* Specific wrappers (no layout styles) */
 .wishlist-icon,
 .cart-icon,
 .notification-wrapper,
@@ -186,18 +285,17 @@ header {
   padding: 0 3px;
   font-size: 8px;
   font-weight: 400;
-  color: #fff;
+  color: #fff !important;
   background: #e84b5b;
   border-radius: 99px;
   text-align: center;
+  text-shadow: none !important;
 }
 
-/* Remove old/duplicate badge styles */
 #cart-icon #cart-count,
 #wishlist-icon #wishlist-count {
   display: none;
 }
-
 
 /* ===========================
    Profile Dropdown 
@@ -227,6 +325,13 @@ header {
   visibility: visible;
 }
 
+.profile-content h3, 
+.profile-content p, 
+.profile-content a {
+  color: #333 !important;
+  text-shadow: none !important;
+}
+
 .desktop-profile-info {
   display: flex;
   align-items: center;
@@ -251,7 +356,6 @@ header {
   gap: 2px;
   align-items: flex-start;
   min-width: 0;
-  /* Fix text overflow */
 }
 
 .user-data h3 {
@@ -276,8 +380,6 @@ header {
   margin: 0;
   padding: 8px;
 }
-
-
 
 .profile-content ul li {
   padding: 12px;
@@ -357,7 +459,6 @@ header {
   color: #854d0e;
 }
 
-
 /* ===========================
    Notification Dropdown
    =========================== */
@@ -367,10 +468,8 @@ header {
   min-height: 350px;
   max-height: 350px;
   right: 80px;
-
 }
 
-/* Header: "Notifications", "Mark read", "Clear All" */
 .notification-header {
   display: flex;
   justify-content: space-between;
@@ -384,7 +483,7 @@ header {
 .notification-header h3 {
   font-size: 14px;
   font-weight: 800;
-  color: #1a1a1a;
+  color: #1a1a1a !important;
   margin: 0;
 }
 
@@ -399,19 +498,16 @@ header {
   font-weight: 500;
   background: none;
   border: none;
-  color: #007bff;
+  color: #007bff !important;
   cursor: pointer;
   white-space: nowrap;
   padding: 4px;
 }
 
-
-
 .notification-header-btn.danger {
-  color: #dc3545;
+  color: #dc3545 !important;
 }
 
-/* Scrolling List */
 .notification-list {
   list-style: none;
   margin: 0;
@@ -420,9 +516,6 @@ header {
   overflow-y: auto;
 }
 
-
-
-/* Time Group Headers (e.g., "Today") */
 .notification-group-header {
   padding: 3px 12px !important;
   font-size: 10px;
@@ -432,7 +525,6 @@ header {
   pointer-events: none;
 }
 
-/* Individual Notification Items */
 .notification-item {
   display: flex;
   align-items: center;
@@ -443,66 +535,43 @@ header {
   border-radius: 8px;
 }
 
-/* Emoji Icons */
-.notification-item::before {
-  font-size: 20px;
-  line-height: 1;
-  flex-shrink: 0;
-  content: '🔔';
-  /* Default */
-}
+.notification-item::before { font-size: 20px; line-height: 1; flex-shrink: 0; content: '🔔'; }
+.notification-item[data-type="order"]::before { content: '📦'; }
+.notification-item[data-type="system"]::before { content: '⚙️'; }
+.notification-item[data-type="coupon"]::before { content: '🎫'; }
 
-.notification-item[data-type="order"]::before {
-  content: '📦';
-  /* Box for orders */
-}
-
-.notification-item[data-type="system"]::before {
-  content: '🚚';
-  /* Truck for delivery/pincode */
-}
-
-.notification-item[data-type="coupon"]::before {
-  content: '🏷️';
-  /* Tag for coupons/promos */
-}
-
-/* Text Styling */
 .notification-item-content {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* Fixes text overflow */
 }
 
 .notification-message {
   font-size: 10px;
-  color: #333;
+  color: #333 !important;
   white-space: normal;
   word-wrap: break-word;
 }
 
 .notification-time {
   font-size: 8px;
-  color: #6c757d;
+  color: #6c757d !important;
   margin-top: 2px;
 }
 
-/* Unread / Read item styles */
 .notification-item.unread {
   background-color: #f8f9fa;
 }
 
 .notification-item.unread .notification-message {
   font-weight: 600;
-  color: #000;
+  color: #000 !important;
 }
 
 .notification-item:hover {
   background-color: #f0f0f0;
 }
 
-/* "No notifications" message */
 .notification-empty {
   padding: 20px;
   text-align: center;
@@ -511,11 +580,9 @@ header {
   pointer-events: none;
 }
 
-
 /* ===========================
    Mobile view & Hamburger
    =========================== */
-
 .mobile-view {
   display: none;
 }
@@ -533,10 +600,11 @@ header {
   border: none;
   padding: 0;
   cursor: pointer;
-  z-index: 9999;
+  z-index: 10001; /* Above sidebar */
   pointer-events: auto !important;
 }
 
+/* ORIGINAL HAMBURGER STYLE */
 .hamburger {
   width: 35px;
   height: 25px;
@@ -551,7 +619,7 @@ header {
 .line {
   width: 100%;
   height: 3px;
-  background: rgb(0, 0, 0);
+  background: rgb(0, 0, 0); /* Default Black */
   transition: all 0.5s ease;
   border-radius: 999px;
 }
@@ -572,45 +640,52 @@ header {
 
 .hamburger.active .line:nth-child(1) {
   transform: rotate(-135deg) translateY(-240%);
-  background-color: rgb(0, 0, 0);
+  background-color: rgb(0, 0, 0) !important;
   width: 18.5px;
 }
 
 .hamburger.active .line:nth-child(2) {
   transform: rotate(-45deg);
-  background-color: rgb(0, 0, 0);
+  background-color: rgb(0, 0, 0) !important;
 }
 
 .hamburger.active .line:nth-child(3) {
   transform: rotate(-135deg) translateY(290%);
-  background-color: rgb(0, 0, 0);
+  background-color: rgb(0, 0, 0) !important;
   width: 21px;
 }
 
-
 /* ===========================
-   Sidebar (Clean & Sectioned)
+   Sidebar (FIXED FOR PORTAL)
    =========================== */
 .sidebar {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  
+  /* Portal Fix */
   position: fixed;
   top: 0;
   left: 100%;
+  bottom: 0;
+  height: 100vh;
+  
   width: 70vw;
   max-width: 300px;
-  height: 100svh;
   background: #ffffff;
   color: white;
   overflow: hidden;
-  z-index: 999;
+  z-index: 10000 !important; /* Above everything */
   pointer-events: auto;
   transition: left 0.3s ease;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  
+  /* Reset margins and borders */
+  margin-top: 0;
   padding: 0;
-  margin-top: -10px;
-  border-radius: 30px;
+  border-radius: 0;
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
 }
 
 .sidebar.open {
@@ -657,29 +732,29 @@ header {
   align-items: flex-start;
   text-align: left;
   min-width: 0;
-  /* required for ellipsis */
 }
 
 .user-info h4 {
   font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
-  color: #1a1a1a;
+  color: #1a1a1a !important;
   line-height: 1.2;
   white-space: normal;
-  /* wraps to next line if too long */
   word-wrap: break-word;
+  text-shadow: none !important;
 }
 
 .user-info .user-email,
 .user-info .user-role {
   font-size: 0.8rem;
-  color: #6b6b6b;
+  color: #6b6b6b !important;
   margin: 0.1rem 0 0 0;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   max-width: 100%;
+  text-shadow: none !important;
 }
 
 .sidebar-action-btn {
@@ -738,6 +813,7 @@ header {
   letter-spacing: 0.5px;
   padding: 0 1.5rem 0.5rem 1.5rem;
   margin-top: 0;
+  text-shadow: none !important;
 }
 
 .sidebar-item {
@@ -777,9 +853,10 @@ header {
 
 .sidebar-label {
   font-size: 0.95rem;
-  color: #333;
+  color: #333 !important;
   font-weight: 500;
   flex-grow: 1;
+  text-shadow: none !important;
 }
 
 .sidebar-badge {
@@ -805,8 +882,9 @@ header {
   border: none;
   font-size: 1rem;
   cursor: pointer;
-  color: #d11;
+  color: #d11 !important;
   font-weight: 700;
+  text-shadow: none !important;
 }
 
 .sidebar-footer img {
@@ -860,26 +938,20 @@ header {
 }
 
 @media (max-width: 700px) {
-
-  /* This section activates the mobile menu */
   .part-2 {
     display: none;
   }
 
   .profile-wrapper {
     display: none;
-    /* Hide desktop profile icon */
   }
-
 
   .wishlist-icon {
     display: none;
   }
 
   .cart-icon {
-    /* Keep cart icon visible */
     margin-right: 10px;
-    /* Add space before hamburger */
   }
 
   .part-1 {
@@ -908,22 +980,17 @@ header {
   }
 
   .notification-dropdown {
-
     right: 50px;
-
   }
 }
 
 /* ===========================
    Utility / Fixes
    =========================== */
-
-/* Login button (no longer used?) */
 #loginButton {
   display: none;
 }
 
-/* Guest Text Wrapping */
 .guest .desktop-profile-info .user-data p,
 .guest .desktop-profile-info .user-data #profile-email {
   white-space: normal !important;

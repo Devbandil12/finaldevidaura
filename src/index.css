@@ -49,6 +49,7 @@ body {
   /* font-family: "Luxury"; Fallback to sans-serif */
   background: hsl(var(--background));
   /* color: hsl(var(--foreground)); */
+  
 }
 
 /* Apply the heading font to all heading tags */
