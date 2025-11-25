@@ -303,7 +303,6 @@ export default function CustomAuthModal({ onClose }) {
                     {isGoogleLoading ? (
                         <>
                             <Loader2 className="w-5 h-5 animate-spin text-gray-600" />
-                            <span className="text-gray-600">Redirecting...</span>
                         </>
                     ) : (
                         <>
