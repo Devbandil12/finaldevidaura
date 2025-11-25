@@ -41,11 +41,12 @@ export default function PaymentDetails({
 
     const handleRazorpayPayment = async () => {
         try {
-            // 🟢 MODIFIED: Send the correct cartItems payload
+            // 🟢 MODIFIED: Send the payload with the structure the BACKEND expects
+            // The backend accesses item.variant.id and item.product.id
             const cartItemsPayload = selectedItems.map(item => ({ 
-              variantId: item.variant.id, 
-              quantity: item.quantity,
-              productId: item.product.id
+              variant: { id: item.variant.id }, 
+              product: { id: item.product.id },
+              quantity: item.quantity
             }));
 
             const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
@@ -56,7 +57,7 @@ export default function PaymentDetails({
                     phone: selectedAddress.phone,
                     couponCode: appliedCoupon?.code,
                     paymentMode: "Razorpay",
-                    cartItems: cartItemsPayload, // 🟢 Pass new payload
+                    cartItems: cartItemsPayload, // 🟢 Pass the nested payload
                     userAddressId: selectedAddress.id,
                 }),
             });
@@ -84,7 +85,7 @@ export default function PaymentDetails({
                 handler: async function (response) {
                     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
                     
-                    // 🟢 MODIFIED: Send cartItems to verify-payment
+                    // 🟢 MODIFIED: Send the same payload to verify-payment
                     const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -96,7 +97,7 @@ export default function PaymentDetails({
                             userAddressId: selectedAddress.id,
                             user: { id: userdetails.id, fullName: userdetails.name },
                             phone: selectedAddress.phone,
-                            cartItems: cartItemsPayload, // 🟢 Pass payload
+                            cartItems: cartItemsPayload, // 🟢 Pass the nested payload
                             couponCode: appliedCoupon?.code,
                         }),
                     });

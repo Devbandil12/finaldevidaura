@@ -6,7 +6,9 @@ header {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 10001;
+  /* Ensure header wrapper doesn't block clicks */
+  pointer-events: none; 
 }
 
 #navbar {
@@ -25,7 +27,10 @@ header {
   background-color: white;
   
   border-radius: 0px;
-  z-index: 9999;
+  z-index: 10001;
+  
+  /* Re-enable clicks on the actual navbar */
+  pointer-events: auto; 
 
   /* Smooth Transitions */
   transition:
@@ -535,11 +540,31 @@ header {
   border-radius: 8px;
 }
 
-.notification-item::before { font-size: 20px; line-height: 1; flex-shrink: 0; content: '🔔'; }
-.notification-item[data-type="order"]::before { content: '📦'; }
-.notification-item[data-type="system"]::before { content: '⚙️'; }
-.notification-item[data-type="coupon"]::before { content: '🎫'; }
+/* ===========================
+   Notification Icons Fix
+   =========================== */
+.notification-item::before {
+  font-size: 18px; 
+  line-height: 1; 
+  flex-shrink: 0; 
+  /* Default Icon: Bell 🔔 */
+  content: '\1F514'; 
+}
 
+/* Order Notification: Package 📦 */
+.notification-item[data-type="order"]::before {
+  content: '\1F4E6'; 
+}
+
+/* System Notification: Gear ⚙️ */
+.notification-item[data-type="system"]::before {
+  content: '\2699'; 
+}
+
+/* Coupon Notification: Label 🏷️ */
+.notification-item[data-type="coupon"]::before {
+  content: '\1F3F7'; 
+}
 .notification-item-content {
   display: flex;
   flex-direction: column;
@@ -653,6 +678,37 @@ header {
   transform: rotate(-135deg) translateY(290%);
   background-color: rgb(0, 0, 0) !important;
   width: 21px;
+}
+
+
+/* ===========================
+   3. SIDEBAR OPEN STATE (The Trick)
+   =========================== */
+
+
+
+/* Hide Logo and Icons when sidebar is open */
+#navbar.sidebar-open .nav-brand,
+#navbar.sidebar-open .wishlist-icon,
+#navbar.sidebar-open .cart-icon,
+#navbar.sidebar-open .notification-wrapper,
+#navbar.sidebar-open .profile-wrapper {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+/* BUT keep the Hamburger Button visible and clickable */
+#navbar.sidebar-open .hamburger-btn {
+  pointer-events: auto !important; /* Re-enable clicks */
+  opacity: 1;
+  visibility: visible;
+  z-index: 10001;
+}
+
+/* Ensure hamburger lines stay black (or change to preferred color) */
+#navbar.sidebar-open .hamburger .line {
+  background-color: #000000 !important;
 }
 
 /* ===========================
@@ -938,6 +994,24 @@ header {
 }
 
 @media (max-width: 700px) {
+  /* 1. Force Flat & Full Width on Mobile (Overrides Pill State) */
+  #navbar, 
+  #navbar.scrolled {
+    width: 100% !important;
+    top: 0px !important;      /* Forces 0px for visible states */
+    border-radius: 0px !important;
+    left: 0 !important;
+    transform: none !important;
+    padding: 0 1rem;
+    margin-top: 0px;
+    z-index: 9999;
+  }
+
+  /* 2. ALLOW HIDING: High specificity to override the rule above */
+  #navbar.navbar-hidden {
+    top: -150px !important;   /* Only applies when React says it's hidden */
+  }
+
   .part-2 {
     display: none;
   }
@@ -965,14 +1039,6 @@ header {
 
   .mobile-view {
     display: block;
-  }
-
-  #navbar {
-    width: 100%;
-    padding: 0;
-    margin-top: 0px;
-    border-radius: 0px;
-    z-index: 9999;
   }
 
   .sidebar-header {
@@ -1005,3 +1071,5 @@ header {
   text-overflow: clip !important;
   word-wrap: break-word;
 }
+
+

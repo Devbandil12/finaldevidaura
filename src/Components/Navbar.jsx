@@ -319,7 +319,8 @@ const Navbar = ({ onVisibilityChange }) => {
     <header ref={navRef}>
       <nav
         id="navbar"
-        className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""}`}
+        // ADDED 'navbar-hidden' logic here to help CSS separate mobile logic
+        className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""} ${!navbarVisible ? "navbar-hidden" : ""}`}
         style={{
           top: getNavbarTop(),
           transition: "top 0.5s cubic-bezier(0.4, 0, 0.2, 1), width 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
