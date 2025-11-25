@@ -14,7 +14,7 @@ import DualMarquee from "./Components/DualMarquee";
 import TestimonialsSection from "./Components/TestimonialsSection";
 import Loader from "./Components/Loader";
 import CustomComboBuillder from "./Components/CustomComboBuilder";
-
+import SsoCallbackLoader from "./Components/SsoCallbackLoader";
 // --- Dynamically Imported (Lazy-Loaded) Components ---
 const Adminpannel = lazy(() => import("./Components/Adminpanel"));
 const ProductDetail = lazy(() => import("./Components/ProductDetail"));
@@ -40,7 +40,8 @@ import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { ReviewProvider } from "./contexts/ReviewContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
-import { useUser } from "@clerk/clerk-react";
+// 🟢 Imported AuthenticateWithRedirectCallback for SSO handling
+import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Global Error Reporting (no changes needed here) ---
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -209,6 +210,12 @@ const App = () => {
                           </Route>
 
                           <Route path="/login" element={<Login />} />
+
+                          <Route
+                            path="/sso-callback"
+                            element={<AuthenticateWithRedirectCallback fallback={<SsoCallbackLoader />} />}
+                          />
+                          
                         </Routes>
                       </Suspense>
                     </Router>

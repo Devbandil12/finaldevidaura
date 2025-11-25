@@ -69,7 +69,7 @@ const DevidAuraLuxuryCombo = () => {
       </style>
 
       {/* --- BRANDING HEADER --- */}
-      <header className="w-full pt-16 pb-8 text-center relative z-20">
+      <div className="w-full pt-16 pb-8 text-center relative ">
         <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
           Devid Aura
         </h1>
@@ -78,10 +78,10 @@ const DevidAuraLuxuryCombo = () => {
            <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">is himself a aura</p>
            <span className="brand-title h-[1px] w-8 bg-black"></span>
         </div>
-      </header>
+      </div>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-center relative z-10 pb-12">
+      <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-center relative  pb-12">
         
         {/* LEFT: POETIC CONTENT & VALUE PROP */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mb-16 lg:mb-0 z-20">

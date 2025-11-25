@@ -1,6 +1,6 @@
 // File: src/Components/Navbar.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo } from "react";
-import { createPortal } from "react-dom"; // Added for Sidebar Portal
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 
 // Assets
@@ -97,8 +97,8 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // Refs
   const navRef = useRef(null);
-  const sidebarScopeRef = useRef(null); // Will attach to the Portal Sidebar
-  const hamburgerRef = useRef(null); // Reference for the hamburger button
+  const sidebarScopeRef = useRef(null);
+  const hamburgerRef = useRef(null);
   const profileWrapperRef = useRef(null);
   const notificationRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
@@ -157,7 +157,6 @@ const Navbar = ({ onVisibilityChange }) => {
         document.body.style.overflow = "hidden";
         document.documentElement.style.overflow = "hidden";
       }
-      // Focus management for accessibility inside portal
       window.setTimeout(() => {
         const el = sidebarScopeRef.current?.querySelector('button, [role="button"], a, input');
         el?.focus?.();
@@ -170,10 +169,8 @@ const Navbar = ({ onVisibilityChange }) => {
     }
   }, [isOpen, isAuthModalOpen]);
 
-  // Click Outside Handler (Updated for Portal)
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if sidebar is open, and if click is NOT inside sidebar AND NOT inside hamburger
       if (
         isOpen &&
         sidebarScopeRef.current &&
@@ -201,26 +198,20 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, isProfileOpen, isAuthModalOpen, isNotificationOpen, closeSidebar, closeAuthModal]);
 
-  // Scroll Handler for "Pill" state and Visibility
   useEffect(() => {
     let lastScrollTop = 0;
     const handleScroll = () => {
       const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-
-      // Visibility Logic
       const isVisible = currentScroll < lastScrollTop;
       setNavbarVisible(isVisible);
       if (onVisibilityChange) onVisibilityChange(isVisible);
       lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-
-      // Pill Logic: Trigger after 30px scroll
       setIsScrolled(currentScroll > 30);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [onVisibilityChange]);
 
-  // GSAP Init for Navbar elements
   useLayoutEffect(() => {
     const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     if (prefersReduced) return;
@@ -237,7 +228,6 @@ const Navbar = ({ onVisibilityChange }) => {
     return () => ctx.revert();
   }, []);
 
-  // GSAP Init for Sidebar (Portal)
   useEffect(() => {
     if (!isOpen) return;
     const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -308,30 +298,26 @@ const Navbar = ({ onVisibilityChange }) => {
     { label: "Contact Us", icon: MailUsIcon, onClick: () => { navigate("/contact"); closeSidebar(); } },
   ];
 
-  // Helper to calculate inline Top style based on state
   const getNavbarTop = () => {
-    if (!navbarVisible) return "-150px"; // Hide completely out of view
-    if (isScrolled) return "15px"; // Float down slightly when scrolled
-    return "0px"; // Stick to top when at top
+    if (!navbarVisible) return "-150px";
+    if (isScrolled) return "15px";
+    return "0px";
   };
 
   return (
     <header ref={navRef}>
       <nav
         id="navbar"
-        // ADDED 'navbar-hidden' logic here to help CSS separate mobile logic
         className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""} ${!navbarVisible ? "navbar-hidden" : ""}`}
         style={{
           top: getNavbarTop(),
           transition: "top 0.5s cubic-bezier(0.4, 0, 0.2, 1), width 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
       >
-        {/* Left: Brand */}
         <div className="part-1 nav-brand">
           <a className="logo" onClick={() => navigate("/")}> <h1>Devid Aura</h1> </a>
         </div>
 
-        {/* Center: Links */}
         <div className="part-2">
           <ul className="nav-links">
             <li><a onClick={() => navigate("/")}>Home</a></li>
@@ -340,10 +326,8 @@ const Navbar = ({ onVisibilityChange }) => {
           </ul>
         </div>
 
-        {/* Right: Icons */}
         <div className="part-3">
           <div className="icons">
-            {/* Wishlist */}
             <div className="wishlist-icon">
               <a onClick={() => navigate("/wishlist")}>
                 <button id="wishlist-icon" className="icon-btn" aria-label={`Wishlist (${wishCount})`}>
@@ -353,7 +337,6 @@ const Navbar = ({ onVisibilityChange }) => {
               </a>
             </div>
 
-            {/* Cart */}
             <div className="cart-icon">
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon" className="icon-btn" aria-label={`Cart (${cartCount})`}>
@@ -363,22 +346,14 @@ const Navbar = ({ onVisibilityChange }) => {
               </a>
             </div>
 
-            {/* Notification */}
             {isLoggedIn && (
               <div className="notification-wrapper" ref={notificationRef}>
                 <div className="notification-icon">
-                  <button
-                    onClick={() => setIsNotificationOpen(v => !v)}
-                    className="icon-btn"
-                    aria-label={`Notifications (${unreadCount})`}
-                  >
+                  <button onClick={() => setIsNotificationOpen(v => !v)} className="icon-btn" aria-label={`Notifications (${unreadCount})`}>
                     <Bell strokeWidth={1.3} />
-                    {unreadCount > 0 && (
-                      <span className="badge">{unreadCount}</span>
-                    )}
+                    {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                   </button>
                 </div>
-
                 <div className={`profile-content notification-dropdown ${isNotificationOpen ? "active" : "hidden"}`} id="notificationContent">
                   <div className="notification-header">
                     <h3>Notifications</h3>
@@ -387,36 +362,23 @@ const Navbar = ({ onVisibilityChange }) => {
                       {notifications.length > 0 && <button onClick={clearAllNotifications} className="notification-header-btn danger">Clear All</button>}
                     </div>
                   </div>
-
                   <ul className="notification-list">
                     {notifications.length === 0 ? (
                       <li className="notification-empty"><a>No new notifications</a></li>
                     ) : (
                       Object.keys(groupedNotifications)
                         .sort((a, b) => {
-                          let aIndex = groupOrder.indexOf(a);
-                          let bIndex = groupOrder.indexOf(b);
-                          if (aIndex === -1) aIndex = 99;
-                          if (bIndex === -1) bIndex = 99;
-                          if (aIndex === 99 && bIndex === 99) {
-                            let aNum = parseInt(a) || 0;
-                            let bNum = parseInt(b) || 0;
-                            if (a.includes('year')) aNum *= 12;
-                            if (b.includes('year')) bNum *= 12;
-                            return aNum - bNum;
-                          }
+                          const order = ["Today", "Yesterday", "This Week", "This Month"];
+                          let aIndex = order.indexOf(a);
+                          let bIndex = order.indexOf(b);
+                          if (aIndex === -1) aIndex = 99; if (bIndex === -1) bIndex = 99;
                           return aIndex - bIndex;
                         })
                         .map(groupKey => (
                           <React.Fragment key={groupKey}>
                             <li className="notification-group-header"><a>{groupKey}</a></li>
                             {groupedNotifications[groupKey].map(notif => (
-                              <li
-                                key={notif.id}
-                                onClick={() => { navigate(notif.link || '/'); setIsNotificationOpen(false); }}
-                                className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
-                                data-type={notif.type}
-                              >
+                              <li key={notif.id} onClick={() => { navigate(notif.link || '/'); setIsNotificationOpen(false); }} className={`notification-item ${notif.isRead ? 'read' : 'unread'}`} data-type={notif.type}>
                                 <div className="notification-item-content">
                                   <span className="notification-message">{notif.message}</span>
                                   <span className="notification-time">{notif.timeAgo}</span>
@@ -431,14 +393,12 @@ const Navbar = ({ onVisibilityChange }) => {
               </div>
             )}
 
-            {/* Profile */}
             <div className="profile-wrapper" ref={profileWrapperRef}>
               <div className="profile-icon" id="profile-btn">
-                <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen} aria-controls="profileContent">
+                <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen}>
                   <img src={ProfileIcon} alt="Profile" />
                 </button>
               </div>
-
               <div className="profile-container">
                 <div className={`profile-content ${isProfileOpen ? "active" : "hidden"}`} id="profileContent">
                   {isLoggedIn ? (
@@ -461,52 +421,32 @@ const Navbar = ({ onVisibilityChange }) => {
                       </div>
                     </div>
                   )}
-
                   <ul>
                     {isLoggedIn ? (
                       <>
-                        <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}>
-                          <img src={ProfileIcon} alt="My Account" />
-                          <a>My Account</a>
-                        </li>
-                        <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}>
-                          <img src={MyOrderIcon} alt="My Orders" />
-                          <a>My Orders</a>
-                        </li>
+                        <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>My Account</a></li>
+                        <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}><img src={MyOrderIcon} alt="" /><a>My Orders</a></li>
                       </>
                     ) : (
-                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}>
-                        <img src={ProfileIcon} alt="Login" />
-                        <a>Login / Sign Up</a>
-                      </li>
+                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>Login / Sign Up</a></li>
                     )}
-                    <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}>
-                      <img src={MailUsIcon} alt="Contact Us" />
-                      <a>Contact Us</a>
-                    </li>
+                    <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}><img src={MailUsIcon} alt="" /><a>Contact Us</a></li>
                     {isLoggedIn && userdetails?.role === "admin" && (
-                      <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}>
-                        <img src={AdminIcon} alt="Admin Panel" />
-                        <a>Admin Panel</a>
-                      </li>
+                      <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}><img src={AdminIcon} alt="" /><a>Admin Panel</a></li>
                     )}
                     {isLoggedIn && (
-                      <li className="logout" id="logout-2" onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: "/" }); setIsProfileOpen(false); }}>
-                        <a>Log Out</a>
-                        <img src={LogOutIcon} alt="Log Out" />
-                      </li>
+                      <li className="logout" onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: "/" }); setIsProfileOpen(false); }}><a>Log Out</a><img src={LogOutIcon} alt="" /></li>
                     )}
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* Mobile View */}
             <div className="part-1">
               <div className="mobile-view">
                 <div className="menu-icon">
                   <button
-                    ref={hamburgerRef} // Ref for click-outside detection
+                    ref={hamburgerRef}
                     className={`hamburger-btn`} id="hamburger-toggle"
                     aria-label={isOpen ? "Close menu" : "Open menu"}
                     aria-expanded={isOpen}
@@ -519,39 +459,44 @@ const Navbar = ({ onVisibilityChange }) => {
                     </div>
                   </button>
 
-                  {/* PORTAL for Sidebar: Moves sidebar out of Navbar structure to the Body */}
                   {createPortal(
                     <aside
-                      ref={sidebarScopeRef} // Ref attached to Sidebar for GSAP and Click detection
+                      ref={sidebarScopeRef}
                       className={`sidebar ${isOpen ? "open" : ""}`}
                       id="sidebar"
                       role="dialog"
                       aria-modal={isOpen}
-                      aria-labelledby="sidebarTitle"
                     >
+
                       <header className="sidebar-header">
+                        <div className="sidebar-close-btn">
+                          <button className="hamburger-btn" onClick={toggleSidebar}>
+                            <div className={`hamburger ${isOpen ? "active" : ""}`}>
+                              <div className="line" />
+                              <div className="line" />
+                              <div className="line" />
+                            </div>
+                          </button>
+                        </div>
                         <div className="sidebar-top">
                           <div className="sidebar-user-details">
-                            <img src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon} alt={isLoggedIn ? "User Profile" : "Guest"} className="user-avatar" />
+                            <img src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon} alt="" className="user-avatar" />
                             <div className="user-info">
-                              <h4 id="sidebarTitle">{isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}</h4>
-                              <p className="user-email">{isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login to personalize your experience'}</p>
-                              {isLoggedIn && <p className="user-role">{userdetails?.role || 'User'}</p>}
+                              <h4>{isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}</h4>
+                              <p className="user-email">{isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login'}</p>
                             </div>
                           </div>
+
+                          {/* FIXED: USE HAMBURGER ICON INSTEAD OF CLOSE BUTTON */}
+
                         </div>
 
                         <div className="sidebar-actions">
                           <button
                             className={`sidebar-action-btn ${isLoggedIn ? 'sidebar-view-account' : 'sidebar-signin'}`}
                             onClick={() => {
-                              if (isLoggedIn) {
-                                navigate('/myaccount');
-                                closeSidebar();
-                              } else {
-                                openAuthModal();
-                                closeSidebar();
-                              }
+                              if (isLoggedIn) { navigate('/myaccount'); closeSidebar(); }
+                              else { openAuthModal(); closeSidebar(); }
                             }}
                           >
                             {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
@@ -563,28 +508,20 @@ const Navbar = ({ onVisibilityChange }) => {
                         <div className="sidebar-section">
                           <h5 className="section-title">Explore</h5>
                           <ul>
-                            {primaryLinks.map((l) => (
-                              <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
-                            ))}
+                            {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />))}
                           </ul>
                         </div>
                         <div className="sidebar-section">
                           <h5 className="section-title">Account</h5>
                           <ul>
-                            {accountLinks.map((l) => (
-                              <SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} onClick={l.onClick} />
-                            ))}
-                            {isLoggedIn && userdetails?.role === 'admin' && (
-                              <SidebarItem icon={AdminIcon} label={'Admin Panel'} onClick={() => { navigate('/admin'); closeSidebar(); }} />
-                            )}
+                            {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} onClick={l.onClick} />))}
+                            {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} onClick={() => { navigate('/admin'); closeSidebar(); }} />)}
                           </ul>
                         </div>
                         <div className="sidebar-section">
                           <h5 className="section-title">Support</h5>
                           <ul>
-                            {supportLinks.map((l) => (
-                              <SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />
-                            ))}
+                            {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />))}
                           </ul>
                         </div>
                       </nav>
@@ -598,7 +535,7 @@ const Navbar = ({ onVisibilityChange }) => {
                         </footer>
                       )}
                     </aside>,
-                    document.body // Portal Target
+                    document.body
                   )}
                 </div>
               </div>
@@ -607,9 +544,7 @@ const Navbar = ({ onVisibilityChange }) => {
         </div>
       </nav>
 
-      {isAuthModalOpen && (
-        <CustomAuthModal onClose={closeAuthModal} />
-      )}
+      {isAuthModalOpen && <CustomAuthModal onClose={closeAuthModal} />}
     </header>
   );
 };

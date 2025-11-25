@@ -6,33 +6,28 @@ header {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10001;
-  /* Ensure header wrapper doesn't block clicks */
-  pointer-events: none; 
+  /* Navbar 9999 < Sidebar 10000 */
+  z-index: 9999;
 }
 
 #navbar {
-  /* Base State (Top of Page) */
+  /* Base State */
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  height: 50px; /* Original Height */
+  height: 50px;
   display: flex;
   justify-content: space-between;
   padding: 0.2rem 2rem 0rem 2rem;
   align-items: center;
-  
-  /* Transparent Background */
   background-color: white;
-  
   border-radius: 0px;
-  z-index: 10001;
-  
-  /* Re-enable clicks on the actual navbar */
-  pointer-events: auto; 
 
-  /* Smooth Transitions */
+  /* Navbar 9999 < Sidebar 10000 */
+  z-index: 9999;
+
+  pointer-events: auto;
   transition:
     top 0.5s cubic-bezier(0.4, 0, 0.2, 1),
     width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
@@ -42,71 +37,47 @@ header {
 }
 
 /* ===========================
-   1. TOP STATE (Black Text, Transparent BG)
+   1. TOP STATE
    =========================== */
-
-/* When NOT scrolled: Force BLACK Text */
 #navbar:not(.scrolled) .nav-links li a,
 #navbar:not(.scrolled) .logo h1,
-#navbar:not(.scrolled) .part-1 {
-  color: #000000 !important; /* CHANGED TO BLACK */
+#navbar:not(.scrolled) .part-1,
+#navbar:not(.scrolled) .icon-btn {
+  color: #000000 !important;
   text-shadow: none !important;
   mix-blend-mode: normal;
 }
 
-/* Icons (SVG & Images) - Force BLACK */
-#navbar:not(.scrolled) .icon-btn {
-  color: #000000; /* CHANGED TO BLACK */
-  filter: none !important;
-  mix-blend-mode: normal;
-}
-
 #navbar:not(.scrolled) .icon-btn svg {
-  stroke: #000000; /* CHANGED TO BLACK */
+  stroke: #000000;
   color: #000000;
-  mix-blend-mode: normal;
 }
 
-#navbar:not(.scrolled) .icon-btn img {
-  filter: none; /* No inversion, keeps original black icons */
-  mix-blend-mode: normal;
-}
-
-/* Hamburger Lines BLACK at Top */
 #navbar:not(.scrolled) .hamburger .line {
-  background-color: #000000; /* CHANGED TO BLACK */
+  background-color: #000000;
   box-shadow: none !important;
-  mix-blend-mode: normal;
 }
 
-/* Underline animation color */
 #navbar:not(.scrolled) .part-2 a::after {
-  background-color: #000000; /* CHANGED TO BLACK */
+  background-color: #000000;
   box-shadow: none !important;
-  mix-blend-mode: normal;
 }
 
 /* ===========================
-   2. SCROLLED STATE (The Pill)
+   2. SCROLLED STATE
    =========================== */
-
 #navbar.scrolled {
   width: 90%;
   border-radius: 50px;
   padding: 5px;
-  /* Glass Effect */
   background: rgba(255, 255, 255, 0.347);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
-
-  /* Shadows */
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.5);
-  
   color: #000;
 }
 
-/* Force elements to Black when scrolled */
 #navbar.scrolled .part-1 .logo h1,
 #navbar.scrolled .nav-links li a,
 #navbar.scrolled .part-1 {
@@ -134,15 +105,13 @@ header {
 }
 
 #navbar.scrolled .icon-btn img {
-  filter: brightness(0); /* Force Black */
+  filter: brightness(0);
 }
 
 #navbar.scrolled .hamburger .line {
   background-color: #000;
-  box-shadow: none;
 }
 
-/* Remove old background pseudo-element */
 #navbar::before {
   display: none;
 }
@@ -152,7 +121,7 @@ header {
 }
 
 /* ===========================
-   Left Part (Brand)
+   Sections
    =========================== */
 .part-1 {
   display: flex;
@@ -173,16 +142,13 @@ header {
   cursor: pointer;
 }
 
-/* ===========================
-   Center (Links)
-   =========================== */
 .part-2 {
   width: fit-content;
   display: flex;
   align-items: center;
   gap: 2rem;
   justify-content: space-between;
-  padding: 5px 30px 5px 30px;
+  padding: 5px 30px;
 }
 
 .nav-links {
@@ -224,9 +190,6 @@ header {
   width: 100%;
 }
 
-/* ===========================
-   Right (Icons)
-   =========================== */
 .part-3 {
   display: flex;
 }
@@ -251,13 +214,12 @@ header {
 }
 
 .icon-btn:hover {
-  background-color: rgba(255,255,255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Original Icon Size */
 .icon-btn img,
 .icon-btn svg {
-  width: 24px; 
+  width: 24px;
   height: 24px;
   object-fit: contain;
 }
@@ -275,9 +237,6 @@ header {
   text-decoration: none;
 }
 
-/* ===========================
-   Icon Badge
-   =========================== */
 .badge {
   position: absolute;
   top: 6px;
@@ -330,8 +289,8 @@ header {
   visibility: visible;
 }
 
-.profile-content h3, 
-.profile-content p, 
+.profile-content h3,
+.profile-content p,
 .profile-content a {
   color: #333 !important;
   text-shadow: none !important;
@@ -389,7 +348,7 @@ header {
 .profile-content ul li {
   padding: 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -540,31 +499,25 @@ header {
   border-radius: 8px;
 }
 
-/* ===========================
-   Notification Icons Fix
-   =========================== */
 .notification-item::before {
-  font-size: 18px; 
-  line-height: 1; 
-  flex-shrink: 0; 
-  /* Default Icon: Bell 🔔 */
-  content: '\1F514'; 
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  content: '\1F514';
 }
 
-/* Order Notification: Package 📦 */
 .notification-item[data-type="order"]::before {
-  content: '\1F4E6'; 
+  content: '\1F4E6';
 }
 
-/* System Notification: Gear ⚙️ */
 .notification-item[data-type="system"]::before {
-  content: '\2699'; 
+  content: '\2699';
 }
 
-/* Coupon Notification: Label 🏷️ */
 .notification-item[data-type="coupon"]::before {
-  content: '\1F3F7'; 
+  content: '\1F3F7';
 }
+
 .notification-item-content {
   display: flex;
   flex-direction: column;
@@ -625,11 +578,10 @@ header {
   border: none;
   padding: 0;
   cursor: pointer;
-  z-index: 10001; /* Above sidebar */
+  position: relative;
   pointer-events: auto !important;
 }
 
-/* ORIGINAL HAMBURGER STYLE */
 .hamburger {
   width: 35px;
   height: 25px;
@@ -644,7 +596,7 @@ header {
 .line {
   width: 100%;
   height: 3px;
-  background: rgb(0, 0, 0); /* Default Black */
+  background: rgb(0, 0, 0);
   transition: all 0.5s ease;
   border-radius: 999px;
 }
@@ -680,63 +632,30 @@ header {
   width: 21px;
 }
 
-
 /* ===========================
-   3. SIDEBAR OPEN STATE (The Trick)
-   =========================== */
-
-
-
-/* Hide Logo and Icons when sidebar is open */
-#navbar.sidebar-open .nav-brand,
-#navbar.sidebar-open .wishlist-icon,
-#navbar.sidebar-open .cart-icon,
-#navbar.sidebar-open .notification-wrapper,
-#navbar.sidebar-open .profile-wrapper {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease;
-}
-
-/* BUT keep the Hamburger Button visible and clickable */
-#navbar.sidebar-open .hamburger-btn {
-  pointer-events: auto !important; /* Re-enable clicks */
-  opacity: 1;
-  visibility: visible;
-  z-index: 10001;
-}
-
-/* Ensure hamburger lines stay black (or change to preferred color) */
-#navbar.sidebar-open .hamburger .line {
-  background-color: #000000 !important;
-}
-
-/* ===========================
-   Sidebar (FIXED FOR PORTAL)
+   Sidebar (FIXED)
    =========================== */
 .sidebar {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  
-  /* Portal Fix */
   position: fixed;
   top: 0;
   left: 100%;
   bottom: 0;
   height: 100vh;
-  
   width: 70vw;
   max-width: 300px;
   background: #ffffff;
   color: white;
   overflow: hidden;
-  z-index: 10000 !important; /* Above everything */
+
+  /* FIX: Sidebar (10000) > Navbar (9999) */
+  z-index: 10000 !important;
+
   pointer-events: auto;
-  transition: left 0.3s ease;
+  transition: left 0.5s ease;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
-  
-  /* Reset margins and borders */
   margin-top: 0;
   padding: 0;
   border-radius: 0;
@@ -749,7 +668,7 @@ header {
 }
 
 .sidebar-header {
-  padding-top: 50px;
+  padding-top: 5px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -771,6 +690,15 @@ header {
   display: flex;
   align-items: center;
   text-align: left;
+}
+
+/* New class to push the hamburger to the right */
+.sidebar-close-btn {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 5px;
+  margin-bottom: 5px ;
 }
 
 .user-avatar {
@@ -796,7 +724,6 @@ header {
   margin: 0;
   color: #1a1a1a !important;
   line-height: 1.2;
-  white-space: normal;
   word-wrap: break-word;
   text-shadow: none !important;
 }
@@ -806,8 +733,6 @@ header {
   font-size: 0.8rem;
   color: #6b6b6b !important;
   margin: 0.1rem 0 0 0;
-  text-overflow: ellipsis;
-  overflow: hidden;
   white-space: nowrap;
   max-width: 100%;
   text-shadow: none !important;
@@ -994,32 +919,27 @@ header {
 }
 
 @media (max-width: 700px) {
-  /* 1. Force Flat & Full Width on Mobile (Overrides Pill State) */
-  #navbar, 
+
+  #navbar,
   #navbar.scrolled {
     width: 100% !important;
-    top: 0px !important;      /* Forces 0px for visible states */
+    top: 0px !important;
     border-radius: 0px !important;
     left: 0 !important;
     transform: none !important;
     padding: 0 1rem;
     margin-top: 0px;
-    z-index: 9999;
+
+    /* FIX: Keep 9999 so Sidebar (10000) covers it */
+    z-index: 9999 !important;
   }
 
-  /* 2. ALLOW HIDING: High specificity to override the rule above */
   #navbar.navbar-hidden {
-    top: -150px !important;   /* Only applies when React says it's hidden */
+    top: -150px !important;
   }
 
-  .part-2 {
-    display: none;
-  }
-
-  .profile-wrapper {
-    display: none;
-  }
-
+  .part-2,
+  .profile-wrapper,
   .wishlist-icon {
     display: none;
   }
@@ -1041,9 +961,7 @@ header {
     display: block;
   }
 
-  .sidebar-header {
-    padding-top: 50px;
-  }
+  
 
   .notification-dropdown {
     right: 50px;
@@ -1071,5 +989,3 @@ header {
   text-overflow: clip !important;
   word-wrap: break-word;
 }
-
-
