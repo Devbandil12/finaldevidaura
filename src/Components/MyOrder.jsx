@@ -40,13 +40,17 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
 
+  const currentStatus = ['created', 'queued', 'pending', 'in_progress'].includes(status)
+    ? 'pending'
+    : status;
+
   const statusConfig = {
     processed: {
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       title: `Refund Processed: ${formattedAmount}`,
       details: `The amount was credited on ${formatDateTime(refund_completed_at)}. ${speed === "optimum"
-          ? "This was an instant refund."
-          : "It may take 5-7 days to reflect in your account."
+        ? "This was an instant refund."
+        : "It may take 5-7 days to reflect in your account."
         }`,
       classes: "bg-green-50 border-green-200 text-green-800",
     },
@@ -64,7 +68,6 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
     },
   };
 
-  const currentStatus = ['created', 'queued', 'pending'].includes(status) ? 'pending' : status;
   const config = statusConfig[currentStatus];
 
   if (!config) return null;
@@ -202,7 +205,7 @@ export default function MyOrders() {
   const renderCancellationModal = () => {
     if (!modalOrder) return null;
 
-    const isOnlinePayment = modalOrder.paymentMode === "Online";
+    const isOnlinePayment = modalOrder.paymentMode === "online";
     const refundAmount = modalOrder.totalAmount * 0.95;
 
     return createPortal(
@@ -340,7 +343,7 @@ export default function MyOrders() {
                           <div className="flex items-center gap-2">
                             {order.status === "Order Placed" && !refundInfo && (
                               cancellingOrderId === order.id ? (
-                                <MiniLoader text="Cancelling..." />
+                                <MiniLoader />
                               ) : (
                                 <button onClick={() => setModalOrder(order)} className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                                   Cancel Order

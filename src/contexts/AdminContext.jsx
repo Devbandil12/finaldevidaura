@@ -14,6 +14,7 @@ export const AdminProvider = ({ children }) => {
   const { userdetails, isUserLoading } = useContext(UserContext);
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
   /* -------------------- USERS -------------------- */
   const getAllUsers = useCallback(async () => {
     try {
@@ -52,7 +53,6 @@ export const AdminProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to delete user");
       window.toast.success("User deleted");
       await getAllUsers();
-      // ⚠️ To also delete from Clerk, you’ll need Clerk Admin API here
     } catch (err) {
       console.error("❌ deleteUser failed:", err);
       window.toast.error("Failed to delete user");
@@ -106,30 +106,36 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // 🟢 UPDATED: Unified Cancel/Refund Logic
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      // 🟢 FIX: Use a robust, case-insensitive check to cover variations like 
-      const isOnlinePayment = paymentMode.toLowerCase().includes("online") || paymentMode.toLowerCase().includes("razorpay");
+      // Always call the Refund API. The backend controller intelligently handles:
+      // 1. Online Orders -> Triggers Razorpay Refund + DB Update + Stock Restore
+      // 2. COD Orders -> Triggers DB Update + Stock Restore (Skips Razorpay)
+      const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          orderId, 
+          amount // Required by backend for validation
+        }),
+      });
 
-      if (isOnlinePayment) {
-        // Refund for prepaid (Online orders)
-        const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, amount }),
-        });
-        if (!res.ok) throw new Error("Refund failed");
-        window.toast.success(`Refund initiated for Order #${orderId}`);
-      } else {
-        // COD (or any other mode)
-        const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, { method: "PUT" });
-        if (!res.ok) throw new Error("Cancel failed");
-        window.toast.success(`Order #${orderId} cancelled`);
+      if (!res.ok) {
+        // Extract error message from backend
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Cancellation failed");
       }
+
+      const data = await res.json();
+      window.toast.success(data.message || `Order #${orderId} cancelled`);
+      
+      // Refresh the orders list to show updated status
       await getAllOrders();
+
     } catch (err) {
       console.error("❌ cancelOrder failed:", err);
-      window.toast.error("Failed to cancel order");
+      window.toast.error(err.message || "Failed to cancel order");
     }
   };
 
@@ -182,7 +188,6 @@ export const AdminProvider = ({ children }) => {
       setAbandonedCarts(data);
     } catch (err) {
       console.error("❌ getAbandonedCarts failed:", err);
-      // Don't show toast for this, it's a bg task
     }
   }, [BACKEND_URL]);
 
@@ -198,10 +203,10 @@ export const AdminProvider = ({ children }) => {
   }, [BACKEND_URL]);
 
   /* -------------------- EFFECT -------------------- */
- useEffect(() => {
+  useEffect(() => {
     // Wait for user loading to finish
     if (isUserLoading) {
-      setLoading(true); // Keep admin context loading
+      setLoading(true); 
       return;
     }
     
@@ -212,7 +217,6 @@ export const AdminProvider = ({ children }) => {
       getAllOrders();
       getAbandonedCarts(); 
       getWishlistStats();
-      // setLoading(false) is handled inside these functions
     } else {
       // User is NOT an admin, clear data and stop loading
       setUsers([]);

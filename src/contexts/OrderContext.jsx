@@ -1,5 +1,5 @@
 // src/contexts/OrderContext.js
-import React, { createContext, useState, useEffect, useContext, useCallback } from "react"; // 👈 IMPORT useCallback
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { UserContext } from "./UserContext";
 
 export const OrderContext = createContext();
@@ -11,7 +11,7 @@ export const OrderProvider = ({ children }) => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
   // 🔹 Fetch orders (user → only own, admin → all)
-  const getorders = useCallback(async (showLoader = true, isAdmin = false) => { // 👈 WRAP
+  const getorders = useCallback(async (showLoader = true, isAdmin = false) => {
     if (!isAdmin && !userdetails?.id) return;
     if (showLoader) setLoadingOrders(true);
 
@@ -35,10 +35,10 @@ export const OrderProvider = ({ children }) => {
     } finally {
       if (showLoader) setLoadingOrders(false);
     }
-  }, [BACKEND_URL, userdetails?.id]); // 👈 ADD DEPENDENCIES
+  }, [BACKEND_URL, userdetails?.id]);
 
   // 🔹 Update order status
-  const updateOrderStatus = useCallback(async (orderId, newStatus) => { // 👈 WRAP
+  const updateOrderStatus = useCallback(async (orderId, newStatus) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
@@ -52,35 +52,45 @@ export const OrderProvider = ({ children }) => {
       console.error("❌ Failed to update order status:", error);
       window.toast.error("Failed to update order status.");
     }
-  }, [BACKEND_URL, getorders]); // 👈 ADD DEPENDENCIES
+  }, [BACKEND_URL, getorders]);
 
-  // 🔹 Cancel order (COD + prepaid via refund API)
-  const cancelOrder = useCallback(async (orderId, paymentMode, amount, isAdmin = false) => { // 👈 WRAP
-    try {
-      if (paymentMode === "online") {
-        // Refund prepaid
+  // 🔹 Cancel order (Now uses Refund Controller for BOTH COD and Online)
+  const cancelOrder = useCallback(
+    async (orderId, paymentMode, amount, isAdmin = false) => {
+      try {
+        // 🟢 UNIFIED LOGIC: Always call refund API
+        // The backend controller determines if it's COD (cancel only) or Online (refund + cancel)
         const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-          method: "POST", 
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, amount }),
+          body: JSON.stringify({ 
+            orderId, 
+            amount // Backend requires amount for validation/refund calc
+          }),
         });
-        if (!res.ok) throw new Error("Refund failed");
-      } else {
-        // COD → just cancel
-        await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
-          method: "PUT",
-        });
+
+        if (!res.ok) {
+          // Try to get error message from backend response
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Cancellation failed");
+        }
+
+        const data = await res.json();
+        window.toast.success(data.message || `Order ${orderId} canceled successfully.`);
+        
+        // Refresh orders list
+        await getorders(true, isAdmin);
+
+      } catch (error) {
+        console.error("❌ Failed to cancel order:", error);
+        window.toast.error(error.message || "Failed to cancel order.");
       }
-      window.toast.success(`Order ${orderId} canceled successfully.`);
-      await getorders(true, isAdmin);
-    } catch (error) {
-      console.error("❌ Failed to cancel order:", error);
-      window.toast.error("Failed to cancel order.");
-    }
-  }, [BACKEND_URL, getorders]); // 👈 ADD DEPENDENCIES
+    },
+    [BACKEND_URL, getorders]
+  );
 
   // 🔹 Single order details
-  const getSingleOrderDetails = useCallback(async (orderId) => { // 👈 WRAP
+  const getSingleOrderDetails = useCallback(async (orderId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
       if (!res.ok) throw new Error("Failed to fetch order details");
@@ -90,7 +100,7 @@ export const OrderProvider = ({ children }) => {
       window.toast.error("Failed to load order details.");
       return null;
     }
-  }, [BACKEND_URL]); // 👈 ADD DEPENDENCIES
+  }, [BACKEND_URL]);
 
   useEffect(() => {
     // Wait for user loading to finish
@@ -107,7 +117,7 @@ export const OrderProvider = ({ children }) => {
       setOrders([]);
       setLoadingOrders(false);
     }
-  }, [isUserLoading, userdetails, getorders]); // 👈 UPDATE DEPENDENCIES
+  }, [isUserLoading, userdetails, getorders]);
 
   return (
     <OrderContext.Provider
