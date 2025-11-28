@@ -147,8 +147,6 @@ const Navbar = ({ onVisibilityChange }) => {
     }, {});
   }, [notifications]);
 
-  const groupOrder = ["Today", "Yesterday", "This Week", "This Month", "1 month ago", "2 months ago", "3 months ago", "6 months ago", "1 year ago"];
-
   // --- Effects ---
   useEffect(() => {
     if (isOpen) {
@@ -393,15 +391,15 @@ const Navbar = ({ onVisibilityChange }) => {
               </div>
             )}
 
-            <div className="profile-wrapper" ref={profileWrapperRef}>
-              <div className="profile-icon" id="profile-btn">
-                <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen}>
-                  <img src={ProfileIcon} alt="Profile" />
-                </button>
-              </div>
-              <div className="profile-container">
-                <div className={`profile-content ${isProfileOpen ? "active" : "hidden"}`} id="profileContent">
-                  {isLoggedIn ? (
+            {isLoggedIn ? (
+              <div className="profile-wrapper" ref={profileWrapperRef}>
+                <div className="profile-icon" id="profile-btn">
+                  <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen}>
+                    <img src={ProfileIcon} alt="Profile" />
+                  </button>
+                </div>
+                <div className="profile-container">
+                  <div className={`profile-content ${isProfileOpen ? "active" : "hidden"}`} id="profileContent">
                     <div className="desktop-profile-info">
                       <img src={userdetails?.profileImage || user?.imageUrl || UserIcon} alt="User" className="mob-profile-img" />
                       <div className="user-data">
@@ -412,35 +410,27 @@ const Navbar = ({ onVisibilityChange }) => {
                         <p id="profile-email">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="desktop-profile-info">
-                      <img src={UserIcon} alt="Guest" className="mob-profile-img" />
-                      <div className="user-data">
-                        <h3>Guest Account</h3>
-                        <p>Welcome to Devid Aura</p>
-                      </div>
-                    </div>
-                  )}
-                  <ul>
-                    {isLoggedIn ? (
-                      <>
-                        <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>My Account</a></li>
-                        <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}><img src={MyOrderIcon} alt="" /><a>My Orders</a></li>
-                      </>
-                    ) : (
-                      <li onClick={() => { openAuthModal(); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>Login / Sign Up</a></li>
-                    )}
-                    <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}><img src={MailUsIcon} alt="" /><a>Contact Us</a></li>
-                    {isLoggedIn && userdetails?.role === "admin" && (
-                      <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}><img src={AdminIcon} alt="" /><a>Admin Panel</a></li>
-                    )}
-                    {isLoggedIn && (
+                    <ul>
+                      <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>My Account</a></li>
+                      <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}><img src={MyOrderIcon} alt="" /><a>My Orders</a></li>
+                      <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}><img src={MailUsIcon} alt="" /><a>Contact Us</a></li>
+                      {userdetails?.role === "admin" && (
+                        <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}><img src={AdminIcon} alt="" /><a>Admin Panel</a></li>
+                      )}
                       <li className="logout" onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: "/" }); setIsProfileOpen(false); }}><a>Log Out</a><img src={LogOutIcon} alt="" /></li>
-                    )}
-                  </ul>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <button 
+                className="nav-signin-btn" 
+                onClick={openAuthModal}
+              >
+                <img src={ProfileIcon} alt="" aria-hidden="true" />
+                <span>Sign In</span>
+              </button>
+            )}
 
             <div className="part-1">
               <div className="mobile-view">
@@ -477,9 +467,6 @@ const Navbar = ({ onVisibilityChange }) => {
                               <p className="user-email">{isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login'}</p>
                             </div>
                           </div>
-
-                          {/* FIXED: USE HAMBURGER ICON INSTEAD OF CLOSE BUTTON */}
-
                         </div>
 
                         <div className="sidebar-actions">

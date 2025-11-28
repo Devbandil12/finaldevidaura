@@ -642,7 +642,7 @@ header {
   justify-content: space-between;
   position: fixed;
   top: 0;
-  left: 100%;
+  right: 0;
   bottom: 0;
   height: 100dvh;
   width: 70vw;
@@ -655,17 +655,25 @@ header {
   z-index: 10000 !important;
 
   pointer-events: auto;
-  transition: left 0.5s ease;
+  /* transition: left 0.5s ease; */
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
   margin-top: 0;
   padding: 0;
   border-radius: 0;
   border-top-left-radius: 30px;
   border-bottom-left-radius: 30px;
+  /* CHANGE 2: Use transform to hide it off-screen to the right */
+  transform: translateX(100%);
+
+  /* CHANGE 3: Animate transform instead of left */
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* CHANGE 4: Hint browser to optimize this element */
+  will-change: transform;
 }
 
 .sidebar.open {
-  left: calc(100% - min(70vw, 300px));
+  transform: translateX(0);
 }
 
 .sidebar-header {
@@ -875,6 +883,42 @@ header {
 }
 
 /* ===========================
+   Desktop Sign In Button
+   =========================== */
+.nav-signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Space between icon and text */
+  background-color: #000000;
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  /* Adjusted padding */
+  border-radius: 99px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+.nav-signin-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  /* Turns black icon to white so it contrasts with black button */
+  filter: brightness(0) invert(1);
+}
+
+.nav-signin-btn:hover {
+  background-color: #333333;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ===========================
    Responsive Media Queries
    =========================== */
 @media (max-width: 1095px) {
@@ -922,6 +966,11 @@ header {
 
 @media (max-width: 700px) {
 
+  /* Hide Desktop Sign In Button on Mobile */
+  .nav-signin-btn {
+    display: none;
+  }
+
   #navbar,
   #navbar.scrolled {
     width: 100% !important;
@@ -964,8 +1013,6 @@ header {
   .mobile-view {
     display: block;
   }
-
-
 
   .notification-dropdown {
     right: 50px;
