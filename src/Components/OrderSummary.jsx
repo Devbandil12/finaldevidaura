@@ -2,7 +2,6 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Tag, Package } from "lucide-react";
 
-// 🟢 Luxury Transition Settings
 const smoothTransition = {
   type: "tween",
   ease: [0.25, 0.1, 0.25, 1],
@@ -40,21 +39,21 @@ export default function OrderSummary({
 
   return (
     <div className="bg-white rounded-3xl  border border-slate-200 overflow-hidden sticky top-24">
-      {/* Header */}
-      <div className="p-6 sm:p-8 border-b border-slate-50 bg-white">
+      {/* Header with reduced padding */}
+      <div className="p-4 sm:p-6 border-b border-slate-50 bg-white">
         <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
-          <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
+          <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700 flex-shrink-0">
             <ShoppingBag className="w-4 h-4" />
           </div>
           Order Summary
-          <span className="ml-auto text-xs font-semibold bg-black text-white px-2.5 py-1 rounded-full">
+          <span className="ml-auto text-xs font-semibold bg-black text-white px-2.5 py-1 rounded-full whitespace-nowrap">
             {selectedItems.length} {selectedItems.length === 1 ? 'Item' : 'Items'}
           </span>
         </h3>
       </div>
 
-      {/* Product List - Scrollable */}
-      <div className="max-h-[400px] overflow-y-auto p-6 sm:p-8 space-y-6 custom-scrollbar">
+      {/* Product List */}
+      <div className="max-h-[400px] overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar">
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -62,7 +61,6 @@ export default function OrderSummary({
           className="space-y-6"
         >
           {selectedItems.map((item, idx) => {
-             // Logic to check for free items from your original code
              const isFree = breakdown.appliedOffers?.some(offer => 
                 offer.appliesToVariantId === item.variant.id
              );
@@ -76,7 +74,6 @@ export default function OrderSummary({
                   {/* Image */}
                   <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden relative">
                     <img 
-                      // 🟢 FIXED: Using exactly 'item.product.imageurl' as requested
                       src={item.product.imageurl || "/fallback.png"} 
                       alt={item.product.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -85,9 +82,9 @@ export default function OrderSummary({
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
                   </div>
 
-                  {/* Details */}
+                  {/* Details with min-w-0 for proper truncation */}
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h4 className="text-sm font-semibold text-slate-800 truncate pr-4">
+                    <h4 className="text-sm font-semibold text-slate-800 truncate pr-1">
                       {item.product.name}
                     </h4>
                     
@@ -96,21 +93,22 @@ export default function OrderSummary({
                             <ul className="text-xs text-slate-500 space-y-0.5">
                                 {item.contents?.map((content, i) => (
                                     <li key={i} className="truncate flex items-center gap-1.5">
-                                        <span className="w-1 h-1 rounded-full bg-slate-300" />
-                                        {content.name} <span className="text-slate-400">({content.variantName})</span>
+                                        <span className="w-1 h-1 rounded-full bg-slate-300 flex-shrink-0" />
+                                        <span className="truncate">{content.name}</span>
+                                        <span className="text-slate-400 whitespace-nowrap">({content.variantName})</span>
                                     </li>
                                 ))}
                             </ul>
                         </div>
                     ) : (
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1 truncate">
                           {item.variant.name && <span className="mr-2">{item.variant.name}</span>}
-                          <span className="text-slate-300">|</span>
+                          {item.variant.name && <span className="text-slate-300">|</span>}
                           <span className="ml-2">Qty: {item.quantity}</span>
                         </p>
                     )}
 
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
                        {isFree ? (
                            <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                                Free
@@ -136,11 +134,11 @@ export default function OrderSummary({
       </div>
 
       {/* Price Breakdown */}
-      <div className="p-6 sm:p-8 bg-slate-50/50 border-t border-slate-100">
+      <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100">
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-slate-500 font-medium">Original Price</span>
-            <span className="text-slate-800 font-semibold">₹{breakdown.originalTotal}</span>
+            <span className="text-slate-800 font-semibold whitespace-nowrap">₹{breakdown.originalTotal}</span>
           </div>
           
           <AnimatePresence>
@@ -151,16 +149,15 @@ export default function OrderSummary({
                 className="flex justify-between text-sm"
               >
                 <span className="text-slate-500 font-medium">Product Discount</span>
-                <span className="text-emerald-600 font-semibold">-₹{productDiscount.toFixed(2)}</span>
+                <span className="text-emerald-600 font-semibold whitespace-nowrap">-₹{productDiscount.toFixed(2)}</span>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Applied Offers Logic from original code */}
           {breakdown.appliedOffers && breakdown.appliedOffers.map((offer, index) => (
              <div key={index} className="flex justify-between text-sm font-semibold text-emerald-600">
-                <span>{offer.title}</span>
-                <span>-₹{offer.amount}</span>
+                <span className="truncate pr-2">{offer.title}</span>
+                <span className="whitespace-nowrap">-₹{offer.amount}</span>
              </div>
           ))}
 
@@ -171,24 +168,23 @@ export default function OrderSummary({
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-between text-sm bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-100/50"
               >
-                <span className="text-emerald-700 font-medium flex items-center gap-2">
-                  <Tag className="w-3.5 h-3.5" />
-                  <span className="uppercase">{appliedCoupon.code}</span>
+                <span className="text-emerald-700 font-medium flex items-center gap-2 truncate">
+                  <Tag className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="uppercase truncate">{appliedCoupon.code}</span>
                 </span>
-                <span className="text-emerald-700 font-bold">-₹{breakdown.discountAmount}</span>
+                <span className="text-emerald-700 font-bold whitespace-nowrap">-₹{breakdown.discountAmount}</span>
               </motion.div>
             )}
           </AnimatePresence>
 
           <div className="flex justify-between text-sm">
             <span className="text-slate-500 font-medium">Delivery Charge</span>
-            <span className={`font-semibold ${breakdown.deliveryCharge === 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
+            <span className={`font-semibold whitespace-nowrap ${breakdown.deliveryCharge === 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
               {breakdown.deliveryCharge === 0 ? 'Free' : `₹${breakdown.deliveryCharge}`}
             </span>
           </div>
         </div>
 
-        {/* Total Separator */}
         <div className="my-6 border-t border-dashed border-slate-200" />
 
         <div className="flex justify-between items-end">
@@ -212,18 +208,17 @@ export default function OrderSummary({
           </div>
         </div>
 
-        {/* Delivery Note */}
         {selectedAddress && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
             className="mt-6 flex items-start gap-3 p-3 rounded-xl bg-white border border-slate-100 "
           >
-            <div className="mt-0.5 text-slate-400">
+            <div className="mt-0.5 text-slate-400 flex-shrink-0">
                <Package className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-700">Delivering to {selectedAddress.name || "..."}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-700 truncate">Delivering to {selectedAddress.name || "..."}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1 break-all">
                   {selectedAddress.address}, {selectedAddress.city}, {selectedAddress.state} - {selectedAddress.postalCode}
               </p>
             </div>

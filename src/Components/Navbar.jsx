@@ -469,15 +469,6 @@ const Navbar = ({ onVisibilityChange }) => {
                     >
 
                       <header className="sidebar-header">
-                        <div className="sidebar-close-btn">
-                          <button className="hamburger-btn" onClick={toggleSidebar}>
-                            <div className={`hamburger ${isOpen ? "active" : ""}`}>
-                              <div className="line" />
-                              <div className="line" />
-                              <div className="line" />
-                            </div>
-                          </button>
-                        </div>
                         <div className="sidebar-top">
                           <div className="sidebar-user-details">
                             <img src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon} alt="" className="user-avatar" />

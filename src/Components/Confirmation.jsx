@@ -41,17 +41,16 @@ export default function Confirmation({ resetCheckout, transactionId }) {
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        // 🟢 COMPACTED: Reduced padding (p-8 sm:p-10)
         className="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-slate-100 w-full max-w-3xl overflow-hidden relative"
       >
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
 
-        <div className="p-8 sm:p-10 text-center">
+        {/* Responsive padding: p-6 on mobile, p-10 on desktop */}
+        <div className="p-6 sm:p-10 text-center">
             
-            {/* 1. Animated Icon (Slightly smaller) */}
+            {/* 1. Animated Icon */}
             <motion.div variants={fadeInUp} className="flex justify-center mb-5 relative">
                 <div className="absolute inset-0 bg-emerald-100/30 blur-xl rounded-full scale-125 animate-pulse" />
-                {/* 🟢 COMPACTED: w-20 h-20 */}
                 <div className="w-20 h-20 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center relative shadow-sm z-10">
                     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
                         <motion.path
@@ -72,8 +71,7 @@ export default function Confirmation({ resetCheckout, transactionId }) {
                 We've received your order and will begin processing it right away.
             </motion.p>
 
-            {/* 3. Timeline (Compacted vertical spacing) */}
-            {/* 🟢 COMPACTED: mt-8 mb-8 py-5 */}
+            {/* 3. Timeline */}
             <motion.div variants={fadeInUp} className="mt-6 mb-6 py-3 border-y border-dashed border-slate-100">
                 <div className="flex items-center justify-between max-w-md mx-auto relative px-2">
                     <div className="absolute top-4 left-0 w-full h-0.5 bg-slate-100 -z-10" />
@@ -102,17 +100,18 @@ export default function Confirmation({ resetCheckout, transactionId }) {
                 </div>
             </motion.div>
 
-            {/* 4. Footer (Compacted gaps) */}
+            {/* 4. Footer */}
             <motion.div variants={fadeInUp} className="flex flex-col items-center gap-6">
                 {transactionId && (
                     <div 
                         onClick={copyToClipboard}
-                        className="group flex flex-col sm:flex-row items-center gap-3 bg-slate-50/80 hover:bg-slate-100 border border-slate-100 px-5 py-2.5 rounded-xl cursor-pointer transition-colors"
+                        className="group flex flex-col sm:flex-row items-center gap-3 bg-slate-50/80 hover:bg-slate-100 border border-slate-100 px-5 py-2.5 rounded-xl cursor-pointer transition-colors max-w-full"
                     >
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm font-semibold text-slate-700">{transactionId}</span>
-                            <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Order ID</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                            {/* break-all ensures long IDs don't overflow */}
+                            <span className="font-mono text-sm font-semibold text-slate-700 break-all">{transactionId}</span>
+                            <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600 flex-shrink-0" />
                         </div>
                     </div>
                 )}

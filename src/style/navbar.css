@@ -685,6 +685,7 @@ header {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
+  padding-top: 50px;
 }
 
 .sidebar-user-details {
@@ -928,7 +929,7 @@ header {
     border-radius: 0px !important;
     left: 0 !important;
     transform: none !important;
-    padding: 0 1rem;
+    padding: 0 3px;
     margin-top: 0px;
     background-color: white;
 

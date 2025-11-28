@@ -167,7 +167,6 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
       <div className="h-32 bg-gradient-to-br from-slate-800 to-black"></div>
       <div className="pt-0 px-6 pb-8 text-center relative z-10">
         
-        {/* 🟢 FIXED: Avatar stays rounded-full, no square morph. Smooth inner image zoom. */}
         <div className="relative mx-auto w-24 h-24 -mt-12 mb-4 group cursor-pointer" onClick={onEditProfile}>
           <div className="w-full h-full bg-white border-[4px] border-white shadow-lg overflow-hidden rounded-full">
             {user.profileImage ? (
@@ -186,8 +185,9 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
           </div>
         </div>
 
-        <h2 className="text-xl font-bold text-slate-900">{user.name}</h2>
-        <p className="text-sm text-slate-500 font-medium mt-1">{user.email}</p>
+        <h2 className="text-xl font-bold text-slate-900 break-words">{user.name}</h2>
+        {/* Added break-all to prevent email overflow */}
+        <p className="text-sm text-slate-500 font-medium mt-1 break-all">{user.email}</p>
 
         {/* Stats */}
         <div className="flex justify-between mt-6 border-t border-slate-100 pt-6">
@@ -243,10 +243,10 @@ const ProfileCompletion = ({ user, addressCount }) => {
       <div className="flex flex-col gap-3">
         {items.map((item, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${item.completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-300'}`}>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${item.completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-300'}`}>
               {item.completed ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />}
             </div>
-            <span className={`text-sm font-medium ${item.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700'}`}>
+            <span className={`text-sm font-medium truncate ${item.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700'}`}>
               {item.label}
             </span>
           </div>
@@ -287,14 +287,14 @@ const RecentActivity = ({ orders, reviews, addresses, queries }) => {
           {activityItems.length === 0 && <p className="text-sm text-slate-400 pl-8">No recent activity.</p>}
           {activityItems.map((item) => (
             <div key={item.id} className="relative flex items-start gap-4 group">
-              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm transition-colors ${
+              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm transition-colors flex-shrink-0 ${
                 item.type === 'order' ? 'bg-indigo-50 text-indigo-600' : 
                 item.type === 'review' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
               }`}>
                 <item.icon size={14} strokeWidth={2.5} />
               </div>
-              <div className="pt-1">
-                <p className="text-sm font-semibold text-slate-800 line-clamp-1">{item.label}</p>
+              <div className="pt-1 min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-800 line-clamp-1 break-all">{item.label}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{formatDate(item.date)}</p>
               </div>
             </div>
@@ -473,9 +473,8 @@ const ProfileSettings = () => {
 
   return (
     <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-2xl">
-      <div className="flex items-center gap-8 mb-10">
+      <div className="flex flex-col sm:flex-row items-center gap-8 mb-10">
         <div className="relative group cursor-pointer" onClick={() => fileRef.current?.click()}>
-          {/* 🟢 FIXED: Stays rounded-full, smooth scale only */}
           <div className="w-24 h-24 rounded-full border-[4px] border-white shadow-lg overflow-hidden bg-white">
             {localUrl ? (
               <img src={localUrl} alt="Profile" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110" />
@@ -520,7 +519,7 @@ const ProfileSettings = () => {
         </div>
         
         <div className="md:col-span-2 flex justify-end mt-4">
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-300 disabled:opacity-50 disabled:shadow-none">
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-300 disabled:opacity-50 disabled:shadow-none w-full sm:w-auto">
                 Save Changes
             </motion.button>
         </div>
@@ -551,19 +550,20 @@ const AddressSettings = ({ onAdd, onEdit }) => {
         {(address || []).map(addr => (
           <motion.div key={addr.id} variants={fadeInUp} className="group bg-white border border-slate-100 shadow-sm rounded-2xl p-6 hover:shadow-md transition-shadow relative">
             <div className="flex justify-between items-start mb-4">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-slate-100 text-slate-600">{addr.addressType || "Home"}</span>
                 {addr.isDefault && <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-emerald-50 text-emerald-600">Default</span>}
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button onClick={() => onEdit(addr)} className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-400 hover:text-black"><Pencil size={14} /></button>
                 <button onClick={() => onDelete(addr.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
               </div>
             </div>
-            <div className="text-sm text-slate-600 leading-relaxed">
-              <strong className="text-slate-900 block mb-1">{addr.name}</strong>
-              <p>{addr.address}, {addr.city}</p>
-              <p>{addr.state} - {addr.postalCode}</p>
+            {/* Added break-words and min-w-0 to handle overflow */}
+            <div className="text-sm text-slate-600 leading-relaxed min-w-0">
+              <strong className="text-slate-900 block mb-1 break-words">{addr.name}</strong>
+              <p className="break-words">{addr.address}, {addr.city}</p>
+              <p className="break-words">{addr.state} - {addr.postalCode}</p>
               <p className="mt-2 text-xs font-medium text-slate-400">Phone: {addr.phone}</p>
             </div>
             {!addr.isDefault && (
@@ -646,21 +646,22 @@ const OrderHistory = ({ onOrderClick }) => {
           variants={fadeInUp}
           onClick={() => onOrderClick(order)}
           whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-          className="w-full text-left p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex justify-between items-center group"
+          // Changed to flex-col on mobile, flex-row on desktop for better fit
+          className="w-full text-left p-6 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 group"
         >
-          <div className="flex gap-4 items-center">
-            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-black group-hover:text-white transition-colors">
+          <div className="flex gap-4 items-center w-full sm:w-auto">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-black group-hover:text-white transition-colors flex-shrink-0">
               <Package size={20} />
             </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="font-bold text-slate-900 text-sm">Order #{order.id.slice(-8)}</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-bold text-slate-900 text-sm whitespace-nowrap">Order #{order.id.slice(-8)}</span>
                 <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${getStatusColor(order.status)}`}>{order.status}</span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">{formatDate(order.createdAt)} • {order.orderItems?.length || 0} Items</p>
+              <p className="text-xs text-slate-500 mt-1 truncate">{formatDate(order.createdAt)} • {order.orderItems?.length || 0} Items</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-2 sm:mt-0 pl-16 sm:pl-0">
             <span className="font-bold text-slate-900">₹{order.totalAmount}</span>
             <ChevronRight size={18} className="text-slate-300 group-hover:text-black transition-colors" />
           </div>
@@ -677,7 +678,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
   return (
     <AnimatePresence>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-sm flex items-center justify-end" onClick={onClose}>
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.3 }} className="bg-white w-full max-w-md h-full shadow-2xl p-8 overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.3 }} className="bg-white w-full max-w-md h-full shadow-2xl p-6 sm:p-8 overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="text-xl font-bold text-slate-900">Order Details</h3>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-50"><X size={20} /></button>
@@ -685,7 +686,8 @@ const OrderDetailsModal = ({ order, onClose }) => {
                 <div className="space-y-6">
                     <div className="pb-6 border-b border-slate-100">
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Order ID</p>
-                        <p className="text-lg font-mono text-slate-800">{order.id}</p>
+                        {/* Added break-all for long IDs */}
+                        <p className="text-lg font-mono text-slate-800 break-all">{order.id}</p>
                         <p className="text-sm text-slate-500 mt-2">{formatDate(order.createdAt)}</p>
                     </div>
                     <div>
@@ -695,8 +697,8 @@ const OrderDetailsModal = ({ order, onClose }) => {
                                 const prod = productMap.get(item.productId);
                                 return (
                                     <div key={item.id} className="flex gap-4">
-                                        <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-lg object-cover bg-slate-50" />
-                                        <div>
+                                        <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-lg object-cover bg-slate-50 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
                                             <p className="text-sm font-semibold text-slate-900 line-clamp-1">{item.productName}</p>
                                             <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
                                             <p className="text-sm font-medium text-slate-900 mt-1">₹{item.totalPrice}</p>
@@ -735,16 +737,16 @@ const ReviewHistory = () => {
         const product = productMap.get(review.productId);
         return (
           <motion.div key={review.id} variants={fadeInUp} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex gap-5">
-            <img src={product?.imageurl?.[0]} className="w-16 h-16 rounded-xl object-cover bg-slate-50" />
-            <div className="flex-1">
-              <div className="flex justify-between">
-                <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{product?.name}</h4>
+            <img src={product?.imageurl?.[0]} className="w-16 h-16 rounded-xl object-cover bg-slate-50 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap justify-between items-start gap-2">
+                <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">{product?.name}</h4>
                     <div className="flex gap-0.5 mt-1">{[...Array(5)].map((_, i) => <Star key={i} size={14} className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />)}</div>
                 </div>
-                <button onClick={() => navigate(`/product/${review.productId}`, { state: { editReviewId: review.id } })} className="text-slate-400 hover:text-black"><Pencil size={16} /></button>
+                <button onClick={() => navigate(`/product/${review.productId}`, { state: { editReviewId: review.id } })} className="text-slate-400 hover:text-black flex-shrink-0"><Pencil size={16} /></button>
               </div>
-              <p className="text-sm text-slate-600 mt-3 leading-relaxed">{review.comment}</p>
+              <p className="text-sm text-slate-600 mt-3 leading-relaxed break-words">{review.comment}</p>
               <p className="text-xs text-slate-400 mt-2">{formatDate(review.createdAt)}</p>
             </div>
           </motion.div>
@@ -765,12 +767,12 @@ const NotificationSettings = () => {
   const onSave = async (data) => { const ok = await updateUser(data); ok ? window.toast.success("Updated") : window.toast.error("Failed"); reset(data); };
 
   const SettingRow = ({ label, desc, ...props }) => (
-    <label className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:border-slate-300 transition-all">
-        <div>
+    <label className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:border-slate-300 transition-all gap-4">
+        <div className="flex-1 min-w-0">
             <p className="font-bold text-slate-900">{label}</p>
-            <p className="text-xs text-slate-500 mt-1">{desc}</p>
+            <p className="text-xs text-slate-500 mt-1 break-words">{desc}</p>
         </div>
-        <div className="relative">
+        <div className="relative flex-shrink-0">
             <input type="checkbox" className="sr-only peer" {...props} />
             <div className="w-11 h-6 bg-slate-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
         </div>
@@ -801,9 +803,12 @@ const SupportQueries = () => {
                 {(!queries || queries.length === 0) && <p className="text-slate-400">No queries.</p>}
                 {(queries || []).map(q => (
                     <div key={q.id} className="p-6 bg-white rounded-2xl border border-slate-100">
-                        <div className="flex justify-between"><h4 className="font-bold text-slate-900">{q.subject}</h4><span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${q.reply ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{q.reply ? "Resolved" : "Pending"}</span></div>
-                        <p className="text-sm text-slate-600 mt-2">{q.message}</p>
-                        {q.reply && <div className="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 border-l-2 border-indigo-500"><p className="font-bold text-indigo-600 text-xs mb-1">Reply</p>{q.reply}</div>}
+                        <div className="flex justify-between flex-wrap gap-2">
+                            <h4 className="font-bold text-slate-900 break-words">{q.subject}</h4>
+                            <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded whitespace-nowrap ${q.reply ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{q.reply ? "Resolved" : "Pending"}</span>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-2 break-words">{q.message}</p>
+                        {q.reply && <div className="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 border-l-2 border-indigo-500 break-words"><p className="font-bold text-indigo-600 text-xs mb-1">Reply</p>{q.reply}</div>}
                     </div>
                 ))}
             </div>
@@ -815,7 +820,7 @@ const SupportQueries = () => {
    MAIN PAGE LAYOUT
    ======================================================================== */
 export default function UserPage() {
-  const { userdetails, address, queries } = useContext(UserContext); // Assuming queries in UserContext or pass appropriately
+  const { userdetails, address, queries } = useContext(UserContext);
   const { orders, loadingOrders } = useContext(OrderContext);
   const { cart, wishlist } = useContext(CartContext);
   const { userReviews } = useContext(ReviewContext);
@@ -852,7 +857,8 @@ export default function UserPage() {
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={smoothTransition}
-                className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[600px]"
+                // Reduced padding on mobile (p-4) to maximize space
+                className="bg-white rounded-[2.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[600px]"
               >
                 {activeTab === 'profile' && <ProfileSettings />}
                 

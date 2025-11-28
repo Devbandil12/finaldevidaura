@@ -126,37 +126,24 @@ export default function Checkout() {
 
   return (
     <>
-      {/* 🟢 PAGE BACKGROUND: Soft Light Gray */}
-      <div className="min-h-screen bg-white font-sans py-24 sm:py-18 px-4 sm:px-6 flex items-start justify-center">
+      {/* Reduced padding top for mobile: py-20 */}
+      <div className="min-h-screen bg-white font-sans py-20 sm:py-24 px-4 sm:px-6 flex items-start justify-center">
 
-        {/* 🟢 THE CONTAINER: One Big Luxury Card */}
-        <div className="w-full max-w-8xl bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
+        <div className="w-full max-w-8xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
 
-          {/* 🟢 HEADER (Inside Container): Dark Black Background */}
-          <div className="bg-black  text-white px-6 pb-12 pt-4 sm:px-12 sm:pb-12 relative overflow-hidden">
-            {/* Subtle decorative glow */}
+          {/* Header padding reduced */}
+          <div className="bg-black text-white px-4 pb-10 pt-4 sm:px-12 sm:pb-12 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative z-10 flex flex-col items-center">
               <div className="flex items-center gap-2 mb-6 opacity-80 bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white">Secure Encrypted Checkout</span>
+                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase text-white whitespace-nowrap">Secure Encrypted Checkout</span>
               </div>
-              {/* Progress Stepper */}
+              
               <div className="relative w-full max-w-6xl">
-                {/* 🟢 ALIGNMENT FIX: left-6 and right-6 ensures line starts/ends exactly at icon centers (1.5rem / 24px) */}
-                {/* Track */}
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-white/20 -translate-y-1/2" />
 
-                {/* Active Fill */}
-                <motion.div
-                  className="absolute top-1/2 left-6 h-[1px] bg-white -translate-y-1/2 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
-                  style={{ right: 'auto' }} // Ensure right isn't set, use width
-                  initial={{ width: "0%" }}
-                  animate={{ width: `calc(${((step - 1) / (steps.length - 1)) * 100}% - 3rem)` }} // Subtract margins
-                  transition={{ duration: 0.8, ease: luxuryEase }}
-                />
-                {/* Simplified width logic for cleaner line: */}
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
                     className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]"
@@ -166,29 +153,25 @@ export default function Checkout() {
                   />
                 </div>
 
-
                 <div className="flex justify-between w-full relative">
                   {steps.map((s, i) => {
                     const isActive = step === i + 1;
                     const isCompleted = step > i + 1;
 
                     return (
-                      // 🟢 LAYOUT FIX: Fixed width item (w-12) keeps justify-between spacing perfect
                       <div key={i} className="relative flex flex-col items-center w-12 group">
                         <motion.div
-                          className={`relative w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10 ${isActive || isCompleted
+                          className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10 ${isActive || isCompleted
                               ? "bg-white text-black border-white shadow-lg shadow-white/20"
                               : "bg-black text-slate-500 border-slate-700"
                             }`}
                           animate={{ scale: isActive ? 1.15 : 1 }}
                         >
-                          {/* Icon */}
-                          <s.icon className={`w-5 h-5 ${isActive || isCompleted ? "stroke-2" : "stroke-1"}`} />
+                          <s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isActive || isCompleted ? "stroke-2" : "stroke-1"}`} />
                         </motion.div>
 
-                        {/* Text is Absolute to not disturb flex width */}
-                        <div className="absolute top-14 left-1/2 -translate-x-1/2 w-32 text-center">
-                          <span className={`text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive ? "text-white" : "text-slate-600"}`}>
+                        <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-24 sm:w-32 text-center">
+                          <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive ? "text-white" : "text-slate-600"}`}>
                             {s.name}
                           </span>
                         </div>
@@ -200,11 +183,9 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* 🟢 BODY (Inside Container): Light Background */}
-          <div className="bg-white p-6 sm:p-2 lg:p-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          <div className="bg-white p-3 sm:p-2 lg:p-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
 
-              {/* LEFT: Forms */}
               <motion.main
                 layout
                 className={`${step === 3 ? "lg:col-span-12 max-w-3xl mx-auto w-full" : "lg:col-span-7 xl:col-span-8"}`}
@@ -243,7 +224,6 @@ export default function Checkout() {
                   </motion.div>
                 </AnimatePresence>
 
-                {/* Buttons */}
                 {step < 3 && (
                   <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
@@ -254,7 +234,7 @@ export default function Checkout() {
                       disabled={isSubmitting}
                       className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-black transition-colors px-6 py-3 rounded-xl hover:bg-slate-100"                                    >
                       <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                      <span>{step === 1 ? "Return to Bag" : "Go Back"}</span>
+                      <span>{step === 1 ? "Cart" : "Go Back"}</span>
                     </button>
 
                     {step === 1 && (
@@ -263,10 +243,10 @@ export default function Checkout() {
                         disabled={!selectedAddress || isSubmitting || loadingPrices}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-3 bg-black text-white px-10 py-4 rounded-2xl text-sm font-bold shadow-sm shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="flex items-center gap-3 bg-black text-white px-8 sm:px-10 py-4 rounded-2xl text-sm font-bold shadow-sm shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >
                         {loadingPrices && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>{loadingPrices ? "Calculating..." : "Continue to Payment"}</span>
+                        <span className="whitespace-nowrap">{loadingPrices ? "Calculating..." : "Payment"}</span>
                         {!loadingPrices && <ChevronRight className="w-4 h-4" />}
                       </motion.button>
                     )}
@@ -274,7 +254,6 @@ export default function Checkout() {
                 )}
               </motion.main>
 
-              {/* RIGHT: Summary (Sidebar) */}
               <AnimatePresence>
                 {step < 3 && (
                   <motion.aside
@@ -283,7 +262,6 @@ export default function Checkout() {
                     exit={{ opacity: 0, x: 20, transition: { duration: 0.3 } }}
                     className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-8"
                   >
-                    {/* Sidebar Content */}
                     <OrderSummary
                       selectedAddress={selectedAddress}
                       selectedItems={selectedItems}

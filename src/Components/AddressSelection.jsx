@@ -6,10 +6,9 @@ import { MapPin, Plus } from "lucide-react";
 
 const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address";
 
-// 🟢 LUXURY TRANSITION SETTINGS
 const smoothTransition = {
   type: "tween",
-  ease: [0.25, 0.1, 0.25, 1], // "Easy Ease" - very premium feel
+  ease: [0.25, 0.1, 0.25, 1],
   duration: 0.4
 };
 
@@ -20,19 +19,19 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
     return (
       <motion.div
         layout
-        initial={{ opacity: 0, y: 10 }} // Subtle rise effect
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
         transition={smoothTransition}
         onClick={() => selectAddress(index)}
-        className={`relative rounded-2xl p-5 flex items-start gap-4 cursor-pointer group transition-all duration-300 border ${
+        // Responsive padding (p-4)
+        className={`relative rounded-2xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 cursor-pointer group transition-all duration-300 border ${
           isSelected
             ? 'bg-slate-50 border-slate-800 shadow-sm' 
             : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-sm'
         }`}
       >
         <div className="mt-1 flex-shrink-0">
-          {/* Animated Selection Circle */}
           <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${isSelected ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
             <AnimatePresence>
                 {isSelected && (
@@ -48,21 +47,25 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
           </div>
         </div>
         
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <div className="flex items-baseline gap-3">
+        {/* min-w-0 ensures the flex child doesn't overflow parent */}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap justify-between items-start gap-2">
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
               <span className={`font-semibold transition-colors duration-300 ${isSelected ? 'text-black' : 'text-slate-700'}`}>{addr.name}</span>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">{addr.addressType}</span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 whitespace-nowrap">{addr.addressType}</span>
             </div>
-            {addr.isDefault && <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">Default</div>}
+            {addr.isDefault && <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">Default</div>}
           </div>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">{fullAddress}</p>
+          
+          {/* break-words handles long addresses */}
+          <p className="text-sm text-slate-500 mt-1 leading-relaxed break-words">{fullAddress}</p>
           <p className="text-sm text-slate-500 mt-2">Phone: <span className="text-slate-700">{addr.phone}</span></p>
           
-          <div className="flex items-center gap-4 mt-4 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            {!addr.isDefault && <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(index); }} className="text-slate-500 hover:text-black transition-colors">Set Default</button>}
-            <button onClick={(e) => { e.stopPropagation(); editAddress(index); }} className="text-slate-500 hover:text-black transition-colors">Edit</button>
-            <button onClick={(e) => { e.stopPropagation(); deleteAddress(index); }} className="text-red-400 hover:text-red-600 transition-colors">Delete</button>
+          {/* Buttons wrap on small screens */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-xs font-semibold opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+            {!addr.isDefault && <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Set Default</button>}
+            <button onClick={(e) => { e.stopPropagation(); editAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Edit</button>
+            <button onClick={(e) => { e.stopPropagation(); deleteAddress(index); }} className="text-red-400 hover:text-red-600 transition-colors py-1">Delete</button>
           </div>
         </div>
       </motion.div>
@@ -330,9 +333,9 @@ function useCurrentLocationInForm() {
   }
 
   return (
-    // 🟢 LUXURY STYLING: shadow-sm, rounded-3xl, extra padding
-    <div className="bg-white p-6 sm:p-8 rounded-3xl  border border-slate-200">
-      <div className="flex items-center justify-between mb-8">
+    // Reduced padding: p-4 sm:p-8
+    <div className="bg-white p-4 sm:p-8 rounded-3xl border border-slate-200">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
           <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
             <MapPin className="w-4 h-4" />
@@ -340,7 +343,7 @@ function useCurrentLocationInForm() {
           Delivery Address
         </h3>
         {addresses.length > 1 && (
-          <button onClick={() => setShowAll(prev => !prev)} className="text-sm font-semibold text-slate-500 hover:text-black transition-colors duration-300">
+          <button onClick={() => setShowAll(prev => !prev)} className="text-sm font-semibold text-slate-500 hover:text-black transition-colors duration-300 ml-2 whitespace-nowrap">
             {showAll ? 'Show Less' : 'Change'}
           </button>
         )}
@@ -397,54 +400,55 @@ function useCurrentLocationInForm() {
             transition={smoothTransition}
             className="overflow-hidden"
           >
-            <div className="pt-8 mt-8 border-t border-slate-100">
+            <div className="pt-6 mt-6 sm:pt-8 sm:mt-8 border-t border-slate-100">
               <h4 className="font-bold text-lg mb-6 text-slate-800 tracking-tight">{isEditing ? "Edit Address" : "Add New Address"}</h4>
               {formError && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 shadow-sm">{formError}</div>}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Added w-full to inputs */}
                 <div className="relative sm:col-span-2">
-                  <input id="name" value={formAddress.name} onChange={(e) => updateFormAddress("name", e.target.value)} className="form-input peer" placeholder=" " required />
+                  <input id="name" value={formAddress.name} onChange={(e) => updateFormAddress("name", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="name" className="floating-label">Full Name *</label>
                 </div>
                 <div className="relative">
-                  <input id="phone" type="tel" value={formAddress.phone} onChange={(e) => updateFormAddress("phone", e.target.value)} className="form-input peer" placeholder=" " required />
+                  <input id="phone" type="tel" value={formAddress.phone} onChange={(e) => updateFormAddress("phone", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="phone" className="floating-label">Phone *</label>
                 </div>
                 <div className="relative">
-                   <input id="altPhone" type="tel" value={formAddress.altPhone || ""} onChange={(e) => updateFormAddress("altPhone", e.target.value)} className="form-input peer" placeholder=" " />
+                   <input id="altPhone" type="tel" value={formAddress.altPhone || ""} onChange={(e) => updateFormAddress("altPhone", e.target.value)} className="form-input peer w-full" placeholder=" " />
                    <label htmlFor="altPhone" className="floating-label">Alternate Phone</label>
                 </div>
                 <div className="relative sm:col-span-2">
-                  <input id="address" value={formAddress.address || ""} onChange={(e) => updateFormAddress("address", e.target.value)} className="form-input peer" placeholder=" " required />
+                  <input id="address" value={formAddress.address || ""} onChange={(e) => updateFormAddress("address", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="address" className="floating-label">Address (House No, Building, Street, Area) *</label>
                 </div>
                 <div className="relative">
-                  <input id="landmark" value={formAddress.landmark || ""} onChange={(e) => updateFormAddress("landmark", e.target.value)} className="form-input peer" placeholder=" " />
+                  <input id="landmark" value={formAddress.landmark || ""} onChange={(e) => updateFormAddress("landmark", e.target.value)} className="form-input peer w-full" placeholder=" " />
                   <label htmlFor="landmark" className="floating-label">Landmark</label>
                 </div>
                 <div className="relative">
-                  <input id="city" value={formAddress.city || ""} onChange={(e) => updateFormAddress("city", e.target.value)} className="form-input peer" placeholder=" " required />
+                  <input id="city" value={formAddress.city || ""} onChange={(e) => updateFormAddress("city", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="city" className="floating-label">City *</label>
                 </div>
                 <div className="sm:col-span-2 flex items-end gap-3">
                     <div className="relative flex-grow">
-                        <input id="postalCode" value={formAddress.postalCode || ""} onChange={(e) => updateFormAddress("postalCode", e.target.value)} onBlur={onPostalBlur} className="form-input peer" placeholder=" " required />
+                        <input id="postalCode" value={formAddress.postalCode || ""} onChange={(e) => updateFormAddress("postalCode", e.target.value)} onBlur={onPostalBlur} className="form-input peer w-full" placeholder=" " required />
                         <label htmlFor="postalCode" className="floating-label">Postal Code *</label>
                     </div>
-                    <motion.button type="button" onClick={useCurrentLocationInForm} whileTap={{ scale: 0.95 }} className="h-12 px-5 bg-slate-800 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all duration-300 flex-shrink-0 flex items-center gap-2 shadow-sm hover:shadow-md">
-                        <FontAwesomeIcon icon={faLocationArrow} /> Locate
+                    <motion.button type="button" onClick={useCurrentLocationInForm} whileTap={{ scale: 0.95 }} className="h-12 px-4 sm:px-5 bg-slate-800 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all duration-300 flex-shrink-0 flex items-center gap-2 shadow-sm hover:shadow-md">
+                        <FontAwesomeIcon icon={faLocationArrow} /> <span className="hidden sm:inline">Locate</span>
                     </motion.button>
                 </div>
                 <div className="relative">
-                  <input id="state" value={formAddress.state || ""} onChange={(e) => updateFormAddress("state", e.target.value)} className="form-input peer" placeholder=" " required />
+                  <input id="state" value={formAddress.state || ""} onChange={(e) => updateFormAddress("state", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="state" className="floating-label">State *</label>
                 </div>
                 <div className="relative">
-                  <input id="country" value={formAddress.country || "India"} disabled className="form-input peer bg-slate-50 cursor-not-allowed text-slate-500" placeholder=" "/>
+                  <input id="country" value={formAddress.country || "India"} disabled className="form-input peer bg-slate-50 cursor-not-allowed text-slate-500 w-full" placeholder=" "/>
                   <label htmlFor="country" className="floating-label">Country</label>
                 </div>
                 <div className="relative sm:col-span-2">
-                  <textarea id="deliveryInstructions" value={formAddress.deliveryInstructions || ""} onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)} className="form-input peer" placeholder=" " rows={2}></textarea>
+                  <textarea id="deliveryInstructions" value={formAddress.deliveryInstructions || ""} onChange={(e) => updateFormAddress("deliveryInstructions", e.target.value)} className="form-input peer w-full" placeholder=" " rows={2}></textarea>
                   <label htmlFor="deliveryInstructions" className="floating-label">Delivery Instructions (Optional)</label>
                 </div>
                 <div className="sm:col-span-2 mt-2">
@@ -462,14 +466,15 @@ function useCurrentLocationInForm() {
                     </div>
                     {formAddress.addressType === 'Other' && (
                         <div className="relative mt-4">
-                          <input type="text" placeholder=" " value={customAddressType} onChange={(e) => setCustomAddressType(e.target.value)} className="form-input peer" />
+                          <input type="text" placeholder=" " value={customAddressType} onChange={(e) => setCustomAddressType(e.target.value)} className="form-input peer w-full" />
                           <label className="floating-label">Custom Type *</label>
                         </div>
                     )}
                 </div>
-                <div className="sm:col-span-2 flex justify-end gap-3 mt-6">
-                  <motion.button type="button" onClick={() => setShowForm(false)} disabled={loading} whileTap={{ scale: 0.98 }} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-200">Cancel</motion.button>
-                  <motion.button type="button" onClick={saveAddress} disabled={loading} whileTap={{ scale: 0.98 }} className="px-8 py-3 bg-black text-white rounded-xl font-semibold text-sm hover:bg-slate-800 disabled:bg-slate-300 shadow-lg shadow-slate-200 transition-all duration-200">{loading ? "Saving..." : "Save Address"}</motion.button>
+                {/* Buttons stack on mobile */}
+                <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
+                  <motion.button type="button" onClick={() => setShowForm(false)} disabled={loading} whileTap={{ scale: 0.98 }} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 w-full sm:w-auto">Cancel</motion.button>
+                  <motion.button type="button" onClick={saveAddress} disabled={loading} whileTap={{ scale: 0.98 }} className="px-8 py-3 bg-black text-white rounded-xl font-semibold text-sm hover:bg-slate-800 disabled:bg-slate-300 shadow-lg shadow-slate-200 transition-all duration-200 w-full sm:w-auto">{loading ? "Saving..." : "Save Address"}</motion.button>
                 </div>
               </div>
             </div>

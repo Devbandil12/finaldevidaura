@@ -79,7 +79,7 @@ export default function PaymentDetails({
                     contact: selectedAddress?.phone || "",
                 },
                 handler: async function (response) {
-                    setIsVerifyingPayment(true); // Lock UI
+                    setIsVerifyingPayment(true);
 
                     try {
                         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
@@ -135,14 +135,12 @@ export default function PaymentDetails({
     return (
         <div className="relative">
             
-            {/* 🟢 Dark Glass Overlay for Processing */}
             <AnimatePresence>
                 {isVerifyingPayment && (
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        // Matches the rounded-3xl of the container
                         className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-[2px] rounded-3xl flex flex-col items-center justify-center text-center p-6"
                     >
                         <motion.div 
@@ -167,8 +165,8 @@ export default function PaymentDetails({
                 )}
             </AnimatePresence>
 
-            {/* 🟢 Payment Methods Card */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+            {/* Responsive padding: p-4 sm:p-8 */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-6">
                 <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                     <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
                         <CreditCard className="w-4 h-4" />
@@ -179,14 +177,13 @@ export default function PaymentDetails({
                 <div className="flex flex-col gap-4">
                     {/* Razorpay Option */}
                     <label
-                        className={`group relative flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${
+                        className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${
                             paymentMethod === "Razorpay"
                                 ? "bg-slate-50 border-slate-800 shadow-sm"
                                 : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
                         } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
-                        {/* Custom Radio Circle */}
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
+                        <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
                             {paymentMethod === "Razorpay" && (
                                 <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
                             )}
@@ -200,16 +197,17 @@ export default function PaymentDetails({
                             disabled={isBusy} 
                             className="hidden" 
                         />
-                        <div className="flex-1">
+                        {/* min-w-0 for text truncation */}
+                        <div className="flex-1 min-w-0">
                             <span className={`block font-semibold transition-colors ${paymentMethod === 'Razorpay' ? 'text-black' : 'text-slate-700'}`}>Razorpay Secure</span>
-                            <span className="text-xs text-slate-500 mt-0.5 block">UPI, Cards, NetBanking, Wallets</span>
+                            <span className="text-xs text-slate-500 mt-0.5 block truncate">UPI, Cards, NetBanking, Wallets</span>
                         </div>
-                        {paymentMethod === "Razorpay" && <ShieldCheck className="w-5 h-5 text-emerald-500 opacity-80" />}
+                        {paymentMethod === "Razorpay" && <ShieldCheck className="w-5 h-5 text-emerald-500 opacity-80 flex-shrink-0" />}
                     </label>
 
                     {/* COD Option */}
                     <label
-                        className={`group relative flex flex-col items-start p-5 rounded-2xl transition-all duration-300 border ${
+                        className={`group relative flex flex-col items-start p-4 sm:p-5 rounded-2xl transition-all duration-300 border ${
                             paymentMethod === "Cash on Delivery" && breakdown.codAvailable
                                 ? "bg-slate-50 border-slate-800 shadow-sm"
                                 : "bg-white border-slate-200"
@@ -219,8 +217,8 @@ export default function PaymentDetails({
                                 : "cursor-pointer hover:border-slate-300 hover:shadow-sm"
                         } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
-                        <div className="flex items-center w-full gap-4">
-                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${
+                        <div className="flex items-center w-full gap-3 sm:gap-4">
+                            <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${
                                 !breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
                                 paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
                             }`}>
@@ -237,16 +235,17 @@ export default function PaymentDetails({
                                 disabled={!breakdown.codAvailable || isBusy}
                                 className="hidden"
                             />
-                            <div className="flex-1">
+                            {/* min-w-0 for text truncation */}
+                            <div className="flex-1 min-w-0">
                                 <span className={`block font-semibold transition-colors ${!breakdown.codAvailable ? 'text-slate-400' : paymentMethod === 'Cash on Delivery' ? 'text-black' : 'text-slate-700'}`}>
                                     Cash on Delivery
                                 </span>
-                                <span className={`text-xs mt-0.5 block ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
+                                <span className={`text-xs mt-0.5 block truncate ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
                             </div>
-                             <Truck className={`w-5 h-5 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
+                             <Truck className={`w-5 h-5 flex-shrink-0 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
                         </div>
                         {!breakdown.codAvailable && (
-                            <div className="mt-3 ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
+                            <div className="mt-3 ml-8 sm:ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
                                 Not available for this pincode.
                             </div>
                         )}
