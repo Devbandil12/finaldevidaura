@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { IndianRupee, CreditCard, Truck, ChevronUp, ChevronDown } from "lucide-react";
+import { CreditCard, Truck, Loader2, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -16,21 +16,19 @@ export default function PaymentDetails({
     loadingPrices,
     isSubmitting,
     onPaymentVerified,
-    paymentVerified, // 🟢 Get this prop
+    paymentVerified, 
     setTransactionId,
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
-    const [summaryExpanded, setSummaryExpanded] = useState(false);
+    const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
     const { user } = useUser();
 
-    // Effect to reset payment verification status when switching to COD
     useEffect(() => {
         if (paymentMethod === "Cash on Delivery") {
             onPaymentVerified(false);
         }
     }, [paymentMethod, onPaymentVerified]);
 
-    // ✨ 1. Handle dynamic COD availability
     useEffect(() => {
         if (!breakdown.codAvailable && paymentMethod === "Cash on Delivery") {
             setPaymentMethod("Razorpay");
@@ -41,8 +39,6 @@ export default function PaymentDetails({
 
     const handleRazorpayPayment = async () => {
         try {
-            // 🟢 MODIFIED: Send the payload with the structure the BACKEND expects
-            // The backend accesses item.variant.id and item.product.id
             const cartItemsPayload = selectedItems.map(item => ({ 
               variant: { id: item.variant.id }, 
               product: { id: item.product.id },
@@ -57,7 +53,7 @@ export default function PaymentDetails({
                     phone: selectedAddress.phone,
                     couponCode: appliedCoupon?.code,
                     paymentMode: "Razorpay",
-                    cartItems: cartItemsPayload, // 🟢 Pass the nested payload
+                    cartItems: cartItemsPayload,
                     userAddressId: selectedAddress.id,
                 }),
             });
@@ -83,33 +79,41 @@ export default function PaymentDetails({
                     contact: selectedAddress?.phone || "",
                 },
                 handler: async function (response) {
-                    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
-                    
-                    // 🟢 MODIFIED: Send the same payload to verify-payment
-                    const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            razorpay_order_id,
-                            razorpay_payment_id,
-                            razorpay_signature,
-                            orderId: orderData.orderId,
-                            userAddressId: selectedAddress.id,
-                            user: { id: userdetails.id, fullName: userdetails.name },
-                            phone: selectedAddress.phone,
-                            cartItems: cartItemsPayload, // 🟢 Pass the nested payload
-                            couponCode: appliedCoupon?.code,
-                        }),
-                    });
+                    setIsVerifyingPayment(true); // Lock UI
 
-                    const verifyData = await verifyRes.json();
-                    if (verifyData.success) {
-                        setTransactionId(razorpay_payment_id);
-                        onPaymentVerified(true);
-                        window.toast.success("Payment successful!");
-                        onRazorpaySuccess();
-                    } else {
-                        window.toast.error(verifyData.error || "Invalid payment. Please contact support.");
+                    try {
+                        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
+                        
+                        const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                razorpay_order_id,
+                                razorpay_payment_id,
+                                razorpay_signature,
+                                orderId: orderData.orderId,
+                                userAddressId: selectedAddress.id,
+                                user: { id: userdetails.id, fullName: userdetails.name },
+                                phone: selectedAddress.phone,
+                                cartItems: cartItemsPayload,
+                                couponCode: appliedCoupon?.code,
+                            }),
+                        });
+
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.success) {
+                            setTransactionId(razorpay_payment_id);
+                            onPaymentVerified(true);
+                            window.toast.success("Payment successful!");
+                            onRazorpaySuccess();
+                        } else {
+                            setIsVerifyingPayment(false);
+                            window.toast.error(verifyData.error || "Invalid payment. Please contact support.");
+                        }
+                    } catch (error) {
+                        console.error("Verification error", error);
+                        setIsVerifyingPayment(false);
+                        window.toast.error("Payment verification failed due to network error.");
                     }
                 },
                 modal: {
@@ -126,120 +130,152 @@ export default function PaymentDetails({
         }
     };
 
-    const productDiscount = breakdown.originalTotal - breakdown.productTotal;
+    const isBusy = isSubmitting || loadingPrices || isVerifyingPayment;
 
     return (
-        <div className="space-y-6">
-            {/* Price Summary Dropdown */}
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-                <button 
-                    onClick={() => setSummaryExpanded(!summaryExpanded)}
-                    className="flex justify-between items-center w-full p-4"
-                >
-                    <div className="flex items-center gap-3">
-                        {summaryExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        <span className="font-semibold text-black">
-                            {summaryExpanded ? "Hide Full Summary" : "Show Full Summary"}
-                        </span>
-                    </div>
-                    <span className="text-lg font-bold">₹{breakdown.total}</span>
-                </button>
-
-                <AnimatePresence>
-                    {summaryExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
+        <div className="relative">
+            
+            {/* 🟢 Dark Glass Overlay for Processing */}
+            <AnimatePresence>
+                {isVerifyingPayment && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        // Matches the rounded-3xl of the container
+                        className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-[2px] rounded-3xl flex flex-col items-center justify-center text-center p-6"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1, rotate: 360 }}
+                            transition={{ 
+                                scale: { duration: 0.3 },
+                                opacity: { duration: 0.3 },
+                                rotate: { repeat: Infinity, duration: 1.5, ease: "linear" } 
+                            }}
+                            className="bg-white p-4 rounded-full shadow-xl mb-5"
                         >
-                            <div className="text-sm space-y-2 p-4 border-t border-slate-100">
-                                <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{breakdown.productTotal}</span></div>
-                                <div className="flex justify-between text-slate-600"><span>Product Discount</span><span>-₹{productDiscount}</span></div>
-                                {appliedCoupon && <div className="flex justify-between font-semibold text-green-600"><span>Coupon ({appliedCoupon.code})</span><span>-₹{breakdown.discountAmount}</span></div>}
-                                <div className="flex justify-between text-slate-600"><span>Delivery Charge</span><span>₹{breakdown.deliveryCharge}</span></div>
-                                <div className="flex justify-between font-bold text-lg text-black border-t border-slate-100 pt-3 mt-3"><span>Total Amount</span><span>₹{breakdown.total}</span></div>
-                            </div>
+                            <Loader2 className="w-8 h-8 text-black" />
                         </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        <h3 className="text-xl font-bold text-white tracking-wide">Processing Payment</h3>
+                        <div className="flex items-center gap-2 mt-3 px-4 py-1.5 bg-white/10 rounded-full border border-white/20">
+                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                            <span className="text-xs font-medium text-slate-200">Secure Verification in Progress</span>
+                        </div>
+                        <p className="text-slate-400 text-xs mt-6 absolute bottom-6">Please do not close this window.</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {/* Payment Methods Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 space-y-4">
-                <h3 className="flex items-center gap-3 text-xl font-bold text-slate-800">
-                    <CreditCard className="w-6 h-6" /> Choose Payment Method
+            {/* 🟢 Payment Methods Card */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6">
+                <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
+                    <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
+                        <CreditCard className="w-4 h-4" />
+                    </div>
+                    Payment Method
                 </h3>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                     {/* Razorpay Option */}
                     <label
-                        key="Razorpay"
-                        className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition ${
+                        className={`group relative flex items-center gap-4 p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${
                             paymentMethod === "Razorpay"
-                                ? "border-black bg-slate-50 ring-2 ring-black/20"
-                                : "border-slate-100 hover:border-slate-400"
-                        }`}
+                                ? "bg-slate-50 border-slate-800 shadow-sm"
+                                : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
+                        } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
-                        <input type="radio" name="paymentMethod" value="Razorpay" checked={paymentMethod === "Razorpay"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 accent-black" />
-                        <span className="font-medium text-black">Razorpay (Online Payment)</span>
+                        {/* Custom Radio Circle */}
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
+                            {paymentMethod === "Razorpay" && (
+                                <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
+                            )}
+                        </div>
+                        <input 
+                            type="radio" 
+                            name="paymentMethod" 
+                            value="Razorpay" 
+                            checked={paymentMethod === "Razorpay"} 
+                            onChange={(e) => setPaymentMethod(e.target.value)} 
+                            disabled={isBusy} 
+                            className="hidden" 
+                        />
+                        <div className="flex-1">
+                            <span className={`block font-semibold transition-colors ${paymentMethod === 'Razorpay' ? 'text-black' : 'text-slate-700'}`}>Razorpay Secure</span>
+                            <span className="text-xs text-slate-500 mt-0.5 block">UPI, Cards, NetBanking, Wallets</span>
+                        </div>
+                        {paymentMethod === "Razorpay" && <ShieldCheck className="w-5 h-5 text-emerald-500 opacity-80" />}
                     </label>
 
-                    {/* ✨ COD Option is now dynamic */}
+                    {/* COD Option */}
                     <label
-                        key="Cash on Delivery"
-                        className={`flex flex-col items-start gap-1 p-4 border rounded-xl transition ${
+                        className={`group relative flex flex-col items-start p-5 rounded-2xl transition-all duration-300 border ${
                             paymentMethod === "Cash on Delivery" && breakdown.codAvailable
-                                ? "border-black bg-slate-50 ring-2 ring-black/20"
-                                : "border-slate-100"
+                                ? "bg-slate-50 border-slate-800 shadow-sm"
+                                : "bg-white border-slate-200"
                         } ${
                             !breakdown.codAvailable
-                                ? "bg-slate-50 cursor-not-allowed opacity-60"
-                                : "cursor-pointer hover:border-slate-400"
-                        }`}
+                                ? "bg-slate-50/50 border-slate-100 cursor-not-allowed"
+                                : "cursor-pointer hover:border-slate-300 hover:shadow-sm"
+                        } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
-                        <div className="flex items-center w-full">
+                        <div className="flex items-center w-full gap-4">
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${
+                                !breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
+                                paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
+                            }`}>
+                                {paymentMethod === "Cash on Delivery" && breakdown.codAvailable && (
+                                    <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
+                                )}
+                            </div>
                             <input
                                 type="radio"
                                 name="paymentMethod"
                                 value="Cash on Delivery"
                                 checked={paymentMethod === "Cash on Delivery"}
                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                disabled={!breakdown.codAvailable} // Disable the radio button itself
-                                className="w-4 h-4 accent-black"
+                                disabled={!breakdown.codAvailable || isBusy}
+                                className="hidden"
                             />
-                            <span className="font-medium text-black ml-3">Cash on Delivery</span>
+                            <div className="flex-1">
+                                <span className={`block font-semibold transition-colors ${!breakdown.codAvailable ? 'text-slate-400' : paymentMethod === 'Cash on Delivery' ? 'text-black' : 'text-slate-700'}`}>
+                                    Cash on Delivery
+                                </span>
+                                <span className={`text-xs mt-0.5 block ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
+                            </div>
+                             <Truck className={`w-5 h-5 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
                         </div>
                         {!breakdown.codAvailable && (
-                            <p className="text-xs text-red-600 ml-7 mt-1">
-                                Not available for the selected pincode.
-                            </p>
+                            <div className="mt-3 ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
+                                Not available for this pincode.
+                            </div>
                         )}
                     </label>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-4">
                     {paymentMethod === "Razorpay" && (
                         <motion.button
                             onClick={handleRazorpayPayment}
-                            disabled={isSubmitting || loadingPrices}
-                            className="w-full py-3 rounded-lg bg-black text-white font-semibold transition-colors hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                            disabled={isBusy}
+                            whileHover={!isBusy ? { scale: 1.01 } : {}}
+                            whileTap={!isBusy ? { scale: 0.98 } : {}}
+                            className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            {isSubmitting ? "Processing..." : (loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`)}
+                             {isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
                         </motion.button>
                     )}
 
                     {paymentMethod === "Cash on Delivery" && (
-                        <div className="space-y-3">
-                            <p className="flex items-center text-sm text-slate-600"><Truck className="w-4 h-4 mr-2" /> You can pay via cash upon delivery.</p>
-                            <motion.button
-                                onClick={handlePlaceOrder}
-                                disabled={isSubmitting || loadingPrices}
-                                className="w-full py-3 rounded-lg bg-black text-white font-semibold transition-colors hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed"
-                            >
-                                {isSubmitting ? "Placing Order..." : (loadingPrices ? "Loading Prices..." : "Place Order (COD)")}
-                            </motion.button>
-                        </div>
+                        <motion.button
+                            onClick={handlePlaceOrder}
+                            disabled={isBusy}
+                            whileHover={!isBusy ? { scale: 1.01 } : {}}
+                            whileTap={!isBusy ? { scale: 0.98 } : {}}
+                            className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? "Placing Order..." : (loadingPrices ? "Loading Prices..." : "Place Order (COD)")}
+                        </motion.button>
                     )}
                 </div>
             </div>

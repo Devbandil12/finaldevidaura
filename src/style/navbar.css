@@ -21,7 +21,6 @@ header {
   justify-content: space-between;
   padding: 0.2rem 2rem 0rem 2rem;
   align-items: center;
-  background-color: white;
   border-radius: 0px;
 
   /* Navbar 9999 < Sidebar 10000 */
@@ -67,15 +66,17 @@ header {
    2. SCROLLED STATE
    =========================== */
 #navbar.scrolled {
-  width: 90%;
+  width: 95%;
   border-radius: 50px;
   padding: 5px;
   background: rgba(255, 255, 255, 0.347);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  /* box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1); */
+  /* border: 1px solid rgba(255, 255, 255, 0.5); */
   color: #000;
+  z-index: 9999;
+
 }
 
 #navbar.scrolled .part-1 .logo h1,
@@ -698,7 +699,7 @@ header {
   align-items: center;
   margin-left: auto;
   margin-right: 5px;
-  margin-bottom: 5px ;
+  margin-bottom: 5px;
 }
 
 .user-avatar {
@@ -929,6 +930,8 @@ header {
     transform: none !important;
     padding: 0 1rem;
     margin-top: 0px;
+    background-color: white;
+
 
     /* FIX: Keep 9999 so Sidebar (10000) covers it */
     z-index: 9999 !important;
@@ -961,7 +964,7 @@ header {
     display: block;
   }
 
-  
+
 
   .notification-dropdown {
     right: 50px;

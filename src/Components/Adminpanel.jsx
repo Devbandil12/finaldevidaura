@@ -11,7 +11,9 @@ import ImageUploadModal from "./ImageUploadModal";
 import PincodeManager from "./PincodeManager";
 import OrderChart from "./OrderChart";
 import Reports from "./Reports";
+import useCloudinary from "../utils/useCloudinary";
 // 🟢 2. IMPORT NEW ICONS
+import { Plus, X, Trash2, UploadCloud, ArrowRight, ArrowLeft, Save, Archive, Undo } from 'lucide-react';
 import { FaTachometerAlt, FaBox, FaTicketAlt, FaClipboardList, FaUsers, FaEnvelope, FaShoppingCart, FaMoneyBillWave, FaBars, FaTimes, FaMapMarkerAlt, FaTimesCircle, FaFlagCheckered, FaDownload, FaPercentage, FaUserPlus, FaUserCheck, FaHeart, FaSave, FaPlus, FaTrash, FaArchive, FaUndo } from 'react-icons/fa'; // Added Archive/Undo
 import { Line, Pie } from 'react-chartjs-2';
 import {
@@ -350,10 +352,13 @@ const ProductVariantEditor = ({ product, onClose }) => {
     updateProduct,
     addVariant,
     updateVariant,
-    deleteVariant, // This is archiveVariant
+    deleteVariant,
     unarchiveVariant,
   } = useContext(ProductContext);
 
+  const { uploadImage, uploading } = useCloudinary();
+
+  // --- DATA STATES ---
   const [parentData, setParentData] = useState({
     name: product.name,
     category: product.category,
@@ -363,360 +368,255 @@ const ProductVariantEditor = ({ product, onClose }) => {
     fragranceNotes: product.fragranceNotes,
   });
 
+  const [existingImages, setExistingImages] = useState(
+    Array.isArray(product.imageurl) ? product.imageurl : (product.imageurl ? [product.imageurl] : [])
+  );
+  
+  const [newFiles, setNewFiles] = useState([]); 
+  const [previews, setPreviews] = useState([]);
   const [variants, setVariants] = useState(product.variants || []);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
-
   const [newVariantIndex, setNewVariantIndex] = useState(-1);
   const newVariantCardRef = useRef(null);
 
-  // --- (Handler functions) ---
+  useEffect(() => {
+    return () => previews.forEach(url => URL.revokeObjectURL(url));
+  }, [previews]);
+
   const handleParentChange = (e) => {
     const { name, value } = e.target;
     setParentData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (existingImages.length + newFiles.length + files.length > 10) return window.toast.error("Max 10 images.");
+    setNewFiles(prev => [...prev, ...files]);
+    setPreviews(prev => [...prev, ...files.map(file => URL.createObjectURL(file))]);
+  };
+
+  const removeExistingImage = (index) => setExistingImages(prev => prev.filter((_, i) => i !== index));
+  const removeNewFile = (index) => {
+    setNewFiles(prev => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(previews[index]);
+    setPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveParent = async (shouldClose = false) => {
+    setIsSaving(true);
+    try {
+      let finalNewUrls = [];
+      if (newFiles.length > 0) {
+        for (const file of newFiles) {
+          finalNewUrls.push(await uploadImage(file));
+        }
+      }
+      const finalImageArray = [...existingImages, ...finalNewUrls];
+      await updateProduct(product.id, { ...parentData, imageurl: finalImageArray });
+      
+      setNewFiles([]);
+      setPreviews([]);
+      setExistingImages(finalImageArray);
+      window.toast.success("Details updated!");
+      if (shouldClose) onClose();
+    } catch (error) {
+      console.error(error);
+      window.toast.error("Update failed.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleVariantChange = (index, e) => {
     const { name, value } = e.target;
     const newVariants = [...variants];
-
     if (["oprice", "costPrice", "discount", "size", "stock"].includes(name)) {
-      newVariants[index][name] = value === "" ? "" : Number(value);
+        newVariants[index][name] = value === "" ? "" : Number(value);
     } else {
-      newVariants[index][name] = value;
+        newVariants[index][name] = value;
     }
-
     setVariants(newVariants);
   };
 
   const handleAddNewVariant = () => {
     setNewVariantIndex(variants.length);
-
-    setVariants([
-      ...variants,
-      {
-        productId: product.id,
-        name: "New Variant",
-        size: 0,
-        oprice: 0,
-        costPrice: 0,
-        discount: 0,
-        stock: 0,
-        isArchived: false,
-      },
-    ]);
-  };
-
-  const handleSaveParent = async () => {
-    setIsSaving(true);
-    await updateProduct(product.id, parentData);
-    setIsSaving(false);
-    window.toast.success("Parent product updated!");
+    setVariants([...variants, { productId: product.id, name: "New Variant", size: 0, oprice: 0, costPrice: 0, discount: 0, stock: 0, isArchived: false }]);
   };
 
   const handleSaveVariant = async (index) => {
     const variant = variants[index];
     setIsSaving(true);
     try {
-      if (variant.id) {
-        await updateVariant(variant.id, variant);
-      } else {
-        const newVariant = await addVariant(variant);
-        if (newVariant) {
-          const newVariants = [...variants];
-          newVariants[index] = newVariant;
-          setVariants(newVariants);
-        } else {
-          throw new Error("Failed to get new variant data from server");
+        if (variant.id) await updateVariant(variant.id, variant);
+        else {
+            const newVariant = await addVariant(variant);
+            if (newVariant) {
+                const newVariants = [...variants];
+                newVariants[index] = newVariant;
+                setVariants(newVariants);
+            }
         }
-      }
-      window.toast.success(`Variant "${variant.name}" saved!`);
-    } catch (e) {
-      window.toast.error("Failed to save variant.");
-    } finally {
-      setIsSaving(false);
-    }
+        window.toast.success(`Variant saved!`);
+    } catch (e) { window.toast.error("Failed to save."); } finally { setIsSaving(false); }
   };
 
-  const handleArchiveVariant = async (index) => {
+  const handleArchiveToggle = async (index) => {
     const variant = variants[index];
-    const activeVariants = variants.filter((v) => !v.isArchived);
-    if (activeVariants.length <= 1 && !variant.isArchived) {
-      window.toast.error("A product must have at least one active variant.");
-      return;
-    }
-    if (!variant.id) {
-      setVariants(variants.filter((_, i) => i !== index));
-      return;
-    }
-    if (
-      window.confirm(
-        `Are you sure you want to ARCHIVE the "${variant.name}" variant?`
-      )
-    ) {
-      setIsSaving(true);
-      await deleteVariant(variant.id);
-      const newVariants = [...variants];
-      newVariants[index].isArchived = true;
-      setVariants(newVariants);
-      setIsSaving(false);
-      window.toast.success("Variant archived!");
-    }
-  };
-
-  const handleUnarchiveVariant = async (index) => {
-    const variant = variants[index];
-    if (
-      window.confirm(
-        `Are you sure you want to UNARCHIVE the "${variant.name}" variant?`
-      )
-    ) {
-      setIsSaving(true);
-      await unarchiveVariant(variant.id);
-      const newVariants = [...variants];
-      newVariants[index].isArchived = false;
-      setVariants(newVariants);
-      setIsSaving(false);
-      window.toast.success("Variant unarchived!");
+    if (!variant.id) { setVariants(variants.filter((_, i) => i !== index)); return; }
+    if (variant.isArchived) {
+        if (window.confirm(`Unarchive?`)) {
+            setIsSaving(true);
+            await unarchiveVariant(variant.id);
+            const newVariants = [...variants];
+            newVariants[index].isArchived = false;
+            setVariants(newVariants);
+            setIsSaving(false);
+        }
+    } else {
+        const activeVariants = variants.filter((v) => !v.isArchived);
+        if (activeVariants.length <= 1) return window.toast.error("Keep at least one active variant.");
+        if (window.confirm(`Archive?`)) {
+            setIsSaving(true);
+            await deleteVariant(variant.id);
+            const newVariants = [...variants];
+            newVariants[index].isArchived = true;
+            setVariants(newVariants);
+            setIsSaving(false);
+        }
     }
   };
 
   useEffect(() => {
     if (newVariantCardRef.current) {
-      newVariantCardRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
-      setNewVariantIndex(-1);
+        newVariantCardRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        setNewVariantIndex(-1);
     }
   }, [newVariantIndex]);
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-[60] bg-black bg-opacity-50">
-      <div className="bg-gray-100 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] relative flex flex-col">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl z-10"
-        >
-          &times;
-        </button>
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 pr-8">
-          Edit Product: {parentData.name}
-        </h2>
+  // Modern Input Helper with Light Border
+  const ModernInput = ({ label, name, value, onChange, type="text", span="col-span-1" }) => (
+    <div className={span}>
+      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">{label}</label>
+      <input 
+        name={name} 
+        type={type} 
+        placeholder={label} 
+        value={value} 
+        onChange={onChange} 
+        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+      />
+    </div>
+  );
 
-        {/* --- Tab Navigation (Unchanged) --- */}
-        <div className="flex border-b border-gray-300">
-          <button
-            onClick={() => setActiveTab("general")}
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "general"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            General
-          </button>
-          <button
-            onClick={() => setActiveTab("variants")}
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "variants"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            Variants ({variants.length})
-          </button>
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-[100] p-4 sm:p-6 transition-all duration-300">
+      <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-white/20">
+        
+        {/* Header */}
+        <div className="px-8 py-6 bg-white flex justify-between items-center z-10 border-b border-gray-100">
+          <div><h2 className="text-xl font-bold text-gray-800 tracking-tight">Edit Product</h2><p className="text-sm text-gray-400 mt-0.5 font-medium">{parentData.name}</p></div>
+          <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all"><X size={22} /></button>
         </div>
 
-        {/* --- Scrollable Content Area (Unchanged) --- */}
-        <div className="overflow-y-auto mt-4 pr-2 flex-1">
-          {/* --- TAB 1: GENERAL (Unchanged) --- */}
+        {/* Soft Tabs */}
+        <div className="flex px-8 gap-8 border-b border-gray-50">
+          <button onClick={() => setActiveTab("general")} className={`py-4 text-sm font-bold tracking-wide border-b-2 transition-all ${activeTab === "general" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}>General & Images</button>
+          <button onClick={() => setActiveTab("variants")} className={`py-4 text-sm font-bold tracking-wide border-b-2 transition-all ${activeTab === "variants" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-400 hover:text-gray-600"}`}>Variants ({variants.length})</button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white/50">
           {activeTab === "general" && (
-            <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <InputField
-                  label="Product Name"
-                  name="name"
-                  value={parentData.name}
-                  onChange={handleParentChange}
-                  placeholder="Product Name"
-                />
-                <InputField
-                  label="Category"
-                  name="category"
-                  value={parentData.category}
-                  onChange={handleParentChange}
-                  placeholder="Category"
-                />
-                <TextAreaField
-                  label="Description"
-                  name="description"
-                  value={parentData.description}
-                  onChange={handleParentChange}
-                  placeholder="Description"
-                  span="md:col-span-2"
-                />
-                <InputField
-                  label="Top Notes"
-                  name="composition"
-                  value={parentData.composition}
-                  onChange={handleParentChange}
-                  placeholder="Top Notes"
-                />
-                <InputField
-                  label="Base Notes"
-                  name="fragranceNotes"
-                  value={parentData.fragranceNotes}
-                  onChange={handleParentChange}
-                  placeholder="Base Notes"
-                />
-                <InputField
-                  label="Heart Notes"
-                  name="fragrance"
-                  value={parentData.fragrance}
-                  onChange={handleParentChange}
-                  placeholder="Heart Notes"
-                />
+            <div className="space-y-8">
+              {/* Image Grid */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 ml-1">Product Gallery</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-gray-50 hover:bg-indigo-50/50 transition-all group border-2 border-dashed border-gray-200 hover:border-indigo-200">
+                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 transition-transform text-indigo-500 mb-4"><Plus size={24} /></div>
+                        <span className="text-[10px] font-bold text-gray-400 group-hover:text-indigo-500 uppercase tracking-wider">Add New</span>
+                        <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+                    </label>
+                    {existingImages.map((url, idx) => (
+                        <div key={`exist-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 bg-white">
+                            <img src={url} alt="Product" className="w-full h-full object-cover" />
+                            <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500 border border-gray-100 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><Trash2 size={16} /></button>
+                        </div>
+                    ))}
+                    {previews.map((url, idx) => (
+                        <div key={`new-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 bg-white">
+                            <img src={url} alt="New" className="w-full h-full object-cover border-4 border-indigo-50" />
+                            <div className="absolute inset-x-0 bottom-0 bg-indigo-600 text-white text-[9px] font-bold text-center py-1 tracking-wider">NEW UPLOAD</div>
+                            <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500 border border-gray-100 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><X size={16} /></button>
+                        </div>
+                    ))}
+                </div>
               </div>
-              <button
-                onClick={handleSaveParent}
-                disabled={isSaving}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-indigo-300"
-              >
-                <FaSave className="inline-block mr-2" /> Save General Details
-              </button>
+
+              {/* Text Fields */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <ModernInput label="Product Name" name="name" value={parentData.name} onChange={handleParentChange} />
+                 <ModernInput label="Category" name="category" value={parentData.category} onChange={handleParentChange} />
+                 <div className="md:col-span-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Description</label>
+                    <textarea name="description" rows={3} value={parentData.description} onChange={handleParentChange} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" />
+                 </div>
+                 <ModernInput label="Top Notes" name="composition" value={parentData.composition} onChange={handleParentChange} />
+                 <ModernInput label="Base Notes" name="fragranceNotes" value={parentData.fragranceNotes} onChange={handleParentChange} />
+                 <ModernInput label="Heart Notes" name="fragrance" value={parentData.fragrance} onChange={handleParentChange} />
+              </div>
+
+              {/* Navigation Footer */}
+              <div className="flex gap-4">
+                  <button onClick={() => handleSaveParent(false)} disabled={isSaving || uploading} className="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">
+                     {uploading ? <span className="animate-pulse">Uploading...</span> : isSaving ? "Saving..." : <><UploadCloud size={20} /> Save Details</>}
+                  </button>
+                  <button onClick={() => setActiveTab("variants")} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+                     Next <ArrowRight size={18} />
+                  </button>
+              </div>
             </div>
           )}
 
-          {/* --- TAB 2: VARIANTS (Unchanged) --- */}
           {activeTab === "variants" && (
-            <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Product Variants
-                </h3>
-                <button
-                  onClick={handleAddNewVariant}
-                  className="px-4 py-1.5 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 flex items-center gap-2"
-                >
-                  <FaPlus className="w-3 h-3" /> Add New
-                </button>
-              </div>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-700 ml-2">Manage Variants</h3>
+                    <button onClick={handleAddNewVariant} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition flex items-center gap-2"><Plus size={16} /> Add Variant</button>
+                </div>
+                
+                <div className="space-y-4">
+                    {variants.map((variant, index) => (
+                        <div key={variant.id || `new-${index}`} ref={index === newVariantIndex ? newVariantCardRef : null} className={`p-6 rounded-3xl border transition-all ${variant.isArchived ? "bg-gray-50 border-gray-200 opacity-60" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}>
+                            <div className="flex justify-between items-start mb-6">
+                                <div><h4 className="font-bold text-gray-800 text-sm">{variant.name || "Untitled"} {variant.isArchived && <span className="ml-2 px-2 py-1 bg-gray-200 text-gray-500 text-[10px] rounded-lg uppercase tracking-wide">Archived</span>}</h4></div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleSaveVariant(index)} disabled={isSaving} className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition-colors"><Save size={18} /></button>
+                                    <button onClick={() => handleArchiveToggle(index)} disabled={isSaving} className={`p-2.5 rounded-xl transition-colors ${variant.isArchived ? "bg-blue-50 text-blue-600 hover:bg-blue-100" : "bg-red-50 text-red-600 hover:bg-red-100"}`}>{variant.isArchived ? <Undo size={18} /> : <Archive size={18} />}</button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                                <ModernInput label="Name" name="name" value={variant.name} onChange={(e) => handleVariantChange(index, e)} />
+                                <ModernInput label="Size" name="size" type="number" value={variant.size} onChange={(e) => handleVariantChange(index, e)} />
+                                <ModernInput label="Stock" name="stock" type="number" value={variant.stock} onChange={(e) => handleVariantChange(index, e)} />
+                                <ModernInput label="Price" name="oprice" type="number" value={variant.oprice} onChange={(e) => handleVariantChange(index, e)} />
+                                <ModernInput label="Cost" name="costPrice" type="number" value={variant.costPrice} onChange={(e) => handleVariantChange(index, e)} />
+                                <ModernInput label="Disc %" name="discount" type="number" value={variant.discount} onChange={(e) => handleVariantChange(index, e)} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-              {/* Variant Card List */}
-              <div className="space-y-4">
-                {variants.map((variant, index) => (
-                  <div
-                    ref={index === newVariantIndex ? newVariantCardRef : null}
-                    key={variant.id || `new-${index}`}
-                    className={`rounded-lg relative ${variant.isArchived
-                      ? "bg-gray-200 opacity-70"
-                      : "bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                      }`}
-                  >
-                    {/* --- DEDICATED HEADER (Unchanged) --- */}
-                    <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                      <div>
-                        {variant.isArchived && (
-                          <span className="text-xs font-bold text-gray-700 bg-gray-300 px-2 py-0.5 rounded-full">
-                            ARCHIVED
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => handleSaveVariant(index)}
-                          disabled={isSaving}
-                          className="px-3 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 disabled:bg-green-300 text-xs flex items-center justify-center gap-1"
-                        >
-                          <FaSave /> Save
-                        </button>
-                        {variant.isArchived ? (
-                          <button
-                            onClick={() => handleUnarchiveVariant(index)}
-                            disabled={isSaving}
-                            title="Unarchive"
-                            className="p-2 w-7 h-7 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-blue-300"
-                          >
-                            <FaUndo size={12} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleArchiveVariant(index)}
-                            disabled={isSaving}
-                            title="Archive"
-                            className="p-2 w-7 h-7 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 disabled:bg-red-300"
-                          >
-                            <FaArchive size={12} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {/* --- END HEADER --- */}
-
-                    {/* --- INPUT GRID (CARD BODY) (Unchanged) --- */}
-                    <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-3">
-                      <InputField
-                        label="Variant Name"
-                        name="name"
-                        value={variant.name}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="e.g., 20ml"
-                        span="col-span-2 md:col-span-2"
-                      />
-
-                      <InputField
-                        label="Size (ml)"
-                        name="size"
-                        type="number"
-                        value={variant.size}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="20"
-                        span="col-span-1 md:col-span-1"
-                      />
-
-                      <InputField
-                        label="Stock"
-                        name="stock"
-                        type="number"
-                        value={variant.stock}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="100"
-                        span="col-span-1 md:col-span-1"
-                      />
-
-                      <InputField
-                        label="Orig. Price (₹)"
-                        name="oprice"
-                        type="number"
-                        value={variant.oprice}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="1500"
-                        span="col-span-1 md:col-span-1"
-                      />
-
-                      <InputField
-                        label="Cost Price (₹)"
-                        name="costPrice"
-                        type="number"
-                        value={variant.costPrice}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="500"
-                        span="col-span-1 md:col-span-1"
-                      />
-
-                      <InputField
-                        label="Discount (%)"
-                        name="discount"
-                        type="number"
-                        value={variant.discount}
-                        onChange={(e) => handleVariantChange(index, e)}
-                        placeholder="10"
-                        span="col-span-2 sm:col-span-1 md:col-span-2"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                {/* Footer Navigation */}
+                <div className="flex gap-4 pt-4 mt-6 border-t border-gray-100">
+                   <button onClick={() => setActiveTab("general")} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+                      <ArrowLeft size={18} /> Back
+                   </button>
+                   <button onClick={onClose} className="w-2/3 bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-gray-200 transition-all">
+                      Finish Editing
+                   </button>
+                </div>
             </div>
           )}
         </div>
@@ -1196,8 +1096,8 @@ const AdminPanel = () => {
                   <button
                     onClick={() => { setCouponSubTab("manual"); setEditingCoupon(null); }}
                     className={`w-1/2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${couponSubTab === "manual"
-                        ? "bg-white text-indigo-700 shadow-sm"
-                        : "text-gray-600 hover:bg-gray-200"
+                      ? "bg-white text-indigo-700 shadow-sm"
+                      : "text-gray-600 hover:bg-gray-200"
                       }`}
                   >
                     Manual Coupons
@@ -1205,8 +1105,8 @@ const AdminPanel = () => {
                   <button
                     onClick={() => { setCouponSubTab("auto"); setEditingCoupon(null); }}
                     className={`w-1/2 px-4 py-2 text-sm font-semibold rounded-md transition-colors ${couponSubTab === "auto"
-                        ? "bg-white text-indigo-700 shadow-sm"
-                        : "text-gray-600 hover:bg-gray-200"
+                      ? "bg-white text-indigo-700 shadow-sm"
+                      : "text-gray-600 hover:bg-gray-200"
                       }`}
                   >
                     Automatic Promotions
