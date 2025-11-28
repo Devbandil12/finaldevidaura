@@ -227,7 +227,7 @@ export default function Checkout() {
                 {step < 3 && (
                   <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                    className="mt-12 flex items-center justify-between border-t border-slate-100 pt-5 px-5"
+                    className="mt-12 flex items-center justify-between border-t border-slate-100 pt-5 px-1 sm:px-5"
                   >
                     <button
                       onClick={handlePrev}
