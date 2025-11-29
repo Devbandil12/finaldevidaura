@@ -298,7 +298,7 @@ const Navbar = ({ onVisibilityChange }) => {
 
   const getNavbarTop = () => {
     if (!navbarVisible) return "-150px";
-    if (isScrolled) return "0px";
+    if (isScrolled) return "5px";
     return "0px";
   };
 

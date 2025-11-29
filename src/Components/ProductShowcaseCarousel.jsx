@@ -75,17 +75,22 @@ export default function ImmersiveProductShowcase() {
     const [direction, setDirection] = useState(0);
     const [storyExpanded, setStoryExpanded] = useState(false);
 
+    // 🟢 FILTER: Exclude products with category 'Template'
+    const visibleProducts = useMemo(() => {
+        return products.filter(p => p.category !== "Template");
+    }, [products]);
+
     const onNext = useCallback(() => {
         setDirection(1);
-        setActiveIdx((i) => (products.length ? (i + 1) % products.length : 0));
+        setActiveIdx((i) => (visibleProducts.length ? (i + 1) % visibleProducts.length : 0));
         setStoryExpanded(false);
-    }, [products.length]);
+    }, [visibleProducts.length]);
 
     const onPrev = useCallback(() => {
         setDirection(-1);
-        setActiveIdx((i) => (products.length ? (i - 1 + products.length) % products.length : 0));
+        setActiveIdx((i) => (visibleProducts.length ? (i - 1 + visibleProducts.length) % visibleProducts.length : 0));
         setStoryExpanded(false);
-    }, [products.length]);
+    }, [visibleProducts.length]);
 
     const goToIndex = (i) => {
         setDirection(i > activeIdx ? 1 : -1);
@@ -109,11 +114,11 @@ export default function ImmersiveProductShowcase() {
     }, [onNext, onPrev]);
 
     useEffect(() => {
-        if (!products || products.length === 0) return;
-        if (activeIdx >= products.length) setActiveIdx(0);
-    }, [products, activeIdx]);
+        if (!visibleProducts || visibleProducts.length === 0) return;
+        if (activeIdx >= visibleProducts.length) setActiveIdx(0);
+    }, [visibleProducts, activeIdx]);
 
-    const product = products[activeIdx] || {};
+    const product = visibleProducts[activeIdx] || {};
     const scent = scentDetails[normalize(product.name)];
     
     // Dynamically retrieve accent colors using HSL strings
@@ -164,6 +169,9 @@ export default function ImmersiveProductShowcase() {
     const storyText = (scent && scent.story) || product.description || "";
     const teaser = storyText.slice(0, 150).trim();
     const isLongStory = storyText && storyText.length > 150;
+
+    // Guard Clause: If no valid products exist, render nothing or a placeholder
+    if (visibleProducts.length === 0 && products.length > 0) return null;
 
     return (
         <PageTransition>
@@ -264,7 +272,7 @@ export default function ImmersiveProductShowcase() {
 
                             {/* Pagination Dots */}
                             <motion.div variants={itemVariants} className="flex justify-center lg:justify-start gap-3 mt-12">
-                                {products.map((_, i) => (
+                                {visibleProducts.map((_, i) => (
                                     <button
                                         key={i}
                                         onClick={() => goToIndex(i)}

@@ -12,7 +12,7 @@
   flex-direction: column;
   gap: 3rem;
   /* This perspective gives the "tilt" depth */
-  perspective: 1200px; 
+  perspective: 1200px;
   /* Ensure it sits above other content */
   z-index: 10;
 }
@@ -42,7 +42,7 @@
   display: flex;
   align-items: center;
   /* IMPORTANT: 'max-content' ensures it doesn't wrap */
-  width: max-content; 
+  width: max-content;
 }
 
 /* Individual Items (Unchanged) */
@@ -50,7 +50,7 @@
   display: flex;
   align-items: center;
   /* Fixed padding ensures smooth loop calculation */
-  padding-right: 5rem; 
+  padding-right: 5rem;
   flex-shrink: 0;
 }
 
@@ -58,7 +58,7 @@
 
 .text-aesthetic {
   font-family: 'Playfair Display', serif;
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 400;
   font-style: italic;
   /* TEXT COLOR: Deep Charcoal (#1A1C20) */
@@ -75,25 +75,26 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  
+
   /* BACKGROUND: Deep Charcoal (#1A1C20) for high contrast stamp */
-  background: #1A1C20; 
+  background: #1A1C20;
   /* TEXT COLOR: Creamy Champagne (#FBF6EF) */
-  color: #FBF6EF; 
+  color: #FBF6EF;
   /* BORDER: Vibrant Amber (#F0A500) */
-  border: 1px solid #F0A500; 
-  
+  border: 1px solid #F0A500;
+
   padding: 0.8rem 2rem;
   border-radius: 8px;
-  
+
   font-family: 'Inter', sans-serif;
   text-transform: uppercase;
-  
+
   /* 3D Shadow using Deep Amber (#CF7500) */
-  box-shadow: 
-    4px 4px 0px rgba(207, 117, 0, 0.6), /* #CF7500 at 60% opacity */
-    0 5px 15px rgba(0,0,0,0.5);
-    
+  box-shadow:
+    4px 4px 0px rgba(207, 117, 0, 0.6),
+    /* #CF7500 at 60% opacity */
+    0 5px 15px rgba(0, 0, 0, 0.5);
+
   transform: rotate(-3deg);
   transition: transform 0.3s ease;
   cursor: pointer;
@@ -102,7 +103,7 @@
 .offer-stamp:hover {
   transform: rotate(0deg) scale(1.05);
   /* Hover Background: Deep Amber (#CF7500) */
-  background: #CF7500; 
+  background: #CF7500;
 }
 
 .offer-main {
@@ -131,22 +132,49 @@
 }
 
 /* --- FLOAT ANIMATION (Unchanged) --- */
-.float-fast { animation: float-y 8s ease-in-out infinite; }
-.float-slow { animation: float-y 12s ease-in-out infinite reverse; }
+.float-fast {
+  animation: float-y 8s ease-in-out infinite;
+}
+
+.float-slow {
+  animation: float-y 12s ease-in-out infinite reverse;
+}
 
 @keyframes float-y {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive (Unchanged) */
 @media (min-width: 768px) {
-  .text-aesthetic { font-size: 3rem; }
-  .offer-main { font-size: 1.6rem; }
-  .dual-marquee-section { padding: 1rem 0; gap: 4rem; }
+  .text-aesthetic {
+    font-size: 2.5rem;
+  }
+
+  .offer-main {
+    font-size: 1.6rem;
+  }
+
+  .dual-marquee-section {
+    padding: 1rem 0;
+    padding-top: 8rem;
+    gap: 4rem;
+  }
 }

@@ -13,10 +13,10 @@ import Loader from "./Loader";
 import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
-import { FiGift, FiCheckCircle, FiX, FiBell } from "react-icons/fi";
+import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo } from "react-icons/fi";
 
 // --- HELPER COMPONENT: Offer Instructions ---
-const OfferInstructionCard = ({ offer }) => {
+const OfferInstructionCard = ({ offer, minimalist = false }) => {
   const generateInstruction = () => {
     const {
       discountType,
@@ -67,32 +67,31 @@ const OfferInstructionCard = ({ offer }) => {
   };
 
   return (
-    <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-      <p className="font-semibold text-indigo-800">{offer.code}</p>
-      <p className="text-sm text-indigo-700">{generateInstruction()}</p>
+    <div className={`p-4 bg-gray-50 border border-gray-200 rounded-lg ${minimalist ? "py-3 px-3 text-sm" : ""}`}>
+      <div className="flex items-start gap-3">
+        <FiTag className={`mt-1 text-black ${minimalist ? "w-3 h-3" : ""}`} />
+        <div>
+            {!minimalist && <p className="font-bold text-gray-900">{offer.code}</p>}
+            <p className={`${minimalist ? "text-gray-700" : "text-sm text-gray-600 mt-1"}`}>{generateInstruction()}</p>
+        </div>
+      </div>
     </div>
   );
 };
 
-// --- ANIMATION VARIANTS ---
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
+// --- MODAL VARIANTS ---
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.98 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { duration: 0.2, ease: "easeOut" } 
   },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 50, damping: 15 },
-  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.98, 
+    transition: { duration: 0.15, ease: "easeIn" } 
+  }
 };
 
 const ShoppingCart = () => {
@@ -125,16 +124,61 @@ const ShoppingCart = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
-  const [showOffers, setShowOffers] = useState(false);
+   
+  // UI States
+  const [showOffers, setShowOffers] = useState(false); 
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [couponSearch, setCouponSearch] = useState(""); 
 
   const isBuyNowFromNavigation = location.state?.isBuyNow;
   const isBuyNowActive = isBuyNowFromNavigation || !!buyNow;
 
-  // --- Normalization helper for buyNow item
+  // --- SCROLL LOCK (FIXED FOR MOBILE/IOS) ---
+  useEffect(() => {
+    if (isCouponModalOpen || showOffers) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      
+      const styles = {
+        overflow: "hidden",
+        height: "100vh",       // Forces body to viewport height
+        touchAction: "none",   // Disables touch scroll on mobile
+        paddingRight: `${scrollbarWidth}px`
+      };
+
+      Object.assign(document.body.style, styles);
+      document.documentElement.style.overflow = "hidden"; // Lock html tag as well
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.height = "";
+      document.body.style.touchAction = "";
+      document.body.style.paddingRight = "";
+      document.documentElement.style.overflow = "";
+    }
+    
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.height = "";
+      document.body.style.touchAction = "";
+      document.body.style.paddingRight = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isCouponModalOpen, showOffers]);
+
+  // --- Filter Coupons ---
+  const filteredCoupons = useMemo(() => {
+    if (!couponSearch) return availableCoupons;
+    const lowerSearch = couponSearch.toLowerCase();
+    return availableCoupons.filter(
+        (c) => 
+            c.code.toLowerCase().includes(lowerSearch) || 
+            (c.description && c.description.toLowerCase().includes(lowerSearch))
+    );
+  }, [availableCoupons, couponSearch]);
+
+  // --- Normalization helper ---
   const normalizeBuyNow = useCallback(
     (bn) => {
       if (!bn) return null;
-      // If bn already matches shape, keep it. Else try to map common fields.
       const normalized = {
         product: bn.product ?? (bn.productId ? { id: bn.productId, name: bn.productName, imageurl: bn.productImageUrl } : undefined),
         variant: bn.variant ?? (bn.variantId ? { id: bn.variantId, oprice: bn.oprice ?? bn.listPrice, discount: bn.discount ?? 0, name: bn.variantName, size: bn.size, stock: bn.stock ?? 999 } : undefined),
@@ -147,14 +191,12 @@ const ShoppingCart = () => {
     []
   );
 
-  // UseMemo to create stable reference for buyNow array
   const buyNowItemArray = useMemo(() => {
     if (!buyNow) return [];
     const n = normalizeBuyNow(buyNow);
     return [n];
   }, [buyNow, normalizeBuyNow]);
 
-  // itemsToRender: either the normalized buyNow array or the cart
   const itemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -171,11 +213,9 @@ const ShoppingCart = () => {
   });
   const [loadingPrices, setLoadingPrices] = useState(true);
 
-  // 🟢 RE-FETCH FIX: Ref to store the last request body string
   const lastRequestRef = useRef("");
 
   useEffect(() => {
-    // If cart is loading or empty, don't fetch price
     if (isCartLoading || itemsToRender.length === 0) {
       setLoadingPrices(false);
       if (itemsToRender.length === 0) {
@@ -195,7 +235,6 @@ const ShoppingCart = () => {
     }
 
     const fetchBreakdown = async () => {
-      // Construct the request body
       const requestBody = {
         cartItems: itemsToRender.map((i) => ({
           variantId: i.variant?.id ?? i.variantId,
@@ -204,13 +243,12 @@ const ShoppingCart = () => {
         })),
         couponCode: appliedCoupon?.code || null,
         isCart: true,
-        pincode: null, // Ensure no delivery charge is calculated in cart
+        pincode: null,
       };
 
-      // 🟢 RE-FETCH FIX: Compare with last request
       const requestString = JSON.stringify(requestBody);
       if (lastRequestRef.current === requestString) {
-        return; // Don't fetch if nothing changed
+        return;
       }
 
       setLoadingPrices(true);
@@ -229,8 +267,6 @@ const ShoppingCart = () => {
         const returned = data.breakdown ?? data;
 
         setBreakdown(returned);
-
-        // Update ref after successful fetch
         lastRequestRef.current = requestString;
       } catch (error) {
         console.error("Price breakdown error:", error);
@@ -239,7 +275,6 @@ const ShoppingCart = () => {
       }
     };
 
-    // Debounce slightly to avoid rapid fires
     const timer = setTimeout(() => fetchBreakdown(), 300);
     return () => clearTimeout(timer);
 
@@ -426,11 +461,11 @@ const ShoppingCart = () => {
     navigate("/cart", { replace: true, state: {} });
   };
 
-  // Helper to render suggested products
-  const renderRemainingProducts = () => {
-    if (isBuyNowActive) return null;
+  // --- Memoize suggested products ---
+  const suggestedProducts = useMemo(() => {
+    if (isBuyNowActive) return [];
 
-    const items = products
+    return products
       .filter((p) => p.variants && p.variants.length > 0 && p.category !== "Template")
       .map((product) => {
         const cheapestVariant = product.variants.reduce(
@@ -441,90 +476,8 @@ const ShoppingCart = () => {
         if (inCart) return null;
         return { product, cheapestVariant };
       })
-      .filter(Boolean); // Filter out nulls
-
-    return items.map(({ product, cheapestVariant }) => {
-      const price = Math.trunc(cheapestVariant.oprice * (1 - (cheapestVariant.discount || 0) / 100));
-      const isAdding = addingProductId === cheapestVariant.id;
-      const imageUrl =
-        Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-
-      const showLineThrough = Number(cheapestVariant.oprice) > Number(price) && Number(cheapestVariant.discount) > 0;
-
-      return (
-        <motion.div
-          layout
-          initial="hidden"
-          animate="show"
-          key={product.id}
-          variants={cardVariants}
-          className="bg-white rounded-xl overflow-hidden flex flex-col shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition duration-300 ease-in-out group"
-        >
-          <div className="relative overflow-hidden">
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
-              onClick={() => navigate(`/product/${product.id}`)}
-            />
-            <div
-              className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-              onClick={() => navigate(`/product/${product.id}`)}
-            >
-              <span className="text-sm font-semibold">Quick View</span>
-            </div>
-          </div>
-          <div className="p-4 flex-grow flex flex-col justify-between text-left">
-            <div>
-              <div className="mb-2 flex justify-between items-baseline">
-                <h3
-                  className="font-semibold text-sm leading-tight inline cursor-pointer hover:underline"
-                  onClick={() => navigate(`/product/${product.id}`)}
-                >
-                  {product.name}
-                </h3>
-                <span className="text-xs text-gray-500">{cheapestVariant.size} ml</span>
-              </div>
-
-              <div className="flex justify-between items-baseline mb-4">
-                <div className="flex items-baseline gap-2">
-                  <p className="font-bold text-base">₹{price}</p>
-                  {showLineThrough ? <p className="text-sm text-gray-500 line-through">₹{cheapestVariant.oprice}</p> : <p className="text-sm text-gray-500">₹{cheapestVariant.oprice}</p>}
-                </div>
-                <span className="text-green-600 text-sm font-semibold">{cheapestVariant.discount}% OFF</span>
-              </div>
-            </div>
-            <HeroButton
-              onClick={() => handleAddToCart(cheapestVariant, product)} // Use handleAddToCart here
-              disabled={isAdding}
-              className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? "!bg-green-600 !text-white" : "bg-gray-100 text-gray-800 hover:bg-gray-200"}`}
-            >
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={isAdding ? "adding" : "add"}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-2"
-                >
-                  {isAdding ? (
-                    <>
-                      Added <FiCheckCircle />
-                    </>
-                  ) : (
-                    <>
-                      Add to Cart <FaShoppingCart />
-                    </>
-                  )}
-                </motion.span>
-              </AnimatePresence>
-            </HeroButton>
-          </div>
-        </motion.div>
-      );
-    });
-  };
+      .filter(Boolean);
+  }, [products, cart, isBuyNowActive]);
 
   const productDiscount = Number(breakdown.originalTotal || 0) - Number(breakdown.productTotal || 0);
   const finalPrice =
@@ -543,24 +496,187 @@ const ShoppingCart = () => {
       <title>{isLoading ? "Loading Cart... | Devid Aura" : isBuyNowActive ? "Buy Now | Devid Aura" : "Shopping Cart | Devid Aura"}</title>
       <meta name="description" content="Review your selected items, apply coupons, and proceed to a secure checkout. Manage your Devid Aura shopping experience." />
 
+      {/* --- 🟢 UPDATED: AUTO-OFFER BELL MODAL WITH INSTRUCTIONS --- */}
       <AnimatePresence>
         {showOffers && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onClick={() => setShowOffers(false)}>
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
-              <div className="flex justify-between items-center mb-4">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
+            onClick={() => setShowOffers(false)}
+          >
+            <motion.div 
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()} 
+              className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
+            >
+               {/* 🟢 Header with Title and Close Button */}
+              <div className="bg-black p-5 flex justify-between items-center text-white sticky top-0 z-10">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <FiGift className="text-indigo-600" />
-                  Available Offers
+                   <FiGift className="text-white" />
+                   Automatic Offers & Help
                 </h3>
-                <button onClick={() => setShowOffers(false)} className="text-gray-400 hover:text-black">
-                  <FiX />
+                <button onClick={() => setShowOffers(false)} className="text-white/70 hover:text-white transition-colors">
+                  <FiX size={24} />
                 </button>
               </div>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {autoOfferInstructions.length > 0 ? (
-                  autoOfferInstructions.map((offer) => <OfferInstructionCard key={offer.id} offer={offer} />)
+
+              <div className="p-6 overflow-y-auto space-y-6">
+                
+                {/* 🟢 Step-by-Step Guide Content */}
+                <div className="space-y-4">
+                    <h4 className="font-bold text-gray-900 border-b pb-2">How Automatic Coupons Work</h4>
+                    
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
+                        <div>
+                        <h4 className="font-bold text-gray-900 mb-1">Add Items to Cart</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">Simply browse our collection and add the products you love to your cart.</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm flex-shrink-0">2</div>
+                        <div>
+                        <h4 className="font-bold text-gray-900 mb-1">Meet the Criteria</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">Fulfil the specific offer requirements (e.g., "Buy 2 Get 1 Free" or "Spend ₹2000").</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm flex-shrink-0">3</div>
+                        <div>
+                        <h4 className="font-bold text-gray-900 mb-1">Instant Discount</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">The system automatically scans your cart. If you qualify, the discount appears instantly in your Order Summary.</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0"><FiInfo /></div>
+                        <div>
+                        <h4 className="font-bold text-gray-900 mb-1">No Code Needed!</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed">You don't need to type anything. <span className="italic text-xs text-red-500 block mt-1">(Note: Entering a manual coupon code might replace the automatic offer).</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 🟢 Divider */}
+                <div className="border-t border-gray-100"></div>
+
+                {/* 🟢 Active Offers Section */}
+                <div>
+                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Current Active Offers</h4>
+                  <div className="space-y-3">
+                    {autoOfferInstructions.length > 0 ? (
+                      autoOfferInstructions.map((offer) => <OfferInstructionCard key={offer.id} offer={offer} />)
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">No automatic offers are currently active.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 border-t border-gray-100 bg-gray-50 text-center">
+                <button 
+                  onClick={() => setShowOffers(false)}
+                  className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  Got it
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- EXISTING: SELECT COUPON MODAL --- */}
+      <AnimatePresence>
+        {isCouponModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setIsCouponModalOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div>
+                  <h3 className="text-xl font-bold text-black tracking-tight">Select Coupon</h3>
+                  <p className="text-xs text-gray-500 mt-1">Find the best deal for your order</p>
+                </div>
+                <button
+                  onClick={() => setIsCouponModalOpen(false)}
+                  className="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-black hover:text-white transition-all duration-200"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="px-5 pt-4 pb-2">
+                <div className="relative">
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Search coupons..." 
+                        value={couponSearch}
+                        onChange={(e) => setCouponSearch(e.target.value)}
+                        className="w-full bg-gray-50 border border-gray-200 pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                    />
+                </div>
+              </div>
+
+              <div className="p-5 overflow-y-auto space-y-4 bg-white flex-grow">
+                {filteredCoupons.length > 0 ? (
+                  filteredCoupons.map((coupon) => (
+                    <motion.div
+                      layout
+                      whileHover={{ scale: 1.01, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      key={coupon.id}
+                      className="group relative flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 rounded-xl hover:border-black transition-all duration-300 cursor-default"
+                    >
+                      <div className="flex flex-col gap-1 pr-4">
+                        <div className="flex items-center gap-2">
+                             <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={14} />
+                             <span className="font-bold text-black text-base tracking-wide uppercase">
+                                {coupon.code}
+                             </span>
+                        </div>
+                        <span className="text-xs text-gray-500 leading-relaxed">
+                          {coupon.description}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          handleApplyCoupon(coupon);
+                          setIsCouponModalOpen(false);
+                          setCouponSearch("");
+                        }}
+                        className="text-xs font-bold text-white bg-black px-5 py-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-sm flex-shrink-0"
+                      >
+                        APPLY
+                      </button>
+                      <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-r border-gray-300 rounded-full group-hover:border-black transition-colors"></div>
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-l border-gray-300 rounded-full group-hover:border-black transition-colors"></div>
+                    </motion.div>
+                  ))
                 ) : (
-                  <p className="text-sm text-gray-500">There are no special offers available right now.</p>
+                  <div className="text-center py-12 flex flex-col items-center justify-center text-gray-400">
+                    <FiSearch size={40} className="mb-3 opacity-20" />
+                    <p className="font-medium text-gray-900">No coupons found</p>
+                    <p className="text-xs mt-1">Try a different search term.</p>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -579,10 +695,11 @@ const ShoppingCart = () => {
             </h1>
 
             <div className="flex items-center gap-4">
+              {/* 🟢 Bell Icon now opens the improved modal and shows the count */}
               {autoOfferInstructions.length > 0 && !isBuyNowActive && (
                 <motion.button onClick={() => setShowOffers(true)} className="relative text-gray-500 hover:text-black" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                   <FiBell className="w-6 h-6" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
                 </motion.button>
               )}
 
@@ -608,14 +725,9 @@ const ShoppingCart = () => {
                     if (!item || !item.product || !item.variant) return null;
 
                     const itemImageUrl = Array.isArray(item.product.imageurl) && item.product.imageurl.length > 0 ? item.product.imageurl[0] : "/placeholder.png";
-
                     const isFree = (breakdown.appliedOffers || []).some((offer) => offer.appliesToVariantId === item.variant.id);
-
                     const isOutOfStock = Number(item.variant.stock || 0) <= 0;
-
-                    // Calculate selling price
                     const sellingPrice = Math.floor(Number(item.variant.oprice || 0) * (1 - (Number(item.variant.discount || 0) / 100)));
-
                     const showLineThrough = Number(item.variant.oprice || 0) > Number(sellingPrice) && Number(item.variant.discount || 0) > 0;
 
                     return (
@@ -706,7 +818,6 @@ const ShoppingCart = () => {
                   <>
                     <div className="flex justify-between mb-4 text-base">
                       <span className="text-gray-500">Original Price</span>
-                      {/* 🟢 STRIKETHROUGH FIX: Only apply line-through if there is a discount */}
                       <span className={`font-semibold ${productDiscount > 0 ? "line-through" : ""}`}>
                         ₹{Number(breakdown.originalTotal || 0).toFixed(2)}
                       </span>
@@ -745,52 +856,82 @@ const ShoppingCart = () => {
                   </>
                 )}
 
+                {/* --- SIDEBAR COUPON SECTION --- */}
                 <div className="mt-6">
-                  <h3 className="flex items-center gap-2 font-semibold mb-4">
-                    <FiGift /> Apply Coupon
+                  <h3 className="flex items-center gap-2 font-semibold mb-4 text-gray-800">
+                    <FiGift className="text-black" /> Apply Coupon
                   </h3>
-                  <div className="flex mb-4">
+
+                  <div className="flex mb-3 relative">
                     <input
                       type="text"
                       placeholder="Enter Coupon Code"
                       value={manualCouponCode}
                       onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
-                      className="flex-grow min-w-0 border border-gray-200 px-4 rounded-l-xl h-11 focus:outline-none focus:border-black focus:ring-2 focus:ring-black/20"
+                      className="flex-grow min-w-0 border border-gray-300 bg-gray-50 px-4 rounded-xl h-12 text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
                     />
-                    <motion.button whileTap={{ scale: 0.95 }} onClick={handleManualApply} className="bg-black text-white border-none px-4 sm:px-6 rounded-r-xl cursor-pointer font-semibold flex-shrink-0">
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleManualApply}
+                      className="absolute right-1 top-1 bottom-1 bg-black text-white text-xs font-bold px-4 rounded-lg hover:bg-gray-800 transition-colors"
+                    >
                       APPLY
                     </motion.button>
                   </div>
 
-                  {appliedCoupon && (
-                    <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-full py-1 px-4 text-sm mb-4">
-                      <span>
-                        APPLIED: <strong>{appliedCoupon.code}</strong>
-                      </span>
-                      <button onClick={() => setAppliedCoupon(null)} className="bg-transparent border-none cursor-pointer text-xl text-red-500 leading-none">
-                        ✕
-                      </button>
-                    </div>
-                  )}
-
-                  {availableCoupons.length > 0 && (
-                    <div className="max-h-40 overflow-y-auto pr-2">
-                      {availableCoupons.map((coupon) => {
-                        const isSelected = appliedCoupon?.id === coupon.id;
-                        return (
-                          <motion.div
-                            key={coupon.id}
-                            onClick={async () => (isSelected ? setAppliedCoupon(null) : await handleApplyCoupon(coupon))}
-                            className={`border p-4 rounded-xl mb-2 cursor-pointer transition-colors duration-200 ease-in-out ${isSelected ? "border-green-600 bg-green-50" : "border-gray-200 hover:border-black"}`}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            <strong className="block mb-1">{coupon.code}</strong>
-                            <small className="text-gray-500">{coupon.description}</small>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {appliedCoupon ? (
+                      <motion.div
+                        key="applied"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex items-center justify-between bg-green-50 border border-green-200 border-dashed rounded-xl p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="bg-green-100 p-2 rounded-full text-green-600">
+                            <FiCheckCircle size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-green-800 text-sm">{appliedCoupon.code}</p>
+                            <p className="text-[10px] text-green-700">Applied successfully</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setAppliedCoupon(null)}
+                          className="text-gray-400 hover:text-red-500 p-2"
+                        >
+                          <FiX size={18} />
+                        </button>
+                      </motion.div>
+                    ) : availableCoupons.length > 0 ? (
+                      <motion.button
+                        key="button"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        onClick={() => setIsCouponModalOpen(true)}
+                        className="w-full flex items-center justify-between p-3 bg-white border border-gray-200 rounded-xl hover:border-black hover:shadow-sm transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="bg-gray-100 p-2 rounded-full text-black group-hover:bg-black group-hover:text-white transition-colors">
+                            <FiGift size={18} />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-semibold text-gray-900 text-sm">
+                              Available Offers
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {availableCoupons.length} Coupons for you
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-gray-400 group-hover:text-black">
+                           <FiChevronRight size={20} />
+                        </div>
+                      </motion.button>
+                    ) : null}
+                  </AnimatePresence>
                 </div>
 
                 <AnimatePresence>
@@ -846,11 +987,110 @@ const ShoppingCart = () => {
             </AnimatePresence>
           </div>
 
-          {!isBuyNowActive && products.length > cart.length && (
+          {/* --- OPTIMIZED EXPLORE SECTION (FIXED LAYOUT & GHOST SPACE) --- */}
+          {!isBuyNowActive && suggestedProducts.length > 0 && (
             <div className="pt-8 mt-8 border-t border-gray-100">
               <h2 className="text-3xl font-bold text-center mb-8">Explore More Products</h2>
-              <motion.div variants={containerVariants} initial="hidden" whileInView="show" viewport={{ once: true, margin: "-50px" }} className="grid grid-cols-1 w-[80%] mx-auto min-[400px]:w-full min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 ">
-                {renderRemainingProducts()}
+              
+              <motion.div 
+                layout // CRITICAL: This enables the smooth shifting of the GRID itself
+                className="grid grid-cols-1 w-[80%] mx-auto min-[400px]:w-full min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
+              >
+                {/* mode="popLayout" is the KEY to fixing the "space not card" issue.
+                   It allows the leaving item to "pop" out of the layout immediately,
+                   so the new items can slide into place while the old one fades out.
+                */}
+                <AnimatePresence mode="popLayout">
+                  {suggestedProducts.map(({ product, cheapestVariant }) => {
+                    const price = Math.trunc(cheapestVariant.oprice * (1 - (cheapestVariant.discount || 0) / 100));
+                    const isAdding = addingProductId === cheapestVariant.id;
+                    const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
+                    const showLineThrough = Number(cheapestVariant.oprice) > Number(price) && Number(cheapestVariant.discount) > 0;
+
+                    return (
+                      <motion.div
+                        layout // Enables smooth position changes
+                        key={product.id}
+                        initial={{ opacity: 0, scale: 0.8 }} // Start slightly smaller
+                        animate={{ opacity: 1, scale: 1 }}   // Scale up to normal
+                        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }} // Fade out and shrink on exit
+                        transition={{ 
+                            type: "spring", 
+                            stiffness: 60, 
+                            damping: 25,
+                            layout: { duration: 0.3 } // Explicit layout duration for shifts
+                        }}
+                        className="bg-white rounded-xl overflow-hidden flex flex-col shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition-shadow duration-300 ease-in-out group h-full"
+                      >
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={imageUrl}
+                            alt={product.name}
+                            className="w-full h-40 object-cover block cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                            onClick={() => navigate(`/product/${product.id}`)}
+                          />
+                          <div
+                            className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                            onClick={() => navigate(`/product/${product.id}`)}
+                          >
+                            <span className="text-sm font-semibold">Quick View</span>
+                          </div>
+                        </div>
+                        <div className="p-4 flex-grow flex flex-col justify-between text-left">
+                          <div>
+                            <div className="mb-2 flex justify-between items-baseline">
+                              <h3
+                                className="font-semibold text-sm leading-tight inline cursor-pointer hover:underline"
+                                onClick={() => navigate(`/product/${product.id}`)}
+                              >
+                                {product.name}
+                              </h3>
+                              <span className="text-xs text-gray-500">{cheapestVariant.size} ml</span>
+                            </div>
+
+                            <div className="flex justify-between items-baseline mb-4">
+                              <div className="flex items-baseline gap-2">
+                                <p className="font-bold text-base">₹{price}</p>
+                                {showLineThrough ? (
+                                  <p className="text-sm text-gray-500 line-through">₹{cheapestVariant.oprice}</p>
+                                ) : (
+                                  <p className="text-sm text-gray-500">₹{cheapestVariant.oprice}</p>
+                                )}
+                              </div>
+                              <span className="text-green-600 text-sm font-semibold">{cheapestVariant.discount}% OFF</span>
+                            </div>
+                          </div>
+                          <HeroButton
+                            onClick={() => handleAddToCart(cheapestVariant, product)}
+                            disabled={isAdding}
+                            className={`w-full text-sm font-semibold flex justify-center py-2 items-center gap-2 transition-colors duration-300 ${isAdding ? "!bg-green-600 !text-white" : "bg-gray-100 text-gray-800 hover:bg-gray-200"}`}
+                          >
+                            <AnimatePresence mode="wait">
+                              <motion.span
+                                key={isAdding ? "adding" : "add"}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex items-center gap-2"
+                              >
+                                {isAdding ? (
+                                  <>
+                                    Added <FiCheckCircle />
+                                  </>
+                                ) : (
+                                  <>
+                                    Add to Cart <FaShoppingCart />
+                                  </>
+                                )}
+                              </motion.span>
+                            </AnimatePresence>
+                          </HeroButton>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </motion.div>
             </div>
           )}
