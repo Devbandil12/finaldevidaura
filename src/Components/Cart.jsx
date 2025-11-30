@@ -1,4 +1,3 @@
-// src/components/Cart.jsx
 import React, { useState, useEffect, useContext, useCallback, useMemo, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -14,6 +13,15 @@ import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock } from "react-icons/fi";
+
+// --- GPU ACCELERATION STYLE ---
+// This forces the element onto its own compositor layer
+const gpuStyle = {
+  transform: "translateZ(0)",
+  backfaceVisibility: "hidden",
+  perspective: 1000,
+  willChange: "transform, opacity, height", // Hints browser about changes
+};
 
 // --- HELPER COMPONENT: Offer Instructions ---
 const OfferInstructionCard = ({ offer, minimalist = false }) => {
@@ -145,7 +153,7 @@ const ShoppingCart = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
-   
+    
   // UI States
   const [showOffers, setShowOffers] = useState(false); 
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
@@ -526,6 +534,7 @@ const ShoppingCart = () => {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             transition={{ duration: 0.2 }}
+            style={{ willChange: "opacity" }} // GPU Hint
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
             onClick={() => setShowOffers(false)}
           >
@@ -534,6 +543,7 @@ const ShoppingCart = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
+              style={gpuStyle} // GPU Hint
               onClick={(e) => e.stopPropagation()} 
               className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
             >
@@ -591,6 +601,7 @@ const ShoppingCart = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            style={{ willChange: "opacity" }} // GPU Hint
             onClick={() => setIsCouponModalOpen(false)}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
           >
@@ -599,6 +610,7 @@ const ShoppingCart = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
+              style={gpuStyle} // GPU Hint
               onClick={(e) => e.stopPropagation()}
               className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
             >
@@ -634,6 +646,7 @@ const ShoppingCart = () => {
                       whileHover={{ scale: 1.01, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
                       key={coupon.id}
+                      style={{ willChange: "transform" }} // GPU Hint
                       className="group relative flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 rounded-xl hover:border-black transition-all duration-300 cursor-default"
                     >
                       <div className="flex flex-col gap-1 pr-4">
@@ -724,6 +737,7 @@ const ShoppingCart = () => {
                         initial="initial" 
                         animate="animate" 
                         exit="exit"
+                        style={gpuStyle} // 🟢 GPU ACCELERATION
                       >
                         <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
                           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
@@ -812,6 +826,7 @@ const ShoppingCart = () => {
                             initial="initial" 
                             animate="animate" 
                             exit="exit"
+                            style={gpuStyle} // 🟢 GPU ACCELERATION
                           >
                             <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
                               {/* Image Section */}
@@ -1075,6 +1090,7 @@ const ShoppingCart = () => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
+                        style={gpuStyle} // 🟢 GPU ACCELERATION
                         transition={{ 
                             type: "spring", 
                             stiffness: 60, 
