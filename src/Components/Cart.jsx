@@ -14,13 +14,19 @@ import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock } from "react-icons/fi";
 
-// --- GPU ACCELERATION STYLE (FIXED) ---
-// Removed 'transform' to allow Framer Motion to control layout sliding
-// Removed 'height' from willChange to prevent browser repaint issues
+// --- GPU ACCELERATION & ANIMATION CONFIG ---
 const gpuStyle = {
   backfaceVisibility: "hidden",
   perspective: 1000,
   willChange: "transform, opacity", 
+};
+
+// "Buttery Smooth" Spring Configuration
+const springTransition = {
+  type: "spring",
+  stiffness: 400,
+  damping: 30,
+  mass: 1
 };
 
 // --- HELPER COMPONENT: Offer Instructions ---
@@ -102,19 +108,19 @@ const modalVariants = {
   }
 };
 
-// --- FADE LIST VARIANTS (FIXED) ---
-// Removed height/margin animation to stop layout shifting
-const fadeListVariants = {
-  initial: { opacity: 0, scale: 0.95 },
+// --- LIST ITEM VARIANTS ---
+const listVariants = {
+  initial: { opacity: 0, scale: 0.9, y: 10 },
   animate: { 
     opacity: 1, 
     scale: 1, 
-    transition: { duration: 0.3 } 
+    y: 0,
+    transition: { duration: 0.3, ease: "easeOut" } 
   },
   exit: { 
     opacity: 0, 
-    scale: 0.95, 
-    transition: { duration: 0.2 } 
+    scale: 0.9, 
+    transition: { duration: 0.2, ease: "easeIn" } 
   }
 };
 
@@ -128,6 +134,15 @@ const ShoppingCart = () => {
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [addingProductId, setAddingProductId] = useState(null);
 
+  // --- OPTIMISTIC UI STATES ---
+  // Removals: IDs hidden from specific lists
+  const [hiddenCartIds, setHiddenCartIds] = useState([]);
+  const [hiddenSavedIds, setHiddenSavedIds] = useState([]);
+  
+  // Additions: Full objects temporarily added to lists
+  const [tempCartItems, setTempCartItems] = useState([]);
+  const [tempSavedItems, setTempSavedItems] = useState([]);
+
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const {
@@ -140,7 +155,6 @@ const ShoppingCart = () => {
     startBuyNow,
     clearBuyNow,
     addToCart,
-    moveToWishlist,
     savedItems,
     saveForLater,
     moveSavedToCart,
@@ -160,6 +174,24 @@ const ShoppingCart = () => {
 
   const isBuyNowFromNavigation = location.state?.isBuyNow;
   const isBuyNowActive = isBuyNowFromNavigation || !!buyNow;
+
+  // --- CLEANUP OPTIMISTIC STATE ---
+  // When real data updates, remove our temp items to prevent duplicates/conflicts
+  useEffect(() => {
+    if (cart.length > 0) {
+      // If real cart has updated, clear our optimistic "added to cart" state
+      setTempCartItems([]);
+      setHiddenCartIds([]); 
+    }
+  }, [cart]);
+
+  useEffect(() => {
+    if (savedItems.length > 0) {
+      setTempSavedItems([]);
+      setHiddenSavedIds([]);
+    }
+  }, [savedItems]);
+
 
   // --- SCROLL LOCK ---
   useEffect(() => {
@@ -217,7 +249,42 @@ const ShoppingCart = () => {
     return [n];
   }, [buyNow, normalizeBuyNow]);
 
-  const itemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
+  // --- FILTER & MERGE ITEMS TO RENDER ---
+  const rawItemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
+  
+  const itemsToRender = useMemo(() => {
+    // 1. Take Real Cart
+    // 2. Remove items hidden by user action
+    const visibleRealItems = rawItemsToRender.filter(item => !hiddenCartIds.includes(item.variant?.id));
+    
+    // 3. Add items moved INTO cart optimistically
+    // We deduplicate just in case: only add temp item if not already in real visible list
+    const finalCart = [...visibleRealItems];
+    tempCartItems.forEach(tempItem => {
+        if (!finalCart.find(i => i.variant?.id === tempItem.variant?.id)) {
+            finalCart.push(tempItem);
+        }
+    });
+    
+    return finalCart;
+  }, [rawItemsToRender, hiddenCartIds, tempCartItems]);
+
+  const visibleSavedItems = useMemo(() => {
+    // 1. Take Real Saved Items
+    // 2. Remove items hidden by user action
+    const visibleRealSaved = savedItems.filter(item => !hiddenSavedIds.includes(item.variant?.id));
+
+    // 3. Add items moved INTO saved optimistically
+    const finalSaved = [...visibleRealSaved];
+    tempSavedItems.forEach(tempItem => {
+         if (!finalSaved.find(i => i.variant?.id === tempItem.variant?.id)) {
+            finalSaved.push(tempItem);
+        }
+    });
+
+    return finalSaved;
+  }, [savedItems, hiddenSavedIds, tempSavedItems]);
+
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
@@ -417,6 +484,8 @@ const ShoppingCart = () => {
   };
 
   const handleRemove = (item) => {
+    setHiddenCartIds(prev => [...prev, item.variant.id]);
+    
     if (isBuyNowActive) {
       clearBuyNow();
     } else {
@@ -424,14 +493,34 @@ const ShoppingCart = () => {
     }
   };
 
+  // --- LOGIC: MOVE TO SAVED ---
   const handleSaveForLater = (item) => {
     if (isBuyNowActive) return; 
+    
+    // 1. Hide from Cart immediately
+    setHiddenCartIds(prev => [...prev, item.variant.id]);
+    
+    // 2. Show in Saved immediately
+    setTempSavedItems(prev => [...prev, item]);
+    
     saveForLater(item);
   };
 
+  // --- LOGIC: MOVE TO CART ---
   const handleMoveToCart = (item) => {
+    // 1. Hide from Saved immediately
+    setHiddenSavedIds(prev => [...prev, item.variant.id]);
+
+    // 2. Show in Cart immediately
+    setTempCartItems(prev => [...prev, item]);
+    
     moveSavedToCart(item);
   };
+
+  const handleRemoveSavedItem = (variantId) => {
+    setHiddenSavedIds(prev => [...prev, variantId]);
+    removeSavedItem(variantId);
+  }
 
   const handleApplyCoupon = useCallback(
     async (coupon) => {
@@ -562,7 +651,6 @@ const ShoppingCart = () => {
                         <p className="text-sm text-gray-600 leading-relaxed">Simply browse our collection and add the products you love to your cart.</p>
                         </div>
                     </div>
-                    {/* ... other steps ... */}
                 </div>
                 <div className="border-t border-gray-100"></div>
                 <div>
@@ -729,7 +817,8 @@ const ShoppingCart = () => {
                       <motion.div 
                         key={item.variant.id} 
                         layout 
-                        variants={fadeListVariants} 
+                        transition={springTransition} 
+                        variants={listVariants} 
                         initial="initial" 
                         animate="animate" 
                         exit="exit"
@@ -799,16 +888,16 @@ const ShoppingCart = () => {
                 )}
               </AnimatePresence>
 
-              {/* SAVED FOR LATER (FIXED) */}
-              {!isBuyNowActive && savedItems && savedItems.length > 0 && (
+              {/* SAVED FOR LATER */}
+              {!isBuyNowActive && visibleSavedItems && visibleSavedItems.length > 0 && (
                 <div className="mt-8 pt-8 border-t border-gray-100">
                   <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <FiClock className="text-gray-800" /> Saved for Later ({savedItems.length})
+                    <FiClock className="text-gray-800" /> Saved for Later ({visibleSavedItems.length})
                   </h2>
                   
                   <div className="flex flex-col gap-4 relative">
                     <AnimatePresence mode="popLayout">
-                      {savedItems.map((item) => {
+                      {visibleSavedItems.map((item) => {
                         const variant = item.variant;
                         const product = item.product || item.variant.product; 
                         const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
@@ -819,7 +908,8 @@ const ShoppingCart = () => {
                           <motion.div
                             key={item.id}
                             layout
-                            variants={fadeListVariants} 
+                            transition={springTransition}
+                            variants={listVariants} 
                             initial="initial" 
                             animate="animate" 
                             exit="exit"
@@ -855,7 +945,7 @@ const ShoppingCart = () => {
                                  
                                  <div className="flex gap-4 sm:gap-6 pt-1">
                                    <button 
-                                     onClick={() => removeSavedItem(variant.id)}
+                                     onClick={() => handleRemoveSavedItem(variant.id)}
                                      className="bg-transparent border-none text-gray-400 cursor-pointer text-xs sm:text-sm font-medium hover:text-red-600 transition-colors"
                                    >
                                      Remove
