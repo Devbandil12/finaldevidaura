@@ -503,12 +503,13 @@ export default function MyOrders() {
                             <button
                               onClick={() => handleDownloadInvoice(order.id)}
                               disabled={downloadingInvoiceId === order.id}
-                              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                              // 🟢 UPDATED CLASSNAME: Matches "Buy Again" style (pill shape, zinc colors)
+                              className="px-6 py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center gap-2 disabled:opacity-50"
                             >
                               {downloadingInvoiceId === order.id ? (
-                                <RotateCw className="animate-spin" size={16} />
+                                <RotateCw className="animate-spin" size={14} />
                               ) : (
-                                <Download size={16} />
+                                <Download size={14} />
                               )}
                               {downloadingInvoiceId === order.id ? "Downloading..." : "Invoice"}
                             </button>
