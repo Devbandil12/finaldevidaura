@@ -14,13 +14,13 @@ import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock } from "react-icons/fi";
 
-// --- GPU ACCELERATION STYLE ---
-// This forces the element onto its own compositor layer
+// --- GPU ACCELERATION STYLE (FIXED) ---
+// Removed 'transform' to allow Framer Motion to control layout sliding
+// Removed 'height' from willChange to prevent browser repaint issues
 const gpuStyle = {
-  transform: "translateZ(0)",
   backfaceVisibility: "hidden",
   perspective: 1000,
-  willChange: "transform, opacity, height", // Hints browser about changes
+  willChange: "transform, opacity", 
 };
 
 // --- HELPER COMPONENT: Offer Instructions ---
@@ -102,20 +102,19 @@ const modalVariants = {
   }
 };
 
-// --- FADE LIST VARIANTS ---
+// --- FADE LIST VARIANTS (FIXED) ---
+// Removed height/margin animation to stop layout shifting
 const fadeListVariants = {
-  initial: { opacity: 0, height: 0, marginBottom: 0 },
+  initial: { opacity: 0, scale: 0.95 },
   animate: { 
     opacity: 1, 
-    height: "auto", 
-    marginBottom: 16,
-    transition: { opacity: { duration: 0.3 }, height: { duration: 0.3 } } 
+    scale: 1, 
+    transition: { duration: 0.3 } 
   },
   exit: { 
     opacity: 0, 
-    height: 0, 
-    marginBottom: 0,
-    transition: { opacity: { duration: 0.2 }, height: { duration: 0.3 } } 
+    scale: 0.95, 
+    transition: { duration: 0.2 } 
   }
 };
 
@@ -484,7 +483,6 @@ const ShoppingCart = () => {
     navigate("/cart", { replace: true, state: {} });
   };
 
-  // 🟢 FIXED: Suggested products now hides items present in SAVED LIST
   const suggestedProducts = useMemo(() => {
     if (isBuyNowActive) return [];
 
@@ -496,18 +494,16 @@ const ShoppingCart = () => {
           product.variants[0]
         );
         
-        // 1. Check Saved Items
         const inSaved = savedItems.some((s) => s.variant?.id === cheapestVariant.id);
         if (inSaved) return null;
 
-        // 2. Check Cart Items
         const inCart = cart.some((c) => c.variant?.id === cheapestVariant.id);
         if (inCart) return null;
         
         return { product, cheapestVariant };
       })
       .filter(Boolean);
-  }, [products, cart, savedItems, isBuyNowActive]); // Added savedItems dependency
+  }, [products, cart, savedItems, isBuyNowActive]);
 
   const productDiscount = Number(breakdown.originalTotal || 0) - Number(breakdown.productTotal || 0);
   const finalPrice =
@@ -534,7 +530,7 @@ const ShoppingCart = () => {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
             transition={{ duration: 0.2 }}
-            style={{ willChange: "opacity" }} // GPU Hint
+            style={{ willChange: "opacity" }} 
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
             onClick={() => setShowOffers(false)}
           >
@@ -543,7 +539,7 @@ const ShoppingCart = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              style={gpuStyle} // GPU Hint
+              style={gpuStyle} 
               onClick={(e) => e.stopPropagation()} 
               className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
             >
@@ -601,7 +597,7 @@ const ShoppingCart = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ willChange: "opacity" }} // GPU Hint
+            style={{ willChange: "opacity" }}
             onClick={() => setIsCouponModalOpen(false)}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
           >
@@ -610,7 +606,7 @@ const ShoppingCart = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              style={gpuStyle} // GPU Hint
+              style={gpuStyle}
               onClick={(e) => e.stopPropagation()}
               className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
             >
@@ -646,7 +642,7 @@ const ShoppingCart = () => {
                       whileHover={{ scale: 1.01, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
                       key={coupon.id}
-                      style={{ willChange: "transform" }} // GPU Hint
+                      style={{ willChange: "transform" }}
                       className="group relative flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 rounded-xl hover:border-black transition-all duration-300 cursor-default"
                     >
                       <div className="flex flex-col gap-1 pr-4">
@@ -717,8 +713,8 @@ const ShoppingCart = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-8">
-            <motion.div layout className="flex flex-col gap-1">
-              <AnimatePresence>
+            <motion.div layout className="flex flex-col gap-4 relative">
+              <AnimatePresence mode="popLayout">
                 {itemsToRender.length > 0 ? (
                   itemsToRender.map((item) => {
                     if (!item || !item.product || !item.variant) return null;
@@ -737,7 +733,8 @@ const ShoppingCart = () => {
                         initial="initial" 
                         animate="animate" 
                         exit="exit"
-                        style={gpuStyle} // 🟢 GPU ACCELERATION
+                        style={gpuStyle}
+                        className="relative"
                       >
                         <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
                           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
@@ -802,18 +799,18 @@ const ShoppingCart = () => {
                 )}
               </AnimatePresence>
 
-              {/* 🟢 NEW SECTION: SAVED FOR LATER WITH FADE ANIMATIONS */}
+              {/* SAVED FOR LATER (FIXED) */}
               {!isBuyNowActive && savedItems && savedItems.length > 0 && (
                 <div className="mt-8 pt-8 border-t border-gray-100">
                   <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                     <FiClock className="text-gray-800" /> Saved for Later ({savedItems.length})
                   </h2>
                   
-                  <div className="flex flex-col gap-1">
-                    <AnimatePresence>
+                  <div className="flex flex-col gap-4 relative">
+                    <AnimatePresence mode="popLayout">
                       {savedItems.map((item) => {
                         const variant = item.variant;
-                        const product = item.product || item.variant.product; // Handle structure variations
+                        const product = item.product || item.variant.product; 
                         const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
                         const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
                         const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
@@ -826,7 +823,8 @@ const ShoppingCart = () => {
                             initial="initial" 
                             animate="animate" 
                             exit="exit"
-                            style={gpuStyle} // 🟢 GPU ACCELERATION
+                            style={gpuStyle}
+                            className="relative"
                           >
                             <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
                               {/* Image Section */}
@@ -1090,7 +1088,7 @@ const ShoppingCart = () => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
-                        style={gpuStyle} // 🟢 GPU ACCELERATION
+                        style={gpuStyle}
                         transition={{ 
                             type: "spring", 
                             stiffness: 60, 
