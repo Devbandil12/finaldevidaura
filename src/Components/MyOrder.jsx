@@ -22,8 +22,7 @@ import {
   Receipt,
   CreditCard,
   Banknote,
-  Download,
-  FileText
+  Download
 } from "lucide-react";
 
 // --- Soft "Buttery" Animation Config ---
@@ -97,19 +96,19 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   if (!config) return null;
 
   return (
-    <div className={`rounded-2xl p-5 mt-6 border flex items-center justify-between gap-4 ${config.style}`}>
-      <div className="flex items-center gap-4">
-        <div className="p-2 bg-white rounded-full shadow-sm">{config.icon}</div>
+    <div className={`rounded-2xl p-4 md:p-5 mt-6 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${config.style}`}>
+      <div className="flex items-start sm:items-center gap-3 md:gap-4">
+        <div className="p-2 bg-white rounded-full shadow-sm shrink-0">{config.icon}</div>
         <div>
           <h3 className="text-sm font-medium">{config.title}</h3>
-          <p className="text-xs opacity-70 mt-0.5">{config.details}</p>
+          <p className="text-xs opacity-70 mt-0.5 leading-relaxed">{config.details}</p>
         </div>
       </div>
       {currentStatus === 'pending' && (
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="p-2 rounded-full hover:bg-black/5 transition-colors"
+          className="self-end sm:self-auto p-2 rounded-full hover:bg-black/5 transition-colors"
         >
           <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
@@ -129,28 +128,20 @@ export default function MyOrders() {
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  // --- NEW: Click Outside Logic ---
+  // --- Click Outside Logic ---
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // If no order is expanded, do nothing
       if (!expandedOrderId) return;
-
-      // Find the currently expanded card element in the DOM
       const activeCard = document.querySelector(`[data-order-id="${expandedOrderId}"]`);
-
-      // If the click target is NOT inside the active card, close it
       if (activeCard && !activeCard.contains(event.target)) {
         setExpandedOrderId(null);
       }
     };
-
-    // Using mousedown for better UI responsiveness than click
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [expandedOrderId]);
-  // -------------------------------
 
   if (loadingOrders) {
     return <Loader text="Loading collection..." />;
@@ -205,20 +196,13 @@ export default function MyOrders() {
     }
   };
 
- const canDownloadInvoice = (order) => {
-    // Safely normalize strings to lowercase for comparison
+  const canDownloadInvoice = (order) => {
     const status = order.status?.toLowerCase() || "";
     const isOnline = order.paymentMode === 'online';
-
-    // 1. Always hide if the order is cancelled
     if (status.includes('cancelled')) return false;
-
     if (isOnline) {
-      // 2. Online: Show for everything EXCEPT 'Order Placed'
-      // (Shows for: Processing, Shipped, Delivered)
       return status !== 'order placed';
     } else {
-      // 3. COD: Show ONLY if 'Delivered'
       return status === 'delivered';
     }
   };
@@ -228,10 +212,7 @@ export default function MyOrders() {
       setDownloadingInvoiceId(orderId);
       const response = await fetch(`${BACKEND}/api/orders/${orderId}/invoice`, {
         method: 'GET',
-        headers: {
-          // Add Authorization header if your backend requires it
-          // 'Authorization': `Bearer ${token}` 
-        },
+        headers: {},
       });
 
       if (!response.ok) throw new Error("Failed to download invoice");
@@ -253,42 +234,60 @@ export default function MyOrders() {
     }
   };
 
+  // ------------------------------------------------------------------
+  //  PERFECTLY ALIGNED STEPPER
+  // ------------------------------------------------------------------
   const renderStepProgress = (progressStep, status) => {
     const steps = [
-      { label: "Confirmed", icon: <Package size={16} /> },
-      { label: "Processing", icon: <Cog size={16} /> },
-      { label: "On The Way", icon: <Truck size={16} /> },
-      { label: "Delivered", icon: <ShoppingBag size={16} /> },
+      { label: "Confirmed", icon: <Package size={14} className="md:w-4 md:h-4" /> },
+      { label: "Processing", icon: <Cog size={14} className="md:w-4 md:h-4" /> },
+      { label: "On The Way", icon: <Truck size={14} className="md:w-4 md:h-4" /> },
+      { label: "Delivered", icon: <ShoppingBag size={14} className="md:w-4 md:h-4" /> },
     ];
 
     const isCancelled = status.toLowerCase().includes('cancelled');
     const currentStepIndex = isCancelled ? -1 : (status === "delivered" ? 3 : (progressStep || 1) - 1);
 
+    // Grid Column Calculation:
+    // 4 Columns = 25% each.
+    // Center of First Column = 12.5%
+    // Center of Last Column = 87.5%
+    // Line Start: 12.5% | Line Width: 75%
+
     return (
-      <div className="w-full pt-8 pb-4 px-2">
-        <div className="flex relative justify-between items-center">
-          {/* Background Track */}
-          <div className="absolute top-1/2 left-0 w-full h-[2px] bg-zinc-100 -z-10 -translate-y-1/2 rounded-full" />
+      <div className="w-full pt-6 pb-2 px-1">
+        <div className="relative grid grid-cols-4 w-full">
+          
+          {/* --- TRACK CONTAINER --- 
+              Positioned absolutely to span from center of first icon to center of last icon.
+              top-4 (16px) aligns with center of h-8 (32px) icon on mobile.
+              md:top-[1.125rem] (18px) aligns with center of h-9 (36px) icon on desktop.
+          */}
+          <div className="absolute top-4 md:top-[1.125rem] left-[12.5%] w-[75%] h-[2px] -z-10 -translate-y-1/2">
+            {/* Gray Background Line */}
+            <div className="absolute inset-0 bg-zinc-100 rounded-full w-full h-full" />
+            
+            {/* Black Active Line */}
+            <motion.div
+              className="absolute left-0 top-0 h-full bg-zinc-900 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+              transition={{ duration: 0.8, ease: "circOut" }}
+            />
+          </div>
 
-          {/* Active Fill Track */}
-          <motion.div
-            className="absolute top-1/2 left-0 h-[2px] bg-zinc-900 -z-10 -translate-y-1/2 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
-            transition={{ duration: 0.8, ease: "circOut" }}
-          />
-
+          {/* --- ICONS --- */}
           {steps.map((step, idx) => {
             const isCompleted = idx <= currentStepIndex;
             return (
-              <div key={idx} className="flex flex-col items-center gap-4 bg-transparent">
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isCompleted
+              <div key={idx} className="flex flex-col items-center gap-2 md:gap-4 z-10">
+                <div className={`relative h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isCompleted
                   ? 'bg-zinc-900 border-zinc-900 text-white shadow-lg shadow-zinc-200'
                   : 'bg-white border-zinc-100 text-zinc-300'
                   }`}>
                   {step.icon}
                 </div>
-                <p className={`text-[10px] uppercase tracking-wider font-semibold transition-colors duration-300 ${isCompleted ? 'text-zinc-900' : 'text-zinc-300'}`}>
+                <p className={`text-[9px] md:text-[10px] uppercase tracking-wider font-semibold transition-colors duration-300 text-center ${isCompleted ? 'text-zinc-900' : 'text-zinc-300'}`}>
                   {step.label}
                 </p>
               </div>
@@ -298,6 +297,7 @@ export default function MyOrders() {
       </div>
     );
   };
+  // ------------------------------------------------------------------
 
   const renderCancellationModal = () => {
     if (!modalOrder) return null;
@@ -305,28 +305,29 @@ export default function MyOrders() {
     const refundAmount = modalOrder.totalAmount * 0.95;
 
     return createPortal(
-      <div className="fixed inset-0 bg-white/60 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setModalOrder(null)}>
+      <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setModalOrder(null)}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={softSpring}
-          className="bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-8 max-w-sm w-full border border-zinc-100"
+          className="bg-white rounded-[28px] md:rounded-[32px] shadow-2xl p-6 md:p-8 max-w-sm w-full border border-zinc-100"
           onClick={e => e.stopPropagation()}
         >
           <div className="text-center">
-            <div className="h-14 w-14 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-900">
+            <div className="h-12 w-12 md:h-14 md:w-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500">
               <AlertTriangle size={24} strokeWidth={1.5} />
             </div>
 
             <h2 className="text-xl font-semibold text-zinc-900 mb-2">Cancel Order?</h2>
 
-            <div className="text-zinc-500 text-sm mb-8 space-y-2 leading-relaxed">
+            <div className="text-zinc-500 text-sm mb-6 space-y-2 leading-relaxed">
               <p>Are you sure you want to cancel <br /><span className="text-zinc-900 font-medium">Order #{modalOrder.id}</span>?</p>
               {isOnlinePayment && (
-                <div className="mt-4 p-4 bg-zinc-50 rounded-2xl text-xs">
-                  <p className="mb-1">Cancellation Fee: 5%</p>
-                  <p className="text-zinc-900 font-bold text-sm">Refund: ₹{refundAmount.toFixed(2)}</p>
+                <div className="mt-4 p-4 bg-zinc-50 rounded-2xl text-xs text-left border border-zinc-100">
+                  <p className="flex justify-between mb-1 text-zinc-500"><span>Cancellation Fee (5%):</span> <span>-₹{(modalOrder.totalAmount * 0.05).toFixed(2)}</span></p>
+                  <div className="h-px bg-zinc-200 my-2"></div>
+                  <p className="flex justify-between text-zinc-900 font-bold text-sm"><span>Refund Amount:</span> <span>₹{refundAmount.toFixed(2)}</span></p>
                 </div>
               )}
             </div>
@@ -334,13 +335,13 @@ export default function MyOrders() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setModalOrder(null)}
-                className="py-3 px-4 rounded-full text-sm font-medium border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
+                className="py-3 px-4 rounded-full text-sm font-medium border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-colors"
               >
                 Go Back
               </button>
               <button
                 onClick={handleConfirmCancel}
-                className="py-3 px-4 rounded-full text-sm font-medium bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:bg-black transition-all"
+                className="py-3 px-4 rounded-full text-sm font-medium bg-red-600 text-white shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
               >
                 Yes, Cancel
               </button>
@@ -355,23 +356,22 @@ export default function MyOrders() {
   return (
     <>
       <title>My Orders | Devid Aura</title>
-      <main className="max-w-5xl mx-auto my-12 px-6 w-full min-h-screen">
+      <main className="max-w-5xl mx-auto my-6 md:my-12 px-4 md:px-6 w-full min-h-screen">
         {renderCancellationModal()}
 
-        {/* --- Minimal Editorial Header --- */}
-        <div className="mt-[100px] mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-2 border-b border-zinc-200 pb-5">
+        {/* --- Header --- */}
+        <div className="mt-20 md:mt-[100px] mb-8 md:mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-zinc-200 pb-5">
             <div>
               <h1 className="text-3xl md:text-4xl font-normal text-zinc-900 tracking-tight">
                 Order History
               </h1>
-              <p className="text-zinc-500 text-sm font-medium max-w-md leading-relaxed">
+              <p className="text-zinc-500 text-sm font-medium max-w-md leading-relaxed mt-2">
                 View and track your recent purchases, manage returns, and download invoices from your collection history.
               </p>
             </div>
 
-            {/* Simple Counter */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2">
               <span className="text-2xl font-light text-zinc-900">{sortedOrders.length}</span>
               <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">Orders</span>
             </div>
@@ -386,12 +386,12 @@ export default function MyOrders() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="flex flex-col items-center justify-center py-32 bg-white rounded-[32px] border border-zinc-100 shadow-sm text-center"
+              className="flex flex-col items-center justify-center py-20 md:py-32 bg-white rounded-[32px] border border-zinc-100 shadow-sm text-center px-6"
             >
-              <div className="h-20 w-20 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
-                <ShoppingBag className="h-8 w-8 text-zinc-300" strokeWidth={1.5} />
+              <div className="h-16 w-16 md:h-20 md:w-20 bg-zinc-50 rounded-full flex items-center justify-center mb-6">
+                <ShoppingBag className="h-6 w-6 md:h-8 md:w-8 text-zinc-300" strokeWidth={1.5} />
               </div>
-              <h2 className="text-xl font-medium text-zinc-900">Your collection is empty</h2>
+              <h2 className="text-lg md:text-xl font-medium text-zinc-900">Your collection is empty</h2>
               <p className="mt-2 text-sm text-zinc-400">Time to discover your signature scent.</p>
             </motion.div>
           ) : (
@@ -399,10 +399,9 @@ export default function MyOrders() {
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="space-y-8"
+              className="space-y-6 md:space-y-8"
             >
               {sortedOrders.map((order) => {
-                const totalItems = order.orderItems.reduce((sum, i) => sum + i.quantity, 0);
                 const isExpanded = expandedOrderId === order.id;
                 const isPrepaid = order.paymentMode === "online";
                 const refundInfo = order.refund_status ? {
@@ -412,38 +411,37 @@ export default function MyOrders() {
 
                 return (
                   <motion.div
-                    // Add this data attribute for the click-outside logic
                     data-order-id={order.id}
                     variants={cardVariant}
                     layout
                     key={order.id}
-                    className="group bg-white rounded-[32px] border border-zinc-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.04)] transition-all duration-500 overflow-hidden"
+                    className="group bg-white rounded-3xl md:rounded-[32px] border border-zinc-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.04)] transition-all duration-500 overflow-hidden"
                   >
-                    <div className="p-8">
+                    <div className="p-5 md:p-8">
                       {/* Top Row: ID, Date & Statuses */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400">
-                            <Receipt size={18} strokeWidth={1.5} />
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 shrink-0">
+                            <Receipt size={16} strokeWidth={1.5} className="md:w-[18px] md:h-[18px]" />
                           </div>
                           <div>
-                            <h3 className="text-base font-semibold text-zinc-900">Order #{order.id}</h3>
-                            <p className="text-xs text-zinc-400 font-medium">{formatDateTime(order.createdAt)}</p>
+                            <h3 className="text-sm md:text-base font-semibold text-zinc-900 break-all">Order #{order.id}</h3>
+                            <p className="text-[10px] md:text-xs text-zinc-400 font-medium">{formatDateTime(order.createdAt)}</p>
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end">
                           {/* Payment Badge */}
-                          <div className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid
+                          <div className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid
                             ? 'bg-zinc-900 text-white border-zinc-900'
                             : 'bg-white text-zinc-500 border-zinc-200'
                             }`}>
-                            {isPrepaid ? <CreditCard size={12} strokeWidth={2} /> : <Banknote size={12} strokeWidth={2} />}
+                            {isPrepaid ? <CreditCard size={10} strokeWidth={2} className="md:w-3 md:h-3" /> : <Banknote size={10} strokeWidth={2} className="md:w-3 md:h-3" />}
                             {isPrepaid ? "PREPAID" : "COD"}
                           </div>
 
                           {/* Status Badge */}
-                          <div className={`px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide border ${order.status === 'delivered'
+                          <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status === 'delivered'
                             ? 'bg-zinc-100 text-zinc-900 border-zinc-200'
                             : 'bg-white text-zinc-600 border-zinc-200'
                             }`}>
@@ -453,30 +451,30 @@ export default function MyOrders() {
                       </div>
 
                       {/* Items Grid */}
-                      <div className="space-y-6">
+                      <div className="space-y-4 md:space-y-6">
                         {order.orderItems.map((item, i) => (
-                          <div key={i} className="flex items-center gap-6 group/item">
-                            <div className="h-24 w-24 rounded-2xl bg-zinc-50 flex-shrink-0 flex items-center justify-center p-4 mix-blend-multiply transition-colors duration-300 group-hover/item:bg-zinc-100">
+                          <div key={i} className="flex items-start md:items-center gap-4 md:gap-6 group/item">
+                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-zinc-50 flex-shrink-0 flex items-center justify-center p-2 md:p-4 mix-blend-multiply transition-colors duration-300 group-hover/item:bg-zinc-100">
                               <img
                                 src={item.img || "/fallback.png"}
                                 alt={item.productName}
                                 className="h-full w-full object-contain mix-blend-multiply"
                               />
                             </div>
-                            <div className="flex-grow">
-                              <h4 className="text-sm font-semibold text-zinc-900">{item.productName}</h4>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="px-2 py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
+                            <div className="flex-grow min-w-0">
+                              <h4 className="text-sm font-semibold text-zinc-900 truncate pr-2">{item.productName}</h4>
+                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
                                   Qty: {item.quantity}
                                 </span>
                                 {item.size && (
-                                  <span className="px-2 py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
+                                  <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
                                     {item.size}ml
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <div className="text-sm font-medium text-zinc-900">
+                            <div className="text-sm font-medium text-zinc-900 whitespace-nowrap">
                               ₹{(item.price * item.quantity).toFixed(2)}
                             </div>
                           </div>
@@ -492,21 +490,20 @@ export default function MyOrders() {
                       </AnimatePresence>
 
                       {/* Action Bar */}
-                      <div className="mt-8 pt-6 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                        <div className="flex flex-col items-start mr-auto">
-                          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-1">Total Amount</span>
-                          <span className="text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
+                      <div className="mt-6 md:mt-8 pt-6 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                        <div className="flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full sm:w-auto mr-auto">
+                          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-0 sm:mb-1">Total Amount</span>
+                          <span className="text-lg md:text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
                         </div>
 
-                        {/* Buttons - Right Aligned on Mobile */}
-                        <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                        {/* Buttons - Stack on Mobile, Row on Desktop */}
+                        <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 w-full sm:flex sm:w-auto sm:items-center sm:justify-end">
 
                           {canDownloadInvoice(order) && (
                             <button
                               onClick={() => handleDownloadInvoice(order.id)}
                               disabled={downloadingInvoiceId === order.id}
-                              // 🟢 UPDATED CLASSNAME: Matches "Buy Again" style (pill shape, zinc colors)
-                              className="px-6 py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                              className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
                             >
                               {downloadingInvoiceId === order.id ? (
                                 <RotateCw className="animate-spin" size={14} />
@@ -517,12 +514,11 @@ export default function MyOrders() {
                             </button>
                           )}
 
-
                           {order.status === "Order Placed" && !refundInfo && (
-                            cancellingOrderId === order.id ? <MiniLoader /> : (
+                            cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
                               <button
                                 onClick={() => setModalOrder(order)}
-                                className="px-6 py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto"
                               >
                                 Cancel Order
                               </button>
@@ -532,7 +528,7 @@ export default function MyOrders() {
                           {order.status === "delivered" && (
                             <button
                               onClick={() => reorder(order.id)}
-                              className="px-6 py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center gap-2"
+                              className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
                             >
                               <Repeat size={14} /> Buy Again
                             </button>
@@ -541,7 +537,7 @@ export default function MyOrders() {
                           {order.status !== "Order Cancelled" && (
                             <button
                               onClick={() => toggleTrackOrder(order.id)}
-                              className="px-8 py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center gap-2"
+                              className="px-4 py-3 md:px-8 md:py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
                             >
                               {isExpanded ? "Hide Details" : "Track Order"}
                               {isExpanded ? <ChevronUp size={14} /> : <ArrowRight size={14} />}
@@ -565,7 +561,7 @@ export default function MyOrders() {
                           transition={softSpring}
                           className="bg-zinc-50/50 border-t border-zinc-50"
                         >
-                          <div className="p-8">
+                          <div className="p-5 md:p-8">
                             {renderStepProgress(order.progressStep, order.status)}
                           </div>
                         </motion.div>
