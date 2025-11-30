@@ -14,19 +14,54 @@ import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock } from "react-icons/fi";
 
-// --- GPU ACCELERATION & ANIMATION CONFIG ---
+// --- ANIMATION CONFIGURATION ---
+
+// 1. GPU Acceleration for smoother rendering
 const gpuStyle = {
   backfaceVisibility: "hidden",
   perspective: 1000,
   willChange: "transform, opacity", 
 };
 
-// "Buttery Smooth" Spring Configuration
-const springTransition = {
+// 2. "Buttery" Spring Physics (Unified for sync)
+// stiffness: controls speed (higher = faster snap)
+// damping: controls bounce (higher = less wobble)
+const butterSpring = {
   type: "spring",
-  stiffness: 400,
-  damping: 30,
+  stiffness: 500, 
+  damping: 40,    
   mass: 1
+};
+
+// 3. Item Entrance/Exit Variants
+const itemVariants = {
+  initial: { opacity: 0, scale: 0.95, y: 15 },
+  animate: { 
+    opacity: 1, 
+    scale: 1, 
+    y: 0,
+    transition: { duration: 0.3, ease: "easeOut" } 
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95, 
+    transition: { duration: 0.2, ease: "easeIn" } 
+  }
+};
+
+// 4. Modal/Popup Variants
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { type: "spring", stiffness: 400, damping: 30 } 
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.95, 
+    transition: { duration: 0.15 } 
+  }
 };
 
 // --- HELPER COMPONENT: Offer Instructions ---
@@ -93,37 +128,6 @@ const OfferInstructionCard = ({ offer, minimalist = false }) => {
   );
 };
 
-// --- MODAL VARIANTS ---
-const modalVariants = {
-  hidden: { opacity: 0, scale: 0.98 },
-  visible: { 
-    opacity: 1, 
-    scale: 1, 
-    transition: { duration: 0.2, ease: "easeOut" } 
-  },
-  exit: { 
-    opacity: 0, 
-    scale: 0.98, 
-    transition: { duration: 0.15, ease: "easeIn" } 
-  }
-};
-
-// --- LIST ITEM VARIANTS ---
-const listVariants = {
-  initial: { opacity: 0, scale: 0.9, y: 10 },
-  animate: { 
-    opacity: 1, 
-    scale: 1, 
-    y: 0,
-    transition: { duration: 0.3, ease: "easeOut" } 
-  },
-  exit: { 
-    opacity: 0, 
-    scale: 0.9, 
-    transition: { duration: 0.2, ease: "easeIn" } 
-  }
-};
-
 const ShoppingCart = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,11 +139,8 @@ const ShoppingCart = () => {
   const [addingProductId, setAddingProductId] = useState(null);
 
   // --- OPTIMISTIC UI STATES ---
-  // Removals: IDs hidden from specific lists
   const [hiddenCartIds, setHiddenCartIds] = useState([]);
   const [hiddenSavedIds, setHiddenSavedIds] = useState([]);
-  
-  // Additions: Full objects temporarily added to lists
   const [tempCartItems, setTempCartItems] = useState([]);
   const [tempSavedItems, setTempSavedItems] = useState([]);
 
@@ -166,8 +167,6 @@ const ShoppingCart = () => {
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
-    
-  // UI States
   const [showOffers, setShowOffers] = useState(false); 
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [couponSearch, setCouponSearch] = useState(""); 
@@ -176,21 +175,19 @@ const ShoppingCart = () => {
   const isBuyNowActive = isBuyNowFromNavigation || !!buyNow;
 
   // --- CLEANUP OPTIMISTIC STATE ---
-  // When real data updates, remove our temp items to prevent duplicates/conflicts
   useEffect(() => {
-    if (cart.length > 0) {
-      // If real cart has updated, clear our optimistic "added to cart" state
+    if (cart.length > 0 || isCartLoading === false) {
       setTempCartItems([]);
       setHiddenCartIds([]); 
     }
-  }, [cart]);
+  }, [cart, isCartLoading]);
 
   useEffect(() => {
-    if (savedItems.length > 0) {
+    if (savedItems.length > 0 || isCartLoading === false) {
       setTempSavedItems([]);
       setHiddenSavedIds([]);
     }
-  }, [savedItems]);
+  }, [savedItems, isCartLoading]);
 
 
   // --- SCROLL LOCK ---
@@ -216,7 +213,7 @@ const ShoppingCart = () => {
     };
   }, [isCouponModalOpen, showOffers]);
 
-  // --- Filter Coupons ---
+  // --- FILTER COUPONS ---
   const filteredCoupons = useMemo(() => {
     if (!couponSearch) return availableCoupons;
     const lowerSearch = couponSearch.toLowerCase();
@@ -227,7 +224,7 @@ const ShoppingCart = () => {
     );
   }, [availableCoupons, couponSearch]);
 
-  // --- Normalization helper ---
+  // --- DATA NORMALIZATION ---
   const normalizeBuyNow = useCallback(
     (bn) => {
       if (!bn) return null;
@@ -249,39 +246,28 @@ const ShoppingCart = () => {
     return [n];
   }, [buyNow, normalizeBuyNow]);
 
-  // --- FILTER & MERGE ITEMS TO RENDER ---
+  // --- ITEM RENDERING LOGIC ---
   const rawItemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
   
   const itemsToRender = useMemo(() => {
-    // 1. Take Real Cart
-    // 2. Remove items hidden by user action
     const visibleRealItems = rawItemsToRender.filter(item => !hiddenCartIds.includes(item.variant?.id));
-    
-    // 3. Add items moved INTO cart optimistically
-    // We deduplicate just in case: only add temp item if not already in real visible list
     const finalCart = [...visibleRealItems];
     tempCartItems.forEach(tempItem => {
         if (!finalCart.find(i => i.variant?.id === tempItem.variant?.id)) {
             finalCart.push(tempItem);
         }
     });
-    
     return finalCart;
   }, [rawItemsToRender, hiddenCartIds, tempCartItems]);
 
   const visibleSavedItems = useMemo(() => {
-    // 1. Take Real Saved Items
-    // 2. Remove items hidden by user action
     const visibleRealSaved = savedItems.filter(item => !hiddenSavedIds.includes(item.variant?.id));
-
-    // 3. Add items moved INTO saved optimistically
     const finalSaved = [...visibleRealSaved];
     tempSavedItems.forEach(tempItem => {
          if (!finalSaved.find(i => i.variant?.id === tempItem.variant?.id)) {
             finalSaved.push(tempItem);
         }
     });
-
     return finalSaved;
   }, [savedItems, hiddenSavedIds, tempSavedItems]);
 
@@ -302,6 +288,7 @@ const ShoppingCart = () => {
 
   const lastRequestRef = useRef("");
 
+  // --- PRICE FETCHING ---
   useEffect(() => {
     if (isCartLoading || itemsToRender.length === 0) {
       setLoadingPrices(false);
@@ -493,27 +480,16 @@ const ShoppingCart = () => {
     }
   };
 
-  // --- LOGIC: MOVE TO SAVED ---
   const handleSaveForLater = (item) => {
     if (isBuyNowActive) return; 
-    
-    // 1. Hide from Cart immediately
     setHiddenCartIds(prev => [...prev, item.variant.id]);
-    
-    // 2. Show in Saved immediately
     setTempSavedItems(prev => [...prev, item]);
-    
     saveForLater(item);
   };
 
-  // --- LOGIC: MOVE TO CART ---
   const handleMoveToCart = (item) => {
-    // 1. Hide from Saved immediately
     setHiddenSavedIds(prev => [...prev, item.variant.id]);
-
-    // 2. Show in Cart immediately
     setTempCartItems(prev => [...prev, item]);
-    
     moveSavedToCart(item);
   };
 
@@ -817,8 +793,8 @@ const ShoppingCart = () => {
                       <motion.div 
                         key={item.variant.id} 
                         layout 
-                        transition={springTransition} 
-                        variants={listVariants} 
+                        transition={butterSpring} 
+                        variants={itemVariants} 
                         initial="initial" 
                         animate="animate" 
                         exit="exit"
@@ -881,81 +857,108 @@ const ShoppingCart = () => {
                     );
                   })
                 ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center p-8 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 transition-shadow">
+                  <motion.div 
+                    key="empty-cart-message"
+                    layout 
+                    variants={itemVariants} 
+                    initial="initial" 
+                    animate="animate" 
+                    exit="exit"
+                    transition={butterSpring}
+                    style={gpuStyle}
+                    className="text-center p-8 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 transition-shadow"
+                  >
                     <h3 className="text-lg mb-2">Your cart is empty.</h3>
                     <p className="text-gray-500">Looks like you haven't added anything to your cart yet.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* SAVED FOR LATER */}
-              {!isBuyNowActive && visibleSavedItems && visibleSavedItems.length > 0 && (
+              {/* SAVED FOR LATER (Static Header + Animated List) */}
+              {!isBuyNowActive && (
                 <div className="mt-8 pt-8 border-t border-gray-100">
-                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                    <FiClock className="text-gray-800" /> Saved for Later ({visibleSavedItems.length})
-                  </h2>
+                  <motion.div layout="position" transition={butterSpring} className="mb-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      <FiClock className="text-gray-800" /> Saved for Later ({visibleSavedItems.length})
+                    </h2>
+                  </motion.div>
                   
                   <div className="flex flex-col gap-4 relative">
                     <AnimatePresence mode="popLayout">
-                      {visibleSavedItems.map((item) => {
-                        const variant = item.variant;
-                        const product = item.product || item.variant.product; 
-                        const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-                        const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
-                        const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
+                      {visibleSavedItems.length > 0 ? (
+                        visibleSavedItems.map((item) => {
+                          const variant = item.variant;
+                          const product = item.product || item.variant.product; 
+                          const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
+                          const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
+                          const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
 
-                        return (
-                          <motion.div
-                            key={item.id}
-                            layout
-                            transition={springTransition}
-                            variants={listVariants} 
-                            initial="initial" 
-                            animate="animate" 
-                            exit="exit"
-                            style={gpuStyle}
-                            className="relative"
-                          >
-                            <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
-                              {/* Image Section */}
-                              <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                                <img src={itemImageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                              </div>
-                              
-                              {/* Info Section */}
-                              <div className="flex-grow w-full text-left">
-                                <h3 className="text-base sm:text-lg font-semibold mb-1 text-gray-900 line-clamp-1">{product.name}</h3>
-                                <p className="text-xs sm:text-sm text-gray-500">{variant.size} ml </p>
+                          return (
+                            <motion.div
+                              key={item.id || item.variant.id}
+                              layout
+                              transition={butterSpring}
+                              variants={itemVariants} 
+                              initial="initial" 
+                              animate="animate" 
+                              exit="exit"
+                              style={gpuStyle}
+                              className="relative"
+                            >
+                              <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
+                                {/* Image Section */}
+                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                                  <img src={itemImageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                                </div>
                                 
-                                <div className="flex items-baseline gap-2 mt-2 justify-start">
-                                   <span className="text-sm sm:text-base font-bold text-gray-900">₹{price}</span>
-                                   {showLineThrough && <span className="text-xs sm:text-sm text-gray-500 line-through">₹{variant.oprice}</span>}
-                                   <span className="text-xs text-gray-500 ml-1">Qty: {item.quantity}</span>
+                                {/* Info Section */}
+                                <div className="flex-grow w-full text-left">
+                                  <h3 className="text-base sm:text-lg font-semibold mb-1 text-gray-900 line-clamp-1">{product.name}</h3>
+                                  <p className="text-xs sm:text-sm text-gray-500">{variant.size} ml </p>
+                                  
+                                  <div className="flex items-baseline gap-2 mt-2 justify-start">
+                                     <span className="text-sm sm:text-base font-bold text-gray-900">₹{price}</span>
+                                     {showLineThrough && <span className="text-xs sm:text-sm text-gray-500 line-through">₹{variant.oprice}</span>}
+                                     <span className="text-xs text-gray-500 ml-1">Qty: {item.quantity}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Actions Section */}
+                                <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
+                                   <button 
+                                      onClick={() => handleMoveToCart(item)}
+                                      className="bg-black text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-800 transition-colors shadow-sm"
+                                   >
+                                      Move to Cart
+                                   </button>
+                                   
+                                   <div className="flex gap-4 sm:gap-6 pt-1">
+                                     <button 
+                                       onClick={() => handleRemoveSavedItem(variant.id)}
+                                       className="bg-transparent border-none text-gray-400 cursor-pointer text-xs sm:text-sm font-medium hover:text-red-600 transition-colors"
+                                     >
+                                       Remove
+                                     </button>
+                                   </div>
                                 </div>
                               </div>
-                              
-                              {/* Actions Section */}
-                              <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
-                                 <button 
-                                    onClick={() => handleMoveToCart(item)}
-                                    className="bg-black text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-800 transition-colors shadow-sm"
-                                 >
-                                    Move to Cart
-                                 </button>
-                                 
-                                 <div className="flex gap-4 sm:gap-6 pt-1">
-                                   <button 
-                                     onClick={() => handleRemoveSavedItem(variant.id)}
-                                     className="bg-transparent border-none text-gray-400 cursor-pointer text-xs sm:text-sm font-medium hover:text-red-600 transition-colors"
-                                   >
-                                     Remove
-                                   </button>
-                                 </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
+                            </motion.div>
+                          );
+                        })
+                      ) : (
+                        <motion.div
+                          key="empty-saved-message"
+                          layout
+                          variants={itemVariants}
+                          initial="initial" 
+                          animate="animate" 
+                          exit="exit"
+                          transition={butterSpring}
+                          className="text-center p-4 text-gray-400 italic text-sm border border-dashed border-gray-200 rounded-xl"
+                        >
+                          No items saved for later.
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </div>
                 </div>
