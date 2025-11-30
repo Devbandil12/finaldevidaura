@@ -205,20 +205,22 @@ export default function MyOrders() {
     }
   };
 
-  const canDownloadInvoice = (order) => {
-    const isOnline = order.paymentMode === 'online'; // Ensure this matches your DB value (e.g., 'online', 'card', 'upi')
-    const isDelivered = order.status?.toLowerCase() === 'delivered';
-    const isCancelled = order.status?.toLowerCase().includes('cancelled');
+ const canDownloadInvoice = (order) => {
+    // Safely normalize strings to lowercase for comparison
+    const status = order.status?.toLowerCase() || "";
+    const isOnline = order.paymentMode === 'online';
 
-    if (isCancelled) return false;
+    // 1. Always hide if the order is cancelled
+    if (status.includes('cancelled')) return false;
 
-    // Requirement: For online, don't show until delivered
     if (isOnline) {
-      return isDelivered;
+      // 2. Online: Show for everything EXCEPT 'Order Placed'
+      // (Shows for: Processing, Shipped, Delivered)
+      return status !== 'order placed';
+    } else {
+      // 3. COD: Show ONLY if 'Delivered'
+      return status === 'delivered';
     }
-
-    // For COD or others, show by default (or adjust if you want them to wait too)
-    return true;
   };
 
   const handleDownloadInvoice = async (orderId) => {
