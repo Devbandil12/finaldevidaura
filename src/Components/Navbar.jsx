@@ -1,7 +1,8 @@
 // File: src/Components/Navbar.jsx
-import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Assets
 import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
@@ -62,7 +63,8 @@ const timeAgo = (date, now) => {
   return getRelativeTimeGroup(date, now);
 };
 
-const SidebarItem = ({ icon: Icon, label, onClick, badge }) => (
+// --- Memoized Sidebar Item ---
+const SidebarItem = memo(({ icon: Icon, label, onClick, badge }) => (
   <li className="sidebar-item" onClick={onClick} role="button" tabIndex={0}>
     {Icon &&
       (typeof Icon === "string" ? (
@@ -75,7 +77,9 @@ const SidebarItem = ({ icon: Icon, label, onClick, badge }) => (
       <span className="sidebar-badge" aria-hidden="true">{badge}</span>
     )}
   </li>
-);
+));
+
+const springConfig = { type: "spring", stiffness: 500, damping: 30, mass: 1 };
 
 const Navbar = ({ onVisibilityChange }) => {
   const { wishlist, cart } = useContext(CartContext);
@@ -84,9 +88,9 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // State
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Sidebar
+  const [isOpen, setIsOpen] = useState(false);
   const [navbarVisible, setNavbarVisible] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false); // Track scroll position for Pill effect
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
@@ -107,28 +111,44 @@ const Navbar = ({ onVisibilityChange }) => {
   const wishCount = wishlist?.length || 0;
 
   // Handlers
-  const toggleSidebar = (e) => {
+  const toggleProfile = useCallback(() => {
+    setIsProfileOpen((prev) => {
+      if (!prev) setIsNotificationOpen(false);
+      return !prev;
+    });
+  }, []);
+
+  const toggleNotification = useCallback(() => {
+    setIsNotificationOpen((prev) => {
+      if (!prev) setIsProfileOpen(false);
+      return !prev;
+    });
+  }, []);
+
+  const toggleSidebar = useCallback((e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
     setIsOpen((v) => !v);
-  };
+  }, []);
+
   const closeSidebar = useCallback(() => {
     setIsOpen(false);
     if (previouslyFocusedRef.current) previouslyFocusedRef.current.focus?.();
   }, []);
+
   const closeAuthModal = useCallback(() => {
     setIsAuthModalOpen(false);
     document.body.style.overflow = "auto";
     document.documentElement.style.overflow = "auto";
   }, []);
-  const openAuthModal = () => {
+
+  const openAuthModal = useCallback(() => {
     setIsAuthModalOpen(true);
     setIsOpen(false);
     setIsProfileOpen(false);
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-  };
+  }, []);
 
-  // Grouping Notifications
   const groupedNotifications = useMemo(() => {
     const now = new Date();
     const processed = notifications.map(notif => ({
@@ -147,107 +167,65 @@ const Navbar = ({ onVisibilityChange }) => {
     }, {});
   }, [notifications]);
 
-  // --- Effects ---
+  // --- 🟢 OPTIMIZED SCROLL HANDLER ---
+  // Merged the layout logic and the dropdown closing logic into one RAF loop
   useEffect(() => {
-    if (isOpen) {
-      previouslyFocusedRef.current = document.activeElement;
-      if (!isAuthModalOpen) {
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
+    let lastScrollTop = 0;
+    let ticking = false;
+
+    const handleScroll = () => {
+      // 1. Close Dropdowns on any scroll
+      // Using functional updates allows us to check state without adding dependencies (preventing re-binding)
+      setIsProfileOpen(prev => (prev ? false : prev));
+      setIsNotificationOpen(prev => (prev ? false : prev));
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+          
+          // 2. Navbar Visibility Logic
+          const isVisible = currentScroll < lastScrollTop || currentScroll < 10;
+          setNavbarVisible(isVisible);
+          if (onVisibilityChange) onVisibilityChange(isVisible);
+          
+          // 3. Pill Shape Logic
+          setIsScrolled(currentScroll > 30);
+          
+          lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+          ticking = false;
+        });
+        ticking = true;
       }
-      window.setTimeout(() => {
-        const el = sidebarScopeRef.current?.querySelector('button, [role="button"], a, input');
-        el?.focus?.();
-      }, 50);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [onVisibilityChange]); // Dependencies kept minimal for performance
+
+  // --- Sidebar & Auth Modal Body Lock ---
+  useEffect(() => {
+    if (isOpen || isAuthModalOpen) {
+      if(isOpen) previouslyFocusedRef.current = document.activeElement;
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      if(isOpen) {
+        window.setTimeout(() => {
+          const el = sidebarScopeRef.current?.querySelector('button, [role="button"], a, input');
+          el?.focus?.();
+        }, 50);
+      }
     } else {
-      if (!isAuthModalOpen) {
-        document.body.style.overflow = "auto";
-        document.documentElement.style.overflow = "auto";
-      }
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
     }
   }, [isOpen, isAuthModalOpen]);
 
+  // --- Click Outside Handlers ---
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        isOpen &&
-        sidebarScopeRef.current &&
-        !sidebarScopeRef.current.contains(event.target) &&
-        hamburgerRef.current &&
-        !hamburgerRef.current.contains(event.target)
-      ) {
+      if (isOpen && sidebarScopeRef.current && !sidebarScopeRef.current.contains(event.target) && hamburgerRef.current && !hamburgerRef.current.contains(event.target)) {
         closeSidebar();
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, closeSidebar]);
-
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") {
-        if (isOpen) closeSidebar();
-        if (isProfileOpen) setIsProfileOpen(false);
-        if (isAuthModalOpen) closeAuthModal();
-        if (isNotificationOpen) setIsNotificationOpen(false);
-      }
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen, isProfileOpen, isAuthModalOpen, isNotificationOpen, closeSidebar, closeAuthModal]);
-
-  useEffect(() => {
-    let lastScrollTop = 0;
-    const handleScroll = () => {
-      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-      const isVisible = currentScroll < lastScrollTop;
-      setNavbarVisible(isVisible);
-      if (onVisibilityChange) onVisibilityChange(isVisible);
-      lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-      setIsScrolled(currentScroll > 30);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [onVisibilityChange]);
-
-  useLayoutEffect(() => {
-    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-    const ctx = gsap.context(() => {
-      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], { willChange: "transform, opacity", force3D: true });
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(".nav-brand", { y: -8, autoAlpha: 0, duration: 0.26 })
-        .from(".nav-links li", { y: -8, autoAlpha: 0, duration: 0.22, stagger: 0.05 }, "-=0.06")
-        .from(".icons > *", { y: -8, autoAlpha: 0, duration: 0.2, stagger: 0.05 }, "-=0.1")
-        .add(() => {
-          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], { willChange: "auto" });
-        });
-    }, navRef);
-    return () => ctx.revert();
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (prefersReduced) return;
-    const ctx = gsap.context(() => {
-      const headerSel = ".sidebar-header";
-      const itemsSel = ".sidebar-item";
-      const footerSel = ".sidebar-footer";
-      gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
-      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-      tl.from(headerSel, { y: -8, opacity: 0, duration: 0.22 }).from(
-        itemsSel, { y: 8, opacity: 0, duration: 0.2, stagger: 0.05 }, "-=0.04"
-      );
-      if (isLoggedIn) {
-        tl.from(footerSel, { y: 6, opacity: 0, duration: 0.18 }, "-=0.08");
-      }
-    }, sidebarScopeRef);
-    return () => ctx.revert();
-  }, [isOpen, isLoggedIn]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
       if (isProfileOpen && profileWrapperRef.current && !profileWrapperRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
@@ -256,19 +234,57 @@ const Navbar = ({ onVisibilityChange }) => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside, true);
-    return () => document.removeEventListener("mousedown", handleClickOutside, true);
-  }, [isProfileOpen, isNotificationOpen]);
-
-  useEffect(() => {
-    const handleScrollProfile = () => {
-      if (isProfileOpen && !isAuthModalOpen) setIsProfileOpen(false);
-      if (isNotificationOpen && !isAuthModalOpen) setIsNotificationOpen(false);
+    document.addEventListener("touchstart", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+      document.removeEventListener("touchstart", handleClickOutside, true);
     };
-    window.addEventListener("scroll", handleScrollProfile);
-    return () => window.removeEventListener("scroll", handleScrollProfile);
-  }, [isProfileOpen, isNotificationOpen, isAuthModalOpen]);
+  }, [isOpen, isProfileOpen, isNotificationOpen, closeSidebar]);
 
-  const handleNavScroll = (targetId) => {
+  // --- GSAP Entrance Animation ---
+  useLayoutEffect(() => {
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      gsap.set([".nav-links li", ".icons > *", ".nav-brand"], { 
+        willChange: "transform, opacity", 
+        force3D: true,
+        backfaceVisibility: "hidden" 
+      });
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.from(".nav-brand", { y: -20, autoAlpha: 0, duration: 0.6 })
+        .from(".nav-links li", { y: -20, autoAlpha: 0, duration: 0.5, stagger: 0.05 }, "-=0.4")
+        .from(".icons > *", { y: -20, autoAlpha: 0, duration: 0.5, stagger: 0.05 }, "-=0.4")
+        .add(() => {
+          gsap.set([".nav-links li", ".icons > *", ".nav-brand"], { willChange: "auto" });
+        });
+    }, navRef);
+    return () => ctx.revert();
+  }, []);
+
+  // --- Sidebar GSAP Animation ---
+  useEffect(() => {
+    if (!isOpen) return;
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    if (prefersReduced) return;
+
+    const ctx = gsap.context(() => {
+      const headerSel = ".sidebar-header";
+      const itemsSel = ".sidebar-item";
+      const footerSel = ".sidebar-footer";
+      gsap.set([headerSel, itemsSel, footerSel], { clearProps: "all" });
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.from(headerSel, { y: -10, opacity: 0, duration: 0.3 })
+        .from(itemsSel, { x: -20, opacity: 0, duration: 0.25, stagger: 0.04 }, "-=0.15");
+      if (isLoggedIn) {
+        tl.from(footerSel, { y: 20, opacity: 0, duration: 0.3 }, "-=0.1");
+      }
+    }, sidebarScopeRef);
+    return () => ctx.revert();
+  }, [isOpen, isLoggedIn]);
+
+  const handleNavScroll = useCallback((targetId) => {
     if (window.location.pathname !== "/") {
       sessionStorage.setItem("scrollToSection", targetId);
       navigate("/");
@@ -276,40 +292,34 @@ const Navbar = ({ onVisibilityChange }) => {
       const el = document.getElementById(targetId);
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, [navigate]);
 
-  const primaryLinks = [
+  // Links Data
+  const primaryLinks = useMemo(() => [
     { label: "Home", icon: BiHomeHeart, onClick: () => { navigate("/"); closeSidebar(); } },
-    {
-      label: "About",
-      icon: (props) => <Feather {...props} strokeWidth={1.75} />,
-      onClick: () => { handleNavScroll("about-section"); closeSidebar(); }
-    },
+    { label: "About", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { handleNavScroll("about-section"); closeSidebar(); } },
     { label: "Collection", icon: TbPerfume, onClick: () => { handleNavScroll("collection-section"); closeSidebar(); } },
-  ];
-  const accountLinks = [
+  ], [navigate, closeSidebar, handleNavScroll]);
+
+  const accountLinks = useMemo(() => [
     ...(isLoggedIn ? [{ label: "My Orders", icon: MyOrderIcon, onClick: () => { navigate("/myorder"); closeSidebar(); } }] : []),
     { label: "Wishlist", icon: WishlistIcon, onClick: () => { navigate("/wishlist"); closeSidebar(); }, badge: wishCount },
     { label: "Cart", icon: ShoppingCart, onClick: () => { navigate("/cart"); closeSidebar(); }, badge: cartCount },
-  ];
-  const supportLinks = [
-    { label: "Contact Us", icon: MailUsIcon, onClick: () => { navigate("/contact"); closeSidebar(); } },
-  ];
+  ], [isLoggedIn, navigate, closeSidebar, wishCount, cartCount]);
 
-  const getNavbarTop = () => {
-    if (!navbarVisible) return "-150px";
-    if (isScrolled) return "5px";
-    return "0px";
-  };
+  const supportLinks = useMemo(() => [
+    { label: "Contact Us", icon: MailUsIcon, onClick: () => { navigate("/contact"); closeSidebar(); } },
+  ], [navigate, closeSidebar]);
 
   return (
     <header ref={navRef}>
       <nav
         id="navbar"
-        className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""} ${!navbarVisible ? "navbar-hidden" : ""}`}
+        className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""}`}
+        // 🟢 TRANSFORMATION: Using -180% to ensure navbar fully clears shadows on mobile
         style={{
-          top: getNavbarTop(),
-          transition: "top 0.5s cubic-bezier(0.4, 0, 0.2, 1), width 0.5s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
+          transform: navbarVisible ? "translateY(0)" : "translateY(-180%)",
+          willChange: "transform",
         }}
       >
         <div className="part-1 nav-brand">
@@ -325,29 +335,30 @@ const Navbar = ({ onVisibilityChange }) => {
         </div>
 
         <div className="part-3">
-          <div className="icons">
-            <div className="wishlist-icon">
+          <motion.div className="icons" layout transition={springConfig}>
+            
+            <motion.div layout className="wishlist-icon">
               <a onClick={() => navigate("/wishlist")}>
                 <button id="wishlist-icon" className="icon-btn" aria-label={`Wishlist (${wishCount})`}>
                   <img className="wishlist-img" src={WishlistIcon} alt="wishlist" />
                   {wishCount > 0 && <span className="badge">{wishCount}</span>}
                 </button>
               </a>
-            </div>
+            </motion.div>
 
-            <div className="cart-icon">
+            <motion.div layout className="cart-icon">
               <a onClick={() => navigate("/cart")}>
                 <button id="cart-icon" className="icon-btn" aria-label={`Cart (${cartCount})`}>
                   <ShoppingCart strokeWidth={1.2} />
                   {cartCount > 0 && <span className="badge">{cartCount}</span>}
                 </button>
               </a>
-            </div>
+            </motion.div>
 
             {isLoggedIn && (
-              <div className="notification-wrapper" ref={notificationRef}>
+              <motion.div layout className="notification-wrapper" ref={notificationRef}>
                 <div className="notification-icon">
-                  <button onClick={() => setIsNotificationOpen(v => !v)} className="icon-btn" aria-label={`Notifications (${unreadCount})`}>
+                  <button onClick={toggleNotification} className="icon-btn" aria-label={`Notifications (${unreadCount})`}>
                     <Bell strokeWidth={1.3} />
                     {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                   </button>
@@ -388,49 +399,67 @@ const Navbar = ({ onVisibilityChange }) => {
                     )}
                   </ul>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            {isLoggedIn ? (
-              <div className="profile-wrapper" ref={profileWrapperRef}>
-                <div className="profile-icon" id="profile-btn">
-                  <button id="profileButton" className="icon-btn" onClick={() => setIsProfileOpen((v) => !v)} aria-expanded={isProfileOpen}>
-                    <img src={ProfileIcon} alt="Profile" />
-                  </button>
-                </div>
-                <div className="profile-container">
-                  <div className={`profile-content ${isProfileOpen ? "active" : "hidden"}`} id="profileContent">
-                    <div className="desktop-profile-info">
-                      <img src={userdetails?.profileImage || user?.imageUrl || UserIcon} alt="User" className="mob-profile-img" />
-                      <div className="user-data">
-                        <div className="user-name-role">
-                          <h3 id="profile-name">{userdetails?.name}</h3>
-                          {userdetails?.role && <span className={`user-role-badge ${userdetails.role === "admin" ? "admin" : ""}`}>{userdetails.role}</span>}
+            <motion.div layout className="auth-item-container">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {isLoggedIn ? (
+                  <motion.div
+                    key="profile-btn"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className="profile-wrapper" 
+                    ref={profileWrapperRef}
+                  >
+                    <div className="profile-icon" id="profile-btn">
+                      <button id="profileButton" className="icon-btn" onClick={toggleProfile} aria-expanded={isProfileOpen}>
+                        <img src={ProfileIcon} alt="Profile" />
+                      </button>
+                    </div>
+                    {/* Profile Dropdown Content */}
+                    <div className="profile-container">
+                      <div className={`profile-content ${isProfileOpen ? "active" : "hidden"}`} id="profileContent">
+                        <div className="desktop-profile-info">
+                          <img src={userdetails?.profileImage || user?.imageUrl || UserIcon} alt="User" className="mob-profile-img" />
+                          <div className="user-data">
+                            <div className="user-name-role">
+                              <h3 id="profile-name">{userdetails?.name}</h3>
+                              {userdetails?.role && <span className={`user-role-badge ${userdetails.role === "admin" ? "admin" : ""}`}>{userdetails.role}</span>}
+                            </div>
+                            <p id="profile-email">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
+                          </div>
                         </div>
-                        <p id="profile-email">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
+                        <ul>
+                          <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>My Account</a></li>
+                          <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}><img src={MyOrderIcon} alt="" /><a>My Orders</a></li>
+                          <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}><img src={MailUsIcon} alt="" /><a>Contact Us</a></li>
+                          {userdetails?.role === "admin" && (
+                            <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}><img src={AdminIcon} alt="" /><a>Admin Panel</a></li>
+                          )}
+                          <li className="logout" onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: "/" }); setIsProfileOpen(false); }}><a>Log Out</a><img src={LogOutIcon} alt="" /></li>
+                        </ul>
                       </div>
                     </div>
-                    <ul>
-                      <li onClick={() => { navigate("/myaccount"); setIsProfileOpen(false); }}><img src={ProfileIcon} alt="" /><a>My Account</a></li>
-                      <li onClick={() => { navigate("/myorder"); setIsProfileOpen(false); }}><img src={MyOrderIcon} alt="" /><a>My Orders</a></li>
-                      <li onClick={() => { navigate("/contact"); setIsProfileOpen(false); }}><img src={MailUsIcon} alt="" /><a>Contact Us</a></li>
-                      {userdetails?.role === "admin" && (
-                        <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }}><img src={AdminIcon} alt="" /><a>Admin Panel</a></li>
-                      )}
-                      <li className="logout" onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: "/" }); setIsProfileOpen(false); }}><a>Log Out</a><img src={LogOutIcon} alt="" /></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <button 
-                className="nav-signin-btn" 
-                onClick={openAuthModal}
-              >
-                <img src={ProfileIcon} alt="" aria-hidden="true" />
-                <span>Sign In</span>
-              </button>
-            )}
+                  </motion.div>
+                ) : (
+                  <motion.button 
+                    key="signin-btn"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    className="nav-signin-btn" 
+                    onClick={openAuthModal}
+                  >
+                    <img src={ProfileIcon} alt="" aria-hidden="true" />
+                    <span>Sign In</span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
             <div className="part-1">
               <div className="mobile-view">
@@ -457,7 +486,6 @@ const Navbar = ({ onVisibilityChange }) => {
                       role="dialog"
                       aria-modal={isOpen}
                     >
-
                       <header className="sidebar-header">
                         <div className="sidebar-top">
                           <div className="sidebar-user-details">
@@ -518,7 +546,7 @@ const Navbar = ({ onVisibilityChange }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </nav>
 
