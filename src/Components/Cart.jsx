@@ -608,7 +608,7 @@ const ShoppingCart = () => {
             transition={{ duration: 0.2 }}
             style={{ willChange: "opacity" }}
             onClick={() => setIsCouponModalOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
           >
             <motion.div
               variants={modalVariants}
