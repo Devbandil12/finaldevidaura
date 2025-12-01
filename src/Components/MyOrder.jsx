@@ -97,7 +97,7 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   let showRefresh = true;
 
   if (currentStatus === 'processed') {
-    if (speed === 'optimum' || isLongAgo) {
+    if (speed === 'optimum' || speed === 'instant' || isLongAgo) {
       title = "Refund Complete";
       details = `Refund is complete. ${formattedAmount} has been credited to your account.`;
       showRefresh = false;
