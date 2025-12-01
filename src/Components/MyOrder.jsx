@@ -97,7 +97,7 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   let showRefresh = true;
 
   if (currentStatus === 'processed') {
-    if (speed === 'instant' || isLongAgo) {
+    if (speed === 'optimum' || isLongAgo) {
       title = "Refund Complete";
       details = `Refund is complete. ${formattedAmount} has been credited to your account.`;
       showRefresh = false;
@@ -110,8 +110,8 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
     icon = <Clock className="h-4 w-4 text-zinc-500" />;
     style = "bg-white border-dashed border-zinc-300 text-zinc-500";
     
-    if (speed === 'instant') {
-      details = `${formattedAmount} is being processed via Instant Refund.`;
+    if (speed === 'optimum') {
+      details = `${formattedAmount} is being processed via optimum Refund.`;
     } else {
       details = `${formattedAmount} is being processed.`;
     }
