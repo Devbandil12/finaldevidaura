@@ -346,6 +346,21 @@ const TextAreaField = ({ label, name, value, onChange, placeholder, span = "col-
   </div>
 );
 
+
+const ModernInput = ({ label, name, value, onChange, type="text", span="col-span-1" }) => (
+  <div className={span}>
+    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">{label}</label>
+    <input 
+      name={name} 
+      type={type} 
+      placeholder={label} 
+      value={value} 
+      onChange={onChange} 
+      className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+    />
+  </div>
+);
+
 // GREEN 4. MODIFIED: ProductVariantEditor (Stuck Zero & Auto-scroll Fix)
 const ProductVariantEditor = ({ product, onClose }) => {
   const {
@@ -494,23 +509,9 @@ const ProductVariantEditor = ({ product, onClose }) => {
     }
   }, [newVariantIndex]);
 
-  // Modern Input Helper with Light Border
-  const ModernInput = ({ label, name, value, onChange, type="text", span="col-span-1" }) => (
-    <div className={span}>
-      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">{label}</label>
-      <input 
-        name={name} 
-        type={type} 
-        placeholder={label} 
-        value={value} 
-        onChange={onChange} 
-        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
-      />
-    </div>
-  );
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-[100] p-4 sm:p-6 transition-all duration-300">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-[100000] p-4 sm:p-6 transition-all duration-300">
       <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-white/20">
         
         {/* Header */}
