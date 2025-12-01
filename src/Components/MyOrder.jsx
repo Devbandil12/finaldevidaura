@@ -100,7 +100,6 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
     if (speed === 'optimum' || speed === 'instant' || isLongAgo) {
       title = "Refund Complete";
       details = `Refund is complete. ${formattedAmount} has been credited to your account.`;
-      showRefresh = false;
     } else {
       title = "Refund Processed";
       details = `Refund processed. ${formattedAmount} will be credited in your account within 5-7 working days.`;
