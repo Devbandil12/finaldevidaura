@@ -12,55 +12,51 @@ import Loader from "./Loader";
 import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
-import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock } from "react-icons/fi";
+import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock, FiHeart } from "react-icons/fi";
 
 // --- ANIMATION CONFIGURATION ---
 
-// 1. GPU Acceleration for smoother rendering
 const gpuStyle = {
   backfaceVisibility: "hidden",
   perspective: 1000,
   willChange: "transform, opacity", 
 };
 
-// 2. "Buttery" Spring Physics (Unified for sync)
-// stiffness: controls speed (higher = faster snap)
-// damping: controls bounce (higher = less wobble)
-const butterSpring = {
-  type: "spring",
-  stiffness: 500, 
-  damping: 40,    
-  mass: 1
+// 1. STRICT TWEEN (Absolutely No Bounce)
+// Used for layout shifts to prevent wobble/overshoot
+const rigidTransition = {
+  type: "tween",
+  ease: "easeInOut",
+  duration: 0.35, 
 };
 
-// 3. Item Entrance/Exit Variants
+// Item Entrance/Exit Variants
 const itemVariants = {
-  initial: { opacity: 0, scale: 0.95, y: 15 },
+  initial: { opacity: 0, scale: 0.98, y: 10 },
   animate: { 
     opacity: 1, 
     scale: 1, 
     y: 0,
-    transition: { duration: 0.3, ease: "easeOut" } 
+    transition: rigidTransition 
   },
   exit: { 
     opacity: 0, 
-    scale: 0.95, 
+    scale: 0.98, 
     transition: { duration: 0.2, ease: "easeIn" } 
   }
 };
 
-// 4. Modal/Popup Variants
 const modalVariants = {
   hidden: { opacity: 0, scale: 0.95 },
   visible: { 
     opacity: 1, 
     scale: 1, 
-    transition: { type: "spring", stiffness: 400, damping: 30 } 
+    transition: rigidTransition
   },
   exit: { 
     opacity: 0, 
     scale: 0.95, 
-    transition: { duration: 0.15 } 
+    transition: { duration: 0.15, ease: "easeIn" } 
   }
 };
 
@@ -138,12 +134,6 @@ const ShoppingCart = () => {
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [addingProductId, setAddingProductId] = useState(null);
 
-  // --- OPTIMISTIC UI STATES ---
-  const [hiddenCartIds, setHiddenCartIds] = useState([]);
-  const [hiddenSavedIds, setHiddenSavedIds] = useState([]);
-  const [tempCartItems, setTempCartItems] = useState([]);
-  const [tempSavedItems, setTempSavedItems] = useState([]);
-
   const { products } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   const {
@@ -173,22 +163,6 @@ const ShoppingCart = () => {
 
   const isBuyNowFromNavigation = location.state?.isBuyNow;
   const isBuyNowActive = isBuyNowFromNavigation || !!buyNow;
-
-  // --- CLEANUP OPTIMISTIC STATE ---
-  useEffect(() => {
-    if (cart.length > 0 || isCartLoading === false) {
-      setTempCartItems([]);
-      setHiddenCartIds([]); 
-    }
-  }, [cart, isCartLoading]);
-
-  useEffect(() => {
-    if (savedItems.length > 0 || isCartLoading === false) {
-      setTempSavedItems([]);
-      setHiddenSavedIds([]);
-    }
-  }, [savedItems, isCartLoading]);
-
 
   // --- SCROLL LOCK ---
   useEffect(() => {
@@ -246,31 +220,9 @@ const ShoppingCart = () => {
     return [n];
   }, [buyNow, normalizeBuyNow]);
 
-  // --- ITEM RENDERING LOGIC ---
-  const rawItemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
-  
-  const itemsToRender = useMemo(() => {
-    const visibleRealItems = rawItemsToRender.filter(item => !hiddenCartIds.includes(item.variant?.id));
-    const finalCart = [...visibleRealItems];
-    tempCartItems.forEach(tempItem => {
-        if (!finalCart.find(i => i.variant?.id === tempItem.variant?.id)) {
-            finalCart.push(tempItem);
-        }
-    });
-    return finalCart;
-  }, [rawItemsToRender, hiddenCartIds, tempCartItems]);
-
-  const visibleSavedItems = useMemo(() => {
-    const visibleRealSaved = savedItems.filter(item => !hiddenSavedIds.includes(item.variant?.id));
-    const finalSaved = [...visibleRealSaved];
-    tempSavedItems.forEach(tempItem => {
-         if (!finalSaved.find(i => i.variant?.id === tempItem.variant?.id)) {
-            finalSaved.push(tempItem);
-        }
-    });
-    return finalSaved;
-  }, [savedItems, hiddenSavedIds, tempSavedItems]);
-
+  // --- ITEM RENDERING LOGIC (PURE STATE - NO HIDING) ---
+  const itemsToRender = isBuyNowActive && buyNow ? buyNowItemArray : cart;
+  const visibleSavedItems = savedItems;
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
@@ -471,8 +423,6 @@ const ShoppingCart = () => {
   };
 
   const handleRemove = (item) => {
-    setHiddenCartIds(prev => [...prev, item.variant.id]);
-    
     if (isBuyNowActive) {
       clearBuyNow();
     } else {
@@ -482,19 +432,14 @@ const ShoppingCart = () => {
 
   const handleSaveForLater = (item) => {
     if (isBuyNowActive) return; 
-    setHiddenCartIds(prev => [...prev, item.variant.id]);
-    setTempSavedItems(prev => [...prev, item]);
     saveForLater(item);
   };
 
   const handleMoveToCart = (item) => {
-    setHiddenSavedIds(prev => [...prev, item.variant.id]);
-    setTempCartItems(prev => [...prev, item]);
     moveSavedToCart(item);
   };
 
   const handleRemoveSavedItem = (variantId) => {
-    setHiddenSavedIds(prev => [...prev, variantId]);
     removeSavedItem(variantId);
   }
 
@@ -703,33 +648,38 @@ const ShoppingCart = () => {
                   filteredCoupons.map((coupon) => (
                     <motion.div
                       layout
-                      whileHover={{ scale: 1.01, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" }}
+                      whileHover={{ scale: 1.01, borderColor: "#000000" }}
                       transition={{ duration: 0.2, ease: "easeInOut" }}
                       key={coupon.id}
                       style={{ willChange: "transform" }}
-                      className="group relative flex items-center justify-between p-4 bg-white border border-dashed border-gray-300 rounded-xl hover:border-black transition-all duration-300 cursor-default"
+                      className="group relative flex w-full bg-white border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300"
                     >
-                      <div className="flex flex-col gap-1 pr-4">
-                        <div className="flex items-center gap-2">
-                             <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={14} />
-                             <span className="font-bold text-black text-base tracking-wide uppercase">
+                      {/* Ticket Body (White) */}
+                      <div className="flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed border-gray-200 group-hover:border-gray-900 transition-colors duration-300">
+                         <div className="flex items-center gap-2 mb-1">
+                             <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={16} />
+                             <span className="font-bold text-black text-lg tracking-wide uppercase">
                                 {coupon.code}
                              </span>
-                        </div>
-                        <span className="text-xs text-gray-500 leading-relaxed">
-                          {coupon.description}
-                        </span>
+                         </div>
+                         <span className="text-xs text-gray-500 leading-relaxed">
+                           {coupon.description}
+                         </span>
                       </div>
-                      <button
-                        onClick={() => {
-                          handleApplyCoupon(coupon);
-                          setIsCouponModalOpen(false);
-                          setCouponSearch("");
-                        }}
-                        className="text-xs font-bold text-white bg-black px-5 py-2.5 rounded-lg hover:bg-gray-800 transition-all shadow-sm flex-shrink-0"
-                      >
-                        APPLY
-                      </button>
+
+                      {/* Ticket Stub (Action Area - White) */}
+                      <div className="w-[28%] flex items-center justify-center p-3 bg-gray-50/30">
+                        <button
+                            onClick={() => {
+                              handleApplyCoupon(coupon);
+                              setIsCouponModalOpen(false);
+                              setCouponSearch("");
+                            }}
+                            className="text-xs font-bold text-white bg-black px-4 py-2 rounded-lg hover:bg-gray-800 transition-all shadow-sm w-full"
+                        >
+                            APPLY
+                        </button>
+                      </div>
                     </motion.div>
                   ))
                 ) : (
@@ -793,7 +743,7 @@ const ShoppingCart = () => {
                       <motion.div 
                         key={item.variant.id} 
                         layout 
-                        transition={butterSpring} 
+                        transition={rigidTransition} // <--- STRICT NO BOUNCE
                         variants={itemVariants} 
                         initial="initial" 
                         animate="animate" 
@@ -803,7 +753,12 @@ const ShoppingCart = () => {
                       >
                         <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
                           <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                            <img src={itemImageUrl} alt={item.product.name} className="w-full h-full object-cover rounded-lg" />
+                            <img 
+                                src={itemImageUrl} 
+                                alt={item.product.name} 
+                                className="w-full h-full object-cover rounded-lg"
+                                loading="eager"
+                            />
                             {isOutOfStock && (
                               <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center z-10">
                                 <span className="text-[10px] font-bold text-red-900  px-1.5 py-0.5 text-center leading-tight">OUT OF STOCK</span>
@@ -846,9 +801,9 @@ const ShoppingCart = () => {
                               <button onClick={() => handleQuantityChange(item, 1)} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100">+</button>
                             </div>
                             <div className="flex gap-4 sm:gap-6 pt-3">
-                              <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
+                              <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
                               {!isBuyNowActive && (
-                                <button onClick={() => handleSaveForLater(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Save for Later</button>
+                                <button onClick={() => handleSaveForLater(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Save for Later</button>
                               )}
                             </div>
                           </div>
@@ -864,7 +819,7 @@ const ShoppingCart = () => {
                     initial="initial" 
                     animate="animate" 
                     exit="exit"
-                    transition={butterSpring}
+                    transition={rigidTransition} // <--- STRICT NO BOUNCE
                     style={gpuStyle}
                     className="text-center p-8 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 transition-shadow"
                   >
@@ -873,96 +828,6 @@ const ShoppingCart = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* SAVED FOR LATER (Static Header + Animated List) */}
-              {!isBuyNowActive && (
-                <div className="mt-8 pt-8 border-t border-gray-100">
-                  <motion.div layout="position" transition={butterSpring} className="mb-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <FiClock className="text-gray-800" /> Saved for Later ({visibleSavedItems.length})
-                    </h2>
-                  </motion.div>
-                  
-                  <div className="flex flex-col gap-4 relative">
-                    <AnimatePresence mode="popLayout">
-                      {visibleSavedItems.length > 0 ? (
-                        visibleSavedItems.map((item) => {
-                          const variant = item.variant;
-                          const product = item.product || item.variant.product; 
-                          const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-                          const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
-                          const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
-
-                          return (
-                            <motion.div
-                              key={item.id || item.variant.id}
-                              layout
-                              transition={butterSpring}
-                              variants={itemVariants} 
-                              initial="initial" 
-                              animate="animate" 
-                              exit="exit"
-                              style={gpuStyle}
-                              className="relative"
-                            >
-                              <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
-                                {/* Image Section */}
-                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                                  <img src={itemImageUrl} alt={product.name} className="w-full h-full object-cover rounded-lg" />
-                                </div>
-                                
-                                {/* Info Section */}
-                                <div className="flex-grow w-full text-left">
-                                  <h3 className="text-base sm:text-lg font-semibold mb-1 text-gray-900 line-clamp-1">{product.name}</h3>
-                                  <p className="text-xs sm:text-sm text-gray-500">{variant.size} ml </p>
-                                  
-                                  <div className="flex items-baseline gap-2 mt-2 justify-start">
-                                     <span className="text-sm sm:text-base font-bold text-gray-900">₹{price}</span>
-                                     {showLineThrough && <span className="text-xs sm:text-sm text-gray-500 line-through">₹{variant.oprice}</span>}
-                                     <span className="text-xs text-gray-500 ml-1">Qty: {item.quantity}</span>
-                                  </div>
-                                </div>
-                                
-                                {/* Actions Section */}
-                                <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
-                                   <button 
-                                      onClick={() => handleMoveToCart(item)}
-                                      className="bg-black text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-800 transition-colors shadow-sm"
-                                   >
-                                      Move to Cart
-                                   </button>
-                                   
-                                   <div className="flex gap-4 sm:gap-6 pt-1">
-                                     <button 
-                                       onClick={() => handleRemoveSavedItem(variant.id)}
-                                       className="bg-transparent border-none text-gray-400 cursor-pointer text-xs sm:text-sm font-medium hover:text-red-600 transition-colors"
-                                     >
-                                       Remove
-                                     </button>
-                                   </div>
-                                </div>
-                              </div>
-                            </motion.div>
-                          );
-                        })
-                      ) : (
-                        <motion.div
-                          key="empty-saved-message"
-                          layout
-                          variants={itemVariants}
-                          initial="initial" 
-                          animate="animate" 
-                          exit="exit"
-                          transition={butterSpring}
-                          className="text-center p-4 text-gray-400 italic text-sm border border-dashed border-gray-200 rounded-xl"
-                        >
-                          No items saved for later.
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              )}
             </motion.div>
 
             {/* Sidebar (Order Summary) */}
@@ -1120,6 +985,102 @@ const ShoppingCart = () => {
             </div>
           </div>
 
+          {/* === SAVED FOR LATER (REDESIGNED) === */}
+          {!isBuyNowActive && (
+            <motion.div 
+              layout="position" 
+              transition={rigidTransition}
+              className="mt-8 border-t border-gray-100 pt-8"
+            >
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-gray-100 rounded-full text-gray-700">
+                      <FiHeart size={20} />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                        Saved for Later
+                      </h2>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {visibleSavedItems.length} items to reconsider
+                      </p>
+                    </div>
+                </div>
+
+                {visibleSavedItems.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {visibleSavedItems.map((item) => {
+                          const variant = item.variant;
+                          const product = item.product || item.variant.product; 
+                          const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
+                          const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
+                          const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
+
+                          return (
+                            <motion.div
+                              key={item.variant.id}
+                              layout
+                              transition={{
+                                ...rigidTransition,
+                                layout: rigidTransition
+                              }} 
+                              variants={itemVariants} 
+                              initial="initial" 
+                              animate="animate" 
+                              exit="exit"
+                              className="bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out flex gap-4 items-center sm:items-start relative group"
+                            >
+                              {/* Cross Button */}
+                              <button
+                                  onClick={() => handleRemoveSavedItem(variant.id)}
+                                  className="absolute top-2 right-2 p-1.5 bg-gray-100 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                  title="Remove Item"
+                              >
+                                <FiX size={14} />
+                              </button>
+
+                              {/* Image */}
+                              <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                  <img 
+                                    src={itemImageUrl} 
+                                    alt={product.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
+                                  <div>
+                                      <h3 className="font-semibold text-sm text-gray-900 truncate pr-6">{product.name}</h3>
+                                      <p className="text-xs text-gray-500 mb-1">{variant.size} ml</p>
+                                      <div className="flex items-center gap-2">
+                                          <span className="text-sm font-bold text-gray-900">₹{price}</span>
+                                          {showLineThrough && <span className="text-xs text-gray-400 line-through">₹{variant.oprice}</span>}
+                                      </div>
+                                  </div>
+                                  
+                                  <div className="mt-3">
+                                      <button 
+                                        onClick={() => handleMoveToCart(item)}
+                                        className="w-full bg-black text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition-colors"
+                                      >
+                                        Move to Cart
+                                      </button>
+                                  </div>
+                              </div>
+                            </motion.div>
+                          );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <p className="text-gray-500">You haven't saved any items for later yet.</p>
+                  </div>
+                )}
+            </motion.div>
+          )}
+
           <div className="bg-white border border-gray-100 p-6 text-center rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 ">
             <h3 className="text-lg font-semibold mb-1">🚚 Check Delivery Availability</h3>
             <p className="text-gray-500 mb-4 text-sm">Enter your pincode to see if we can reach your doorstep.</p>
@@ -1139,7 +1100,7 @@ const ShoppingCart = () => {
             </div>
             <AnimatePresence>
               {pincodeDetails && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className={`mt-4 rounded-xl text-sm overflow-hidden`}>
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ ...rigidTransition, duration: 0.3 }} className={`mt-4 rounded-xl text-sm overflow-hidden`}>
                   <div className={`p-4 ${pincodeDetails.isServiceable ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
                     {pincodeDetails.isServiceable ? (
                       <>
@@ -1178,15 +1139,13 @@ const ShoppingCart = () => {
                       <motion.div
                         layout
                         key={product.id}
-                        initial={{ opacity: 0, scale: 0.8 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
+                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
                         style={gpuStyle}
                         transition={{ 
-                            type: "spring", 
-                            stiffness: 60, 
-                            damping: 25,
-                            layout: { duration: 0.3 }
+                            ...rigidTransition,
+                            layout: rigidTransition
                         }}
                         className="bg-white rounded-xl overflow-hidden flex flex-col shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition-shadow duration-300 ease-in-out group h-full"
                       >
@@ -1239,7 +1198,7 @@ const ShoppingCart = () => {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
+                                transition={rigidTransition}
                                 className="flex items-center gap-2"
                               >
                                 {isAdding ? (
