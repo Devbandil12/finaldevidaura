@@ -821,7 +821,7 @@ const ShoppingCart = () => {
                     exit="exit"
                     transition={rigidTransition} // <--- STRICT NO BOUNCE
                     style={gpuStyle}
-                    className="text-center p-8 bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 transition-shadow"
+                    className="text-center p-8 bg-white  transition-shadow"
                   >
                     <h3 className="text-lg mb-2">Your cart is empty.</h3>
                     <p className="text-gray-500">Looks like you haven't added anything to your cart yet.</p>
@@ -1081,7 +1081,7 @@ const ShoppingCart = () => {
             </motion.div>
           )}
 
-          <div className="bg-white border border-gray-100 p-6 text-center rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 ">
+          <div className="bg-white p-6 text-center  ">
             <h3 className="text-lg font-semibold mb-1">🚚 Check Delivery Availability</h3>
             <p className="text-gray-500 mb-4 text-sm">Enter your pincode to see if we can reach your doorstep.</p>
             <div className="flex max-w-sm mx-auto">
