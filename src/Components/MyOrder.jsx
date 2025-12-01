@@ -61,61 +61,129 @@ const formatDateTime = (dateString) => {
 
 // --- Sub-Components ---
 
+// Add this import if 'useState' isn't already used in this specific sub-component context (usually it's at top of file)
+// import { useState } from "react"; 
+
 const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
+  // 1. Add state for dropdown visibility (Default: false/hidden)
+  const [expanded, setExpanded] = useState(false);
+
   if (!refund || !refund.status) return null;
 
-  const { status, amount, refund_completed_at } = refund;
+  const { status, amount, refund_completed_at, speed } = refund;
   const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
 
+  // Normalize status
   const currentStatus = ['created', 'queued', 'pending', 'in_progress'].includes(status)
     ? 'pending'
     : status;
 
-  const statusConfig = {
-    processed: {
-      icon: <CheckCircle className="h-4 w-4 text-zinc-900" />,
-      title: "Refund Processed",
-      details: `${formattedAmount} credited on ${formatDateTime(refund_completed_at)}.`,
-      style: "bg-zinc-50 border-zinc-100 text-zinc-900",
-    },
-    pending: {
-      icon: <Clock className="h-4 w-4 text-zinc-500" />,
-      title: "Refund Processing",
-      details: `${formattedAmount} is being processed.`,
-      style: "bg-white border-dashed border-zinc-300 text-zinc-500",
-    },
-    failed: {
-      icon: <XCircle className="h-4 w-4 text-zinc-900" />,
-      title: "Refund Failed",
-      details: "Contact support for assistance.",
-      style: "bg-zinc-50 border-zinc-200 text-zinc-900",
-    },
-  };
+  // Logic to check if 7 days have passed
+  let isLongAgo = false;
+  if (refund_completed_at) {
+    const completedDate = new Date(refund_completed_at);
+    const today = new Date();
+    const diffTime = Math.abs(today - completedDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 7) isLongAgo = true;
+  }
 
-  const config = statusConfig[currentStatus];
-  if (!config) return null;
+  // Define UI Content
+  let title = "Refund Processed";
+  let details = "";
+  let icon = <CheckCircle className="h-4 w-4 text-zinc-900" />;
+  let style = "bg-zinc-50 border-zinc-100 text-zinc-900";
+  let showRefresh = true;
+
+  if (currentStatus === 'processed') {
+    if (speed === 'instant' || isLongAgo) {
+      title = "Refund Complete";
+      details = `Refund is complete. ${formattedAmount} has been credited to your account.`;
+      showRefresh = false;
+    } else {
+      title = "Refund Processed";
+      details = `Refund processed. ${formattedAmount} will be credited in your account within 5-7 working days.`;
+    }
+  } else if (currentStatus === 'pending') {
+    title = "Refund Processing";
+    icon = <Clock className="h-4 w-4 text-zinc-500" />;
+    style = "bg-white border-dashed border-zinc-300 text-zinc-500";
+    
+    if (speed === 'instant') {
+      details = `${formattedAmount} is being processed via Instant Refund.`;
+    } else {
+      details = `${formattedAmount} is being processed.`;
+    }
+  } else if (currentStatus === 'failed') {
+    title = "Refund Failed";
+    details = "Contact support for assistance.";
+    icon = <XCircle className="h-4 w-4 text-zinc-900" />;
+    style = "bg-zinc-50 border-zinc-200 text-zinc-900";
+    showRefresh = false;
+  }
 
   return (
-    <div className={`rounded-2xl p-4 md:p-5 mt-6 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${config.style}`}>
-      <div className="flex items-start sm:items-center gap-3 md:gap-4">
-        <div className="p-2 bg-white rounded-full shadow-sm shrink-0">{config.icon}</div>
-        <div>
-          <h3 className="text-sm font-medium">{config.title}</h3>
-          <p className="text-xs opacity-70 mt-0.5 leading-relaxed">{config.details}</p>
-        </div>
-      </div>
-      {currentStatus === 'pending' && (
-        <button
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="self-end sm:self-auto p-2 rounded-full hover:bg-black/5 transition-colors"
+    <div 
+      className={`rounded-2xl px-4 py-3 md:px-5 md:py-4 mt-6 border transition-all duration-300 ${style}`}
+    >
+      {/* --- Top Row (Always Visible) --- */}
+      <div className="flex items-center justify-between">
+        {/* Clickable Area to Toggle Dropdown */}
+        <div 
+          onClick={() => setExpanded(!expanded)} 
+          className="flex items-center gap-3 md:gap-4 cursor-pointer group select-none flex-grow"
         >
-          <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-      )}
+          <div className="p-2 bg-white rounded-full shadow-sm shrink-0">
+            {icon}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium">{title}</h3>
+            {/* Chevron Icon that rotates */}
+            <div className={`transition-transform duration-300 text-zinc-400 ${expanded ? 'rotate-180' : ''}`}>
+              <ChevronDown size={16} />
+            </div>
+          </div>
+        </div>
+
+        {/* Refresh Button (Stops propagation so it doesn't toggle dropdown) */}
+        {showRefresh && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRefresh();
+            }}
+            disabled={isRefreshing}
+            className="p-2 rounded-full hover:bg-black/5 transition-colors"
+            title="Check for status updates"
+          >
+            <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+      </div>
+
+      {/* --- Dropdown Content (Hidden by default) --- */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="text-xs opacity-70 mt-2 ml-[3.25rem] leading-relaxed pb-1">
+              {details}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+
+
 
 export default function MyOrders() {
   const { orders, setOrders, cancelOrder, loadingOrders } = useContext(OrderContext);
