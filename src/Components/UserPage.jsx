@@ -12,7 +12,8 @@ import {
   Pencil, MapPin, Package, Star, MessageSquare, Plus,
   Trash2, CheckCircle, Circle, X, CreditCard,
   ShoppingBag, Bell, Shield, LogOut, User as UserIcon, Camera, ShoppingCart,
-  FileText, XCircle, Heart, ChevronLeft, ChevronDown, Check, Loader2, Upload, ChevronRight
+  FileText, XCircle, Heart, ChevronLeft, ChevronDown, Check, Loader2, Upload,
+  ChevronRight, Send, AlertCircle, Lock, RefreshCw, Clock, Headphones
 } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import useCloudinary from "../utils/useCloudinary";
@@ -102,7 +103,7 @@ const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
         <span className={`font-medium ${!value ? "text-slate-400" : "text-slate-900"}`}>{value || "Select..."}</span>
         <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
       </button>
-      
+
       <label className="absolute left-3 -top-2 bg-white px-1 text-xs text-slate-500 transition-all duration-300 pointer-events-none rounded-sm">
         {label}
       </label>
@@ -151,10 +152,10 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
       className="group flex-1 flex flex-col items-center py-3 cursor-pointer rounded-2xl transition-all duration-300 ease-in-out hover:bg-slate-50 hover:scale-105"
     >
       <div className={`mb-1 p-2 rounded-full bg-slate-50 transition-colors duration-300 group-hover:bg-white`}>
-        <Icon 
-            size={20} 
-            strokeWidth={1.5}
-            className={`text-slate-400 transition-colors duration-300 ${hoverColor}`} 
+        <Icon
+          size={20}
+          strokeWidth={1.5}
+          className={`text-slate-400 transition-colors duration-300 ${hoverColor}`}
         />
       </div>
       <span className="text-lg font-bold text-slate-800 transition-colors duration-300">{count}</span>
@@ -166,20 +167,20 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
     <motion.div variants={fadeInUp} className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
       <div className="h-32 bg-gradient-to-br from-slate-800 to-black"></div>
       <div className="pt-0 px-6 pb-8 text-center relative z-10">
-        
+
         <div className="relative mx-auto w-24 h-24 -mt-12 mb-4 group cursor-pointer" onClick={onEditProfile}>
           <div className="w-full h-full bg-white border-[4px] border-white shadow-lg overflow-hidden rounded-full">
             {user.profileImage ? (
-              <img 
-                src={user.profileImage} 
-                alt={user.name} 
-                className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110" 
+              <img
+                src={user.profileImage}
+                alt={user.name}
+                className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
               />
             ) : (
               <div className={`w-full h-full flex items-center justify-center text-3xl font-bold ${avatarBg} transition-all duration-500`}>{initials}</div>
             )}
           </div>
-          
+
           <div className="absolute bottom-0 right-0 p-2 bg-black text-white rounded-full shadow-md border-2 border-white transition-all duration-300 group-hover:scale-110">
             <Pencil size={12} />
           </div>
@@ -235,7 +236,7 @@ const ProfileCompletion = ({ user, addressCount }) => {
         <span className="text-xl font-bold text-slate-900">{percentage}%</span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mb-6">
-        <motion.div 
+        <motion.div
           initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1, ease: "circOut" }}
           className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full"
         />
@@ -265,12 +266,12 @@ const RecentActivity = ({ orders, reviews, addresses, queries }) => {
     const TIME_THRESHOLD = 60000;
 
     (orders || []).forEach(o => {
-      allItems.push({ type: "order", id: `op-${o.id}`, label: `Placed Order #${o.id.slice(0,8)}...`, date: new Date(o.createdAt), icon: ShoppingBag });
+      allItems.push({ type: "order", id: `op-${o.id}`, label: `Placed Order #${o.id.slice(0, 8)}...`, date: new Date(o.createdAt), icon: ShoppingBag });
       if (new Date(o.updatedAt) > new Date(o.createdAt) + TIME_THRESHOLD) {
-        allItems.push({ type: "update", id: `ou-${o.id}`, label: `Order #${o.id.slice(0,8)}... is ${o.status}`, date: new Date(o.updatedAt), icon: Package });
+        allItems.push({ type: "update", id: `ou-${o.id}`, label: `Order #${o.id.slice(0, 8)}... is ${o.status}`, date: new Date(o.updatedAt), icon: Package });
       }
     });
-    
+
     (reviews || []).forEach(r => allItems.push({ type: "review", id: `r-${r.id}`, label: "Wrote a review", date: new Date(r.createdAt), icon: Star }));
     (addresses || []).forEach(a => allItems.push({ type: "address", id: `a-${a.id}`, label: "Updated address book", date: new Date(a.createdAt), icon: MapPin }));
     (queries || []).forEach(q => allItems.push({ type: "query", id: `q-${q.id}`, label: "Raised a support ticket", date: new Date(q.createdAt), icon: FileText }));
@@ -287,10 +288,9 @@ const RecentActivity = ({ orders, reviews, addresses, queries }) => {
           {activityItems.length === 0 && <p className="text-sm text-slate-400 pl-8">No recent activity.</p>}
           {activityItems.map((item) => (
             <div key={item.id} className="relative flex items-start gap-4 group">
-              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm transition-colors flex-shrink-0 ${
-                item.type === 'order' ? 'bg-indigo-50 text-indigo-600' : 
-                item.type === 'review' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
-              }`}>
+              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm transition-colors flex-shrink-0 ${item.type === 'order' ? 'bg-indigo-50 text-indigo-600' :
+                  item.type === 'review' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
+                }`}>
                 <item.icon size={14} strokeWidth={2.5} />
               </div>
               <div className="pt-1 min-w-0 flex-1">
@@ -325,9 +325,8 @@ const TabNavigation = ({ activeTab, onTabClick }) => (
         <button
           key={tab.id}
           onClick={() => onTabClick(tab.id)}
-          className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex-shrink-0 ${
-            isActive ? "text-white shadow-md" : "text-slate-500 hover:text-slate-800"
-          }`}
+          className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex-shrink-0 ${isActive ? "text-white shadow-md" : "text-slate-500 hover:text-slate-800"
+            }`}
         >
           {isActive && (
             <motion.div
@@ -346,7 +345,7 @@ const TabNavigation = ({ activeTab, onTabClick }) => (
   </div>
 );
 
-const CustomDropdown = ({ value, options, onChange, wrapperClassName }) => { 
+const CustomDropdown = ({ value, options, onChange, wrapperClassName }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -484,44 +483,44 @@ const ProfileSettings = () => {
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
         </div>
-        
+
         <div className="flex items-center gap-3">
-            <button type="button" onClick={() => fileRef.current?.click()} className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-all shadow-md shadow-slate-200 flex items-center gap-2">
-                <Upload size={16} /> Change Photo
+          <button type="button" onClick={() => fileRef.current?.click()} className="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-slate-800 transition-all shadow-md shadow-slate-200 flex items-center gap-2">
+            <Upload size={16} /> Change Photo
+          </button>
+          {localUrl && (
+            <button type="button" onClick={handleRemoveImage} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors" title="Remove Photo">
+              <Trash2 size={18} />
             </button>
-            {localUrl && (
-                <button type="button" onClick={handleRemoveImage} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors" title="Remove Photo">
-                    <Trash2 size={18} />
-                </button>
-            )}
+          )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onProfileSave)} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="md:col-span-2">
-            <FloatingInput label="Full Name" {...register("name", { required: true })} />
+          <FloatingInput label="Full Name" {...register("name", { required: true })} />
         </div>
-        
+
         <div>
-            <FloatingInput label="Phone Number" {...register("phone", { minLength: 6 })} />
+          <FloatingInput label="Phone Number" {...register("phone", { minLength: 6 })} />
         </div>
-        
+
         <div className="relative">
-            <Controller control={control} name="dob" render={({ field }) => (
-                <ReactDatePicker selected={field.value} onChange={(date) => field.onChange(date)} customInput={<FloatingInput label="Date of Birth" />} renderCustomHeader={CustomDatePickerHeader} dateFormat="MMMM d, yyyy" maxDate={new Date()} showPopperArrow={false} />
-            )} />
+          <Controller control={control} name="dob" render={({ field }) => (
+            <ReactDatePicker selected={field.value} onChange={(date) => field.onChange(date)} customInput={<FloatingInput label="Date of Birth" />} renderCustomHeader={CustomDatePickerHeader} dateFormat="MMMM d, yyyy" maxDate={new Date()} showPopperArrow={false} />
+          )} />
         </div>
-        
+
         <div className="md:col-span-2">
-            <Controller control={control} name="gender" render={({ field }) => (
-                <FloatingDropdown label="Gender" value={field.value} onChange={field.onChange} options={["Male", "Female", "Other"]} />
-            )} />
+          <Controller control={control} name="gender" render={({ field }) => (
+            <FloatingDropdown label="Gender" value={field.value} onChange={field.onChange} options={["Male", "Female", "Other"]} />
+          )} />
         </div>
-        
+
         <div className="md:col-span-2 flex justify-end mt-4">
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-300 disabled:opacity-50 disabled:shadow-none w-full sm:w-auto">
-                Save Changes
-            </motion.button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg shadow-slate-300 disabled:opacity-50 disabled:shadow-none w-full sm:w-auto">
+            Save Changes
+          </motion.button>
         </div>
       </form>
     </motion.div>
@@ -584,7 +583,7 @@ const AddressForm = ({ address, onCancel }) => {
   });
 
   const onSubmit = async (data) => {
-    try { isEditing ? await editAddress(address.id, data) : await addAddress(data); window.toast.success("Saved"); onCancel(); } 
+    try { isEditing ? await editAddress(address.id, data) : await addAddress(data); window.toast.success("Saved"); onCancel(); }
     catch (e) { window.toast.error("Failed"); }
   };
 
@@ -595,13 +594,13 @@ const AddressForm = ({ address, onCancel }) => {
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
         <FloatingInput label="Full Name" {...register("name", { required: "Required" })} error={errors.name?.message} />
-        
+
         <Controller
-            control={control}
-            name="addressType"
-            render={({ field }) => (
-                <FloatingDropdown label="Type" value={field.value} onChange={field.onChange} options={["Home", "Work", "Other"]} />
-            )}
+          control={control}
+          name="addressType"
+          render={({ field }) => (
+            <FloatingDropdown label="Type" value={field.value} onChange={field.onChange} options={["Home", "Work", "Other"]} />
+          )}
         />
 
         <FloatingInput label="Phone" {...register("phone", { required: "Required" })} error={errors.phone?.message} />
@@ -677,45 +676,45 @@ const OrderDetailsModal = ({ order, onClose }) => {
 
   return (
     <AnimatePresence>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-sm flex items-center justify-end" onClick={onClose}>
-            <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.3 }} className="bg-white w-full max-w-md h-full shadow-2xl p-6 sm:p-8 overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-xl font-bold text-slate-900">Order Details</h3>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-50"><X size={20} /></button>
-                </div>
-                <div className="space-y-6">
-                    <div className="pb-6 border-b border-slate-100">
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Order ID</p>
-                        {/* Added break-all for long IDs */}
-                        <p className="text-lg font-mono text-slate-800 break-all">{order.id}</p>
-                        <p className="text-sm text-slate-500 mt-2">{formatDate(order.createdAt)}</p>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] bg-black/20 backdrop-blur-sm flex items-center justify-end" onClick={onClose}>
+        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.3 }} className="bg-white w-full max-w-md h-full shadow-2xl p-6 sm:p-8 overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xl font-bold text-slate-900">Order Details</h3>
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-50"><X size={20} /></button>
+          </div>
+          <div className="space-y-6">
+            <div className="pb-6 border-b border-slate-100">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Order ID</p>
+              {/* Added break-all for long IDs */}
+              <p className="text-lg font-mono text-slate-800 break-all">{order.id}</p>
+              <p className="text-sm text-slate-500 mt-2">{formatDate(order.createdAt)}</p>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 mb-4">Items</h4>
+              <div className="space-y-4">
+                {order.orderItems?.map(item => {
+                  const prod = productMap.get(item.productId);
+                  return (
+                    <div key={item.id} className="flex gap-4">
+                      <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-lg object-cover bg-slate-50 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{item.productName}</p>
+                        <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
+                        <p className="text-sm font-medium text-slate-900 mt-1">₹{item.totalPrice}</p>
+                      </div>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-slate-900 mb-4">Items</h4>
-                        <div className="space-y-4">
-                            {order.orderItems?.map(item => {
-                                const prod = productMap.get(item.productId);
-                                return (
-                                    <div key={item.id} className="flex gap-4">
-                                        <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-lg object-cover bg-slate-50 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-slate-900 line-clamp-1">{item.productName}</p>
-                                            <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
-                                            <p className="text-sm font-medium text-slate-900 mt-1">₹{item.totalPrice}</p>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                    <div className="pt-6 border-t border-slate-100">
-                        <div className="flex justify-between text-base font-bold text-slate-900">
-                            <span>Total</span><span>₹{order.totalAmount}</span>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="pt-6 border-t border-slate-100">
+              <div className="flex justify-between text-base font-bold text-slate-900">
+                <span>Total</span><span>₹{order.totalAmount}</span>
+              </div>
+            </div>
+          </div>
         </motion.div>
+      </motion.div>
     </AnimatePresence>
   );
 };
@@ -741,8 +740,8 @@ const ReviewHistory = () => {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap justify-between items-start gap-2">
                 <div className="min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate">{product?.name}</h4>
-                    <div className="flex gap-0.5 mt-1">{[...Array(5)].map((_, i) => <Star key={i} size={14} className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />)}</div>
+                  <h4 className="font-bold text-slate-900 text-sm truncate">{product?.name}</h4>
+                  <div className="flex gap-0.5 mt-1">{[...Array(5)].map((_, i) => <Star key={i} size={14} className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />)}</div>
                 </div>
                 <button onClick={() => navigate(`/product/${review.productId}`, { state: { editReviewId: review.id } })} className="text-slate-400 hover:text-black flex-shrink-0"><Pencil size={16} /></button>
               </div>
@@ -768,68 +767,320 @@ const NotificationSettings = () => {
 
   const SettingRow = ({ label, desc, ...props }) => (
     <label className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl cursor-pointer hover:border-slate-300 transition-all gap-4">
-        <div className="flex-1 min-w-0">
-            <p className="font-bold text-slate-900">{label}</p>
-            <p className="text-xs text-slate-500 mt-1 break-words">{desc}</p>
-        </div>
-        <div className="relative flex-shrink-0">
-            <input type="checkbox" className="sr-only peer" {...props} />
-            <div className="w-11 h-6 bg-slate-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
-        </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-slate-900">{label}</p>
+        <p className="text-xs text-slate-500 mt-1 break-words">{desc}</p>
+      </div>
+      <div className="relative flex-shrink-0">
+        <input type="checkbox" className="sr-only peer" {...props} />
+        <div className="w-11 h-6 bg-slate-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black"></div>
+      </div>
     </label>
   );
 
   return (
     <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-        <h3 className="text-xl font-bold text-slate-900 mb-6">Notifications</h3>
-        <form onSubmit={handleSubmit(onSave)} className="space-y-4 max-w-xl">
-            <SettingRow label="Orders" desc="Updates on shipping and delivery." {...register("notify_order_updates")} />
-            <SettingRow label="Promotions" desc="New coupons and sales." {...register("notify_promos")} />
-            <SettingRow label="Service Alerts" desc="Pincode service updates." {...register("notify_pincode")} />
-            <div className="flex justify-end mt-6">
-                <button type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50">Save Preferences</button>
-            </div>
-        </form>
+      <h3 className="text-xl font-bold text-slate-900 mb-6">Notifications</h3>
+      <form onSubmit={handleSubmit(onSave)} className="space-y-4 max-w-xl">
+        <SettingRow label="Orders" desc="Updates on shipping and delivery." {...register("notify_order_updates")} />
+        <SettingRow label="Promotions" desc="New coupons and sales." {...register("notify_promos")} />
+        <SettingRow label="Service Alerts" desc="Pincode service updates." {...register("notify_pincode")} />
+        <div className="flex justify-end mt-6">
+          <button type="submit" disabled={!isDirty} className="px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50">Save Preferences</button>
+        </div>
+      </form>
     </motion.div>
   );
 };
 
+/* ========================================================================
+   8. TAB CONTENT: SUPPORT QUERIES (Redesigned)
+   ======================================================================== */
 const SupportQueries = () => {
-    const { queries } = useContext(ContactContext);
-    return (
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-            <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-bold text-slate-900">Support</h3></div>
-            <div className="space-y-4">
-                {(!queries || queries.length === 0) && <p className="text-slate-400">No queries.</p>}
-                {(queries || []).map(q => (
-                    <div key={q.id} className="p-6 bg-white rounded-2xl border border-slate-100">
-                        <div className="flex justify-between flex-wrap gap-2">
-                            <h4 className="font-bold text-slate-900 break-words">{q.subject}</h4>
-                            <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded whitespace-nowrap ${q.reply ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>{q.reply ? "Resolved" : "Pending"}</span>
-                        </div>
-                        <p className="text-sm text-slate-600 mt-2 break-words">{q.message}</p>
-                        {q.reply && <div className="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 border-l-2 border-indigo-500 break-words"><p className="font-bold text-indigo-600 text-xs mb-1">Reply</p>{q.reply}</div>}
-                    </div>
-                ))}
-            </div>
-        </motion.div>
-    );
-};
+  const { tickets, getUserTickets, replyToTicket } = useContext(ContactContext);
+  const { userdetails } = useContext(UserContext);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const messagesEndRef = useRef(null);
+
+  // Initial fetch
+  useEffect(() => {
+    if (userdetails?.email) getUserTickets(userdetails.email);
+  }, [userdetails, getUserTickets]);
+
+  // Scroll to bottom when chat opens or updates
+  useEffect(() => {
+    if (selectedTicket && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedTicket?.messages, selectedTicket?.id]);
+
+  const handleRefresh = async () => {
+    if (userdetails?.email) {
+      setIsRefreshing(true);
+      await getUserTickets(userdetails.email);
+      setTimeout(() => setIsRefreshing(false), 800);
+      window.toast.success("Inbox updated");
+    }
+  };
+
+  // When clicking a ticket in the sidebar
+  const handleTicketSelect = (ticket) => {
+    setSelectedTicket(ticket);
+    // Silent refresh to ensure we have latest messages
+    if (userdetails?.email) getUserTickets(userdetails.email);
+  };
+
+  const handleReply = async () => {
+    if (!replyText.trim() || !selectedTicket) return;
+    setLoading(true);
+    try {
+      await replyToTicket(selectedTicket.id, replyText, 'user');
+
+      // Optimistic update locally
+      const newMsg = {
+        senderRole: 'user',
+        message: replyText,
+        createdAt: new Date().toISOString()
+      };
+
+      setSelectedTicket(prev => ({
+        ...prev,
+        messages: [...prev.messages, newMsg]
+      }));
+
+      await getUserTickets(userdetails.email);
+      setReplyText("");
+    } catch (error) {
+      window.toast.error(error.message || "Message failed");
+      await getUserTickets(userdetails.email);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // If tickets list is empty
+  if (!tickets || tickets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+          <MessageSquare className="w-8 h-8 text-slate-300" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900">No support tickets</h3>
+        <p className="text-slate-500 mb-6">You haven't reached out to us yet.</p>
+        <button
+          onClick={() => window.location.href = '/contact'}
+          className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-black text-white font-medium hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+        >
+          <Plus size={18} /> Create Ticket
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col md:flex-row h-[650px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+
+      {/* LEFT SIDEBAR: TICKET LIST */}
+      {/* Hidden on mobile if a ticket is selected */}
+      <div className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-slate-100 bg-white ${selectedTicket ? 'hidden md:flex' : 'flex'}`}>
+
+        {/* Sidebar Header */}
+        <div className="p-5 border-b border-slate-100 bg-white z-10">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-slate-900">Inbox</h3>
+            <div className="flex gap-1">
+              <button onClick={handleRefresh} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              </button>
+              <button onClick={() => window.location.href = '/contact'} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-black transition-colors" title="New Ticket">
+                <Plus size={18} />
+              </button>
+            </div>
+          </div>
+          {/* Search or Filter could go here */}
+        </div>
+
+        {/* List Items */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+          {tickets.map(ticket => {
+            const isSelected = selectedTicket?.id === ticket.id;
+            const isOpen = ticket.status?.toLowerCase() === 'open';
+
+            return (
+              <div
+                key={ticket.id}
+                onClick={() => handleTicketSelect(ticket)}
+                className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-slate-50/80 ${isSelected ? 'bg-indigo-50/30 border-l-4 border-l-indigo-600' : 'border-l-4 border-l-transparent'
+                  }`}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <h4 className={`text-sm font-bold truncate pr-2 ${isSelected ? 'text-indigo-900' : 'text-slate-900'}`}>
+                    {ticket.subject}
+                  </h4>
+                  <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                    {new Date(ticket.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500 truncate mb-2.5 opacity-80">
+                  {ticket.messages[ticket.messages.length - 1]?.message}
+                </p>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-slate-400">#{ticket.id.slice(0, 6)}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${isOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                    {ticket.status}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* RIGHT MAIN: CHAT AREA */}
+      {/* Hidden on mobile if NO ticket is selected */}
+      <div className={`flex-1 flex flex-col bg-slate-50/50 relative ${!selectedTicket ? 'hidden md:flex' : 'flex'}`}>
+
+        {selectedTicket ? (
+          <>
+            {/* Chat Header */}
+            <div className="h-16 px-6 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${selectedTicket.status === 'open' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                  <Headphones size={16} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-sm truncate">{selectedTicket.subject}</h3>
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                    Ticket ID: <span className="font-mono">{selectedTicket.id}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Close Chat Button (Cross Button) */}
+              <button
+                onClick={() => setSelectedTicket(null)}
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors"
+                title="Close Chat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {/* Date Separator (Optional Aesthetic) */}
+              <div className="flex justify-center">
+                <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+                  {new Date(selectedTicket.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+
+              {selectedTicket.messages.map((msg, i) => {
+                const isUser = msg.senderRole === 'user';
+                return (
+                  <div key={i} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex max-w-[85%] sm:max-w-[70%] gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'} items-end`}>
+
+                      {/* Avatar */}
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1 ${isUser ? 'bg-slate-900 text-white' : 'bg-indigo-100 text-indigo-600'
+                        }`}>
+                        {isUser ? <UserIcon size={12} /> : <Headphones size={12} />}
+                      </div>
+
+                      {/* Bubble */}
+                      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                        <div className={`px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${isUser
+                            ? 'bg-black text-white rounded-2xl rounded-br-sm'
+                            : 'bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-bl-sm'
+                          }`}>
+                          <p className="whitespace-pre-wrap">{msg.message}</p>
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1 px-1">
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            {selectedTicket.status === 'open' ? (
+              <div className="p-4 bg-white border-t border-slate-100">
+                <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:border-indigo-400 transition-all">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleReply()}
+                    placeholder="Type your reply here..."
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-3 py-2 min-h-[44px]"
+                  />
+                  <button
+                    onClick={handleReply}
+                    disabled={loading || !replyText.trim()}
+                    className="p-3 bg-black hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl transition-all shadow-sm mb-[1px] mr-[1px]"
+                  >
+                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={16} />}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200">
+                  <Lock size={12} /> Ticket Closed
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Empty State (Right Pane) */
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+              <MessageSquare className="w-8 h-8 text-indigo-200" />
+            </div>
+            <h3 className="text-slate-900 font-semibold mb-1">Support Chat</h3>
+            <p className="text-sm text-slate-500">Select a ticket from the left to view details.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 /* ========================================================================
    MAIN PAGE LAYOUT
    ======================================================================== */
 export default function UserPage() {
-  const { userdetails, address, queries } = useContext(UserContext);
+  const { userdetails, address } = useContext(UserContext); // Removed 'queries' from here
   const { orders, loadingOrders } = useContext(OrderContext);
   const { cart, wishlist } = useContext(CartContext);
   const { userReviews } = useContext(ReviewContext);
+  // 🟢 Added Ticket Context
+  const { tickets, getUserTickets } = useContext(ContactContext);
+
   const [activeTab, setActiveTab] = useState("profile");
   const [editingAddress, setEditingAddress] = useState(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [viewingOrder, setViewingOrder] = useState(null);
 
-  if (!userdetails) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-400"/></div>;
+  // 🟢 Fetch tickets on mount to populate Recent Activity
+  useEffect(() => {
+    if (userdetails?.email) {
+      getUserTickets(userdetails.email);
+    }
+  }, [userdetails, getUserTickets]);
+
+  if (!userdetails) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
   const showAddressForm = isAddingAddress || !!editingAddress;
 
@@ -837,22 +1088,23 @@ export default function UserPage() {
     <>
       <div className="min-h-screen bg-slate-50 pt-18 pb-20 px-4 sm:px-8 font-sans text-slate-900">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* LEFT SIDEBAR (Sticky) */}
           <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-28">
-            <ProfileCard 
-              user={userdetails} 
-              wishlistCount={wishlist?.length || 0} cartCount={cart?.length || 0} orderCount={orders?.length || 0} 
+            <ProfileCard
+              user={userdetails}
+              wishlistCount={wishlist?.length || 0} cartCount={cart?.length || 0} orderCount={orders?.length || 0}
               onEditProfile={() => setActiveTab('profile')}
             />
             <ProfileCompletion user={userdetails} addressCount={address?.length || 0} />
-            <RecentActivity orders={orders} reviews={userReviews} addresses={address} queries={queries} />
+            {/* 🟢 Passed tickets to RecentActivity */}
+            <RecentActivity orders={orders} reviews={userReviews} addresses={address} queries={tickets} />
           </div>
 
           {/* RIGHT CONTENT */}
           <div className="lg:col-span-8">
             <TabNavigation activeTab={activeTab} onTabClick={setActiveTab} />
-            
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -861,7 +1113,7 @@ export default function UserPage() {
                 className="bg-white rounded-[2.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[600px]"
               >
                 {activeTab === 'profile' && <ProfileSettings />}
-                
+
                 {activeTab === 'addresses' && !showAddressForm && (
                   <AddressSettings onAdd={() => { setEditingAddress(null); setIsAddingAddress(true); }} onEdit={(addr) => { setIsAddingAddress(false); setEditingAddress(addr); }} />
                 )}

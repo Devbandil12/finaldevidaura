@@ -64,7 +64,10 @@ const AdminPanel = () => {
   // Contexts
   const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
-  const { queries, getquery } = useContext(ContactContext);
+  
+  // 🟢 FIX APPLIED HERE: Aliasing new names to old variable names
+  const { tickets: queries, getAllTickets: getquery } = useContext(ContactContext);
+
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
   
   const { 
