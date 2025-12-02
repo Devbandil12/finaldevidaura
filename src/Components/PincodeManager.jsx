@@ -560,7 +560,7 @@ export default function PincodeManager() {
         <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
             {editingPincode && <EditPincodeModal pincodeData={editingPincode} onClose={() => setEditingPincode(null)} onSave={handleUpdatePincode} />}
             
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                 <div>
                     <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
                         <MapPin className="text-indigo-600" size={28} />
@@ -568,7 +568,7 @@ export default function PincodeManager() {
                     </h1>
                     <p className="text-sm text-gray-500 mt-1 font-medium">Configure serviceable areas and delivery rules.</p>
                 </div>
-            </header>
+            </div>
 
             <div className="flex p-1 bg-white border border-gray-200 rounded-xl shadow-sm w-fit">
                 <button 

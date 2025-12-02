@@ -160,10 +160,10 @@ const AdminPanel = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'reports', label: 'Analytics', icon: BarChart3 },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'products', label: 'Products', icon: Package },
-    { id: 'users', label: 'Customers', icon: Users },
     { id: 'coupons', label: 'Coupons', icon: Ticket },
+    { id: 'users', label: 'Customers', icon: Users },
+    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'carts', label: 'Carts & Wish', icon: ShoppingCart },
     { id: 'queries', label: 'Messages', icon: MessageSquare },
     { id: 'pincodes', label: 'Logistics', icon: MapPin },
