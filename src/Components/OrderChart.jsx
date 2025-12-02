@@ -1,73 +1,94 @@
-// src/Components/OrderChart.jsx
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import { TrendingUp } from 'lucide-react';
 
 const OrderChart = ({ orders }) => {
-  // 1. Process the orders to group them by date and status
+  // 1. Group Data
   const processedData = orders.reduce((acc, order) => {
-    const date = new Date(order.createdAt).toISOString().split('T')[0];
+    const date = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
     if (!acc[date]) {
-      acc[date] = { 'Order Placed': 0, 'Processing': 0, 'Shipped': 0, 'Delivered': 0, 'Order Cancelled': 0 };
+      acc[date] = { Delivered: 0, Shipped: 0, Processing: 0, Cancelled: 0 };
     }
-    // Increment the count for the order's status on that date
-    if (acc[date][order.status] !== undefined) {
-      acc[date][order.status]++;
-    }
+
+    const statusMap = {
+      'Delivered': 'Delivered',
+      'Shipped': 'Shipped',
+      'Order Placed': 'Processing',
+      'Processing': 'Processing',
+      'Order Cancelled': 'Cancelled'
+    };
+
+    const mappedStatus = statusMap[order.status] || 'Processing';
+    acc[date][mappedStatus] = (acc[date][mappedStatus] || 0) + 1;
+    
     return acc;
   }, {});
 
-  // 2. Sort dates to ensure the chart displays chronologically
-  const sortedDates = Object.keys(processedData).sort((a, b) => new Date(a) - new Date(b));
+  const labels = Object.keys(processedData); // Dates are automatically sorted by insertion if processed chronologically
 
-  // 3. Format the data for Chart.js
   const chartData = {
-    labels: sortedDates,
+    labels,
     datasets: [
       {
         label: 'Delivered',
-        data: sortedDates.map(date => processedData[date]['Delivered']),
-        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        data: labels.map(d => processedData[d].Delivered),
+        backgroundColor: '#10B981', // Emerald
+        borderRadius: 4,
       },
       {
         label: 'Shipped',
-        data: sortedDates.map(date => processedData[date]['Shipped']),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        data: labels.map(d => processedData[d].Shipped),
+        backgroundColor: '#3B82F6', // Blue
+        borderRadius: 4,
       },
       {
         label: 'Processing',
-        data: sortedDates.map(date => processedData[date]['Processing'] + processedData[date]['Order Placed']), // Combine processing and placed
-        backgroundColor: 'rgba(255, 206, 86, 0.6)',
+        data: labels.map(d => processedData[d].Processing),
+        backgroundColor: '#F59E0B', // Amber
+        borderRadius: 4,
       },
       {
         label: 'Cancelled',
-        data: sortedDates.map(date => processedData[date]['Order Cancelled']),
-        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        data: labels.map(d => processedData[d].Cancelled),
+        backgroundColor: '#EF4444', // Red
+        borderRadius: 4,
       },
     ],
   };
 
   const options = {
-    plugins: {
-      title: {
-        display: true,
-        text: 'Daily Order Status Trends',
-      },
-    },
     responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8 } },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: '#111827',
+        padding: 10,
+        cornerRadius: 8,
+      }
+    },
     scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
-      },
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, beginAtZero: true, grid: { color: '#F3F4F6' } },
     },
   };
 
-  return <Bar options={options} data={chartData} />;
+  return (
+    <div className="h-80 w-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <TrendingUp className="text-gray-500" size={20} /> Order Volume
+        </h3>
+      </div>
+      <div className="flex-1 relative min-h-0">
+        <Bar data={chartData} options={options} updateMode="resize" />
+      </div>
+    </div>
+  );
 };
 
 export default OrderChart;

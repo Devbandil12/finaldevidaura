@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FaTimes, FaChevronDown, FaPen, FaTrash, FaSearch, FaRegSave, FaMapMarkerAlt } from 'react-icons/fa';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { 
+  X, ChevronDown, Edit2, Trash2, Search, Save, MapPin, UploadCloud, FileText, CheckCircle, AlertCircle 
+} from 'lucide-react';
 
 const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address/pincodes";
 
@@ -12,7 +14,25 @@ const indianStates = [
   "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
 ];
 
-// --- NEW Custom Dropdown Component ---
+// --- 1. TOGGLE SWITCH ---
+const ToggleSwitch = ({ label, checked, onChange, disabled, name }) => (
+  <label className={`flex items-center justify-between p-3 rounded-xl border border-gray-200 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-indigo-300 bg-white shadow-sm'}`}>
+    <span className="text-sm font-medium text-gray-700">{label}</span>
+    <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+      <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+    </div>
+    <input 
+      type="checkbox" 
+      name={name} 
+      checked={!!checked} 
+      onChange={onChange} 
+      disabled={disabled} 
+      className="hidden" 
+    />
+  </label>
+);
+
+// --- 2. CUSTOM DROPDOWN ---
 const CustomDropdown = ({ options, selected, onSelect, placeholder }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -20,38 +40,41 @@ const CustomDropdown = ({ options, selected, onSelect, placeholder }) => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const filteredOptions = options.filter(option => 
-        option.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredOptions = options.filter(option => option.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return (
-        <div className="relative w-full md:w-2/3" ref={dropdownRef}>
-            <button type="button" onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center p-2.5 bg-white border border-gray-300 rounded-lg shadow-sm text-left focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-                <span className={selected ? 'text-gray-800' : 'text-gray-400'}>{selected || placeholder}</span>
-                <FaChevronDown className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="relative w-full" ref={dropdownRef}>
+            <button 
+                type="button" 
+                onClick={() => setIsOpen(!isOpen)} 
+                className="w-full flex justify-between items-center px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm text-left hover:border-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            >
+                <span className={`text-sm font-medium ${selected ? 'text-gray-900' : 'text-gray-400'}`}>{selected || placeholder}</span>
+                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
-                <div className="absolute z-20 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto">
-                    <div className="p-2">
-                        <input
-                            type="text"
-                            placeholder="Search state..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-200 rounded-md"
-                        />
+                <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
+                    <div className="p-2 sticky top-0 bg-white border-b border-gray-100">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                            <input
+                                type="text"
+                                placeholder="Search state..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-0 text-gray-900 placeholder:text-gray-400"
+                            />
+                        </div>
                     </div>
                     <ul className="py-1">
                         {filteredOptions.map(option => (
-                            <li key={option} onClick={() => { onSelect(option); setIsOpen(false); setSearchTerm(""); }} className="p-2.5 hover:bg-indigo-50 cursor-pointer text-sm">
+                            <li key={option} onClick={() => { onSelect(option); setIsOpen(false); setSearchTerm(""); }} className="px-4 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 cursor-pointer text-sm font-medium text-gray-700 transition-colors">
                                 {option}
                             </li>
                         ))}
@@ -62,19 +85,26 @@ const CustomDropdown = ({ options, selected, onSelect, placeholder }) => {
     );
 };
 
-
-const AccordionItem = ({ title, children, badgeCount }) => {
+// --- 3. ACCORDION ITEM ---
+const AccordionItem = ({ title, children, badgeCount, onSelect, active }) => {
     const [isOpen, setIsOpen] = useState(false);
+    
+    // Auto-open if active prop is passed
+    useEffect(() => { if(active) setIsOpen(true); }, [active]);
+
     return (
-        <div className="border-b border-gray-200 last:border-b-0">
-            <button onClick={() => setIsOpen(!isOpen)} className="w-full text-left p-4 hover:bg-gray-50 flex justify-between items-center transition-colors">
-                <span className="font-semibold text-gray-800">{title}</span>
-                <div className="flex items-center space-x-4">
-                    {badgeCount > 0 && <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">{badgeCount} Cities</span>}
-                    <FaChevronDown className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} size={14} />
+        <div className="border border-gray-200 rounded-xl mb-3 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+            <button 
+                onClick={() => { setIsOpen(!isOpen); if(onSelect) onSelect(); }} 
+                className={`w-full text-left p-4 flex justify-between items-center transition-colors ${active || isOpen ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
+            >
+                <span className="font-semibold text-gray-800 text-sm">{title}</span>
+                <div className="flex items-center space-x-3">
+                    {badgeCount > 0 && <span className="text-xs bg-indigo-100 text-indigo-700 font-bold px-2.5 py-0.5 rounded-full">{badgeCount}</span>}
+                    <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
             </button>
-            {isOpen && <div className="p-4 bg-white">{children}</div>}
+            {isOpen && <div className="p-4 border-t border-gray-100 bg-white">{children}</div>}
         </div>
     );
 };
@@ -88,410 +118,476 @@ const useDebounce = (value, delay) => {
     return debouncedValue;
 };
 
+// --- 4. EDIT MODAL ---
 const EditPincodeModal = ({ pincodeData, onClose, onSave }) => {
     const [formData, setFormData] = useState(pincodeData);
+    
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => {
-            const newData = { ...prev, [name]: type === 'checkbox' ? checked : parseInt(value, 10) || 0 };
+            const val = type === 'checkbox' ? checked : (parseInt(value, 10) || 0);
+            const newData = { ...prev, [name]: val };
             if (name === "isServiceable" && !checked) newData.codAvailable = false;
             return newData;
         });
     };
+
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md space-y-6 animate-fade-in-up">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-gray-800">Edit Pincode: {pincodeData.pincode}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><FaTimes /></button>
-                </div>
-                <div className="space-y-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-gray-200">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
                     <div>
-                        <label htmlFor="deliveryCharge" className="text-sm font-medium text-gray-700">Delivery Charge (₹)</label>
-                        <input id="deliveryCharge" name="deliveryCharge" type="number" value={formData.deliveryCharge} onChange={handleInputChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"/>
+                        <h3 className="text-lg font-bold text-gray-900">Edit Zone Rules</h3>
+                        <p className="text-xs text-gray-500 font-mono mt-1">PIN: {pincodeData.pincode}</p>
                     </div>
-                    <div className="flex items-center space-x-6 pt-2">
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                            <input type="checkbox" name="isServiceable" checked={formData.isServiceable} onChange={handleInputChange} className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"/>
-                            <span className="text-sm font-medium text-gray-700">Serviceable</span>
-                        </label>
-                        <label className={`flex items-center space-x-2 ${!formData.isServiceable ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-                            <input type="checkbox" name="codAvailable" checked={formData.codAvailable} onChange={handleInputChange} disabled={!formData.isServiceable} className="h-5 w-5 text-indigo-600 border-gray-300 rounded disabled:bg-gray-200 focus:ring-indigo-500"/>
-                            <span className="text-sm font-medium text-gray-700">COD Available</span>
-                        </label>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"><X size={20} /></button>
+                </div>
+                <div className="space-y-6">
+                    <div>
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Delivery Fee (₹)</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                            <input name="deliveryCharge" type="number" value={formData.deliveryCharge} onChange={handleInputChange} className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <ToggleSwitch label="Serviceable Area" checked={formData.isServiceable} onChange={handleInputChange} name="isServiceable" />
+                        <ToggleSwitch label="Cash on Delivery" checked={formData.codAvailable} onChange={handleInputChange} disabled={!formData.isServiceable} name="codAvailable" />
                     </div>
                 </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
-                    <button onClick={() => onSave(formData)} disabled={!formData.isServiceable} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm hover:bg-indigo-700 disabled:bg-gray-400 transition-colors">Save Changes</button>
+                <div className="flex justify-end gap-3 mt-8 pt-4 border-t border-gray-100">
+                    <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
+                    <button onClick={() => onSave(formData)} disabled={!formData.isServiceable} className="px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl shadow-lg hover:bg-black disabled:bg-gray-300 disabled:shadow-none transition-all hover:-translate-y-0.5">Save Changes</button>
                 </div>
             </div>
         </div>
     );
 };
 
+// --- MAIN COMPONENT ---
 export default function PincodeManager() {
-    const [selectedState, setSelectedState] = useState("");
+    const [activeTab, setActiveTab] = useState('import'); 
+
+    // Tab 1: Import
+    const [selectedStateImport, setSelectedStateImport] = useState("");
     const [citySearch, setCitySearch] = useState("");
     const [citySuggestions, setCitySuggestions] = useState([]);
-    const [selectedCities, setSelectedCities] = useState([]);
-    const [cityPincodes, setCityPincodes] = useState({});
-    const [selectedPincodes, setSelectedPincodes] = useState({});
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isFetchingPincodes, setIsFetchingPincodes] = useState(false);
-    const [editingPincode, setEditingPincode] = useState(null);
+    const [selectedCityImport, setSelectedCityImport] = useState("");
+    const [bulkText, setBulkText] = useState("");
+    const [filePincodes, setFilePincodes] = useState(""); 
     const [batchSettings, setBatchSettings] = useState({ isServiceable: true, codAvailable: true, deliveryCharge: 50 });
+    const [isSubmittingImport, setIsSubmittingImport] = useState(false);
+    
+    // Tab 2: Manage
     const [savedPincodes, setSavedPincodes] = useState({});
+    const [manageSearchQuery, setManageSearchQuery] = useState("");
     const [isLoadingList, setIsLoadingList] = useState(true);
-    const [error, setError] = useState("");
+    const [editingPincode, setEditingPincode] = useState(null);
+    const [selectedStateManage, setSelectedStateManage] = useState("");
+    const [selectedCityManage, setSelectedCityManage] = useState("");
+    const [cityPincodesManage, setCityPincodesManage] = useState([]);
+
     const debouncedCitySearch = useDebounce(citySearch, 400);
 
+    // Initial Fetch
     useEffect(() => { fetchSavedPincodes() }, []);
-    useEffect(() => {
-        if (debouncedCitySearch.length > 1 && selectedState) fetchCitySuggestions(debouncedCitySearch);
-        else setCitySuggestions([]);
-    }, [debouncedCitySearch, selectedState]);
-
-    const fetchCitySuggestions = async (query) => {
-        try {
-            const res = await fetch(`https://api.postalpincode.in/postoffice/${query}`);
-            const data = await res.json();
-            if (data[0].Status === "Success") {
-                const cities = [...new Set(data[0].PostOffice.filter(po => po.State === selectedState).map(po => po.District))];
-                setCitySuggestions(cities.filter(c => !selectedCities.includes(c)));
-            }
-        } catch (err) { console.error("Error fetching city suggestions:", err); }
-    };
     
+    // Google City Search
+    useEffect(() => {
+        if (debouncedCitySearch.length > 1 && selectedStateImport) {
+            fetchCitySuggestions(debouncedCitySearch);
+        } else {
+            setCitySuggestions([]);
+        }
+    }, [debouncedCitySearch, selectedStateImport]);
+
+    // 🟢 SAFE FILTERING LOGIC
+    const filteredSavedPincodes = useMemo(() => {
+        if (!manageSearchQuery) return savedPincodes;
+        const lowerQ = manageSearchQuery.toLowerCase();
+        const result = {};
+
+        // Safety check: ensure savedPincodes is an object
+        if (!savedPincodes || typeof savedPincodes !== 'object') return {};
+
+        Object.keys(savedPincodes).forEach(state => {
+            const cities = savedPincodes[state];
+            if (!cities) return;
+
+            const matchingCities = {};
+            const stateMatch = state.toLowerCase().includes(lowerQ);
+
+            Object.keys(cities).forEach(city => {
+                const cityMatch = city.toLowerCase().includes(lowerQ);
+                const pincodes = cities[city] || [];
+                // Safe string conversion
+                const pinMatch = Array.isArray(pincodes) && pincodes.some(p => p && String(p.pincode).includes(lowerQ));
+
+                if (stateMatch || cityMatch || pinMatch) {
+                    matchingCities[city] = pincodes;
+                }
+            });
+
+            if (Object.keys(matchingCities).length > 0) {
+                result[state] = matchingCities;
+            }
+        });
+        return result;
+    }, [savedPincodes, manageSearchQuery]);
+
+    // API Calls
     const fetchSavedPincodes = async () => {
         setIsLoadingList(true);
-        setError("");
         try {
             const res = await fetch(API_BASE);
             const data = await res.json();
-            if (data.success) {
-                setSavedPincodes(data.data);
-            } else {
-                setError(data.msg || "Failed to fetch saved pincodes");
-            }
-        } catch (err) {
-            setError("Network error fetching data.");
-        } finally {
-            setIsLoadingList(false);
-        }
-    };
-
-    const handleAddCity = (city) => {
-        if (!selectedCities.includes(city)) setSelectedCities([...selectedCities, city].sort());
-        setCitySearch("");
-        setCitySuggestions([]);
-    };
-
-    const handleRemoveCity = (cityToRemove) => {
-        setSelectedCities(selectedCities.filter(city => city !== cityToRemove));
-        const newCityPincodes = { ...cityPincodes };
-        delete newCityPincodes[cityToRemove];
-        setCityPincodes(newCityPincodes);
+            if (data.success) setSavedPincodes(data.data || {});
+        } catch (err) { console.error("Error fetching saved pincodes:", err); }
+        finally { setIsLoadingList(false); }
     };
     
-    const handleFetchPincodes = async () => {
-        setError("");
-        setIsFetchingPincodes(true);
-        let pincodesData = {};
-        let newSelectedPincodes = {};
-
-        for (const city of selectedCities) {
-            try {
-                const res = await fetch(`https://api.postalpincode.in/postoffice/${city}`);
-                const data = await res.json();
-                if (data[0].Status === "Success") {
-                    const fetchedPincodes = [...new Set(data[0].PostOffice.map(p => p.Pincode))].sort();
-                    pincodesData[city] = fetchedPincodes;
-
-                    const savedCityPincodes = savedPincodes[selectedState]?.[city]?.map(p => p.pincode) || [];
-                    for (const pincode of fetchedPincodes) {
-                        if (savedCityPincodes.includes(pincode)) {
-                            newSelectedPincodes[pincode] = true;
-                        }
-                    }
-                } else {
-                    setError(prev => `${prev} No pincodes found for ${city}.`);
-                }
-            } catch (err) {
-                setError(prev => `${prev} API error for ${city}.`);
-            }
-        }
-        setCityPincodes(pincodesData);
-        setSelectedPincodes(newSelectedPincodes);
-        setIsFetchingPincodes(false);
+    const fetchCitySuggestions = async (query) => {
+        if (!selectedStateImport) return;
+        try {
+            const res = await fetch(`${API_BASE}/search-cities/${encodeURIComponent(selectedStateImport)}/${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (data.success) setCitySuggestions(data.data.filter(c => c !== selectedStateImport));
+        } catch (err) { console.error("Error fetching city suggestions:", err); }
     };
 
-    const handlePincodeToggle = (pincode) => {
-        setSelectedPincodes(prev => ({ ...prev, [pincode]: !prev[pincode] }));
+    const fetchCityPincodesForManage = async (state, city) => {
+        if (state === selectedStateManage && city === selectedCityManage && cityPincodesManage.length > 0) return;
+        setSelectedStateManage(state);
+        setSelectedCityManage(city);
+        setCityPincodesManage([]);
+        try {
+            const res = await fetch(`${API_BASE}/${encodeURIComponent(state)}/${encodeURIComponent(city)}`);
+            const data = await res.json();
+            if (data.success) setCityPincodesManage(data.data || []);
+        } catch (err) { console.error("Error fetching city pincodes:", err); }
     };
 
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => setFilePincodes(e.target.result);
+        reader.readAsText(file);
+    };
+
+    // Handlers
     const handleBatchSettingsChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, checked } = e.target;
         setBatchSettings(prev => {
-            const newSettings = { ...prev, [name]: type === 'checkbox' ? checked : parseInt(value, 10) || 0 };
-            if (name === "isServiceable" && !checked) {
-                newSettings.codAvailable = false;
-            }
+            const newSettings = { ...prev, [name]: checked };
+            if (name === "isServiceable" && !checked) newSettings.codAvailable = false;
             return newSettings;
         });
     };
 
-    const handleBatchAdd = async () => {
-        setIsSubmitting(true);
-        const pincodesToProcess = {
-            addOrUpdate: [],
-            remove: []
-        };
-    
-        for (const city in cityPincodes) {
-            for (const pincode of cityPincodes[city]) {
-                const isSelected = !!selectedPincodes[pincode];
-                const isAlreadySaved = savedPincodes[selectedState]?.[city]?.some(p => p.pincode === pincode);
+    const handleImportPincodes = async () => {
+        const sourceText = (bulkText.trim() || filePincodes.trim());
+        if (!selectedStateImport || !selectedCityImport || !sourceText) return alert("Select state, city, and enter/import pincodes.");
+        
+        setIsSubmittingImport(true);
+        const rawPincodes = sourceText.split(/[\s,]+/);
+        const validPincodes = rawPincodes.filter(p => /^\d{6}$/.test(p));
 
-                if (isSelected) {
-                    pincodesToProcess.addOrUpdate.push({
-                        pincode, city, state: selectedState,
-                        isServiceable: batchSettings.isServiceable,
-                        codAvailable: batchSettings.codAvailable,
-                        deliveryCharge: batchSettings.deliveryCharge,
-                    });
-                } else if (isAlreadySaved && !isSelected) {
-                    pincodesToProcess.remove.push(pincode);
-                }
-            }
+        if (validPincodes.length === 0) {
+            alert("No valid 6-digit pincodes found.");
+            setIsSubmittingImport(false);
+            return;
         }
 
+        const pincodesToAdd = validPincodes.map(p => ({
+            pincode: p,
+            city: selectedCityImport.trim(),
+            state: selectedStateImport,
+            ...batchSettings,
+            deliveryCharge: parseInt(batchSettings.deliveryCharge) || 0
+        }));
+
         try {
-            if (pincodesToProcess.addOrUpdate.length > 0) {
-                const res = await fetch(`${API_BASE}/batch`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pincodes: pincodesToProcess.addOrUpdate }) });
-                const data = await res.json();
-                if (!data.success) throw new Error(data.msg || "Failed to save pincodes.");
-            }
-
-            for (const pincode of pincodesToProcess.remove) {
-                await handleDelete(pincode, true);
-            }
-
-            alert("Pincode selections have been saved successfully!");
-            fetchSavedPincodes();
-            setCityPincodes({});
-            setSelectedPincodes({});
-
-        } catch (err) {
-            alert(`An error occurred: ${err.message}`);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleUpdatePincode = async (updatedData) => {
-        try {
-            const res = await fetch(`${API_BASE}/${updatedData.pincode}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
+            const res = await fetch(`${API_BASE}/batch`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ pincodes: pincodesToAdd }) 
             });
             const data = await res.json();
-            if (data.success) {
-                alert("Pincode updated successfully!");
-                setEditingPincode(null);
-                fetchSavedPincodes();
-            } else {
-                alert(data.msg || "Failed to update pincode.");
-            }
-        } catch(err) {
-            alert("Network error while updating.");
-        }
+            if (!data.success) throw new Error(data.msg);
+
+            alert("Import successful!");
+            setBulkText(""); setFilePincodes(""); setCitySearch(""); setCitySuggestions([]); setSelectedCityImport("");
+            fetchSavedPincodes();
+        } catch(e) { alert("Import failed: " + e.message); } 
+        finally { setIsSubmittingImport(false); }
     };
     
-    const handleDelete = async (pincode, skipConfirm = false) => {
-        if (!skipConfirm && !window.confirm(`Are you sure you want to delete pincode ${pincode}?`)) return;
+    const handleUpdatePincode = async (updatedData) => {
         try {
-            const res = await fetch(`${API_BASE}/${pincode}`, { method: 'DELETE' });
+            const res = await fetch(`${API_BASE}/${updatedData.pincode}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedData) });
             const data = await res.json();
             if (data.success) {
-                if (!skipConfirm) {
-                    alert('Pincode deleted.');
-                }
-                fetchSavedPincodes();
-            } else {
-                if (!skipConfirm) {
-                    alert(data.msg || "Failed to delete");
-                } else {
-                    throw new Error(`Failed to delete ${pincode}`);
-                }
-            }
-        } catch (err) {
-            if (!skipConfirm) {
-                alert("Network error");
-            } else {
-                throw err;
-            }
-        }
+                alert("Updated.");
+                setEditingPincode(null);
+                fetchSavedPincodes(); 
+                fetchCityPincodesForManage(selectedStateManage, selectedCityManage); 
+            } else { alert(data.msg); }
+        } catch(err) { alert("Network error."); }
     };
     
-    const hasSelectedPincodesInUI = Object.keys(cityPincodes).length > 0;
-
-    return (
-        <div className="space-y-8 p-1">
-            {editingPincode && <EditPincodeModal pincodeData={editingPincode} onClose={() => setEditingPincode(null)} onSave={handleUpdatePincode} />}
-            
-            <header className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center space-x-3">
-                        <FaMapMarkerAlt className="text-indigo-500" />
-                        <span>Advanced Pincode Manager</span>
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-500 mt-1">Dynamically search and add serviceable regions by State and City.</p>
+    const handleDelete = async (pincode) => {
+        if (!window.confirm(`Delete ${pincode}?`)) return;
+        try {
+            await fetch(`${API_BASE}/${pincode}`, { method: 'DELETE' });
+            fetchSavedPincodes(); 
+            fetchCityPincodesForManage(selectedStateManage, selectedCityManage); 
+        } catch (err) { alert("Network error."); }
+    };
+    
+    // --- Renderers ---
+    const renderImportTab = () => (
+        <div className="space-y-8">
+            {/* STEP 1 */}
+            <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 mb-6">
+                    <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">1</span>
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Select Target Region</h3>
                 </div>
-            </header>
+                <CustomDropdown 
+                    options={indianStates}
+                    selected={selectedStateImport}
+                    onSelect={(state) => { 
+                        setSelectedStateImport(state); 
+                        setSelectedCityImport("");
+                        setCitySearch("");
+                    }}
+                    placeholder="Choose State"
+                />
+            </section>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                <div className="lg:col-span-3 space-y-6">
-                    <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0 bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                            <h3 className="ml-4 text-lg font-semibold text-gray-800">Select a State</h3>
+            {selectedStateImport && (
+                <>
+                    {/* STEP 2 */}
+                    <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">2</span>
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Identify City</h3>
                         </div>
-                        <div className="mt-4">
-                            <CustomDropdown 
-                                options={indianStates}
-                                selected={selectedState}
-                                onSelect={(state) => { setSelectedState(state); setSelectedCities([]); setCityPincodes({}); }}
-                                placeholder="-- Choose State --"
+                        
+                        <div className="relative group mb-6">
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors"/>
+                            <input 
+                                type="text" 
+                                value={citySearch} 
+                                onChange={(e) => setCitySearch(e.target.value)} 
+                                placeholder={`Search city in ${selectedStateImport}...`} 
+                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium" 
                             />
+                             {citySuggestions.length > 0 && (
+                                <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
+                                    {citySuggestions.map(city => (
+                                        <div 
+                                            key={city} 
+                                            onClick={() => { setSelectedCityImport(city); setCitySearch(city); setCitySuggestions([]); }} 
+                                            className="px-4 py-2.5 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg cursor-pointer text-sm font-medium text-gray-700 transition-colors"
+                                        >
+                                            {city}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
+                        
+                        {selectedCityImport && (
+                            <div className="flex items-center gap-2 p-3 bg-green-50 text-green-800 rounded-xl border border-green-100">
+                                <CheckCircle size={16} />
+                                <span className="text-sm font-medium">Selected: <strong>{selectedCityImport}</strong></span>
+                            </div>
+                        )}
                     </section>
+                    
+                    {/* STEP 3 */}
+                    <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">3</span>
+                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Pincode Data & Rules</h3>
+                        </div>
+                        
+                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-6">
+                            <div className="flex flex-wrap gap-6 items-end">
+                                <div className="flex-1 min-w-[140px]">
+                                    <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Delivery Fee</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                                        <input name="deliveryCharge" type="number" value={batchSettings.deliveryCharge} onChange={(e) => setBatchSettings(p => ({ ...p, deliveryCharge: parseInt(e.target.value) || 0 }))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
+                                    </div>
+                                </div>
+                                <div className="min-w-[140px]">
+                                    <ToggleSwitch label="Serviceable" checked={batchSettings.isServiceable} onChange={handleBatchSettingsChange} name="isServiceable" />
+                                </div>
+                                <div className="min-w-[140px]">
+                                    <ToggleSwitch label="Allow COD" checked={batchSettings.codAvailable} onChange={handleBatchSettingsChange} disabled={!batchSettings.isServiceable} name="codAvailable" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                            <label className="flex-1 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all text-sm font-medium text-gray-600">
+                                <UploadCloud size={20} className="text-indigo-500" />
+                                <span>Upload CSV / TXT File</span>
+                                <input type="file" accept=".csv, .txt" onChange={handleFileChange} className="hidden" />
+                            </label>
+                            {filePincodes && (
+                                <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-100 rounded-xl text-sm font-medium text-green-700">
+                                    <FileText size={18} />
+                                    <span>{filePincodes.split(/[\s,]+/).filter(x=>x).length} codes loaded</span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <textarea 
+                            value={bulkText} 
+                            onChange={(e) => setBulkText(e.target.value)} 
+                            placeholder="Or manually paste pincodes here (separated by commas or spaces)..."
+                            rows="4"
+                            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
+                        ></textarea>
 
-                    {selectedState && (
-                        <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 animate-fade-in-up">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                                <h3 className="ml-4 text-lg font-semibold text-gray-800">Search and Add Cities</h3>
-                            </div>
-                            <div className="relative mt-4">
-                                <FaSearch className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
-                                <input type="text" value={citySearch} onChange={(e) => setCitySearch(e.target.value)} placeholder={`Type to search for cities in ${selectedState}...`} className="w-full pl-10 p-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" />
-                                {citySuggestions.length > 0 && (
-                                    <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto">
-                                        {citySuggestions.map(city => <li key={city} onClick={() => handleAddCity(city)} className="p-2.5 hover:bg-indigo-50 cursor-pointer text-sm">{city}</li>)}
-                                    </ul>
-                                )}
-                            </div>
-                            {selectedCities.length > 0 && (
-                                <div className="mt-4">
-                                    <div className="flex flex-wrap gap-2">
-                                        {selectedCities.map(city => (
-                                            <div key={city} className="flex items-center bg-indigo-100 text-indigo-800 text-sm font-medium px-3 py-1.5 rounded-full animate-fade-in-up">
-                                                <span>{city}</span>
-                                                <button onClick={() => handleRemoveCity(city)} className="ml-2 text-indigo-500 hover:text-indigo-800"><FaTimes size={12} /></button>
+                        <button 
+                            onClick={handleImportPincodes} 
+                            disabled={isSubmittingImport || !selectedCityImport || !bulkText.trim() && !filePincodes.trim()} 
+                            className="mt-6 w-full py-3.5 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-gray-200 flex items-center justify-center gap-2.5"
+                        >
+                            <Save size={18} />
+                            <span>{isSubmittingImport ? "Processing..." : "Import Pincodes"}</span>
+                        </button>
+                    </section>
+                </>
+            )}
+        </div>
+    );
+
+    const renderManageTab = () => (
+        <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden min-h-[600px] flex flex-col">
+                <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900">Active Service Zones</h2>
+                        <p className="text-sm text-gray-500">Browse and edit rules for specific locations.</p>
+                    </div>
+                    <div className="relative w-full sm:w-64">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
+                        <input 
+                            type="text"
+                            placeholder="Search State, City, PIN..."
+                            value={manageSearchQuery}
+                            onChange={(e) => setManageSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm transition-all"
+                        />
+                    </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6">
+                    {isLoadingList ? (
+                        <div className="py-20 text-center text-gray-400 text-sm">Syncing data...</div>
+                    ) : Object.keys(filteredSavedPincodes).length > 0 ? (
+                        <div className="space-y-2">
+                            {Object.keys(filteredSavedPincodes).sort().map(state => (
+                                <AccordionItem 
+                                    key={state} 
+                                    title={state} 
+                                    badgeCount={Object.keys(filteredSavedPincodes[state]).length}
+                                    active={state === selectedStateManage}
+                                >
+                                    <div className="space-y-1 pl-2">
+                                        {Object.keys(filteredSavedPincodes[state]).sort().map(city => (
+                                            <div key={city} className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                                                <AccordionItem 
+                                                    title={city} 
+                                                    onSelect={() => fetchCityPincodesForManage(state, city)}
+                                                    active={city === selectedCityManage && state === selectedStateManage}
+                                                >
+                                                    {city === selectedCityManage && state === selectedStateManage && (
+                                                        <div className="grid gap-2 pt-2 pr-2">
+                                                            {cityPincodesManage.length > 0 ? (
+                                                                cityPincodesManage.filter(p => !manageSearchQuery || String(p.pincode).includes(manageSearchQuery)).map(p => (
+                                                                    <div key={p.pincode} className="group flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
+                                                                        <div>
+                                                                            <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                                                                {p.pincode}
+                                                                                {!p.isServiceable && <AlertCircle size={12} className="text-red-500" />}
+                                                                            </div>
+                                                                            <div className="flex gap-2 mt-1.5">
+                                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${p.isServiceable ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>{p.isServiceable ? 'Active' : 'Inactive'}</span>
+                                                                                {p.codAvailable && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 uppercase">COD</span>}
+                                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">₹{p.deliveryCharge}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <button onClick={() => setEditingPincode(p)} className="p-1.5 bg-gray-100 hover:bg-black hover:text-white rounded-md text-gray-600 transition-colors"><Edit2 size={14} /></button>
+                                                                            <button onClick={() => handleDelete(p.pincode)} className="p-1.5 bg-red-50 hover:bg-red-600 hover:text-white rounded-md text-red-600 transition-colors"><Trash2 size={14} /></button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="text-xs text-gray-400 p-2 text-center">Loading or no pincodes found...</div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </AccordionItem>
                                             </div>
                                         ))}
                                     </div>
-                                    <button onClick={handleFetchPincodes} disabled={isFetchingPincodes} className="mt-4 px-5 py-2 bg-slate-800 text-white font-semibold rounded-lg shadow-sm hover:bg-slate-900 disabled:bg-gray-400 transition-colors">
-                                        {isFetchingPincodes ? 'Fetching...' : 'Fetch Area Pincodes'}
-                                    </button>
-                                </div>
+                                </AccordionItem>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center">
+                            <div className="inline-block p-4 bg-gray-50 rounded-full mb-3 text-gray-300"><MapPin size={32}/></div>
+                            <p className="text-sm text-gray-500 font-medium">No matching zones found.</p>
+                            {!manageSearchQuery && (
+                                <button onClick={() => setActiveTab('import')} className="mt-4 text-sm font-bold text-indigo-600 hover:underline">Import Data Now</button>
                             )}
-                        </section>
-                    )}
-
-                    {Object.keys(cityPincodes).length > 0 && (
-                         <section className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 animate-fade-in-up">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                                <h3 className="ml-4 text-lg font-semibold text-gray-800">Select Area Pincodes to Add/Update</h3>
-                            </div>
-                             <div className="mt-4 space-y-5">
-                                {Object.keys(cityPincodes).map(cityName => (
-                                    <div key={cityName}>
-                                        <h4 className="font-semibold text-gray-800 border-b pb-2 mb-3">{cityName}</h4>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                                            {cityPincodes[cityName].map(pincode => (
-                                                <label key={pincode} className={`text-sm p-2.5 border rounded-lg flex items-center justify-center space-x-2.5 cursor-pointer transition-all duration-200 ${selectedPincodes[pincode] ? 'bg-indigo-100 border-indigo-400 font-semibold text-indigo-800 shadow-sm' : 'hover:border-gray-400'}`}>
-                                                    <input type="checkbox" checked={!!selectedPincodes[pincode]} onChange={() => handlePincodeToggle(pincode)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"/>
-                                                    <span>{pincode}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                             </div>
-                         </section>
-                    )}
-                    
-                    {hasSelectedPincodesInUI && (
-                        <section className="bg-indigo-50 p-6 rounded-xl shadow-lg border-2 border-indigo-200 animate-fade-in-up">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">4</div>
-                                <h3 className="ml-4 text-lg font-semibold text-gray-800">Set Rules for Selections</h3>
-                            </div>
-                            <div className="mt-4 md:ml-12">
-                                <p className="text-xs text-gray-500">These settings will be applied to all pincodes you have checked/unchecked above.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 items-end mt-4">
-                                    <div className="md:col-span-2">
-                                        <label htmlFor="batchDeliveryCharge" className="text-sm font-medium text-gray-700">Delivery Charge (₹)</label>
-                                        <input id="batchDeliveryCharge" name="deliveryCharge" type="number" value={batchSettings.deliveryCharge} onChange={handleBatchSettingsChange} className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
-                                    </div>
-                                    <div className="flex items-center space-x-6 pt-2">
-                                        <label className="flex items-center space-x-2 cursor-pointer">
-                                            <input type="checkbox" name="isServiceable" checked={batchSettings.isServiceable} onChange={handleBatchSettingsChange} className="h-5 w-5 text-indigo-600 border-gray-300 rounded"/>
-                                            <span className="text-sm font-medium text-gray-700">Serviceable</span>
-                                        </label>
-                                        <label className={`flex items-center space-x-2 ${!batchSettings.isServiceable ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-                                            <input type="checkbox" name="codAvailable" checked={batchSettings.codAvailable} onChange={handleBatchSettingsChange} disabled={!batchSettings.isServiceable} className="h-5 w-5 text-indigo-600 border-gray-300 rounded disabled:bg-gray-200"/>
-                                            <span className="text-sm font-medium text-gray-700">COD Available</span>
-                                        </label>
-                                    </div>
-                                    <div>
-                                        <button onClick={handleBatchAdd} disabled={isSubmitting} className="w-full flex items-center justify-center space-x-2 px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
-                                            <FaRegSave />
-                                            <span>{isSubmitting ? "Saving..." : `Apply & Save`}</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                        </div>
                     )}
                 </div>
+            </div>
+        </div>
+    );
+    
+    return (
+        <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
+            {editingPincode && <EditPincodeModal pincodeData={editingPincode} onClose={() => setEditingPincode(null)} onSave={handleUpdatePincode} />}
+            
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+                <div>
+                    <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-3">
+                        <MapPin className="text-indigo-600" size={28} />
+                        <span>Logistics Manager</span>
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-1 font-medium">Configure serviceable areas and delivery rules.</p>
+                </div>
+            </header>
 
-                <div className="lg:col-span-2 space-y-4">
-                    <h2 className="text-xl font-bold text-gray-900">Currently Serviceable Regions</h2>
-                    {isLoadingList && <div className="text-center p-4 text-gray-500 bg-white rounded-lg shadow-md border"><p>Loading list...</p></div>}
-                    {error && <p className="text-red-600 bg-red-100 p-3 rounded-lg">{error}</p>}
-                    <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-                        {!isLoadingList && Object.keys(savedPincodes).length > 0 ? Object.keys(savedPincodes).sort().map(state => (
-                            <AccordionItem key={state} title={state} badgeCount={Object.keys(savedPincodes[state]).length}>
-                                {Object.keys(savedPincodes[state]).sort().map(city => (
-                                    <AccordionItem key={city} title={city}>
-                                         <ul className="divide-y divide-gray-100">
-                                            {savedPincodes[state][city].map(p => (
-                                                <li key={p.pincode} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 px-2">
-                                                    <div className="text-sm">
-                                                        <span className="font-bold text-gray-800">{p.pincode}</span>
-                                                        <div className="flex flex-col sm:flex-row sm:space-x-4 text-gray-500 mt-1">
-                                                            <span>Serviceable: {p.isServiceable ? 'Yes' : 'No'}</span>
-                                                            <span>Charge: ₹{p.deliveryCharge}</span>
-                                                            <span>COD: {p.codAvailable ? 'Yes' : 'No'}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="space-x-4 mt-2 sm:mt-0 flex-shrink-0">
-                                                        <button onClick={() => setEditingPincode(p)} className="text-sm font-medium text-indigo-600 hover:underline flex items-center space-x-1"><FaPen size={10}/> <span>Edit</span></button>
-                                                        <button onClick={() => handleDelete(p.pincode)} className="text-sm font-medium text-red-600 hover:underline flex items-center space-x-1"><FaTrash size={10}/> <span>Delete</span></button>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                         </ul>
-                                    </AccordionItem>
-                                ))}
-                            </AccordionItem>
-                        )) : !isLoadingList && <p className="p-6 text-gray-500 text-center">No serviceable regions have been added yet.</p>}
-                    </div>
+            <div className="flex p-1 bg-white border border-gray-200 rounded-xl shadow-sm w-fit">
+                <button 
+                    onClick={() => setActiveTab('import')} 
+                    className={`px-5 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'import' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                >
+                    <UploadCloud size={16} /> Bulk Import
+                </button>
+                <button 
+                    onClick={() => setActiveTab('manage')} 
+                    className={`px-5 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'manage' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                >
+                    <FileText size={16} /> Manage Database
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="lg:col-span-12">
+                    {activeTab === 'import' ? renderImportTab() : renderManageTab()}
                 </div>
             </div>
         </div>

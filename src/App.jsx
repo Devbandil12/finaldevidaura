@@ -2,6 +2,32 @@
 import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement, // Fixes "point is not a registered element"
+  LineElement,  // Needed for Line Charts
+  BarElement,   // Needed for Bar Charts
+  ArcElement,   // Needed for Pie Charts
+  Title,
+  Tooltip,
+  Legend
+);
+
 // --- Statically Imported Components (for initial load) ---
 import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
