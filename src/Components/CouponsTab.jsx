@@ -356,7 +356,8 @@ const CouponsTab = ({
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* CORRECTED FIX: opacity-100 (mobile default), sm:opacity-0 (desktop hidden default), group-hover:opacity-100 (desktop hover override) */}
+                        <div className="flex justify-end gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setEditingCoupon({ ...c })} className="p-2 text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition"><Edit2 size={14} /></button>
                           <button onClick={() => deleteCoupon(c.id)} className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"><Trash2 size={14} /></button>
                         </div>
@@ -396,7 +397,8 @@ const CouponsTab = ({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {coupons.filter(c => c.isAutomatic).map((c) => (
               <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-all group relative">
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* CORRECTED FIX: opacity-100 (mobile default), md:opacity-0 (desktop hidden default), group-hover:opacity-100 (desktop hover override) */}
+                <div className="absolute top-4 right-4 flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => setEditingCoupon({ ...c })} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-md"><Edit2 size={14} /></button>
                   <button onClick={() => deleteCoupon(c.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-md"><Trash2 size={14} /></button>
                 </div>
