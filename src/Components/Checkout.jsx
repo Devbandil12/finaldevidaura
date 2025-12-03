@@ -132,27 +132,55 @@ export default function Checkout() {
         <div className="w-full max-w-8xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
 
           {/* Header padding reduced */}
-          <div className="bg-black text-white px-4 pb-10 pt-4 sm:px-12 sm:pb-12 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          {/* Header Section */}
+          <div className="
+  relative overflow-hidden transition-colors duration-300
+  /* Mobile: Dark Background */
+  bg-black text-white 
+  /* Desktop: White Background with bottom border */
+  md:bg-white md:text-slate-900 md:border-b md:border-slate-100
+  px-4 pb-10 pt-4 sm:px-12 sm:pb-12
+">
+
+            {/* Background Effects (Mobile Only - Hidden on Desktop) */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
-              <div className="flex items-center gap-2 mb-6 opacity-80 bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
-                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase text-white whitespace-nowrap">Secure Encrypted Checkout</span>
-              </div>
-              
-              <div className="relative w-full max-w-6xl">
-                <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-white/20 -translate-y-1/2" />
 
+              {/* Secure Badge: Adaptive Colors */}
+              <div className={`
+      flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
+      /* Mobile Style */
+      bg-white/10 border-white/10
+      /* Desktop Style */
+      md:bg-emerald-50 md:border-emerald-100
+    `}>
+                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 md:text-emerald-600" />
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap text-white md:text-emerald-800">
+                  Secure Encrypted Checkout
+                </span>
+              </div>
+
+              {/* Stepper Container */}
+              <div className="relative w-full max-w-4xl">
+
+                {/* Inactive Line (Background) */}
+                <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 
+        bg-white/20 md:bg-slate-200"
+                />
+
+                {/* Active Line (Progress) */}
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
-                    className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                    className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none
+            bg-white md:bg-black"
                     initial={{ width: "0%" }}
                     animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
                     transition={{ duration: 0.8, ease: luxuryEase }}
                   />
                 </div>
 
+                {/* Steps Icons */}
                 <div className="flex justify-between w-full relative">
                   {steps.map((s, i) => {
                     const isActive = step === i + 1;
@@ -161,17 +189,28 @@ export default function Checkout() {
                     return (
                       <div key={i} className="relative flex flex-col items-center w-12 group">
                         <motion.div
-                          className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10 ${isActive || isCompleted
-                              ? "bg-white text-black border-white shadow-lg shadow-white/20"
-                              : "bg-black text-slate-500 border-slate-700"
-                            }`}
+                          className={`
+                  relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10
+                  
+                  /* LOGIC FOR COLORS BASED ON STATE & SCREEN SIZE */
+                  ${isActive || isCompleted
+                              ? "bg-white text-black border-white md:bg-black md:text-white md:border-black md:shadow-md" // Active/Done
+                              : "bg-black text-slate-500 border-slate-700 md:bg-white md:text-slate-300 md:border-slate-200" // Inactive
+                            }
+                `}
                           animate={{ scale: isActive ? 1.15 : 1 }}
                         >
                           <s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isActive || isCompleted ? "stroke-2" : "stroke-1"}`} />
                         </motion.div>
 
-                        <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-24 sm:w-32 text-center">
-                          <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 ${isActive ? "text-white" : "text-slate-600"}`}>
+                        <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-32 text-center">
+                          <span className={`
+                  text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300
+                  ${isActive
+                              ? "text-white md:text-black"
+                              : "text-slate-600 md:text-slate-400"
+                            }
+                `}>
                             {s.name}
                           </span>
                         </div>
