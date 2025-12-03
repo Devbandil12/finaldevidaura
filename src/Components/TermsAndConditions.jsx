@@ -1,109 +1,111 @@
 import React from "react";
-import "../style/PolicyStyles.css";
 
 export default function TermsAndConditions() {
   return (
-    <div className="policy-content">
-      <h2>Terms &amp; Conditions</h2>
-     <p><em>Last updated: July 18, 2025</em></p>
+    <div className="font-sans text-zinc-700 space-y-12 px-2 pb-6">
+      
+      {/* Header */}
+      <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">Terms of Service</h2>
+        <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest mt-2">Effective Date: July 18, 2025</p>
+      </div>
 
-      <p>
-        Welcome to Devid Aura. By accessing or using our website <strong>www.devidaura.com</strong>,
-        you agree to comply with and be bound by the following Terms and Conditions ("Terms").
-        Please read them carefully. If you do not agree with any part of these Terms, you must not access or use our site.
-      </p>
+      <div className="space-y-10 relative">
+        {/* Decorative Line */}
+        <div className="absolute left-[19px] top-4 bottom-4 w-px bg-gradient-to-b from-zinc-100 via-zinc-200 to-transparent hidden sm:block"></div>
 
-      <h3>1. Eligibility &amp; Use</h3>
-      <ul>
-        <li>You must be at least 18 years old or use the Site under parental supervision.</li>
-        <li>You agree to use the Site for lawful purposes only.</li>
-      </ul>
+        <TermSection 
+          num="01" 
+          title="Introduction & Eligibility" 
+          content={
+            <>
+              Welcome to <strong>Devid Aura</strong>. By accessing our website, you agree to these Terms. You must be at least 18 years old to purchase products. If you are under 18, you may use the site only with the involvement of a parent or guardian.
+            </>
+          }
+        />
+        
+        <TermSection 
+          num="02" 
+          title="Fragrance & Product Disclaimer" 
+          content={
+            <>
+              <p className="mb-2"><strong>Scent Variation:</strong> Perfumes interact uniquely with individual skin chemistry. A scent may smell different on your skin compared to a test strip or another person. We cannot refund open bottles based on personal preference or skin chemistry results.</p>
+              <p><strong>Medical Disclaimer:</strong> Our products are for external use only. If you have sensitive skin or allergies, please review ingredients carefully. Discontinue use immediately if irritation occurs.</p>
+            </>
+          }
+        />
 
-      <h3>2. User Accounts</h3>
-      <ul>
-        <li>To access certain features, register via Clerk.</li>
-        <li>You are responsible for all activities under your account.</li>
-        <li>We may suspend or terminate accounts for unauthorized use or violations.</li>
-      </ul>
+        <TermSection 
+          num="03" 
+          title="Orders & Payment" 
+          content={
+            <>
+              All orders are subject to acceptance and availability. We reserve the right to refuse service or cancel orders suspected of fraud. Payments are processed securely via <strong>Razorpay</strong>; we do not store your financial data on our servers.
+            </>
+          }
+        />
+        
+        <TermSection 
+          num="04" 
+          title="Shipping & Delivery" 
+          content={
+            <>
+              Perfumes are classified as <em>Dangerous Goods</em> (flammable) by courier partners, which may restrict air shipping to certain pin codes. Delivery timelines are estimates. Devid Aura is not liable for delays caused by logistics partners, weather, or force majeure events.
+            </>
+          }
+        />
 
-      <h3>3. Product Information &amp; Availability</h3>
-      <p>
-        We strive for accuracy in product descriptions, pricing, and availability. All products
-        are subject to availability and may be modified or discontinued without notice.
-      </p>
+        <TermSection 
+          num="05" 
+          title="Intellectual Property" 
+          content={
+            <>
+              All content on this site—including the Devid Aura trademark, logo, bottle designs, product descriptions, and imagery—is the exclusive property of Devid Aura. Unauthorized commercial use, reproduction, or framing is strictly prohibited.
+            </>
+          }
+        />
 
-      <h3>4. Orders &amp; Payment</h3>
-      <ul>
-        <li>Orders are offers to purchase, subject to acceptance.</li>
-        <li>Payments via Razorpay; we do not store card or banking details.</li>
-        <li>We reserve the right to cancel suspicious or fraudulent orders.</li>
-      </ul>
+         <TermSection 
+          num="06" 
+          title="Limitation of Liability" 
+          content={
+            <>
+              To the fullest extent permitted by law, Devid Aura shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or website. Our total liability is limited to the amount paid for the product.
+            </>
+          }
+        />
 
-      <h3>5. Shipping &amp; Delivery</h3>
-      <p>
-        We do not use third‑party delivery partners. Shipping details and timelines are
-        communicated per order. We are not liable for delays outside our control.
-      </p>
+        <TermSection 
+          num="07" 
+          title="Governing Law" 
+          content={
+            <>
+              These terms are governed by the laws of India. Any disputes arising in relation to these terms shall be subject to the exclusive jurisdiction of the courts in [Your City/State].
+            </>
+          }
+        />
+      </div>
 
-      <h3>6. Returns &amp; Refunds</h3>
-      <p>
-        Returns are only accepted for defective or damaged items. See our Refund Policy
-        for full details.
-      </p>
+      <div className="mt-12 text-center pt-8 border-t border-zinc-100">
+        <p className="text-xs text-zinc-400">Questions about the Terms?</p>
+        <a href="mailto:devidauraofficial@gmail.com" className="text-sm font-medium text-zinc-900 hover:text-blue-600 transition-colors">devidauraofficial@gmail.com</a>
+      </div>
+    </div>
+  );
+}
 
-      <h3>7. Promotions &amp; Offers</h3>
-      <p>
-        Promotional offers are subject to availability and may be withdrawn or modified at any time.
-      </p>
-
-      <h3>8. User Conduct</h3>
-      <p>
-        You agree not to post unlawful, abusive, or infringing content. We may remove content
-        that violates these Terms or applicable laws.
-      </p>
-
-      <h3>9. Intellectual Property</h3>
-      <p>
-        All site content—text, images, logos—is the property of Devid Aura or its licensors.
-        You may not reproduce or exploit any portion without written permission.
-      </p>
-
-      <h3>10. Third‑Party Links</h3>
-      <p>
-        Our Site may contain links to external websites. We are not responsible for their content
-        or privacy practices.
-      </p>
-
-      <h3>11. Disclaimer &amp; Limitation of Liability</h3>
-      <p>
-        The Site and all products are provided “as is.” Devid Aura is not liable for indirect,
-        incidental, or consequential damages arising from use of the Site or products.
-      </p>
-
-      <h3>12. Indemnification</h3>
-      <p>
-        You agree to indemnify and hold harmless Devid Aura from any claims, liabilities, damages,
-        or expenses arising from your misuse of the Site or violation of these Terms.
-      </p>
-
-      <h3>13. Changes to Terms</h3>
-      <p>
-        We may revise these Terms at any time. Updated versions take effect upon posting.
-      </p>
-
-      <h3>14. Governing Law &amp; Jurisdiction</h3>
-      <p>
-        These Terms are governed by the laws of India. Disputes are subject to the exclusive
-        jurisdiction of the courts in [Your City, India].
-      </p>
-
-      <h3>15. Contact Us</h3>
-      <p>
-        Devid Aura<br />
-        Email: <a href="mailto:devidauraofficial@gmail.com">devidauraofficial@gmail.com</a><br />
-        Address: [Company Address]<br />
-        Phone: [Customer Service Number]
-      </p>
+function TermSection({ num, title, content }) {
+  return (
+    <div className="relative flex flex-col sm:flex-row gap-4 sm:gap-8 items-start group">
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 text-zinc-400 font-semibold flex items-center justify-center text-sm shadow-[0_4px_10px_rgb(0,0,0,0.03)] group-hover:scale-105 group-hover:bg-white group-hover:border-zinc-200 group-hover:text-black transition-all duration-300 z-10">
+        {num}
+      </div>
+      <div className="pt-1">
+        <h3 className="text-zinc-900 font-bold text-base mb-2 group-hover:text-black transition-colors">{title}</h3>
+        <div className="text-sm text-zinc-500 leading-relaxed font-light">
+            {content}
+        </div>
+      </div>
     </div>
   );
 }

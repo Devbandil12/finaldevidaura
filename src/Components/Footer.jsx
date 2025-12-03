@@ -1,10 +1,10 @@
-// src/components/Footer.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTwitter } from "@fortawesome/free-brands-svg-icons";
 import { X, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import PrivacyPolicy from "./PrivacyPolicy";
 import TermsAndConditions from "./TermsAndConditions";
@@ -12,15 +12,51 @@ import RefundPolicy from "./RefundPolicy";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// A fully redesigned, light-themed, and responsive footer using Tailwind CSS.
 export default function Footer() {
   const footerRef = useRef(null);
   const [policiesOpen, setPoliciesOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPolicy, setCurrentPolicy] = useState("privacy");
+  const navigate = useNavigate();
 
+  const handleScroll = useCallback((targetId) => {
+    const el = document.getElementById(targetId);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, [navigate]);
+
+  // ==========================================
+  // 🔒 SCROLL LOCK FIX (UPDATED)
+  // ==========================================
   useEffect(() => {
-    // GSAP animations - selectors are kept consistent with the new structure
+    if (modalOpen) {
+      // 1. Calculate width of scrollbar to prevent layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      
+      // 2. Add padding to body to fill the gap
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+      
+      // 3. Lock BODY and HTML (Critical for some browsers/frameworks)
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      // 4. Reset everything when closed
+      document.body.style.paddingRight = "";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+
+    // Cleanup function to ensure scroll is restored if component unmounts
+    return () => {
+      document.body.style.paddingRight = "";
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [modalOpen]);
+
+  // ==========================================
+  // GSAP Animations
+  // ==========================================
+  useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".footer-brand h2", {
         y: -20, opacity: 0, duration: 0.8, ease: "power3.out",
@@ -46,12 +82,10 @@ export default function Footer() {
   const openModal = (policy) => {
     setCurrentPolicy(policy);
     setModalOpen(true);
-    document.body.style.overflow = "hidden";
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    document.body.style.overflow = "auto";
   };
 
   const policyComponents = {
@@ -63,15 +97,23 @@ export default function Footer() {
   const renderPolicyModal = () => {
     if (!modalOpen) return null;
     return (
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={closeModal}>
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" 
+        onClick={closeModal}
+      >
+        <div 
+          className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" 
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex justify-between items-center p-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-zinc-900 capitalize">{currentPolicy} Policy</h2>
             <button onClick={closeModal} className="text-gray-400 hover:text-black transition-colors">
               <X size={24} />
             </button>
           </div>
-          <div className="overflow-y-auto p-6">
+          
+          {/* Added 'overscroll-contain' to prevent scroll chaining on mobile */}
+          <div className="overflow-y-auto p-6 overscroll-contain">
             {policyComponents[currentPolicy]}
           </div>
         </div>
@@ -96,13 +138,13 @@ export default function Footer() {
             <div className="footer-link-group hidden lg:block md:col-span-6 lg:col-span-2">
               <h3 className="text-sm font-semibold tracking-wider uppercase text-gray-500">About</h3>
               <div className="mt-4 space-y-4">
-                <a href="#" className="block text-sm text-gray-600 hover:text-black transition-colors">Our Story</a>
+                <a onClick={() => handleScroll("about-section")} className="block text-sm text-gray-600 hover:text-black transition-colors cursor-pointer">Our Story</a>
               </div>
             </div>
             <div className="footer-link-group hidden lg:block md:col-span-6 lg:col-span-2">
               <h3 className="text-sm font-semibold tracking-wider uppercase text-gray-500">Contact</h3>
               <div className="mt-4 space-y-4">
-                <a href="#" className="block text-sm text-gray-600 hover:text-black transition-colors">Contact Us</a>
+                <a href="/contact" className="block text-sm text-gray-600 hover:text-black transition-colors">Contact Us</a>
               </div>
             </div>
             <div className="footer-link-group hidden lg:block md:col-span-12 lg:col-span-3">
@@ -117,8 +159,8 @@ export default function Footer() {
             {/* Mobile Links & Accordion */}
             <div className="space-y-4 lg:hidden md:col-span-12">
                <div className="flex gap-6 text-sm font-medium text-gray-600">
-                  <a href="#" className="hover:text-black transition-colors">Our Story</a>
-                  <a href="#" className="hover:text-black transition-colors">Contact Us</a>
+                  <a onClick={() => handleScroll("about-section")} className="hover:text-black transition-colors cursor-pointer">Our Story</a>
+                  <a href="/contact" className="hover:text-black transition-colors">Contact Us</a>
                </div>
                <div className="border-t border-gray-200 pt-4">
                   <button
@@ -129,11 +171,11 @@ export default function Footer() {
                     <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${policiesOpen ? "rotate-180" : ""}`} />
                   </button>
                   <div className={`overflow-hidden transition-all duration-300 ease-in-out ${policiesOpen ? "max-h-96 mt-4" : "max-h-0"}`}>
-                     <div className="space-y-4">
-                        <button onClick={() => openModal("privacy")} className="block text-sm text-gray-600 hover:text-black transition-colors">Privacy Policy</button>
-                        <button onClick={() => openModal("terms")} className="block text-sm text-gray-600 hover:text-black transition-colors">Terms & Conditions</button>
-                        <button onClick={() => openModal("refund")} className="block text-sm text-gray-600 hover:text-black transition-colors">Refund Policy</button>
-                     </div>
+                      <div className="space-y-4">
+                         <button onClick={() => openModal("privacy")} className="block text-sm text-gray-600 hover:text-black transition-colors">Privacy Policy</button>
+                         <button onClick={() => openModal("terms")} className="block text-sm text-gray-600 hover:text-black transition-colors">Terms & Conditions</button>
+                         <button onClick={() => openModal("refund")} className="block text-sm text-gray-600 hover:text-black transition-colors">Refund Policy</button>
+                      </div>
                   </div>
                </div>
             </div>
