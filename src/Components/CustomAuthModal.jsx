@@ -163,14 +163,13 @@ export default function CustomAuthModal({ onClose }) {
     }
   };
 
-  const handleGoogle = async () => {
-    if (isGoogleLoading || sendingOtp || otpSent) return; // Prevent double submit or conflict
+const handleGoogle = async () => {
+    if (isGoogleLoading || sendingOtp || otpSent) return; 
     setIsGoogleLoading(true);
     setError("");
 
     const redirectUrl = sessionStorage.getItem("post_login_redirect") || "/";
 
-    // 2. Construct redirect settings
     const redirectSettings = {
       strategy: "oauth_google",
       redirectUrl: "/sso-callback",
@@ -178,25 +177,31 @@ export default function CustomAuthModal({ onClose }) {
     };
 
     try {
-      // 3. Attempt Sign Up first. This causes a full page redirect in a real environment.
-      await signUp.authenticateWithRedirect(redirectSettings);
-
-      // Execution stops here in a real browser. No client-side cleanup is needed.
+      // 🚀 PERFORMANCE FIX: Check the current mode (Sign Up vs Log In)
+      if (isSignUp) {
+        // If user is on Sign Up tab, try creating account first
+        await signUp.authenticateWithRedirect(redirectSettings);
+      } else {
+        // If user is on Log In tab, try logging in first (NO DELAY)
+        await signIn.authenticateWithRedirect(redirectSettings);
+      }
 
     } catch (err) {
-      console.error("Google Auth Error (SignUp attempt failed):", err);
+      console.log("Primary Google attempt failed, attempting fallback logic...", err);
 
-      // 4. If Sign Up fails (user exists), attempt Sign In
+      // Smart Fallback: If the user clicked the wrong tab (e.g., clicked "Sign Up" but has an account)
       try {
-        await signIn.authenticateWithRedirect(redirectSettings);
-
-        // Execution stops here in a real browser.
-
-      } catch (signInErr) {
-        // 5. If both fail, display error and re-enable the button
-        console.error("Google Auth Error (SignIn fallback failed):", signInErr);
-        setError(signInErr.errors?.[0]?.message || "Google authentication failed.");
-        setIsGoogleLoading(false); // Re-enable button on final failure 
+        if (isSignUp) {
+          // Initial attempt was SignUp and failed (likely user exists) -> Try SignIn
+          await signIn.authenticateWithRedirect(redirectSettings);
+        } else {
+           // Initial attempt was SignIn and failed (likely user new) -> Try SignUp
+          await signUp.authenticateWithRedirect(redirectSettings);
+        }
+      } catch (finalErr) {
+        console.error("Google Auth Final Error:", finalErr);
+        setError(finalErr.errors?.[0]?.message || "Google authentication failed.");
+        setIsGoogleLoading(false); 
       }
     }
   };
