@@ -984,8 +984,17 @@ header {
 }
 
 @media (max-width: 795px) {
-  #navbar {
-    width: 100%;
+  #navbar,
+  #navbar.scrolled {
+    width: 100% !important;
+    top: 0 !important;
+    border-radius: 0 !important;
+    left: 0 !important;
+    /* 🟢 FIXED: DO NOT OVERRIDE transform: none here. React controls transform now. */
+    padding: 0 16px;
+    margin-top: 0px;
+    background-color: white;
+    z-index: 9999 !important;
   }
 
   .part-2 a {

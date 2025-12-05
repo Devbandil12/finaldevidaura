@@ -31,12 +31,13 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
+  // 🟢 Update User (With actorId)
   const updateUser = async (userId, updates) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ ...updates, actorId: userdetails?.id }), // 🟢 Added actorId
       });
       if (!res.ok) throw new Error("Failed to update user");
       window.toast.success("User updated");
@@ -47,9 +48,14 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // 🟢 Delete User (With actorId)
   const deleteUser = async (userId) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, { method: "DELETE" });
+      const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, { 
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ actorId: userdetails?.id }) // 🟢 Added actorId to body
+      });
       if (!res.ok) throw new Error("Failed to delete user");
       window.toast.success("User deleted");
       await getAllUsers();
@@ -75,7 +81,6 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
-  // New function to get single order details
   const getSingleOrderDetails = async (orderId) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
@@ -88,12 +93,13 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // 🟢 Update Order Status (With actorId)
   const updateOrderStatus = async (orderId, status) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, actorId: userdetails?.id }), // 🟢 Added actorId
       });
       if (!res.ok) throw new Error("Failed to update order");
       const updatedOrder = await res.json();
@@ -106,31 +112,26 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // 🟢 UPDATED: Unified Cancel/Refund Logic
+  // 🟢 Cancel Order (With actorId)
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      // Always call the Refund API. The backend controller intelligently handles:
-      // 1. Online Orders -> Triggers Razorpay Refund + DB Update + Stock Restore
-      // 2. COD Orders -> Triggers DB Update + Stock Restore (Skips Razorpay)
       const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           orderId, 
-          amount // Required by backend for validation
+          amount,
+          actorId: userdetails?.id // 🟢 Added actorId
         }),
       });
 
       if (!res.ok) {
-        // Extract error message from backend
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Cancellation failed");
       }
 
       const data = await res.json();
       window.toast.success(data.message || `Order #${orderId} cancelled`);
-      
-      // Refresh the orders list to show updated status
       await getAllOrders();
 
     } catch (err) {
@@ -140,12 +141,13 @@ export const AdminProvider = ({ children }) => {
   };
 
   /* -------------------- COUPONS -------------------- */
+  // 🟢 Create Coupon (With actorId)
   const createCoupon = async (couponData) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/coupons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(couponData),
+        body: JSON.stringify({ ...couponData, actorId: userdetails?.id }), // 🟢 Added actorId
       });
       if (!res.ok) throw new Error("Failed to create coupon");
       window.toast.success("Coupon created");
@@ -163,7 +165,6 @@ export const AdminProvider = ({ children }) => {
   const exportOrders = (selectedOrders) => {
     console.log("Exporting orders:", selectedOrders);
   };
-
 
   const getReportData = useCallback(async () => {
     try {
@@ -204,21 +205,17 @@ export const AdminProvider = ({ children }) => {
 
   /* -------------------- EFFECT -------------------- */
   useEffect(() => {
-    // Wait for user loading to finish
     if (isUserLoading) {
       setLoading(true); 
       return;
     }
     
-    // Now, we have a stable user state
     if (userdetails?.role === "admin") {
-      // User is an admin, fetch all data
       getAllUsers();
       getAllOrders();
       getAbandonedCarts(); 
       getWishlistStats();
     } else {
-      // User is NOT an admin, clear data and stop loading
       setUsers([]);
       setOrders([]);
       setReportOrders([]);

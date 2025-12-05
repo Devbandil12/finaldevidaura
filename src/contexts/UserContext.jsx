@@ -22,7 +22,6 @@ export const UserProvider = ({ children }) => {
     []
   );
 
-  // keep a mounted ref so we don't set state on unmounted component
   const mountedRef = useRef(true);
   useEffect(() => {
     mountedRef.current = true;
@@ -31,21 +30,15 @@ export const UserProvider = ({ children }) => {
     };
   }, []);
 
-  // --- fetch logged-in user from backend (with AbortController + strong guards) ---
+  // --- fetch logged-in user from backend ---
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
 
     const fetchUser = async () => {
-      // we want to be "loading" until we know the userdetails or that user is signed-out
       setIsUserLoading(true);
 
-      // Wait until Clerk finished loading and indicates sign-in status.
-      // Also ensure user object has the fields we depend on.
-      if (!isLoaded) {
-        // keep isUserLoading true until isLoaded becomes true and effect re-runs
-        return;
-      }
+      if (!isLoaded) return;
 
       if (!isSignedIn) {
         if (!mountedRef.current) return;
@@ -55,19 +48,13 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      // strongly guard that user has an id and email before calling backend
       const clerkId = user?.id;
       const email = user?.primaryEmailAddress?.emailAddress;
       const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
-      if (!clerkId || !email) {
-        console.warn("Clerk user object missing id or email yet; delaying fetch.");
-        // keep loading and wait for next update
-        return;
-      }
+      if (!clerkId || !email) return;
 
       try {
-        // 1) Try find by clerk id
         const res = await fetch(
           `${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${encodeURIComponent(clerkId)}`,
           { signal }
@@ -78,10 +65,8 @@ export const UserProvider = ({ children }) => {
         if (res.ok) {
           const data = await res.json();
           if (!mountedRef.current) return;
-          // Use server canonical object
           setUserdetails({ ...data, isNew: false });
         } else if (res.status === 404) {
-          // 2) Create user if not found
           const postRes = await fetch(`${BACKEND_URL}/api/users`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -92,22 +77,17 @@ export const UserProvider = ({ children }) => {
           if (signal.aborted) return;
 
           const postData = await postRes.json();
-          // Use server response as canonical
           const isNew = postRes.status === 201;
           if (!mountedRef.current) return;
           setUserdetails({ ...postData, isNew });
         } else {
-          // other error
           const text = await res.text().catch(() => "");
           throw new Error(
             `Failed to fetch user: ${res.status} ${res.statusText} ${text}`
           );
         }
       } catch (err) {
-        if (err.name === "AbortError") {
-          // request was cancelled — ignore
-          return;
-        }
+        if (err.name === "AbortError") return;
         console.error("❌ Error in fetchUser:", err);
         if (!mountedRef.current) return;
         setUserdetails(null);
@@ -119,13 +99,11 @@ export const UserProvider = ({ children }) => {
 
     fetchUser();
 
-    // cleanup cancels in-flight fetches
     return () => {
       controller.abort();
     };
   }, [isLoaded, isSignedIn, user?.id, user?.primaryEmailAddress, BACKEND_URL, user?.firstName, user?.lastName]);
 
-  // --- address fetch with AbortController and safe-guarded user id ---
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) {
       setAddress([]);
@@ -146,14 +124,10 @@ export const UserProvider = ({ children }) => {
       console.error("❌ Failed to get user addresses:", error);
       if (mountedRef.current) setAddress([]);
     }
-
-    // cleanup helper: returns abort function so caller may cancel if desired
     return () => controller.abort();
   }, [userdetails?.id, BACKEND_URL]);
 
   useEffect(() => {
-    // When userdetails becomes available, fetch addresses.
-    // Guard so we don't call with incomplete userdetails
     let abortFn;
     if (userdetails?.id) {
       const maybe = getUserAddress();
@@ -166,7 +140,7 @@ export const UserProvider = ({ children }) => {
     };
   }, [userdetails, getUserAddress]);
 
-  // --- CRUD functions for user & addresses (merge returned server objects) ---
+  // 🟢 Update User (With actorId)
   const updateUser = useCallback(
     async (updatedData) => {
       if (!userdetails?.id) return null;
@@ -174,12 +148,11 @@ export const UserProvider = ({ children }) => {
         const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedData),
+          body: JSON.stringify({ ...updatedData, actorId: userdetails?.id }), // 🟢 Added actorId
         });
         if (!res.ok) throw new Error("Failed to update user");
         const data = await res.json();
         if (mountedRef.current) {
-          // prefer server-returned canonical object if present
           setUserdetails((prev) => ({ ...prev, ...(data || updatedData) }));
         }
         return data;
@@ -276,7 +249,6 @@ export const UserProvider = ({ children }) => {
     [BACKEND_URL, getUserAddress]
   );
 
-  // stable context value
   const contextValue = useMemo(
     () => ({
       userdetails,

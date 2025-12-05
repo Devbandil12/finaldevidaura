@@ -5,7 +5,7 @@ import { UserContext } from "./UserContext";
 export const CouponContext = createContext({
   coupons: [],
   availableCoupons: [],
-  autoOfferInstructions: [], // 🟢 For the "how-to" notification
+  autoOfferInstructions: [], 
   editingCoupon: null,
   setEditingCoupon: () => {},
   refreshCoupons: () => {},
@@ -13,7 +13,7 @@ export const CouponContext = createContext({
   deleteCoupon: () => {},
   isCouponValid: () => false,
   loadAvailableCoupons: () => {},
-  loadAutoOfferInstructions: () => {}, // 🟢 For the "how-to" notification
+  loadAutoOfferInstructions: () => {}, 
   validateCoupon: () => null,
 });
 
@@ -21,8 +21,11 @@ export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [autoOfferInstructions, setAutoOfferInstructions] = useState([]); // 🟢 NEW
+  const [autoOfferInstructions, setAutoOfferInstructions] = useState([]); 
+  
+  // 🟢 We need userdetails to get the actorId
   const { userdetails, isUserLoading } = useContext(UserContext);
+  
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
   // --- 1. Admin function to get ALL coupons ---
@@ -52,12 +55,12 @@ export const CouponProvider = ({ children }) => {
     }
   }, [BASE_URL]);
   
-  // 🟢 3. NEW: Function to get automatic offer instructions
+  // --- 3. Function to get automatic offer instructions ---
   const loadAutoOfferInstructions = useCallback(async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/coupons/automatic-offers`);
       if (!res.ok) throw new Error("Failed to fetch auto offers");
-      const data = await res.json(); // This data contains all the rules
+      const data = await res.json(); 
       setAutoOfferInstructions(data);
     } catch (err) {
       console.error("[CouponContext] failed to load auto offers:", err);
@@ -71,7 +74,6 @@ export const CouponProvider = ({ children }) => {
       return;
     }
     
-    // 🟢 Call for all users (guests included)
     loadAutoOfferInstructions();
     
     if (userdetails?.role === 'admin') {
@@ -82,10 +84,9 @@ export const CouponProvider = ({ children }) => {
       setCoupons([]);
       setAvailableCoupons([]);
     }
-  }, [isUserLoading, userdetails, refreshCoupons, loadAvailableCoupons, loadAutoOfferInstructions]); // 🟢 Add dependency
+  }, [isUserLoading, userdetails, refreshCoupons, loadAvailableCoupons, loadAutoOfferInstructions]);
 
-  // 5. 🟢 --- MODIFIED: saveCoupon ---
-  // This now sends all the new promotion rules to the backend
+  // 5. 🟢 MODIFIED: saveCoupon (Includes actorId for logging)
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
       return window.toast.error("Code is required");
@@ -98,18 +99,13 @@ export const CouponProvider = ({ children }) => {
       discountValue: editingCoupon.discountValue,
       minOrderValue: editingCoupon.minOrderValue,
       minItemCount: editingCoupon.minItemCount,
-      
-      // 🟢 --- START FIX ---
-      // This is the new field you were missing
       maxDiscountAmount: editingCoupon.maxDiscountAmount || null, 
-      // 🟢 --- END FIX ---
       
       validFrom: editingCoupon.validFrom ? new Date(editingCoupon.validFrom) : null,
       validUntil: editingCoupon.validUntil ? new Date(editingCoupon.validUntil) : null,
       firstOrderOnly: editingCoupon.firstOrderOnly ?? false,
       maxUsagePerUser: editingCoupon.maxUsagePerUser ?? null,
       
-      // 🟢 NEW: Send the new automatic offer rules
       isAutomatic: editingCoupon.isAutomatic ?? false,
       cond_requiredCategory: editingCoupon.cond_requiredCategory || null,
       cond_requiredSize: editingCoupon.cond_requiredSize || null,
@@ -117,6 +113,9 @@ export const CouponProvider = ({ children }) => {
       action_targetMaxPrice: editingCoupon.action_targetMaxPrice || null,
       action_buyX: editingCoupon.action_buyX || null,
       action_getY: editingCoupon.action_getY || null,
+
+      // 🟢 CRITICAL FIX: Add actorId so backend logs the Create/Update action
+      actorId: userdetails?.id 
     };
 
     const url = editingCoupon.id
@@ -142,12 +141,15 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // --- 6. deleteCoupon (Unchanged) ---
+  // --- 6. 🟢 MODIFIED: deleteCoupon (Includes actorId for logging) ---
   const deleteCoupon = async (id) => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
       const res = await fetch(`${BASE_URL}/api/coupons/${id}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
+        // 🟢 CRITICAL FIX: Send actorId in body for DELETE log
+        body: JSON.stringify({ actorId: userdetails?.id }), 
       });
       if (!res.ok) throw new Error();
       window.toast.success("Coupon deleted");
@@ -157,22 +159,18 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // --- 7. 🟢 MODIFIED: isCouponValid ---
-  // This now checks against the post-offer total
+  // --- 7. isCouponValid ---
   const isCouponValid = useCallback((coupon, cart, postOfferTotal) => {
-    // 🟢 Use the post-offer total calculated by the priceController
     const totalValue = postOfferTotal ?? cart.reduce(
       (acc, item) =>
         acc +
         item.quantity *
-        // 🟢 FIX: Use variant price, not product price
         Math.floor(item.variant.oprice * (1 - item.variant.discount / 100)),
       0
     ); 
     
     const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-    // 🟢 NEW: Automatic coupons can't be applied manually
     if (coupon.isAutomatic) {
       window.toast.error("This is an automatic offer and cannot be applied manually.");
       return false;
@@ -202,8 +200,7 @@ export const CouponProvider = ({ children }) => {
     return true;
   }, []);
 
-  // --- 8. validateCoupon (Unchanged) ---
-  // This is for validating a *manual* code with the backend
+  // --- 8. validateCoupon ---
   const validateCoupon = useCallback(async (code, userId) => {
     if (!code || !userId) {
       window.toast.error("Coupon code and user are required.");
@@ -234,7 +231,7 @@ export const CouponProvider = ({ children }) => {
       value={{
         coupons,
         availableCoupons,
-        autoOfferInstructions, // 🟢 NEW
+        autoOfferInstructions,
         editingCoupon,
         setEditingCoupon,
         refreshCoupons,
@@ -242,7 +239,7 @@ export const CouponProvider = ({ children }) => {
         deleteCoupon,
         isCouponValid,
         loadAvailableCoupons, 
-        loadAutoOfferInstructions, // 🟢 NEW
+        loadAutoOfferInstructions,
         validateCoupon,
       }}
     >

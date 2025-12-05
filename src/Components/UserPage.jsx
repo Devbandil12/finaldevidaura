@@ -13,13 +13,16 @@ import {
   Trash2, CheckCircle, Circle, X, CreditCard,
   ShoppingBag, Bell, Shield, LogOut, User as UserIcon, Camera, ShoppingCart,
   FileText, XCircle, Heart, ChevronLeft, ChevronDown, Check, Loader2, Upload,
-  ChevronRight, Send, AlertCircle, Lock, RefreshCw, Clock, Headphones
+  ChevronRight, Send, AlertCircle, Lock, RefreshCw, Clock, Headphones, Filter,
+  Truck, CheckSquare, ShieldAlert, UserCog, History, Ticket
 } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import useCloudinary from "../utils/useCloudinary";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from "framer-motion";
+
+const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 // 🟢 Luxury Animations
 const luxuryEase = [0.25, 0.1, 0.25, 1];
@@ -64,7 +67,7 @@ const FloatingInput = React.forwardRef(({ label, error, className = "", ...props
   <div className={`relative w-full ${className}`}>
     <input
       ref={ref}
-      placeholder=" " // Required for peer-placeholder-shown to work
+      placeholder=" "
       className={`peer w-full rounded-xl border bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all duration-300 placeholder-transparent
         ${error ? "border-red-400 focus:border-red-500" : "border-slate-200 focus:border-black focus:ring-1 focus:ring-black/5"}`}
       {...props}
@@ -187,10 +190,8 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
         </div>
 
         <h2 className="text-xl font-bold text-slate-900 break-words">{user.name}</h2>
-        {/* Added break-all to prevent email overflow */}
         <p className="text-sm text-slate-500 font-medium mt-1 break-all">{user.email}</p>
 
-        {/* Stats */}
         <div className="flex justify-between mt-6 border-t border-slate-100 pt-6">
           <StatItem label="Wishlist" count={wishlistCount} icon={Heart} path="/wishlist" hoverColor="text-pink-500 group-hover:text-pink-600" />
           <div className="w-[1px] bg-slate-100 my-2" />
@@ -199,7 +200,6 @@ const ProfileCard = ({ user, wishlistCount, cartCount, orderCount, onEditProfile
           <StatItem label="Orders" count={orderCount} icon={Package} path="/myorder" hoverColor="text-amber-500 group-hover:text-amber-600" />
         </div>
 
-        {/* Actions */}
         <div className="mt-6 space-y-3">
           <button onClick={() => navigate('/settings')} className="w-full py-3 rounded-xl bg-slate-50 text-slate-700 text-sm font-semibold hover:bg-slate-100 transition-colors flex items-center justify-center gap-2">
             <Shield size={16} /> Security & Settings
@@ -258,48 +258,243 @@ const ProfileCompletion = ({ user, addressCount }) => {
 };
 
 /* ========================================================================
-   3. LEFT COLUMN: RECENT ACTIVITY
+   3. LEFT COLUMN: ADVANCED ACTIVITY LOG (REPLACES RECENT ACTIVITY)
    ======================================================================== */
-const RecentActivity = ({ orders, reviews, addresses, queries }) => {
-  const activityItems = useMemo(() => {
-    let allItems = [];
-    const TIME_THRESHOLD = 60000;
+// 🟢 MODIFIED: Added isAdminLog prop to display Actor Name for global logs
+const AdvancedActivityLog = ({ orders, reviews, addresses, tickets, securityLogs, onNavigate, title = "Activity Log", isAdminLog = false }) => {
+  const [filter, setFilter] = useState("all");
 
-    (orders || []).forEach(o => {
-      allItems.push({ type: "order", id: `op-${o.id}`, label: `Placed Order #${o.id.slice(0, 8)}...`, date: new Date(o.createdAt), icon: ShoppingBag });
-      if (new Date(o.updatedAt) > new Date(o.createdAt) + TIME_THRESHOLD) {
-        allItems.push({ type: "update", id: `ou-${o.id}`, label: `Order #${o.id.slice(0, 8)}... is ${o.status}`, date: new Date(o.updatedAt), icon: Package });
+  const activityItems = useMemo(() => {
+    let items = [];
+    const UPDATE_THRESHOLD = 60 * 60 * 1000;
+
+    // 🟢 Condition: Process User-Specific Data only if NOT a global admin log
+    if (!isAdminLog) {
+      // 1. Process Orders
+      (orders || []).forEach(o => {
+        items.push({
+          id: `ord-cr-${o.id}`,
+          type: 'order_created',
+          date: new Date(o.createdAt),
+          title: `Order Placed`,
+          subtitle: `#${o.id.slice(-6).toUpperCase()} • ₹${o.totalAmount}`,
+          data: o,
+          icon: ShoppingBag,
+          color: 'text-indigo-600 bg-indigo-50 border-indigo-100'
+        });
+
+        if (new Date(o.updatedAt) > new Date(o.createdAt).getTime() + UPDATE_THRESHOLD) {
+          let statusTitle = `Order ${o.status}`;
+          let icon = Package;
+          let color = 'text-blue-600 bg-blue-50 border-blue-100';
+
+          if (o.status.toLowerCase() === 'delivered') {
+            statusTitle = "Delivered";
+            icon = Truck;
+            color = 'text-emerald-600 bg-emerald-50 border-emerald-100';
+          }
+
+          items.push({
+            id: `ord-up-${o.id}`,
+            type: 'order_updated',
+            date: new Date(o.updatedAt),
+            title: statusTitle,
+            subtitle: `#${o.id.slice(-6).toUpperCase()}`,
+            data: o,
+            icon: icon,
+            color: color
+          });
+        }
+      });
+
+      // 2. Process Support Tickets
+      (tickets || []).forEach(t => {
+        items.push({
+          id: `tkt-${t.id}`,
+          type: 'ticket',
+          date: new Date(t.createdAt),
+          title: `Ticket ${t.status === 'open' ? 'Opened' : 'Updated'}`,
+          subtitle: t.subject,
+          data: t,
+          icon: Headphones,
+          color: 'text-rose-600 bg-rose-50 border-rose-100'
+        });
+      });
+
+      // 3. Process Reviews
+      (reviews || []).forEach(r => {
+        items.push({
+          id: `rev-${r.id}`,
+          type: 'review',
+          date: new Date(r.createdAt),
+          title: "Wrote a Review",
+          subtitle: "Click to see details",
+          data: r,
+          icon: Star,
+          color: 'text-amber-600 bg-amber-50 border-amber-100'
+        });
+      });
+    }
+
+    // 4. Process Security/Profile Logs
+    (securityLogs || []).forEach(log => {
+      const isAdminAction = log.performedBy === 'admin';
+
+      // 1. Extract Actor and Target Names
+      const actorName = log.actor?.name || 'Admin';
+      const targetName = log.target?.name;
+
+      // 2. Default Styling
+      let title = "Profile Updated";
+      let icon = UserCog;
+      let color = isAdminAction ? 'text-red-600 bg-red-50 border-red-100' : 'text-slate-600 bg-slate-100 border-slate-200';
+
+      // 3. Determine Base Title & Icon based on Action
+      switch (log.action) {
+        case 'ADMIN_UPDATE':
+        case 'PROFILE_UPDATE':
+          title = "Profile Update";
+          icon = ShieldAlert;
+          break;
+        case 'ACCOUNT_CREATED':
+          title = "Account Created";
+          icon = UserIcon;
+          break;
+        case 'ORDER_CANCEL':
+          title = "Order Cancelled";
+          icon = XCircle;
+          break;
+        case 'ORDER_STATUS_UPDATE':
+          title = "Status Update";
+          icon = Truck;
+          break;
+        case 'PRODUCT_CREATE':
+          title = "Product Created";
+          icon = Package;
+          color = 'text-purple-600 bg-purple-50 border-purple-100';
+          break;
+        case 'PRODUCT_UPDATE':
+          title = "Product Updated";
+          icon = Package;
+          color = 'text-blue-600 bg-blue-50 border-blue-100';
+          break;
+        case 'COUPON_CREATE':
+          title = "Coupon Created";
+          icon = Ticket;
+          color = 'text-pink-600 bg-pink-50 border-pink-100';
+          break;
+        case 'COUPON_UPDATE':
+          title = "Coupon Updated";
+          icon = Ticket;
+          color = 'text-pink-600 bg-pink-50 border-pink-100';
+          break;
+        default:
+          title = log.action.replace(/_/g, ' ');
+          break;
       }
+
+      // 4. Construct Final Display Title
+      let displayTitle = title;
+
+      if (isAdminLog) {
+        if (targetName) {
+          // Scenario: Admin changed a specific user (e.g., "Devid ➝ John Doe")
+          displayTitle = `${actorName} ➝ ${targetName}`;
+        } else {
+          // Scenario: Global action (e.g., "Devid • Coupon Created")
+          displayTitle = `${actorName} • ${title}`;
+        }
+      }
+
+      items.push({
+        id: log.id,
+        type: 'security',
+        date: new Date(log.createdAt),
+        title: displayTitle, // 🟢 Use the dynamically formatted title
+        subtitle: log.description,
+        data: log,
+        icon: icon,
+        color: color
+      });
     });
 
-    (reviews || []).forEach(r => allItems.push({ type: "review", id: `r-${r.id}`, label: "Wrote a review", date: new Date(r.createdAt), icon: Star }));
-    (addresses || []).forEach(a => allItems.push({ type: "address", id: `a-${a.id}`, label: "Updated address book", date: new Date(a.createdAt), icon: MapPin }));
-    (queries || []).forEach(q => allItems.push({ type: "query", id: `q-${q.id}`, label: "Raised a support ticket", date: new Date(q.createdAt), icon: FileText }));
+    return items.sort((a, b) => b.date - a.date);
+  }, [orders, tickets, reviews, securityLogs, isAdminLog]);
 
-    return allItems.sort((a, b) => b.date - a.date).slice(0, 5);
-  }, [orders, reviews, addresses, queries]);
+  const filteredItems = filter === 'all'
+    ? activityItems
+    : activityItems.filter(i => i.type.includes(filter) || (filter === 'support' && i.type === 'ticket') || (filter === 'security' && i.type === 'security'));
+
+  const grouped = filteredItems.reduce((acc, item) => {
+    const d = item.date;
+    const key = d.toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' :
+      d.toLocaleDateString() === new Date(Date.now() - 86400000).toLocaleDateString() ? 'Yesterday' :
+        d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
 
   return (
-    <motion.div variants={fadeInUp} className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8">
-      <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Recent Activity</h3>
-      <div className="relative pl-2">
-        <div className="absolute top-3 bottom-3 left-[19px] w-[1px] bg-slate-100" />
-        <div className="space-y-6">
-          {activityItems.length === 0 && <p className="text-sm text-slate-400 pl-8">No recent activity.</p>}
-          {activityItems.map((item) => (
-            <div key={item.id} className="relative flex items-start gap-4 group">
-              <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-[3px] border-white shadow-sm transition-colors flex-shrink-0 ${item.type === 'order' ? 'bg-indigo-50 text-indigo-600' :
-                  item.type === 'review' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-500'
-                }`}>
-                <item.icon size={14} strokeWidth={2.5} />
-              </div>
-              <div className="pt-1 min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-800 line-clamp-1 break-all">{item.label}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{formatDate(item.date)}</p>
-              </div>
+    <motion.div variants={fadeInUp} className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 max-h-[600px] flex flex-col mb-8">
+      <div className="flex items-center justify-between mb-6">
+        {/* 🟢 MODIFIED: Use Title prop */}
+        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">{title}</h3>
+
+        {/* 🟢 MODIFIED: Hide non-security filters for Global Admin Log */}
+        {!isAdminLog && (
+          <div className="flex gap-2">
+            <button onClick={() => setFilter('all')} className={`p-1.5 rounded-lg transition-colors ${filter === 'all' ? 'bg-black text-white' : 'bg-slate-100 text-slate-400'}`} title="All"><Clock size={14} /></button>
+            <button onClick={() => setFilter('order')} className={`p-1.5 rounded-lg transition-colors ${filter === 'order' ? 'bg-black text-white' : 'bg-slate-100 text-slate-400'}`} title="Orders"><ShoppingBag size={14} /></button>
+            <button onClick={() => setFilter('support')} className={`p-1.5 rounded-lg transition-colors ${filter === 'support' ? 'bg-black text-white' : 'bg-slate-100 text-slate-400'}`} title="Support"><Headphones size={14} /></button>
+            <button onClick={() => setFilter('security')} className={`p-1.5 rounded-lg transition-colors ${filter === 'security' ? 'bg-black text-white' : 'bg-slate-100 text-slate-400'}`} title="Security"><UserCog size={14} /></button>
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2 -mr-2 space-y-8">
+        {Object.keys(grouped).length === 0 && <p className="text-center text-slate-400 text-sm py-4">No recent activity found.</p>}
+
+        {Object.entries(grouped).map(([label, groupItems]) => (
+          <div key={label}>
+            <div className="sticky top-0 bg-white z-20 py-1 mb-4 border-b border-slate-50">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
             </div>
-          ))}
-        </div>
+            <div className="space-y-0 relative">
+              <div className="absolute top-2 bottom-2 left-[15px] w-[2px] bg-slate-100 z-0"></div>
+              {groupItems.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => onNavigate && !isAdminLog && onNavigate(item)}
+                  className={`relative z-10 flex items-center gap-4 p-2 rounded-xl transition-colors mb-2 ${!isAdminLog ? 'group cursor-pointer hover:bg-slate-50' : ''}`}
+                >
+                  {/* Icon Container */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm shrink-0 ${item.color}`}>
+                    <item.icon size={12} />
+                  </div>
+
+                  {/* Text */}
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="flex justify-between items-start">
+                      <p className="text-sm font-bold text-slate-800 leading-none group-hover:text-indigo-600 transition-colors">{item.title}</p>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                        {item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 truncate">{item.subtitle}</p>
+                  </div>
+
+                  {/* Navigation Chevron (Only for User) */}
+                  {!isAdminLog && (
+                    <div className="text-slate-300 group-hover:text-black transition-colors pl-2">
+                      <ChevronRight size={16} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -720,7 +915,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
 };
 
 /* ========================================================================
-   7. TAB CONTENT: REVIEWS & NOTIFICATIONS (Restyled)
+   7. TAB CONTENT: REVIEWS & NOTIFICATIONS
    ======================================================================== */
 const ReviewHistory = () => {
   const { userReviews, loadingReviews } = useContext(ReviewContext);
@@ -794,24 +989,20 @@ const NotificationSettings = () => {
 };
 
 /* ========================================================================
-   8. TAB CONTENT: SUPPORT QUERIES (Redesigned)
+   8. TAB CONTENT: SUPPORT QUERIES
    ======================================================================== */
-const SupportQueries = () => {
+const SupportQueries = ({ selectedTicket, setSelectedTicket }) => {
   const { tickets, getUserTickets, replyToTicket } = useContext(ContactContext);
   const { userdetails } = useContext(UserContext);
-  const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
   const messagesEndRef = useRef(null);
 
-  // Initial fetch
   useEffect(() => {
     if (userdetails?.email) getUserTickets(userdetails.email);
   }, [userdetails, getUserTickets]);
 
-  // Scroll to bottom when chat opens or updates
   useEffect(() => {
     if (selectedTicket && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -827,31 +1018,17 @@ const SupportQueries = () => {
     }
   };
 
-  // When clicking a ticket in the sidebar
-  const handleTicketSelect = (ticket) => {
-    setSelectedTicket(ticket);
-    // Silent refresh to ensure we have latest messages
-    if (userdetails?.email) getUserTickets(userdetails.email);
-  };
-
   const handleReply = async () => {
     if (!replyText.trim() || !selectedTicket) return;
     setLoading(true);
     try {
       await replyToTicket(selectedTicket.id, replyText, 'user');
-
-      // Optimistic update locally
       const newMsg = {
         senderRole: 'user',
         message: replyText,
         createdAt: new Date().toISOString()
       };
-
-      setSelectedTicket(prev => ({
-        ...prev,
-        messages: [...prev.messages, newMsg]
-      }));
-
+      setSelectedTicket(prev => ({ ...prev, messages: [...prev.messages, newMsg] }));
       await getUserTickets(userdetails.email);
       setReplyText("");
     } catch (error) {
@@ -862,7 +1039,6 @@ const SupportQueries = () => {
     }
   };
 
-  // If tickets list is empty
   if (!tickets || tickets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
@@ -871,10 +1047,7 @@ const SupportQueries = () => {
         </div>
         <h3 className="text-lg font-bold text-slate-900">No support tickets</h3>
         <p className="text-slate-500 mb-6">You haven't reached out to us yet.</p>
-        <button
-          onClick={() => window.location.href = '/contact'}
-          className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-black text-white font-medium hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
-        >
+        <button onClick={() => window.location.href = '/contact'} className="flex items-center gap-2 py-2.5 px-6 rounded-xl bg-black text-white font-medium hover:bg-slate-800 transition-all shadow-lg shadow-slate-200">
           <Plus size={18} /> Create Ticket
         </button>
       </div>
@@ -883,12 +1056,7 @@ const SupportQueries = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-[650px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-
-      {/* LEFT SIDEBAR: TICKET LIST */}
-      {/* Hidden on mobile if a ticket is selected */}
       <div className={`w-full md:w-80 lg:w-96 flex flex-col border-r border-slate-100 bg-white ${selectedTicket ? 'hidden md:flex' : 'flex'}`}>
-
-        {/* Sidebar Header */}
         <div className="p-5 border-b border-slate-100 bg-white z-10">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-slate-900">Inbox</h3>
@@ -901,41 +1069,21 @@ const SupportQueries = () => {
               </button>
             </div>
           </div>
-          {/* Search or Filter could go here */}
         </div>
-
-        {/* List Items */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
           {tickets.map(ticket => {
             const isSelected = selectedTicket?.id === ticket.id;
             const isOpen = ticket.status?.toLowerCase() === 'open';
-
             return (
-              <div
-                key={ticket.id}
-                onClick={() => handleTicketSelect(ticket)}
-                className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-slate-50/80 ${isSelected ? 'bg-indigo-50/30 border-l-4 border-l-indigo-600' : 'border-l-4 border-l-transparent'
-                  }`}
-              >
+              <div key={ticket.id} onClick={() => setSelectedTicket(ticket)} className={`p-4 border-b border-slate-50 cursor-pointer transition-all hover:bg-slate-50/80 ${isSelected ? 'bg-indigo-50/30 border-l-4 border-l-indigo-600' : 'border-l-4 border-l-transparent'}`}>
                 <div className="flex justify-between items-start mb-1">
-                  <h4 className={`text-sm font-bold truncate pr-2 ${isSelected ? 'text-indigo-900' : 'text-slate-900'}`}>
-                    {ticket.subject}
-                  </h4>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                    {new Date(ticket.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </span>
+                  <h4 className={`text-sm font-bold truncate pr-2 ${isSelected ? 'text-indigo-900' : 'text-slate-900'}`}>{ticket.subject}</h4>
+                  <span className="text-[10px] text-slate-400 whitespace-nowrap">{new Date(ticket.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                 </div>
-
-                <p className="text-xs text-slate-500 truncate mb-2.5 opacity-80">
-                  {ticket.messages[ticket.messages.length - 1]?.message}
-                </p>
-
+                <p className="text-xs text-slate-500 truncate mb-2.5 opacity-80">{ticket.messages[ticket.messages.length - 1]?.message}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-slate-400">#{ticket.id.slice(0, 6)}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${isOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
-                    }`}>
-                    {ticket.status}
-                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${isOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{ticket.status}</span>
                 </div>
               </div>
             );
@@ -943,69 +1091,30 @@ const SupportQueries = () => {
         </div>
       </div>
 
-      {/* RIGHT MAIN: CHAT AREA */}
-      {/* Hidden on mobile if NO ticket is selected */}
       <div className={`flex-1 flex flex-col bg-slate-50/50 relative ${!selectedTicket ? 'hidden md:flex' : 'flex'}`}>
-
         {selectedTicket ? (
           <>
-            {/* Chat Header */}
             <div className="h-16 px-6 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${selectedTicket.status === 'open' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'
-                  }`}>
-                  <Headphones size={16} />
-                </div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${selectedTicket.status === 'open' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}><Headphones size={16} /></div>
                 <div className="min-w-0">
                   <h3 className="font-bold text-slate-900 text-sm truncate">{selectedTicket.subject}</h3>
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                    Ticket ID: <span className="font-mono">{selectedTicket.id}</span>
-                  </p>
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5">Ticket ID: <span className="font-mono">{selectedTicket.id}</span></p>
                 </div>
               </div>
-
-              {/* Close Chat Button (Cross Button) */}
-              <button
-                onClick={() => setSelectedTicket(null)}
-                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors"
-                title="Close Chat"
-              >
-                <X size={20} />
-              </button>
+              <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-800 transition-colors" title="Close Chat"><X size={20} /></button>
             </div>
-
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-              {/* Date Separator (Optional Aesthetic) */}
-              <div className="flex justify-center">
-                <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
-                  {new Date(selectedTicket.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-
+              <div className="flex justify-center"><span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-3 py-1 rounded-full">{new Date(selectedTicket.createdAt).toLocaleDateString()}</span></div>
               {selectedTicket.messages.map((msg, i) => {
                 const isUser = msg.senderRole === 'user';
                 return (
                   <div key={i} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
                     <div className={`flex max-w-[85%] sm:max-w-[70%] gap-2 ${isUser ? 'flex-row-reverse' : 'flex-row'} items-end`}>
-
-                      {/* Avatar */}
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1 ${isUser ? 'bg-slate-900 text-white' : 'bg-indigo-100 text-indigo-600'
-                        }`}>
-                        {isUser ? <UserIcon size={12} /> : <Headphones size={12} />}
-                      </div>
-
-                      {/* Bubble */}
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1 ${isUser ? 'bg-slate-900 text-white' : 'bg-indigo-100 text-indigo-600'}`}>{isUser ? <UserIcon size={12} /> : <Headphones size={12} />}</div>
                       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                        <div className={`px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${isUser
-                            ? 'bg-black text-white rounded-2xl rounded-br-sm'
-                            : 'bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-bl-sm'
-                          }`}>
-                          <p className="whitespace-pre-wrap">{msg.message}</p>
-                        </div>
-                        <span className="text-[10px] text-slate-400 mt-1 px-1">
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div className={`px-4 py-2.5 text-[13px] leading-relaxed shadow-sm ${isUser ? 'bg-black text-white rounded-2xl rounded-br-sm' : 'bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-bl-sm'}`}><p className="whitespace-pre-wrap">{msg.message}</p></div>
+                        <span className="text-[10px] text-slate-400 mt-1 px-1">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
                   </div>
@@ -1013,42 +1122,22 @@ const SupportQueries = () => {
               })}
               <div ref={messagesEndRef} />
             </div>
-
-            {/* Input Area */}
             {selectedTicket.status === 'open' ? (
               <div className="p-4 bg-white border-t border-slate-100">
                 <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/10 focus-within:border-indigo-400 transition-all">
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleReply()}
-                    placeholder="Type your reply here..."
-                    className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-3 py-2 min-h-[44px]"
-                  />
-                  <button
-                    onClick={handleReply}
-                    disabled={loading || !replyText.trim()}
-                    className="p-3 bg-black hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl transition-all shadow-sm mb-[1px] mr-[1px]"
-                  >
-                    {loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={16} />}
-                  </button>
+                  <input type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleReply()} placeholder="Type your reply here..." className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-3 py-2 min-h-[44px]" />
+                  <button onClick={handleReply} disabled={loading || !replyText.trim()} className="p-3 bg-black hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl transition-all shadow-sm mb-[1px] mr-[1px]">{loading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={16} />}</button>
                 </div>
               </div>
             ) : (
               <div className="p-4 bg-slate-50 border-t border-slate-100 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200">
-                  <Lock size={12} /> Ticket Closed
-                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold border border-slate-200"><Lock size={12} /> Ticket Closed</div>
               </div>
             )}
           </>
         ) : (
-          /* Empty State (Right Pane) */
           <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
-              <MessageSquare className="w-8 h-8 text-indigo-200" />
-            </div>
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100"><MessageSquare className="w-8 h-8 text-indigo-200" /></div>
             <h3 className="text-slate-900 font-semibold mb-1">Support Chat</h3>
             <p className="text-sm text-slate-500">Select a ticket from the left to view details.</p>
           </div>
@@ -1057,28 +1146,59 @@ const SupportQueries = () => {
     </div>
   );
 };
+
 /* ========================================================================
    MAIN PAGE LAYOUT
    ======================================================================== */
 export default function UserPage() {
-  const { userdetails, address } = useContext(UserContext); // Removed 'queries' from here
+  const { userdetails, address } = useContext(UserContext);
   const { orders, loadingOrders } = useContext(OrderContext);
   const { cart, wishlist } = useContext(CartContext);
   const { userReviews } = useContext(ReviewContext);
-  // 🟢 Added Ticket Context
   const { tickets, getUserTickets } = useContext(ContactContext);
 
+  // State
   const [activeTab, setActiveTab] = useState("profile");
   const [editingAddress, setEditingAddress] = useState(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [viewingOrder, setViewingOrder] = useState(null);
+  const [activeTicket, setActiveTicket] = useState(null);
 
-  // 🟢 Fetch tickets on mount to populate Recent Activity
+  // 🟢 NEW: State for logs
+  const [personalLogs, setPersonalLogs] = useState([]);
+  const [globalAdminLogs, setGlobalAdminLogs] = useState([]);
+
+  // Fetch tickets and Logs
   useEffect(() => {
-    if (userdetails?.email) {
+    if (userdetails?.email && userdetails?.id) {
       getUserTickets(userdetails.email);
+
+      // 🟢 1. Fetch Personal Logs (My actions + Actions on me)
+      fetch(`${BASE}/api/users/${userdetails.id}/logs`)
+        .then(res => res.json())
+        .then(data => setPersonalLogs(Array.isArray(data) ? data : []))
+        .catch(err => console.error("Failed to fetch user logs", err));
+
+      // 🟢 2. If Admin, Fetch GLOBAL Admin Logs (Combined view of all admins)
+      if (userdetails.role === 'admin') {
+        fetch(`${BASE}/api/users/admin/all-activity-logs`)
+          .then(res => res.json())
+          .then(data => setGlobalAdminLogs(Array.isArray(data) ? data : []))
+          .catch(err => console.error("Failed to fetch global logs", err));
+      }
     }
   }, [userdetails, getUserTickets]);
+
+  const handleNavigateActivity = (item) => {
+    if (item.type.includes('order')) {
+      setViewingOrder(item.data);
+    } else if (item.type === 'ticket') {
+      setActiveTab('support');
+      setActiveTicket(item.data);
+    } else if (item.type === 'review') {
+      setActiveTab('reviews');
+    }
+  };
 
   if (!userdetails) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
 
@@ -1097,8 +1217,29 @@ export default function UserPage() {
               onEditProfile={() => setActiveTab('profile')}
             />
             <ProfileCompletion user={userdetails} addressCount={address?.length || 0} />
-            {/* 🟢 Passed tickets to RecentActivity */}
-            <RecentActivity orders={orders} reviews={userReviews} addresses={address} queries={tickets} />
+
+            {/* 🟢 Log 1: User Activity (Personal) */}
+            <AdvancedActivityLog
+              orders={orders}
+              reviews={userReviews}
+              addresses={address}
+              tickets={tickets}
+              securityLogs={personalLogs} // Pass Personal Logs state
+              onNavigate={handleNavigateActivity}
+              title="Your Activity"
+            />
+
+            {/* 🟢 Log 2: Global Admin History (Visible only to Admin) */}
+            {userdetails.role === 'admin' && globalAdminLogs.length > 0 && (
+              <AdvancedActivityLog
+                orders={[]}
+                reviews={[]}
+                tickets={[]}
+                securityLogs={globalAdminLogs} // Pass Global Logs state
+                title="Global Admin History"
+                isAdminLog={true}
+              />
+            )}
           </div>
 
           {/* RIGHT CONTENT */}
@@ -1109,7 +1250,6 @@ export default function UserPage() {
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={smoothTransition}
-                // Reduced padding on mobile (p-4) to maximize space
                 className="bg-white rounded-[2.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[600px]"
               >
                 {activeTab === 'profile' && <ProfileSettings />}
@@ -1123,7 +1263,7 @@ export default function UserPage() {
 
                 {activeTab === 'orders' && <OrderHistory onOrderClick={setViewingOrder} />}
                 {activeTab === 'reviews' && <ReviewHistory />}
-                {activeTab === 'support' && <SupportQueries />}
+                {activeTab === 'support' && <SupportQueries selectedTicket={activeTicket} setSelectedTicket={setActiveTicket} />}
                 {activeTab === 'notifications' && <NotificationSettings />}
               </motion.div>
             </AnimatePresence>

@@ -65,7 +65,6 @@ const AdminPanel = () => {
   const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
   
-  // 🟢 FIX APPLIED HERE: Aliasing new names to old variable names
   const { tickets: queries, getAllTickets: getquery } = useContext(ContactContext);
 
   const { coupons, editingCoupon, setEditingCoupon, saveCoupon, deleteCoupon, refreshCoupons } = useContext(CouponContext);
@@ -147,6 +146,44 @@ const AdminPanel = () => {
     u?.phone?.includes(userSearchQuery)
   );
 
+  // 🟢 NEW: Handle Role Update from Backend (Includes Actor ID)
+  const handleUpdateUserRole = async (userId, newRole) => {
+    // Confirm before changing sensitive permissions
+    if (!window.confirm(`Are you sure you want to change this user's role to "${newRole}"?`)) return;
+
+    try {
+      setLoading(true);
+      
+      // 🟢 Get Current Admin ID (Actor)
+      const currentAdminId = userdetails?.id; 
+
+      const response = await fetch(`${BASE}/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            role: newRole,
+            actorId: currentAdminId // 🟢 SEND ACTOR ID
+        }),
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.toast.success(`Role updated to ${newRole}`);
+        // Update local editing state instantly
+        setEditingUser(prev => ({ ...prev, role: newRole }));
+        // Refresh full user list
+        getAllUsers(); 
+      } else {
+        window.toast.error(data.message || "Failed to update role");
+      }
+    } catch (error) {
+      console.error("Update Error:", error);
+      window.toast.error("Error updating role");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEditUser = (u) => setEditingUser(u);
   const handleSaveUser = async () => {}; 
   const handleDeleteUser = async (id) => {}; 
@@ -182,11 +219,7 @@ const AdminPanel = () => {
 
   if (!isLoaded || !userdetails) return <div className="h-screen w-full flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
 
-  // --- DERIVE DISPLAY DATA (UPDATED to prioritize backend data) ---
   const adminName = userdetails?.name || user?.fullName || user?.firstName || "Administrator";
-  
-  // Prioritize `userdetails` (backend) -> then `user` (Clerk)
-  // Check ALL properties: image, avatar, imageUrl, profileImage
   const adminImage = 
     userdetails?.image || 
     userdetails?.avatar || 
@@ -280,7 +313,7 @@ const AdminPanel = () => {
       {/* --- MAIN CONTENT --- */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-gray-50 relative">
         
-        {/* --- TOP NAVBAR (Fixed Layout) --- */}
+        {/* --- TOP NAVBAR --- */}
         <div className="h-16 w-full bg-white/90 backdrop-blur-md  flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
           
           {/* Left: Mobile Menu & Breadcrumb */}
@@ -300,7 +333,7 @@ const AdminPanel = () => {
             </div>
           </div>
           
-          {/* Right: User Profile (Matched to UsersTab Style) */}
+          {/* Right: User Profile */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-3 pr-1 py-1 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all cursor-pointer group">
               <div className="flex flex-col items-end">
@@ -309,15 +342,8 @@ const AdminPanel = () => {
               </div>
               
               <div className="w-9 h-9">
-                {/* --- IMAGE LOGIC (Robust Check) --- */}
                 {adminImage && !imgError ? (
-                  <img 
-                    src={adminImage} 
-                    alt="Profile" 
-                    referrerPolicy="no-referrer" 
-                    className="w-full h-full rounded-full object-cover border border-gray-100 shadow-sm bg-white" 
-                    onError={() => setImgError(true)}
-                  />
+                  <img src={adminImage} alt="Profile" referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover border border-gray-100 shadow-sm bg-white" onError={() => setImgError(true)} />
                 ) : (
                   <div className={`w-full h-full rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${getAvatarColor(adminName)}`}>
                     {adminName ? adminName.charAt(0).toUpperCase() : "A"}
@@ -341,7 +367,8 @@ const AdminPanel = () => {
                 {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} />}
                 {activeTab === "coupons" && <CouponsTab coupons={coupons} couponSubTab={couponSubTab} setCouponSubTab={setCouponSubTab} editingCoupon={editingCoupon} setEditingCoupon={setEditingCoupon} saveCoupon={saveCoupon} deleteCoupon={deleteCoupon} />}
                 {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
-                {activeTab === "users" && <UsersTab users={users} filteredUsers={filteredUsers} userSearchQuery={userSearchQuery} setUserSearchQuery={setUserSearchQuery} editingUser={editingUser} setEditingUser={setEditingUser} handleEditUser={handleEditUser} handleSaveUser={handleSaveUser} handleDeleteUser={handleDeleteUser} downloadCSV={downloadCSV} />}
+                {/* 🟢 PASSED: handleUpdateUserRole */}
+                {activeTab === "users" && <UsersTab users={users} filteredUsers={filteredUsers} userSearchQuery={userSearchQuery} setUserSearchQuery={setUserSearchQuery} editingUser={editingUser} setEditingUser={setEditingUser} handleEditUser={handleEditUser} handleSaveUser={handleSaveUser} handleDeleteUser={handleDeleteUser} handleUpdateUserRole={handleUpdateUserRole} downloadCSV={downloadCSV} />}
                 {activeTab === "queries" && <QueriesTab queries={queries} querySearch={querySearch} setQuerySearch={setQuerySearch} />}
                 {activeTab === "carts" && <CartsWishlistsTab flatCarts={abandonedCarts} stats={wishlistStats} />}
                 {activeTab === "pincodes" && <PincodeManager />}

@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+import React, { useLayoutEffect, useRef } from 'react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Star, Hexagon, Sparkles } from 'lucide-react';
 import PageTransition from "./PageTransition";
 
 gsap.registerPlugin(ScrollTrigger);
-
+ 
 // --- ASSETS ---
 const IMAGES = {
     hero: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto-format&fit=crop&w=1600&q=80',
@@ -22,8 +21,18 @@ const IMAGES = {
 export default function AboutUs() {
     const containerRef = useRef(null);
 
-    useEffect(() => {
-        const ctx = gsap.context(() => {
+    // HELPER: Refreshes ScrollTrigger when an image loads
+    const handleImageLoad = () => {
+        ScrollTrigger.refresh();
+    };
+
+    // Use useLayoutEffect instead of useEffect for GSAP to prevent flash of unstyled content
+    useLayoutEffect(() => {
+        
+        // 1. Force a scroll reset to top to prevent calculation errors on reload
+        window.scrollTo(0, 0);
+
+        let ctx = gsap.context(() => {
             
             // 1. HERO REVEAL
             const heroTl = gsap.timeline({
@@ -33,6 +42,8 @@ export default function AboutUs() {
                     end: "bottom top",
                     scrub: 1,
                     pin: true,
+                    // invalidateOnRefresh ensures recalculation on window resize/refresh
+                    invalidateOnRefresh: true, 
                 }
             });
             heroTl.to(".hero-title", { scale: 0.6, opacity: 0, y: -100 }, 0)
@@ -50,13 +61,15 @@ export default function AboutUs() {
                         pin: true,
                         scrub: 1,
                         snap: 1 / (slides.length - 1),
-                        end: () => "+=" + horizontalSection.offsetWidth
+                        // Calculate end dynamically
+                        end: () => "+=" + horizontalSection.offsetWidth, 
+                        invalidateOnRefresh: true
                     }
                 });
             }
 
             // --------------------------------------------------------
-            // 3. ARCHITECTURE SECTION (Top-to-Bottom Color Reveal)
+            // 3. ARCHITECTURE SECTION
             // --------------------------------------------------------
             const archSection = ".architecture-section";
 
@@ -72,9 +85,7 @@ export default function AboutUs() {
                 y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: "power3.out"
             });
 
-            // IMAGE COLOR REVEAL (Clip Path Animation)
-            // We animate the clip-path from inset(0 0 100% 0) -> inset(0 0 0% 0)
-            // This creates a "wipe down" effect revealing the color image
+            // IMAGE COLOR REVEAL
             gsap.fromTo(".arch-color-layer", 
                 { clipPath: "inset(0 0 100% 0)" }, 
                 {
@@ -84,12 +95,12 @@ export default function AboutUs() {
                         trigger: archSection,
                         start: "top center", 
                         end: "bottom center",
-                        scrub: true // This makes it follow the scroll speed
+                        scrub: true
                     }
                 }
             );
 
-            // Parallax for floating elements
+            // Parallax
             gsap.to(archSection + " .floating-1", {
                 y: -80, rotation: 30,
                 scrollTrigger: { trigger: archSection, start: "top 80%", end: "bottom 20%", scrub: 1 }
@@ -101,10 +112,8 @@ export default function AboutUs() {
 
 
             // --------------------------------------------------------
-            // 4. FOUNDERS SECTION (Top-to-Bottom Color Reveal)
+            // 4. FOUNDERS SECTION
             // --------------------------------------------------------
-            
-            // Text Reveal
             gsap.utils.toArray('.founder-reveal-text').forEach((el) => {
                 gsap.fromTo(el,
                     { y: 50, opacity: 0 },
@@ -115,7 +124,7 @@ export default function AboutUs() {
                 );
             });
 
-            // IMAGE COLOR REVEAL (Clip Path Animation)
+            // IMAGE COLOR REVEAL
             gsap.fromTo(".founder-color-layer", 
                 { clipPath: "inset(0 0 100% 0)" }, 
                 {
@@ -130,7 +139,6 @@ export default function AboutUs() {
                 }
             );
 
-            // Badge Spin
             gsap.to(".founder-badge", {
                 rotation: 360, ease: "none",
                 scrollTrigger: { trigger: ".founder-section", start: "top bottom", end: "bottom top", scrub: 1 }
@@ -138,35 +146,30 @@ export default function AboutUs() {
 
 
             // --------------------------------------------------------
-            // 5. FOOTER REVEAL (Fixed Visibility & Trigger)
+            // 5. FOOTER REVEAL
             // --------------------------------------------------------
             const footerTl = gsap.timeline({
                 scrollTrigger: {
                     trigger: ".final-signature-section",
-                    start: "top 75%", // Trigger earlier so it doesn't get stuck
+                    start: "top 75%", 
                     toggleActions: "play none none reverse",
                 }
             });
 
-            // Reveal Brand Name
             footerTl.from(".final-signature-section h2", {
                 opacity: 0, y: 30, duration: 1, stagger: 0.2, ease: "power3.out"
             }, 0);
 
-            // Reveal Floating Icons (Hexagons/Stars)
-            // We force opacity to 0.1/0.05 (whatever the class has) from 0
             footerTl.fromTo(".final-signature-section .dynamic-icon", 
                 { opacity: 0, scale: 0 },
                 { opacity: (i, target) => target.dataset.opacity || 0.1, scale: 1, duration: 1.5, ease: "elastic.out(1, 0.5)" }, 
                 0.2
             );
 
-            // Reveal CTA Group (Heading & Button)
             footerTl.to(".final-cta-anim", {
                 opacity: 1, y: 0, duration: 0.8, stagger: 0.15, ease: "power2.out"
             }, 0.5);
 
-            // Footer Background Parallax
             gsap.fromTo(".footer-bg-image",
                 { y: 100 },
                 {
@@ -182,7 +185,17 @@ export default function AboutUs() {
 
         }, containerRef);
 
-        return () => ctx.revert();
+        // 2. IMPORTANT: Force a Refresh slightly after mount 
+        // This accounts for the PageTransition animation time and slight DOM painting delays
+        const timer = setTimeout(() => {
+            ScrollTrigger.refresh();
+        }, 500); // 500ms delay
+
+        return () => {
+            // Clean up everything when component unmounts
+            ctx.revert();
+            clearTimeout(timer);
+        };
     }, []);
 
     return (
@@ -211,6 +224,7 @@ export default function AboutUs() {
 
                 {/* =======================
                    2. HERO
+                   ADDED: onLoad handler to refresh GSAP when image loads
                 ======================= */}
                 <section className="hero-section h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-[#FCFCFA]">
                     <div className="hero-title z-20 text-center mix-blend-difference text-white">
@@ -220,7 +234,12 @@ export default function AboutUs() {
                         <p className="text-xl text-[#333] mt-8 tracking-widest uppercase font-bold">Est. 2023</p>
                     </div>
                     <div className="hero-image-mask absolute z-10 w-[40vw] h-[60vh] rounded-[200px] overflow-hidden shadow-2xl">
-                        <img src={IMAGES.hero} alt="Hero Bottle" className="w-full h-full object-cover" />
+                        <img 
+                            src={IMAGES.hero} 
+                            alt="Hero Bottle" 
+                            className="w-full h-full object-cover" 
+                            onLoad={handleImageLoad} /* CRITICAL FIX */
+                        />
                         <div className="absolute inset-0 bg-black/20" />
                     </div>
                 </section>
@@ -233,7 +252,7 @@ export default function AboutUs() {
                         {/* Slide 1 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden">
-                                <img src={IMAGES.pillar_1} alt="Purity" className="w-full h-full object-cover" />
+                                <img src={IMAGES.pillar_1} alt="Purity" className="w-full h-full object-cover" onLoad={handleImageLoad} />
                                 <div className="absolute inset-0 bg-black/30" />
                             </div>
                             <div className="flex flex-col justify-center px-12 md:px-24 bg-[#0F0F0F]">
@@ -301,27 +320,20 @@ export default function AboutUs() {
                     {/* RIGHT COLUMN: Color Reveal Image */}
                     <div className="lg:w-1/2 relative min-h-[50vh] lg:min-h-screen overflow-hidden">
                         <div className="absolute inset-0 w-full h-full">
-                            {/* 1. Grayscale Background (Bottom Layer) */}
                             <img
                                 src={IMAGES.alchemy_bg}
                                 alt="Alchemy Grayscale"
                                 className="w-full h-full object-cover grayscale"
                             />
-                            
-                            {/* 2. Color Reveal (Top Layer) - ClipPath controlled by GSAP */}
                             <div className="arch-color-layer absolute inset-0 w-full h-full">
                                 <img
                                     src={IMAGES.alchemy_bg}
                                     alt="Alchemy Color"
                                     className="w-full h-full object-cover"
                                 />
-                                {/* Add a subtle overlay to make text pop if needed, though images here are background */}
                             </div>
-                            
                             <div className="absolute inset-0 bg-black/10 z-10" />
                         </div>
-
-                        {/* Floating elements */}
                         <div className="floating-1 absolute top-[10%] left-[5%] w-48 h-48 rounded-full overflow-hidden border border-white/20 z-20 opacity-80">
                             <img src={IMAGES.flower} alt="Flower" className="w-full h-full object-cover" />
                         </div>
@@ -345,22 +357,19 @@ export default function AboutUs() {
                             <p className="founder-reveal-text text-neutral-500 max-w-md leading-relaxed" style={{ opacity: 0, transform: 'translateY(50px)' }}>Driven by the belief that scent is identity, they set out to create fragrances that don't just smell good—they feel true.</p>
                         </div>
 
-                        {/* Founder Image with Color Reveal */}
                         <div className="lg:col-span-7 relative pt-20 lg:pt-0">
                             <div className="relative h-[80vh] w-full overflow-hidden rounded-sm">
-                                {/* 1. Grayscale Layer */}
                                 <img
                                     src={IMAGES.founders}
                                     alt="Founders BW"
                                     className="absolute inset-0 w-full h-full object-cover grayscale"
                                 />
-                                {/* 2. Color Layer (ClipPath Animated) */}
                                 <div className="founder-color-layer absolute inset-0 w-full h-full">
                                      <img
                                         src={IMAGES.founders}
                                         alt="Founders Color"
                                         className="w-full h-full object-cover"
-                                    />
+                                   />
                                 </div>
                             </div>
                             <div className="founder-badge absolute -left-12 top-1/2 w-24 h-24 bg-[#0F0F0F] rounded-full flex items-center justify-center text-white shadow-xl z-10">
@@ -371,10 +380,9 @@ export default function AboutUs() {
                 </section>
 
                 {/* =======================
-                   6. FOOTER (Fixed)
+                   6. FOOTER
                 ======================= */}
                 <section className="final-signature-section h-[70vh] w-full relative flex items-center justify-center overflow-hidden bg-[#000000] text-white">
-                    {/* Background Image */}
                     <img
                         src={IMAGES.footer_bg}
                         alt="Devid Aura Footer Background"
@@ -383,7 +391,6 @@ export default function AboutUs() {
                     />
                     <div className="absolute inset-0 bg-black/60 z-10"></div>
 
-                    {/* Dynamic Aura Elements (Fixed Z-Index & Opacity Handling) */}
                     <div className="absolute inset-0 w-full h-full flex items-center justify-center z-20 pointer-events-none">
                         <div 
                             className="absolute w-[800px] h-[800px] animate-spin-slow-reverse dynamic-icon" 
@@ -402,14 +409,12 @@ export default function AboutUs() {
                         </div>
                     </div>
 
-                    {/* Main Content */}
                     <div className="relative z-30 text-center px-6">
                         <div className="mb-10 leading-none">
                             <h2 className="text-[10vw] md:text-[8vw] font-serif font-bold text-transparent stroke-text-white select-none inline-block whitespace-nowrap opacity-50">DEVID</h2>
                             <h2 className="text-[10vw] md:text-[8vw] font-serif italic text-white -mt-4 select-none inline-block whitespace-nowrap mix-blend-screen">AURA</h2>
                         </div>
 
-                        {/* CTA Group (Fixed Opacity Animation) */}
                         <div className="mt-10 flex flex-col items-center justify-center space-y-8 final-cta-group">
                             <h3 className="text-xl md:text-3xl font-light text-white tracking-widest uppercase final-cta-anim" style={{ opacity: 0, transform: 'translateY(20px)' }}>
                                 Define Your Presence
