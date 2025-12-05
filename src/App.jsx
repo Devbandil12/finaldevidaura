@@ -1,60 +1,32 @@
 // src/App.jsx
 import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useUser, AuthenticateWithRedirectCallback  } from "@clerk/clerk-react";
 
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement, // Fixes "point is not a registered element"
-  LineElement,  // Needed for Line Charts
-  BarElement,   // Needed for Bar Charts
-  ArcElement,   // Needed for Pie Charts
-  Title,
-  Tooltip,
-  Legend
-);
-
-// --- Statically Imported Components (for initial load) ---
+// --- Minimal Imports (Load these immediately) ---
 import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import Footer from "./Components/Footer";
-import HeroSection from "./Components/HeroSection";
-import AboutUs from "./Components/AboutUs";
-import Products from "./Components/Products";
-import ProductShowcaseCarousel from "./Components/ProductShowcaseCarousel";
-import DualMarquee from "./Components/DualMarquee";
-import TestimonialsSection from "./Components/TestimonialsSection";
 import Loader from "./Components/Loader";
-import CustomComboBuillder from "./Components/CustomComboBuilder";
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
-// --- Dynamically Imported (Lazy-Loaded) Components ---
-const Adminpannel = lazy(() => import("./Components/Adminpanel"));
+
+// --- Lazy Load the Heavy Stuff ---
+// These won't load when the user is just logging in
+const Home = lazy(() => import("./Components/Home"));
+const Products = lazy(() => import("./Components/Products"));
 const ProductDetail = lazy(() => import("./Components/ProductDetail"));
+const Cart = lazy(() => import("./Components/Cart"));
+const Login = lazy(() => import("./Components/CustomAuthModal"));
+const Adminpannel = lazy(() => import("./Components/Adminpanel"));
 const MyOrder = lazy(() => import("./Components/MyOrder"));
 const Wishlist = lazy(() => import("./Components/Wishlist"));
-const Cart = lazy(() => import("./Components/Cart"));
 const Checkout = lazy(() => import("./Components/Checkout"));
 const UserPage = lazy(() => import("./Components/UserPage"));
 const ContactUs = lazy(() => import("./Components/ContactUs"));
 const PrivacyPolicy = lazy(() => import("./Components/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./Components/TermsAndConditions"));
-const Login = lazy(() => import("./Components/CustomAuthModal"));
 
-// Utilities & Contexts
+// --- Utilities & Contexts (Keep these) ---
 import CheckoutGuard from "./CheckoutGuard";
 import ScrollToTop from "./ScrollToTop";
 import { ProductProvider } from "./contexts/productContext";
@@ -67,7 +39,6 @@ import { AdminProvider } from "./contexts/AdminContext";
 import { ReviewProvider } from "./contexts/ReviewContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 // 🟢 Imported AuthenticateWithRedirectCallback for SSO handling
-import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Global Error Reporting (no changes needed here) ---
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -136,64 +107,16 @@ function PostLoginRedirector() {
   return null;
 }
 
-// --- Main Layout Component ---
-const MainLayout = () => {
-  return (
-    <>
-      <title>Devid Aura | Exquisite Perfumes & Fragrances</title>
-      <meta name="description" content="More than perfume, Devid Aura is an invisible aura of confidence and artistry. Discover masterfully crafted fragrances that leave a memorable impression. Your signature scent awaits." />
+// --- Main Layout ---
+const MainLayout = () => (
+  <>
+    <Navbar isVisible={true} />
+    <MobileBackBar />
+    <main><Outlet /></main>
+    <Footer />
+  </>
+);
 
-      <Navbar isVisible={true} />
-      <MobileBackBar />
-      <main>
-        <Outlet />
-      </main>
-      <Footer />
-    </>
-  );
-};
-
-// --- Home Page Component ---
-const HomePage = () => {
-  useEffect(() => {
-    const target = sessionStorage.getItem("scrollToSection");
-    if (target) {
-      const el = document.getElementById(target);
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth" });
-        }, 300); // wait a bit for page render
-      }
-      sessionStorage.removeItem("scrollToSection");
-    }
-  }, []);
-
-  return (
-    <>
-      <HeroSection />
-      <Suspense fallback={null}> {/* Use null or a minimal loader */}
-        <DualMarquee />
-        <div id="scents-section">
-          <ProductShowcaseCarousel />
-        </div>
-        <div id="collection-section">
-          <Products />
-        </div>
-        <div id="custom-combo-section">
-          <CustomComboBuillder />
-        </div>
-        <div id="about-section">
-          <AboutUs />
-        </div>
-        <TestimonialsSection />
-      </Suspense>
-    </>
-  );
-};
-
-
-
-// --- App Component with Code Splitting ---
 const App = () => {
   return (
     <UserProvider>
@@ -207,11 +130,14 @@ const App = () => {
                     <Router>
                       <ScrollToTop />
                       <PostLoginRedirector />
-                      {/* ✅ Wrap all routes in a single Suspense */}
-                      <Suspense fallback={<Loader text="Loading Page..." />}>
+
+                      {/* Suspense handles the loading state for lazy components */}
+                      <Suspense fallback={<Loader text="Loading..." />}>
                         <Routes>
+
                           <Route element={<MainLayout />}>
-                            <Route path="/" element={<HomePage />} />
+                            {/* Home is now lazy-loaded here */}
+                            <Route path="/" element={<Home />} />
                             <Route path="/products" element={<Products />} />
                             <Route path="/privacy" element={<PrivacyPolicy />} />
                             <Route path="/terms" element={<TermsAndConditions />} />
@@ -221,13 +147,12 @@ const App = () => {
                             <Route path="/cart" element={<Cart />} />
                             <Route path="/myaccount" element={<UserPage />} />
                             <Route path="/contact" element={<ContactUs />} />
-                            <Route
-                              path="/Admin"
-                              element={
-                                <AdminProvider>
-                                  <Adminpannel />
-                                </AdminProvider>
-                              }
+
+                            <Route path="/Admin" element={
+                              <AdminProvider>
+                                <Adminpannel />
+                              </AdminProvider>
+                            }
                             />
 
                             <Route element={<CheckoutGuard />}>
@@ -239,9 +164,14 @@ const App = () => {
 
                           <Route
                             path="/sso-callback"
-                            element={<AuthenticateWithRedirectCallback fallback={<SsoCallbackLoader />} />}
+                            element={
+                              <>
+                                <AuthenticateWithRedirectCallback />
+                                <SsoCallbackLoader />
+                              </>
+                            }
                           />
-                          
+
                         </Routes>
                       </Suspense>
                     </Router>

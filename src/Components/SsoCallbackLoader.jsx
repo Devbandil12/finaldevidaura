@@ -1,36 +1,89 @@
-// src/Components/SsoCallbackLoader.jsx
 import React from 'react';
-import { DotLoader } from 'react-spinners'; // Using DotLoader as an example
+import { motion } from 'framer-motion';
 
-const SsoCallbackLoader = ({ text = "Finalizing sign-in, please wait..." }) => {
-    // Define a clear, high-contrast color (e.g., Indigo/Purple)
-    const spinnerColor = "#4f46e5"; 
-    
-    return (
-        // Ensures the component covers the entire viewport (100vh)
-        // and sets a clear, visible background color (#f9fafb is light grey).
-        <div 
-            className="flex flex-col items-center justify-center w-full"
-            style={{ 
-                minHeight: '100vh', 
-                backgroundColor: '#f9fafb',
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                zIndex: 9999, // Ensure it's on top of everything
+const DevidAuraLoader = () => {
+  // Brand colors: Gold and Deep Charcoal
+  const goldColor = "#D4AF37"; 
+  
+  return (
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#fdfbf7]">
+      {/* Background Texture (Optional): 
+         Adds a very subtle grain or noise for a paper-like, premium feel 
+      */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]"></div>
+
+      <div className="relative z-10 flex flex-col items-center">
+        
+        {/* 1. The "Essence" Droplet Animation */}
+        <div className="relative flex items-center justify-center w-24 h-24 mb-8">
+          {/* Outer Ripple */}
+          <motion.div
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.3, 0, 0.3],
+              borderWidth: ["1px", "0px", "1px"]
             }}
-        >
-            <DotLoader 
-                color={spinnerColor} 
-                loading={true} 
-                size={60} // Size in pixels
-                aria-label="Loading Spinner" 
-                data-testid="loader"
-                className="mb-4"
-            />
-            <p className="text-xl font-semibold text-gray-700 mt-4">{text}</p>
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute inset-0 rounded-full border border-[#D4AF37]"
+          />
+          
+          {/* Inner Rotating Ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            className="absolute w-16 h-16 rounded-full border border-t-[#D4AF37] border-r-transparent border-b-[#D4AF37] border-l-transparent opacity-60"
+          />
+
+          {/* Central Perfume Drop */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: [0.8, 1, 0.8] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="w-3 h-3 rounded-full bg-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.6)]"
+          />
         </div>
-    );
+
+        {/* 2. Brand Typography */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="text-center space-y-2"
+        >
+          <h1 className="text-4xl md:text-5xl text-gray-900 font-serif tracking-[0.2em] uppercase">
+            Devid Aura
+          </h1>
+          
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: "40%" }}
+            transition={{ duration: 1.5, delay: 0.5 }}
+            className="h-[1px] bg-[#D4AF37] mx-auto my-4"
+          />
+        </motion.div>
+
+        {/* 3. Elegant Status Text */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.8 }}
+          className="mt-2 text-center"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-medium">
+            Bottling Essence
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >...</motion.span>
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  );
 };
 
-export default SsoCallbackLoader;
+export default DevidAuraLoader;
