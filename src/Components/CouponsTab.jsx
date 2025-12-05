@@ -18,7 +18,7 @@ const InputField = React.forwardRef(({ label, name, value, onChange, placeholder
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400"
+        className="block w-full px-4 py-3 bg-gray-50  rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400"
         {...props}
       />
     </div>
@@ -35,7 +35,7 @@ const TextAreaField = ({ label, name, value, onChange, placeholder, span = "col-
       onChange={onChange}
       placeholder={placeholder}
       rows={3}
-      className="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 resize-none"
+      className="block w-full px-4 py-3 bg-gray-50  rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 resize-none"
     />
   </div>
 );
@@ -72,7 +72,7 @@ const CouponsTab = ({
           <p className="text-sm text-gray-500 mt-1">Manage discount codes and automatic cart promotions.</p>
         </div>
 
-        <div className="flex p-1 bg-white border border-gray-200 rounded-xl shadow-sm">
+        <div className="flex p-1 bg-white  rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
           <button
             onClick={() => { setCouponSubTab("manual"); setEditingCoupon(null); }}
             className={`flex items-center gap-2 px-6 py-2.5 text-sm font-bold rounded-lg transition-all ${
@@ -105,7 +105,7 @@ const CouponsTab = ({
             exit={{ opacity: 0, height: 0, y: -20 }}
             className="overflow-hidden"
           >
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-lg  overflow-hidden">
               <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   {editingCoupon.id ? <Edit2 size={18} className="text-indigo-600"/> : <Plus size={18} className="text-indigo-600"/>}
@@ -156,7 +156,7 @@ const CouponsTab = ({
                           <select
                             value={editingCoupon.discountType || "percent"}
                             onChange={(e) => setEditingCoupon((ec) => ({ ...ec, discountType: e.target.value }))}
-                            className="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            className="block w-full px-4 py-3 bg-gray-50  rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
                           >
                             <option value="percent">Percentage (%)</option>
                             <option value="flat">Flat Amount (₹)</option>
@@ -222,7 +222,7 @@ const CouponsTab = ({
                           onChange={(e) => setEditingCoupon((ec) => ({ ...ec, maxUsagePerUser: e.target.value === "" ? null : +e.target.value }))}
                         />
                         <div className="flex items-end pb-3">
-                          <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200 w-full cursor-pointer hover:bg-gray-100 transition">
+                          <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl  w-full cursor-pointer hover:bg-gray-100 transition">
                             <input
                               type="checkbox"
                               className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
@@ -277,7 +277,7 @@ const CouponsTab = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-8 mt-4 border-t border-gray-100">
-                  <button onClick={() => setEditingCoupon(null)} className="px-6 py-3 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+                  <button onClick={() => setEditingCoupon(null)} className="px-6 py-3 text-sm font-bold text-gray-600 bg-white  rounded-xl hover:bg-gray-50 transition">
                     Cancel
                   </button>
                   <button onClick={saveCoupon} className="px-8 py-3 text-sm font-bold text-white bg-gray-900 rounded-xl hover:bg-black transition shadow-lg shadow-gray-200">
@@ -293,7 +293,7 @@ const CouponsTab = ({
       {/* --- 3. Manual Coupons List --- */}
       {couponSubTab === 'manual' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Active Manual Coupons</h2>
               <p className="text-xs text-gray-500">Customers enter these codes at checkout.</p>
@@ -303,13 +303,13 @@ const CouponsTab = ({
                 code: "", discountType: "percent", discountValue: 10, isAutomatic: false,
                 minOrderValue: 0, minItemCount: 0, maxDiscountAmount: null, firstOrderOnly: false, maxUsagePerUser: 1
               })}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
             >
               <Plus size={16} /> Create Coupon
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-gray-50/50 border-b border-gray-200">
@@ -377,7 +377,7 @@ const CouponsTab = ({
       {/* --- 4. Automatic Promotions List --- */}
       {couponSubTab === 'auto' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Automatic Promotions</h2>
               <p className="text-xs text-gray-500">Applied automatically when cart conditions are met.</p>
@@ -388,7 +388,7 @@ const CouponsTab = ({
                 minOrderValue: 0, minItemCount: 0, maxDiscountAmount: null, cond_requiredCategory: "Template",
                 action_targetSize: 30, action_targetMaxPrice: 600
               })}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
             >
               <Plus size={16} /> Create Promotion
             </button>
@@ -396,7 +396,7 @@ const CouponsTab = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {coupons.filter(c => c.isAutomatic).map((c) => (
-              <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-all group relative">
+              <div key={c.id} className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] p-5 hover:shadow-md transition-all group relative">
                 {/* CORRECTED FIX: opacity-100 (mobile default), md:opacity-0 (desktop hidden default), group-hover:opacity-100 (desktop hover override) */}
                 <div className="absolute top-4 right-4 flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => setEditingCoupon({ ...c })} className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 rounded-md"><Edit2 size={14} /></button>

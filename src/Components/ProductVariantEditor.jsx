@@ -6,7 +6,7 @@ import { Plus, X, Trash2, UploadCloud, ArrowRight, ArrowLeft, Save, Archive, Und
 const ModernInput = ({ label, name, value, onChange, type = "text", span = "col-span-1" }) => (
   <div className={span}>
     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">{label}</label>
-    <input name={name} type={type} placeholder={label} value={value} onChange={onChange} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+    <input name={name} type={type} placeholder={label} value={value} onChange={onChange} className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
   </div>
 );
 
@@ -111,52 +111,52 @@ const ProductVariantEditor = ({ product, onClose }) => {
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white/50">
           {activeTab === "general" && (
             <div className="space-y-8">
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6 ml-1">Product Gallery</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-gray-50 hover:bg-indigo-50/50 transition-all group border-2 border-dashed border-gray-200 hover:border-indigo-200">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 transition-transform text-indigo-500 mb-4"><Plus size={24} /></div>
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  group-hover:scale-110 transition-transform text-indigo-500 mb-4"><Plus size={24} /></div>
                     <span className="text-[10px] font-bold text-gray-400 group-hover:text-indigo-500 uppercase tracking-wider">Add New</span>
                     <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                   </label>
                   {existingImages.map((url, idx) => (
-                    <div key={`exist-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 bg-white">
+                    <div key={`exist-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300 bg-white">
                       <img src={url} alt="Product" className="w-full h-full object-cover" />
-                      <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500 border border-gray-100 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><Trash2 size={16} /></button>
+                      <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><Trash2 size={16} /></button>
                     </div>
                   ))}
                   {previews.map((url, idx) => (
-                    <div key={`new-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 bg-white">
+                    <div key={`new-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300 bg-white">
                       <img src={url} alt="New" className="w-full h-full object-cover border-4 border-indigo-50" />
                       <div className="absolute inset-x-0 bottom-0 bg-indigo-600 text-white text-[9px] font-bold text-center py-1 tracking-wider">NEW UPLOAD</div>
-                      <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500 border border-gray-100 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><X size={16} /></button>
+                      <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><X size={16} /></button>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-3xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ModernInput label="Product Name" name="name" value={parentData.name} onChange={handleParentChange} />
                 <ModernInput label="Category" name="category" value={parentData.category} onChange={handleParentChange} />
-                <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Description</label><textarea name="description" rows={3} value={parentData.description} onChange={handleParentChange} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" /></div>
+                <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Description</label><textarea name="description" rows={3} value={parentData.description} onChange={handleParentChange} className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" /></div>
                 <ModernInput label="Top Notes" name="composition" value={parentData.composition} onChange={handleParentChange} />
                 <ModernInput label="Base Notes" name="fragranceNotes" value={parentData.fragranceNotes} onChange={handleParentChange} />
                 <ModernInput label="Heart Notes" name="fragrance" value={parentData.fragrance} onChange={handleParentChange} />
               </div>
               <div className="flex gap-4">
                 <button onClick={() => handleSaveParent(false)} disabled={isSaving || uploading} className="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2">{uploading ? <span className="animate-pulse">Uploading...</span> : isSaving ? "Saving..." : <><UploadCloud size={20} /> Save Details</>}</button>
-                <button onClick={() => setActiveTab("variants")} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">Next <ArrowRight size={18} /></button>
+                <button onClick={() => setActiveTab("variants")} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">Next <ArrowRight size={18} /></button>
               </div>
             </div>
           )}
           {activeTab === "variants" && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                 <h3 className="text-sm font-bold text-gray-700 ml-2">Manage Variants</h3>
                 <button onClick={handleAddNewVariant} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition flex items-center gap-2"><Plus size={16} /> Add Variant</button>
               </div>
               <div className="space-y-4">
                 {variants.map((variant, index) => (
-                  <div key={variant.id || `new-${index}`} ref={index === newVariantIndex ? newVariantCardRef : null} className={`p-6 rounded-3xl border transition-all ${variant.isArchived ? "bg-gray-50 border-gray-200 opacity-60" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}>
+                  <div key={variant.id || `new-${index}`} ref={index === newVariantIndex ? newVariantCardRef : null} className={`p-6 rounded-3xl border transition-all ${variant.isArchived ? "bg-gray-50 border-gray-200 opacity-60" : "bg-white border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md"}`}>
                     <div className="flex justify-between items-start mb-6">
                       <div><h4 className="font-bold text-gray-800 text-sm">{variant.name || "Untitled"} {variant.isArchived && <span className="ml-2 px-2 py-1 bg-gray-200 text-gray-500 text-[10px] rounded-lg uppercase tracking-wide">Archived</span>}</h4></div>
                       <div className="flex gap-2">
@@ -176,7 +176,7 @@ const ProductVariantEditor = ({ product, onClose }) => {
                 ))}
               </div>
               <div className="flex gap-4 pt-4 mt-6 border-t border-gray-100">
-                <button onClick={() => setActiveTab("general")} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2"><ArrowLeft size={18} /> Back</button>
+                <button onClick={() => setActiveTab("general")} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2"><ArrowLeft size={18} /> Back</button>
                 <button onClick={onClose} className="w-2/3 bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-gray-200 transition-all">Finish Editing</button>
               </div>
             </div>

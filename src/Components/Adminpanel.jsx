@@ -276,7 +276,7 @@ const AdminPanel = () => {
               </div>
               <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {menuItems.map(item => (
-                  <button key={item.id} onClick={() => handleTabClick(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === item.id ? "bg-indigo-50 text-indigo-700 shadow-sm" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}>
+                  <button key={item.id} onClick={() => handleTabClick(item.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === item.id ? "bg-indigo-50 text-indigo-700 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}`}>
                     <item.icon size={18} /> {item.label}
                   </button>
                 ))}
@@ -369,9 +369,9 @@ const AdminPanel = () => {
 
               <div className="w-9 h-9">
                 {adminImage && !imgError ? (
-                  <img src={adminImage} alt="Profile" referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover border border-gray-100 shadow-sm bg-white" onError={() => setImgError(true)} />
+                  <img src={adminImage} alt="Profile" referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] bg-white" onError={() => setImgError(true)} />
                 ) : (
-                  <div className={`w-full h-full rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${getAvatarColor(adminName)}`}>
+                  <div className={`w-full h-full rounded-full flex items-center justify-center text-sm font-bold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ${getAvatarColor(adminName)}`}>
                     {adminName ? adminName.charAt(0).toUpperCase() : "A"}
                   </div>
                 )}

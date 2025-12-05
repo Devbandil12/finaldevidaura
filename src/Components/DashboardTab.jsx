@@ -64,7 +64,7 @@ const SalesChart = ({ orders }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-96 flex flex-col">
+    <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <TrendingUp className="text-indigo-600" size={20} /> Sales Trend
@@ -102,7 +102,7 @@ const CustomerRetentionChart = ({ newCustomers, returningCustomers }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-96 flex flex-col">
+    <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
       <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
         <Users className="text-blue-600" size={20} /> Customer Mix
       </h3>
@@ -119,7 +119,7 @@ const CustomerRetentionChart = ({ newCustomers, returningCustomers }) => {
 
 // --- STAT CARD COMPONENT ---
 const StatCard = ({ title, value, subtext, icon: Icon, colorClass, trend }) => (
-  <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
+  <div className="bg-white p-5 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
     <div className="flex justify-between items-start mb-4">
       <div className={`p-3 rounded-xl ${colorClass}`}>
         <Icon size={22} />
@@ -164,7 +164,7 @@ const DashboardTab = ({
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Executive Dashboard</h2>
           <p className="text-sm text-gray-500 mt-1">Real-time overview of your store's performance.</p>
         </div>
-        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-sm font-medium text-gray-600">
+        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-sm font-medium text-gray-600">
           <Activity size={16} className="text-green-500 animate-pulse" /> Live Updates
         </div>
       </div>
@@ -244,7 +244,7 @@ const DashboardTab = ({
       </div>
 
       {/* Order Volume Chart */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
         <OrderChart orders={orders} />
       </div>
 

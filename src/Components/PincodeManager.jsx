@@ -16,10 +16,10 @@ const indianStates = [
 
 // --- 1. TOGGLE SWITCH ---
 const ToggleSwitch = ({ label, checked, onChange, disabled, name }) => (
-  <label className={`flex items-center justify-between p-3 rounded-xl border border-gray-200 transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-indigo-300 bg-white shadow-sm'}`}>
+  <label className={`flex items-center justify-between p-3 rounded-xl  transition-all ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-indigo-300 bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]'}`}>
     <span className="text-sm font-medium text-gray-700">{label}</span>
     <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}>
-      <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] transition-transform duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </div>
     <input 
       type="checkbox" 
@@ -53,13 +53,13 @@ const CustomDropdown = ({ options, selected, onSelect, placeholder }) => {
             <button 
                 type="button" 
                 onClick={() => setIsOpen(!isOpen)} 
-                className="w-full flex justify-between items-center px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm text-left hover:border-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full flex justify-between items-center px-4 py-3 bg-white  rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-left hover:border-gray-400 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             >
                 <span className={`text-sm font-medium ${selected ? 'text-gray-900' : 'text-gray-400'}`}>{selected || placeholder}</span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
-                <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
+                <div className="absolute z-50 w-full bg-white  rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
                     <div className="p-2 sticky top-0 bg-white border-b border-gray-100">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
@@ -93,7 +93,7 @@ const AccordionItem = ({ title, children, badgeCount, onSelect, active }) => {
     useEffect(() => { if(active) setIsOpen(true); }, [active]);
 
     return (
-        <div className="border border-gray-200 rounded-xl mb-3 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+        <div className=" rounded-xl mb-3 overflow-hidden bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow">
             <button 
                 onClick={() => { setIsOpen(!isOpen); if(onSelect) onSelect(); }} 
                 className={`w-full text-left p-4 flex justify-between items-center transition-colors ${active || isOpen ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'}`}
@@ -134,7 +134,7 @@ const EditPincodeModal = ({ pincodeData, onClose, onSave }) => {
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-gray-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm ">
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
                     <div>
                         <h3 className="text-lg font-bold text-gray-900">Edit Zone Rules</h3>
@@ -147,7 +147,7 @@ const EditPincodeModal = ({ pincodeData, onClose, onSave }) => {
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Delivery Fee (₹)</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input name="deliveryCharge" type="number" value={formData.deliveryCharge} onChange={handleInputChange} className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
+                            <input name="deliveryCharge" type="number" value={formData.deliveryCharge} onChange={handleInputChange} className="w-full pl-8 pr-4 py-3 bg-gray-50  rounded-xl text-gray-900 font-semibold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
                         </div>
                     </div>
                     <div className="space-y-3">
@@ -349,7 +349,7 @@ export default function PincodeManager() {
     const renderImportTab = () => (
         <div className="space-y-8">
             {/* STEP 1 */}
-            <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+            <section className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                 <div className="flex items-center gap-3 mb-6">
                     <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">1</span>
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Select Target Region</h3>
@@ -369,7 +369,7 @@ export default function PincodeManager() {
             {selectedStateImport && (
                 <>
                     {/* STEP 2 */}
-                    <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <section className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                         <div className="flex items-center gap-3 mb-6">
                             <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">2</span>
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Identify City</h3>
@@ -382,10 +382,10 @@ export default function PincodeManager() {
                                 value={citySearch} 
                                 onChange={(e) => setCitySearch(e.target.value)} 
                                 placeholder={`Search city in ${selectedStateImport}...`} 
-                                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium" 
+                                className="w-full pl-12 pr-4 py-3 bg-gray-50  rounded-xl text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium" 
                             />
                              {citySuggestions.length > 0 && (
-                                <div className="absolute z-20 w-full bg-white border border-gray-200 rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
+                                <div className="absolute z-20 w-full bg-white  rounded-xl mt-2 shadow-xl max-h-60 overflow-y-auto p-1">
                                     {citySuggestions.map(city => (
                                         <div 
                                             key={city} 
@@ -408,19 +408,19 @@ export default function PincodeManager() {
                     </section>
                     
                     {/* STEP 3 */}
-                    <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+                    <section className="bg-white p-8 rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                         <div className="flex items-center gap-3 mb-6">
                             <span className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">3</span>
                             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Pincode Data & Rules</h3>
                         </div>
                         
-                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-6">
+                        <div className="bg-gray-50 p-6 rounded-xl  mb-6">
                             <div className="flex flex-wrap gap-6 items-end">
                                 <div className="flex-1 min-w-[140px]">
                                     <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Delivery Fee</label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                                        <input name="deliveryCharge" type="number" value={batchSettings.deliveryCharge} onChange={(e) => setBatchSettings(p => ({ ...p, deliveryCharge: parseInt(e.target.value) || 0 }))} className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
+                                        <input name="deliveryCharge" type="number" value={batchSettings.deliveryCharge} onChange={(e) => setBatchSettings(p => ({ ...p, deliveryCharge: parseInt(e.target.value) || 0 }))} className="w-full pl-8 pr-4 py-2.5 bg-white  rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"/>
                                     </div>
                                 </div>
                                 <div className="min-w-[140px]">
@@ -451,7 +451,7 @@ export default function PincodeManager() {
                             onChange={(e) => setBulkText(e.target.value)} 
                             placeholder="Or manually paste pincodes here (separated by commas or spaces)..."
                             rows="4"
-                            className="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
+                            className="w-full p-4 bg-white  rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none"
                         ></textarea>
 
                         <button 
@@ -470,7 +470,7 @@ export default function PincodeManager() {
 
     const renderManageTab = () => (
         <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden min-h-[600px] flex flex-col">
+            <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  overflow-hidden min-h-[600px] flex flex-col">
                 <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">Active Service Zones</h2>
@@ -483,7 +483,7 @@ export default function PincodeManager() {
                             placeholder="Search State, City, PIN..."
                             value={manageSearchQuery}
                             onChange={(e) => setManageSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm transition-all"
+                            className="w-full pl-9 pr-3 py-2 bg-white  rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] transition-all"
                         />
                     </div>
                 </div>
@@ -502,7 +502,7 @@ export default function PincodeManager() {
                                 >
                                     <div className="space-y-1 pl-2">
                                         {Object.keys(filteredSavedPincodes[state]).sort().map(city => (
-                                            <div key={city} className="bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                                            <div key={city} className="bg-gray-50 rounded-lg overflow-hidden ">
                                                 <AccordionItem 
                                                     title={city} 
                                                     onSelect={() => fetchCityPincodesForManage(state, city)}
@@ -512,7 +512,7 @@ export default function PincodeManager() {
                                                         <div className="grid gap-2 pt-2 pr-2">
                                                             {cityPincodesManage.length > 0 ? (
                                                                 cityPincodesManage.filter(p => !manageSearchQuery || String(p.pincode).includes(manageSearchQuery)).map(p => (
-                                                                    <div key={p.pincode} className="group flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
+                                                                    <div key={p.pincode} className="group flex items-center justify-between p-3 bg-white  rounded-lg hover:border-indigo-300 transition-all">
                                                                         <div>
                                                                             <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                                                                 {p.pincode}
@@ -521,7 +521,7 @@ export default function PincodeManager() {
                                                                             <div className="flex gap-2 mt-1.5">
                                                                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase ${p.isServiceable ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>{p.isServiceable ? 'Active' : 'Inactive'}</span>
                                                                                 {p.codAvailable && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 uppercase">COD</span>}
-                                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">₹{p.deliveryCharge}</span>
+                                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 ">₹{p.deliveryCharge}</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -570,7 +570,7 @@ export default function PincodeManager() {
                 </div>
             </div>
 
-            <div className="flex p-1 bg-white border border-gray-200 rounded-xl shadow-sm w-fit">
+            <div className="flex p-1 bg-white  rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] w-fit">
                 <button 
                     onClick={() => setActiveTab('import')} 
                     className={`px-5 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${activeTab === 'import' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}

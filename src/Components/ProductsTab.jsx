@@ -36,7 +36,7 @@ const ProductsTab = ({
         <div className="flex gap-3 w-full sm:w-auto">
           <button 
             onClick={() => downloadCSV(products, 'products.csv')} 
-            className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-semibold shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white  text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-semibold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
           >
             <Download className="w-4 h-4 mr-2" /> Export
           </button>
@@ -53,7 +53,7 @@ const ProductsTab = ({
       {products?.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in duration-500">
           {products.map((product) => (
-            <div key={product.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col overflow-hidden">
+            <div key={product.id} className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md transition-all duration-300 group flex flex-col overflow-hidden">
               
               {/* Image Area */}
               <div className="aspect-square bg-gray-100 relative overflow-hidden">
@@ -65,14 +65,14 @@ const ProductsTab = ({
                 <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button 
                     onClick={() => setEditingProduct(product)} 
-                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm text-gray-700 hover:text-indigo-600 hover:scale-110 transition-all"
+                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-gray-700 hover:text-indigo-600 hover:scale-110 transition-all"
                     title="Edit"
                   >
                     <Edit3 size={16} />
                   </button>
                   <button 
                     onClick={() => handleProductArchive(product.id)} 
-                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm text-gray-700 hover:text-red-600 hover:scale-110 transition-all"
+                    className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-gray-700 hover:text-red-600 hover:scale-110 transition-all"
                     title="Archive"
                   >
                     <Archive size={16} />
@@ -86,7 +86,7 @@ const ProductsTab = ({
               {/* Details */}
               <div className="p-5 flex flex-col flex-1">
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wide">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600  uppercase tracking-wide">
                     {product.category || 'Uncategorized'}
                   </span>
                 </div>
@@ -98,12 +98,12 @@ const ProductsTab = ({
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Variants</p>
                   <div className="flex flex-wrap gap-1.5">
                     {product.variants?.slice(0, 3).map(v => (
-                      <span key={v.id} className="px-2 py-1 bg-gray-50 border border-gray-100 rounded text-[10px] font-medium text-gray-600">
+                      <span key={v.id} className="px-2 py-1 bg-gray-50  rounded text-[10px] font-medium text-gray-600">
                         {v.name} (₹{v.oprice})
                       </span>
                     ))}
                     {(product.variants?.length || 0) > 3 && (
-                      <span className="px-2 py-1 bg-gray-50 border border-gray-100 rounded text-[10px] font-medium text-gray-400">
+                      <span className="px-2 py-1 bg-gray-50  rounded text-[10px] font-medium text-gray-400">
                         +{product.variants.length - 3} more
                       </span>
                     )}
@@ -138,7 +138,7 @@ const ProductsTab = ({
           </div>
 
           {showArchived && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm animate-in slide-in-from-top-2 duration-300">
+            <div className="bg-white rounded-xl  overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] animate-in slide-in-from-top-2 duration-300">
               {loading ? (
                 <div className="p-8 text-center text-gray-500 text-sm">Loading archived items...</div>
               ) : (
@@ -159,7 +159,7 @@ const ProductsTab = ({
                               <img 
                                 src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl} 
                                 alt={product.name} 
-                                className="w-10 h-10 rounded-lg object-cover bg-gray-100 border border-gray-200 grayscale group-hover:grayscale-0 transition-all"
+                                className="w-10 h-10 rounded-lg object-cover bg-gray-100  grayscale group-hover:grayscale-0 transition-all"
                               />
                               <span className="font-medium text-gray-900 line-through decoration-gray-400 group-hover:no-underline">{product.name}</span>
                             </div>

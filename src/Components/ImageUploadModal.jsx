@@ -16,11 +16,11 @@ const VariantInput = ({ index, variant, onChange, onRemove }) => {
   };
 
   return (
-    <div className="relative p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+    <div className="relative p-6 bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300">
       <button
         type="button"
         onClick={() => onRemove(index)}
-        className="absolute -top-3 -right-3 bg-white text-red-400 border border-gray-100 shadow-sm rounded-full p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors z-10"
+        className="absolute -top-3 -right-3 bg-white text-red-400  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] rounded-full p-2 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors z-10"
         title="Remove Variant"
       >
         <Trash2 className="w-4 h-4" />
@@ -35,28 +35,28 @@ const VariantInput = ({ index, variant, onChange, onRemove }) => {
             type="text" 
             value={variant.name} 
             onChange={handleChange} 
-            className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+            className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
           />
         </div>
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Size (ml)</label>
-          <input name="size" placeholder="20" type="number" value={variant.size} onChange={handleChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <input name="size" placeholder="20" type="number" value={variant.size} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Stock</label>
-          <input name="stock" placeholder="100" type="number" value={variant.stock} onChange={handleChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <input name="stock" placeholder="100" type="number" value={variant.stock} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Orig. Price</label>
-          <input name="oprice" placeholder="1500" type="number" value={variant.oprice} onChange={handleChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <input name="oprice" placeholder="1500" type="number" value={variant.oprice} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Cost Price</label>
-          <input name="costPrice" placeholder="500" type="number" value={variant.costPrice} onChange={handleChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <input name="costPrice" placeholder="500" type="number" value={variant.costPrice} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
         <div className="col-span-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Discount (%)</label>
-          <input name="discount" placeholder="10" type="number" value={variant.discount} onChange={handleChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <input name="discount" placeholder="10" type="number" value={variant.discount} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
       </div>
     </div>
@@ -197,7 +197,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                 
                 {/* Add Button */}
                 <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-gray-50 hover:bg-indigo-50/50 transition-all group border-2 border-dashed border-gray-200 hover:border-indigo-200">
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 transition-transform text-indigo-500 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  group-hover:scale-110 transition-transform text-indigo-500 mb-4">
                     <Plus size={28} />
                   </div>
                   <span className="text-[10px] font-bold text-gray-400 group-hover:text-indigo-500 uppercase tracking-widest">Add Images</span>
@@ -206,11 +206,11 @@ const ImageUploadModal = ({ isopen, onClose }) => {
 
                 {/* Previews */}
                 {previews.map((url, index) => (
-                  <div key={index} className="relative aspect-square group rounded-3xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 bg-white">
+                  <div key={index} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300 bg-white">
                     <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     <button 
                       onClick={() => removeImage(index)} 
-                      className="absolute top-3 right-3 bg-white/90 text-red-500 border border-gray-100 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"
+                      className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -261,7 +261,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                         rows={3} 
                         value={product[field.name]} 
                         onChange={handleChange} 
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" 
+                        className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" 
                       />
                     ) : (
                       <input 
@@ -269,7 +269,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                         type={field.type} 
                         value={product[field.name]} 
                         onChange={handleChange} 
-                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+                        className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
                       />
                     )}
                   </div>
@@ -278,7 +278,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
             </div>
             
             <div className="p-8 bg-white/50 border-t border-gray-100 flex gap-4">
-              <button onClick={() => setStep(1)} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+              <button onClick={() => setStep(1)} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
                 <ArrowLeft size={18} /> Back
               </button>
               <button onClick={goToStep3} className="w-2/3 bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-gray-200 transition-all flex items-center justify-center gap-2">
@@ -301,7 +301,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
             </div>
             
             <div className="p-8 bg-white/50 border-t border-gray-100 flex gap-4">
-              <button onClick={() => setStep(2)} className="w-1/3 bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+              <button onClick={() => setStep(2)} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
                 <ArrowLeft size={18} /> Back
               </button>
               <button onClick={handleSubmit} className="w-2/3 bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-2xl font-bold shadow-xl shadow-green-200 transition-all transform hover:-translate-y-0.5">

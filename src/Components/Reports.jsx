@@ -119,7 +119,7 @@ const Reports = ({ products, users, orders }) => {
       {/* 1. Financial Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Gross Revenue */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden group">
+        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-50 rounded-full group-hover:scale-110 transition-transform" />
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Gross Revenue</p>
@@ -131,7 +131,7 @@ const Reports = ({ products, users, orders }) => {
         </div>
 
         {/* Net Profit */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden group">
+        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform" />
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Net Profit (Est.)</p>
@@ -143,7 +143,7 @@ const Reports = ({ products, users, orders }) => {
         </div>
 
         {/* Cost of Goods */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden group">
+        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full group-hover:scale-110 transition-transform" />
           <div className="relative z-10">
             <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Cost of Goods</p>
@@ -159,7 +159,7 @@ const Reports = ({ products, users, orders }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Category Breakdown */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-96 flex flex-col">
+        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <PieChart size={20} className="text-purple-600" /> Revenue by Category
           </h3>
@@ -169,13 +169,13 @@ const Reports = ({ products, users, orders }) => {
         </div>
 
         {/* Top Products Leaderboard */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-96 flex flex-col">
+        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
           <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
             <Award size={20} className="text-amber-500" /> Best Sellers (Delivered)
           </h3>
           <div className="overflow-y-auto pr-2 custom-scrollbar space-y-4">
             {topProducts.length > 0 ? topProducts.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 border border-gray-100">
+              <div key={p.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 ">
                 <span className="text-lg font-bold text-gray-400 w-6 text-center">#{i+1}</span>
                 <img src={(Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl) || "/fallback.png"} alt="" className="w-10 h-10 rounded-lg object-cover bg-white" />
                 <div className="flex-1 min-w-0">
@@ -198,13 +198,13 @@ const Reports = ({ products, users, orders }) => {
       </div>
 
       {/* 3. Top Customers */}
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
         <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
           <User size={20} className="text-blue-600" /> High Value Customers (LTV)
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {topCustomers.map((user, i) => (
-            <div key={i} className="p-4 rounded-xl border border-gray-100 bg-gray-50 text-center hover:border-blue-200 hover:shadow-md transition-all">
+            <div key={i} className="p-4 rounded-xl  bg-gray-50 text-center hover:border-blue-200 hover:shadow-md transition-all">
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold mx-auto mb-3 text-lg">
                 {user.name.charAt(0)}
               </div>

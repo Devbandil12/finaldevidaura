@@ -61,7 +61,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
               </div>
             ) : (
               abandonedCarts.map((cart) => (
-                <div key={cart.user.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div key={cart.user.id} className="bg-white rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-md transition-shadow">
                   
                   {/* Cart Header */}
                   <div className="p-5 flex justify-between items-start border-b border-gray-50">
@@ -84,7 +84,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                   <div className="bg-gray-50/50 p-4 space-y-3">
                     {cart.items.slice(0, 3).map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white border border-gray-200 overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-white  overflow-hidden flex-shrink-0">
                           <img 
                             src={(Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl) || "/fallback.png"} 
                             alt={item.name} 
@@ -128,7 +128,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
             </h3>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
             {stats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Heart className="w-10 h-10 text-gray-300 mb-3" />
@@ -142,7 +142,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                       #{index + 1}
                     </div>
                     
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100  overflow-hidden flex-shrink-0">
                       <img 
                         src={item.productImage || "/fallback.png"} 
                         alt={item.productName} 

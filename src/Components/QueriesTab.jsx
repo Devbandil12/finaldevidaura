@@ -88,7 +88,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm font-sans">
+    <div className="flex h-[calc(100vh-100px)] bg-gray-50 rounded-2xl  overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] font-sans">
       
       {/* LEFT SIDEBAR: Ticket List */}
       <div className={`${selectedTicket ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[380px] border-r border-gray-200 bg-white z-10`}>
@@ -108,7 +108,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
                 <button 
                     key={status}
                     onClick={() => setStatusFilter(status)}
-                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 capitalize ${statusFilter === status ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 capitalize ${statusFilter === status ? 'bg-white text-indigo-600 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                     {status === 'open' ? <Inbox size={14} /> : <CheckCircle size={14} />} 
                     {status}
@@ -123,7 +123,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
               placeholder="Search..." 
               value={querySearch} 
               onChange={(e) => setQuerySearch(e.target.value)} 
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 group-hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg text-sm transition-all outline-none" 
+              className="w-full pl-9 pr-3 py-2 bg-gray-50  group-hover:border-indigo-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-lg text-sm transition-all outline-none" 
             />
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 group-hover:text-indigo-400 transition-colors" />
           </div>
@@ -136,7 +136,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
               <div 
                 key={ticket.id} 
                 onClick={() => setSelectedTicket(ticket)}
-                className={`p-3 rounded-xl cursor-pointer transition-all border ${selectedTicket?.id === ticket.id ? 'bg-indigo-50/60 border-indigo-200 shadow-sm' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
+                className={`p-3 rounded-xl cursor-pointer transition-all border ${selectedTicket?.id === ticket.id ? 'bg-indigo-50/60 border-indigo-200 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
               >
                 <div className="flex justify-between items-start mb-1">
                   <h4 className={`font-semibold text-sm truncate pr-2 ${selectedTicket?.id === ticket.id ? 'text-indigo-900' : 'text-gray-800'}`}>{ticket.subject}</h4>
@@ -213,7 +213,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#F8FAFC]">
                 {/* Date separator example - could be dynamic */}
                 <div className="flex justify-center my-4">
-                    <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full border border-gray-200/50">
+                    <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full /50">
                         Ticket Created: {new Date(selectedTicket.createdAt || selectedTicket.updatedAt).toLocaleDateString()}
                     </span>
                 </div>
@@ -229,10 +229,10 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
                                 </div>
 
                                 <div className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
-                                    <div className={`px-4 py-2 text-[13px] shadow-sm ${
+                                    <div className={`px-4 py-2 text-[13px] shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ${
                                         isAdmin 
                                         ? 'bg-indigo-600 text-white rounded-2xl rounded-br-none' 
-                                        : 'bg-white text-gray-700 border border-gray-200/80 rounded-2xl rounded-bl-none'
+                                        : 'bg-white text-gray-700 /80 rounded-2xl rounded-bl-none'
                                     }`}>
                                         <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                                     </div>
@@ -249,7 +249,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
             {/* Reply / Footer */}
             <div className="p-4 bg-white border-t border-gray-200">
             {selectedTicket.status === 'open' ? (
-                <form onSubmit={handleSendReply} className="relative flex items-end gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+                <form onSubmit={handleSendReply} className="relative flex items-end gap-2 bg-gray-50  rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
                     <input 
                         type="text" 
                         value={replyMessage}
@@ -260,13 +260,13 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
                     <button 
                         type="submit" 
                         disabled={sending || !replyMessage.trim()}
-                        className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-xl transition-all shadow-sm mb-[1px] mr-[1px]"
+                        className="p-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-xl transition-all shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] mb-[1px] mr-[1px]"
                     >
                         {sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send size={16} />}
                     </button>
                 </form>
             ) : (
-                <div className="py-2 flex items-center justify-center gap-2 text-gray-500 bg-gray-50 rounded-xl border border-gray-200 border-dashed">
+                <div className="py-2 flex items-center justify-center gap-2 text-gray-500 bg-gray-50 rounded-xl  border-dashed">
                     <ShieldAlert size={16} /> 
                     <span className="text-xs font-medium">This ticket is closed. Re-open via admin panel to reply.</span>
                 </div>
@@ -276,7 +276,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
         ) : (
           /* Empty State */
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50">
-            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-gray-100">
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
                 <Inbox className="w-10 h-10 text-indigo-200" />
             </div>
             <h3 className="text-gray-900 font-semibold mb-1">Select a ticket</h3>

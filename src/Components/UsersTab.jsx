@@ -5,7 +5,7 @@ import {
   ArrowUpDown, ChevronDown, Check
 } from 'lucide-react';
 
-// --- CUSTOM SORT DROPDOWN (Existing) ---
+// --- CUSTOM SORT DROPDOWN (Existing - UNCHANGED) ---
 const SortDropdown = ({ currentSort, onSortChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -36,7 +36,7 @@ const SortDropdown = ({ currentSort, onSortChange }) => {
     <div className="relative w-full sm:w-auto" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full sm:w-56 flex items-center justify-between px-4 py-3 bg-white border rounded-xl shadow-sm text-sm font-medium transition-all ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}
+        className={`w-full sm:w-56 flex items-center justify-between px-4 py-3 bg-white border rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-sm font-medium transition-all ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}
       >
         <div className="flex items-center gap-2 truncate">
           <ArrowUpDown size={16} className="text-gray-400" />
@@ -46,7 +46,7 @@ const SortDropdown = ({ currentSort, onSortChange }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-full sm:w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
+        <div className="absolute right-0 mt-2 w-full sm:w-56 bg-white  rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
           <div className="p-1">
             {options.map((option) => (
               <button
@@ -65,7 +65,7 @@ const SortDropdown = ({ currentSort, onSortChange }) => {
   );
 };
 
-// --- 🟢 NEW: ROLE DROPDOWN COMPONENT ---
+// --- ROLE DROPDOWN COMPONENT (Existing - UNCHANGED) ---
 const RoleDropdown = ({ currentRole, onRoleChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -92,7 +92,6 @@ const RoleDropdown = ({ currentRole, onRoleChange }) => {
     setIsOpen(false);
   };
 
-  // Color coding for roles
   const roleStyles = {
     admin: "bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 hover:border-purple-300",
     user: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300"
@@ -111,7 +110,7 @@ const RoleDropdown = ({ currentRole, onRoleChange }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
+        <div className="absolute left-0 mt-2 w-36 bg-white  rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
           <div className="p-1.5 space-y-0.5">
             {options.map((option) => (
               <button
@@ -138,7 +137,7 @@ const UsersTab = ({
   downloadCSV
 }) => {
 
-  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'most-delivered'
+  const [sortBy, setSortBy] = useState('newest');
 
   // --- SORTING LOGIC ---
   const sortedUsers = useMemo(() => {
@@ -154,17 +153,18 @@ const UsersTab = ({
   }, [filteredUsers, sortBy]);
 
   const getAvatarColor = (name) => {
-    const colors = ["bg-red-100 text-red-600", "bg-orange-100 text-orange-600", "bg-amber-100 text-amber-600", "bg-green-100 text-green-600", "bg-teal-100 text-teal-600", "bg-blue-100 text-blue-600", "bg-indigo-100 text-indigo-600", "bg-purple-100 text-purple-600", "bg-pink-100 text-pink-600"];
+    const colors = ["bg-red-50 text-red-600", "bg-orange-50 text-orange-600", "bg-amber-50 text-amber-600", "bg-green-50 text-green-600", "bg-teal-50 text-teal-600", "bg-blue-50 text-blue-600", "bg-indigo-50 text-indigo-600", "bg-purple-50 text-purple-600", "bg-pink-50 text-pink-600"];
     return colors[(name ? name.length : 0) % colors.length];
   };
 
   const getOrderStatusBadge = (status) => {
+    // Softened badges
     const styles = {
-      "Delivered": "bg-emerald-100 text-emerald-700 border-emerald-200",
-      "Shipped": "bg-blue-100 text-blue-700 border-blue-200",
-      "Processing": "bg-amber-100 text-amber-700 border-amber-200",
-      "Order Cancelled": "bg-red-100 text-red-700 border-red-200",
-      "Order Placed": "bg-gray-100 text-gray-700 border-gray-200",
+      "Delivered": "bg-emerald-50 text-emerald-700 border-emerald-100",
+      "Shipped": "bg-blue-50 text-blue-700 border-blue-100",
+      "Processing": "bg-amber-50 text-amber-700 border-amber-100",
+      "Order Cancelled": "bg-red-50 text-red-700 border-red-100",
+      "Order Placed": "bg-gray-50 text-gray-700 border-gray-100",
     };
     return <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${styles[status] || styles["Order Placed"]}`}>{status}</span>;
   };
@@ -175,24 +175,26 @@ const UsersTab = ({
     const sizeClasses = { sm: "w-10 h-10 text-sm", md: "w-12 h-12 text-lg", lg: "w-24 h-24 text-3xl" };
 
     if (imgSrc && !imgError) {
-      return <img src={imgSrc} alt={user.name} onError={() => setImgError(true)} className={`object-cover rounded-full border border-gray-100 shadow-sm bg-white ${sizeClasses[size]} ${className}`} />;
+      // Changed border-gray-100 to border-white or very light
+      return <img src={imgSrc} alt={user.name} onError={() => setImgError(true)} className={`object-cover rounded-full border border-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] bg-white ${sizeClasses[size]} ${className}`} />;
     }
-    return <div className={`rounded-full flex items-center justify-center font-bold shadow-sm ${getAvatarColor(user.name)} ${sizeClasses[size]} ${className}`}>{user.name ? user.name.charAt(0).toUpperCase() : "?"}</div>;
+    return <div className={`rounded-full flex items-center justify-center font-bold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ${getAvatarColor(user.name)} ${sizeClasses[size]} ${className}`}>{user.name ? user.name.charAt(0).toUpperCase() : "?"}</div>;
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
+    <div className="space-y-6 p-4 sm:p-8 bg-gray-50/50 min-h-screen text-gray-900 font-sans">
 
       {/* --- HEADER (List View Only) --- */}
       {!editingUser && (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-100">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 flex items-center">
               <User className="w-6 h-6 mr-3 text-indigo-600" /> User Management
             </h2>
             <p className="text-sm text-gray-500 mt-1">Manage customer accounts and details.</p>
           </div>
-          <button onClick={() => downloadCSV(users, 'users.csv')} className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-black hover:text-white hover:border-black transition text-sm font-semibold shadow-sm">
+          {/* Softened Button Border */}
+          <button onClick={() => downloadCSV(users, 'users.csv')} className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-white  text-gray-700 rounded-lg hover:bg-black hover:text-white hover:border-black transition text-sm font-semibold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
             <Download className="w-4 h-4 mr-2" /> Export CSV
           </button>
         </div>
@@ -208,8 +210,8 @@ const UsersTab = ({
             <ArrowLeft className="w-4 h-4 mr-1" /> Back to User List
           </button>
 
-          {/* Profile Header */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+          {/* Profile Header - Very Light Border & Soft Shadow */}
+          <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  p-6 sm:p-8 mb-6">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
               <UserAvatar user={editingUser} size="lg" className="ring-4 ring-gray-50" />
               <div className="flex-1 w-full">
@@ -223,13 +225,13 @@ const UsersTab = ({
                     </div>
                   </div>
 
-                  {/* Quick Stats */}
+                  {/* Quick Stats - Very Light Borders */}
                   <div className="flex gap-4 w-full sm:w-auto justify-center">
-                    <div className="flex-1 sm:flex-none px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 text-center min-w-[100px]">
+                    <div className="flex-1 sm:flex-none px-4 py-2 bg-gray-50 rounded-xl  text-center min-w-[100px]">
                       <p className="text-xs text-gray-500 font-bold uppercase">Joined</p>
                       <p className="text-sm font-semibold text-gray-900">{new Date(editingUser.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex-1 sm:flex-none px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100 text-center min-w-[100px]">
+                    <div className="flex-1 sm:flex-none px-4 py-2 bg-indigo-50/50 rounded-xl border border-indigo-100/50 text-center min-w-[100px]">
                       <p className="text-xs text-indigo-500 font-bold uppercase">Orders</p>
                       <p className="text-sm font-semibold text-indigo-900">{editingUser.orders?.length || 0}</p>
                     </div>
@@ -240,15 +242,15 @@ const UsersTab = ({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Contact Info */}
+            {/* Contact Info - Very Light Border */}
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full">
+              <div className="bg-white p-6 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-full">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><User size={14} /> Personal Details</h3>
                 <div className="space-y-4">
                   <div><label className="text-xs text-gray-500 font-medium">Email</label><div className="flex items-center gap-2 mt-1 text-sm font-medium text-gray-900 break-all"><Mail size={16} className="text-gray-400 flex-shrink-0" /> {editingUser.email}</div></div>
                   <div><label className="text-xs text-gray-500 font-medium">Phone</label><div className="flex items-center gap-2 mt-1 text-sm font-medium text-gray-900"><Phone size={16} className="text-gray-400 flex-shrink-0" /> {editingUser.phone || 'Not Provided'}</div></div>
 
-                  {/* 🟢 MODIFIED: Custom Role Dropdown */}
+                  {/* Custom Role Dropdown */}
                   <div>
                     <label className="text-xs text-gray-500 font-medium">Role</label>
                     <div className="flex items-center gap-3 mt-1.5">
@@ -264,27 +266,27 @@ const UsersTab = ({
               </div>
             </div>
 
-            {/* Addresses */}
+            {/* Addresses - Very Light Border */}
             <div className="lg:col-span-2">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full">
+              <div className="bg-white p-6 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-full">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><MapPin size={14} /> Saved Addresses</h3>
                 {editingUser.addresses?.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                     {editingUser.addresses.map((address) => (
-                      <div key={address.id} className="p-4 rounded-xl border border-gray-200 bg-gray-50 hover:border-indigo-200 transition-colors">
+                      <div key={address.id} className="p-4 rounded-xl  bg-gray-50/50 hover:border-indigo-100 transition-colors">
                         <div className="flex items-start gap-3">
-                          <div className="p-2 bg-white rounded-lg shadow-sm text-indigo-600 mt-1 flex-shrink-0"><MapPin size={16} /></div>
+                          <div className="p-2 bg-white rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-indigo-600 mt-1 flex-shrink-0"><MapPin size={16} /></div>
                           <div className="text-sm flex-1">
                             <p className="font-bold text-gray-900 mb-1">{address.city}, {address.state}</p>
                             <p className="text-gray-600 leading-relaxed text-xs line-clamp-2">{address.address}</p>
-                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200"><p className="text-gray-500 text-xs font-mono">{address.zipCode}</p><p className="text-[10px] font-bold text-gray-400 uppercase">{address.country}</p></div>
+                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100"><p className="text-gray-500 text-xs font-mono">{address.zipCode}</p><p className="text-[10px] font-bold text-gray-400 uppercase">{address.country}</p></div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-40 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <div className="flex flex-col items-center justify-center h-40 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
                     <MapPin className="w-8 h-8 text-gray-300 mb-2" /><p className="text-sm text-gray-500 font-medium">No addresses found.</p>
                   </div>
                 )}
@@ -292,16 +294,16 @@ const UsersTab = ({
             </div>
           </div>
 
-          {/* Order History */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-2 justify-between items-center">
+          {/* Order History - Very Light Border */}
+          <div className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-2 justify-between items-center">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2"><Package size={16} className="text-indigo-600" /> Order History</h3>
-              <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">{editingUser.orders?.length || 0} Orders</span>
+              <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">{editingUser.orders?.length || 0} Orders</span>
             </div>
             {editingUser.orders && editingUser.orders.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[600px]">
-                  <thead className="bg-white text-gray-500 border-b border-gray-100 text-xs uppercase font-semibold">
+                  <thead className="bg-white text-gray-500 border-b border-gray-50 text-xs uppercase font-semibold">
                     <tr><th className="px-6 py-3">Order ID</th><th className="px-6 py-3">Date</th><th className="px-6 py-3">Status</th><th className="px-6 py-3">Total Amount</th><th className="px-6 py-3 text-right">Items</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -339,7 +341,8 @@ const UsersTab = ({
                 placeholder="Search by name, email or phone..."
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm text-sm transition-all"
+                // Replaced border-gray-200 with border-gray-100
+                className="w-full pl-10 pr-4 py-3 bg-white  rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-sm transition-all"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             </div>
@@ -354,13 +357,14 @@ const UsersTab = ({
                 const deliveredCount = user.orders?.filter(o => o.status === 'Delivered').length || 0;
 
                 return (
-                  <div key={user.id} className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col">
+                  // Replaced border-gray-200 with border-gray-100 and added soft shadow
+                  <div key={user.id} className="bg-white rounded-2xl p-5  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:shadow-indigo-500/5 transition-all duration-300 group flex flex-col">
 
                     <div className="flex justify-between items-start mb-4">
                       <div className="relative">
                         <UserAvatar user={user} size="md" />
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wide">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-50 text-gray-600  uppercase tracking-wide">
                         {user.role}
                       </span>
                     </div>
@@ -372,7 +376,7 @@ const UsersTab = ({
                         <Calendar size={12} /> Joined {new Date(user.createdAt).toLocaleDateString()}
                       </div>
 
-                      {/* Delivered Orders Badge */}
+                      {/* Delivered Orders Badge - Softened */}
                       {deliveredCount > 0 && (
                         <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 text-[10px] font-bold">
                           <CheckCircle size={10} /> {deliveredCount} Delivered
@@ -384,7 +388,7 @@ const UsersTab = ({
                       <button onClick={() => handleEditUser(user)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
                         <ExternalLink size={14} /> Profile
                       </button>
-                      <button onClick={() => handleDeleteUser(user.id)} className="flex-none flex items-center justify-center p-2 text-gray-400 bg-white border border-gray-200 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors" title="Delete User">
+                      <button onClick={() => handleDeleteUser(user.id)} className="flex-none flex items-center justify-center p-2 text-gray-400 bg-white  rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors" title="Delete User">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -393,7 +397,7 @@ const UsersTab = ({
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
               <div className="p-4 bg-gray-50 rounded-full mb-3"><Search className="w-6 h-6 text-gray-400" /></div>
               <p className="text-gray-500 font-medium">No users found matching your search.</p>
             </div>
