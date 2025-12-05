@@ -1,10 +1,11 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react'; // Changed useEffect to useLayoutEffect
+import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Star, Hexagon, Sparkles } from 'lucide-react';
 import PageTransition from "./PageTransition";
 
 gsap.registerPlugin(ScrollTrigger);
- 
+
 // --- ASSETS ---
 const IMAGES = {
     hero: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto-format&fit=crop&w=1600&q=80',
