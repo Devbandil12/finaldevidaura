@@ -7,12 +7,13 @@ import { useUser, AuthenticateWithRedirectCallback  } from "@clerk/clerk-react";
 import Navbar from "./Components/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
 import Footer from "./Components/Footer";
-import Loader from "./Components/Loader";
+import Loader from "./Components/LoginLoader";
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
+import Home from "./Components/Home";
 
 // --- Lazy Load the Heavy Stuff ---
 // These won't load when the user is just logging in
-const Home = lazy(() => import("./Components/Home"));
+// const Home = lazy(() => import("./Components/Home"));
 const Products = lazy(() => import("./Components/Products"));
 const ProductDetail = lazy(() => import("./Components/ProductDetail"));
 const Cart = lazy(() => import("./Components/Cart"));
@@ -132,7 +133,7 @@ const App = () => {
                       <PostLoginRedirector />
 
                       {/* Suspense handles the loading state for lazy components */}
-                      <Suspense fallback={<Loader text="Loading..." />}>
+                      {/* <Suspense fallback={<Loader text="Loading..." />}> */}
                         <Routes>
 
                           <Route element={<MainLayout />}>
@@ -173,7 +174,7 @@ const App = () => {
                           />
 
                         </Routes>
-                      </Suspense>
+                      {/* </Suspense> */}
                     </Router>
                   </NotificationProvider>
                 </ReviewProvider>
