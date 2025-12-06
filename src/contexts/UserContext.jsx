@@ -7,6 +7,10 @@ import React, {
   useRef,
 } from "react";
 import { useUser } from "@clerk/clerk-react";
+import { subscribeToPush } from '../utils/pushNotification';
+
+
+
 
 export const UserContext = createContext();
 
@@ -104,6 +108,13 @@ export const UserProvider = ({ children }) => {
     };
   }, [isLoaded, isSignedIn, user?.id, user?.primaryEmailAddress, BACKEND_URL, user?.firstName, user?.lastName]);
 
+
+  useEffect(() => {
+    if (userdetails && userdetails.id) {
+       subscribeToPush(userdetails.id);
+    }
+  }, [userdetails]);
+  
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) {
       setAddress([]);

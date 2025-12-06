@@ -4,13 +4,13 @@ export const ContactContext = createContext();
 
 export const ContactProvider = ({ children }) => {
   const [tickets, setTickets] = useState([]);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-  // Fetch all tickets (Admin)
+  // Fetch all tickets (For Admin Panel)
   const getAllTickets = useCallback(async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) throw new Error("Failed to fetch tickets");
       const data = await res.json();
       setTickets(data);
     } catch (error) {
@@ -18,12 +18,12 @@ export const ContactProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
-  // Fetch specific user tickets
+  // Fetch specific user tickets (For User Dashboard)
   const getUserTickets = useCallback(async (email) => {
     if (!email) return;
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact/user/${email}`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) throw new Error("Failed to fetch user tickets");
       const data = await res.json();
       setTickets(data);
     } catch (error) {
@@ -48,11 +48,11 @@ export const ContactProvider = ({ children }) => {
       return await res.json();
     } catch (error) {
       console.error("❌ Failed to create ticket:", error);
-      throw error; // Re-throw so UI can handle it
+      throw error; // Re-throw so UI (ContactUs.jsx) can handle it
     }
   }, [BACKEND_URL]);
 
-  // 🟢 UPDATED: Reply to Ticket (Handles Closed Ticket Error)
+  // Reply to Ticket (Handles Closed Ticket Error)
   const replyToTicket = useCallback(async (ticketId, message, senderRole) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact/${ticketId}/reply`, {
@@ -61,7 +61,7 @@ export const ContactProvider = ({ children }) => {
         body: JSON.stringify({ message, senderRole }),
       });
 
-      // 🟢 Capture specific backend error (e.g., "Ticket is permanently closed")
+      // Capture specific backend error (e.g., "Ticket is permanently closed")
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to reply");
@@ -70,11 +70,11 @@ export const ContactProvider = ({ children }) => {
       return await res.json();
     } catch (error) {
       console.error("❌ Failed to reply:", error);
-      throw error; // Re-throw so the UI (QueriesTab/UserPage) can show a toast error
+      throw error; 
     }
   }, [BACKEND_URL]);
 
-  // Update Status
+  // Update Status (For Admin to Close/Reopen)
   const updateTicketStatus = useCallback(async (ticketId, status) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/contact/${ticketId}/status`, {
@@ -85,7 +85,8 @@ export const ContactProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to update status");
       return await res.json();
     } catch (error) {
-        console.error("❌ Status update failed", error);
+       console.error("❌ Status update failed", error);
+       throw error;
     }
   }, [BACKEND_URL]);
 

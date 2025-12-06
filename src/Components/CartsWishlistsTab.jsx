@@ -1,9 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
-  ShoppingCart, Heart, Mail, Clock, TrendingUp, AlertCircle, Package 
+  ShoppingCart, Heart, Mail, Clock, TrendingUp, AlertCircle, Package, Send, CheckCircle, Loader2
 } from 'lucide-react';
 
+// Use backend URL from env
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+
 const CartsWishlistsTab = ({ flatCarts, stats }) => {
+  const [isSending, setIsSending] = useState(false);
   
   // Logic remains unchanged
   const abandonedCarts = useMemo(() => {
@@ -31,6 +35,33 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
     return Array.from(userMap.values()).sort((a, b) => b.lastActivity - a.lastActivity);
   }, [flatCarts]);
 
+  // 🟢 NEW: Handle Recover All
+  const handleRecoverAll = async () => {
+    if (abandonedCarts.length === 0) return;
+    setIsSending(true);
+
+    try {
+        const userIds = abandonedCarts.map(c => c.user.id);
+        
+        const res = await fetch(`${BACKEND_URL}/api/notifications/recover-abandoned`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userIds })
+        });
+
+        if (res.ok) {
+            window.toast.success(`Recovery sent to ${userIds.length} users! 🚀`);
+        } else {
+            throw new Error("Failed to send");
+        }
+    } catch (error) {
+        console.error(error);
+        window.toast.error("Failed to send notifications");
+    } finally {
+        setIsSending(false);
+    }
+  };
+
   return (
     <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
       
@@ -51,6 +82,18 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
               <ShoppingCart className="text-amber-500" size={20} /> Abandoned Carts
               <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">{abandonedCarts.length}</span>
             </h3>
+
+            {/* 🟢 NEW: Combined Action Button */}
+            {abandonedCarts.length > 0 && (
+                <button 
+                    onClick={handleRecoverAll}
+                    disabled={isSending}
+                    className="flex items-center gap-2 px-4 py-2 bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-all shadow-md"
+                >
+                    {isSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                    {isSending ? "Sending..." : "Send Recovery to All"}
+                </button>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -61,7 +104,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
               </div>
             ) : (
               abandonedCarts.map((cart) => (
-                <div key={cart.user.id} className="bg-white rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-md transition-shadow">
+                <div key={cart.user.id} className="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-md transition-shadow relative">
                   
                   {/* Cart Header */}
                   <div className="p-5 flex justify-between items-start border-b border-gray-50">
@@ -84,7 +127,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                   <div className="bg-gray-50/50 p-4 space-y-3">
                     {cart.items.slice(0, 3).map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white  overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex-shrink-0">
                           <img 
                             src={(Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl) || "/fallback.png"} 
                             alt={item.name} 
@@ -108,12 +151,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="p-3 bg-white border-t border-gray-100">
-                    <button className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
-                      <Mail size={14} /> Send Recovery Email
-                    </button>
-                  </div>
+                  {/* Removed individual button footer */}
                 </div>
               ))
             )}
@@ -128,7 +166,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
             </h3>
           </div>
 
-          <div className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
             {stats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Heart className="w-10 h-10 text-gray-300 mb-3" />
@@ -142,7 +180,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                       #{index + 1}
                     </div>
                     
-                    <div className="w-12 h-12 rounded-xl bg-gray-100  overflow-hidden flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
                       <img 
                         src={item.productImage || "/fallback.png"} 
                         alt={item.productName} 
@@ -154,7 +192,6 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                       <h4 className="text-sm font-bold text-gray-900 truncate">{item.productName}</h4>
                       <p className="text-xs text-gray-500">{item.variantName}</p>
                       
-                      {/* Popularity Bar */}
                       <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                         <div 
                           className="bg-rose-500 h-1.5 rounded-full" 

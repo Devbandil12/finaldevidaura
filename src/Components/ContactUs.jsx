@@ -1,10 +1,9 @@
 import React, { useState, useContext } from "react";
 import { ContactContext } from "../contexts/ContactContext";
-import { UserContext } from "../contexts/UserContext"; // 🟢 Import UserContext
-import { Mail, Phone, MapPin, CheckCircle, Send } from "lucide-react";
+import { UserContext } from "../contexts/UserContext"; 
+import { Mail, Phone, MapPin, CheckCircle, Send, Loader2 } from "lucide-react"; // 🟢 Added Loader2
 
 const ContactUs = () => {
-  // Added 'subject' to the initial state
   const [formData, setFormData] = useState({ 
     name: "", 
     email: "", 
@@ -14,10 +13,9 @@ const ContactUs = () => {
   });
   
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🟢 1. New Loading State
   
-  // Use 'createTicket' instead of the old 'addQuery'
   const { createTicket } = useContext(ContactContext);
-  // 🟢 Get user details to link the ticket
   const { userdetails } = useContext(UserContext);
 
   const handleChange = (e) => {
@@ -27,22 +25,29 @@ const ContactUs = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true); // 🟢 2. Disable Button Immediately
     
-    // 🟢 Prepare payload with userId if logged in
     const ticketPayload = {
         ...formData,
         userId: userdetails?.id || null 
     };
     
-    // Call the new context function to create a ticket
-    if (createTicket) {
-        await createTicket(ticketPayload);
-    } else {
-        console.error("createTicket function is missing from ContactContext");
+    try {
+      if (createTicket) {
+          // This awaits the backend response (email sending takes 1-2 seconds)
+          await createTicket(ticketPayload); 
+          
+          setSubmitted(true);
+          setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+      } else {
+          console.error("createTicket function is missing from ContactContext");
+      }
+    } catch (error) {
+      console.error("Failed to submit ticket:", error);
+      // Optional: Add a toast error here if you want
+    } finally {
+      setIsSubmitting(false); // 🟢 3. Re-enable Button (Always runs)
     }
-
-    setSubmitted(true);
-    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
   };
 
   const renderSuccessMessage = () => (
@@ -75,7 +80,8 @@ const ContactUs = () => {
           onChange={handleChange}
           placeholder="Enter your name"
           required
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border"
+          disabled={isSubmitting} // Disable input while sending
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border disabled:bg-gray-100 disabled:text-gray-400"
         />
       </div>
 
@@ -92,7 +98,8 @@ const ContactUs = () => {
             onChange={handleChange}
             placeholder="you@example.com"
             required
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border"
+            disabled={isSubmitting}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border disabled:bg-gray-100 disabled:text-gray-400"
             />
         </div>
         <div>
@@ -107,12 +114,12 @@ const ContactUs = () => {
             onChange={handleChange}
             placeholder="Enter your phone number"
             required
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border"
+            disabled={isSubmitting}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border disabled:bg-gray-100 disabled:text-gray-400"
             />
         </div>
       </div>
 
-      {/* New Subject Field */}
       <div>
         <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
           Subject
@@ -125,7 +132,8 @@ const ContactUs = () => {
           onChange={handleChange}
           placeholder="What is this regarding? (e.g., Order #1234, General Inquiry)"
           required
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border"
+          disabled={isSubmitting}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border disabled:bg-gray-100 disabled:text-gray-400"
         />
       </div>
 
@@ -141,16 +149,32 @@ const ContactUs = () => {
           onChange={handleChange}
           placeholder="Type your message here..."
           required
-          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border"
+          disabled={isSubmitting}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5 border disabled:bg-gray-100 disabled:text-gray-400"
         />
       </div>
 
+      {/* 🟢 4. Button Logic: Disabled when submitting, shows Spinner */}
       <button
         type="submit"
-        className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all transform active:scale-[0.98]"
+        disabled={isSubmitting}
+        className={`w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black transition-all transform ${
+            isSubmitting 
+            ? "opacity-75 cursor-not-allowed" 
+            : "hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black active:scale-[0.98]"
+        }`}
       >
-        <Send size={16} />
-        Submit Ticket
+        {isSubmitting ? (
+            <>
+                <Loader2 size={16} className="animate-spin" />
+                Sending...
+            </>
+        ) : (
+            <>
+                <Send size={16} />
+                Submit Ticket
+            </>
+        )}
       </button>
     </form>
   );
@@ -159,7 +183,6 @@ const ContactUs = () => {
     <div className="bg-gray-50 min-h-screen pt-16 sm:pt-20 lg:pt-18 pb-16 sm:pb-20 lg:pb-24 font-sans">
       <div className="max-w-6xl mx-auto px-4">
 
-        {/* Page Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
             Contact Support
@@ -171,10 +194,7 @@ const ContactUs = () => {
 
         <div className="relative bg-white w-full shadow-xl rounded-2xl overflow-hidden lg:flex border border-gray-100">
           
-          {/* Information Panel (Left Side) */}
           <div className="lg:w-1/3 bg-black text-white p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden">
-            
-            {/* Decorative background element */}
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-indigo-900/30 blur-3xl"></div>
             
             <div className="relative z-10">
@@ -216,7 +236,6 @@ const ContactUs = () => {
                 </div>
             </div>
 
-            {/* Bottom Note */}
             <div className="relative z-10 mt-12 pt-8 border-t border-white/10">
                 <p className="text-xs text-gray-400">
                     Operating Hours: Mon - Sat, 9AM - 6PM
@@ -224,7 +243,6 @@ const ContactUs = () => {
             </div>
           </div>
 
-          {/* Form Panel (Right Side) */}
           <div className="lg:w-2/3 p-8 sm:p-12 bg-white">
             {submitted ? renderSuccessMessage() : renderContactForm()}
           </div>
