@@ -15,18 +15,17 @@ import PageTransition from "./PageTransition";
 const baseTheme = {
     colors: {
         luxuryDark: "225 15% 11%", // #181A21
-        cream: "38 43% 96%",       // #FAF8F5
+        background: "210 20% 98%", // Cool Off-White (Removed yellow/cream tint)
         
-        // ✨ REAL SHINING DARK GOLD PALETTE
-        // Rich Metallic Gold (for accents/glows) - darker and more saturated
-        goldMetallic: "45 90% 45%", 
-        // Deep Bronze (for high-contrast text)
-        goldDeep: "38 85% 25%",    
+        // ✨ NEW MONOCHROME PALETTE (Replaces Gold)
+        // Primary Accent (Dark Slate/Black)
+        accentPrimary: "222 47% 11%", 
+        // Secondary Accent (Cool Gray)
+        accentSecondary: "215 16% 47%",    
     },
 };
 
 /* ------------------ ANIMATION VARIANTS (OPTIMIZED) ------------------ */
-// Added 'willChange' hint to variants for smoother mobile performance
 const infoVariants = {
     hidden: { opacity: 0, willChange: "opacity" },
     visible: { 
@@ -50,7 +49,7 @@ const luxuryImageVariants = {
         opacity: 0,
         scale: 0.9,
         rotateY: direction > 0 ? -15 : 15,
-        willChange: "transform, opacity", // ⚡ Performance Boost
+        willChange: "transform, opacity",
     }),
     center: {
         zIndex: 1,
@@ -59,7 +58,7 @@ const luxuryImageVariants = {
         scale: 1,
         rotateY: 0,
         transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
-        willChange: "transform, opacity", // ⚡ Performance Boost
+        willChange: "transform, opacity",
     },
     exit: (direction) => ({
         zIndex: 0,
@@ -68,7 +67,7 @@ const luxuryImageVariants = {
         scale: 0.9,
         rotateY: direction > 0 ? 15 : -15,
         transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-        willChange: "transform, opacity", // ⚡ Performance Boost
+        willChange: "transform, opacity",
     }),
 };
 
@@ -135,12 +134,12 @@ export default function ImmersiveProductShowcase() {
     // --- Data Preparation ---
     const product = visibleProducts[activeIdx] || {};
     
-    // Fixed Golden Theme
+    // Fixed Monochrome Theme
     const colors = {
-        bg: `hsl(${baseTheme.colors.cream})`,
+        bg: `hsl(${baseTheme.colors.background})`,
         text: `hsl(${baseTheme.colors.luxuryDark})`,
-        brandLight: `hsl(${baseTheme.colors.goldMetallic})`, // Rich Shining Gold
-        brandDeep: `hsl(${baseTheme.colors.goldDeep})`,      // Dark Bronze Text
+        brandLight: `hsl(${baseTheme.colors.accentPrimary})`, // Now Dark Slate/Black
+        brandDeep: `hsl(${baseTheme.colors.accentSecondary})`, // Now Cool Gray
     };
 
     // Story Logic
@@ -199,7 +198,7 @@ export default function ImmersiveProductShowcase() {
                                     className="absolute left-0 top-0 bottom-0 w-[4px] lg:w-1.5 opacity-100 rounded-full"
                                     style={{ 
                                         backgroundColor: colors.brandLight,
-                                        boxShadow: `0 0 15px ${colors.brandLight}` // Glowing Gold Effect
+                                        boxShadow: `0 0 15px rgba(0,0,0,0.1)` // Neutral Shadow
                                     }}
                                 />
                                 
@@ -216,8 +215,8 @@ export default function ImmersiveProductShowcase() {
                                         className="text-5xl md:text-8xl font-serif font-medium tracking-tight uppercase leading-none" 
                                         style={{ 
                                             color: colors.text,
-                                            // Subtle text shadow for "shining" feel on title
-                                            textShadow: "0 2px 40px rgba(218, 165, 32, 0.1)"
+                                            // Neutral shadow instead of gold
+                                            textShadow: "0 2px 40px rgba(0, 0, 0, 0.05)"
                                         }} 
                                         variants={itemVariants}
                                     >
@@ -261,7 +260,7 @@ export default function ImmersiveProductShowcase() {
                                                                 className="w-1.5 h-1.5 rounded-full" 
                                                                 style={{ 
                                                                     backgroundColor: colors.brandLight,
-                                                                    boxShadow: `0 0 5px ${colors.brandLight}` 
+                                                                    opacity: 0.3
                                                                 }} 
                                                             />
                                                         )}
@@ -292,31 +291,31 @@ export default function ImmersiveProductShowcase() {
                         {/* --- RIGHT PANEL --- */}
                         <div className="relative w-full h-[450px] md:h-[700px] flex items-center justify-center perspective-1200 overflow-visible mt-10 lg:mt-0">
                             
-                            {/* Ambient Glow (Dark Gold) */}
+                            {/* Ambient Glow (Neutral) */}
                             <motion.div 
                                 className="absolute inset-0 z-0 flex items-center justify-center transition-colors duration-1000"
                                 animate={{ background: `radial-gradient(circle at center, ${colors.brandLight} 0%, transparent 70%)` }}
-                                style={{ opacity: 0.25 }} // Reduced opacity for "dark" feel
+                                style={{ opacity: 0.1 }} 
                             />
                             
                             {/* Rotating Circles */}
                             <div className="absolute inset-0 z-0 flex items-center justify-center">
                                 <motion.div 
                                     className="w-[280px] h-[280px] md:w-[450px] md:h-[450px] rounded-full border border-dashed"
-                                    style={{ borderColor: colors.brandLight, opacity: 0.4 }}
+                                    style={{ borderColor: colors.brandLight, opacity: 0.2 }}
                                     variants={rotateCircle}
                                     animate="animate"
                                 />
                                 <motion.div 
                                     className="absolute w-[240px] h-[240px] md:w-[380px] md:h-[380px] rounded-full border"
-                                    style={{ borderColor: colors.brandLight, opacity: 0.2 }}
+                                    style={{ borderColor: colors.brandLight, opacity: 0.1 }}
                                     animate={{ rotate: -360 }}
                                     transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
                                 />
                             </div>
 
                             {/* Background Text */}
-                            <div className="absolute right-0 top-0 bottom-0 z-0 flex items-center justify-end overflow-hidden pointer-events-none opacity-10 select-none">
+                            <div className="absolute right-0 top-0 bottom-0 z-0 flex items-center justify-end overflow-hidden pointer-events-none opacity-5 select-none">
                                 <motion.span 
                                     key={product.name}
                                     initial={{ y: 50, opacity: 0 }}
@@ -339,19 +338,17 @@ export default function ImmersiveProductShowcase() {
                                     initial="enter"
                                     animate="center"
                                     exit="exit"
-                                    // ⚡ PERFORMANCE: Promote to layer
                                     style={{ willChange: "transform, opacity" }}
                                 >
-                                    <div className="relative w-full h-full rounded-t-[100px] rounded-b-[40px] overflow-hidden shadow-2xl transition-all duration-500 bg-white/5 backdrop-blur-sm border border-white/20 group">
+                                    <div className="relative w-full h-full rounded-t-[100px] rounded-b-[40px] overflow-hidden shadow-2xl transition-all duration-500 bg-white/5 backdrop-blur-sm border border-black/5 group">
                                         
-                                        {/* ⚡ OPTIMIZED IMAGE: Using <img> instead of background-image for better browser loading control */}
                                         {product.imageurl?.[0] ? (
                                             <img 
                                                 src={product.imageurl[0]} 
                                                 alt={product.name}
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                                loading="eager" // Load current image immediately
-                                                decoding="async" // Decode off main thread
+                                                loading="eager"
+                                                decoding="async"
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -360,13 +357,13 @@ export default function ImmersiveProductShowcase() {
                                         )}
                                         
                                         {/* Overlay Gradient */}
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-black/20 via-transparent to-white/10 pointer-events-none" />
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10 pointer-events-none" />
                                     </div>
                                     
-                                    {/* Bottom Shadow Glow */}
+                                    {/* Bottom Shadow Glow (Neutral) */}
                                     <div 
-                                        className="absolute -bottom-8 left-4 right-4 h-6 rounded-[50%] blur-xl opacity-50" 
-                                        style={{ backgroundColor: colors.brandLight }} 
+                                        className="absolute -bottom-8 left-4 right-4 h-6 rounded-[50%] blur-xl opacity-30" 
+                                        style={{ backgroundColor: "#000" }} 
                                     />
                                 </motion.div>
                             </AnimatePresence>
@@ -383,7 +380,7 @@ export default function ImmersiveProductShowcase() {
                             
                             <motion.div 
                                 className="absolute top-1/4 right-1/4 opacity-80"
-                                animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.2, 1] }}
+                                animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
                                 transition={{ duration: 3, repeat: Infinity }}
                                 style={{ color: colors.brandLight }}
                             >
