@@ -88,7 +88,7 @@ const AdminPanel = () => {
   const [imgError, setImgError] = useState(false);
 
   // Contexts
-  const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts } = useContext(ProductContext);
+  const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts, refreshProductStock  } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
 
   const { tickets: queries, getAllTickets: getquery } = useContext(ContactContext);
@@ -114,6 +114,8 @@ const AdminPanel = () => {
   const [couponSubTab, setCouponSubTab] = useState("manual");
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  
 
   // Auth Guard
   useEffect(() => {
@@ -390,7 +392,7 @@ const AdminPanel = () => {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
               {activeTab === "dashboard" && <DashboardTab orders={orders} successfulOrders={successfulOrders} totalRevenue={totalRevenue} totalOrders={totalOrders} conversionRate={conversionRate} averageOrderValue={averageOrderValue} newCustomers={newCustomers} returningCustomers={returningCustomers} cancelledOrdersValue={cancelledOrdersValue} totalQueries={totalQueries} />}
               {activeTab === "reports" && <Reports products={products} users={users} orders={reportOrders} />}
-              {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} />}
+              {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock}/>}
               {activeTab === "coupons" && <CouponsTab coupons={coupons} users={users} couponSubTab={couponSubTab} setCouponSubTab={setCouponSubTab} editingCoupon={editingCoupon} setEditingCoupon={setEditingCoupon} saveCoupon={saveCoupon} deleteCoupon={deleteCoupon} />}
               {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
               {/* 🟢 PASSED: handleUpdateUserRole */}

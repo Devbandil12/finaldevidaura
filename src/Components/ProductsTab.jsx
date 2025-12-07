@@ -1,12 +1,12 @@
 import React from 'react';
 import { 
   Download, Archive, RotateCcw, Plus, Search, 
-  Package, Tag, AlertTriangle, CheckCircle, XCircle, Edit3
+  Package, Tag, AlertTriangle, CheckCircle, XCircle, Edit3,RefreshCw
 } from 'lucide-react';
 
 const ProductsTab = ({ 
   products, archivedProducts, showArchived, loading, 
-  handleProductArchive, handleProductUnarchive, setEditingProduct, downloadCSV, setOpenModal, setShowArchived 
+  handleProductArchive, handleProductUnarchive, setEditingProduct, downloadCSV, setOpenModal, setShowArchived, refreshProductStock
 }) => {
 
   // Helper: Get Stock Status Badge
@@ -34,6 +34,14 @@ const ProductsTab = ({
           <p className="text-sm text-gray-500 mt-1">Manage your store's inventory and catalog.</p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
+          <button 
+            onClick={refreshProductStock} 
+            disabled={loading}
+            className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition text-sm font-semibold shadow-sm disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> 
+            {loading ? 'Refreshing...' : 'Refresh Stock'}
+          </button>
           <button 
             onClick={() => downloadCSV(products, 'products.csv')} 
             className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 bg-white  text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-semibold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"

@@ -199,6 +199,25 @@ export const ProductProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getProducts, userdetails?.id]);
 
+  const refreshProductStock = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Tell backend to clear the cache
+      await fetch(`${BACKEND_URL}/api/products/cache/invalidate`, { 
+        method: "POST" 
+      });
+      
+      // 2. Fetch fresh data (Backend will now serve live DB data)
+      await getProducts();
+      window.toast.success("Live stock updated!");
+    } catch (error) {
+      console.error("❌ Failed to refresh stock:", error);
+      window.toast.error("Failed to refresh stock.");
+    } finally {
+      setLoading(false);
+    }
+  }, [BACKEND_URL, getProducts]);
+
   useEffect(() => {
     getProducts();
     getArchivedProducts();
@@ -220,6 +239,7 @@ export const ProductProvider = ({ children }) => {
         updateVariant,
         deleteVariant,      
         unarchiveVariant,   
+        refreshProductStock,
       }}
     >
       {children}

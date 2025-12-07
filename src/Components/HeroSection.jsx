@@ -2,9 +2,9 @@ import React, { useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 // NOTE: For the best effect, you need THREE DIFFERENT bottle images here. 
-import bottleMain from "../assets/images/bottle-perfume.webp";
-import bottleLayer1 from "../assets/images/bottle-perfume.webp";
-import bottleLayer2 from "../assets/images/bottle-perfume.webp";
+import bottleMain from "../assets/images/saphire-mist-2.webp";
+import bottleLayer1 from "../assets/images/saphire-mist.webp";
+import bottleLayer2 from "../assets/images/vigor.webp";
 
 const DevidAuraLuxuryCombo = () => {
   const comp = useRef(null);
