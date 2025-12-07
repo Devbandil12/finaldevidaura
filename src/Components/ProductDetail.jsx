@@ -177,7 +177,7 @@ useEffect(() => {
 
       <div className="min-h-screen bg-white text-gray-800 font-sans">
         <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
-          <main className="relative max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-16">
+          <main className="relative max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-16 mt-[40px] md:mt-0">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
