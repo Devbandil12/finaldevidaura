@@ -86,7 +86,7 @@ export const CouponProvider = ({ children }) => {
     }
   }, [isUserLoading, userdetails, refreshCoupons, loadAvailableCoupons, loadAutoOfferInstructions]);
 
-  // 5. 🟢 MODIFIED: saveCoupon (Includes actorId for logging)
+  // 5. 🟢 MODIFIED: saveCoupon (Includes actorId for logging and targetUserId for targeting)
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
       return window.toast.error("Code is required");
@@ -114,6 +114,9 @@ export const CouponProvider = ({ children }) => {
       action_buyX: editingCoupon.action_buyX || null,
       action_getY: editingCoupon.action_getY || null,
 
+      // 🟢 NEW: Pass targetUserId to backend
+      targetUserId: editingCoupon.targetUserId || null,
+      targetCategory: editingCoupon.targetCategory || null, // 🟢 NEW
       // 🟢 CRITICAL FIX: Add actorId so backend logs the Create/Update action
       actorId: userdetails?.id 
     };

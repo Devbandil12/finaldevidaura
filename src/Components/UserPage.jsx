@@ -14,7 +14,7 @@ import {
   ShoppingBag, Bell, Shield, LogOut, User as UserIcon, Camera, ShoppingCart,
   FileText, XCircle, Heart, ChevronLeft, ChevronDown, Check, Loader2, Upload,
   ChevronRight, Send, AlertCircle, Lock, RefreshCw, Clock, Headphones, Filter,
-  Truck, CheckSquare, ShieldAlert, UserCog, History, Ticket
+  Truck, CheckSquare, ShieldAlert, UserCog, History, Ticket, Sparkles, Copy, Layers
 } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import useCloudinary from "../utils/useCloudinary";
@@ -260,7 +260,6 @@ const ProfileCompletion = ({ user, addressCount }) => {
 /* ========================================================================
    3. LEFT COLUMN: ADVANCED ACTIVITY LOG (REPLACES RECENT ACTIVITY)
    ======================================================================== */
-// 🟢 MODIFIED: Added isAdminLog prop to display Actor Name for global logs
 const AdvancedActivityLog = ({ orders, reviews, addresses, tickets, securityLogs, onNavigate, title = "Activity Log", isAdminLog = false }) => {
   const [filter, setFilter] = useState("all");
 
@@ -500,11 +499,239 @@ const AdvancedActivityLog = ({ orders, reviews, addresses, tickets, securityLogs
   );
 };
 
+// 🟢 NEW: UserOffers with Updated Categorization Logic
+
+const UserOffers = () => {
+  const { userdetails } = useContext(UserContext);
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState(null); 
+
+  // Use global BASE variable
+  useEffect(() => {
+    if (userdetails?.id) {
+      fetch(`${BASE}/api/coupons/available?userId=${userdetails.id}`)
+        .then(res => res.json())
+        .then(data => setOffers(data))
+        .catch(err => console.error("Failed to load offers", err))
+        .finally(() => setLoading(false));
+    } else {
+        setLoading(false);
+    }
+  }, [userdetails]);
+
+  // 🟢 1. Categorize Offers Logic (UPDATED)
+  const categorized = useMemo(() => {
+    return {
+      // 🟢 MODIFIED: "Just For You" now includes User Specific OR Category Specific coupons
+      special: offers.filter(o => o.targetUserId || o.targetCategory),
+      
+      // Public Automatic (No targeting constraints)
+      automatic: offers.filter(o => !o.targetUserId && !o.targetCategory && o.isAutomatic),
+      
+      // Public Manual (No targeting constraints)
+      manual: offers.filter(o => !o.targetUserId && !o.targetCategory && !o.isAutomatic),
+    };
+  }, [offers]);
+
+  const handleCopy = (code, id) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    if(window.toast) window.toast.success("Code copied!");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // 🟢 2. Compact Voucher Component
+  const VoucherCard = ({ offer, type }) => {
+    const isSpecial = type === 'special';
+    const isAuto = type === 'automatic';
+    const isCopied = copiedId === offer.id;
+
+    // Theme Configs
+    const themes = {
+      special: {
+        wrapper: "bg-slate-900 border-slate-800 text-white",
+        left: "bg-gradient-to-br from-indigo-600 to-purple-700 text-white",
+        divider: "border-slate-700",
+        dots: "bg-slate-50", 
+        code: "text-amber-400",
+        btn: "bg-white/10 hover:bg-white/20 text-white text-[10px]"
+      },
+      automatic: {
+        wrapper: "bg-white border-blue-100 text-slate-800",
+        left: "bg-blue-50 text-blue-600",
+        divider: "border-blue-100",
+        dots: "bg-slate-50",
+        code: "text-blue-700",
+        btn: "hidden" 
+      },
+      manual: {
+        wrapper: "bg-white border-slate-200 text-slate-800",
+        left: "bg-slate-100 text-slate-500",
+        divider: "border-slate-200",
+        dots: "bg-slate-50",
+        code: "text-slate-900",
+        btn: "bg-black text-white hover:bg-slate-800 text-[10px]"
+      }
+    };
+
+    const theme = isSpecial ? themes.special : isAuto ? themes.automatic : themes.manual;
+
+    return (
+      <motion.div 
+        variants={fadeInUp}
+        className={`relative flex w-full h-28 rounded-xl overflow-hidden border shadow-sm transition-all hover:shadow-md ${theme.wrapper}`}
+      >
+        {/* LEFT SIDE: Visuals (Fixed Width) */}
+        <div className={`w-20 flex flex-col items-center justify-center text-center relative ${theme.left}`}>
+          <div className="mb-1">
+            {isSpecial ? <Sparkles size={18} /> : isAuto ? <Layers size={18} /> : <Ticket size={18} />}
+          </div>
+          {offer.discountType === 'percent' && (
+            <span className="text-lg font-black leading-none">{offer.discountValue}%<br/><span className="text-[9px] font-medium opacity-80">OFF</span></span>
+          )}
+          {offer.discountType === 'flat' && (
+            <span className="text-lg font-black leading-none">₹{offer.discountValue}<br/><span className="text-[9px] font-medium opacity-80">OFF</span></span>
+          )}
+          {offer.discountType === 'free_item' && (
+            <span className="text-[10px] font-bold leading-tight">FREE<br/>GIFT</span>
+          )}
+          
+          {/* Perforation Dots (Right side of Left panel) */}
+          <div className="absolute -right-1 top-0 bottom-0 flex flex-col justify-between py-1.5">
+             {[...Array(5)].map((_,i) => <div key={i} className={`w-2 h-2 rounded-full ${theme.wrapper.split(' ')[0]}`} />)}
+          </div>
+        </div>
+
+        {/* MIDDLE: Details */}
+        <div className="flex-1 px-4 py-3 flex flex-col justify-center min-w-0 relative">
+          {/* Top/Bottom Cutouts */}
+          <div className={`absolute -top-2.5 left-0 w-5 h-5 rounded-full ${theme.dots} border-b ${theme.divider}`} style={{left: '-10px'}}></div>
+          <div className={`absolute -bottom-2.5 left-0 w-5 h-5 rounded-full ${theme.dots} border-t ${theme.divider}`} style={{left: '-10px'}}></div>
+          
+          {/* Divider Line */}
+          <div className={`absolute top-3 bottom-3 left-0 border-l-2 border-dashed ${theme.divider}`}></div>
+
+          <div className="pl-4">
+            {/* Badges */}
+            <div className="flex items-center gap-2 mb-1">
+              {isSpecial && <span className="text-[9px] font-bold uppercase tracking-widest text-amber-400">Exclusive</span>}
+              {isAuto && <span className="text-[9px] font-bold uppercase tracking-widest text-blue-500">Auto-Applied</span>}
+              {offer.minOrderValue > 0 && (
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${isSpecial ? 'bg-white/10 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>
+                  Min ₹{offer.minOrderValue}
+                </span>
+              )}
+            </div>
+
+            {/* Code */}
+            <h3 className={`text-lg font-black tracking-wider font-mono truncate ${theme.code}`}>
+              {offer.code}
+            </h3>
+
+            {/* Description */}
+            <p className={`text-[10px] sm:text-xs line-clamp-1 opacity-80 mb-1 ${isSpecial ? 'text-slate-300' : 'text-slate-500'}`}>
+              {offer.description || "Use code at checkout"}
+            </p>
+            
+            {/* Expiry */}
+            {offer.validUntil && (
+               <p className={`text-[9px] flex items-center gap-1 opacity-70 ${isSpecial ? 'text-slate-400' : 'text-slate-400'}`}>
+                 Expires: {new Date(offer.validUntil).toLocaleDateString()}
+               </p>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Action Button (Only for Manual/Special) */}
+        {!isAuto && (
+          <div className="hidden sm:flex flex-col justify-center pr-4 pl-2 border-l border-dashed border-opacity-50 border-gray-300">
+            <button
+              onClick={() => handleCopy(offer.code, offer.id)}
+              className={`h-8 px-4 rounded-lg font-bold transition-all active:scale-95 flex items-center gap-1.5 ${theme.btn} ${isCopied ? '!bg-emerald-500 !text-white !border-emerald-500' : ''}`}
+            >
+              {isCopied ? <CheckCircle size={12} /> : <Copy size={12} />}
+              {isCopied ? "Copied" : "Copy"}
+            </button>
+          </div>
+        )}
+        
+        {/* Mobile Tap Area */}
+        {!isAuto && (
+           <button onClick={() => handleCopy(offer.code, offer.id)} className="absolute inset-0 w-full h-full sm:hidden z-10" aria-label="Copy Code"></button>
+        )}
+      </motion.div>
+    );
+  };
+
+  if (loading) return (
+    <div className="py-12 flex flex-col items-center justify-center text-slate-400 animate-pulse">
+      <Loader2 className="animate-spin mb-2 text-slate-300" size={24} />
+      <span className="text-xs font-medium">Loading offers...</span>
+    </div>
+  );
+
+  if (offers.length === 0) return (
+    <div className="py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+      <div className="w-12 h-12 bg-white shadow-sm rounded-full flex items-center justify-center mb-3 text-slate-300">
+        <Ticket size={20} />
+      </div>
+      <h3 className="text-slate-900 font-bold text-sm">No Coupons Available</h3>
+      <p className="text-slate-400 text-xs mt-1">Check back later for new deals!</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8 py-2">
+      
+      {/* 3. SECTION: SPECIAL OFFERS */}
+      {categorized.special.length > 0 && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+            <Sparkles size={16} className="text-amber-500 fill-amber-500" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Just For You</h3>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {categorized.special.map(offer => <VoucherCard key={offer.id} offer={offer} type="special" />)}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 4. SECTION: AUTOMATIC OFFERS */}
+      {categorized.automatic.length > 0 && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+            <Layers size={16} className="text-blue-600" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Automatic Deals</h3>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {categorized.automatic.map(offer => <VoucherCard key={offer.id} offer={offer} type="automatic" />)}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 5. SECTION: MANUAL COUPONS */}
+      {categorized.manual.length > 0 && (
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+            <Ticket size={16} className="text-slate-500" />
+            <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Available Coupons</h3>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {categorized.manual.map(offer => <VoucherCard key={offer.id} offer={offer} type="manual" />)}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
 /* ========================================================================
    TAB NAVIGATION
    ======================================================================== */
 const TABS = [
   { id: 'profile', label: 'Profile', icon: UserIcon },
+  { id: 'offers', label: 'Offers', icon: Ticket },
   { id: 'addresses', label: 'Addresses', icon: MapPin },
   { id: 'orders', label: 'Orders', icon: Package },
   { id: 'reviews', label: 'Reviews', icon: Star },
@@ -1253,6 +1480,8 @@ export default function UserPage() {
                 className="bg-white rounded-[2.5rem] p-4 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 min-h-[600px]"
               >
                 {activeTab === 'profile' && <ProfileSettings />}
+
+                {activeTab === 'offers' && <UserOffers />}
 
                 {activeTab === 'addresses' && !showAddressForm && (
                   <AddressSettings onAdd={() => { setEditingAddress(null); setIsAddingAddress(true); }} onEdit={(addr) => { setIsAddingAddress(false); setEditingAddress(addr); }} />
