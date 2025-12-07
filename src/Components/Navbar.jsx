@@ -402,8 +402,8 @@ const Navbar = ({ onVisibilityChange }) => {
               </motion.div>
             )}
 
-            <motion.div layout className="auth-item-container">
-              <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div layout className="auth-item-container" ref={profileWrapperRef}>
+              <AnimatePresence mode="popLayout" initial={false} >
                 {isLoggedIn ? (
                   <motion.div
                     key="profile-btn"
@@ -412,7 +412,6 @@ const Navbar = ({ onVisibilityChange }) => {
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
                     className="profile-wrapper" 
-                    ref={profileWrapperRef}
                   >
                     <div className="profile-icon" id="profile-btn">
                       <button id="profileButton" className="icon-btn" onClick={toggleProfile} aria-expanded={isProfileOpen}>
