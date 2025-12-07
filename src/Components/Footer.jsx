@@ -4,7 +4,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebookF, faInstagram, faTwitter } from "@fortawesome/free-brands-svg-icons";
 import { X, ChevronDown } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+// 1. Import useLocation to track page changes
+import { useNavigate, useLocation } from "react-router-dom";
 
 import PrivacyPolicy from "./PrivacyPolicy";
 import TermsAndConditions from "./TermsAndConditions";
@@ -17,7 +18,10 @@ export default function Footer() {
   const [policiesOpen, setPoliciesOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPolicy, setCurrentPolicy] = useState("privacy");
+  
   const navigate = useNavigate();
+  // 2. Get the current location object
+  const location = useLocation();
 
   const handleScroll = useCallback((targetId) => {
     const el = document.getElementById(targetId);
@@ -25,27 +29,20 @@ export default function Footer() {
   }, [navigate]);
 
   // ==========================================
-  // 🔒 SCROLL LOCK FIX (UPDATED)
+  // 🔒 SCROLL LOCK FIX
   // ==========================================
   useEffect(() => {
     if (modalOpen) {
-      // 1. Calculate width of scrollbar to prevent layout shift
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      
-      // 2. Add padding to body to fill the gap
       document.body.style.paddingRight = `${scrollbarWidth}px`;
-      
-      // 3. Lock BODY and HTML (Critical for some browsers/frameworks)
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
     } else {
-      // 4. Reset everything when closed
       document.body.style.paddingRight = "";
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
     }
 
-    // Cleanup function to ensure scroll is restored if component unmounts
     return () => {
       document.body.style.paddingRight = "";
       document.body.style.overflow = "";
@@ -54,9 +51,12 @@ export default function Footer() {
   }, [modalOpen]);
 
   // ==========================================
-  // GSAP Animations
+  // GSAP Animations (FIXED)
   // ==========================================
   useEffect(() => {
+    // 3. Refresh ScrollTrigger to ensure it calculates positions based on the NEW page height
+    ScrollTrigger.refresh();
+
     const ctx = gsap.context(() => {
       gsap.from(".footer-brand h2", {
         y: -20, opacity: 0, duration: 0.8, ease: "power3.out",
@@ -77,7 +77,9 @@ export default function Footer() {
     }, footerRef);
 
     return () => ctx.revert();
-  }, []);
+    
+    // 4. DEPENDENCY ADDED: This forces the effect to re-run whenever the route changes
+  }, [location.pathname]); 
 
   const openModal = (policy) => {
     setCurrentPolicy(policy);
@@ -112,7 +114,6 @@ export default function Footer() {
             </button>
           </div>
           
-          {/* Added 'overscroll-contain' to prevent scroll chaining on mobile */}
           <div className="overflow-y-auto p-6 overscroll-contain">
             {policyComponents[currentPolicy]}
           </div>

@@ -1,29 +1,32 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lucide-react'; // Added specific icons
+import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lucide-react'; 
 import PageTransition from "./PageTransition";
-// Make sure this path matches your actual file structure
-import footer_bg from "../assets/images/aboutus-footer.webp"; 
+
+// --- IMPORT ASSETS ---
+// 1. Desktop Image (Wide)
+import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 
+// 2. Mobile Image (Tall) - MAKE SURE THIS FILE EXISTS IN YOUR FOLDER
+// If you don't have it yet, just point this to the desktop image temporarily.
+import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; // <-- CHANGE THIS TO YOUR MOBILE IMAGE FILE NAME
+
 import pillar_1 from "../assets/images/saphire-mist-2.webp";
 import pillar_2 from "../assets/images/vigor.webp";
 import pillar_3 from "../assets/images/scarlet-night.webp";
 
-
 gsap.registerPlugin(ScrollTrigger);
 
-// --- ASSETS (UPDATED FOR LIGHT THEME) ---
+// --- ASSETS CONFIGURATION ---
 const IMAGES = {
     hero: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto-format&fit=crop&w=1600&q=80',
-    // Slide 1: Botanical/Bright (White Flower)
     pillar_1: pillar_1,
-    // Slide 2: Lab/Process (Glass & Light)
     pillar_2: pillar_2,
-    // Slide 3: Skin/Texture (Silk & Light)
     pillar_3: pillar_3,
-    // Founders: Light/Clean styling
     founders: 'https://images.unsplash.com/photo-1556157382-97eda2d62296?auto-format&fit=crop&w=1200&q=80',
-    footer_bg: footer_bg, 
+    // Footer Images
+    footer_desktop: footer_bg_desktop,
+    footer_mobile: footer_bg_mobile, 
 };
 
 export default function AboutUs() {
@@ -78,7 +81,6 @@ export default function AboutUs() {
                 toggleActions: "play none none reverse"
             };
 
-            // Image Reveal (Scale Down effect)
             gsap.fromTo(".founder-img-anim",
                 { scale: 1.1, opacity: 0.8 },
                 { 
@@ -95,7 +97,6 @@ export default function AboutUs() {
                 }
             );
 
-            // Text Stagger
             gsap.fromTo(".founder-text-anim",
                 { y: 30, opacity: 0 },
                 {
@@ -108,9 +109,7 @@ export default function AboutUs() {
                 }
             );
 
-            // --------------------------------------------------------
             // 4. FOOTER ANIMATION
-            // --------------------------------------------------------
             gsap.fromTo(".footer-card-anim", 
                 { 
                     clipPath: "inset(20% 10% 20% 10% round 60px)",
@@ -120,7 +119,7 @@ export default function AboutUs() {
                 {
                     clipPath: "inset(0% 0% 0% 0% round 48px)",
                     scale: 1,
-                    filter: "brightness(0.5)",
+                    filter: "brightness(1)",
                     duration: 1.5,
                     ease: "power4.out",
                     scrollTrigger: {
@@ -216,18 +215,13 @@ export default function AboutUs() {
                     </div>
                 </section>
 
-                {/* 3. HORIZONTAL SCROLL (LIGHT THEME) */}
-                {/* Changed: bg-[#0F0F0F] -> bg-[#F2F2F2] (Soft Grey)
-                   Changed: Text color -> text-[#1a1a1a] (Dark Charcoal)
-                */}
+                {/* 3. HORIZONTAL SCROLL */}
                 <div className="horizontal-wrapper h-screen w-full bg-[#F2F2F2] text-[#1a1a1a] overflow-hidden relative">
                     <div className="horizontal-scroll flex h-full w-[300vw]">
-                        
-                        {/* Slide 1: The Raw */}
+                        {/* Slide 1 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden">
                                 <img src={IMAGES.pillar_1} alt="Raw Ingredients" className="w-full h-full object-cover" onLoad={handleImageLoad} />
-                                {/* Lighter overlay for light theme */}
                                 <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
                             </div>
                             <div className="flex flex-col justify-center px-12 md:px-24 bg-[#F2F2F2]">
@@ -241,8 +235,7 @@ export default function AboutUs() {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Slide 2: The Alchemy */}
+                        {/* Slide 2 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden order-2 md:order-1">
                                 <img src={IMAGES.pillar_2} alt="Alchemy Lab" className="w-full h-full object-cover" />
@@ -258,8 +251,7 @@ export default function AboutUs() {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Slide 3: The Touch */}
+                        {/* Slide 3 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden">
                                 <img src={IMAGES.pillar_3} alt="Skin Texture" className="w-full h-full object-cover" />
@@ -275,22 +267,15 @@ export default function AboutUs() {
                                 </p>
                             </div>
                         </div>
-
                     </div>
                     <div className="absolute bottom-12 right-12 flex items-center gap-4 text-xs font-bold tracking-widest uppercase text-neutral-400">
                         Scroll to explore <ArrowRight className="w-4 h-4 text-black animate-pulse" />
                     </div>
                 </div>
 
-                {/* 4. FOUNDERS (LIGHT THEME) */}
-                {/* Changed: bg-[#121212] -> bg-[#FFFFFF]
-                    Changed: Text colors to dark/neutral
-                */}
+                {/* 4. FOUNDERS */}
                 <section className="founder-section relative py-32 bg-white text-[#1a1a1a] overflow-hidden">
-                    
                     <div className="max-w-[1400px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        
-                        {/* Left: Image (Clean Editorial) */}
                         <div className="relative w-full h-[60vh] lg:h-[80vh] overflow-hidden rounded-sm shadow-xl bg-gray-100">
                             <img 
                                 src={IMAGES.founders} 
@@ -298,34 +283,28 @@ export default function AboutUs() {
                                 className="founder-img-anim w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 transition-all duration-700"
                             />
                         </div>
-
-                        {/* Right: Content */}
                         <div className="flex flex-col justify-center relative z-10">
                             <div className="founder-text-anim mb-8">
                                 <span className="inline-block border-b border-black pb-1 text-xs font-bold tracking-[0.3em] uppercase text-neutral-900">
                                     The Visionaries
                                 </span>
                             </div>
-
                             <h2 className="founder-text-anim text-5xl md:text-7xl font-serif leading-[0.9] mb-8 text-black">
                                 Architects of <br/>
                                 <span className="text-neutral-400 italic">Memory.</span>
                             </h2>
-
                             <div className="founder-text-anim relative pl-8 border-l border-neutral-300 mb-10">
                                 <Quote className="absolute -left-3 -top-3 w-6 h-6 text-neutral-300 fill-neutral-100" />
                                 <p className="text-xl md:text-2xl text-neutral-600 font-light italic leading-relaxed">
                                     "We believe that luxury is transparency. We stripped away the marketing noise to focus on what matters: the liquid, the glass, and the feeling."
                                 </p>
                             </div>
-
                             <div className="founder-text-anim space-y-6 text-neutral-500 max-w-lg leading-relaxed font-light">
                                 <p>
                                     <strong>Harsh & Yomesh</strong> founded Devid Aura with a simple premise: to modernize the ancient art of Indian perfumery. 
                                     Balancing minimalist design with maximalist ingredients, they create scents that whisper rather than shout.
                                 </p>
                             </div>
-
                             <div className="founder-text-anim mt-12 flex items-center gap-12">
                                 <div>
                                     <p className="font-serif text-2xl text-black">Harsh</p>
@@ -341,29 +320,43 @@ export default function AboutUs() {
                     </div>
                 </section>
 
-                {/* 5. FOOTER */}
+                {/* 5. FOOTER (RESPONSIVE IMAGE SWAPPING) */}
                 <section className="footer-wrapper w-full bg-white pb-20 pt-20 flex justify-center items-center">
-                    <div className="footer-card-anim relative w-[90%] h-[40vh] md:h-[70vh] rounded-[3rem] overflow-hidden shadow-2xl">
+                    
+                    <div className="footer-card-anim relative w-[90%] h-[60vh] md:h-[70vh] rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black">
                         
                         <div className="absolute inset-0 w-full h-full overflow-hidden">
-                            <img
-                                src={IMAGES.footer_bg}
-                                alt="Devid Aura Footer Background"
-                                className="footer-bg-parallax w-full h-full md:h-[120%] object-contain md:object-cover object-center"
-                            />
+                            {/* <picture> allows us to swap the image source completely based on CSS media queries */}
+                            <picture>
+                                {/* ON MOBILE (Max-width 767px): Use the Mobile (Portrait) Image */}
+                                <source media="(max-width: 767px)" srcSet={IMAGES.footer_mobile} />
+                                
+                                {/* ON DESKTOP (Default): Use the Desktop (Landscape) Image */}
+                                <img
+                                    src={IMAGES.footer_desktop}
+                                    alt="Devid Aura Footer Background"
+                                    // Use object-cover for BOTH because they now match their screen aspect ratios
+                                    className="footer-bg-parallax w-full h-full object-cover object-center"
+                                />
+                            </picture>
                         </div>
 
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-black/20 to-black/90 mix-blend-multiply z-10 pointer-events-none"></div>
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80 z-10 pointer-events-none"></div>
 
                         <div className="absolute top-10 right-10 z-20 opacity-50">
-                            <Hexagon className="w-12 h-12 text-white/40 animate-spin-slow" strokeWidth={0.5} />
+                            <Hexagon className="w-8 h-8 md:w-12 md:h-12 text-white/40 animate-spin-slow" strokeWidth={0.5} />
                         </div>
 
-                        <div className="relative z-30 h-full flex flex-col justify-end items-center pb-16">
-                            <h2 className="footer-content-reveal text-3xl md:text-5xl font-serif text-white mb-8 text-center px-4" style={{ opacity: 0 }}>
+                        <div className="relative z-30 h-full flex flex-col justify-end items-center pb-10 md:pb-16">
+                            
+                            {/* NOTE: If your mobile image has text baked into it (like the example you showed), keep this 'hidden md:block'.
+                                If your mobile image is CLEAN (no text), remove 'hidden md:block' to show this text overlay. */}
+                            <h2 className="hidden md:block footer-content-reveal text-3xl md:text-5xl font-serif text-white mb-8 text-center px-4" style={{ opacity: 0 }}>
                                 Define Your Presence.
                             </h2>
-                            <button className="footer-content-reveal group relative px-10 py-4 md:px-14 md:py-5 bg-white text-black rounded-full overflow-hidden transition-all duration-500 hover:scale-[1.05]" style={{ opacity: 0 }}>
+
+                            <button className="footer-content-reveal group relative px-8 py-3 md:px-14 md:py-5 bg-white text-black rounded-full overflow-hidden transition-all duration-500 hover:scale-[1.05]" style={{ opacity: 0 }}>
                                 <span className="relative z-10 font-bold tracking-widest uppercase text-xs md:text-sm flex items-center gap-3">
                                     Shop Collection <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
                                 </span>
