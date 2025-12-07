@@ -5,6 +5,10 @@ import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lu
 import PageTransition from "./PageTransition";
 // Make sure this path matches your actual file structure
 import footer_bg from "../assets/images/aboutus-footer.webp"; 
+import pillar_1 from "../assets/images/saphire-mist-2.webp";
+import pillar_2 from "../assets/images/vigor.webp";
+import pillar_3 from "../assets/images/scarlet-night.webp";
+
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,11 +16,11 @@ gsap.registerPlugin(ScrollTrigger);
 const IMAGES = {
     hero: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto-format&fit=crop&w=1600&q=80',
     // Slide 1: Botanical/Bright (White Flower)
-    pillar_1: 'https://images.unsplash.com/photo-1508610048659-a06b669e3321?auto-format&fit=crop&w=1200&q=80',
+    pillar_1: pillar_1,
     // Slide 2: Lab/Process (Glass & Light)
-    pillar_2: 'https://images.unsplash.com/photo-1532413992378-f169ac26fff0?auto-format&fit=crop&w=1200&q=80',
+    pillar_2: pillar_2,
     // Slide 3: Skin/Texture (Silk & Light)
-    pillar_3: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto-format&fit=crop&w=1200&q=80',
+    pillar_3: pillar_3,
     // Founders: Light/Clean styling
     founders: 'https://images.unsplash.com/photo-1556157382-97eda2d62296?auto-format&fit=crop&w=1200&q=80',
     footer_bg: footer_bg, 
