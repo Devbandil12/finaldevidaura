@@ -122,14 +122,14 @@ const ProductVariantEditor = ({ product, onClose }) => {
                   {existingImages.map((url, idx) => (
                     <div key={`exist-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300 bg-white">
                       <img src={url} alt="Product" className="w-full h-full object-cover" />
-                      <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><Trash2 size={16} /></button>
+                      <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><Trash2 size={16} /></button>
                     </div>
                   ))}
                   {previews.map((url, idx) => (
                     <div key={`new-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  hover:shadow-md transition-all duration-300 bg-white">
                       <img src={url} alt="New" className="w-full h-full object-cover border-4 border-indigo-50" />
                       <div className="absolute inset-x-0 bottom-0 bg-indigo-600 text-white text-[9px] font-bold text-center py-1 tracking-wider">NEW UPLOAD</div>
-                      <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><X size={16} /></button>
+                      <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-white/90 text-red-500  p-2 rounded-full shadow-lg opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-red-500 hover:text-white"><X size={16} /></button>
                     </div>
                   ))}
                 </div>
