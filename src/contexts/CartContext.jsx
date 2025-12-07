@@ -178,6 +178,20 @@ export const CartProvider = ({ children }) => {
     BACKEND_URL
   ]);
 
+  // 🟢 NEW: Auto-refresh cart when user comes back to the tab (Focus Revalidation)
+  // This solves the "lack of live update" issue without sockets.
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isSignedIn && userdetails?.id) {
+        // Silent refresh (false argument) so no loading spinner appears
+        getCartitems(false);
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [isSignedIn, userdetails?.id, getCartitems]);
+
+
   const addToCart = useCallback(
     async (product, variant, quantity = 1) => {
       if (!variant || !variant.id) {
