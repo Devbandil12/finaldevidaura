@@ -220,7 +220,7 @@ const ContactUs = () => {
                     </div>
                     <div>
                     <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-400">Phone</h3>
-                    <a href="tel:+919406554414" className="text-white hover:text-emerald-200 transition">+91 9406554414</a>
+                    <a href="tel:+919406554414" className="text-white hover:text-emerald-200 transition">+91 7417711915</a>
                     </div>
                 </div>
                 
