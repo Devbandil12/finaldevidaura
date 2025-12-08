@@ -14,6 +14,7 @@ import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; // <-- CHAN
 import pillar_1 from "../assets/images/saphire-mist-2.webp";
 import pillar_2 from "../assets/images/vigor.webp";
 import pillar_3 from "../assets/images/scarlet-night.webp";
+import founder_img from "../assets/images/founder-img.jpg";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -23,7 +24,7 @@ const IMAGES = {
     pillar_1: pillar_1,
     pillar_2: pillar_2,
     pillar_3: pillar_3,
-    founders: 'https://images.unsplash.com/photo-1556157382-97eda2d62296?auto-format&fit=crop&w=1200&q=80',
+    founders: founder_img,
     // Footer Images
     footer_desktop: footer_bg_desktop,
     footer_mobile: footer_bg_mobile, 
