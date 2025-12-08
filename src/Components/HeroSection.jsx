@@ -137,7 +137,7 @@ const Herosection = () => {
         </h1>
         <div className="flex items-center justify-center gap-4 mt-3 opacity-60">
           <span className="brand-title h-[1px] w-8 bg-black"></span>
-          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">Itself an aura</p>
+          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">Is Itself an aura</p>
           <span className="brand-title h-[1px] w-8 bg-black"></span>
         </div>
       </div>
