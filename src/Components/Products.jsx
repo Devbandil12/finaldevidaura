@@ -26,6 +26,31 @@ const cardVariants = {
   }
 };
 
+// --- 🟢 NEW HELPER COMPONENT: BLUR IMAGE ---
+const BlurImage = ({ src, alt, className }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  return (
+    <motion.img
+      src={src}
+      alt={alt}
+      // Start hidden and blurred
+      initial={{ opacity: 0, filter: "blur(15px)" }} 
+      // Animate to visible and sharp once loaded
+      animate={{ 
+        opacity: isLoading ? 0 : 0.85, // 0.85 matches your original opacity-85 class
+        filter: isLoading ? "blur(15px)" : "blur(0px)"
+      }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      onLoad={() => setIsLoading(false)}
+      loading="lazy"
+      decoding="async"
+      // We pass the classes down so hover effects still work
+      className={className} 
+    />
+  );
+};
+
 const Products = () => {
   const { products } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
@@ -128,7 +153,7 @@ const Products = () => {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-16 max-w-[1600px] mx-auto"
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-16 max-w-[1600px] mx-auto"
             >
               <AnimatePresence mode="wait">
                 {displayProducts.map((product, index) => {
@@ -159,11 +184,14 @@ const Products = () => {
                       onClick={() => handleProductClick(product)}
                     >
                       {/* --- Image Area --- */}
-                      <div className="relative w-full h-60 overflow-hidden bg-[#0a0a0a]">
-                        <img
+                      <div className="relative w-full h-70 overflow-hidden bg-[#0a0a0a]">
+                        
+                        {/* 🟢 REPLACED <img /> WITH <BlurImage /> */}
+                        <BlurImage
                           src={imageUrl}
                           alt={product.name}
-                          className="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
+                          // Note: removed opacity-85 from here because it is handled inside the component logic for smoother transition
+                          className="w-full h-full object-cover group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
                         />
                         
                         {/* Discount Badge */}

@@ -5,12 +5,8 @@ import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lu
 import PageTransition from "./PageTransition";
 
 // --- IMPORT ASSETS ---
-// 1. Desktop Image (Wide)
 import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 
-// 2. Mobile Image (Tall) - MAKE SURE THIS FILE EXISTS IN YOUR FOLDER
-// If you don't have it yet, just point this to the desktop image temporarily.
-import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; // <-- CHANGE THIS TO YOUR MOBILE IMAGE FILE NAME
-
+import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; 
 import pillar_1 from "../assets/images/saphire-mist-2.webp";
 import pillar_2 from "../assets/images/vigor.webp";
 import pillar_3 from "../assets/images/scarlet-night.webp";
@@ -25,7 +21,6 @@ const IMAGES = {
     pillar_2: pillar_2,
     pillar_3: pillar_3,
     founders: founder_img,
-    // Footer Images
     footer_desktop: footer_bg_desktop,
     footer_mobile: footer_bg_mobile, 
 };
@@ -198,17 +193,22 @@ export default function AboutUs() {
                 </section>
 
                 {/* 2. HERO */}
+                {/* Optimized: Added will-change-transform to title and mask for smoother mobile composition */}
                 <section className="hero-section h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-[#FCFCFA]">
-                    <div className="hero-title z-20 text-center mix-blend-difference text-white">
+                    <div className="hero-title z-20 text-center mix-blend-difference text-white will-change-transform">
                         <h1 className="text-[12vw] leading-[0.8] font-serif font-bold tracking-tighter text-[#0F0F0F] inline-block whitespace-nowrap">
                             DEVID <span className="text-[12vw] font-serif italic text-[#0F0F0F]">AURA</span>
                         </h1>
                         <p className="text-xl text-[#333] mt-8 tracking-widest uppercase font-bold">Est. 2023</p>
                     </div>
-                    <div className="hero-image-mask absolute z-10 w-[40vw] h-[60vh] rounded-[200px] overflow-hidden shadow-2xl">
+                    {/* Optimized: Added 'will-change' to support heavy width/height/radius animation on mobile GPU */}
+                    <div className="hero-image-mask absolute z-10 w-[40vw] h-[60vh] rounded-[200px] overflow-hidden shadow-2xl [will-change:width,height,border-radius,transform]">
                         <img 
                             src={IMAGES.hero} 
                             alt="Hero Bottle" 
+                            /* Optimized: High Priority loading for LCP element */
+                            fetchPriority="high"
+                            decoding="sync"
                             className="w-full h-full object-cover" 
                             onLoad={handleImageLoad}
                         />
@@ -218,11 +218,19 @@ export default function AboutUs() {
 
                 {/* 3. HORIZONTAL SCROLL */}
                 <div className="horizontal-wrapper h-screen w-full bg-[#F2F2F2] text-[#1a1a1a] overflow-hidden relative">
-                    <div className="horizontal-scroll flex h-full w-[300vw]">
+                    {/* Optimized: Added will-change-transform for smoother horizontal scrolling */}
+                    <div className="horizontal-scroll flex h-full w-[300vw] will-change-transform">
                         {/* Slide 1 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden">
-                                <img src={IMAGES.pillar_1} alt="Raw Ingredients" className="w-full h-full object-cover" onLoad={handleImageLoad} />
+                                <img 
+                                    src={IMAGES.pillar_1} 
+                                    alt="Raw Ingredients" 
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover" 
+                                    onLoad={handleImageLoad} 
+                                />
                                 <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
                             </div>
                             <div className="flex flex-col justify-center px-12 md:px-24 bg-[#F2F2F2]">
@@ -239,7 +247,13 @@ export default function AboutUs() {
                         {/* Slide 2 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden order-2 md:order-1">
-                                <img src={IMAGES.pillar_2} alt="Alchemy Lab" className="w-full h-full object-cover" />
+                                <img 
+                                    src={IMAGES.pillar_2} 
+                                    alt="Alchemy Lab" 
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover" 
+                                />
                             </div>
                             <div className="flex flex-col justify-center px-12 md:px-24 bg-[#EAEAEA] order-1 md:order-2">
                                 <div className="mb-8">
@@ -255,7 +269,13 @@ export default function AboutUs() {
                         {/* Slide 3 */}
                         <div className="h-slide w-screen h-full grid grid-cols-1 md:grid-cols-2">
                             <div className="relative h-full w-full overflow-hidden">
-                                <img src={IMAGES.pillar_3} alt="Skin Texture" className="w-full h-full object-cover" />
+                                <img 
+                                    src={IMAGES.pillar_3} 
+                                    alt="Skin Texture" 
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover" 
+                                />
                             </div>
                             <div className="flex flex-col justify-center px-12 md:px-24 bg-[#F2F2F2]">
                                 <div className="mb-8">
@@ -281,7 +301,9 @@ export default function AboutUs() {
                             <img 
                                 src={IMAGES.founders} 
                                 alt="Harsh and Yomesh" 
-                                className="founder-img-anim w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 transition-all duration-700"
+                                loading="lazy"
+                                decoding="async"
+                                className="founder-img-anim w-full h-full object-cover grayscale opacity-90 hover:grayscale-0 transition-all duration-700 will-change-transform"
                             />
                         </div>
                         <div className="flex flex-col justify-center relative z-10">
@@ -324,20 +346,22 @@ export default function AboutUs() {
                 {/* 5. FOOTER (RESPONSIVE IMAGE SWAPPING) */}
                 <section className="footer-wrapper w-full bg-white pb-20 pt-20 flex justify-center items-center">
                     
-                    <div className="footer-card-anim relative w-[90%] h-[60vh] md:h-[70vh] rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black">
+                    {/* Optimized: Added will-change-transform for the scale/clip-path animation */}
+                    <div className="footer-card-anim relative w-[90%] h-[60vh] md:h-[70vh] rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black [will-change:clip-path,transform,filter]">
                         
                         <div className="absolute inset-0 w-full h-full overflow-hidden">
-                            {/* <picture> allows us to swap the image source completely based on CSS media queries */}
                             <picture>
-                                {/* ON MOBILE (Max-width 767px): Use the Mobile (Portrait) Image */}
+                                {/* ON MOBILE (Max-width 767px) */}
                                 <source media="(max-width: 767px)" srcSet={IMAGES.footer_mobile} />
                                 
-                                {/* ON DESKTOP (Default): Use the Desktop (Landscape) Image */}
+                                {/* ON DESKTOP (Default) */}
                                 <img
                                     src={IMAGES.footer_desktop}
                                     alt="Devid Aura Footer Background"
-                                    // Use object-cover for BOTH because they now match their screen aspect ratios
-                                    className="footer-bg-parallax w-full h-full object-cover object-center"
+                                    loading="lazy"
+                                    decoding="async"
+                                    // Optimized: Added will-change-transform for parallax
+                                    className="footer-bg-parallax w-full h-full object-cover object-center will-change-transform"
                                 />
                             </picture>
                         </div>
@@ -351,8 +375,6 @@ export default function AboutUs() {
 
                         <div className="relative z-30 h-full flex flex-col justify-end items-center pb-10 md:pb-16">
                             
-                            {/* NOTE: If your mobile image has text baked into it (like the example you showed), keep this 'hidden md:block'.
-                                If your mobile image is CLEAN (no text), remove 'hidden md:block' to show this text overlay. */}
                             <h2 className="hidden md:block footer-content-reveal text-3xl md:text-5xl font-serif text-white mb-8 text-center px-4" style={{ opacity: 0 }}>
                                 Define Your Presence.
                             </h2>
