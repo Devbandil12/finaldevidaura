@@ -32,9 +32,9 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-between w-full sm:min-w-[140px] px-2 py-1.5 sm:px-3 sm:py-2 bg-white border rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 
-        ${isOpen 
-          ? 'border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-black' 
-          : 'border-gray-100 hover:border-gray-200 text-gray-600 shadow-sm hover:shadow-md'}`}
+        ${isOpen
+            ? 'border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-black'
+            : 'border-gray-100 hover:border-gray-200 text-gray-600 shadow-sm hover:shadow-md'}`}
       >
         <span className="truncate mr-2">{currentStatus}</span>
         <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -118,13 +118,21 @@ const OrdersTab = ({
     if (orderStatusTab === "All") return true;
     if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
     if (orderStatusTab === "Payment Pending") {
-      if (o.status === "Order Cancelled") return false;
+      const orderStatus = (o.status || "").toLowerCase().trim();
       const pMode = (o.paymentMode || "").toUpperCase();
       const pStatus = (o.paymentStatus || "").toLowerCase().trim();
-      const isCOD = pMode.includes("COD") || pMode.includes("CASH");
-      if (isCOD) return false;
-      const isPending = pStatus === "pending" || pStatus === "pending_payment";
-      return isPending;
+
+      // Condition A: Order Status must be 'payment_pending' or 'payment pending'
+      const isOrderPending = orderStatus === "payment_pending" || orderStatus === "payment pending";
+
+      // Condition B: Payment Mode must be Online (Not COD)
+      const isOnline = !(pMode.includes("COD") || pMode.includes("CASH"));
+
+      // Condition C: Payment Status must be 'pending'
+      const isPaymentPending = pStatus === "pending";
+
+      // RETURN TRUE ONLY IF ALL 3 MATCH
+      return isOrderPending && isOnline && isPaymentPending;
     }
     return o.status === orderStatusTab;
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
@@ -136,7 +144,7 @@ const OrdersTab = ({
       <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-gray-100 gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 flex items-center">
-            <Package className="w-5 h-5 sm:w-6 sm:h-6 mr-3 text-indigo-500" strokeWidth={2} /> 
+            <Package className="w-5 h-5 sm:w-6 sm:h-6 mr-3 text-indigo-500" strokeWidth={2} />
             Order Management
           </h2>
           <p className="text-sm text-gray-400 mt-1 font-medium">Track and manage customer orders.</p>
@@ -157,9 +165,9 @@ const OrdersTab = ({
               key={status}
               onClick={() => setOrderStatusTab(status)}
               className={`px-4 py-2 rounded-full text-[11px] font-bold whitespace-nowrap transition-all duration-300 border 
-              ${orderStatusTab === status 
-                ? "bg-black text-white border-black shadow-[0_4px_12px_rgba(0,0,0,0.1)]" 
-                : "bg-white text-gray-500 border-transparent hover:bg-white hover:shadow-sm hover:text-gray-800"}`}
+              ${orderStatusTab === status
+                  ? "bg-black text-white border-black shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+                  : "bg-white text-gray-500 border-transparent hover:bg-white hover:shadow-sm hover:text-gray-800"}`}
             >
               {status === "Cancelled" ? "Cancelled" : status}
             </button>
@@ -204,9 +212,9 @@ const OrdersTab = ({
               style={{ zIndex: 1000 - idx, position: 'relative' }}
               // ULTRA SOFT BORDERS AND SHADOWS APPLIED HERE
               className={`bg-white rounded-2xl transition-all duration-300 group overflow-hidden
-              ${isExpanded 
-                ? 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] ring-0 border border-gray-100' 
-                : 'border border-gray-100/50 hover:border-gray-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.04)]'}`}
+              ${isExpanded
+                  ? 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] ring-0 border border-gray-100'
+                  : 'border border-gray-100/50 hover:border-gray-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.04)]'}`}
             >
 
               {/* Main Summary Row */}
@@ -299,8 +307,8 @@ const OrdersTab = ({
                                 <div key={step.label} className="relative z-10 flex flex-col items-center group">
                                   <div
                                     className={`w-10 h-10 rounded-xl flex items-center justify-center border-[3px] transition-all duration-500 shadow-sm ${isCompleted
-                                        ? "bg-black border-black text-white shadow-md"
-                                        : "bg-white border-white text-gray-200"
+                                      ? "bg-black border-black text-white shadow-md"
+                                      : "bg-white border-white text-gray-200"
                                       }`}
                                   >
                                     <Icon size={18} className={`${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={isCompleted ? 2.5 : 2} />                                      </div>
