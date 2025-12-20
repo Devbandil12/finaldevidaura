@@ -2,61 +2,62 @@ import React, { useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 
-// --- ASSETS (Matched to your uploaded files) ---
+// IMAGE ASSETS
 import bottleMain from "../assets/images/saphire-mist.webp";
 import bottleLayer1 from "../assets/images/saphire-mist-2.webp";
 import bottleLayer2 from "../assets/images/vigor.webp";
 
 const Herosection = () => {
-  const containerRef = useRef(null);
+  const comp = useRef(null);
   const navigate = useNavigate();
 
-  // --- HANDLERS ---
   const handleScroll = useCallback((targetId) => {
     const el = document.getElementById(targetId);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   }, [navigate]);
 
-  // --- ANIMATION ENGINE ---
   useLayoutEffect(() => {
-    // 1. Create a Context (Essential for React StrictMode & Cleanup)
-    const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
+    let mm = gsap.matchMedia();
 
-      // 2. INITIAL SETUP (Performance Critical)
-      // Hide everything initially using visibility:hidden (autoAlpha: 0)
-      // This prevents the browser from trying to paint them before the animation starts.
-      gsap.set([".brand-title", ".poetic-line", ".cta-container", ".bottle-group"], { 
-        autoAlpha: 0 
-      });
+    let ctx = gsap.context(() => {
+      
+      // 1. SETUP: PRE-CALCULATE LAYERS
+      // We set autoAlpha: 0 immediately. This hides them from the DOM layout engine entirely
+      // until GSAP needs them. This is the #1 performance booster.
+      gsap.set(
+        [".bottle-main", ".bottle-layer-1", ".bottle-layer-2", ".brand-title", ".poetic-line", ".cta-container"], 
+        { autoAlpha: 0 } 
+      );
 
-      // Force GPU acceleration specifically on the large images
+      // Force hardware acceleration on the images specifically
       gsap.set([".bottle-main", ".bottle-layer-1", ".bottle-layer-2"], {
+        willChange: "transform, opacity",
+        transform: "translate3d(0,0,0)", // Forces GPU layer creation
         force3D: true,
-        backfaceVisibility: "hidden", 
-        transformStyle: "preserve-3d", // Helps flat images render smoother
-        willChange: "transform, opacity"
       });
 
-      // 3. SHARED TIMELINE (Text & Header)
+      // --- SHARED TIMELINE ---
       const tl = gsap.timeline({
         defaults: { ease: "power3.out" },
         onComplete: () => {
-          // Garbage Collection: Release GPU memory when animation is done
-          gsap.set("*", { willChange: "auto" });
-        }
+          // Garbage Collection: Release memory
+          gsap.set(
+            [".brand-title", ".poetic-line", ".cta-container", ".bottle-main", ".bottle-layer-1", ".bottle-layer-2"], 
+            { willChange: "auto" }
+          );
+        },
       });
 
-      // Header Text Reveal
+      // 1. Brand Title (Use autoAlpha for performance)
       tl.to(".brand-title", {
         y: 0,
-        autoAlpha: 1,
+        autoAlpha: 1, // "to" tween from 0 to 1
         duration: 1.2,
         stagger: 0.1,
         startAt: { y: -30 }
       });
-
-      // Main Poetic Text Reveal
+      
+      // 2. Main Text
       tl.to(".poetic-line", {
         y: 0,
         autoAlpha: 1,
@@ -66,97 +67,121 @@ const Herosection = () => {
         startAt: { y: 60 }
       }, "-=0.8");
 
-      // 4. DEVICE-SPECIFIC LOGIC
-      mm.add({
-        isDesktop: "(min-width: 800px)",
-        isMobile: "(max-width: 799px)",
-      }, (context) => {
-        const { isMobile } = context.conditions;
+      // --- DEVICE SPECIFIC SEQUENCING ---
+      mm.add(
+        {
+          isDesktop: "(min-width: 800px)",
+          isMobile: "(max-width: 799px)",
+        },
+        (context) => {
+          let { isMobile } = context.conditions;
 
-        if (isMobile) {
-          // ===============================================
-          // MOBILE SEQUENCE: Text -> Button -> Images
-          // STRATEGY: Zero Movement. Opacity Only.
-          // ===============================================
+          if (isMobile) {
+            // =========================================
+            // MOBILE: SUPER LITE MODE
+            // =========================================
 
-          // A. Button appears first (User request)
-          tl.to(".cta-container", {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.8,
-            startAt: { y: 20 } // Small movement for button is okay
-          }, "-=0.5");
+            // 3. CTA Button (Comes BEFORE images on mobile)
+            // No movement (y), just fade. Movement causes layout thrashing on weak phones.
+            tl.to(".cta-container", {
+              autoAlpha: 1,
+              duration: 1.0,
+              startAt: { y: 10 },
+              y: 0
+            }, "-=0.5"); 
 
-          // B. Images Fade In (No Stagger)
-          // We fade the *container* first to minimize repaints
-          tl.to(".bottle-group", { autoAlpha: 1, duration: 0.1 }); 
-          
-          // Fade images in simultaneously.
-          // Moving full rectangular photos on mobile causes lag, so we just fade them.
-          tl.to([".bottle-main", ".bottle-layer-1", ".bottle-layer-2"], {
-            autoAlpha: 1,
-            duration: 1.5,
-            ease: "sine.out"
-          }, "-=0.2");
+            // 4. Images Fade In
+            // We animate them ALL AT ONCE (stagger: 0) to reduce draw calls
+            tl.to([".bottle-main", ".bottle-layer-1", ".bottle-layer-2"], {
+              autoAlpha: 1,
+              duration: 1.2,
+              ease: "sine.out", // Sine is mathematically cheaper than Expo
+            }, "-=0.2");
 
-        } else {
-          // ===============================================
-          // DESKTOP SEQUENCE: Text -> Images -> Button
-          // STRATEGY: Full VFX. Sliding, Scaling, Floating.
-          // ===============================================
+          } else {
+            // =========================================
+            // DESKTOP: PREMIUM MODE
+            // =========================================
 
-          // A. Images Entrance (Complex)
-          tl.to(".bottle-group", { autoAlpha: 1, duration: 0.1 });
-          
-          // Main Bottle: Slide Up + Scale
-          tl.to(".bottle-main", {
-            scale: 1, autoAlpha: 1, y: 0, duration: 1.5, ease: "expo.out",
-            startAt: { scale: 0.9, y: 50 }
-          }, "-=1");
+            // 3. Complex Image Entrance
+            tl.to(".bottle-main", {
+              scale: 1,
+              autoAlpha: 1,
+              y: 0,
+              duration: 1.5,
+              ease: "expo.out",
+              startAt: { scale: 0.9, y: 50 }
+            }, "-=1");
 
-          // Side Layers: Slide Out + Rotate
-          tl.to([".bottle-layer-1", ".bottle-layer-2"], {
-            x: 0, autoAlpha: 1, 
-            rotation: (i) => (i === 0 ? -10 : 10),
-            duration: 1.8, ease: "expo.out",
-            startAt: { x: (i) => (i === 0 ? -40 : 40), rotation: 0 }
-          }, "<");
+            tl.to([".bottle-layer-1", ".bottle-layer-2"], {
+              x: 0,
+              autoAlpha: 1,
+              rotation: (index) => (index === 0 ? -10 : 10),
+              duration: 1.8,
+              ease: "expo.out",
+              startAt: { 
+                 x: (index) => (index === 0 ? -40 : 40), 
+                 rotation: 0 
+              }
+            }, "<");
 
-          // B. Expensive Filters (Desktop Only)
-          tl.to(".bottle-main", { 
-            filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))", 
-            duration: 1 
-          }, "-=1");
+            // 4. CTA Button (After images on desktop)
+            tl.to(".cta-container", {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.8,
+              startAt: { y: 20 }
+            }, "-=0.8");
 
-          // C. Button (Last on Desktop)
-          tl.to(".cta-container", {
-            autoAlpha: 1, y: 0, duration: 0.8,
-            startAt: { y: 20 }
-          }, "-=0.8");
+            // 5. Desktop VFX (Shadows & Floating)
+            tl.to(".bottle-main", {
+              filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))",
+              duration: 1,
+            }, "-=1");
 
-          // D. Continuous Floating Loop (Desktop Only)
-          gsap.to(".bottle-main", { y: -15, rotation: 1, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut" });
-          gsap.to(".bottle-layer-1", { y: 20, rotation: -3, duration: 6, delay: 0.2, repeat: -1, yoyo: true, ease: "sine.inOut" });
-          gsap.to(".bottle-layer-2", { y: -20, rotation: 3, duration: 7, delay: 0.4, repeat: -1, yoyo: true, ease: "sine.inOut" });
+            gsap.to(".bottle-main", {
+              y: -15, rotation: 1, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+            gsap.to(".bottle-layer-1", {
+              y: 20, rotation: -3, duration: 6, delay: 0.2, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+            gsap.to(".bottle-layer-2", {
+              y: -20, rotation: 3, duration: 7, delay: 0.4, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+          }
         }
-      });
-    }, containerRef); // Scope to container
+      );
+    }, comp);
 
-    return () => ctx.revert(); // Cleanup
+    return () => ctx.revert();
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15">
-      
-      {/* --- STYLES --- */}
+    <div
+      ref={comp}
+      className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15"
+    >
       <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');`}
+        {`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');
+        
+        /* HARDWARE ACCELERATION CSS CLASS */
+        .gpu-accelerated {
+            transform: translate3d(0, 0, 0);
+            -webkit-transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        `}
       </style>
 
       {/* --- HEADER --- */}
-      <div className="w-full pt-16 pb-8 text-center relative">
-        <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase invisible" 
-            style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+      <div className="w-full pt-16 pb-8 text-center relative ">
+        <h1
+          className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase invisible"
+          style={{ fontFamily: "'Cinzel Decorative', serif" }}
+        >
           Devid Aura
         </h1>
         <div className="flex items-center justify-center gap-4 mt-3 opacity-60">
@@ -168,42 +193,54 @@ const Herosection = () => {
         </div>
       </div>
 
-      {/* --- MAIN LAYOUT --- */}
+      {/* --- MAIN CONTENT --- */}
       <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-center relative pb-12">
         
-        {/* SECTION 1: TEXT & CTA */}
+        {/* LEFT: TEXT CONTENT */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mb-16 lg:mb-0 z-20">
-          
           <h2 className="poetic-line text-xs lg:text-sm tracking-[0.4em] uppercase text-[#D4AF37] mb-6 font-bold border border-[#D4AF37]/30 px-4 py-2 rounded-full invisible">
             The Custom Atelier
           </h2>
 
           <div className="mb-8 space-y-2">
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 Don't Wear
               </h1>
             </div>
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 A Scent.
               </h1>
             </div>
             <div className="overflow-hidden pt-2">
-              <h1 className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9] invisible"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 Build A Legacy.
               </h1>
             </div>
           </div>
 
           <div className="overflow-hidden max-w-lg">
-            <p className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide invisible" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            <p
+              className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide invisible"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
+            >
               Standard perfume is for the crowd. <br />
-              Select your foundation, layer your heart notes, and crown it with an aura that belongs only to you.
+              Select your foundation, layer your heart notes, and crown it with
+              an aura that belongs only to you.
             </p>
           </div>
 
-          {/* CTA Button - Invisible initially, handled by GSAP */}
+          {/* Button starts invisible */}
           <div className="cta-container mt-12 invisible">
             <button
               onClick={() => handleScroll("custom-combo-section")}
@@ -222,42 +259,45 @@ const Herosection = () => {
           </div>
         </div>
 
-        {/* SECTION 2: BOTTLE COMPOSITION */}
+        {/* RIGHT: BOTTLE VISUALS */}
         <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[70vh] flex items-center justify-center">
-          
-          {/* 'bottle-group' is the container we use to toggle visibility efficiently */}
-          <div className="relative w-full h-full flex items-center justify-center bottle-group invisible">
+          <div className="relative w-full h-full flex items-center justify-center">
             
-            {/* Desktop Only Blur (Very Expensive - Hidden on Mobile) */}
+            {/* PERFORMANCE FIX: Hidden on mobile */}
             <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gray-100 rounded-full blur-3xl -z-10"></div>
-            
-            {/* Layer 1 (Left) */}
-            <img src={bottleLayer1} alt="Base Note" decoding="async"
-              className="bottle-layer-1 invisible absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
+
+            {/* Note: 'invisible' class added to all images so they don't block paint before GSAP loads */}
+            <img
+              src={bottleLayer1}
+              alt="Base Note"
+              decoding="async"
+              className="bottle-layer-1 gpu-accelerated invisible absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
               style={{ zIndex: 1 }}
             />
 
-            {/* Layer 2 (Right) */}
-            <img src={bottleLayer2} alt="Top Note" decoding="async"
-              className="bottle-layer-2 invisible absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
+            <img
+              src={bottleLayer2}
+              alt="Top Note"
+              decoding="async"
+              className="bottle-layer-2 gpu-accelerated invisible absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
               style={{ zIndex: 2 }}
             />
 
-            {/* Main Bottle (Center) */}
-            <img src={bottleMain} alt="The Signature" decoding="async"
-              className="bottle-main invisible relative h-[85%] object-contain"
+            <img
+              src={bottleMain}
+              alt="The Signature"
+              decoding="async"
+              className="bottle-main gpu-accelerated invisible relative h-[85%] object-contain"
               style={{ zIndex: 3 }}
             />
 
-            {/* Badge - Clean on Mobile, Blurred on Desktop */}
-            <div className="bottle-main invisible absolute bottom-10 bg-white lg:bg-white/80 lg:backdrop-blur-sm border border-white px-6 py-2 rounded-full lg:shadow-sm">
+            <div className="bottle-main absolute bottom-10 bg-white lg:bg-white/80 lg:backdrop-blur-sm border border-white px-6 py-2 rounded-full lg:shadow-sm invisible">
               <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-black">
                 The Masterpiece
               </span>
             </div>
           </div>
         </div>
-
       </main>
     </div>
   );
