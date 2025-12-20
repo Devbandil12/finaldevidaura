@@ -115,8 +115,6 @@ const AdminPanel = () => {
 
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-  
-
   // Auth Guard
   useEffect(() => {
     if (isLoaded && (!user || userdetails?.role !== "admin")) {
@@ -263,14 +261,16 @@ const AdminPanel = () => {
       <AnimatePresence>
         {isSidebarOpen && (
           <>
+            {/* BACKDROP: Increased z-index to 9999 to cover all cards */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 lg:hidden"
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9999] lg:hidden"
             />
+            {/* SIDEBAR: Increased z-index to 10000 to sit above backdrop */}
             <motion.aside
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-50 lg:hidden shadow-2xl flex flex-col"
+              className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-[10000] lg:hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                 <span className="text-xl font-extrabold text-gray-900 tracking-tight">Devid<span className="text-indigo-600">Aura</span></span>
@@ -395,7 +395,6 @@ const AdminPanel = () => {
               {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock}/>}
               {activeTab === "coupons" && <CouponsTab coupons={coupons} users={users} couponSubTab={couponSubTab} setCouponSubTab={setCouponSubTab} editingCoupon={editingCoupon} setEditingCoupon={setEditingCoupon} saveCoupon={saveCoupon} deleteCoupon={deleteCoupon} />}
               {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
-              {/* 🟢 PASSED: handleUpdateUserRole */}
               {activeTab === "users" && <UsersTab users={users} filteredUsers={filteredUsers} userSearchQuery={userSearchQuery} setUserSearchQuery={setUserSearchQuery} editingUser={editingUser} setEditingUser={setEditingUser} handleEditUser={handleEditUser} handleSaveUser={handleSaveUser} handleDeleteUser={handleDeleteUser} handleUpdateUserRole={handleUpdateUserRole} downloadCSV={downloadCSV} />}
               {activeTab === "queries" && <QueriesTab queries={queries} querySearch={querySearch} setQuerySearch={setQuerySearch} />}
               {activeTab === "carts" && <CartsWishlistsTab flatCarts={abandonedCarts} stats={wishlistStats} />}

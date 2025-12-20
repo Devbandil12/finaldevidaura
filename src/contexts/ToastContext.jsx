@@ -110,19 +110,13 @@ export function ToastProvider({ children, position = "bottom-right" }) {
     };
   }, [addToast]);
   
-  // ✅ UPDATED: Classes are now mobile-first (no 'sm:' prefix)
-  // This makes them apply to all screen sizes.
   const positionClasses = {
     "top-left": "items-start justify-start",
     "top-center": "items-center justify-start",
     "top-right": "items-end justify-start",
     "bottom-left": "items-start justify-end",
     "bottom-center": "items-center justify-end",
-    
-    // ✅ UPDATED: This specific class is now responsive:
-    // Mobile (default): items-end (right) + justify-start (top)   = TOP-RIGHT
-    // Desktop (sm:):    items-end (right) + sm:justify-end (bottom) = BOTTOM-RIGHT
-    "bottom-right": "items-end justify-start sm:justify-end",
+    "bottom-right": "items-end justify-end", // Simplified, as mobile is now hidden
   };
 
   return (
@@ -131,8 +125,8 @@ export function ToastProvider({ children, position = "bottom-right" }) {
       
       <div
         aria-live="assertive"
-        // ✅ UPDATED: Added z-[99999] for visibility
-        className={`fixed inset-0 flex flex-col gap-3 p-4 sm:p-4 pointer-events-none ${positionClasses[position]} z-[99999]`}
+        // 👇 CHANGED HERE: Added 'hidden' and 'sm:flex'
+        className={`fixed inset-0 hidden sm:flex flex-col gap-3 p-4 sm:p-4 pointer-events-none ${positionClasses[position]} z-[99999]`}
         style={{ perspective: "1000px" }}
       >
         <AnimatePresence>

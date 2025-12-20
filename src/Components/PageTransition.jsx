@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ScrollTrigger } from "gsap/ScrollTrigger"; // Import ScrollTrigger
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const pageVariants = {
   initial: {
@@ -35,15 +35,20 @@ const PageTransition = ({ children }) => {
       variants={pageVariants}
       transition={pageTransition}
       style={{ width: "100%" }}
-      // ---------------------------------------------------------
-      // THE FIX: Refresh GSAP exactly when the transition ends
-      // ---------------------------------------------------------
       onAnimationComplete={(definition) => {
-        // Only refresh when the 'in' animation finishes
         if (definition === "in") {
+          // ⚠️ CRITICAL FIX FOR GSAP SCROLLTRIGGER
+          // Framer Motion leaves a 'transform: none' or matrix style that 
+          // creates a new stacking context, breaking 'position: fixed' inside.
+          // We manually remove it after the animation ends.
+          const element = document.querySelector(".page-transition-container");
+          if (element) {
+            element.style.transform = ""; 
+          }
           ScrollTrigger.refresh();
         }
       }}
+      className="page-transition-container" // Added class for selection
     >
       {children}
     </motion.div>

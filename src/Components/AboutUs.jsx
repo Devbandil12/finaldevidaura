@@ -5,8 +5,13 @@ import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lu
 import PageTransition from "./PageTransition";
 
 // --- IMPORT ASSETS ---
+// 1. Desktop Image (Wide)
 import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 
-import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; 
+// 2. Mobile Image (Tall) - MAKE SURE THIS FILE EXISTS IN YOUR FOLDER
+// If you don't have it yet, just point this to the desktop image temporarily.
+import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; // <-- CHANGE THIS TO YOUR MOBILE IMAGE FILE NAME
+
+import hero from "../assets/images/banner-2.png";
 import pillar_1 from "../assets/images/saphire-mist-2.webp";
 import pillar_2 from "../assets/images/vigor.webp";
 import pillar_3 from "../assets/images/scarlet-night.webp";
@@ -16,11 +21,12 @@ gsap.registerPlugin(ScrollTrigger);
 
 // --- ASSETS CONFIGURATION ---
 const IMAGES = {
-    hero: 'https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto-format&fit=crop&w=1600&q=80',
+    hero: hero,
     pillar_1: pillar_1,
     pillar_2: pillar_2,
     pillar_3: pillar_3,
     founders: founder_img,
+    // Footer Images
     footer_desktop: footer_bg_desktop,
     footer_mobile: footer_bg_mobile, 
 };
@@ -346,22 +352,20 @@ export default function AboutUs() {
                 {/* 5. FOOTER (RESPONSIVE IMAGE SWAPPING) */}
                 <section className="footer-wrapper w-full bg-white pb-20 pt-20 flex justify-center items-center">
                     
-                    {/* Optimized: Added will-change-transform for the scale/clip-path animation */}
-                    <div className="footer-card-anim relative w-[90%] h-[60vh] md:h-[70vh] rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black [will-change:clip-path,transform,filter]">
+                    <div className="footer-card-anim relative w-[90%] h-[60vh] md:h-[70vh] rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black">
                         
                         <div className="absolute inset-0 w-full h-full overflow-hidden">
+                            {/* <picture> allows us to swap the image source completely based on CSS media queries */}
                             <picture>
-                                {/* ON MOBILE (Max-width 767px) */}
+                                {/* ON MOBILE (Max-width 767px): Use the Mobile (Portrait) Image */}
                                 <source media="(max-width: 767px)" srcSet={IMAGES.footer_mobile} />
                                 
-                                {/* ON DESKTOP (Default) */}
+                                {/* ON DESKTOP (Default): Use the Desktop (Landscape) Image */}
                                 <img
                                     src={IMAGES.footer_desktop}
                                     alt="Devid Aura Footer Background"
-                                    loading="lazy"
-                                    decoding="async"
-                                    // Optimized: Added will-change-transform for parallax
-                                    className="footer-bg-parallax w-full h-full object-cover object-center will-change-transform"
+                                    // Use object-cover for BOTH because they now match their screen aspect ratios
+                                    className="footer-bg-parallax w-full h-full object-cover object-center"
                                 />
                             </picture>
                         </div>
@@ -375,6 +379,8 @@ export default function AboutUs() {
 
                         <div className="relative z-30 h-full flex flex-col justify-end items-center pb-10 md:pb-16">
                             
+                            {/* NOTE: If your mobile image has text baked into it (like the example you showed), keep this 'hidden md:block'.
+                                If your mobile image is CLEAN (no text), remove 'hidden md:block' to show this text overlay. */}
                             <h2 className="hidden md:block footer-content-reveal text-3xl md:text-5xl font-serif text-white mb-8 text-center px-4" style={{ opacity: 0 }}>
                                 Define Your Presence.
                             </h2>

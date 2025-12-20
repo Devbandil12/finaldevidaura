@@ -124,7 +124,7 @@ const Herosection = () => {
   }, []);
 
   return (
-    <div ref={comp} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center">
+    <div ref={comp} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15">
 
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');
