@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 
-// Ensure these paths match your project structure
+// IMAGE ASSETS
 import bottleMain from "../assets/images/saphire-mist.webp";
 import bottleLayer1 from "../assets/images/saphire-mist-2.webp";
 import bottleLayer2 from "../assets/images/vigor.webp";
@@ -18,78 +18,125 @@ const Herosection = () => {
 
   useLayoutEffect(() => {
     let mm = gsap.matchMedia();
-    
-    // Context for cleanup
+
     let ctx = gsap.context(() => {
       
-      // 1. Setup: Tell browser to prepare for 3D transforms (Optimization)
-      gsap.set([".brand-title", ".poetic-line", ".bottle-main", ".bottle-layer-1", ".bottle-layer-2", ".cta-container"], {
-        willChange: "transform, opacity",
-        force3D: true, 
-        backfaceVisibility: "hidden" // Prevents flickering on mobile
-      });
+      // 1. SETUP: Hardware Acceleration
+      gsap.set(
+        [".bottle-main", ".bottle-layer-1", ".bottle-layer-2"], 
+        {
+          willChange: "transform, opacity",
+          force3D: true,
+          backfaceVisibility: "hidden",
+          transformStyle: "preserve-3d"
+        }
+      );
 
-      // --- SHARED TIMELINE (Mobile & Desktop) ---
-      const tl = gsap.timeline({ 
+      // --- SHARED TIMELINE START ---
+      const tl = gsap.timeline({
         defaults: { ease: "power3.out" },
         onComplete: () => {
-           // 2. CRITICAL OPTIMIZATION:
-           // Remove will-change to free up memory immediately after entrance animation
-           gsap.set([".brand-title", ".poetic-line", ".cta-container", ".bottle-layer-1", ".bottle-layer-2"], { 
-             willChange: "auto" 
-           });
-        }
+          gsap.set(
+            [".brand-title", ".poetic-line", ".cta-container"], 
+            { willChange: "auto" }
+          );
+        },
       });
 
-      // 1. Brand Reveal
-      tl.from(".brand-title", { y: -30, opacity: 0, duration: 1.2, stagger: 0.1 });
-
-      // 2. Text Reveal
-      tl.from(".poetic-line", {
-        y: 60, 
+      // 1. Brand Title
+      tl.from(".brand-title", {
+        y: -30,
         opacity: 0,
         duration: 1.2,
         stagger: 0.1,
-        ease: "expo.out"
+      });
+      
+      // 2. Main Text
+      tl.from(".poetic-line", {
+        y: 60,
+        opacity: 0,
+        duration: 1.2,
+        stagger: 0.1,
+        ease: "expo.out",
       }, "-=0.8");
 
-      // --- DEVICE SPECIFIC LOGIC ---
-      mm.add({
-        isDesktop: "(min-width: 800px)",
-        isMobile: "(max-width: 799px)",
-      }, (context) => {
-        let { isMobile, isDesktop } = context.conditions;
+      // --- DEVICE SPECIFIC SEQUENCING ---
+      mm.add(
+        {
+          isDesktop: "(min-width: 800px)",
+          isMobile: "(max-width: 799px)",
+        },
+        (context) => {
+          let { isMobile } = context.conditions;
 
-        // 3. Bottle Entrance (Runs on BOTH, but simpler on mobile)
-        tl.from(".bottle-main", {
-          scale: 0.9,
-          opacity: 0,
-          y: 50,
-          duration: 1.5,
-          ease: "expo.out"
-        }, "-=1");
+          if (isMobile) {
+            // =========================================
+            // MOBILE ORDER: Text -> Button -> Images
+            // =========================================
 
-        tl.from([".bottle-layer-1", ".bottle-layer-2"], {
-          x: (index) => index === 0 ? -40 : 40, 
-          opacity: 0,
-          // On mobile, keep rotation at 0 to avoid jagged edges during animation
-          rotation: isMobile ? 0 : ((index) => index === 0 ? -10 : 10), 
-          duration: 1.8,
-          ease: "expo.out"
-        }, "<");
+            // 3. CTA Button (Comes BEFORE images on mobile)
+            tl.from(".cta-container", {
+              opacity: 0,
+              y: 20,
+              duration: 0.8,
+            }, "-=0.5"); // Starts appearing as text finishes
 
-        // 4. CTA Reveal
-        tl.from(".cta-container", { opacity: 0, y: 20, duration: 0.8 }, "-=0.8");
+            // 4. Images Fade In (Simple Opacity, No Slide)
+            tl.from(".bottle-main", {
+              opacity: 0,
+              duration: 1.5,
+              ease: "power2.out",
+            }, "-=0.2");
 
-        // --- DESKTOP ONLY: EXPENSIVE EFFECTS ---
-        if (isDesktop) {
-            // A. Drop Shadow (Expensive Filter) - Desktop Only
-            tl.to(".bottle-main", { 
-              filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))", 
-              duration: 1 
+            tl.from([".bottle-layer-1", ".bottle-layer-2"], {
+              opacity: 0,
+              duration: 1.5,
+              ease: "power2.out",
+            }, "<");
+
+            // Cleanup
+            tl.add(() => {
+              gsap.set(
+                [".bottle-main", ".bottle-layer-1", ".bottle-layer-2"],
+                { willChange: "auto" }
+              );
+            });
+
+          } else {
+            // =========================================
+            // DESKTOP ORDER: Text -> Images -> Button
+            // =========================================
+
+            // 3. Complex Image Entrance
+            tl.from(".bottle-main", {
+              scale: 0.9,
+              opacity: 0,
+              y: 50,
+              duration: 1.5,
+              ease: "expo.out",
             }, "-=1");
 
-            // B. Continuous Floating Loop - Desktop Only
+            tl.from([".bottle-layer-1", ".bottle-layer-2"], {
+              x: (index) => (index === 0 ? -40 : 40),
+              opacity: 0,
+              rotation: (index) => (index === 0 ? -10 : 10),
+              duration: 1.8,
+              ease: "expo.out",
+            }, "<");
+
+            // 4. CTA Button (After images on desktop)
+            tl.from(".cta-container", {
+              opacity: 0,
+              y: 20,
+              duration: 0.8,
+            }, "-=0.8");
+
+            // 5. Desktop VFX (Shadows & Floating)
+            tl.to(".bottle-main", {
+              filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))",
+              duration: 1,
+            }, "-=1");
+
             gsap.to(".bottle-main", {
               y: -15, rotation: 1, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut",
             });
@@ -99,75 +146,87 @@ const Herosection = () => {
             gsap.to(".bottle-layer-2", {
               y: -20, rotation: 3, duration: 7, delay: 0.4, repeat: -1, yoyo: true, ease: "sine.inOut",
             });
-        } else {
-            // --- MOBILE ONLY: CLEANUP ---
-            // Ensure main bottle releases memory since it won't be floating
-            tl.add(() => {
-               gsap.set(".bottle-main", { willChange: "auto" });
-            });
+          }
         }
-      });
-
+      );
     }, comp);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <div ref={comp} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15">
-
+    <div
+      ref={comp}
+      className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15"
+    >
       <style>
         {`@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');`}
       </style>
 
-      {/* --- BRANDING HEADER --- */}
+      {/* --- HEADER --- */}
       <div className="w-full pt-16 pb-8 text-center relative ">
-        <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+        <h1
+          className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase"
+          style={{ fontFamily: "'Cinzel Decorative', serif" }}
+        >
           Devid Aura
         </h1>
         <div className="flex items-center justify-center gap-4 mt-3 opacity-60">
           <span className="brand-title h-[1px] w-8 bg-black"></span>
-          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">Is Itself an aura</p>
+          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium">
+            Is Itself an aura
+          </p>
           <span className="brand-title h-[1px] w-8 bg-black"></span>
         </div>
       </div>
 
       {/* --- MAIN CONTENT --- */}
       <main className="flex-grow w-full max-w-[1600px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center justify-center relative pb-12">
-
-        {/* LEFT: POETIC CONTENT & VALUE PROP */}
+        
+        {/* LEFT: TEXT CONTENT */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left mb-16 lg:mb-0 z-20">
-
           <h2 className="poetic-line text-xs lg:text-sm tracking-[0.4em] uppercase text-[#D4AF37] mb-6 font-bold border border-[#D4AF37]/30 px-4 py-2 rounded-full">
             The Custom Atelier
           </h2>
 
           <div className="mb-8 space-y-2">
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 Don't Wear
               </h1>
             </div>
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9]"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 A Scent.
               </h1>
             </div>
             <div className="overflow-hidden pt-2">
-              <h1 className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9]" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1
+                className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9]"
+                style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              >
                 Build A Legacy.
               </h1>
             </div>
           </div>
 
           <div className="overflow-hidden max-w-lg">
-            <p className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            <p
+              className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide"
+              style={{ fontFamily: "'Montserrat', sans-serif" }}
+            >
               Standard perfume is for the crowd. <br />
-              Select your foundation, layer your heart notes, and crown it with an aura that belongs only to you.
+              Select your foundation, layer your heart notes, and crown it with
+              an aura that belongs only to you.
             </p>
           </div>
 
-          {/* CTA BUTTON */}
           <div className="cta-container mt-12">
             <button
               onClick={() => handleScroll("custom-combo-section")}
@@ -184,53 +243,47 @@ const Herosection = () => {
               </div>
             </button>
           </div>
-
         </div>
 
-        {/* RIGHT: THE COMBO VISUAL */}
+        {/* RIGHT: BOTTLE VISUALS */}
         <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[70vh] flex items-center justify-center">
           <div className="relative w-full h-full flex items-center justify-center">
+            
+            {/* PERFORMANCE FIX: Hidden on mobile */}
+            <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gray-100 rounded-full blur-3xl -z-10"></div>
 
-            {/* Static background blur (Lightweight div instead of CSS filter on image) */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gray-100 rounded-full blur-3xl -z-10"></div>
-
-            {/* Layer 1 (Back Left) */}
-            <img 
-              src={bottleLayer1} 
+            <img
+              src={bottleLayer1}
               alt="Base Note"
               decoding="async"
-              // Optimized: blur only on lg (desktop), opacity handled via GSAP usually but set here for init state
-              className="bottle-layer-1 absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
-              style={{ zIndex: 1 }} 
+              className="bottle-layer-1 transform-gpu absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
+              style={{ zIndex: 1 }}
             />
 
-            {/* Layer 2 (Back Right) */}
-            <img 
-              src={bottleLayer2} 
+            <img
+              src={bottleLayer2}
               alt="Top Note"
               decoding="async"
-              className="bottle-layer-2 absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
-              style={{ zIndex: 2 }} 
+              className="bottle-layer-2 transform-gpu absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
+              style={{ zIndex: 2 }}
             />
 
-            {/* Main Bottle (Front Center) */}
-            <img 
-              src={bottleMain} 
+            <img
+              src={bottleMain}
               alt="The Signature"
               decoding="async"
-              className="bottle-main relative h-[85%] object-contain"
-              style={{ zIndex: 3 }} 
+              className="bottle-main transform-gpu relative h-[85%] object-contain"
+              style={{ zIndex: 3 }}
             />
 
-            {/* Interactive Label - Removed backdrop-blur on mobile */}
-            <div className="bottle-main absolute bottom-10 bg-white/90 lg:bg-white/80 lg:backdrop-blur-sm border border-white px-6 py-2 shadow-sm rounded-full">
-              <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-black">The Masterpiece</span>
+            <div className="bottle-main absolute bottom-10 bg-white lg:bg-white/80 lg:backdrop-blur-sm border border-white px-6 py-2 rounded-full lg:shadow-sm">
+              <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-black">
+                The Masterpiece
+              </span>
             </div>
           </div>
         </div>
-
       </main>
-
     </div>
   );
 };
