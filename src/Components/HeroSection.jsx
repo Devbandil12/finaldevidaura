@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 
-// NOTE: For the best effect, you need THREE DIFFERENT bottle images here. 
+// Ensure these paths match your project structure
 import bottleMain from "../assets/images/saphire-mist.webp";
 import bottleLayer1 from "../assets/images/saphire-mist-2.webp";
 import bottleLayer2 from "../assets/images/vigor.webp";
@@ -17,27 +17,27 @@ const Herosection = () => {
   }, [navigate]);
 
   useLayoutEffect(() => {
-    // GSAP MatchMedia allows us to write different animation logic for Mobile vs Desktop
     let mm = gsap.matchMedia();
-
+    
     // Context for cleanup
     let ctx = gsap.context(() => {
       
-      // Setup elements with will-change to inform browser of upcoming heavy lifting
+      // 1. Setup: Tell browser to prepare for 3D transforms (Optimization)
       gsap.set([".brand-title", ".poetic-line", ".bottle-main", ".bottle-layer-1", ".bottle-layer-2", ".cta-container"], {
         willChange: "transform, opacity",
         force3D: true, 
-        backfaceVisibility: "hidden" // Prevents flickering on some mobile browsers
+        backfaceVisibility: "hidden" // Prevents flickering on mobile
       });
 
       // --- SHARED TIMELINE (Mobile & Desktop) ---
       const tl = gsap.timeline({ 
         defaults: { ease: "power3.out" },
-        // Clear will-change after entrance to save memory, 
-        // but re-apply it to floating elements below
         onComplete: () => {
-           // Optional: Apply expensive filters ONLY after animation ends to prevent lag
-           gsap.to(".bottle-main", { filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))", duration: 1 });
+           // 2. CRITICAL OPTIMIZATION:
+           // Remove will-change to free up memory immediately after entrance animation
+           gsap.set([".brand-title", ".poetic-line", ".cta-container", ".bottle-layer-1", ".bottle-layer-2"], { 
+             willChange: "auto" 
+           });
         }
       });
 
@@ -46,7 +46,7 @@ const Herosection = () => {
 
       // 2. Text Reveal
       tl.from(".poetic-line", {
-        y: 60, // Reduced distance for mobile smoothness
+        y: 60, 
         opacity: 0,
         duration: 1.2,
         stagger: 0.1,
@@ -54,16 +54,13 @@ const Herosection = () => {
       }, "-=0.8");
 
       // --- DEVICE SPECIFIC LOGIC ---
-      
       mm.add({
-        // DESKTOP: Full Complex Animation
         isDesktop: "(min-width: 800px)",
-        // MOBILE: Simplified Animation
         isMobile: "(max-width: 799px)",
       }, (context) => {
-        let { isMobile } = context.conditions;
+        let { isMobile, isDesktop } = context.conditions;
 
-        // 3. The Combo Composition Reveal
+        // 3. Bottle Entrance (Runs on BOTH, but simpler on mobile)
         tl.from(".bottle-main", {
           scale: 0.9,
           opacity: 0,
@@ -72,11 +69,10 @@ const Herosection = () => {
           ease: "expo.out"
         }, "-=1");
 
-        // Supporting bottles
         tl.from([".bottle-layer-1", ".bottle-layer-2"], {
-          x: (index) => index === 0 ? -40 : 40, // Reduced travel distance for mobile
+          x: (index) => index === 0 ? -40 : 40, 
           opacity: 0,
-          // On mobile, avoid rotation during entrance to save GPU calculation
+          // On mobile, keep rotation at 0 to avoid jagged edges during animation
           rotation: isMobile ? 0 : ((index) => index === 0 ? -10 : 10), 
           duration: 1.8,
           ease: "expo.out"
@@ -85,37 +81,31 @@ const Herosection = () => {
         // 4. CTA Reveal
         tl.from(".cta-container", { opacity: 0, y: 20, duration: 0.8 }, "-=0.8");
 
-        // --- CONTINUOUS FLOATING AMBIANCE ---
-        // We use slightly slower, simpler movements on mobile
-        
-        gsap.to(".bottle-main", {
-          y: isMobile ? -8 : -15, // Less movement on mobile
-          rotation: isMobile ? 0.5 : 1, // subtle rotation
-          duration: 5,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
+        // --- DESKTOP ONLY: EXPENSIVE EFFECTS ---
+        if (isDesktop) {
+            // A. Drop Shadow (Expensive Filter) - Desktop Only
+            tl.to(".bottle-main", { 
+              filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.3))", 
+              duration: 1 
+            }, "-=1");
 
-        gsap.to(".bottle-layer-1", {
-          y: isMobile ? 10 : 20,
-          rotation: isMobile ? 0 : -3, // No rotation on mobile side bottles
-          duration: 6,
-          delay: 0.2,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
-
-        gsap.to(".bottle-layer-2", {
-          y: isMobile ? -10 : -20,
-          rotation: isMobile ? 0 : 3,
-          duration: 7,
-          delay: 0.4,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
+            // B. Continuous Floating Loop - Desktop Only
+            gsap.to(".bottle-main", {
+              y: -15, rotation: 1, duration: 5, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+            gsap.to(".bottle-layer-1", {
+              y: 20, rotation: -3, duration: 6, delay: 0.2, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+            gsap.to(".bottle-layer-2", {
+              y: -20, rotation: 3, duration: 7, delay: 0.4, repeat: -1, yoyo: true, ease: "sine.inOut",
+            });
+        } else {
+            // --- MOBILE ONLY: CLEANUP ---
+            // Ensure main bottle releases memory since it won't be floating
+            tl.add(() => {
+               gsap.set(".bottle-main", { willChange: "auto" });
+            });
+        }
       });
 
     }, comp);
@@ -127,7 +117,7 @@ const Herosection = () => {
     <div ref={comp} className="relative w-full min-h-screen bg-white overflow-hidden flex flex-col items-center pb-15">
 
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');
+        {`@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');`}
       </style>
 
       {/* --- BRANDING HEADER --- */}
@@ -201,16 +191,16 @@ const Herosection = () => {
         <div className="w-full lg:w-1/2 relative h-[50vh] lg:h-[70vh] flex items-center justify-center">
           <div className="relative w-full h-full flex items-center justify-center">
 
-            {/* Static background blur (Much faster than CSS filter blur on images) */}
+            {/* Static background blur (Lightweight div instead of CSS filter on image) */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-gray-100 rounded-full blur-3xl -z-10"></div>
 
             {/* Layer 1 (Back Left) */}
-            {/* OPTIMIZATION: Removed heavy filters (grayscale, blur) for mobile performance */}
             <img 
               src={bottleLayer1} 
               alt="Base Note"
-              decoding="async" // Helps with main thread jank
-              className="bottle-layer-1 absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px] "
+              decoding="async"
+              // Optimized: blur only on lg (desktop), opacity handled via GSAP usually but set here for init state
+              className="bottle-layer-1 absolute left-[5%] lg:left-[10%] top-[25%] h-[55%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
               style={{ zIndex: 1 }} 
             />
 
@@ -219,12 +209,11 @@ const Herosection = () => {
               src={bottleLayer2} 
               alt="Top Note"
               decoding="async"
-              className="bottle-layer-2 absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px] "
+              className="bottle-layer-2 absolute right-[5%] lg:right-[10%] top-[15%] h-[50%] object-contain opacity-50 lg:opacity-60 lg:blur-[1px]"
               style={{ zIndex: 2 }} 
             />
 
             {/* Main Bottle (Front Center) */}
-            {/* OPTIMIZATION: Removed drop-shadow class, adding it via GSAP later */}
             <img 
               src={bottleMain} 
               alt="The Signature"
@@ -233,7 +222,7 @@ const Herosection = () => {
               style={{ zIndex: 3 }} 
             />
 
-            {/* Interactive Label - Removed backdrop-blur for mobile smoothness */}
+            {/* Interactive Label - Removed backdrop-blur on mobile */}
             <div className="bottle-main absolute bottom-10 bg-white/90 lg:bg-white/80 lg:backdrop-blur-sm border border-white px-6 py-2 shadow-sm rounded-full">
               <span className="text-[10px] tracking-[0.2em] uppercase font-bold text-black">The Masterpiece</span>
             </div>
