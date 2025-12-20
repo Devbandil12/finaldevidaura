@@ -140,7 +140,26 @@ const AdminPanel = () => {
     return colors[(name ? name.length : 0) % colors.length];
   };
 
-  const successfulOrders = orders?.filter(order => order.status !== "Order Cancelled");
+  // 🟢 FIX: Filter successful orders to exclude Pending Payments
+  const successfulOrders = useMemo(() => {
+    return orders?.filter(order => {
+      // 1. Must not be Cancelled
+      if (order.status === "Order Cancelled") return false;
+      
+      // 2. Must not be explicitly 'pending_payment' (Backend status for unpaid online)
+      if (order.status === "pending_payment" || order.status === "pending payment") return false;
+
+      // 3. Strict Check: If Online and Payment is Pending -> Exclude
+      const pMode = (order.paymentMode || "").toLowerCase();
+      const pStatus = (order.paymentStatus || "").toLowerCase();
+      if (pMode === 'online' && (pStatus === 'pending' || pStatus === 'pending_payment')) {
+        return false;
+      }
+
+      return true;
+    }) || [];
+  }, [orders]);
+
   const totalOrders = orders?.length;
   const totalQueries = queries?.length;
   const cancelledOrdersValue = orders?.filter(order => order.status === "Order Cancelled").reduce((sum, order) => sum + order.totalAmount, 0);
