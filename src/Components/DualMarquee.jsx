@@ -7,18 +7,17 @@ import { CouponContext } from "../contexts/CouponContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// --- 🟢 UPDATED: More Modern & Aesthetic Phrases ---
 const defaultPhrases = [
   "Timeless Elegance",
   "Pure Ingredients",
   "Unforgettable Scent",
   "Masterfully Crafted",
   "Signature Aura",
-  "Bold & Beautiful", // New
-  "Essence of You",   // New
-  "Luxury Redefined", // New
-  "Scent of Success", // New
-  "Art in a Bottle"   // New
+  "Bold & Beautiful", 
+  "Essence of You",   
+  "Luxury Redefined", 
+  "Scent of Success", 
+  "Art in a Bottle"   
 ];
 
 const MarqueeRow = ({ items, direction = 1, className }) => {
@@ -35,34 +34,21 @@ const MarqueeRow = ({ items, direction = 1, className }) => {
 
     const ctx = gsap.context(() => {
       const track = trackRef.current;
-      
       const totalWidth = track.scrollWidth;
-      // Duplicate x4 logic means we move 1/4th
+      // We duplicate content 4 times, so one full loop is 1/4th the width
       const singleSetWidth = totalWidth / 4; 
 
+      // Set initial position
       gsap.set(track, { x: direction === 1 ? 0 : -singleSetWidth });
 
+      // PERFORMANCE FIX: Removed the Velocity ScrollTrigger logic.
+      // Changing timeScale() on scroll causes heavy recalculations on mobile.
+      // A linear, constant speed is much smoother (60fps).
       timelineRef.current = gsap.to(track, {
         x: direction === 1 ? -singleSetWidth : 0,
-        duration: 45, // Slightly adjusted for new content length
+        duration: 40, // Adjusted for steady flow
         ease: "none",
         repeat: -1,
-      });
-
-      ScrollTrigger.create({
-        trigger: document.body,
-        start: "top top",
-        end: "bottom bottom",
-        onUpdate: (self) => {
-          const vel = self.getVelocity();
-          const speed = 1 + Math.abs(vel / 800); 
-          
-          gsap.to(timelineRef.current, {
-            timeScale: speed,
-            duration: 0.2,
-            overwrite: true
-          });
-        }
       });
 
     }, trackRef);
@@ -78,19 +64,20 @@ const MarqueeRow = ({ items, direction = 1, className }) => {
         {/* Duplicate 4 times for seamless loop */}
         {[...items, ...items, ...items, ...items].map((item, i) => {
           const isOffer = typeof item === 'object' && item.type === 'offer';
+          
+          // Note: float classes are handled in CSS via media queries now
           const floatClass = i % 2 === 0 ? "float-slow" : "float-fast";
           
-          // More variety in separators
-          const Separator = i % 4 === 0 ? <Diamond size={18} /> : 
-                            (i % 3 === 0 ? <Crown size={20} /> : 
-                            (i % 2 === 0 ? <Sparkles size={22} /> : <Star size={18} />));
+          const Separator = i % 4 === 0 ? <Diamond className="sep-icon" /> : 
+                            (i % 3 === 0 ? <Crown className="sep-icon" /> : 
+                            (i % 2 === 0 ? <Sparkles className="sep-icon" /> : <Star className="sep-icon" />));
 
           return (
             <div key={i} className={`marquee-item ${floatClass}`}>
               
               {isOffer ? (
                 <div className="offer-stamp">
-                   <div className="mb-1 opacity-50"><Tag size={14} /></div>
+                   <div className="offer-icon-wrapper"><Tag size={12} /></div>
                    <div className="offer-main">{item.main}</div>
                    <div className="offer-sub">{item.sub}</div>
                 </div>
@@ -98,7 +85,7 @@ const MarqueeRow = ({ items, direction = 1, className }) => {
                 <span className="text-aesthetic">{item}</span>
               )}
               
-              <div className="shape-separator ml-8 opacity-40">
+              <div className="shape-separator">
                  {Separator}
               </div>
 
@@ -110,7 +97,7 @@ const MarqueeRow = ({ items, direction = 1, className }) => {
   );
 };
 
-// Formatter (Unchanged Logic, just ensuring it's here)
+// --- Helper Functions (Unchanged Logic) ---
 const formatOffer = (offer) => {
   const { 
     discountType, discountValue, code, minOrderValue, 
@@ -181,10 +168,8 @@ export default function DualMarquee() {
         const mixed = [];
         const max = Math.max(uniqueOffers.length, defaultPhrases.length);
         
-        // Interleave offers and phrases
         for(let i=0; i<max; i++) {
             if(uniqueOffers[i % uniqueOffers.length]) mixed.push(uniqueOffers[i % uniqueOffers.length]);
-            // Add filler phrases more frequently to space out offers nicely
             if(defaultPhrases[i % defaultPhrases.length]) mixed.push(defaultPhrases[i % defaultPhrases.length]);
         }
         return mixed;
@@ -195,10 +180,7 @@ export default function DualMarquee() {
 
   return (
     <section className="dual-marquee-section">
-      {/* Row 1 */}
       <MarqueeRow items={marqueeItems} direction={1} className="normal" />
-      
-      {/* Row 2 (Reversed & Offset) */}
       <MarqueeRow 
          items={[...marqueeItems].reverse()} 
          direction={-1} 

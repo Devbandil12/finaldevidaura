@@ -1,180 +1,215 @@
 /* src/style/DualMarquee.css */
 
-/* --- COLOR DEFINITIONS --- */
-/* Background: Creamy Champagne (#FBF6EF) */
+/* --- LAYOUT & CONTAINER --- */
 .dual-marquee-section {
   position: relative;
   width: 100%;
-  /* BACKGROUND COLOR: Creamy Champagne (#FBF6EF) */
   overflow: hidden;
-  padding: 2rem 0;
+  /* Reduced padding for mobile */
+  padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
-  /* This perspective gives the "tilt" depth */
+  /* Reduced gap between rows for mobile */
+  gap: 1.5rem;
   perspective: 1200px;
-  /* Ensure it sits above other content */
   z-index: 10;
+  /* Hardware acceleration hint */
+  will-change: transform; 
 }
 
-/* Row Wrapper (Unchanged) */
 .marquee-track-wrapper {
   width: 100%;
   display: flex;
   will-change: transform;
   transform-origin: center;
   background-color: transparent;
+  /* Prevent interaction causing scrolling issues on mobile */
+  pointer-events: none; 
 }
 
-/* Row 1 Tilt (Unchanged) */
+/* Allow clicking coupons if needed */
+.marquee-item {
+  pointer-events: auto; 
+}
+
 .marquee-track-wrapper.normal {
   transform: rotate(-2deg) translateZ(0);
 }
 
-/* Row 2 Tilt (Opposite - Unchanged) */
 .marquee-track-wrapper.reverse {
   transform: rotate(2deg) translateZ(0);
-  margin-top: -1rem;
+  margin-top: -0.5rem;
 }
 
-/* The Moving Strip (Unchanged) */
 .marquee-track {
   display: flex;
   align-items: center;
-  /* IMPORTANT: 'max-content' ensures it doesn't wrap */
   width: max-content;
 }
 
-/* Individual Items (Unchanged) */
 .marquee-item {
   display: flex;
   align-items: center;
-  /* Fixed padding ensures smooth loop calculation */
-  padding-right: 5rem;
+  /* Reduced spacing between items for mobile */
+  padding-right: 2.5rem; 
   flex-shrink: 0;
 }
 
-/* --- TYPOGRAPHY --- */
+/* --- TYPOGRAPHY (MOBILE FIRST) --- */
 
 .text-aesthetic {
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
+  /* Smaller font for mobile */
+  font-size: 1.25rem; 
   font-weight: 400;
   font-style: italic;
-  /* TEXT COLOR: Deep Charcoal (#1A1C20) */
   color: #1A1C20;
   line-height: 1;
   white-space: nowrap;
   letter-spacing: -0.02em;
 }
 
-/* --- THE GOLDEN STAMP (Coupon) --- */
+/* --- THE GOLDEN STAMP (Coupon - MOBILE FIRST) --- */
 .offer-stamp {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-
-  /* BACKGROUND: Deep Charcoal (#1A1C20) for high contrast stamp */
   background: #1A1C20;
-  /* TEXT COLOR: Creamy Champagne (#FBF6EF) */
   color: #FBF6EF;
-  /* BORDER: Vibrant Amber (#F0A500) */
   border: 1px solid #F0A500;
-
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
+  
+  /* Compact Padding for Mobile */
+  padding: 0.5rem 1rem; 
+  border-radius: 6px;
 
   font-family: 'Inter', sans-serif;
   text-transform: uppercase;
 
-  /* 3D Shadow using Deep Amber (#CF7500) */
-  box-shadow:
-    4px 4px 0px rgba(207, 117, 0, 0.6),
-    /* #CF7500 at 60% opacity */
-    0 5px 15px rgba(0, 0, 0, 0.5);
+  /* Simplified shadow for mobile performance */
+  box-shadow: 2px 2px 0px rgba(207, 117, 0, 0.6);
 
   transform: rotate(-3deg);
   transition: transform 0.3s ease;
   cursor: pointer;
 }
 
-.offer-stamp:hover {
-  transform: rotate(0deg) scale(1.05);
-  /* Hover Background: Deep Amber (#CF7500) */
-  background: #CF7500;
+.offer-icon-wrapper {
+  margin-bottom: 2px;
+  opacity: 0.5;
+}
+
+.offer-stamp:active {
+  transform: scale(0.95);
 }
 
 .offer-main {
-  font-size: 1.4rem;
+  /* Smaller main text */
+  font-size: 0.9rem; 
   font-weight: 900;
-  line-height: 0.9;
+  line-height: 1;
   letter-spacing: 0.02em;
 }
 
 .offer-sub {
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  margin-top: 6px;
-  opacity: 0.8;
-  letter-spacing: 0.15em;
-  /* SUB TEXT COLOR: Vibrant Amber (#F0A500) */
+  margin-top: 2px;
+  opacity: 0.9;
+  letter-spacing: 0.1em;
   color: #F0A500;
 }
 
 /* Separators */
 .shape-separator {
-  /* SEPARATOR COLOR: Vibrant Amber (#F0A500) */
   color: #F0A500;
   opacity: 0.4;
+  /* Reduced margin for mobile */
+  margin-left: 1rem; 
+}
+
+/* Adjust separator icon sizes via CSS for mobile consistency */
+.sep-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- ANIMATIONS --- */
+
+/* Only rotate separator, do not float on mobile to save CPU */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.shape-separator {
   animation: spin-slow 12s linear infinite;
 }
 
-/* --- FLOAT ANIMATION (Unchanged) --- */
-.float-fast {
-  animation: float-y 8s ease-in-out infinite;
-}
-
-.float-slow {
-  animation: float-y 12s ease-in-out infinite reverse;
-}
-
-@keyframes float-y {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive (Unchanged) */
+/* --- DESKTOP STYLES (min-width: 768px) --- */
 @media (min-width: 768px) {
+  .dual-marquee-section {
+    padding: 2rem 0;
+    padding-top: 8rem;
+    gap: 4rem;
+  }
+
   .text-aesthetic {
     font-size: 2.5rem;
+  }
+  
+  .marquee-item {
+    padding-right: 5rem;
+  }
+  
+  .offer-stamp {
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0px rgba(207, 117, 0, 0.6), 0 5px 15px rgba(0, 0, 0, 0.5);
+  }
+
+  .offer-stamp:hover {
+    transform: rotate(0deg) scale(1.05);
+    background: #CF7500;
   }
 
   .offer-main {
     font-size: 1.6rem;
   }
 
-  .dual-marquee-section {
-    padding: 1rem 0;
-    padding-top: 8rem;
-    gap: 4rem;
+  .offer-sub {
+    font-size: 0.65rem;
+    margin-top: 6px;
+  }
+
+  .offer-icon-wrapper {
+    margin-bottom: 4px;
+  }
+  
+  .sep-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .shape-separator {
+    margin-left: 2rem;
+  }
+
+  /* --- ENABLE FLOAT ANIMATION ONLY ON DESKTOP --- */
+  /* Floating items + Horizontal scroll = Lag on mobile. 
+     We enable this only for larger screens. */
+     
+  .float-fast {
+    animation: float-y 8s ease-in-out infinite;
+  }
+
+  .float-slow {
+    animation: float-y 12s ease-in-out infinite reverse;
+  }
+  
+  @keyframes float-y {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
   }
 }
