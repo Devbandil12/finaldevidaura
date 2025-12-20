@@ -6,7 +6,20 @@ import { Pie } from 'react-chartjs-2';
 
 const Reports = ({ products, users, orders }) => {
 
-  const successfulOrders = useMemo(() => orders?.filter(o => o.status !== "Order Cancelled") || [], [orders]);
+  // 🟢 FIX: Filter successful orders to exclude Pending Payments
+  const successfulOrders = useMemo(() => {
+    return orders?.filter(order => {
+      if (order.status === "Order Cancelled") return false;
+      if (order.status === "pending_payment" || order.status === "pending payment") return false;
+
+      const pMode = (order.paymentMode || "").toLowerCase();
+      const pStatus = (order.paymentStatus || "").toLowerCase();
+      if (pMode === 'online' && (pStatus === 'pending' || pStatus === 'pending_payment')) {
+        return false;
+      }
+      return true;
+    }) || [];
+  }, [orders]);
 
   // --- 1. Sales By Category ---
   const { salesByCategory, categoryLabels, categoryValues } = useMemo(() => {
