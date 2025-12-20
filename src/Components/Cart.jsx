@@ -22,15 +22,12 @@ const gpuStyle = {
   willChange: "transform, opacity", 
 };
 
-// 1. STRICT TWEEN (Absolutely No Bounce)
-// Used for layout shifts to prevent wobble/overshoot
 const rigidTransition = {
   type: "tween",
   ease: "easeInOut",
   duration: 0.35, 
 };
 
-// Item Entrance/Exit Variants
 const itemVariants = {
   initial: { opacity: 0, scale: 0.98, y: 10 },
   animate: { 
@@ -58,6 +55,33 @@ const modalVariants = {
     scale: 0.95, 
     transition: { duration: 0.15, ease: "easeIn" } 
   }
+};
+
+// --- NEW HELPER: Bundle Items List (Responsive) ---
+const BundleItemsList = ({ items, isCompact = false }) => {
+  if (!items || !Array.isArray(items) || items.length === 0) return null;
+
+  return (
+    <div className={`mt-2 grid gap-2 ${isCompact ? "grid-cols-1" : "grid-cols-2 md:grid-cols-2 lg:grid-cols-4"}`}>
+      {items.map((subItem, index) => (
+        <div 
+          key={index} 
+          className="relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50 p-2 flex items-center gap-2"
+        >
+           {/* Small Dot Indicator */}
+           <div className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />
+           <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate text-[10px] sm:text-xs">
+                  {subItem.product?.name || subItem.name}
+              </p>
+              <p className="text-[9px] text-gray-500 uppercase tracking-wider">
+                  {subItem.variant?.size || subItem.variantName || "30ml"}
+              </p>
+           </div>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 // --- HELPER COMPONENT: Offer Instructions ---
@@ -656,15 +680,15 @@ const ShoppingCart = () => {
                     >
                       {/* Ticket Body (White) */}
                       <div className="flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed border-gray-200 group-hover:border-gray-900 transition-colors duration-300">
-                         <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1">
                              <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={16} />
                              <span className="font-bold text-black text-lg tracking-wide uppercase">
                                 {coupon.code}
                              </span>
-                         </div>
-                         <span className="text-xs text-gray-500 leading-relaxed">
+                          </div>
+                          <span className="text-xs text-gray-500 leading-relaxed">
                            {coupon.description}
-                         </span>
+                          </span>
                       </div>
 
                       {/* Ticket Stub (Action Area - White) */}
@@ -751,59 +775,55 @@ const ShoppingCart = () => {
                         style={gpuStyle}
                         className="relative"
                       >
-                        <div className="flex flex-row items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
-                          <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
-                            <img 
-                                src={itemImageUrl} 
-                                alt={item.product.name} 
-                                className="w-full h-full object-cover rounded-lg"
-                                loading="eager"
-                            />
-                            {isOutOfStock && (
-                              <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center z-10">
-                                <span className="text-[10px] font-bold text-red-900  px-1.5 py-0.5 text-center leading-tight">OUT OF STOCK</span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out">
+                          
+                          {/* Top Section on Mobile (Image + Details) */}
+                          <div className="flex flex-row gap-4 w-full sm:w-auto">
+                              <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                                <img 
+                                    src={itemImageUrl} 
+                                    alt={item.product.name} 
+                                    className="w-full h-full object-cover rounded-lg"
+                                    loading="eager"
+                                />
+                                {isOutOfStock && (
+                                  <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center z-10">
+                                    <span className="text-[10px] font-bold text-red-900  px-1.5 py-0.5 text-center leading-tight">OUT OF STOCK</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
+
+                              <div className="flex-grow w-full text-left">
+                                <h2 className={`text-base sm:text-lg font-semibold mb-1 ${isOutOfStock ? "text-gray-500" : ""}`}>{item.product.name}</h2>
+                                {item.isBundle ? (
+                                  <BundleItemsList items={item.contents} />
+                                ) : (
+                                  <p className="text-xs sm:text-sm text-gray-500">{item.variant.size} ml</p>
+                                )}
+
+                                <div className="flex items-baseline gap-2 mt-2 justify-start">
+                                  {isFree ? (
+                                    <span className="text-sm sm:text-base font-bold text-green-600">Free</span>
+                                  ) : (
+                                    <span className={`text-sm sm:text-base font-bold ${isOutOfStock ? "text-gray-400" : ""}`}>₹{sellingPrice}</span>
+                                  )}
+
+                                  {showLineThrough && <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.variant.oprice}</span>}
+                                </div>
+                              </div>
                           </div>
 
-                          <div className="flex-grow w-full text-left">
-                            <h2 className={`text-base sm:text-lg font-semibold mb-1 ${isOutOfStock ? "text-gray-500" : ""}`}>{item.product.name}</h2>
-                            {item.isBundle ? (
-                              <div className="pl-4 mt-1">
-                                <span className="text-xs font-semibold text-gray-600">Contains:</span>
-                                <ul className="list-disc list-inside text-xs text-gray-500">
-                                  {item.contents?.map((content, idx) => (
-                                    <li key={idx}>
-                                      {content.name} ({content.variantName})
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : (
-                              <p className="text-xs sm:text-sm text-gray-500">{item.variant.size} ml</p>
-                            )}
-
-                            <div className="flex items-baseline gap-2 mt-2 justify-start">
-                              {isFree ? (
-                                <span className="text-sm sm:text-base font-bold text-green-600">Free</span>
-                              ) : (
-                                <span className={`text-sm sm:text-base font-bold ${isOutOfStock ? "text-gray-400" : ""}`}>₹{sellingPrice}</span>
-                              )}
-
-                              {showLineThrough && <span className="text-xs sm:text-sm text-gray-500 line-through">₹{item.variant.oprice}</span>}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-3 sm:gap-4 flex-shrink-0">
+                          {/* Controls Section */}
+                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0 gap-3 sm:gap-4 flex-shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-100">
                             <div className={`flex items-center gap-1 sm:gap-2 border border-gray-200 rounded-xl overflow-hidden ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
                               <button onClick={() => handleQuantityChange(item, -1)} disabled={item.quantity <= 1} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">–</button>
                               <span className="font-semibold min-w-[20px] text-center text-sm sm:text-base">{item.quantity}</span>
                               <button onClick={() => handleQuantityChange(item, 1)} className="bg-transparent border-none w-7 h-7 sm:w-9 sm:h-9 text-lg sm:text-xl cursor-pointer text-gray-800 transition-colors hover:bg-gray-100">+</button>
                             </div>
-                            <div className="flex gap-4 sm:gap-6 pt-3">
-                              <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
+                            <div className="flex gap-4 sm:gap-6">
+                              <button onClick={() => handleRemove(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Remove</button>
                               {!isBuyNowActive && (
-                                <button onClick={() => handleSaveForLater(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Save for Later</button>
+                                <button onClick={() => handleSaveForLater(item)} className="bg-transparent border-none text-gray-500 cursor-pointer text-xs sm:text-sm font-medium  hover:text-gray-800">Save for Later</button>
                               )}
                             </div>
                           </div>
@@ -992,92 +1012,99 @@ const ShoppingCart = () => {
               transition={rigidTransition}
               className="mt-8 border-t border-gray-100 pt-8"
             >
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-gray-100 rounded-full text-gray-700">
-                      <FiHeart size={20} />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 leading-tight">
-                        Saved for Later
-                      </h2>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {visibleSavedItems.length} items to reconsider
-                      </p>
-                    </div>
-                </div>
+              <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gray-100 rounded-full text-gray-700">
+                    <FiHeart size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                      Saved for Later
+                    </h2>
+                    <p className="text-xs text-gray-500 font-medium">
+                      {visibleSavedItems.length} items to reconsider
+                    </p>
+                  </div>
+              </div>
 
-                {visibleSavedItems.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <AnimatePresence mode="popLayout">
-                      {visibleSavedItems.map((item) => {
-                          const variant = item.variant;
-                          const product = item.product || item.variant.product; 
-                          const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-                          const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
-                          const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
+              {visibleSavedItems.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <AnimatePresence mode="popLayout">
+                    {visibleSavedItems.map((item) => {
+                        const variant = item.variant;
+                        const product = item.product || item.variant.product; 
+                        const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
+                        const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
+                        const showLineThrough = Number(variant.oprice) > Number(price) && Number(variant.discount) > 0;
 
-                          return (
-                            <motion.div
-                              key={item.variant.id}
-                              layout
-                              transition={{
-                                ...rigidTransition,
-                                layout: rigidTransition
-                              }} 
-                              variants={itemVariants} 
-                              initial="initial" 
-                              animate="animate" 
-                              exit="exit"
-                              className="bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out flex gap-4 items-center sm:items-start relative group"
+                        return (
+                          <motion.div
+                            key={item.variant.id}
+                            layout
+                            transition={{
+                              ...rigidTransition,
+                              layout: rigidTransition
+                            }} 
+                            variants={itemVariants} 
+                            initial="initial" 
+                            animate="animate" 
+                            exit="exit"
+                            className="bg-white p-4 rounded-xl shadow-lg shadow-gray-100/50 border border-gray-50 transition duration-300 ease-in-out flex gap-4 items-center sm:items-start relative group"
+                          >
+                            {/* Cross Button */}
+                            <button
+                                onClick={() => handleRemoveSavedItem(variant.id)}
+                                className="absolute top-2 right-2 p-1.5 bg-gray-100 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                title="Remove Item"
                             >
-                              {/* Cross Button */}
-                              <button
-                                  onClick={() => handleRemoveSavedItem(variant.id)}
-                                  className="absolute top-2 right-2 p-1.5 bg-gray-100 rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                                  title="Remove Item"
-                              >
-                                <FiX size={14} />
-                              </button>
+                              <FiX size={14} />
+                            </button>
 
-                              {/* Image */}
-                              <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                                  <img 
-                                    src={itemImageUrl} 
-                                    alt={product.name} 
-                                    className="w-full h-full object-cover" 
-                                  />
-                              </div>
+                            {/* Image */}
+                            <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                                <img 
+                                  src={itemImageUrl} 
+                                  alt={product.name} 
+                                  className="w-full h-full object-cover" 
+                                />
+                            </div>
 
-                              {/* Content */}
-                              <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
-                                  <div>
-                                      <h3 className="font-semibold text-sm text-gray-900 truncate pr-6">{product.name}</h3>
-                                      <p className="text-xs text-gray-500 mb-1">{variant.size} ml</p>
-                                      <div className="flex items-center gap-2">
-                                          <span className="text-sm font-bold text-gray-900">₹{price}</span>
-                                          {showLineThrough && <span className="text-xs text-gray-400 line-through">₹{variant.oprice}</span>}
-                                      </div>
-                                  </div>
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
+                                <div>
+                                  <h3 className="font-semibold text-sm text-gray-900 truncate pr-6">{product.name}</h3>
                                   
-                                  <div className="mt-3">
-                                      <button 
-                                        onClick={() => handleMoveToCart(item)}
-                                        className="w-full bg-black text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition-colors"
-                                      >
-                                        Move to Cart
-                                      </button>
+                                  {/* NEW: Check if this is a bundle and render contents */}
+                                  {(item.isBundle || (item.contents && item.contents.length > 0)) ? (
+                                    <BundleItemsList items={item.contents} isCompact={true} />
+                                  ) : (
+                                    <p className="text-xs text-gray-500 mb-1">{variant.size} ml</p>
+                                  )}
+
+                                  <div className="flex items-center gap-2 mt-2">
+                                      <span className="text-sm font-bold text-gray-900">₹{price}</span>
+                                      {showLineThrough && <span className="text-xs text-gray-400 line-through">₹{variant.oprice}</span>}
                                   </div>
-                              </div>
-                            </motion.div>
-                          );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p className="text-gray-500">You haven't saved any items for later yet.</p>
-                  </div>
-                )}
+                                </div>
+                                
+                                <div className="mt-3">
+                                  <button 
+                                    onClick={() => handleMoveToCart(item)}
+                                    className="w-full bg-black text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-gray-800 transition-colors"
+                                  >
+                                    Move to Cart
+                                  </button>
+                                </div>
+                            </div>
+                          </motion.div>
+                        );
+                    })}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                  <p className="text-gray-500">You haven't saved any items for later yet.</p>
+                </div>
+              )}
             </motion.div>
           )}
 

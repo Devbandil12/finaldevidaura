@@ -93,7 +93,7 @@ export const ProductProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error("❌ Error archiving product:", error);
-      window.toast.error("Failed to archive product.");
+      // window.toast.error("Failed to archive product.");
       return false;
     }
   }, [BACKEND_URL, getProducts, getArchivedProducts, userdetails?.id]);

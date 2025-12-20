@@ -24,8 +24,8 @@ const HeroButton = ({ children, className, variant = "primary", ...props }) => {
 
     return (
         <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={props.disabled ? {} : { scale: 1.02 }}
+            whileTap={props.disabled ? {} : { scale: 0.98 }}
             {...props}
             className={`${baseStyle} ${variants[variant]} ${className}`}
         >
@@ -149,6 +149,9 @@ const CustomComboBuilder = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
+    // Consolidated processing state to lock UI
+    const isProcessing = isAddingToCart || isBuyingNow;
+
     // --- Data Logic ---
     const { templateVariant, comboOriginalPrice, comboFinalPrice, comboDiscount, comboSavings } = useMemo(() => {
         const templateProduct = products.find((p) => p.category === "Template");
@@ -188,6 +191,8 @@ const CustomComboBuilder = () => {
     }, [products]);
 
     const handleSelectPerfume = useCallback((variant) => {
+        if (isProcessing) return; // Guard clause
+
         setSelectedPerfumes((prev) => {
             const exists = prev.some((v) => v.id === variant.id);
             if (exists) return prev.filter((v) => v.id !== variant.id);
@@ -197,9 +202,12 @@ const CustomComboBuilder = () => {
             }
             return [...prev, variant];
         });
-    }, []);
+    }, [isProcessing]);
 
-    const handleRemoveFromSlot = (id) => setSelectedPerfumes((prev) => prev.filter((v) => v.id !== id));
+    const handleRemoveFromSlot = (id) => {
+        if (isProcessing) return; // Guard clause
+        setSelectedPerfumes((prev) => prev.filter((v) => v.id !== id));
+    };
 
     const validateAndProceed = () => {
         if (selectedPerfumes.length !== 4) {
@@ -300,8 +308,9 @@ const CustomComboBuilder = () => {
                                     variant={variant}
                                     product={product}
                                     isSelected={selectedPerfumes.some((v) => v.id === variant.id)}
-                                    isDisabled={isFull && !selectedPerfumes.some((v) => v.id === variant.id)}
-                                    onSelect={() => handleSelectPerfume(variant)}
+                                    // Disable interactions if processing, OR if box full and not selected
+                                    isDisabled={isProcessing || (isFull && !selectedPerfumes.some((v) => v.id === variant.id))}
+                                    onSelect={() => !isProcessing && handleSelectPerfume(variant)}
                                 />
                             ))}
                         </motion.div>
@@ -314,12 +323,10 @@ const CustomComboBuilder = () => {
                             {/* Header */}
                             <div className="relative z-10 mb-8">
                                 <div className="flex justify-between items-center mb-1">
-                                    {/* 🟢 HEADER: Your Personal Set */}
                                     <h3 className="text-2xl font-serif text-white">Your Personal Set</h3>
                                     <FaShoppingBag className="text-[#C5A059]" />
                                 </div>
                                 
-                                {/* NEW: David Aura Personalized Text */}
                                 <p className="text-[#C5A059] text-xs font-serif italic mb-3">
                                     The David Aura Signature Edit — Curated just for you.
                                 </p>
@@ -361,8 +368,13 @@ const CustomComboBuilder = () => {
                                                             <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
                                                         </div>
                                                         <button
-                                                            onClick={() => handleRemoveFromSlot(variant.id)}
-                                                            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-500/20 hover:text-red-400 text-gray-500 transition-colors"
+                                                            onClick={() => !isProcessing && handleRemoveFromSlot(variant.id)}
+                                                            disabled={isProcessing}
+                                                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors 
+                                                            ${isProcessing 
+                                                                ? "opacity-30 cursor-not-allowed text-gray-600" 
+                                                                : "hover:bg-red-500/20 hover:text-red-400 text-gray-500"
+                                                            }`}
                                                         >
                                                             <FaTimes size={12} />
                                                         </button>
@@ -402,7 +414,6 @@ const CustomComboBuilder = () => {
 
                                             {/* 2. Final Price Row */}
                                             <div className="flex justify-between items-center mb-4">
-                                                {/* 🟢 CHANGED: Your Curated Price to Final Set Price */}
                                                 <span className="text-sm text-white font-medium">Final Combo Price</span>
                                                 <span className="text-3xl font-serif text-[#C5A059]">₹{comboFinalPrice}</span>
                                             </div>
@@ -428,10 +439,10 @@ const CustomComboBuilder = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-8 flex items-center justify-center gap-2 text-white/40 bg-white/5 py-4 rounded-xl border border-white/5">
-                                        <FaLock size={12} />
-                                        <span className="text-[10px] uppercase tracking-widest font-bold">
-                                            Add {4 - selectedPerfumes.length} more to unlock
-                                        </span>
+                                            <FaLock size={12} />
+                                            <span className="text-[10px] uppercase tracking-widest font-bold">
+                                                Add {4 - selectedPerfumes.length} more to unlock
+                                            </span>
                                     </div>
                                 )}
 
@@ -439,7 +450,7 @@ const CustomComboBuilder = () => {
                                     <HeroButton
                                         variant="primary"
                                         onClick={handleBuyNow}
-                                        disabled={!isFull || isBuyingNow}
+                                        disabled={!isFull || isProcessing}
                                         className="w-full"
                                     >
                                         {isBuyingNow ? <MiniLoader /> : "Buy Bundle Now"}
@@ -448,7 +459,7 @@ const CustomComboBuilder = () => {
                                     <HeroButton
                                         variant="outline"
                                         onClick={handleAddToCart}
-                                        disabled={!isFull || isAddingToCart}
+                                        disabled={!isFull || isProcessing}
                                         className="w-full"
                                     >
                                         {isAddingToCart ? <MiniLoader /> : "Add to Cart"}

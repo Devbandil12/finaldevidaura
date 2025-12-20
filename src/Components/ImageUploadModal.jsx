@@ -154,10 +154,10 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     const success = await addProduct(payload);
 
     if (success) {
-      window.toast.success("✅ Product added!");
+      window.toast.success("Product added!");
       handleClose();
     } else {
-      window.toast.error("❌ Failed to add product.");
+      window.toast.error("Failed to add product.");
     }
   };
 

@@ -64,7 +64,8 @@ export const CartProvider = ({ children }) => {
       return rows;
     } catch (e) {
       console.error("getCartitems error:", e);
-      // Only show error toast if it was a user-initiated load
+      // Only show error
+      //  if it was a user-initiated load
       if (showLoader) window.toast.error("Failed to load cart.");
       // Don't clear cart on error, keep stale data is better than empty
       return []; 
@@ -83,7 +84,7 @@ export const CartProvider = ({ children }) => {
       setWishlist(rows);
     } catch (e) {
       console.error("getwishlist error:", e);
-      window.toast.error("Failed to load wishlist.");
+      // window.toast.error("Failed to load wishlist.");
       setWishlist([]);
     } finally {
       setIsWishlistLoading(false);
