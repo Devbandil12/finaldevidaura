@@ -123,7 +123,7 @@ const OrdersTab = ({
       const pStatus = (o.paymentStatus || "").toLowerCase().trim();
 
       // Condition A: Order Status must be 'payment_pending' or 'payment pending'
-      const isOrderPending = orderStatus === "payment_pending" || orderStatus === "payment pending";
+      const isOrderPending = orderStatus === "pending_payment" || orderStatus === "pending payment";
 
       // Condition B: Payment Mode must be Online (Not COD)
       const isOnline = !(pMode.includes("COD") || pMode.includes("CASH"));
