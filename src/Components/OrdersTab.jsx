@@ -72,6 +72,9 @@ const OrdersTab = ({
 
   // --- Helper: Status Timeline Steps ---
   const getProgressStep = (status) => {
+    // Treat 'pending_payment' as step 0 or 1 depending on your preference
+    if (status === 'pending_payment') return 0;
+    
     const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
     const index = steps.indexOf(status);
     return index === -1 ? 0 : index + 1;
@@ -99,41 +102,69 @@ const OrdersTab = ({
   };
 
   const getStatusBadge = (status) => {
-    // Using softer backgrounds and lighter text for badges
+    // Normalize status for styling check
+    const normalizedStatus = (status || "").toLowerCase();
+
     const styles = {
-      "Delivered": "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
-      "Shipped": "bg-blue-50/50 text-blue-600 border-blue-100/50",
-      "Processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
-      "Order Cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
-      "Order Placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
+      "delivered": "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
+      "shipped": "bg-blue-50/50 text-blue-600 border-blue-100/50",
+      "processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
+      "order cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
+      "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
+      // 🟢 Added explicit style for pending payment so you can see it
+      "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
+      "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
     };
+
+    // Fallback logic
+    let styleClass = styles["order placed"];
+    if (styles[normalizedStatus]) {
+      styleClass = styles[normalizedStatus];
+    } else if (normalizedStatus.includes('pending')) {
+       styleClass = styles["pending_payment"];
+    }
+
     return (
-      <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styles[status] || styles["Order Placed"]}`}>
-        {status}
+      <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styleClass}`}>
+        {status?.replace(/_/g, " ")}
       </span>
     );
   };
 
   const filteredOrders = orders?.filter((o) => {
+    // 1. All Filter
     if (orderStatusTab === "All") return true;
+    
+    // 2. Cancelled Filter
     if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+    
+    // 3. Payment Pending Filter (ROBUST LOGIC)
     if (orderStatusTab === "Payment Pending") {
-      const orderStatus = (o.status || "").toLowerCase().trim();
-      const pMode = (o.paymentMode || "").toUpperCase();
-      const pStatus = (o.paymentStatus || "").toLowerCase().trim();
+      
+      const status = (o.status || "").toLowerCase();
+      const pMode = (o.paymentMode || "").toLowerCase();
+      const pStatus = (o.paymentStatus || "").toLowerCase();
 
-      // Condition A: Order Status must be 'payment_pending' or 'payment pending'
-      const isOrderPending = orderStatus === "pending_payment" || orderStatus === "pending payment";
+      // Condition A: Order Status matches variants of 'pending_payment'
+      const matchesStatus = status.includes("pending") && status.includes("payment"); 
+      // This catches "pending_payment", "payment_pending", "Payment Pending"
 
-      // Condition B: Payment Mode must be Online (Not COD)
-      const isOnline = !(pMode.includes("COD") || pMode.includes("CASH"));
+      // Condition B: Payment Mode is Online (Not COD/Cash)
+      const isOnline = !pMode.includes("cod") && !pMode.includes("cash");
 
-      // Condition C: Payment Status must be 'pending'
-      const isPaymentPending = pStatus === "pending";
+      // Condition C: Payment Status is NOT Paid (Pending, Failed, Initiated)
+      // We check what it is NOT, to be safer against slight variations like 'initiated'
+      const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
 
-      // RETURN TRUE ONLY IF ALL 3 MATCH
-      return isOrderPending && isOnline && isPaymentPending;
+      // Debug log to help you (check browser console if list is still empty)
+      if (matchesStatus && isOnline && isNotPaid) {
+          // console.log("Found Pending Order:", o.id);
+      }
+
+      return matchesStatus && isOnline && isNotPaid;
     }
+
+    // 4. Standard Status Filter
     return o.status === orderStatusTab;
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
 
@@ -189,6 +220,7 @@ const OrdersTab = ({
       <div className="space-y-4">
         {filteredOrders?.length > 0 ? filteredOrders.map((order, idx) => {
 
+          // Prevent editing if cancelled/delivered (or if payment pending, usually you can't ship it yet)
           const isEditable = order.status !== "Order Cancelled" && order.status !== "Delivered";
           const isExpanded = expandedOrderId === order.id;
           const progressStep = getProgressStep(order.status);
@@ -210,7 +242,6 @@ const OrdersTab = ({
             <div
               key={order.id}
               style={{ zIndex: 1000 - idx, position: 'relative' }}
-              // ULTRA SOFT BORDERS AND SHADOWS APPLIED HERE
               className={`bg-white rounded-2xl transition-all duration-300 group overflow-hidden
               ${isExpanded
                   ? 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] ring-0 border border-gray-100'
@@ -284,7 +315,7 @@ const OrdersTab = ({
                     <div className="pt-8">
 
                       {/* 1. TIMELINE STEPPER */}
-                      {order.status !== "Order Cancelled" && (
+                      {order.status !== "Order Cancelled" && order.status !== "pending_payment" && (
                         <div className="mb-10 pb-8 border-b border-gray-100 overflow-x-auto">
                           <div className="relative flex justify-between w-full min-w-[300px] max-w-3xl mx-auto px-2">
                             <div className="absolute top-5 left-0 w-full h-[2px] bg-gray-100 -z-0 rounded-full"></div>
@@ -320,6 +351,14 @@ const OrdersTab = ({
                             })}
                           </div>
                         </div>
+                      )}
+                      
+                      {/* Warning for Pending Payment */}
+                      {order.status === "pending_payment" && (
+                          <div className="mb-8 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center gap-3 text-orange-700 text-sm">
+                              <AlertCircle size={20} />
+                              <span className="font-semibold">This order is awaiting payment. Do not process until status changes to "Order Placed".</span>
+                          </div>
                       )}
 
                       <div className="flex flex-col xl:flex-row gap-8">
