@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Tag, Package, ChevronDown } from "lucide-react";
+import { ShoppingBag, Tag, Package, Layers } from "lucide-react";
 
 const smoothTransition = {
   type: "tween",
@@ -36,7 +36,6 @@ export default function OrderSummary({
 
   return (
     <>
-      {/* 🟢 1. Inject Custom Scrollbar Styles */}
       <style>{`
         .luxury-scroll::-webkit-scrollbar {
           width: 4px;
@@ -68,22 +67,18 @@ export default function OrderSummary({
           </h3>
         </div>
 
-        {/* 🟢 2. Scrollable Product List 
-            - Changed max-h to use 'vh' (viewport height) on desktop.
-            - This ensures the summary never becomes taller than the user's screen.
-            - Added 'luxury-scroll' class.
-        */}
+        {/* Scrollable Product List */}
         <div className="relative group">
           <div className="
             max-h-[300px] lg:max-h-[calc(100vh-450px)] 
             overflow-y-auto luxury-scroll 
-            p-5 space-y-6
+            p-5 space-y-8
           ">
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-6"
+              className="space-y-8"
             >
               {selectedItems.map((item, idx) => {
                 const isFree = breakdown.appliedOffers?.some(offer =>
@@ -97,59 +92,80 @@ export default function OrderSummary({
                     className="flex gap-4"
                   >
                     {/* Image */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden relative z-10">
                       <img
                         src={item.product.imageurl || "/fallback.png"}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
                         onError={(e) => { e.target.src = "/fallback.png"; }}
                       />
+                      {item.isBundle && (
+                         <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-0.5 flex justify-center">
+                            <Layers className="text-white w-3 h-3" />
+                         </div>
+                      )}
                     </div>
 
                     {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h4 className="text-sm font-semibold text-slate-800 truncate pr-1">
-                        {item.product.name}
-                      </h4>
+                    <div className="flex-1 min-w-0 flex flex-col pt-1">
+                      <div className="flex justify-between items-start gap-2">
+                          <h4 className="text-sm font-bold text-slate-800 leading-tight">
+                            {item.product.name}
+                          </h4>
+                          {/* Price Tag */}
+                          <div className="text-right flex-shrink-0">
+                             {isFree ? (
+                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                  Free
+                                </span>
+                              ) : (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-sm font-bold text-slate-900">
+                                    ₹{item.variant.price * item.quantity}
+                                  </span>
+                                  {item.product.mrp > item.variant.price && (
+                                    <span className="text-[10px] text-slate-400 line-through">
+                                      ₹{item.product.mrp * item.quantity}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                          </div>
+                      </div>
 
+                      {/* 🟢 NEW CLEAN BUNDLE DESIGN */}
                       {item.isBundle ? (
-                        <div className="mt-1">
-                          <ul className="text-xs text-slate-500 space-y-0.5">
-                            {item.contents?.map((content, i) => (
-                              <li key={i} className="truncate flex items-center gap-1.5">
-                                <span className="w-1 h-1 rounded-full bg-slate-300 flex-shrink-0" />
-                                <span className="truncate">{content.name}</span>
-                                <span className="text-slate-400 whitespace-nowrap">({content.variantName})</span>
-                              </li>
-                            ))} 
-                          </ul>
+                        <div className="mt-2 relative pl-3">
+                          {/* Vertical Guide Line */}
+                          <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-slate-200 rounded-full"></div>
+                          
+                          <div className="space-y-1.5">
+                            {item.contents?.map((content, i) => {
+                               const name = content.product?.name || content.name || "Scent";
+                               const size = content.variant?.size || content.variantName || content.size || "30ml";
+                               
+                               return (
+                                  <div key={i} className="flex justify-between items-center text-xs group/item">
+                                    <span className="text-slate-600 font-medium truncate mr-2">
+                                      {name}
+                                    </span>
+                                    <span className="text-slate-400 text-[10px]">
+                                      {size}
+                                    </span>
+                                  </div>
+                               );
+                            })}
+                          </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500 mt-1 truncate">
-                          {item.variant.name && <span className="mr-2">{item.variant.name}</span>}
-                          {item.variant.name && <span className="text-slate-300">|</span>}
-                          <span className="ml-2">Qty: {item.quantity}</span>
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-slate-500 font-medium">
+                            {item.variant.name || item.variant.size + " ml"}
+                          </p>
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
+                        </div>
                       )}
-
-                      <div className="mt-1.5 flex items-center gap-2">
-                        {isFree ? (
-                          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                            Free
-                          </span>
-                        ) : (
-                          <>
-                            <span className="text-sm font-bold text-slate-900">
-                              ₹{item.variant.price * item.quantity}
-                            </span>
-                            {item.product.mrp > item.variant.price && (
-                              <span className="text-xs text-slate-400 line-through">
-                                ₹{item.product.mrp * item.quantity}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
                     </div>
                   </motion.div>
                 );
@@ -157,7 +173,6 @@ export default function OrderSummary({
             </motion.div>
           </div>
 
-          {/* 🟢 3. Bottom Fade Gradient (Visual cue for scrolling) */}
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50/50 to-transparent pointer-events-none" />
         </div>
 
