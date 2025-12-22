@@ -1,10 +1,12 @@
 // src/CheckoutGuard.jsx
-import React, { useMemo } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import React, { useContext, useMemo } from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { CartContext } from "./contexts/CartContext";
+import Loader from "./Components/Loader";
 
 const INTENT_KEY = "checkout_intent";
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
 
 function readIntent() {
   try {
@@ -14,7 +16,7 @@ function readIntent() {
     if (!data?.ts) return null;
     const age = Date.now() - Number(data.ts);
     if (age > MAX_AGE_MS) return null;
-    return data; // { ts }
+    return data;
   } catch {
     return null;
   }
@@ -22,22 +24,37 @@ function readIntent() {
 
 export default function CheckoutGuard() {
   const { isLoaded, isSignedIn } = useUser();
+  const { cart, isCartLoading } = useContext(CartContext);
+  const location = useLocation();
+
   const intent = useMemo(readIntent, []);
 
-  // Wait for Clerk to determine auth state (optional: show a loader)
-  if (!isLoaded) return null;
+  // 1. Wait for Clerk to load fundamental auth state
+  if (!isLoaded) return <Loader text="Verifying..." />;
 
-  // 1) No valid intent? Never open checkout directly.
+  // 🔒 2. SECURITY FIRST: No Ticket? No Entry.
+  // If the user typed the URL manually, 'intent' is null.
+  // We block them IMMEDIATELY and send them to Cart.
   if (!intent) {
-    return <Navigate to="/" replace />;
+     return <Navigate to="/cart" replace />;
   }
 
-  // 2) Not signed in? Go to login and come back to CART (not checkout).
+  // 3. Ticket exists? Now check if they are logged in.
   if (!isSignedIn) {
-    // Policy says: after login, return to /cart
+    if (location.pathname !== "/login") {
+        sessionStorage.setItem("post_login_redirect", "/checkout");
+    }
     return <Navigate to="/login" replace />;
   }
 
-  // 3) Valid intent + signed in → enter checkout
+  // 4. Wait for Cart Data
+  if (isCartLoading) return <Loader text="Loading your cart..." />;
+
+  // 5. Check if Cart is Empty
+  if (!cart || cart.length === 0) {
+    return <Navigate to="/cart" replace />;
+  }
+
+  // 6. Access Granted
   return <Outlet />;
 }

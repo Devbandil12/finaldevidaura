@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useUser, AuthenticateWithRedirectCallback  } from "@clerk/clerk-react";
+import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Minimal Imports (Load these immediately) ---
 import Navbar from "./Components/Navbar";
@@ -96,11 +96,24 @@ function PostLoginRedirector() {
   const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
+    // 1. Don't interfere if we are currently handling the Google SSO callback
+    if (location.pathname === "/sso-callback") return;
+
+    // 2. Wait for the user to be fully loaded and signed in
     if (!isLoaded || !isSignedIn) return;
+
+    // 3. Check if there is a pending redirect
     const target = sessionStorage.getItem("post_login_redirect");
+
     if (target) {
-      sessionStorage.removeItem("post_login_redirect");
-      if (location.pathname !== target) {
+      if (location.pathname === target) {
+        // ✅ SUCCESS: We have arrived at the target (e.g., /checkout).
+        // Now it is safe to remove the key so we don't redirect again.
+        sessionStorage.removeItem("post_login_redirect");
+      } else {
+        // ⏳ PENDING: We are not at the target yet (e.g., we are at /).
+        // Redirect the user, but DO NOT remove the key yet. 
+        // We will remove it in the next render when we actually arrive.
         navigate(target, { replace: true });
       }
     }
@@ -134,46 +147,46 @@ const App = () => {
 
                       {/* Suspense handles the loading state for lazy components */}
                       {/* <Suspense fallback={<Loader text="Loading..." />}> */}
-                        <Routes>
+                      <Routes>
 
-                          <Route element={<MainLayout />}>
-                            {/* Home is now lazy-loaded here */}
-                            <Route path="/" element={<Home />} />
-                            <Route path="/products" element={<Products />} />
-                            <Route path="/privacy" element={<PrivacyPolicy />} />
-                            <Route path="/terms" element={<TermsAndConditions />} />
-                            <Route path="/myorder" element={<MyOrder />} />
-                            <Route path="/product/:productId" element={<ProductDetail />} />
-                            <Route path="/wishlist" element={<Wishlist />} />
-                            <Route path="/cart" element={<Cart />} />
-                            <Route path="/myaccount" element={<UserPage />} />
-                            <Route path="/contact" element={<ContactUs />} />
+                        <Route element={<MainLayout />}>
+                          {/* Home is now lazy-loaded here */}
+                          <Route path="/" element={<Home />} />
+                          <Route path="/products" element={<Products />} />
+                          <Route path="/privacy" element={<PrivacyPolicy />} />
+                          <Route path="/terms" element={<TermsAndConditions />} />
+                          <Route path="/myorder" element={<MyOrder />} />
+                          <Route path="/product/:productId" element={<ProductDetail />} />
+                          <Route path="/wishlist" element={<Wishlist />} />
+                          <Route path="/cart" element={<Cart />} />
+                          <Route path="/myaccount" element={<UserPage />} />
+                          <Route path="/contact" element={<ContactUs />} />
 
-                            <Route path="/Admin" element={
-                              <AdminProvider>
-                                <Adminpannel />
-                              </AdminProvider>
-                            }
-                            />
-
-                            <Route element={<CheckoutGuard />}>
-                              <Route path="/checkout" element={<Checkout />} />
-                            </Route>
-                          </Route>
-
-                          <Route path="/login" element={<Login />} />
-
-                          <Route
-                            path="/sso-callback"
-                            element={
-                              <>
-                                <AuthenticateWithRedirectCallback />
-                                <SsoCallbackLoader />
-                              </>
-                            }
+                          <Route path="/Admin" element={
+                            <AdminProvider>
+                              <Adminpannel />
+                            </AdminProvider>
+                          }
                           />
 
-                        </Routes>
+                          <Route element={<CheckoutGuard />}>
+                            <Route path="/checkout" element={<Checkout />} />
+                          </Route>
+                        </Route>
+
+                        <Route path="/login" element={<Login />} />
+
+                        <Route
+                          path="/sso-callback"
+                          element={
+                            <>
+                              <AuthenticateWithRedirectCallback />
+                              <SsoCallbackLoader />
+                            </>
+                          }
+                        />
+
+                      </Routes>
                       {/* </Suspense> */}
                     </Router>
                   </NotificationProvider>

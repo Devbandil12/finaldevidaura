@@ -2,14 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, X, Loader2 } from "lucide-react";
-
-// 🚀 PRODUCTION FIX: Import the actual Clerk hooks
 import { useSignIn, useSignUp } from "@clerk/clerk-react";
 
-// ❌ REMOVE the mockDelay, useSignUp, and useSignIn definitions below this line ❌
-
-// --- Placeholder Assets (since local file paths were invalid) ---
-
+// --- Assets ---
 import SignUpImage from "../assets/images/founder-img.jpg";
 import SignInImage from "../assets/images/vigor.webp";
 
@@ -23,7 +18,6 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
-
 export default function CustomAuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState("");
@@ -36,24 +30,20 @@ export default function CustomAuthModal({ onClose }) {
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Manages loading state for Google SSO
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // This now calls the actual Clerk hooks
   const { signUp, setActive: setSignUpActive } = useSignUp();
   const { signIn, setActive: setSignInActive } = useSignIn();
-  // Removed: const { isLoaded: isRecaptchaLoaded, executeRecaptcha } = useGoogleReCaptcha();
   const navigate = useNavigate();
 
   const otpRefs = useRef([]);
   const modalContentRef = useRef(null);
 
-  // Function to handle navigation and closing the modal
   const navigateAndClose = useCallback((path) => {
     navigate(path);
     onClose();
   }, [navigate, onClose]);
 
-  // Cooldown timer for resending OTP
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
@@ -63,7 +53,6 @@ export default function CustomAuthModal({ onClose }) {
 
   const handleToggle = () => {
     setIsSignUp(prev => !prev);
-    // Reset all form states when toggling between sign up and sign in
     setFirstName("");
     setLastName("");
     setEmail("");
@@ -86,12 +75,9 @@ export default function CustomAuthModal({ onClose }) {
     setSendingOtp(true);
     try {
       if (isSignUp) {
-        // Step 1: Create a new user attempt
         await signUp.create({ emailAddress: email, firstName, lastName });
-        // Step 2: Prepare and send the verification code
         await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       } else {
-        // Step 1: Start the sign-in attempt
         await signIn.create({ identifier: email, strategy: "email_code" });
       }
       setOtpSent(true);
@@ -112,12 +98,10 @@ export default function CustomAuthModal({ onClose }) {
     newOtp[idx] = value;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (value && idx < 5) {
       otpRefs.current[idx + 1]?.focus();
     }
 
-    // Auto-submit if all 6 digits are entered
     if (newOtp.join("").length === 6) {
       verifyOtp(newOtp.join(""));
     }
@@ -134,15 +118,21 @@ export default function CustomAuthModal({ onClose }) {
     setError("");
     try {
       let result;
+
+      // 🟢 FIX 1: Capture the redirect URL *before* the timeout starts
+      const redirectUrl = sessionStorage.getItem("post_login_redirect") || "/";
+
       if (isSignUp) {
         result = await signUp.attemptEmailAddressVerification({ code });
         if (result.status === "complete") {
           await setSignUpActive({ session: result.createdSessionId });
           setVerified(true);
           window.toast.success("Account created successfully!");
-          // Use navigateAndClose to handle redirect and modal close
-          setTimeout(() => navigateAndClose(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
+          
+          // 🟢 FIX 2: Clear storage immediately, but use the captured variable
           sessionStorage.removeItem("post_login_redirect");
+          
+          setTimeout(() => navigateAndClose(redirectUrl), 1200);
         }
       } else {
         result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
@@ -150,9 +140,11 @@ export default function CustomAuthModal({ onClose }) {
           await setSignInActive({ session: result.createdSessionId });
           setVerified(true);
           window.toast.success("Welcome back!");
-          // Use navigateAndClose to handle redirect and modal close
-          setTimeout(() => navigateAndClose(sessionStorage.getItem("post_login_redirect") || "/"), 1200);
+
+          // 🟢 FIX 3: Clear storage immediately, but use the captured variable
           sessionStorage.removeItem("post_login_redirect");
+
+          setTimeout(() => navigateAndClose(redirectUrl), 1200);
         }
       }
     } catch (err) {
@@ -165,39 +157,32 @@ export default function CustomAuthModal({ onClose }) {
     }
   };
 
-const handleGoogle = async () => {
+  const handleGoogle = async () => {
     if (isGoogleLoading || sendingOtp || otpSent) return; 
     setIsGoogleLoading(true);
     setError("");
 
+    // This part is correct: Read URL before we leave the page
     const redirectUrl = sessionStorage.getItem("post_login_redirect") || "/";
 
     const redirectSettings = {
       strategy: "oauth_google",
       redirectUrl: "/sso-callback",
-      redirectUrlComplete: redirectUrl,
+      redirectUrlComplete: redirectUrl, // Clerk handles this redirect automatically
     };
 
     try {
-      // 🚀 PERFORMANCE FIX: Check the current mode (Sign Up vs Log In)
       if (isSignUp) {
-        // If user is on Sign Up tab, try creating account first
         await signUp.authenticateWithRedirect(redirectSettings);
       } else {
-        // If user is on Log In tab, try logging in first (NO DELAY)
         await signIn.authenticateWithRedirect(redirectSettings);
       }
-
     } catch (err) {
       console.log("Primary Google attempt failed, attempting fallback logic...", err);
-
-      // Smart Fallback: If the user clicked the wrong tab (e.g., clicked "Sign Up" but has an account)
       try {
         if (isSignUp) {
-          // Initial attempt was SignUp and failed (likely user exists) -> Try SignIn
           await signIn.authenticateWithRedirect(redirectSettings);
         } else {
-           // Initial attempt was SignIn and failed (likely user new) -> Try SignUp
           await signUp.authenticateWithRedirect(redirectSettings);
         }
       } catch (finalErr) {
@@ -208,64 +193,27 @@ const handleGoogle = async () => {
     }
   };
 
-  // --- Animation Variants for inner Form/Image Panel slide ---
+  // --- Animations ---
   const slideAnimationVariants = {
-    initial: (isSignUp) => ({
-      x: isSignUp ? "100%" : "-100%",
-      opacity: 0,
-    }),
-    animate: {
-      x: "0%",
-      opacity: 1,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-    },
-    exit: (isSignUp) => ({
-      x: isSignUp ? "-100%" : "100%",
-      opacity: 0,
-      transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-    }),
+    initial: (isSignUp) => ({ x: isSignUp ? "100%" : "-100%", opacity: 0 }),
+    animate: { x: "0%", opacity: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+    exit: (isSignUp) => ({ x: isSignUp ? "-100%" : "100%", opacity: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }),
   };
 
-  // --- Animation Variants for Modal Scale/Fade ---
   const modalScaleVariants = {
-    initial: {
-      scale: 0.1,
-      y: 20,
-      transition: { duration: 0 }
-    },
-    animate: {
-      scale: 1,
-      y: 0,
-      transition: { duration: 0.6 }
-    },
-    exit: {
-      scale: 1,
-      y: 10,
-      transition: { duration: 0.5 }
-    }
+    initial: { scale: 0.1, y: 20, transition: { duration: 0 } },
+    animate: { scale: 1, y: 0, transition: { duration: 0.6 } },
+    exit: { scale: 1, y: 10, transition: { duration: 0.5 } }
   };
-
 
   return (
-    // Backdrop Container
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="auth-modal-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <title>{isSignUp ? "Create Account" : "Log In"} | Devid Aura</title>
-      <meta name="description" content={isSignUp
-        ? "Join the Devid Aura family. Create an account to manage your orders, wishlist, and enjoy a seamless shopping experience."
-        : "Log in to your Devid Aura account to access your orders, wishlist, and continue your fragrance journey."}
-      />
-
-      {/* Modal Content Container with Motion for Entrance/Exit */}
       <AnimatePresence>
         <motion.div
           key="auth-modal-content"
@@ -273,20 +221,13 @@ const handleGoogle = async () => {
           initial="initial"
           animate="animate"
           exit="exit"
-
           ref={modalContentRef}
           className="w-full max-w-4xl min-h-[650px] bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-50"
         >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-gray-900 transition-colors bg-white rounded-full shadow-lg"
-            aria-label="Close authentication modal"
-          >
+          <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-gray-900 transition-colors bg-white rounded-full shadow-lg">
             <X size={24} />
           </button>
 
-          {/* Content Panel with Slide Animation */}
           <AnimatePresence initial={false} mode="wait">
             <motion.div
               key={isSignUp ? "signup" : "login"}
@@ -297,26 +238,15 @@ const handleGoogle = async () => {
               exit="exit"
               className="w-full flex flex-col md:flex-row"
             >
-              {/* Form Panel */}
               <div className={`w-full md:w-1/2 flex flex-col justify-center p-8 md:p-12 ${isSignUp ? 'md:order-1' : 'md:order-2'}`}>
-                <h2 id="auth-modal-title" className="text-3xl font-bold text-zinc-900 mb-6">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
+                <h2 className="text-3xl font-bold text-zinc-900 mb-6">{isSignUp ? "Create Account" : "Welcome Back"}</h2>
 
                 <button
                   onClick={handleGoogle}
-                  // Disable if Google is loading OR if Email/OTP flow has started
                   disabled={isGoogleLoading || sendingOtp || otpSent}
                   className={`flex items-center justify-center gap-3 w-full py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed`}
                 >
-                  {isGoogleLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin text-gray-600" />
-                    </>
-                  ) : (
-                    <>
-                      <GoogleIcon className="w-5 h-5" />
-                      Sign in with Google
-                    </>
-                  )}
+                  {isGoogleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-600" /> : <><GoogleIcon className="w-5 h-5" /> Sign in with Google</>}
                 </button>
 
                 <div className="flex items-center my-6">
@@ -324,37 +254,26 @@ const handleGoogle = async () => {
                   <span className="px-2 text-xs text-gray-400 font-medium">OR</span>
                   <div className="flex-grow h-px bg-gray-200"></div>
                 </div>
+                
                 <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
                   {isSignUp && (
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="relative">
-                        <input id="fname" type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
-                          // Disable if Google SSO is loading
-                          disabled={isGoogleLoading}
-                          className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="First Name" required />
-                        <label htmlFor="fname" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">First Name</label>
+                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="First Name" required />
+                        <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">First Name</label>
                       </div>
                       <div className="relative">
-                        <input id="lname" type="text" value={lastName} onChange={e => setLastName(e.target.value)}
-                          // Disable if Google SSO is loading
-                          disabled={isGoogleLoading}
-                          className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Last Name" required />
-                        <label htmlFor="lname" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Last Name</label>
+                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Last Name" required />
+                        <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Last Name</label>
                       </div>
                     </div>
                   )}
                   <div className="relative mb-4">
-                    <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
-                      // Disable if Google SSO is loading
-                      disabled={isGoogleLoading}
-                      className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Email Address" required />
-                    <label htmlFor="email" className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Email Address</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Email Address" required />
+                    <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Email Address</label>
                   </div>
                   {!otpSent ? (
-                    <button type="submit"
-                      // Disable if sending or if Google SSO is loading
-                      disabled={sendingOtp || isGoogleLoading}
-                      className="w-full bg-black text-white py-3 rounded-lg font-semibold text-sm hover:bg-zinc-800 transition-colors disabled:bg-gray-300">
+                    <button type="submit" disabled={sendingOtp || isGoogleLoading} className="w-full bg-black text-white py-3 rounded-lg font-semibold text-sm hover:bg-zinc-800 transition-colors disabled:bg-gray-300">
                       {sendingOtp ? "Sending..." : "Continue"}
                     </button>
                   ) : (
@@ -367,7 +286,6 @@ const handleGoogle = async () => {
                             ref={el => (otpRefs.current[i] = el)}
                             type="tel"
                             maxLength={1}
-                            // Disable if Google SSO is loading, verifying, or verified
                             disabled={verifying || verified || isGoogleLoading}
                             value={digit}
                             onChange={e => handleOtpChange(e, i)}
@@ -381,10 +299,7 @@ const handleGoogle = async () => {
                           <CheckCircle size={20} /> Verified! Redirecting...
                         </div>
                       ) : (
-                        <button type="button" onClick={handleSendOtp}
-                          // Disable if sending, cooling down, or if Google SSO is loading
-                          disabled={sendingOtp || cooldown > 0 || isGoogleLoading}
-                          className="text-sm text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline">
+                        <button type="button" onClick={handleSendOtp} disabled={sendingOtp || cooldown > 0 || isGoogleLoading} className="text-sm text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline">
                           {sendingOtp ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
                         </button>
                       )}
@@ -399,16 +314,12 @@ const handleGoogle = async () => {
                   </span>
                 </p>
               </div>
-
-              {/* Image Panel */}
               <div className={`relative w-full md:w-1/2 h-64 md:h-full ${isSignUp ? 'md:order-2' : 'md:order-1'}`}>
-                {/* Using placeholder images since asset imports failed */}
                 <img src={isSignUp ? SignUpImage : SignInImage} alt="Authentication" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/30"></div>
                 <div className="absolute bottom-0 left-0 p-8 md:p-12">
                   <h3 className="text-white text-2xl md:text-3xl font-semibold leading-tight max-w-sm text-shadow">
                     {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
-
                   </h3>
                 </div>
               </div>
@@ -416,12 +327,7 @@ const handleGoogle = async () => {
           </AnimatePresence>
         </motion.div>
       </AnimatePresence>
-      <style>{`
-        /* Minimal style to ensure the Google icon is visible if using a local file path */
-        .text-shadow {
-            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-        }
-      `}</style>
+      <style>{` .text-shadow { text-shadow: 0 1px 3px rgba(0,0,0,0.5); } `}</style>
     </div>
   );
 }

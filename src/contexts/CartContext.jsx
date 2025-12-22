@@ -64,10 +64,7 @@ export const CartProvider = ({ children }) => {
       return rows;
     } catch (e) {
       console.error("getCartitems error:", e);
-      // Only show error
-      //  if it was a user-initiated load
       if (showLoader) window.toast.error("Failed to load cart.");
-      // Don't clear cart on error, keep stale data is better than empty
       return []; 
     } finally {
       if (showLoader) setIsCartLoading(false);
@@ -84,7 +81,6 @@ export const CartProvider = ({ children }) => {
       setWishlist(rows);
     } catch (e) {
       console.error("getwishlist error:", e);
-      // window.toast.error("Failed to load wishlist.");
       setWishlist([]);
     } finally {
       setIsWishlistLoading(false);
@@ -106,7 +102,8 @@ export const CartProvider = ({ children }) => {
     }
   }, [userdetails?.id, BACKEND_URL]);
 
-  useEffect(() => {
+  // 🟢 MERGE LOGIC FIXED HERE 🟢
+useEffect(() => {
     if (!isLoaded || isUserLoading) {
       setIsCartLoading(true);
       setIsWishlistLoading(true);
@@ -114,15 +111,19 @@ export const CartProvider = ({ children }) => {
     }
 
     if (isSignedIn && userdetails?.id) {
-      if (userdetails.isNew && mergeRanForId.current !== userdetails.id) {
+      const guestCart = readLS(LS_CART_KEY);
+      const guestWishlist = readLS(LS_WISHLIST_KEY);
+      const hasGuestData = (guestCart && guestCart.length > 0) || (guestWishlist && guestWishlist.length > 0);
+
+      if (hasGuestData && mergeRanForId.current !== userdetails.id) {
         mergeRanForId.current = userdetails.id;
 
         const mergeGuestData = async () => {
-          const guestCart = readLS(LS_CART_KEY);
-          const guestWishlist = readLS(LS_WISHLIST_KEY);
+          const currentGuestCart = readLS(LS_CART_KEY);
+          const currentGuestWishlist = readLS(LS_WISHLIST_KEY);
 
-          if (guestCart.length > 0) {
-            const payload = guestCart.map(item => ({ 
+          if (currentGuestCart.length > 0) {
+            const payload = currentGuestCart.map(item => ({ 
               productId: item.product.id, 
               variantId: item.variant.id, 
               quantity: item.quantity 
@@ -133,11 +134,11 @@ export const CartProvider = ({ children }) => {
               body: JSON.stringify({ userId: userdetails.id, guestCart: payload }),
             });
             removeLS(LS_CART_KEY);
-            window.toast.info("Your guest cart has been saved to your new account.");
+            window.toast.info("Your guest cart has been merged.");
           }
 
-          if (guestWishlist.length > 0) {
-            const payload = guestWishlist.map(item => ({
+          if (currentGuestWishlist.length > 0) {
+            const payload = currentGuestWishlist.map(item => ({
               productId: item.product.id,
               variantId: item.variant.id
             }));
@@ -149,9 +150,25 @@ export const CartProvider = ({ children }) => {
             removeLS(LS_WISHLIST_KEY);
           }
 
-          await getCartitems();
+          // Fetch fresh data
+          const freshCart = await getCartitems();
           await getwishlist();
           await getSavedItems();
+
+          // 🟢 CHECK INTENT SOURCE
+          try {
+            const intentRaw = sessionStorage.getItem("checkout_intent");
+            const intent = intentRaw ? JSON.parse(intentRaw) : null;
+            const isBuyNow = intent?.source === "buy_now";
+
+            // 🟢 ONLY update 'selectedItems' if it is NOT a Buy Now flow.
+            // If it IS Buy Now, we want to keep the single item snapshot we made in Cart.jsx
+            if (!isBuyNow && freshCart && freshCart.length > 0) {
+              localStorage.setItem("selectedItems", JSON.stringify(freshCart));
+            }
+          } catch (e) {
+            console.error("Error parsing checkout intent during merge", e);
+          }
         };
 
         mergeGuestData();
@@ -180,11 +197,9 @@ export const CartProvider = ({ children }) => {
   ]);
 
   // 🟢 NEW: Auto-refresh cart when user comes back to the tab (Focus Revalidation)
-  // This solves the "lack of live update" issue without sockets.
   useEffect(() => {
     const handleFocus = () => {
       if (isSignedIn && userdetails?.id) {
-        // Silent refresh (false argument) so no loading spinner appears
         getCartitems(false);
       }
     };
