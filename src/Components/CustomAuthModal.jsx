@@ -9,8 +9,10 @@ import { useSignIn, useSignUp } from "@clerk/clerk-react";
 // ❌ REMOVE the mockDelay, useSignUp, and useSignIn definitions below this line ❌
 
 // --- Placeholder Assets (since local file paths were invalid) ---
-const SignUpImage = 'https://placehold.co/400x650/4f46e5/ffffff?text=Sign+Up+Image';
-const SignInImage = 'https://placehold.co/400x650/1e293b/ffffff?text=Sign+In+Image';
+
+import SignUpImage from "../assets/images/founder-img.jpg";
+import SignInImage from "../assets/images/vigor.webp";
+
 // Inline function component for the Google SVG icon
 const GoogleIcon = (props) => (
   <svg viewBox="0 0 48  48" className={props.className}>
