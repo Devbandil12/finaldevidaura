@@ -422,10 +422,15 @@ const ShoppingCart = () => {
     });
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
+    
+    // --- FIX START ---
     const intentData = {
       ts: Date.now(),
-      source: isBuyNow ? "buy_now" : "cart"
+      // Changed 'isBuyNow' to 'isBuyNowActive'
+      source: isBuyNowActive ? "buy_now" : "cart" 
     };
+    // --- FIX END ---
+
     sessionStorage.setItem("checkout_intent", JSON.stringify(intentData));
     if (!isSignedIn) {
       sessionStorage.setItem("post_login_redirect", "/checkout");

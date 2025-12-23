@@ -36,6 +36,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 
 // ✅ REGISTER THEM HERE
@@ -48,7 +49,8 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler,
 );
 
 // --- CSV Export Utility ---

@@ -155,7 +155,7 @@ const Products = () => {
               animate="visible"
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-16 max-w-[1600px] mx-auto"
             >
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 {displayProducts.map((product, index) => {
                   const displayVariant = getDisplayVariant(product);
                   if (!displayVariant) return null;
