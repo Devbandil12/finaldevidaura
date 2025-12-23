@@ -9,7 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, BarChart3, Package, Ticket, ShoppingBag, Users,
-  MessageSquare, ShoppingCart, MapPin, Menu, X, LogOut, ChevronRight, Home
+  MessageSquare, ShoppingCart, MapPin, Menu, X, LogOut, ChevronRight, Home,
+  LineChart, History // 1. Added Icon for Insights
 } from 'lucide-react';
 
 // Modals & Components
@@ -17,6 +18,7 @@ import ImageUploadModal from "./ImageUploadModal";
 import PincodeManager from "./PincodeManager";
 import Reports from "./Reports";
 import DashboardTab from "./DashboardTab";
+import InsightsTab from "./InsightsTab"; // 2. Imported InsightsTab
 import ProductsTab from "./ProductsTab";
 import CouponsTab from "./CouponsTab";
 import OrdersTab from "./OrdersTab";
@@ -24,6 +26,7 @@ import UsersTab from "./UsersTab";
 import QueriesTab from "./QueriesTab";
 import CartsWishlistsTab from "./CartsWishlistsTab";
 import ProductVariantEditor from "./ProductVariantEditor";
+import ActivityLogsTab from "./ActivityLogsTab"; // 2. Import the new component
 
 import {
   Chart as ChartJS,
@@ -90,7 +93,7 @@ const AdminPanel = () => {
   const [imgError, setImgError] = useState(false);
 
   // Contexts
-  const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts, refreshProductStock  } = useContext(ProductContext);
+  const { products, deleteProduct, unarchiveProduct, archivedProducts, getArchivedProducts, refreshProductStock } = useContext(ProductContext);
   const { userdetails } = useContext(UserContext);
 
   const { tickets: queries, getAllTickets: getquery } = useContext(ContactContext);
@@ -147,7 +150,7 @@ const AdminPanel = () => {
     return orders?.filter(order => {
       // 1. Must not be Cancelled
       if (order.status === "Order Cancelled") return false;
-      
+
       // 2. Must not be explicitly 'pending_payment' (Backend status for unpaid online)
       if (order.status === "pending_payment" || order.status === "pending payment") return false;
 
@@ -247,6 +250,8 @@ const AdminPanel = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'reports', label: 'Analytics', icon: BarChart3 },
+    { id: 'insights', label: 'Market Intel', icon: LineChart }, // 3. Added Menu Item
+    { id: 'logs', label: 'Audit Logs', icon: History }, // 3. Add to Menu Items
     { id: 'products', label: 'Products', icon: Package },
     { id: 'coupons', label: 'Coupons', icon: Ticket },
     { id: 'users', label: 'Customers', icon: Users },
@@ -413,7 +418,11 @@ const AdminPanel = () => {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
               {activeTab === "dashboard" && <DashboardTab orders={orders} successfulOrders={successfulOrders} totalRevenue={totalRevenue} totalOrders={totalOrders} conversionRate={conversionRate} averageOrderValue={averageOrderValue} newCustomers={newCustomers} returningCustomers={returningCustomers} cancelledOrdersValue={cancelledOrdersValue} totalQueries={totalQueries} />}
               {activeTab === "reports" && <Reports products={products} users={users} orders={reportOrders} />}
-              {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock}/>}
+
+              {/* 4. Render InsightsTab when active */}
+              {activeTab === "insights" && <InsightsTab />}
+              {activeTab === "logs" && <ActivityLogsTab />}
+              {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock} />}
               {activeTab === "coupons" && <CouponsTab coupons={coupons} users={users} couponSubTab={couponSubTab} setCouponSubTab={setCouponSubTab} editingCoupon={editingCoupon} setEditingCoupon={setEditingCoupon} saveCoupon={saveCoupon} deleteCoupon={deleteCoupon} />}
               {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
               {activeTab === "users" && <UsersTab users={users} filteredUsers={filteredUsers} userSearchQuery={userSearchQuery} setUserSearchQuery={setUserSearchQuery} editingUser={editingUser} setEditingUser={setEditingUser} handleEditUser={handleEditUser} handleSaveUser={handleSaveUser} handleDeleteUser={handleDeleteUser} handleUpdateUserRole={handleUpdateUserRole} downloadCSV={downloadCSV} />}

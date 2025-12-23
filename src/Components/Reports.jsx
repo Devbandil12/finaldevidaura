@@ -1,236 +1,326 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { 
-  PieChart, TrendingUp, DollarSign, Package, User, Ticket, Award, BarChart3 
+  BarChart3, PieChart, Package, Users, Download, 
+  Search, ArrowUpRight, ArrowDownRight 
 } from 'lucide-react';
-import { Pie } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
+import { AdminContext } from '../contexts/AdminContext';
+import { ProductContext } from '../contexts/productContext';
 
-const Reports = ({ products, users, orders }) => {
+const Reports = () => {
+  const { reportOrders, users, orders } = useContext(AdminContext);
+  const { products } = useContext(ProductContext);
+  const [activeTab, setActiveTab] = useState('sales'); // sales, inventory, customers
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // 🟢 FIX: Filter successful orders to exclude Pending Payments
-  const successfulOrders = useMemo(() => {
-    return orders?.filter(order => {
-      if (order.status === "Order Cancelled") return false;
-      if (order.status === "pending_payment" || order.status === "pending payment") return false;
+  // --- 1. SALES ANALYTICS ENGINE ---
+  const salesData = useMemo(() => {
+    // Fallback to basic orders if reportOrders (detailed) aren't loaded yet
+    const sourceData = (reportOrders && reportOrders.length > 0) ? reportOrders : orders;
+    if (!sourceData) return [];
 
-      const pMode = (order.paymentMode || "").toLowerCase();
-      const pStatus = (order.paymentStatus || "").toLowerCase();
-      if (pMode === 'online' && (pStatus === 'pending' || pStatus === 'pending_payment')) {
-        return false;
-      }
-      return true;
-    }) || [];
-  }, [orders]);
+    const dailyMap = {};
 
-  // --- 1. Sales By Category ---
-  const { salesByCategory, categoryLabels, categoryValues } = useMemo(() => {
-    const counts = {};
-    successfulOrders.forEach(order => {
-      order.products?.forEach(p => {
-        const cat = p.category || 'Uncategorized';
-        counts[cat] = (counts[cat] || 0) + (p.price * p.quantity);
-      });
+    sourceData.forEach(order => {
+       // Only count valid sales
+       if (order.status === 'Order Cancelled' || order.status === 'pending_payment') return;
+
+       const date = new Date(order.createdAt).toLocaleDateString('en-US');
+       
+       if (!dailyMap[date]) dailyMap[date] = { date, revenue: 0, orders: 0, profit: 0 };
+       
+       dailyMap[date].revenue += order.totalAmount;
+       dailyMap[date].orders += 1;
+       
+       // Calculate Cost
+       let cost = 0;
+       if (order.products) {
+          cost = order.products.reduce((sum, p) => sum + ((p.costPrice || p.price * 0.7) * p.quantity), 0);
+       } else {
+          cost = order.totalAmount * 0.7;
+       }
+       
+       dailyMap[date].profit += (order.totalAmount - cost);
     });
-    return { 
-      salesByCategory: counts, 
-      categoryLabels: Object.keys(counts), 
-      categoryValues: Object.values(counts) 
-    };
-  }, [successfulOrders]);
 
-  // --- 2. Advanced Profit Metrics ---
-  const { totalRevenue, totalCost, netProfit } = useMemo(() => {
-    let revenue = 0;
-    let cost = 0;
+    // Sort by date descending
+    return Object.values(dailyMap).sort((a,b) => new Date(b.date) - new Date(a.date));
+  }, [reportOrders, orders]);
+
+  // --- 2. INVENTORY INTELLIGENCE ---
+  const inventoryData = useMemo(() => {
+    if (!products) return [];
+    return products.flatMap(p => 
+      p.variants?.map(v => ({
+        id: v.id,
+        name: p.name,
+        variant: v.name,
+        sku: v.sku || 'N/A',
+        stock: v.stock,
+        sold: v.sold || 0, // Ensure your backend routes/products.js updates 'sold' count on order
+        price: v.oprice,
+        // Potential revenue sitting in stock
+        value: v.stock * v.oprice, 
+        // Turnover rate: Sold / (Sold + Stock)
+        turnoverRate: (v.sold + v.stock) > 0 ? ((v.sold / (v.stock + v.sold)) * 100).toFixed(1) : 0
+      })) || []
+    ).sort((a,b) => a.stock - b.stock); // Show lowest stock first
+  }, [products]);
+
+  // --- 3. CUSTOMER INSIGHTS ---
+  const customerData = useMemo(() => {
+    if (!users || !orders) return [];
     
-    successfulOrders.forEach(order => {
-      revenue += order.totalAmount;
-      order.products?.forEach(p => {
-        // Fallback: If no cost price, assume 70% of sell price is cost (30% margin)
-        const unitCost = p.costPrice || (p.price * 0.7); 
-        cost += unitCost * p.quantity;
-      });
+    const userMap = {};
+    orders.forEach(order => {
+        if (order.status === 'Order Cancelled') return;
+        
+        if (!userMap[order.userId]) {
+            const u = users.find(usr => usr.id === order.userId);
+            userMap[order.userId] = {
+                id: order.userId,
+                name: u?.name || 'Guest/Unknown',
+                email: u?.email || 'N/A',
+                totalSpent: 0,
+                orders: 0,
+                lastOrder: order.createdAt,
+                city: order.shippingAddress?.city || 'Unknown' // Using shippingAddress from order detail
+            };
+        }
+        userMap[order.userId].totalSpent += order.totalAmount;
+        userMap[order.userId].orders += 1;
+        
+        // Update last seen
+        if (new Date(order.createdAt) > new Date(userMap[order.userId].lastOrder)) {
+            userMap[order.userId].lastOrder = order.createdAt;
+        }
     });
 
-    return { totalRevenue: revenue, totalCost: cost, netProfit: revenue - cost };
-  }, [successfulOrders]);
+    return Object.values(userMap).sort((a,b) => b.totalSpent - a.totalSpent);
+  }, [users, orders]);
 
-  // --- 3. Top Products (ONLY DELIVERED) ---
-  const topProducts = useMemo(() => {
-    // 1. Calculate sold counts strictly from Delivered orders
-    const deliveredCounts = {};
-
-    orders?.forEach(order => {
-      if (order.status === 'Delivered') {
-        order.products?.forEach(item => {
-          // Identify Product ID (handling backend object spread nuances)
-          // We prefer productId if available, otherwise fallback to id
-          const pId = item.productId || item.id; 
-          deliveredCounts[pId] = (deliveredCounts[pId] || 0) + item.quantity;
-        });
-      }
-    });
-
-    // 2. Map this data to the main products list
-    return products
-      .map(product => {
-        // Get the dynamic delivered count from our map
-        const totalSold = deliveredCounts[product.id] || 0;
-        return { ...product, totalSold };
-      })
-      .filter(p => p.totalSold > 0) // Only show products that have actually been delivered
-      .sort((a, b) => b.totalSold - a.totalSold) // Sort Highest to Lowest
-      .slice(0, 5);
-  }, [products, orders]);
-
-  // --- 4. Top Customers (By LTV - Lifetime Value) ---
-  const topCustomers = useMemo(() => {
-    const spendingMap = {};
-    successfulOrders.forEach(order => {
-      if (!spendingMap[order.userId]) {
-        spendingMap[order.userId] = { 
-          name: users.find(u => u.id === order.userId)?.name || 'Guest',
-          totalSpent: 0, 
-          orderCount: 0 
-        };
-      }
-      spendingMap[order.userId].totalSpent += order.totalAmount;
-      spendingMap[order.userId].orderCount += 1;
-    });
-
-    return Object.values(spendingMap)
-      .sort((a, b) => b.totalSpent - a.totalSpent)
-      .slice(0, 5);
-  }, [successfulOrders, users]);
-
-  // --- Charts Data ---
-  const pieData = {
-    labels: categoryLabels,
-    datasets: [{
-      data: categoryValues,
-      backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'],
-      borderWidth: 0,
-    }],
-  };
-
-  const pieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8 } } }
-  };
+  // --- UI COMPONENTS ---
+  const TabButton = ({ id, label, icon: Icon }) => (
+    <button 
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all ${
+        activeTab === id 
+        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
+        : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
+      }`}
+    >
+      <Icon size={18} /> {label}
+    </button>
+  );
 
   return (
-    <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-8 font-sans space-y-8 animate-in fade-in">
       
-      {/* Header */}
-      <div className="border-b border-gray-200 pb-6">
-        <h2 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-          <BarChart3 className="text-indigo-600" size={32} /> Financial Reports
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">Deep dive into revenue, profit margins, and inventory performance.</p>
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Financial Reports</h1>
+          <p className="text-gray-500 text-sm mt-1">Exportable data for accounting and inventory management.</p>
+        </div>
+        <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors">
+          <Download size={16} /> Export CSV
+        </button>
       </div>
 
-      {/* 1. Financial Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Gross Revenue */}
-        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-50 rounded-full group-hover:scale-110 transition-transform" />
-          <div className="relative z-10">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Gross Revenue</p>
-            <h3 className="text-3xl font-extrabold text-gray-900 mt-2">₹{totalRevenue.toLocaleString()}</h3>
-          </div>
-          <div className="relative z-10 flex items-center gap-2 text-indigo-600 font-medium text-sm">
-            <DollarSign size={16} /> Total Sales Volume
-          </div>
-        </div>
-
-        {/* Net Profit */}
-        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform" />
-          <div className="relative z-10">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Net Profit (Est.)</p>
-            <h3 className="text-3xl font-extrabold text-emerald-600 mt-2">₹{netProfit.toLocaleString()}</h3>
-          </div>
-          <div className="relative z-10 flex items-center gap-2 text-emerald-700 font-medium text-sm">
-            <TrendingUp size={16} /> {totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0}% Margin
-          </div>
-        </div>
-
-        {/* Cost of Goods */}
-        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] flex flex-col justify-between h-40 relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-rose-50 rounded-full group-hover:scale-110 transition-transform" />
-          <div className="relative z-10">
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Cost of Goods</p>
-            <h3 className="text-3xl font-extrabold text-rose-600 mt-2">₹{totalCost.toLocaleString()}</h3>
-          </div>
-          <div className="relative z-10 flex items-center gap-2 text-rose-700 font-medium text-sm">
-            <Package size={16} /> Operational Expense
-          </div>
-        </div>
+      {/* NAVIGATION */}
+      <div className="flex flex-wrap gap-3">
+        <TabButton id="sales" label="Sales Performance" icon={BarChart3} />
+        <TabButton id="inventory" label="Inventory Logic" icon={Package} />
+        <TabButton id="customers" label="Customer Insights" icon={Users} />
       </div>
 
-      {/* 2. Category & Products Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* CONTENT AREA */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[500px] overflow-hidden">
         
-        {/* Category Breakdown */}
-        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <PieChart size={20} className="text-purple-600" /> Revenue by Category
-          </h3>
-          <div className="flex-1 relative min-h-0">
-            <Pie data={pieData} options={pieOptions} updateMode="resize" />
-          </div>
-        </div>
-
-        {/* Top Products Leaderboard */}
-        <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-96 flex flex-col">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Award size={20} className="text-amber-500" /> Best Sellers (Delivered)
-          </h3>
-          <div className="overflow-y-auto pr-2 custom-scrollbar space-y-4">
-            {topProducts.length > 0 ? topProducts.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 ">
-                <span className="text-lg font-bold text-gray-400 w-6 text-center">#{i+1}</span>
-                <img src={(Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl) || "/fallback.png"} alt="" className="w-10 h-10 rounded-lg object-cover bg-white" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-gray-900 text-sm truncate">{p.name}</h4>
-                  <p className="text-xs text-gray-500">{p.category}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900 text-sm">{p.totalSold} Sold</p>
-                  <p className="text-xs text-green-600 font-medium">Verified</p>
-                </div>
-              </div>
-            )) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
-                <Package size={32} className="mb-2 opacity-50" />
-                <p className="text-sm">No delivered sales yet.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Top Customers */}
-      <div className="bg-white p-6 rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
-        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <User size={20} className="text-blue-600" /> High Value Customers (LTV)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {topCustomers.map((user, i) => (
-            <div key={i} className="p-4 rounded-xl  bg-gray-50 text-center hover:border-blue-200 hover:shadow-md transition-all">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold mx-auto mb-3 text-lg">
-                {user.name.charAt(0)}
-              </div>
-              <h4 className="font-bold text-gray-900 text-sm truncate">{user.name}</h4>
-              <p className="text-xs text-gray-500 mb-2">{user.orderCount} Orders</p>
-              <span className="inline-block px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-bold text-green-600">
-                ₹{user.totalSpent.toLocaleString()}
-              </span>
+        {/* --- SALES TAB --- */}
+        {activeTab === 'sales' && (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+               <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                 <p className="text-xs font-bold text-indigo-500 uppercase">Total Period Revenue</p>
+                 <h3 className="text-2xl font-black text-indigo-900 mt-1">
+                   ₹{salesData.reduce((a,b) => a + b.revenue, 0).toLocaleString()}
+                 </h3>
+               </div>
+               <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                 <p className="text-xs font-bold text-emerald-500 uppercase">Total Profit</p>
+                 <h3 className="text-2xl font-black text-emerald-900 mt-1">
+                   ₹{salesData.reduce((a,b) => a + b.profit, 0).toLocaleString()}
+                 </h3>
+               </div>
+               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                 <p className="text-xs font-bold text-blue-500 uppercase">Avg. Daily Sales</p>
+                 <h3 className="text-2xl font-black text-blue-900 mt-1">
+                   ₹{salesData.length ? (salesData.reduce((a,b) => a + b.revenue, 0) / salesData.length).toFixed(0) : 0}
+                 </h3>
+               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
+            <div className="h-80 mb-8">
+                <Bar 
+                  data={{
+                    labels: salesData.slice(0, 14).reverse().map(d => d.date), // Last 14 days
+                    datasets: [
+                      {
+                        label: 'Revenue',
+                        data: salesData.slice(0, 14).reverse().map(d => d.revenue),
+                        backgroundColor: '#4F46E5',
+                        borderRadius: 4
+                      }
+                    ]
+                  }}
+                  options={{ responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }}
+                />
+            </div>
+
+            {/* Sales Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3 rounded-l-lg">Date</th>
+                    <th className="px-4 py-3">Orders</th>
+                    <th className="px-4 py-3">Revenue</th>
+                    <th className="px-4 py-3 text-right rounded-r-lg">Profit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {salesData.map((day, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{day.date}</td>
+                      <td className="px-4 py-3">{day.orders}</td>
+                      <td className="px-4 py-3">₹{day.revenue.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-bold text-emerald-600">₹{day.profit.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- INVENTORY TAB --- */}
+        {activeTab === 'inventory' && (
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
+               <div className="relative flex-1 max-w-md">
+                 <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                 <input 
+                   type="text" 
+                   placeholder="Search SKU or Product..." 
+                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                   onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+                 />
+               </div>
+               <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
+                  Inventory Value: <span className="font-bold">₹{inventoryData.reduce((a,b) => a + b.value, 0).toLocaleString()}</span>
+               </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Product Name</th>
+                    <th className="px-4 py-3">Variant</th>
+                    <th className="px-4 py-3">SKU</th>
+                    <th className="px-4 py-3">Stock Level</th>
+                    <th className="px-4 py-3">Turnover Rate</th>
+                    <th className="px-4 py-3 text-right">Value (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {inventoryData
+                    .filter(i => i.name.toLowerCase().includes(searchTerm) || i.sku.toLowerCase().includes(searchTerm))
+                    .map((item, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-bold text-gray-900">{item.name}</td>
+                      <td className="px-4 py-3 text-gray-600">{item.variant}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-400">{item.sku}</td>
+                      <td className={`px-4 py-3 font-bold ${item.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                        {item.stock} Units
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                           <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500" style={{ width: `${Math.min(item.turnoverRate, 100)}%` }}></div>
+                           </div>
+                           <span className="text-xs">{item.turnoverRate}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium text-gray-900">₹{item.value.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* --- CUSTOMERS TAB --- */}
+        {activeTab === 'customers' && (
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+               {/* Segmentation Chart */}
+               <div className="bg-gray-50 p-6 rounded-2xl flex items-center justify-center">
+                  <div className="h-40 w-40">
+                    <Doughnut 
+                      data={{
+                        labels: ['VIP (>5k)', 'Regular', 'New'],
+                        datasets: [{
+                           data: [
+                             customerData.filter(c => c.totalSpent > 5000).length,
+                             customerData.filter(c => c.totalSpent <= 5000 && c.orders > 1).length,
+                             customerData.filter(c => c.orders === 1).length
+                           ],
+                           backgroundColor: ['#4F46E5', '#3B82F6', '#93C5FD'],
+                           borderWidth: 0
+                        }]
+                      }}
+                      options={{ maintainAspectRatio: false }}
+                    />
+                  </div>
+                  <div className="ml-8">
+                     <h4 className="font-bold text-gray-900 mb-1">Customer Segments</h4>
+                     <p className="text-xs text-gray-500 max-w-[150px]">Based on Lifetime Value (LTV) and order frequency.</p>
+                  </div>
+               </div>
+            </div>
+
+            {/* Top Customers List */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Last Active</th>
+                    <th className="px-4 py-3">Orders</th>
+                    <th className="px-4 py-3 text-right">LTV (Total Spent)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {customerData.slice(0, 50).map((c, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-bold text-gray-900">{c.name}</td>
+                      <td className="px-4 py-3 text-gray-500">{c.email}</td>
+                      <td className="px-4 py-3 text-gray-500">{new Date(c.lastOrder).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">{c.orders}</td>
+                      <td className="px-4 py-3 text-right font-bold text-indigo-600">₹{c.totalSpent.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };

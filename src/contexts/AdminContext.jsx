@@ -1,6 +1,7 @@
 // src/contexts/AdminContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { UserContext } from "./UserContext";
+
 export const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
 
@@ -9,9 +10,13 @@ export const AdminProvider = ({ children }) => {
   const [wishlistStats, setWishlistStats] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]); // ✅ Added State
   const [loading, setLoading] = useState(true);
   const [reportOrders, setReportOrders] = useState([]);
+  
   const { userdetails, isUserLoading } = useContext(UserContext);
+  
+  // URL Helpers
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -31,13 +36,13 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
-  // 🟢 Update User (With actorId)
+  // Update User
   const updateUser = async (userId, updates) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...updates, actorId: userdetails?.id }), // 🟢 Added actorId
+        body: JSON.stringify({ ...updates, actorId: userdetails?.id }),
       });
       if (!res.ok) throw new Error("Failed to update user");
       window.toast.success("User updated");
@@ -48,13 +53,13 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // 🟢 Delete User (With actorId)
+  // Delete User
   const deleteUser = async (userId) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, { 
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ actorId: userdetails?.id }) // 🟢 Added actorId to body
+      const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId: userdetails?.id })
       });
       if (!res.ok) throw new Error("Failed to delete user");
       window.toast.success("User deleted");
@@ -93,13 +98,12 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // 🟢 Update Order Status (With actorId)
   const updateOrderStatus = async (orderId, status) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, actorId: userdetails?.id }), // 🟢 Added actorId
+        body: JSON.stringify({ status, actorId: userdetails?.id }),
       });
       if (!res.ok) throw new Error("Failed to update order");
       const updatedOrder = await res.json();
@@ -112,16 +116,15 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  // 🟢 Cancel Order (With actorId)
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          orderId, 
+        body: JSON.stringify({
+          orderId,
           amount,
-          actorId: userdetails?.id // 🟢 Added actorId
+          actorId: userdetails?.id
         }),
       });
 
@@ -141,13 +144,12 @@ export const AdminProvider = ({ children }) => {
   };
 
   /* -------------------- COUPONS -------------------- */
-  // 🟢 Create Coupon (With actorId)
   const createCoupon = async (couponData) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/coupons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...couponData, actorId: userdetails?.id }), // 🟢 Added actorId
+        body: JSON.stringify({ ...couponData, actorId: userdetails?.id }),
       });
       if (!res.ok) throw new Error("Failed to create coupon");
       window.toast.success("Coupon created");
@@ -157,15 +159,7 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  /* -------------------- EXPORT -------------------- */
-  const exportUsers = (selectedUsers) => {
-    console.log("Exporting users:", selectedUsers);
-  };
-
-  const exportOrders = (selectedOrders) => {
-    console.log("Exporting orders:", selectedOrders);
-  };
-
+  /* -------------------- ANALYTICS & LOGS -------------------- */
   const getReportData = useCallback(async () => {
     try {
       setLoading(true);
@@ -203,27 +197,57 @@ export const AdminProvider = ({ children }) => {
     }
   }, [BACKEND_URL]);
 
-  /* -------------------- EFFECT -------------------- */
+  // ✅ Added Activity Log Fetcher
+  const getActivityLogs = useCallback(async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/users/admin/all-activity-logs`);
+      if (!res.ok) throw new Error("Failed to fetch activity logs");
+      const data = await res.json();
+      setActivityLogs(data);
+    } catch (err) {
+      console.error("❌ getActivityLogs failed:", err);
+    }
+  }, [BACKEND_URL]);
+
+  /* -------------------- EXPORT UTILS -------------------- */
+  const exportUsers = (selectedUsers) => console.log("Exporting users:", selectedUsers);
+  const exportOrders = (selectedOrders) => console.log("Exporting orders:", selectedOrders);
+
+  /* -------------------- INITIALIZATION EFFECT -------------------- */
   useEffect(() => {
     if (isUserLoading) {
-      setLoading(true); 
+      setLoading(true);
       return;
     }
-    
+
     if (userdetails?.role === "admin") {
-      getAllUsers();
-      getAllOrders();
-      getAbandonedCarts(); 
-      getWishlistStats();
+      // ✅ Fetch all admin data
+      Promise.all([
+        getAllUsers(),
+        getAllOrders(),
+        getAbandonedCarts(),
+        getWishlistStats(),
+        getActivityLogs() // ✅ Added log fetch here
+      ]).finally(() => setLoading(false));
     } else {
+      // Reset state if not admin
       setUsers([]);
       setOrders([]);
       setReportOrders([]);
-      setAbandonedCarts([]); 
+      setAbandonedCarts([]);
       setWishlistStats([]);
+      setActivityLogs([]);
       setLoading(false);
     }
-  }, [isUserLoading, userdetails, getAllUsers, getAllOrders, getAbandonedCarts, getWishlistStats]);
+  }, [
+    isUserLoading, 
+    userdetails, 
+    getAllUsers, 
+    getAllOrders, 
+    getAbandonedCarts, 
+    getWishlistStats, 
+    getActivityLogs
+  ]);
 
   return (
     <AdminContext.Provider
@@ -231,20 +255,24 @@ export const AdminProvider = ({ children }) => {
         users,
         orders,
         loading,
+        reportOrders,
+        abandonedCarts,
+        wishlistStats,
+        activityLogs, // ✅ Exposed to consumers
+        
         getAllUsers,
         updateUser,
         deleteUser,
-        exportUsers,
         getAllOrders,
         getSingleOrderDetails,
         updateOrderStatus,
         cancelOrder,
-        exportOrders,
         createCoupon,
-        reportOrders,
         getReportData,
-        abandonedCarts,
-        wishlistStats,
+        getActivityLogs,
+        
+        exportUsers,
+        exportOrders,
       }}
     >
       {children}
