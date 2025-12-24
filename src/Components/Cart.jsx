@@ -11,6 +11,7 @@ import { CouponContext } from "../contexts/CouponContext";
 import Loader from "./Loader";
 import MiniLoader from "./MiniLoader";
 import HeroButton from "./HeroButton";
+import CartRecommendations from "./CartRecommendations"; // Adjust path if needed
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock, FiHeart } from "react-icons/fi";
 
@@ -422,14 +423,12 @@ const ShoppingCart = () => {
     });
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
-    
-    // --- FIX START ---
+
     const intentData = {
       ts: Date.now(),
-      // Changed 'isBuyNow' to 'isBuyNowActive'
-      source: isBuyNowActive ? "buy_now" : "cart" 
+      source: isBuyNowActive ? "buy_now" : "cart"
     };
-    // --- FIX END ---
+    
 
     sessionStorage.setItem("checkout_intent", JSON.stringify(intentData));
     if (!isSignedIn) {
@@ -528,27 +527,7 @@ const ShoppingCart = () => {
     navigate("/cart", { replace: true, state: {} });
   };
 
-  const suggestedProducts = useMemo(() => {
-    if (isBuyNowActive) return [];
 
-    return products
-      .filter((p) => p.variants && p.variants.length > 0 && p.category !== "Template")
-      .map((product) => {
-        const cheapestVariant = product.variants.reduce(
-          (cheapest, current) => (current.oprice < cheapest.oprice ? current : cheapest),
-          product.variants[0]
-        );
-
-        const inSaved = savedItems.some((s) => s.variant?.id === cheapestVariant.id);
-        if (inSaved) return null;
-
-        const inCart = cart.some((c) => c.variant?.id === cheapestVariant.id);
-        if (inCart) return null;
-
-        return { product, cheapestVariant };
-      })
-      .filter(Boolean);
-  }, [products, cart, savedItems, isBuyNowActive]);
 
   const productDiscount = Number(breakdown.originalTotal || 0) - Number(breakdown.productTotal || 0);
   const finalPrice =
@@ -1199,115 +1178,12 @@ const ShoppingCart = () => {
             </AnimatePresence>
           </div>
 
-          {!isBuyNowActive && suggestedProducts.length > 0 && (
-            <div className="pt-8 mt-12 border-t border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">You Might Also Like</h2>
-
-              <motion.div
-                layout
-                className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
-              >
-                <AnimatePresence mode="popLayout">
-                  {suggestedProducts.map(({ product, cheapestVariant }) => {
-                    const price = Math.trunc(cheapestVariant.oprice * (1 - (cheapestVariant.discount || 0) / 100));
-                    const isAdding = addingProductId === cheapestVariant.id;
-                    const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-                    const showLineThrough = Number(cheapestVariant.oprice) > Number(price) && Number(cheapestVariant.discount) > 0;
-
-                    return (
-                      <motion.div
-                        layout
-                        key={product.id}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        style={gpuStyle}
-                        transition={{ ...rigidTransition, layout: rigidTransition }}
-                        /* --- MATCHING SHADOW & BORDER STYLE --- */
-                        className="bg-white rounded-xl overflow-hidden flex flex-col shadow-lg shadow-gray-100/50 border border-gray-50 group h-full"
-                      >
-                        {/* Image Section */}
-                        <div className="relative aspect-square overflow-hidden bg-gray-50">
-                          <img
-                            src={imageUrl}
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            onClick={() => navigate(`/product/${product.id}`)}
-                          />
-
-                          {/* Quick View Overlay (Desktop) */}
-                          <div
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                            onClick={() => navigate(`/product/${product.id}`)}
-                          >
-                            <span className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full">
-                              View Details
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Content Section */}
-                        <div className="p-3 flex-grow flex flex-col justify-between text-left">
-                          <div>
-                            <h3
-                              className="font-bold text-sm text-gray-900 leading-tight mb-1 cursor-pointer hover:underline truncate"
-                              onClick={() => navigate(`/product/${product.id}`)}
-                            >
-                              {product.name}
-                            </h3>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">{cheapestVariant.size} ml</p>
-
-                            <div className="flex items-baseline gap-2 mb-3">
-                              <span className="font-bold text-sm text-gray-900">₹{price}</span>
-                              {showLineThrough && (
-                                <span className="text-xs text-gray-400 line-through">₹{cheapestVariant.oprice}</span>
-                              )}
-                              {Number(cheapestVariant.discount) > 0 && (
-                                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 rounded">
-                                  -{cheapestVariant.discount}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Add Button - Matching Solid Black Style */}
-                          <HeroButton
-                            onClick={() => handleAddToCart(cheapestVariant, product)}
-                            disabled={isAdding}
-                            className={`w-full text-xs font-bold py-2.5 rounded-lg flex justify-center items-center gap-2 transition-all duration-200 shadow-sm ${isAdding
-                                ? "!bg-green-600 !text-white"
-                                : "bg-black text-white hover:bg-gray-800"
-                              }`}
-                          >
-                            <AnimatePresence mode="wait">
-                              {isAdding ? (
-                                <motion.span
-                                  key="added"
-                                  initial={{ opacity: 0, y: 5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="flex items-center gap-1.5"
-                                >
-                                  Added <FiCheckCircle />
-                                </motion.span>
-                              ) : (
-                                <motion.span
-                                  key="add"
-                                  initial={{ opacity: 0, y: -5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="flex items-center gap-1.5"
-                                >
-                                  Add to Cart <FaShoppingCart size={10} />
-                                </motion.span>
-                              )}
-                            </AnimatePresence>
-                          </HeroButton>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.div>
-            </div>
+          {/* 🟢 NEW SMART RECOMMENDATIONS */}
+          {!isBuyNowActive && (
+            <CartRecommendations
+              currentCartItems={cart}
+              addToCart={(product) => handleAddToCart(product.variants?.[0] || {}, product)}
+            />
           )}
         </main>
       )}
