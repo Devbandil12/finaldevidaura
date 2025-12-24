@@ -90,7 +90,7 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900 leading-none">
-            Selected For Your Palette
+            Recommended
           </h2>
           <p className="text-xs text-gray-400 font-medium mt-1">
             Curated based on your taste profile
