@@ -27,6 +27,7 @@ import QueriesTab from "./QueriesTab";
 import CartsWishlistsTab from "./CartsWishlistsTab";
 import ProductVariantEditor from "./ProductVariantEditor";
 import ActivityLogsTab from "./ActivityLogsTab"; // 2. Import the new component
+import CmsTab from "./CmsTab";
 
 import {
   Chart as ChartJS,
@@ -250,8 +251,8 @@ const AdminPanel = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'reports', label: 'Analytics', icon: BarChart3 },
-    { id: 'insights', label: 'Market Intel', icon: LineChart }, // 3. Added Menu Item
-    { id: 'logs', label: 'Audit Logs', icon: History }, // 3. Add to Menu Items
+    { id: 'insights', label: 'Market Intel', icon: LineChart },
+    { id: 'logs', label: 'Audit Logs', icon: History }, 
     { id: 'products', label: 'Products', icon: Package },
     { id: 'coupons', label: 'Coupons', icon: Ticket },
     { id: 'users', label: 'Customers', icon: Users },
@@ -259,6 +260,7 @@ const AdminPanel = () => {
     { id: 'carts', label: 'Carts & Wish', icon: ShoppingCart },
     { id: 'queries', label: 'Messages', icon: MessageSquare },
     { id: 'pincodes', label: 'Logistics', icon: MapPin },
+    { id: 'cms', label: 'Site Content', icon: LayoutDashboard },
   ];
 
   // Tooltip Logic
@@ -429,6 +431,7 @@ const AdminPanel = () => {
               {activeTab === "queries" && <QueriesTab queries={queries} querySearch={querySearch} setQuerySearch={setQuerySearch} />}
               {activeTab === "carts" && <CartsWishlistsTab flatCarts={abandonedCarts} stats={wishlistStats} />}
               {activeTab === "pincodes" && <PincodeManager />}
+              {activeTab === "cms" && <CmsTab />}
             </motion.div>
           </div>
         </div>

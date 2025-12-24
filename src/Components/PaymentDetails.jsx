@@ -70,7 +70,7 @@ export default function PaymentDetails({
                 key: orderData.keyId,
                 amount: breakdown.total * 100,
                 currency: "INR",
-                name: "DevidAura",
+                name: "Devid Aura",
                 description: "Order Payment",
                 order_id: orderData.razorpayOrderId,
                 prefill: {

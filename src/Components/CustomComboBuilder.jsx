@@ -328,7 +328,7 @@ const CustomComboBuilder = () => {
                                 </div>
                                 
                                 <p className="text-[#C5A059] text-xs font-serif italic mb-3">
-                                    The David Aura Signature Edit — Curated just for you.
+                                    The Devid Aura Signature Edit — Curated just for you.
                                 </p>
                                 
                                 {/* Progress Bar */}
