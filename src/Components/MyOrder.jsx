@@ -61,11 +61,7 @@ const formatDateTime = (dateString) => {
 
 // --- Sub-Components ---
 
-// Add this import if 'useState' isn't already used in this specific sub-component context (usually it's at top of file)
-// import { useState } from "react"; 
-
 const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
-  // 1. Add state for dropdown visibility (Default: false/hidden)
   const [expanded, setExpanded] = useState(false);
 
   if (!refund || !refund.status) return null;
@@ -183,8 +179,6 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   );
 };
 
-
-
 export default function MyOrders() {
   const { orders, setOrders, cancelOrder, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
@@ -215,9 +209,21 @@ export default function MyOrders() {
     return <Loader text="Loading collection..." />;
   }
 
+  // 1. Get Sorted Orders
   const sortedOrders = (orders || [])
     .filter((o) => userdetails?.id && o.userId === userdetails.id)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  // 2. Separate into Groups
+  const activeOrders = sortedOrders.filter(o => {
+    const s = o.status.toLowerCase();
+    return !s.includes('cancelled') && s !== 'delivered';
+  });
+
+  const deliveredOrders = sortedOrders.filter(o => o.status.toLowerCase() === 'delivered');
+
+  const cancelledOrders = sortedOrders.filter(o => o.status.toLowerCase().includes('cancelled'));
+
 
   const handleConfirmCancel = async () => {
     if (!modalOrder) return;
@@ -316,26 +322,12 @@ export default function MyOrders() {
     const isCancelled = status.toLowerCase().includes('cancelled');
     const currentStepIndex = isCancelled ? -1 : (status === "delivered" ? 3 : (progressStep || 1) - 1);
 
-    // Grid Column Calculation:
-    // 4 Columns = 25% each.
-    // Center of First Column = 12.5%
-    // Center of Last Column = 87.5%
-    // Line Start: 12.5% | Line Width: 75%
-
     return (
       <div className="w-full pt-6 pb-2 px-1">
         <div className="relative grid grid-cols-4 w-full">
-          
-          {/* --- TRACK CONTAINER --- 
-              Positioned absolutely to span from center of first icon to center of last icon.
-              top-4 (16px) aligns with center of h-8 (32px) icon on mobile.
-              md:top-[1.125rem] (18px) aligns with center of h-9 (36px) icon on desktop.
-          */}
+          {/* --- TRACK CONTAINER --- */}
           <div className="absolute top-4 md:top-[1.125rem] left-[12.5%] w-[75%] h-[2px] -z-10 -translate-y-1/2">
-            {/* Gray Background Line */}
             <div className="absolute inset-0 bg-zinc-100 rounded-full w-full h-full" />
-            
-            {/* Black Active Line */}
             <motion.div
               className="absolute left-0 top-0 h-full bg-zinc-900 rounded-full"
               initial={{ width: 0 }}
@@ -421,6 +413,177 @@ export default function MyOrders() {
     );
   };
 
+  // Helper to render a single card (to avoid duplication across sections)
+  const renderOrderCard = (order) => {
+    const isExpanded = expandedOrderId === order.id;
+    const isPrepaid = order.paymentMode === "online";
+    const refundInfo = order.refund_status ? {
+      status: order.refund_status, amount: order.refund_amount,
+      refund_completed_at: order.refund_completed_at, speed: order.refund_speed,
+    } : null;
+
+    return (
+      <motion.div
+        data-order-id={order.id}
+        variants={cardVariant}
+        layout
+        key={order.id}
+        className="group bg-white rounded-3xl md:rounded-[32px] border border-zinc-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.04)] transition-all duration-500 overflow-hidden"
+      >
+        <div className="p-5 md:p-8">
+          {/* Top Row: ID, Date & Statuses */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 shrink-0">
+                <Receipt size={16} strokeWidth={1.5} className="md:w-[18px] md:h-[18px]" />
+              </div>
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-zinc-900 break-all">Order #{order.id}</h3>
+                <p className="text-[10px] md:text-xs text-zinc-400 font-medium">{formatDateTime(order.createdAt)}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end">
+              {/* Payment Badge */}
+              <div className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid
+                ? 'bg-zinc-900 text-white border-zinc-900'
+                : 'bg-white text-zinc-500 border-zinc-200'
+                }`}>
+                {isPrepaid ? <CreditCard size={10} strokeWidth={2} className="md:w-3 md:h-3" /> : <Banknote size={10} strokeWidth={2} className="md:w-3 md:h-3" />}
+                {isPrepaid ? "PREPAID" : "COD"}
+              </div>
+
+              {/* Status Badge */}
+              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status === 'delivered'
+                ? 'bg-zinc-100 text-zinc-900 border-zinc-200'
+                : 'bg-white text-zinc-600 border-zinc-200'
+                }`}>
+                {order.status}
+              </div>
+            </div>
+          </div>
+
+          {/* Items Grid */}
+          <div className="space-y-4 md:space-y-6">
+            {order.orderItems.map((item, i) => (
+              <div key={i} className="flex items-start md:items-center gap-4 md:gap-6 group/item">
+                <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-zinc-50 flex-shrink-0 flex items-center justify-center p-2 md:p-4 mix-blend-multiply transition-colors duration-300 group-hover/item:bg-zinc-100">
+                  <img
+                    src={item.img || "/fallback.png"}
+                    alt={item.productName}
+                    className="h-full w-full object-contain mix-blend-multiply"
+                  />
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h4 className="text-sm font-semibold text-zinc-900 truncate pr-2">{item.productName}</h4>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
+                      Qty: {item.quantity}
+                    </span>
+                    {item.size && (
+                      <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
+                        {item.size}ml
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-zinc-900 whitespace-nowrap">
+                  ₹{(item.price * item.quantity).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <AnimatePresence>
+            {refundInfo && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                <RefundStatusDisplay refund={refundInfo} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Action Bar */}
+          <div className="mt-6 md:mt-8 pt-6 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+            <div className="flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full sm:w-auto mr-auto">
+              <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-0 sm:mb-1">Total Amount</span>
+              <span className="text-lg md:text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
+            </div>
+
+            {/* Buttons */}
+            <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 w-full sm:flex sm:w-auto sm:items-center sm:justify-end">
+
+              {canDownloadInvoice(order) && (
+                <button
+                  onClick={() => handleDownloadInvoice(order.id)}
+                  disabled={downloadingInvoiceId === order.id}
+                  className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
+                >
+                  {downloadingInvoiceId === order.id ? (
+                    <RotateCw className="animate-spin" size={14} />
+                  ) : (
+                    <Download size={14} />
+                  )}
+                  {downloadingInvoiceId === order.id ? "Downloading..." : "Invoice"}
+                </button>
+              )}
+
+              {order.status === "Order Placed" && !refundInfo && (
+                cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
+                  <button
+                    onClick={() => setModalOrder(order)}
+                    className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto"
+                  >
+                    Cancel Order
+                  </button>
+                )
+              )}
+
+              {order.status === "delivered" && (
+                <button
+                  onClick={() => reorder(order.id)}
+                  className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  <Repeat size={14} /> Buy Again
+                </button>
+              )}
+
+              {order.status !== "Order Cancelled" && (
+                <button
+                  onClick={() => toggleTrackOrder(order.id)}
+                  className="px-4 py-3 md:px-8 md:py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  {isExpanded ? "Hide Details" : "Track Order"}
+                  {isExpanded ? <ChevronUp size={14} /> : <ArrowRight size={14} />}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Tracking */}
+        <AnimatePresence>
+          {isExpanded && order.status !== "Order Cancelled" && (
+            <motion.div
+              initial="collapsed"
+              animate="open"
+              exit="collapsed"
+              variants={{
+                open: { opacity: 1, height: "auto" },
+                collapsed: { opacity: 0, height: 0 },
+              }}
+              transition={softSpring}
+              className="bg-zinc-50/50 border-t border-zinc-50"
+            >
+              <div className="p-5 md:p-8">
+                {renderStepProgress(order.progressStep, order.status)}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  };
+
   return (
     <>
       <title>My Orders | Devid Aura</title>
@@ -449,6 +612,7 @@ export default function MyOrders() {
         {/* Orders List */}
         <AnimatePresence mode="wait">
           {sortedOrders.length === 0 ? (
+            // --- EMPTY STATE ---
             <motion.div
               variants={cardVariant}
               initial="hidden"
@@ -463,181 +627,51 @@ export default function MyOrders() {
               <p className="mt-2 text-sm text-zinc-400">Time to discover your signature scent.</p>
             </motion.div>
           ) : (
+            // --- SECTIONS ---
             <motion.div
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
-              className="space-y-6 md:space-y-8"
+              className="space-y-16"
             >
-              {sortedOrders.map((order) => {
-                const isExpanded = expandedOrderId === order.id;
-                const isPrepaid = order.paymentMode === "online";
-                const refundInfo = order.refund_status ? {
-                  status: order.refund_status, amount: order.refund_amount,
-                  refund_completed_at: order.refund_completed_at, speed: order.refund_speed,
-                } : null;
+              {/* 1. ACTIVE ORDERS */}
+              {activeOrders.length > 0 && (
+                <section>
+                  <h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">
+                    Active Orders
+                    <span className="text-sm font-normal text-zinc-400 bg-zinc-50 px-2.5 py-0.5 rounded-full border border-zinc-100">
+                      {activeOrders.length}
+                    </span>
+                  </h2>
+                  <div className="space-y-6 md:space-y-8">
+                    {activeOrders.map(renderOrderCard)}
+                  </div>
+                </section>
+              )}
 
-                return (
-                  <motion.div
-                    data-order-id={order.id}
-                    variants={cardVariant}
-                    layout
-                    key={order.id}
-                    className="group bg-white rounded-3xl md:rounded-[32px] border border-zinc-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.04)] transition-all duration-500 overflow-hidden"
-                  >
-                    <div className="p-5 md:p-8">
-                      {/* Top Row: ID, Date & Statuses */}
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 shrink-0">
-                            <Receipt size={16} strokeWidth={1.5} className="md:w-[18px] md:h-[18px]" />
-                          </div>
-                          <div>
-                            <h3 className="text-sm md:text-base font-semibold text-zinc-900 break-all">Order #{order.id}</h3>
-                            <p className="text-[10px] md:text-xs text-zinc-400 font-medium">{formatDateTime(order.createdAt)}</p>
-                          </div>
-                        </div>
+              {/* 2. SUCCESSFUL (Delivered) ORDERS */}
+              {deliveredOrders.length > 0 && (
+                <section>
+                  <h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">
+                    Delivered
+                  </h2>
+                  <div className="space-y-6 md:space-y-8">
+                    {deliveredOrders.map(renderOrderCard)}
+                  </div>
+                </section>
+              )}
 
-                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end">
-                          {/* Payment Badge */}
-                          <div className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid
-                            ? 'bg-zinc-900 text-white border-zinc-900'
-                            : 'bg-white text-zinc-500 border-zinc-200'
-                            }`}>
-                            {isPrepaid ? <CreditCard size={10} strokeWidth={2} className="md:w-3 md:h-3" /> : <Banknote size={10} strokeWidth={2} className="md:w-3 md:h-3" />}
-                            {isPrepaid ? "PREPAID" : "COD"}
-                          </div>
-
-                          {/* Status Badge */}
-                          <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status === 'delivered'
-                            ? 'bg-zinc-100 text-zinc-900 border-zinc-200'
-                            : 'bg-white text-zinc-600 border-zinc-200'
-                            }`}>
-                            {order.status}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Items Grid */}
-                      <div className="space-y-4 md:space-y-6">
-                        {order.orderItems.map((item, i) => (
-                          <div key={i} className="flex items-start md:items-center gap-4 md:gap-6 group/item">
-                            <div className="h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-zinc-50 flex-shrink-0 flex items-center justify-center p-2 md:p-4 mix-blend-multiply transition-colors duration-300 group-hover/item:bg-zinc-100">
-                              <img
-                                src={item.img || "/fallback.png"}
-                                alt={item.productName}
-                                className="h-full w-full object-contain mix-blend-multiply"
-                              />
-                            </div>
-                            <div className="flex-grow min-w-0">
-                              <h4 className="text-sm font-semibold text-zinc-900 truncate pr-2">{item.productName}</h4>
-                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
-                                  Qty: {item.quantity}
-                                </span>
-                                {item.size && (
-                                  <span className="px-1.5 py-0.5 md:px-2 md:py-0.5 rounded-md bg-zinc-50 border border-zinc-100 text-[10px] font-medium text-zinc-500">
-                                    {item.size}ml
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-sm font-medium text-zinc-900 whitespace-nowrap">
-                              ₹{(item.price * item.quantity).toFixed(2)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <AnimatePresence>
-                        {refundInfo && (
-                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                            <RefundStatusDisplay refund={refundInfo} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Action Bar */}
-                      <div className="mt-6 md:mt-8 pt-6 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                        <div className="flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full sm:w-auto mr-auto">
-                          <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-0 sm:mb-1">Total Amount</span>
-                          <span className="text-lg md:text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
-                        </div>
-
-                        {/* Buttons - Stack on Mobile, Row on Desktop */}
-                        <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 w-full sm:flex sm:w-auto sm:items-center sm:justify-end">
-
-                          {canDownloadInvoice(order) && (
-                            <button
-                              onClick={() => handleDownloadInvoice(order.id)}
-                              disabled={downloadingInvoiceId === order.id}
-                              className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
-                            >
-                              {downloadingInvoiceId === order.id ? (
-                                <RotateCw className="animate-spin" size={14} />
-                              ) : (
-                                <Download size={14} />
-                              )}
-                              {downloadingInvoiceId === order.id ? "Downloading..." : "Invoice"}
-                            </button>
-                          )}
-
-                          {order.status === "Order Placed" && !refundInfo && (
-                            cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
-                              <button
-                                onClick={() => setModalOrder(order)}
-                                className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto"
-                              >
-                                Cancel Order
-                              </button>
-                            )
-                          )}
-
-                          {order.status === "delivered" && (
-                            <button
-                              onClick={() => reorder(order.id)}
-                              className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
-                            >
-                              <Repeat size={14} /> Buy Again
-                            </button>
-                          )}
-
-                          {order.status !== "Order Cancelled" && (
-                            <button
-                              onClick={() => toggleTrackOrder(order.id)}
-                              className="px-4 py-3 md:px-8 md:py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
-                            >
-                              {isExpanded ? "Hide Details" : "Track Order"}
-                              {isExpanded ? <ChevronUp size={14} /> : <ArrowRight size={14} />}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Expandable Tracking */}
-                    <AnimatePresence>
-                      {isExpanded && order.status !== "Order Cancelled" && (
-                        <motion.div
-                          initial="collapsed"
-                          animate="open"
-                          exit="collapsed"
-                          variants={{
-                            open: { opacity: 1, height: "auto" },
-                            collapsed: { opacity: 0, height: 0 },
-                          }}
-                          transition={softSpring}
-                          className="bg-zinc-50/50 border-t border-zinc-50"
-                        >
-                          <div className="p-5 md:p-8">
-                            {renderStepProgress(order.progressStep, order.status)}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
+              {/* 3. CANCELLED ORDERS */}
+              {cancelledOrders.length > 0 && (
+                <section>
+                  <h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">
+                    Cancelled
+                  </h2>
+                  <div className="space-y-6 md:space-y-8 opacity-80 hover:opacity-100 transition-opacity duration-300">
+                    {cancelledOrders.map(renderOrderCard)}
+                  </div>
+                </section>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
