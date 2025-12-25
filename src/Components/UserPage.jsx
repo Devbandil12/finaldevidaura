@@ -346,7 +346,7 @@ const AdvancedActivityLog = ({ orders, tickets, reviews, securityLogs, onNavigat
         </div>
       </div>
 
-      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2 -mr-2 space-y-6 h-[00px]">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2 -mr-2 space-y-6 h-[500px]">
         {Object.keys(grouped).length === 0 && <p className="text-center text-slate-400 text-sm py-10">No recent activity.</p>}
 
         {Object.entries(grouped).map(([label, groupItems]) => (
