@@ -13,7 +13,7 @@ import {
   Trash2, CheckCircle, X, ShoppingBag, Bell, LogOut, User as UserIcon,
   Heart, ChevronLeft, ChevronDown, Loader2, Upload,
   ChevronRight, Send, Lock, RefreshCw, Clock, Headphones, Ticket, Sparkles, Copy, Layers,
-  LayoutDashboard, ShieldAlert, XCircle, UserCog, Shield, AlertCircle, ShoppingCart
+  LayoutDashboard, ShieldAlert, XCircle, UserCog, Shield, AlertCircle, ShoppingCart, Calendar
 } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import useCloudinary from "../utils/useCloudinary";
@@ -116,13 +116,13 @@ const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
   const avatarBg = getDeterministicColor(user?.email || "user");
 
   return (
-    <div className="bg-white lg:rounded-[2rem] border-b lg:border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden sticky top-[60px] lg:top-24 z-30">
-      
+    <div className="bg-white lg:rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.03)] overflow-hidden sticky top-[60px] lg:top-24 z-30">
+
       {/* Header Section */}
-      <div className="p-5 lg:p-8 lg:pb-6 border-b border-slate-50 flex flex-row lg:flex-col items-center gap-4 lg:gap-0 lg:text-center transition-all">
+      <div className="p-5 lg:p-8 lg:pb bg-black-6 border-b border-slate-50 flex flex-row lg:flex-col items-center gap-4 lg:gap-0 lg:text-center transition-all">
         <div className="w-14 h-14 lg:w-24 lg:h-24 lg:mx-auto rounded-full p-1 border-2 border-dashed border-slate-200 lg:mb-4 overflow-hidden relative shrink-0">
           {user?.profileImage ? (
-             <img src={user.profileImage} alt="User" className="w-full h-full rounded-full object-cover bg-slate-100" />
+            <img src={user.profileImage} alt="User" className="w-full h-full rounded-full object-cover bg-slate-100" />
           ) : (
             <div className={`w-full h-full rounded-full flex items-center justify-center font-bold text-xl lg:text-2xl ${avatarBg}`}>{initials}</div>
           )}
@@ -139,7 +139,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
           const isActive = activeTab === item.id;
           return (
             <button
-              key={item.id} 
+              key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`flex-shrink-0 w-auto lg:w-full flex items-center gap-2 lg:gap-3 px-4 py-2 lg:py-3.5 rounded-full lg:rounded-xl text-sm font-semibold transition-colors relative z-10 
               ${isActive ? "text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`}
@@ -151,7 +151,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-              
+
               <item.icon size={18} strokeWidth={2} className="relative z-10" />
               <span className="whitespace-nowrap relative z-10">{item.label}</span>
             </button>
@@ -170,6 +170,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
 };
 
 // 2. Profile Strength (Gradient Design)
+// 2. Profile Strength (Clean Version - No Outer Box)
 const ProfileCompletion = ({ user, addressCount }) => {
   const items = useMemo(() => [
     { label: "Profile photo", completed: !!user.profileImage },
@@ -181,24 +182,40 @@ const ProfileCompletion = ({ user, addressCount }) => {
   const percentage = Math.round((items.filter(i => i.completed).length / items.length) * 100);
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
-       <div className="flex justify-between items-end mb-2">
-         <h4 className="font-bold text-slate-900 text-sm">Profile Strength</h4>
-         <span className="font-black text-slate-900">{percentage}%</span>
-       </div>
-       <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mb-4">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 1 }} className="h-full bg-gradient-to-r from-emerald-400 to-teal-500" />
-       </div>
-       <div className="flex flex-col gap-2">
-          {items.map((i, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-               <div className={`w-4 h-4 rounded-full flex items-center justify-center ${i.completed ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-300'}`}>
-                  {i.completed ? <CheckCircle size={10} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300"/>}
-               </div>
-               <span className={`text-xs ${i.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{i.label}</span>
+    <div className="w-full">
+      <div className="flex justify-between items-end mb-3">
+        <div>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Completion</p>
+          <h4 className="font-black text-3xl text-slate-900">{percentage}%</h4>
+        </div>
+        <div className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-100">
+          {percentage === 100 ? <CheckCircle className="text-emerald-500" size={20} /> : <UserCog className="text-slate-400" size={20} />}
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden mb-6 border border-slate-100">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className={`h-full rounded-full ${percentage === 100 ? 'bg-emerald-400' : 'bg-slate-900'}`}
+        />
+      </div>
+
+      {/* Checklist Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((i, idx) => (
+          <div key={idx} className="flex items-center gap-3 group">
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${i.completed ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-white border-slate-200 text-slate-300'}`}>
+              {i.completed ? <CheckCircle size={10} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
             </div>
-          ))}
-       </div>
+            <span className={`text-sm font-medium transition-colors ${i.completed ? 'text-slate-700' : 'text-slate-400 group-hover:text-slate-600'}`}>
+              {i.label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -288,7 +305,7 @@ const AdvancedActivityLog = ({ orders, tickets, reviews, securityLogs, onNavigat
         data: log,
         icon: icon,
         color: color,
-        actionable: false 
+        actionable: false
       });
     });
 
@@ -298,12 +315,12 @@ const AdvancedActivityLog = ({ orders, tickets, reviews, securityLogs, onNavigat
   const filteredItems = filter === 'all'
     ? activityItems
     : activityItems.filter(i => {
-        if (filter === 'order') return i.type.includes('order');
-        if (filter === 'ticket') return i.type === 'ticket';
-        if (filter === 'review') return i.type === 'review';
-        if (filter === 'security') return i.type === 'security';
-        return false;
-      });
+      if (filter === 'order') return i.type.includes('order');
+      if (filter === 'ticket') return i.type === 'ticket';
+      if (filter === 'review') return i.type === 'review';
+      if (filter === 'security') return i.type === 'security';
+      return false;
+    });
 
   const grouped = filteredItems.reduce((acc, item) => {
     const d = item.date;
@@ -316,7 +333,7 @@ const AdvancedActivityLog = ({ orders, tickets, reviews, securityLogs, onNavigat
   }, {});
 
   return (
-    <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6 h-full flex flex-col">
+    <div className="bg-white rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.03)]  p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-bold text-slate-900 flex items-center gap-2"><Clock size={16} /> {title}</h3>
         <div className="flex gap-1">
@@ -329,7 +346,7 @@ const AdvancedActivityLog = ({ orders, tickets, reviews, securityLogs, onNavigat
         </div>
       </div>
 
-      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2 -mr-2 space-y-6 h-[400px]">
+      <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2 -mr-2 space-y-6 h-[00px]">
         {Object.keys(grouped).length === 0 && <p className="text-center text-slate-400 text-sm py-10">No recent activity.</p>}
 
         {Object.entries(grouped).map(([label, groupItems]) => (
@@ -385,7 +402,7 @@ const UserOffers = ({ userId }) => {
   const handleCopy = (code, id) => {
     navigator.clipboard.writeText(code);
     setCopiedId(id);
-    if(window.toast) window.toast.success("Code copied!");
+    if (window.toast) window.toast.success("Code copied!");
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -403,30 +420,30 @@ const UserOffers = ({ userId }) => {
     const isCopied = copiedId === offer.id;
 
     // Detailed theme mapping from original code
-    const theme = isSpecial 
+    const theme = isSpecial
       ? { wrapper: "bg-slate-900 border-slate-800 text-white", left: "bg-gradient-to-br from-indigo-600 to-purple-700 text-white", code: "text-amber-400", dots: "bg-slate-50" }
-      : isAuto 
-      ? { wrapper: "bg-white border-blue-100 text-slate-800", left: "bg-blue-50 text-blue-600", code: "text-blue-700", dots: "bg-slate-50" }
-      : { wrapper: "bg-white border-slate-200 text-slate-800", left: "bg-slate-100 text-slate-500", code: "text-slate-900", dots: "bg-slate-50" };
+      : isAuto
+        ? { wrapper: "bg-white border-blue-100 text-slate-800", left: "bg-blue-50 text-blue-600", code: "text-blue-700", dots: "bg-slate-50" }
+        : { wrapper: "bg-white border-slate-200 text-slate-800", left: "bg-slate-100 text-slate-500", code: "text-slate-900", dots: "bg-slate-50" };
 
     return (
       <motion.div variants={fadeInUp} className={`relative flex w-full h-28 rounded-xl overflow-hidden border shadow-sm transition-all hover:shadow-md ${theme.wrapper}`}>
         <div className={`w-20 flex flex-col items-center justify-center text-center relative ${theme.left}`}>
           <div className="mb-1">{isSpecial ? <Sparkles size={18} /> : isAuto ? <Layers size={18} /> : <Ticket size={18} />}</div>
-          <span className="text-lg font-black leading-none">{offer.discountValue}{offer.discountType === 'percent' ? '%' : '₹'}<br/><span className="text-[9px] font-medium opacity-80">OFF</span></span>
+          <span className="text-lg font-black leading-none">{offer.discountValue}{offer.discountType === 'percent' ? '%' : '₹'}<br /><span className="text-[9px] font-medium opacity-80">OFF</span></span>
           <div className="absolute -right-1 top-0 bottom-0 flex flex-col justify-between py-1.5">
-             {[...Array(5)].map((_,i) => <div key={i} className={`w-2 h-2 rounded-full ${theme.dots}`} />)}
+            {[...Array(5)].map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${theme.dots}`} />)}
           </div>
         </div>
         <div className="flex-1 px-4 py-3 flex flex-col justify-center min-w-0 relative">
           <div className="pl-4">
-             <div className="flex items-center gap-2 mb-1">
-               {isSpecial && <span className="text-[9px] font-bold uppercase tracking-widest text-amber-400">Exclusive</span>}
-               {isAuto && <span className="text-[9px] font-bold uppercase tracking-widest text-blue-500">Auto-Applied</span>}
-             </div>
-             <h3 className={`text-lg font-black tracking-wider font-mono truncate ${theme.code}`}>{offer.code}</h3>
-             <p className="text-[10px] opacity-70 line-clamp-1">{offer.description || "Use code at checkout"}</p>
-             {offer.validUntil && <p className="text-[9px] opacity-60 mt-1">Exp: {new Date(offer.validUntil).toLocaleDateString()}</p>}
+            <div className="flex items-center gap-2 mb-1">
+              {isSpecial && <span className="text-[9px] font-bold uppercase tracking-widest text-amber-400">Exclusive</span>}
+              {isAuto && <span className="text-[9px] font-bold uppercase tracking-widest text-blue-500">Auto-Applied</span>}
+            </div>
+            <h3 className={`text-lg font-black tracking-wider font-mono truncate ${theme.code}`}>{offer.code}</h3>
+            <p className="text-[10px] opacity-70 line-clamp-1">{offer.description || "Use code at checkout"}</p>
+            {offer.validUntil && <p className="text-[9px] opacity-60 mt-1">Exp: {new Date(offer.validUntil).toLocaleDateString()}</p>}
           </div>
         </div>
         {!isAuto && (
@@ -461,7 +478,7 @@ const NotificationSettings = ({ user, onUpdate }) => {
 
   const onSubmit = async (data) => {
     const ok = await onUpdate(data);
-    if(ok) window.toast.success("Preferences Saved");
+    if (ok) window.toast.success("Preferences Saved");
   };
 
   const SettingRow = ({ label, desc, ...props }) => (
@@ -479,11 +496,11 @@ const NotificationSettings = ({ user, onUpdate }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-xl">
-       <h2 className="text-xl font-bold mb-6">Notification Preferences</h2>
-       <SettingRow label="Order Updates" desc="Get notified about shipping and delivery status." {...register("notify_order_updates")} />
-       <SettingRow label="Promotions & Deals" desc="Receive updates on new coupons and sales." {...register("notify_promos")} />
-       <SettingRow label="Service Alerts" desc="Important updates about service availability." {...register("notify_pincode")} />
-       <button type="submit" disabled={!isDirty} className="mt-4 px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50 hover:bg-slate-800 transition-colors">Save Preferences</button>
+      <h2 className="text-xl font-bold mb-6">Notification Preferences</h2>
+      <SettingRow label="Order Updates" desc="Get notified about shipping and delivery status." {...register("notify_order_updates")} />
+      <SettingRow label="Promotions & Deals" desc="Receive updates on new coupons and sales." {...register("notify_promos")} />
+      <SettingRow label="Service Alerts" desc="Important updates about service availability." {...register("notify_pincode")} />
+      <button type="submit" disabled={!isDirty} className="mt-4 px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50 hover:bg-slate-800 transition-colors">Save Preferences</button>
     </form>
   );
 };
@@ -546,7 +563,7 @@ export default function UserPage() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [ticketRefreshing, setTicketRefreshing] = useState(false);
-  
+
   // 🟢 NEW: State for logs (System/Security Logs)
   const [personalLogs, setPersonalLogs] = useState([]);
 
@@ -594,7 +611,7 @@ export default function UserPage() {
     try {
       await replyToTicket(selectedTicket.id, replyText, 'user');
       setReplyText("");
-      setSelectedTicket(prev => ({...prev, messages: [...prev.messages, { message: replyText, senderRole: 'user', createdAt: new Date().toISOString() }] }));
+      setSelectedTicket(prev => ({ ...prev, messages: [...prev.messages, { message: replyText, senderRole: 'user', createdAt: new Date().toISOString() }] }));
       await getUserTickets(userdetails.email);
     } catch (e) { window.toast.error("Message failed to send"); }
   };
@@ -608,9 +625,9 @@ export default function UserPage() {
   if (!userdetails) return <div className="h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-14 sm:pt-20 pb-20 px-4 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50/50 pt-14 sm:pt-20 pb-20 px-2 font-sans text-slate-900">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* LEFT SIDEBAR (Sticky) */}
         <div className="lg:col-span-3 sticky top-12 z-40">
           <Sidebar user={userdetails} activeTab={activeTab} setActiveTab={setActiveTab} onSignOut={() => signOut({ redirectUrl: "/" })} />
@@ -619,108 +636,329 @@ export default function UserPage() {
         {/* RIGHT CONTENT AREA */}
         <div className="lg:col-span-9">
           <AnimatePresence mode="wait">
-            <motion.div 
-              key={activeTab} 
+            <motion.div
+              key={activeTab}
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={smoothTransition}
             >
               {activeTab === 'overview' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-gradient-to-r from-indigo-900 to-black rounded-[2rem] p-8 text-white relative overflow-hidden shadow-sm shadow-indigo-900/20">
-                      <div className="relative z-10">
-                        <h2 className="text-2xl font-bold mb-2">Welcome, {userdetails.name.split(" ")[0]}</h2>
-                        <p className="text-indigo-200 text-sm max-w-sm mb-6">Manage your orders and account details.</p>
-                        <button onClick={() => setActiveTab('orders')} className="bg-white text-black px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors">View Orders</button>
-                      </div>
-                      <Sparkles className="absolute top-4 right-8 text-indigo-500/20 w-40 h-40 rotate-12" />
-                    </div>
-                    {/* Stats Widget */}
-                    <div className="grid grid-cols-3 gap-4">
-                      {[
-                        { label: 'Orders', val: orders?.length || 0, icon: Package, bg: 'bg-blue-50 text-blue-600' },
-                        { label: 'Wishlist', val: wishlist?.length || 0, icon: Heart, bg: 'bg-pink-50 text-pink-600' },
-                        { label: 'Cart', val: cart?.length || 0, icon: ShoppingBag, bg: 'bg-amber-50 text-amber-600' }
-                      ].map((s, i) => (
-                        <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center hover:shadow-md transition-all">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${s.bg}`}><s.icon size={18} /></div>
-                          <span className="text-2xl font-black text-slate-900">{s.val}</span>
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{s.label}</span>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 ">
+
+                  {/* LEFT COLUMN: Main Dashboard */}
+                  <div className="xl:col-span-2 space-y-8">
+
+                    {/* 1. Hero / Welcome Card - Clean Light Version */}
+                    <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 md:p-10 border border-slate-100 shadow-[0_20px_40px_rgb(0,0,0,0.03)]">
+
+                      {/* Background Pattern - Subtle Grid */}
+                      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] z-0"></div>
+
+                      {/* Soft Color Blobs */}
+                      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-indigo-50 rounded-full blur-3xl opacity-60"></div>
+                      <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-emerald-50 rounded-full blur-3xl opacity-60"></div>
+
+                      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+
+                        {/* Text Section */}
+                        <div className="space-y-4 max-w-lg">
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            Welcome Back
+                          </div>
+
+                          <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+                            Hello, <span className="text-indigo-600">{userdetails.name.split(" ")[0]}</span> 👋
+                          </h2>
+
+                          <p className="text-slate-500 text-lg">
+                            You have <span className="font-bold text-slate-900">
+                              {/* Counts orders that are NOT delivered and NOT cancelled */}
+                              {orders?.filter(o => {
+                                const s = o.status?.toLowerCase() || '';
+                                return s !== 'delivered' && !s.includes('cancel');
+                              }).length || 0} orders
+                            </span> in progress.
+                          </p>
                         </div>
-                      ))}
+
+                        {/* Buttons Section */}
+                        <div className="flex flex-col  gap-4 w-full lg:w-auto">
+
+                          <button
+                            onClick={() => setActiveTab('offers')}
+                            className="flex-1 sm:flex-none bg-white text-slate-700  px-8 py-5 rounded-2xl font-bold shadow-[0_20px_40px_rgb(0,0,0,0.03)] transition-all flex items-center justify-center gap-2"
+                          >
+                            <Ticket size={18} className="text-indigo-500" /> Coupons
+                          </button>
+                        </div>
+
+                      </div>
                     </div>
-                    <ProfileCompletion user={userdetails} addressCount={address?.length || 0} />
+
+                    {/* 2. Stats & Profile Split */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+                      {/* Left: Stats Column */}
+                      <div className="md:col-span-4 flex flex-col gap-5">
+
+                        {/* Orders Stat (Clickable -> Switches Tab) */}
+                        <motion.div
+                          whileHover={{ y: -4 }}
+                          onClick={() => setActiveTab('orders')}
+                          className="flex-1 bg-gradient-to-br from-white to-blue-50/50 p-6 rounded-[2rem]  shadow-[0_20px_40px_rgb(0,0,0,0.03)] transition-all cursor-pointer group relative overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500">
+                            <ChevronRight />
+                          </div>
+
+                          <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center mb-4 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform duration-300">
+                            <Package size={24} strokeWidth={2.5} />
+                          </div>
+
+                          <div>
+                            <span className="text-4xl font-black text-slate-900 tracking-tight">{orders?.length || 0}</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Orders</p>
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            </div>
+                          </div>
+                        </motion.div>
+
+                        {/* Cart & Wishlist Row */}
+                        <div className="grid grid-cols-2 gap-5">
+
+                          {/* Cart Card (Clickable -> Navigates to /cart) */}
+                          <motion.div
+                            whileHover={{ y: -4 }}
+                            onClick={() => navigate('/cart')}
+                            className="bg-white p-5 rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.03)] transition-all cursor-pointer group"
+                          >
+                            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-3 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                              <ShoppingBag size={22} strokeWidth={2.5} />
+                            </div>
+                            <span className="text-2xl font-black text-slate-900">{cart?.length || 0}</span>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 group-hover:text-amber-600 transition-colors">In Cart</p>
+                          </motion.div>
+
+                          {/* Wishlist Card (Clickable -> Navigates to /wishlist) */}
+                          <motion.div
+                            whileHover={{ y: -4 }}
+                            onClick={() => navigate('/wishlist')}
+                            className="bg-white p-5 rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.03)] transition-all cursor-pointer group"
+                          >
+                            <div className="w-12 h-12 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center mb-3 group-hover:bg-pink-500 group-hover:text-white transition-colors duration-300">
+                              <Heart size={22} strokeWidth={2.5} />
+                            </div>
+                            <span className="text-2xl font-black text-slate-900">{wishlist?.length || 0}</span>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 group-hover:text-pink-600 transition-colors">Saved</p>
+                          </motion.div>
+                        </div>
+                      </div>
+
+                      {/* Right: Profile Widget */}
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="md:col-span-8 bg-white p-8 rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.03)] flex flex-col justify-between relative overflow-hidden group"
+                      >
+                        {/* Decorative BG */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-bl-[10rem] -z-0 transition-transform duration-700 group-hover:scale-110"></div>
+
+                        <div className="relative z-10 h-full flex flex-col">
+                          <div className="flex items-start justify-between mb-8">
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-2xl mb-1">Profile Health</h3>
+                              <p className="text-sm text-slate-500 font-medium">Complete your account to unlock exclusive offers.</p>
+                            </div>
+
+                            <button
+                              onClick={() => setActiveTab('settings')}
+                              className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 text-xs font-bold text-slate-600 hover:bg-black hover:text-white transition-all border border-slate-100 hover:border-black"
+                            >
+                              <UserCog size={14} /> Edit Profile
+                            </button>
+                          </div>
+
+                          <div className="flex-1 flex flex-col justify-center">
+                            <ProfileCompletion user={userdetails} addressCount={address?.length || 0} />
+                          </div>
+
+                          {/* Mobile Only Button */}
+                          <button
+                            onClick={() => setActiveTab('settings')}
+                            className="sm:hidden w-full mt-6 py-3.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                          >
+                            <UserCog size={14} /> Manage Profile
+                          </button>
+                        </div>
+                      </motion.div>
+
+                    </div>
                   </div>
-                  <div className="lg:col-span-1 h-full">
-                    {/* 🟢 Logs Component */}
-                    <AdvancedActivityLog 
-                      orders={orders} 
-                      tickets={tickets} 
-                      reviews={userReviews} 
+
+                  {/* RIGHT COLUMN: Activity Feed */}
+                  <div className="xl:col-span-1 h-full min-h-[500px]">
+                    <AdvancedActivityLog
+                      orders={orders}
+                      tickets={tickets}
+                      reviews={userReviews}
                       securityLogs={personalLogs}
-                      onNavigate={handleNavigateActivity} 
+                      onNavigate={handleNavigateActivity}
                       role={userdetails.role}
-                      title="Your Activity"
+                      title="Recent Activity"
                     />
                   </div>
                 </div>
               )}
 
               {activeTab === 'orders' && (
-                <div className="space-y-6">
-                   <h2 className="text-xl font-bold text-slate-900">Order History</h2>
-                   {loadingOrders ? <Loader2 className="animate-spin text-slate-400 mx-auto" /> : (
-                     orders.length === 0 ? <p className="text-slate-400">No orders placed yet.</p> :
-                     orders.map(order => (
-                       <motion.div key={order.id} onClick={() => setViewOrder(order)} variants={fadeInUp} initial="hidden" animate="visible" className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md cursor-pointer flex flex-wrap justify-between items-center gap-4 group">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-black group-hover:text-white transition-colors"><Package size={20}/></div>
-                            <div>
-                               <p className="font-bold text-slate-900">Order #{order.id.slice(-6).toUpperCase()}</p>
-                               <p className="text-xs text-slate-500 mt-1">{formatDate(order.createdAt)} • {order.orderItems.length} Items</p>
+                <div className="space-y-8">
+                  {/* Page Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4  pb-2">
+                    <div>
+                      <h2 className="text-2xl pl-3 font-bold text-slate-900 tracking-tight">Order History</h2>
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  {loadingOrders ? (
+                    <div className="flex justify-center py-20">
+                      <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="text-center py-24 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                      <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
+                        <ShoppingBag className="text-slate-400" size={24} />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-900">No orders placed yet</h3>
+                      <p className="text-slate-500 mt-1 max-w-sm mx-auto">Start shopping to fill your wardrobe with the best trends.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-5">
+                      {orders.map((order) => {
+                        // --- Logic Preparation ---
+                        const previewImages = order.orderItems.slice(0, 4).map((item) => {
+                          const prod = productMap.get(item.productId);
+                          return prod?.imageurl?.[0] || item.img;
+                        });
+                        const remaining = order.orderItems.length - 4;
+                        const isDelivered = order.status.toLowerCase() === 'delivered';
+                        const isProcessing = order.status.toLowerCase() === 'processing';
+
+                        // Dynamic Status Colors
+                        let statusStyles = "bg-slate-100 text-slate-600 border-slate-200";
+                        if (isDelivered) statusStyles = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                        else if (isProcessing) statusStyles = "bg-blue-50 text-blue-700 border-blue-200";
+                        else statusStyles = "bg-amber-50 text-amber-700 border-amber-200";
+
+                        return (
+                          <motion.div
+                            key={order.id}
+                            layoutId={order.id}
+                            variants={fadeInUp}
+                            initial="hidden"
+                            animate="visible"
+                            onClick={() => setViewOrder(order)}
+                            className="group relative bg-white rounded-2xl  p-5 cursor-pointer transition-all duration-300 shadow-[0_20px_40px_rgb(0,0,0,0.03)] hover:shadow-xl hover:shadow-slate-200/50 hover:border-indigo-100 hover:-translate-y-1"
+                          >
+                            <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
+
+                              {/* Left Section: Info & Images */}
+                              <div className="flex-1 space-y-4">
+
+                                {/* Metadata Row */}
+                                <div className="flex flex-wrap items-center justify-between md:justify-start gap-3 md:gap-6">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${statusStyles}`}>
+                                    {order.status}
+                                  </span>
+                                  <div className="flex items-center text-slate-500 text-sm">
+                                    <Calendar size={14} className="mr-1.5" />
+                                    {formatDate(order.createdAt)}
+                                  </div>
+                                  <div className="text-xs font-mono text-slate-400">
+                                    ID: #{order.id.toUpperCase()}
+                                  </div>
+                                </div>
+
+                                {/* Image Strip */}
+                                <div className="flex items-center gap-3">
+                                  {previewImages.map((img, idx) => (
+                                    <div key={idx} className="relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50">
+                                      <img
+                                        src={img}
+                                        alt="Product"
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                      />
+                                    </div>
+                                  ))}
+                                  {remaining > 0 && (
+                                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs font-semibold text-slate-500">
+                                      +{remaining}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Right Section: Price & Action */}
+                              <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 gap-1 md:gap-3 min-w-[120px]">
+
+                                <div className="md:text-right">
+                                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-0.5">Total</p>
+                                  <p className="text-xl md:text-2xl font-bold text-slate-900">₹{order.totalAmount}</p>
+                                </div>
+
+                                <button className="flex items-center gap-2 text-sm font-semibold text-indigo-600 group-hover:text-indigo-700 transition-colors">
+                                  View Details
+                                  <div className="bg-indigo-50 rounded-full p-1 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                                    <ChevronRight size={16} />
+                                  </div>
+                                </button>
+
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                             <p className="font-bold text-slate-900">₹{order.totalAmount}</p>
-                             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${order.status.toLowerCase() === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
-                          </div>
-                       </motion.div>
-                     ))
-                   )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === 'addresses' && (
-                 !isAddingAddress && !editingAddress ? 
-                 <AddressManager address={address} onAdd={() => setIsAddingAddress(true)} onEdit={setEditingAddress} onDelete={deleteAddress} onSetDefault={setDefaultAddress} />
-                 : <div className="bg-white p-8 rounded-[2rem] border border-slate-100">
-                     <h3 className="text-xl font-bold mb-6">{editingAddress ? "Edit Address" : "New Address"}</h3>
-                     <AddressFormWrapper initialData={editingAddress} onCancel={() => { setIsAddingAddress(false); setEditingAddress(null); }} onSubmit={handleAddressSubmit} />
-                   </div>
+                !isAddingAddress && !editingAddress ?
+                  <AddressManager address={address} onAdd={() => setIsAddingAddress(true)} onEdit={setEditingAddress} onDelete={deleteAddress} onSetDefault={setDefaultAddress} />
+                  : <div className="bg-white p-8 rounded-[2rem] border border-slate-100">
+                    <h3 className="text-xl font-bold mb-6">{editingAddress ? "Edit Address" : "New Address"}</h3>
+                    <AddressFormWrapper initialData={editingAddress} onCancel={() => { setIsAddingAddress(false); setEditingAddress(null); }} onSubmit={handleAddressSubmit} />
+                  </div>
               )}
 
               {activeTab === 'offers' && <UserOffers userId={userdetails.id} />}
-              {activeTab === 'settings' && <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm"><ProfileSettingsWrapper user={userdetails} onUpdate={updateUser} /></div>}
+              {activeTab === 'settings' && <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm"><ProfileSettingsWrapper user={userdetails} onUpdate={updateUser} /></div>}
               {activeTab === 'reviews' && <ReviewHistory />}
-              
+
               {activeTab === 'support' && (
                 <div className="flex h-[600px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                   <div className={`w-full md:w-80 border-r border-slate-100 flex flex-col bg-white z-10 ${selectedTicket ? 'hidden md:flex' : 'flex'}`}>
                     <div className="p-4 border-b border-slate-50 flex justify-between items-center">
-                       <h3 className="font-bold text-slate-900">Inbox</h3>
-                       <div className="flex gap-1">
-                          <button onClick={refreshTickets} className={`p-2 hover:bg-slate-50 rounded-lg text-slate-400 ${ticketRefreshing ? 'animate-spin text-indigo-500' : ''}`}><RefreshCw size={14}/></button>
-                          <button onClick={() => navigate('/contact')} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-black"><Plus size={16}/></button>
-                       </div>
+                      <h3 className="font-bold text-slate-900">Inbox</h3>
+                      <div className="flex gap-1">
+                        <button onClick={refreshTickets} className={`p-2 hover:bg-slate-50 rounded-lg text-slate-400 ${ticketRefreshing ? 'animate-spin text-indigo-500' : ''}`}><RefreshCw size={14} /></button>
+                        <button onClick={() => navigate('/contact')} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-black"><Plus size={16} /></button>
+                      </div>
                     </div>
                     <div className="overflow-y-auto flex-1 p-2 space-y-1">
-                       {tickets.length === 0 && <p className="text-center text-xs text-slate-400 mt-10">No tickets found.</p>}
-                       {tickets.map(t => (
-                         <div key={t.id} onClick={() => setSelectedTicket(t)} className={`p-3 rounded-xl cursor-pointer transition-colors border-l-4 ${selectedTicket?.id === t.id ? 'bg-slate-50 border-indigo-500' : 'border-transparent hover:bg-slate-50'}`}>
-                            <div className="flex justify-between"><span className="font-bold text-sm text-slate-800 truncate">{t.subject}</span><span className="text-[10px] text-slate-400">{new Date(t.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span></div>
-                            <p className="text-xs text-slate-500 truncate mt-1 opacity-70">{t.messages[t.messages.length - 1]?.message}</p>
-                            <span className={`mt-2 inline-block text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${t.status === 'open' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{t.status}</span>
-                         </div>
-                       ))}
+                      {tickets.length === 0 && <p className="text-center text-xs text-slate-400 mt-10">No tickets found.</p>}
+                      {tickets.map(t => (
+                        <div key={t.id} onClick={() => setSelectedTicket(t)} className={`p-3 rounded-xl cursor-pointer transition-colors border-l-4 ${selectedTicket?.id === t.id ? 'bg-slate-50 border-indigo-500' : 'border-transparent hover:bg-slate-50'}`}>
+                          <div className="flex justify-between"><span className="font-bold text-sm text-slate-800 truncate">{t.subject}</span><span className="text-[10px] text-slate-400">{new Date(t.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div>
+                          <p className="text-xs text-slate-500 truncate mt-1 opacity-70">{t.messages[t.messages.length - 1]?.message}</p>
+                          <span className={`mt-2 inline-block text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${t.status === 'open' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{t.status}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className={`flex-1 flex flex-col bg-slate-50/50 relative ${!selectedTicket ? 'hidden md:flex' : 'flex'}`}>
@@ -732,7 +970,7 @@ export default function UserPage() {
                             <p className="text-xs text-slate-400">ID: {selectedTicket.id}</p>
                           </div>
                           <div className="flex gap-2">
-                             <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-red-500 transition-colors" title="Close View"><X size={20}/></button>
+                            <button onClick={() => setSelectedTicket(null)} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-red-500 transition-colors" title="Close View"><X size={20} /></button>
                           </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -747,9 +985,9 @@ export default function UserPage() {
                         {selectedTicket.status === 'open' ? (
                           <div className="p-4 bg-white border-t border-slate-100 flex gap-2">
                             <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleTicketReply()} placeholder="Type reply..." className="flex-1 bg-slate-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-black/10 transition-all" />
-                            <button onClick={handleTicketReply} disabled={!replyText.trim()} className="p-2.5 bg-black text-white rounded-xl disabled:bg-slate-300 transition-colors"><Send size={16}/></button>
+                            <button onClick={handleTicketReply} disabled={!replyText.trim()} className="p-2.5 bg-black text-white rounded-xl disabled:bg-slate-300 transition-colors"><Send size={16} /></button>
                           </div>
-                        ) : <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 border-t border-slate-100 font-bold flex items-center justify-center gap-2"><Lock size={12}/> Ticket Closed</div>}
+                        ) : <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 border-t border-slate-100 font-bold flex items-center justify-center gap-2"><Lock size={12} /> Ticket Closed</div>}
                       </>
                     ) : (
                       <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
@@ -761,7 +999,7 @@ export default function UserPage() {
                 </div>
               )}
 
-              {activeTab === 'notifications' && <div className="bg-white p-8 rounded-[2rem] border border-slate-100"><NotificationSettings user={userdetails} onUpdate={updateUser} /></div>}
+              {activeTab === 'notifications' && <div className="bg-white p-4 rounded-[2rem] border border-slate-100"><NotificationSettings user={userdetails} onUpdate={updateUser} /></div>}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -771,33 +1009,33 @@ export default function UserPage() {
       <AnimatePresence>
         {viewOrder && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setViewOrder(null)}>
-             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-6">
-                   <h3 className="text-xl font-bold">Order Details</h3>
-                   <button onClick={() => setViewOrder(null)} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><X size={20}/></button>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold">Order Details</h3>
+                <button onClick={() => setViewOrder(null)} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100"><X size={20} /></button>
+              </div>
+              <div className="space-y-5">
+                {viewOrder.orderItems.map(item => {
+                  const prod = productMap.get(item.productId);
+                  return (
+                    <div key={item.id} className="flex gap-4 border-b border-slate-50 pb-4">
+                      <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-xl object-cover bg-slate-50" />
+                      <div className="flex-1">
+                        <p className="font-bold text-sm text-slate-900 line-clamp-1">{item.productName}</p>
+                        <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
+                        <p className="text-sm font-bold mt-1">₹{item.totalPrice}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div className="flex justify-between pt-2 text-lg font-bold border-t border-slate-100"><span>Total Amount</span><span>₹{viewOrder.totalAmount}</span></div>
+                <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-500 space-y-1">
+                  <p><span className="font-bold">Order ID:</span> {viewOrder.id}</p>
+                  <p><span className="font-bold">Date:</span> {formatDate(viewOrder.createdAt)}</p>
+                  <p><span className="font-bold">Status:</span> {viewOrder.status}</p>
                 </div>
-                <div className="space-y-5">
-                   {viewOrder.orderItems.map(item => {
-                      const prod = productMap.get(item.productId);
-                      return (
-                        <div key={item.id} className="flex gap-4 border-b border-slate-50 pb-4">
-                           <img src={prod?.imageurl?.[0] || item.img} className="w-16 h-16 rounded-xl object-cover bg-slate-50" />
-                           <div className="flex-1">
-                              <p className="font-bold text-sm text-slate-900 line-clamp-1">{item.productName}</p>
-                              <p className="text-xs text-slate-500 mt-1">Qty: {item.quantity}</p>
-                              <p className="text-sm font-bold mt-1">₹{item.totalPrice}</p>
-                           </div>
-                        </div>
-                      )
-                   })}
-                   <div className="flex justify-between pt-2 text-lg font-bold border-t border-slate-100"><span>Total Amount</span><span>₹{viewOrder.totalAmount}</span></div>
-                   <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-500 space-y-1">
-                      <p><span className="font-bold">Order ID:</span> {viewOrder.id}</p>
-                      <p><span className="font-bold">Date:</span> {formatDate(viewOrder.createdAt)}</p>
-                      <p><span className="font-bold">Status:</span> {viewOrder.status}</p>
-                   </div>
-                </div>
-             </motion.div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -831,49 +1069,49 @@ const ProfileSettingsWrapper = ({ user, onUpdate }) => {
         await onUpdate({ profileImage: url });
         setImagePreview(url);
         window.toast.success("Profile photo updated successfully!");
-      } catch (e) { 
-        window.toast.error("Upload failed. Please try again."); 
-      } finally { 
-        setLoading(false); 
+      } catch (e) {
+        window.toast.error("Upload failed. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const deleteAvatar = async () => {
-    if(window.confirm("Remove profile photo?")) {
-        await onUpdate({ profileImage: "" });
-        setImagePreview(null);
-        window.toast.success("Photo removed");
+    if (window.confirm("Remove profile photo?")) {
+      await onUpdate({ profileImage: "" });
+      setImagePreview(null);
+      window.toast.success("Photo removed");
     }
   };
 
   return (
     <div className="max-w-2xl">
       <h2 className="text-xl font-bold text-slate-900 mb-6">Profile Settings</h2>
-      <div className="flex items-start gap-6 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+      <div className="flex items-start gap-6 mb-8 p-2 bg-slate-50 rounded-2xl border border-slate-100">
         <div className="relative group w-24 h-24 shrink-0">
           <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-sm bg-white relative">
-             <img src={imagePreview || `https://ui-avatars.com/api/?name=${user.name}`} className="w-full h-full object-cover" />
-             <label className={`absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity ${loading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                {loading ? <Loader2 className="animate-spin mb-1" size={20}/> : <Upload size={24} />}
-                {loading && <span className="text-[10px] font-bold">Uploading</span>}
-                <input type="file" className="hidden" onChange={handleAvatar} disabled={loading} accept="image/*" />
-             </label>
+            <img src={imagePreview || `https://ui-avatars.com/api/?name=${user.name}`} className="w-full h-full object-cover" />
+            <label className={`absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity ${loading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+              {loading ? <Loader2 className="animate-spin mb-1" size={20} /> : <Upload size={24} />}
+              {loading && <span className="text-[10px] font-bold">Uploading</span>}
+              <input type="file" className="hidden" onChange={handleAvatar} disabled={loading} accept="image/*" />
+            </label>
           </div>
         </div>
         <div className="flex-1">
           <h3 className="font-bold text-slate-900">Profile Photo</h3>
           <p className="text-xs text-slate-500 mb-2">Click the image to upload a new one.</p>
           <div className="flex gap-4 items-center">
-             {imagePreview && !loading && (
-                <button onClick={deleteAvatar} className="text-xs text-red-500 font-bold hover:underline flex items-center gap-1"><Trash2 size={12}/> Remove Photo</button>
-             )}
+            {imagePreview && !loading && (
+              <button onClick={deleteAvatar} className="text-xs text-red-500 font-bold hover:underline flex items-center gap-1"><Trash2 size={12} /> Remove Photo</button>
+            )}
           </div>
           {loading && (
-             <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 animate-pulse">
-                <AlertCircle size={16} className="text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-xs text-amber-800 font-bold leading-tight">Uploading image...<br/><span className="font-normal text-amber-700">Do not close or reload the page.</span></p>
-             </div>
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 animate-pulse">
+              <AlertCircle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-800 font-bold leading-tight">Uploading image...<br /><span className="font-normal text-amber-700">Do not close or reload the page.</span></p>
+            </div>
           )}
         </div>
       </div>
@@ -882,10 +1120,10 @@ const ProfileSettingsWrapper = ({ user, onUpdate }) => {
         <FloatingInput label="Phone" {...register("phone")} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Controller control={control} name="dob" render={({ field }) => (
-             <ReactDatePicker selected={field.value} onChange={field.onChange} customInput={<FloatingInput label="Date of Birth" />} showPopperArrow={false} />
+            <ReactDatePicker selected={field.value} onChange={field.onChange} customInput={<FloatingInput label="Date of Birth" />} showPopperArrow={false} />
           )} />
           <Controller control={control} name="gender" render={({ field }) => (
-             <FloatingDropdown label="Gender" value={field.value} onChange={field.onChange} options={["Male", "Female", "Other"]} />
+            <FloatingDropdown label="Gender" value={field.value} onChange={field.onChange} options={["Male", "Female", "Other"]} />
           )} />
         </div>
         <button type="submit" disabled={!isDirty || loading} className="mt-4 px-8 py-3 bg-black text-white rounded-xl font-bold text-sm shadow-lg disabled:opacity-50 transition-all hover:scale-105">Save Changes</button>
@@ -898,24 +1136,24 @@ const AddressManager = ({ address, onAdd, onEdit, onDelete, onSetDefault }) => (
   <motion.div variants={staggerContainer} initial="hidden" animate="visible">
     <div className="flex justify-between items-center mb-6">
       <h2 className="text-xl font-bold text-slate-900">Saved Addresses</h2>
-      <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 transition-all"><Plus size={16}/> Add New</button>
+      <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl text-sm font-bold shadow-lg hover:bg-slate-800 transition-all"><Plus size={16} /> Add New</button>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       {(address || []).map(addr => (
         <motion.div key={addr.id} variants={fadeInUp} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-md transition-all">
           <div className="flex justify-between items-start mb-2">
             <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-bold uppercase tracking-wide text-slate-600">{addr.addressType || "Home"}</span>
-            {addr.isDefault && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold uppercase tracking-wide flex items-center gap-1"><CheckCircle size={10}/> Default</span>}
+            {addr.isDefault && <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold uppercase tracking-wide flex items-center gap-1"><CheckCircle size={10} /> Default</span>}
           </div>
           <h4 className="font-bold text-slate-900">{addr.name}</h4>
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed">{addr.address}, {addr.city}<br/>{addr.state} - {addr.postalCode}</p>
+          <p className="text-sm text-slate-500 mt-1 leading-relaxed">{addr.address}, {addr.city}<br />{addr.state} - {addr.postalCode}</p>
           <p className="text-xs text-slate-400 mt-2 font-mono">Ph: {addr.phone}</p>
           <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white pl-2">
-            <button onClick={() => onEdit(addr)} className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:bg-slate-100 hover:text-black"><Pencil size={14}/></button>
-            <button onClick={() => onDelete(addr.id)} className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Trash2 size={14}/></button>
+            <button onClick={() => onEdit(addr)} className="p-1.5 bg-slate-50 text-slate-500 rounded-lg hover:bg-slate-100 hover:text-black"><Pencil size={14} /></button>
+            <button onClick={() => onDelete(addr.id)} className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Trash2 size={14} /></button>
           </div>
           {!addr.isDefault && (
-             <button onClick={() => onSetDefault(addr.id)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Set as Default</button>
+            <button onClick={() => onSetDefault(addr.id)} className="mt-4 text-xs font-bold text-indigo-600 hover:underline">Set as Default</button>
           )}
         </motion.div>
       ))}
@@ -930,19 +1168,19 @@ const AddressFormWrapper = ({ initialData, onCancel, onSubmit }) => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 max-w-xl">
       <FloatingInput label="Full Name" {...register("name", { required: "Required" })} error={errors.name?.message} />
       <div className="grid grid-cols-2 gap-4">
-         <FloatingInput label="Phone" {...register("phone", { required: "Required" })} error={errors.phone?.message} />
-         <Controller control={control} name="addressType" render={({ field }) => (
-            <FloatingDropdown label="Type" value={field.value} onChange={field.onChange} options={["Home", "Work", "Other"]} />
-         )} />
+        <FloatingInput label="Phone" {...register("phone", { required: "Required" })} error={errors.phone?.message} />
+        <Controller control={control} name="addressType" render={({ field }) => (
+          <FloatingDropdown label="Type" value={field.value} onChange={field.onChange} options={["Home", "Work", "Other"]} />
+        )} />
       </div>
       <FloatingInput label="Address Line 1" {...register("address", { required: "Required" })} error={errors.address?.message} />
       <div className="grid grid-cols-2 gap-4">
-         <FloatingInput label="City" {...register("city", { required: "Required" })} error={errors.city?.message} />
-         <FloatingInput label="State" {...register("state", { required: "Required" })} error={errors.state?.message} />
+        <FloatingInput label="City" {...register("city", { required: "Required" })} error={errors.city?.message} />
+        <FloatingInput label="State" {...register("state", { required: "Required" })} error={errors.state?.message} />
       </div>
       <div className="grid grid-cols-2 gap-4">
-         <FloatingInput label="Postal Code" {...register("postalCode", { required: "Required" })} error={errors.postalCode?.message} />
-         <FloatingInput label="Country" {...register("country", { required: "Required" })} error={errors.country?.message} />
+        <FloatingInput label="Postal Code" {...register("postalCode", { required: "Required" })} error={errors.postalCode?.message} />
+        <FloatingInput label="Country" {...register("country", { required: "Required" })} error={errors.country?.message} />
       </div>
       <div className="flex gap-4 pt-4">
         <button type="button" onClick={onCancel} className="px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
