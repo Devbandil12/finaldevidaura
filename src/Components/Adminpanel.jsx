@@ -244,7 +244,7 @@ const AdminPanel = () => {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsSidebarOpen(false);
-    if (tab === "reports") getReportData();
+    // if (tab === "reports") getReportData();
     if (tab === "products") getArchivedProducts();
   };
 

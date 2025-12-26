@@ -7,64 +7,95 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import { AdminContext } from '../contexts/AdminContext';
 import { ProductContext } from '../contexts/productContext';
 
+// --- HELPER: CSV Export ---
+const downloadCSV = (data, filename) => {
+  if (!data || !data.length) return;
+  const headers = Object.keys(data[0]);
+  const rows = data.map(obj => headers.map(header => JSON.stringify(obj[header])).join(','));
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
+
 const Reports = () => {
   const { reportOrders, users, orders } = useContext(AdminContext);
   const { products } = useContext(ProductContext);
   const [activeTab, setActiveTab] = useState('sales'); // sales, inventory, customers
   const [searchTerm, setSearchTerm] = useState('');
 
-  // --- 1. SALES ANALYTICS ENGINE ---
+  // --- 1. SALES ANALYTICS ENGINE (SYNCED WITH DASHBOARD) ---
   const salesData = useMemo(() => {
-    // Fallback to basic orders if reportOrders (detailed) aren't loaded yet
-    const sourceData = (reportOrders && reportOrders.length > 0) ? reportOrders : orders;
-    if (!sourceData) return [];
+    if (!orders) return [];
 
     const dailyMap = {};
 
-    sourceData.forEach(order => {
-       // Only count valid sales
-       if (order.status === 'Order Cancelled' || order.status === 'pending_payment') return;
+    orders.forEach(order => {
+       // 🟢 1. STRICT REVENUE CHECK (Exact Match to Dashboard)
+       const isRevenueOrder = () => {
+          if (order.status === 'Order Cancelled') return false;
+          if (order.paymentMode === 'online') return order.paymentStatus === 'paid';
+          if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
+          return false;
+       };
+
+       if (!isRevenueOrder()) return;
 
        const date = new Date(order.createdAt).toLocaleDateString('en-US');
        
        if (!dailyMap[date]) dailyMap[date] = { date, revenue: 0, orders: 0, profit: 0 };
        
-       dailyMap[date].revenue += order.totalAmount;
+       const totalAmount = parseFloat(order.totalAmount || 0);
+       dailyMap[date].revenue += totalAmount;
        dailyMap[date].orders += 1;
        
-       // Calculate Cost
-       let cost = 0;
-       if (order.products) {
-          cost = order.products.reduce((sum, p) => sum + ((p.costPrice || p.price * 0.7) * p.quantity), 0);
-       } else {
-          cost = order.totalAmount * 0.7;
-       }
+       // 🟢 2. PROFIT CALCULATION (Exact Match to Dashboard)
+       // Logic: Look up detailed order. If cost exists, use it. If not, cost is 0 (100% profit).
+       let orderCost = 0;
        
-       dailyMap[date].profit += (order.totalAmount - cost);
+       // Try to find the detailed version of this order in reportOrders (contains costPrice)
+       const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
+       const items = detailedOrder.products || detailedOrder.orderItems || [];
+
+       orderCost = items.reduce((pSum, p) => {
+          const cost = p.costPrice ? parseFloat(p.costPrice) : 0; 
+          const qty = p.quantity || 1;
+          return pSum + (cost * qty);
+       }, 0);
+       
+       dailyMap[date].profit += (totalAmount - orderCost);
     });
 
     // Sort by date descending
-    return Object.values(dailyMap).sort((a,b) => new Date(b.date) - new Date(a.date));
+    return Object.values(dailyMap).sort((a,b) => new Date(a.date) - new Date(b.date));
   }, [reportOrders, orders]);
 
   // --- 2. INVENTORY INTELLIGENCE ---
   const inventoryData = useMemo(() => {
     if (!products) return [];
     return products.flatMap(p => 
-      p.variants?.map(v => ({
-        id: v.id,
-        name: p.name,
-        variant: v.name,
-        sku: v.sku || 'N/A',
-        stock: v.stock,
-        sold: v.sold || 0, // Ensure your backend routes/products.js updates 'sold' count on order
-        price: v.oprice,
-        // Potential revenue sitting in stock
-        value: v.stock * v.oprice, 
-        // Turnover rate: Sold / (Sold + Stock)
-        turnoverRate: (v.sold + v.stock) > 0 ? ((v.sold / (v.stock + v.sold)) * 100).toFixed(1) : 0
-      })) || []
-    ).sort((a,b) => a.stock - b.stock); // Show lowest stock first
+      p.variants?.map(v => {
+        const stock = parseInt(v.stock || 0);
+        const sold = parseInt(v.sold || 0);
+        const price = parseFloat(v.price || v.oprice || 0); 
+
+        return {
+          id: v.id,
+          name: p.name,
+          variant: v.name,
+          sku: v.sku || 'N/A',
+          stock: stock,
+          sold: sold, 
+          price: price,
+          value: stock * price, 
+          turnoverRate: (sold + stock) > 0 ? ((sold / (stock + sold)) * 100).toFixed(1) : 0
+        };
+      }) || []
+    ).sort((a,b) => a.stock - b.stock); 
   }, [products]);
 
   // --- 3. CUSTOMER INSIGHTS ---
@@ -73,7 +104,15 @@ const Reports = () => {
     
     const userMap = {};
     orders.forEach(order => {
-        if (order.status === 'Order Cancelled') return;
+        // 🟢 STRICT REVENUE CHECK
+        const isRevenueOrder = () => {
+          if (order.status === 'Order Cancelled') return false;
+          if (order.paymentMode === 'online') return order.paymentStatus === 'paid';
+          if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
+          return false;
+        };
+
+        if (!isRevenueOrder()) return;
         
         if (!userMap[order.userId]) {
             const u = users.find(usr => usr.id === order.userId);
@@ -84,13 +123,12 @@ const Reports = () => {
                 totalSpent: 0,
                 orders: 0,
                 lastOrder: order.createdAt,
-                city: order.shippingAddress?.city || 'Unknown' // Using shippingAddress from order detail
+                city: order.shippingAddress?.city || 'Unknown' 
             };
         }
-        userMap[order.userId].totalSpent += order.totalAmount;
+        userMap[order.userId].totalSpent += parseFloat(order.totalAmount || 0);
         userMap[order.userId].orders += 1;
         
-        // Update last seen
         if (new Date(order.createdAt) > new Date(userMap[order.userId].lastOrder)) {
             userMap[order.userId].lastOrder = order.createdAt;
         }
@@ -99,7 +137,12 @@ const Reports = () => {
     return Object.values(userMap).sort((a,b) => b.totalSpent - a.totalSpent);
   }, [users, orders]);
 
-  // --- UI COMPONENTS ---
+  const handleExport = () => {
+    if (activeTab === 'sales') downloadCSV(salesData, 'Sales_Report');
+    if (activeTab === 'inventory') downloadCSV(inventoryData, 'Inventory_Report');
+    if (activeTab === 'customers') downloadCSV(customerData, 'Customer_Report');
+  };
+
   const TabButton = ({ id, label, icon: Icon }) => (
     <button 
       onClick={() => setActiveTab(id)}
@@ -122,7 +165,10 @@ const Reports = () => {
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Financial Reports</h1>
           <p className="text-gray-500 text-sm mt-1">Exportable data for accounting and inventory management.</p>
         </div>
-        <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors">
+        <button 
+          onClick={handleExport}
+          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors"
+        >
           <Download size={16} /> Export CSV
         </button>
       </div>
@@ -164,11 +210,11 @@ const Reports = () => {
             <div className="h-80 mb-8">
                 <Bar 
                   data={{
-                    labels: salesData.slice(0, 14).reverse().map(d => d.date), // Last 14 days
+                    labels: salesData.slice(-14).map(d => d.date),
                     datasets: [
                       {
                         label: 'Revenue',
-                        data: salesData.slice(0, 14).reverse().map(d => d.revenue),
+                        data: salesData.slice(-14).map(d => d.revenue),
                         backgroundColor: '#4F46E5',
                         borderRadius: 4
                       }
@@ -178,7 +224,6 @@ const Reports = () => {
                 />
             </div>
 
-            {/* Sales Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
@@ -190,12 +235,12 @@ const Reports = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {salesData.map((day, i) => (
+                  {[...salesData].reverse().map((day, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-gray-900">{day.date}</td>
                       <td className="px-4 py-3">{day.orders}</td>
                       <td className="px-4 py-3">₹{day.revenue.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-bold text-emerald-600">₹{day.profit.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-bold text-emerald-600">₹{day.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -231,7 +276,7 @@ const Reports = () => {
                     <th className="px-4 py-3">SKU</th>
                     <th className="px-4 py-3">Stock Level</th>
                     <th className="px-4 py-3">Turnover Rate</th>
-                    <th className="px-4 py-3 text-right">Value (₹)</th>
+                    <th className="px-4 py-3 text-right">Potential Rev (₹)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -266,7 +311,6 @@ const Reports = () => {
         {activeTab === 'customers' && (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-               {/* Segmentation Chart */}
                <div className="bg-gray-50 p-6 rounded-2xl flex items-center justify-center">
                   <div className="h-40 w-40">
                     <Doughnut 
@@ -286,13 +330,12 @@ const Reports = () => {
                     />
                   </div>
                   <div className="ml-8">
-                     <h4 className="font-bold text-gray-900 mb-1">Customer Segments</h4>
-                     <p className="text-xs text-gray-500 max-w-[150px]">Based on Lifetime Value (LTV) and order frequency.</p>
+                      <h4 className="font-bold text-gray-900 mb-1">Customer Segments</h4>
+                      <p className="text-xs text-gray-500 max-w-[150px]">Based on Lifetime Value (LTV) and order frequency.</p>
                   </div>
                </div>
             </div>
 
-            {/* Top Customers List */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
