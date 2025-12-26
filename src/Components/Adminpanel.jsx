@@ -418,7 +418,7 @@ const AdminPanel = () => {
             {editingProduct && <ProductVariantEditor product={editingProduct} onClose={() => { setEditingProduct(null); getArchivedProducts(); }} />}
 
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-              {activeTab === "dashboard" && <DashboardTab orders={orders} successfulOrders={successfulOrders} totalRevenue={totalRevenue} totalOrders={totalOrders} conversionRate={conversionRate} averageOrderValue={averageOrderValue} newCustomers={newCustomers} returningCustomers={returningCustomers} cancelledOrdersValue={cancelledOrdersValue} totalQueries={totalQueries} />}
+              {activeTab === "dashboard" && <DashboardTab orders={orders} setActiveTab={setActiveTab} successfulOrders={successfulOrders} totalRevenue={totalRevenue} totalOrders={totalOrders} conversionRate={conversionRate} averageOrderValue={averageOrderValue} newCustomers={newCustomers} returningCustomers={returningCustomers} cancelledOrdersValue={cancelledOrdersValue} totalQueries={totalQueries} />}
               {activeTab === "reports" && <Reports products={products} users={users} orders={reportOrders} />}
 
               {/* 4. Render InsightsTab when active */}

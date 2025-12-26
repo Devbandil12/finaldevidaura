@@ -2,25 +2,27 @@ import React, { useState, useMemo, useContext } from 'react';
 import { 
   TrendingUp, TrendingDown, Users, ShoppingBag, DollarSign, Activity, 
   CreditCard, Package, AlertTriangle, Clock, ArrowRight,
-  Droplets, RefreshCcw, AlertCircle, UserPlus, Repeat, Ban
+  Droplets, RefreshCcw, AlertCircle, UserPlus, Repeat, Ban, Layers,
+  UserCheck 
 } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, 
   Title, Tooltip, Legend, ArcElement, BarElement, Filler 
 } from 'chart.js';
+// 🔴 REMOVE useNavigate
+// import { useNavigate } from 'react-router-dom';
 import { AdminContext } from '../contexts/AdminContext';
 import { ProductContext } from '../contexts/productContext';
 import { UserContext } from '../contexts/UserContext';
 import OrderChart from './OrderChart';
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, Title, 
   Tooltip, Legend, ArcElement, BarElement, Filler
 );
 
-// --- HELPER: Date Ranges & Comparison Logic ---
+// --- HELPER: Date Ranges ---
 const getDateRange = (range) => {
   const now = new Date();
   const start = new Date();
@@ -50,7 +52,7 @@ const getDateRange = (range) => {
       prevStart.setFullYear(now.getFullYear() - 2);
       prevEnd.setFullYear(now.getFullYear() - 1);
       break;
-    default: // All time
+    default: 
       start.setFullYear(2000); 
   }
   return { current: { start, end: now }, previous: { start: prevStart, end: prevEnd } };
@@ -87,83 +89,133 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, color, loading }) 
   </div>
 );
 
-const DashboardTab = () => {
-  const { orders, reportOrders, abandonedCarts, loading: adminLoading } = useContext(AdminContext);
+// 🟢 ACCEPT setActiveTab PROP
+const DashboardTab = ({ setActiveTab }) => {
+  // const navigate = useNavigate(); // Remove this
+  const { orders, users, reportOrders, abandonedCarts, loading: adminLoading } = useContext(AdminContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
-  const { userdetails } = useContext(UserContext);
   
   const [timeRange, setTimeRange] = useState('month'); 
 
-  // --- DATA PROCESSING ENGINE ---
   const dashboardData = useMemo(() => {
-    if (!orders || !products) return null;
+    if (!orders || !products || !users) return null;
 
     const { current, previous } = getDateRange(timeRange);
 
-    // Filter Helper
     const filterByDate = (data, start, end) => 
       data.filter(item => {
         const d = new Date(item.createdAt);
         return d >= start && d <= end;
       });
 
-    // 1. Order Segments (Current vs Previous)
-    const currentOrders = filterByDate(orders, current.start, current.end);
-    const prevOrders = filterByDate(orders, previous.start, previous.end);
+    const rawCurrentOrders = filterByDate(orders, current.start, current.end);
+    const rawPrevOrders = filterByDate(orders, previous.start, previous.end);
+
+    const isValidVolumeOrder = (o) => {
+      const isOnlinePending = o.paymentMode === 'online' && (o.paymentStatus === 'pending' || o.paymentStatus === 'pending_payment');
+      return !isOnlinePending; 
+    };
+
+    const currentTotalOrders = rawCurrentOrders.filter(isValidVolumeOrder);
     
-    // Success Check Logic
-    const isSuccessful = (o) => 
-      o.status !== 'Order Cancelled' && 
-      o.status !== 'pending_payment' && 
-      o.status !== 'pending payment' &&
-      !(o.paymentMode === 'online' && (o.paymentStatus === 'pending' || o.paymentStatus === 'pending_payment'));
+    // Revenue Order Definition
+    const isRevenueOrder = (o) => {
+      if (o.status === 'Order Cancelled') return false;
+      if (o.paymentMode === 'online') return o.paymentStatus === 'paid';
+      if (o.paymentMode === 'cod' || o.paymentMode === 'cash') return o.status === 'Delivered';
+      return false; 
+    };
 
-    const successOrders = currentOrders.filter(isSuccessful);
-    const prevSuccessOrders = prevOrders.filter(isSuccessful);
-    const cancelledOrders = currentOrders.filter(o => o.status === 'Order Cancelled');
+    const successOrders = currentTotalOrders.filter(isRevenueOrder);
+    const prevSuccessOrders = rawPrevOrders.filter(isValidVolumeOrder).filter(isRevenueOrder);
+    const cancelledOrders = currentTotalOrders.filter(o => o.status === 'Order Cancelled');
 
-    // 2. Financial Metrics
+    // Financials
     const calcRevenue = (list) => list.reduce((sum, o) => sum + o.totalAmount, 0);
     const revenue = calcRevenue(successOrders);
     const prevRevenue = calcRevenue(prevSuccessOrders);
     const lostRevenue = calcRevenue(cancelledOrders);
     
-    // Profit Calculation (Cost logic or 70% rule)
+    // Profit
     const calcProfit = (list) => list.reduce((sum, order) => {
       let orderCost = 0;
       const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
-      if (detailedOrder.products || detailedOrder.orderItems) {
-         const items = detailedOrder.products || detailedOrder.orderItems;
-         orderCost = items.reduce((pSum, p) => pSum + ((p.costPrice || p.price * 0.7) * p.quantity), 0);
-      } else {
-         orderCost = order.totalAmount * 0.7;
-      }
+      const items = detailedOrder.products || detailedOrder.orderItems || [];
+      orderCost = items.reduce((pSum, p) => pSum + ((p.costPrice ? parseFloat(p.costPrice) : 0) * p.quantity), 0);
       return sum + (order.totalAmount - orderCost);
     }, 0);
 
     const profit = calcProfit(successOrders);
     const prevProfit = calcProfit(prevSuccessOrders);
 
-    // 3. Customer Metrics (Simplified Logic)
-    // In a real app, you'd check user creation date. Here we approximate by unique IDs in success orders.
-    const uniqueUserIds = [...new Set(successOrders.map(o => o.userId))];
-    // Determine 'New' vs 'Returning' if we had full user history. 
-    // Fallback: If they have >1 order ever, they are returning.
-    let returningCount = 0;
-    let newCount = 0;
+    // --- CUSTOMER METRICS ---
     
-    uniqueUserIds.forEach(uid => {
-        // Check global order history for this user
-        const userTotalOrders = orders.filter(o => o.userId === uid).length;
-        if (userTotalOrders > 1) returningCount++;
-        else newCount++;
+    // A. New Registrations
+    const newCustomersCount = users.filter(u => {
+      const joinedAt = new Date(u.createdAt);
+      return joinedAt >= current.start && joinedAt <= current.end;
+    }).length;
+
+    // B. Returning vs First-Time Buyers
+    
+    const userHistory = new Map();
+    orders.forEach(o => {
+      if (!isRevenueOrder(o)) return; 
+      const uid = String(o.userId);
+      const d = new Date(o.createdAt);
+      if (!userHistory.has(uid)) {
+        userHistory.set(uid, { firstDate: d, totalCount: 1 });
+      } else {
+        const history = userHistory.get(uid);
+        if (d < history.firstDate) history.firstDate = d;
+        history.totalCount += 1;
+      }
     });
 
-    const returningRate = (uniqueUserIds.length > 0) 
-        ? ((returningCount / uniqueUserIds.length) * 100) 
+    const activeUserIds = [...new Set(successOrders.map(o => String(o.userId)))];
+    const activeBuyersCount = activeUserIds.length;
+
+    let returningCount = 0;
+    let firstTimeBuyersCount = 0;
+
+    activeUserIds.forEach(uid => {
+      const history = userHistory.get(uid);
+      if (!history) return;
+      if (history.firstDate >= current.start) firstTimeBuyersCount++;
+      if (history.totalCount > 1) returningCount++;
+    });
+
+    const returningRate = (activeBuyersCount > 0) 
+        ? ((returningCount / activeBuyersCount) * 100) 
         : 0;
 
-    // 4. Inventory Logic
+    // --- ABANDONED CART LOGIC ---
+    let calcAbandonedVal = 0;
+    const uniqueCartUsers = new Set();
+
+    if (Array.isArray(abandonedCarts)) {
+        abandonedCarts.forEach(item => {
+            const { user, variant, cartItem } = item;
+            if (!user || !variant || !cartItem) return;
+
+            const price = parseFloat(variant.oprice ?? 0);
+            const discount = parseFloat(variant.discount ?? 0);
+            const quantity = parseInt(cartItem.quantity ?? 1);
+
+            const itemValue = (price * (1 - discount / 100)) * quantity;
+
+            if (!isNaN(itemValue)) {
+                calcAbandonedVal += itemValue;
+            }
+            uniqueCartUsers.add(user.id);
+        });
+    }
+
+    const abandonedVal = calcAbandonedVal;
+    const uniqueAbandonedCount = uniqueCartUsers.size;
+
+
+    // Inventory
     const lowStockVariants = [];
     products.forEach(p => {
       p.variants?.forEach(v => {
@@ -173,15 +225,15 @@ const DashboardTab = () => {
       });
     });
 
-    // 5. Chart Data
-    const fragranceStats = {};
+    // Charts
+    const categoryStats = {};
     successOrders.forEach(order => {
       const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
       const items = detailedOrder.products || detailedOrder.orderItems || [];
       items.forEach(p => {
         const mainProduct = products.find(prod => prod.id === (p.productId || p.id));
-        const family = mainProduct?.fragrance || 'Other';
-        fragranceStats[family] = (fragranceStats[family] || 0) + 1;
+        const cat = mainProduct?.category || 'Uncategorized';
+        categoryStats[cat] = (categoryStats[cat] || 0) + p.quantity;
       });
     });
 
@@ -205,23 +257,26 @@ const DashboardTab = () => {
     return {
       revenue, revenueTrend: calculateTrend(revenue, prevRevenue),
       profit, profitTrend: calculateTrend(profit, prevProfit),
-      totalOrders: currentOrders.length, 
+      totalOrders: currentTotalOrders.length, 
       successOrdersCount: successOrders.length,
       successTrend: calculateTrend(successOrders.length, prevSuccessOrders.length),
       aov: successOrders.length ? revenue / successOrders.length : 0,
       
-      newCustomers: newCount,
+      newCustomers: newCustomersCount,
+      firstTimeBuyers: firstTimeBuyersCount,
       returningCustomers: returningCount,
+      activeBuyersCount, 
       returningRate,
       lostRevenue,
-      conversionRate: currentOrders.length ? (successOrders.length / currentOrders.length) * 100 : 0, // Order Success Rate
+      conversionRate: currentTotalOrders.length ? (successOrders.length / currentTotalOrders.length) * 100 : 0, 
 
-      abandonedVal: abandonedCarts?.reduce((acc, c) => acc + (c.variant?.oprice || 0), 0) || 0,
+      abandonedVal,
+      uniqueAbandonedCount, 
       lowStockVariants,
-      fragranceData: { labels: Object.keys(fragranceStats), data: Object.values(fragranceStats) },
+      categoryData: { labels: Object.keys(categoryStats), data: Object.values(categoryStats) },
       chartData: { labels: chartLabels, revenue: chartRevenue },
     };
-  }, [orders, reportOrders, products, abandonedCarts, timeRange]);
+  }, [orders, reportOrders, products, abandonedCarts, users, timeRange]);
 
   const isLoading = adminLoading || productsLoading || !dashboardData;
 
@@ -253,12 +308,12 @@ const DashboardTab = () => {
         </div>
       </div>
 
-      {/* ROW 1: PRIMARY FINANCIALS (Restored Total Orders & AOV) */}
+      {/* STAT CARDS ROW 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Revenue" value={`₹${dashboardData?.revenue.toLocaleString()}`} 
           trend={dashboardData?.revenueTrend} icon={DollarSign} color="indigo" loading={isLoading}
-          subtext="Gross sales volume"
+          subtext="Paid Online & Delivered COD"
         />
         <StatCard 
           title="Net Profit (Est.)" value={`₹${dashboardData?.profit.toLocaleString()}`} 
@@ -277,16 +332,22 @@ const DashboardTab = () => {
         />
       </div>
 
-      {/* ROW 2: CUSTOMER & EFFICIENCY METRICS (Restored Extras) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* STAT CARDS ROW 2 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         <StatCard 
-          title="New Customers" value={dashboardData?.newCustomers} 
+          title="New Registrations" value={dashboardData?.newCustomers} 
           icon={UserPlus} color="teal" loading={isLoading}
+          subtext="Sign-ups in this period"
         />
         <StatCard 
-          title="Returning Rate" value={`${dashboardData?.returningRate.toFixed(1)}%`} 
+          title="First-Time Buyers" value={dashboardData?.firstTimeBuyers} 
+          icon={UserCheck} color="indigo" loading={isLoading}
+          subtext="Purchased 1st time in this period"
+        />
+        <StatCard 
+          title="Returning Buyers" value={`${dashboardData?.returningCustomers}`} 
           icon={Repeat} color="cyan" loading={isLoading}
-          subtext={`${dashboardData?.returningCustomers} Loyal Customers`}
+          subtext={`of ${dashboardData?.activeBuyersCount} active buyers (Lifetime > 1)`}
         />
         <StatCard 
           title="Lost Revenue" value={`₹${dashboardData?.lostRevenue.toLocaleString()}`} 
@@ -300,9 +361,8 @@ const DashboardTab = () => {
         />
       </div>
 
-      {/* ROW 3: CHARTS */}
+      {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-96">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -323,30 +383,29 @@ const DashboardTab = () => {
           </div>
         </div>
 
-        {/* Fragrance Pie Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Droplets className="text-pink-500" size={20} /> Fragrance Sales
+            <Layers className="text-pink-500" size={20} /> Category Sales
           </h3>
           <div className="flex-1 relative flex items-center justify-center">
-            {dashboardData?.fragranceData.data.length > 0 ? (
+            {dashboardData?.categoryData.data.length > 0 ? (
               <Doughnut data={{
-                  labels: dashboardData?.fragranceData.labels,
+                  labels: dashboardData?.categoryData.labels,
                   datasets: [{
-                    data: dashboardData?.fragranceData.data,
+                    data: dashboardData?.categoryData.data,
                     backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#3b82f6'],
                     borderWidth: 0,
                   }]
                 }} options={{ cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } }}
               />
-            ) : <div className="text-gray-400 text-sm">No fragrance data</div>}
+            ) : <div className="text-gray-400 text-sm">No sales data</div>}
           </div>
         </div>
       </div>
 
-      {/* ROW 4: ALERTS & RECOVERY */}
+      {/* BOTTOM ROW: STOCK & CARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Low Stock */}
+        {/* STOCK */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -374,7 +433,7 @@ const DashboardTab = () => {
           </div>
         </div>
 
-        {/* Abandoned Cart */}
+        {/* RECOVERY POTENTIAL */}
         <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl shadow-lg text-white">
           <div className="flex justify-between items-start mb-8">
             <div>
@@ -390,18 +449,21 @@ const DashboardTab = () => {
             <span className="mb-2 font-medium opacity-80">pending</span>
           </div>
           <div className="flex gap-3">
-            <button className="flex-1 bg-white text-indigo-600 py-3 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2">
+            {/* 🟢 FIXED REDIRECT: Use setActiveTab to switch tabs in AdminPanel */}
+            <button 
+              onClick={() => setActiveTab('carts')} 
+              className="flex-1 bg-white text-indigo-600 py-3 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+            >
                View Carts <ArrowRight size={16} />
             </button>
             <div className="bg-white/10 px-4 py-3 rounded-xl flex flex-col items-center justify-center">
-              <span className="text-xl font-bold leading-none">{abandonedCarts?.length || 0}</span>
+              <span className="text-xl font-bold leading-none">{dashboardData?.uniqueAbandonedCount || 0}</span>
               <span className="text-[10px] uppercase tracking-wider opacity-70">Carts</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Order Volume Chart (Original) */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-lg font-bold text-gray-800 mb-4">Total Order Volume</h3>
         <OrderChart orders={orders} />
