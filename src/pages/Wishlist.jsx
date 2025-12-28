@@ -3,7 +3,7 @@
 import React, { useContext } from "react";
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { CartContext } from "../contexts/CartContext";
-import Loader from "./Loader";
+import Loader from "../Components/Loader";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Wishlist = () => {

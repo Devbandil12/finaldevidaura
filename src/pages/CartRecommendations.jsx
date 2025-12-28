@@ -5,7 +5,7 @@ import { FaShoppingCart, FaMagic } from "react-icons/fa";
 import { FiCheckCircle } from "react-icons/fi"; 
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
-import HeroButton from "./HeroButton"; // 🟢 Added HeroButton import
+import HeroButton from "../Components/HeroButton"; // 🟢 Added HeroButton import
 
 // --- ANIMATION CONFIGURATION ---
 const gpuStyle = {

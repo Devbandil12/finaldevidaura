@@ -4,28 +4,28 @@ import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigat
 import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Minimal Imports (Load these immediately) ---
-import Navbar from "./Components/Navbar";
+import Navbar from "./pages/Navbar";
 import MobileBackBar from "./Components/MobileBackBar";
-import Footer from "./Components/Footer";
+import Footer from "./pages/Footer";
 import Loader from "./Components/LoginLoader";
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
-import Home from "./Components/Home";
+import Home from "./pages/Home";
 
 // --- Lazy Load the Heavy Stuff ---
 // These won't load when the user is just logging in
-// const Home = lazy(() => import("./Components/Home"));
-const Products = lazy(() => import("./Components/Products"));
-const ProductDetail = lazy(() => import("./Components/ProductDetail"));
-const Cart = lazy(() => import("./Components/Cart"));
-const Login = lazy(() => import("./Components/CustomAuthModal"));
-const Adminpannel = lazy(() => import("./Components/Adminpanel"));
-const MyOrder = lazy(() => import("./Components/MyOrder"));
-const Wishlist = lazy(() => import("./Components/Wishlist"));
-const Checkout = lazy(() => import("./Components/Checkout"));
-const UserPage = lazy(() => import("./Components/UserPage"));
-const ContactUs = lazy(() => import("./Components/ContactUs"));
-const PrivacyPolicy = lazy(() => import("./Components/PrivacyPolicy"));
-const TermsAndConditions = lazy(() => import("./Components/TermsAndConditions"));
+// const Home = lazy(() => import("./pages/Home"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Login = lazy(() => import("./pages/CustomAuthModal"));
+const Adminpannel = lazy(() => import("./pages/Adminpanel"));
+const MyOrder = lazy(() => import("./pages/MyOrder"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const UserPage = lazy(() => import("./pages/UserPage"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 
 // --- Utilities & Contexts (Keep these) ---
 import CheckoutGuard from "./CheckoutGuard";
@@ -145,7 +145,7 @@ const App = () => {
                       <ScrollToTop />
                       <PostLoginRedirector />
 
-                      {/* Suspense handles the loading state for lazy components */}
+                      {/* Suspense handles the loading state for lazy pages */}
                       {/* <Suspense fallback={<Loader text="Loading..." />}> */}
                       <Routes>
 

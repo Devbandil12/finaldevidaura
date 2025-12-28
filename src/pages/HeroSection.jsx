@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
-import HeroButton from './HeroButton';
+import HeroButton from '../Components/HeroButton';
 
 // DEFAULT ASSETS
 import bottleMain from "../assets/images/saphire-mist.webp";

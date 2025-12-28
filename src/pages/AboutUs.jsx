@@ -3,7 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Star, Hexagon, Quote, Droplets, Sun, Fingerprint } from 'lucide-react'; 
 import PageTransition from "./PageTransition";
-import Loader from "./Loader"; // Ensure you have this component
+import Loader from "../Components/Loader"; // Ensure you have this component
 
 // --- DEFAULT ASSETS (Fallbacks) ---
 import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 

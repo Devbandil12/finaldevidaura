@@ -8,9 +8,9 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { CouponContext } from "../contexts/CouponContext";
 
-import Loader from "./Loader";
-import MiniLoader from "./MiniLoader";
-import HeroButton from "./HeroButton";
+import Loader from "../Components/Loader";
+import MiniLoader from "../Components/MiniLoader";
+import HeroButton from "../Components/HeroButton";
 import CartRecommendations from "./CartRecommendations"; // Adjust path if needed
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiInfo, FiClock, FiHeart } from "react-icons/fi";

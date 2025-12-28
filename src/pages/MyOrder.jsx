@@ -2,8 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
-import Loader from "./Loader";
-import MiniLoader from "./MiniLoader";
+import Loader from "../Components/Loader";
+import MiniLoader from "../Components/MiniLoader";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
