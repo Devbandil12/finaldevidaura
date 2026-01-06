@@ -201,7 +201,7 @@ export default function ImmersiveProductShowcase() {
                 </div>
                 
                 {/* --- MAIN SHOWCASE --- */}
-                <section className="relative w-full py-16 md:py-24 min-h-screen flex flex-col items-center justify-center overflow-hidden font-sans">
+                <section className="relative w-full py-16 md:py-24 min-h-screen flex flex-col items-center justify-center overflow-hidden ">
                     <div className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-16 md:gap-22 px-6 touch-action-pan-y" {...swipeHandlers}>
                         
                         {/* --- LEFT PANEL --- */}
@@ -233,7 +233,7 @@ export default function ImmersiveProductShowcase() {
                                     </motion.div>
 
                                     <motion.h1 
-                                        className="text-5xl md:text-8xl font-serif font-medium tracking-tight uppercase leading-none" 
+                                        className="text-5xl md:text-8xl  font-medium tracking-tight uppercase leading-none" 
                                         style={{ 
                                             color: colors.text,
                                             textShadow: "0 2px 40px rgba(0, 0, 0, 0.05)"

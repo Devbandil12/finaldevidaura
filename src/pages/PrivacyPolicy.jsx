@@ -3,7 +3,7 @@ import { ShieldCheck, Database, Lock, Eye, Server } from "lucide-react";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="text-zinc-700 font-sans space-y-12 px-2 pb-6">
+    <div className="text-zinc-700  space-y-12 px-2 pb-6">
       
       {/* Header */}
       <div className="text-center">

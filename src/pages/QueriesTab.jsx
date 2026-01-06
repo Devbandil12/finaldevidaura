@@ -88,7 +88,7 @@ const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] bg-gray-50 rounded-2xl  overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] font-sans">
+    <div className="flex h-[calc(100vh-100px)] bg-gray-50 rounded-2xl  overflow-hidden shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ">
       
       {/* LEFT SIDEBAR: Ticket List */}
       <div className={`${selectedTicket ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[380px] border-r border-gray-200 bg-white z-10`}>

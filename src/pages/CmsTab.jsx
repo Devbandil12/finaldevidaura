@@ -85,7 +85,7 @@ const CmsTab = () => {
   const [mainView, setMainView] = useState('banners'); 
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] p-8 font-sans text-slate-600 space-y-10 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-[#FAFAFA] p-8  text-slate-600 space-y-10 animate-in fade-in duration-700">
       
       {/* Header & Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">

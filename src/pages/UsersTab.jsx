@@ -182,7 +182,7 @@ const UsersTab = ({
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-8 bg-gray-50/50 min-h-screen text-gray-900 font-sans">
+    <div className="space-y-6 p-4 sm:p-8 bg-gray-50/50 min-h-screen text-gray-900 ">
 
       {/* --- HEADER (List View Only) --- */}
       {!editingUser && (

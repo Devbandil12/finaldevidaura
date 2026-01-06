@@ -157,7 +157,7 @@ const Reports = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-8 font-sans space-y-8 animate-in fade-in">
+    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-8  space-y-8 animate-in fade-in">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">

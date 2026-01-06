@@ -16,7 +16,7 @@ export default function PaymentDetails({
     loadingPrices,
     isSubmitting,
     onPaymentVerified,
-    paymentVerified, 
+    paymentVerified,
     setTransactionId,
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
@@ -39,10 +39,10 @@ export default function PaymentDetails({
 
     const handleRazorpayPayment = async () => {
         try {
-            const cartItemsPayload = selectedItems.map(item => ({ 
-              variant: { id: item.variant.id }, 
-              product: { id: item.product.id },
-              quantity: item.quantity
+            const cartItemsPayload = selectedItems.map(item => ({
+                variant: { id: item.variant.id },
+                product: { id: item.product.id },
+                quantity: item.quantity
             }));
 
             const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
@@ -58,12 +58,14 @@ export default function PaymentDetails({
                 }),
             });
 
+            const orderData = await orderResponse.json();
+
+            // 🟢 PRE-CHECK: Stock Unavailable? Stop here.
+            // This prevents opening the Razorpay window if stock is 0.
             if (!orderResponse.ok) {
-                const errorData = await orderResponse.json();
-                throw new Error(errorData.msg || "Could not create order.");
+                throw new Error(orderData.msg || "Could not create order.");
             }
 
-            const orderData = await orderResponse.json();
             if (!orderData.razorpayOrderId) throw new Error("Missing Razorpay order ID.");
 
             const options = {
@@ -83,7 +85,7 @@ export default function PaymentDetails({
 
                     try {
                         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
-                        
+
                         const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -101,14 +103,17 @@ export default function PaymentDetails({
                         });
 
                         const verifyData = await verifyRes.json();
+
+                        // 🟢 CHECK FOR SUCCESS (Or Race Condition Error)
                         if (verifyData.success) {
                             setTransactionId(razorpay_payment_id);
                             onPaymentVerified(true);
                             window.toast.success("Payment successful!");
-                            onRazorpaySuccess();
+                            onRazorpaySuccess(razorpay_payment_id);
                         } else {
                             setIsVerifyingPayment(false);
-                            window.toast.error(verifyData.error || "Invalid payment. Please contact support.");
+                            // Show the specific error (e.g., "Item went out of stock... Refund initiated")
+                            window.toast.error(verifyData.error || "Payment verification failed.");
                         }
                     } catch (error) {
                         console.error("Verification error", error);
@@ -126,7 +131,8 @@ export default function PaymentDetails({
             rzp.open();
         } catch (err) {
             console.error("Payment error:", err);
-            window.toast.error(`Payment failed: ${err.message}`);
+            // This catches the Pre-Check stock error and shows it to the user.
+            window.toast.error(err.message);
         }
     };
 
@@ -134,22 +140,22 @@ export default function PaymentDetails({
 
     return (
         <div className="relative">
-            
+
             <AnimatePresence>
                 {isVerifyingPayment && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-[2px] rounded-3xl flex flex-col items-center justify-center text-center p-6"
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1, rotate: 360 }}
-                            transition={{ 
+                            transition={{
                                 scale: { duration: 0.3 },
                                 opacity: { duration: 0.3 },
-                                rotate: { repeat: Infinity, duration: 1.5, ease: "linear" } 
+                                rotate: { repeat: Infinity, duration: 1.5, ease: "linear" }
                             }}
                             className="bg-white p-4 rounded-full shadow-xl mb-5"
                         >
@@ -177,25 +183,24 @@ export default function PaymentDetails({
                 <div className="flex flex-col gap-4">
                     {/* Razorpay Option */}
                     <label
-                        className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${
-                            paymentMethod === "Razorpay"
+                        className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${paymentMethod === "Razorpay"
                                 ? "bg-slate-50 border-slate-800 shadow-sm"
                                 : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
-                        } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
+                            } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
                         <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
                             {paymentMethod === "Razorpay" && (
                                 <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
                             )}
                         </div>
-                        <input 
-                            type="radio" 
-                            name="paymentMethod" 
-                            value="Razorpay" 
-                            checked={paymentMethod === "Razorpay"} 
-                            onChange={(e) => setPaymentMethod(e.target.value)} 
-                            disabled={isBusy} 
-                            className="hidden" 
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="Razorpay"
+                            checked={paymentMethod === "Razorpay"}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            disabled={isBusy}
+                            className="hidden"
                         />
                         {/* min-w-0 for text truncation */}
                         <div className="flex-1 min-w-0">
@@ -207,21 +212,18 @@ export default function PaymentDetails({
 
                     {/* COD Option */}
                     <label
-                        className={`group relative flex flex-col items-start p-4 sm:p-5 rounded-2xl transition-all duration-300 border ${
-                            paymentMethod === "Cash on Delivery" && breakdown.codAvailable
+                        className={`group relative flex flex-col items-start p-4 sm:p-5 rounded-2xl transition-all duration-300 border ${paymentMethod === "Cash on Delivery" && breakdown.codAvailable
                                 ? "bg-slate-50 border-slate-800 shadow-sm"
                                 : "bg-white border-slate-200"
-                        } ${
-                            !breakdown.codAvailable
+                            } ${!breakdown.codAvailable
                                 ? "bg-slate-50/50 border-slate-100 cursor-not-allowed"
                                 : "cursor-pointer hover:border-slate-300 hover:shadow-sm"
-                        } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
+                            } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
                     >
                         <div className="flex items-center w-full gap-3 sm:gap-4">
-                            <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${
-                                !breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
-                                paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
-                            }`}>
+                            <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${!breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
+                                    paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
+                                }`}>
                                 {paymentMethod === "Cash on Delivery" && breakdown.codAvailable && (
                                     <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
                                 )}
@@ -242,7 +244,7 @@ export default function PaymentDetails({
                                 </span>
                                 <span className={`text-xs mt-0.5 block truncate ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
                             </div>
-                             <Truck className={`w-5 h-5 flex-shrink-0 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
+                            <Truck className={`w-5 h-5 flex-shrink-0 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
                         </div>
                         {!breakdown.codAvailable && (
                             <div className="mt-3 ml-8 sm:ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
@@ -261,7 +263,7 @@ export default function PaymentDetails({
                             whileTap={!isBusy ? { scale: 0.98 } : {}}
                             className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                             {isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
+                            {isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
                         </motion.button>
                     )}
 

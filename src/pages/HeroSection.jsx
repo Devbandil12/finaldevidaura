@@ -181,7 +181,7 @@ const HeroSection = () => {
              className="absolute inset-0 w-full h-full object-cover opacity-80" 
            />
            <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white p-4 animate-in fade-in duration-1000">
-               <h1 className="text-5xl md:text-7xl font-serif mb-6 drop-shadow-lg">
+               <h1 className="text-5xl md:text-7xl  mb-6 drop-shadow-lg">
                  {activeBanner.title}
                </h1>
                
@@ -208,7 +208,6 @@ const HeroSection = () => {
     >
       <style>
         {`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Montserrat:wght@300;400;500&display=swap');
         .gpu-accelerated {
             transform: translate3d(0, 0, 0);
             -webkit-transform: translate3d(0, 0, 0);
@@ -221,12 +220,12 @@ const HeroSection = () => {
 
       {/* HEADER */}
       <div className="w-full pt-16 pb-8 text-center relative ">
-        <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+        <h1 className="brand-title text-3xl lg:text-5xl tracking-[0.2em] font-bold text-black uppercase invisible" >
           Devid Aura
         </h1>
         <div className="flex items-center justify-center gap-4 mt-3 opacity-60">
           <span className="brand-title h-[1px] w-8 bg-black invisible"></span>
-          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase font-medium invisible">
+          <p className="brand-title text-[10px] tracking-[0.4em] text-black uppercase  invisible">
             Is Itself an aura
           </p>
           <span className="brand-title h-[1px] w-8 bg-black invisible"></span>
@@ -244,27 +243,27 @@ const HeroSection = () => {
 
           <div className="mb-8 space-y-2">
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" >
                 {titlePart1}
               </h1>
             </div>
             {titlePart2 && (
             <div className="overflow-hidden">
-              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1 className="poetic-line text-5xl lg:text-7xl text-black leading-[0.9] invisible" >
                 {titlePart2}
               </h1>
             </div>
             )}
             
             <div className="overflow-hidden pt-2">
-              <h1 className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9] invisible" style={{ fontFamily: "'Cinzel Decorative', serif" }}>
+              <h1 className="poetic-line text-4xl lg:text-6xl text-gray-400 italic leading-[0.9] invisible" >
                 {displayData.poeticLine}
               </h1>
             </div>
           </div>
 
           <div className="overflow-hidden max-w-lg">
-            <p className="poetic-line text-sm lg:text-base text-gray-600 font-medium leading-loose tracking-wide invisible" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+            <p className="poetic-line text-sm lg:text-base text-gray-600  leading-loose tracking-wide invisible" style={{ fontFamily: "'Montserrat', sans-serif" }}>
               {displayData.description}
             </p>
           </div>

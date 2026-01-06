@@ -169,7 +169,7 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // --- 🟢 OPTIMIZED SCROLL HANDLER ---
   // Merged the layout logic and the dropdown closing logic into one RAF loop
-  useEffect(() => {
+useEffect(() => {
     let lastScrollTop = 0;
     let ticking = false;
 
@@ -183,14 +183,27 @@ const Navbar = ({ onVisibilityChange }) => {
         window.requestAnimationFrame(() => {
           const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
           
-          // 2. Navbar Visibility Logic
-          const isVisible = currentScroll < lastScrollTop || currentScroll < 10;
+          // 1. Calculate the difference
+          const scrollDelta = Math.abs(currentScroll - lastScrollTop);
+
+          // 2. IGNORE micro-movements (The Fix for Shaking)
+          // If the scroll changed by less than 10px, do nothing.
+          if (scrollDelta < 10) {
+            ticking = false;
+            return;
+          }
+
+          // 3. Navbar Visibility Logic (Only runs if moved > 10px)
+          // Hide if scrolling DOWN, Show if scrolling UP or at the very top
+          const isVisible = currentScroll < lastScrollTop || currentScroll < 50;
+          
           setNavbarVisible(isVisible);
           if (onVisibilityChange) onVisibilityChange(isVisible);
-          
-          // 3. Pill Shape Logic
-          setIsScrolled(currentScroll > 30);
-          
+
+          // 4. Pill Shape Logic
+          setIsScrolled(currentScroll > 50);
+
+          // Update last position
           lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
           ticking = false;
         });

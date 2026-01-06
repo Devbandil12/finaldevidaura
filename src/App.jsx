@@ -4,12 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigat
 import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Minimal Imports (Load these immediately) ---
-import Navbar from "./pages/Navbar";
-import MobileBackBar from "./Components/MobileBackBar";
-import Footer from "./pages/Footer";
-import Loader from "./Components/LoginLoader";
+import SmoothScroll from "./components/SmoothScroll";
+
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
 import Home from "./pages/Home";
+import MainLayout from "./pages/MainLayout"; // Import the new layout
 
 // --- Lazy Load the Heavy Stuff ---
 // These won't load when the user is just logging in
@@ -22,11 +21,12 @@ const Adminpannel = lazy(() => import("./pages/Adminpanel"));
 const MyOrder = lazy(() => import("./pages/MyOrder"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Checkout = lazy(() => import("./pages/Checkout"));
+const Confirmation = lazy(() => import("./pages/Confirmation"));
 const UserPage = lazy(() => import("./pages/UserPage"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
-
+const CustomComboBuilder = lazy(() => import("./pages/CustomComboBuilder"));
 // --- Utilities & Contexts (Keep these) ---
 import CheckoutGuard from "./CheckoutGuard";
 import ScrollToTop from "./ScrollToTop";
@@ -121,15 +121,7 @@ function PostLoginRedirector() {
   return null;
 }
 
-// --- Main Layout ---
-const MainLayout = () => (
-  <>
-    <Navbar isVisible={true} />
-    <MobileBackBar />
-    <main><Outlet /></main>
-    <Footer />
-  </>
-);
+
 
 const App = () => {
   return (
@@ -147,21 +139,30 @@ const App = () => {
 
                       {/* Suspense handles the loading state for lazy pages */}
                       {/* <Suspense fallback={<Loader text="Loading..." />}> */}
-                      <Routes>
+                      <SmoothScroll>
+                        <Routes>
 
-                        <Route element={<MainLayout />}>
-                          {/* Home is now lazy-loaded here */}
-                          <Route path="/" element={<Home />} />
-                          <Route path="/products" element={<Products />} />
-                          <Route path="/privacy" element={<PrivacyPolicy />} />
-                          <Route path="/terms" element={<TermsAndConditions />} />
-                          <Route path="/myorder" element={<MyOrder />} />
-                          <Route path="/product/:productId" element={<ProductDetail />} />
-                          <Route path="/wishlist" element={<Wishlist />} />
-                          <Route path="/cart" element={<Cart />} />
-                          <Route path="/myaccount" element={<UserPage />} />
-                          <Route path="/contact" element={<ContactUs />} />
+                          <Route element={<MainLayout />}>
+                            {/* Home is now lazy-loaded here */}
+                            <Route path="/" element={<Home />} />
+                            <Route path="/products" element={<Products />} />
+                            <Route path="/custom-combo" element={<CustomComboBuilder />} />
+                            <Route path="/privacy" element={<PrivacyPolicy />} />
+                            <Route path="/terms" element={<TermsAndConditions />} />
+                            <Route path="/myorder" element={<MyOrder />} />
+                            <Route path="/product/:productId" element={<ProductDetail />} />
+                            <Route path="/wishlist" element={<Wishlist />} />
+                            <Route path="/cart" element={<Cart />} />
+                            <Route path="/myaccount" element={<UserPage />} />
+                            <Route path="/contact" element={<ContactUs />} />
 
+
+
+                            <Route element={<CheckoutGuard />}>
+                              <Route path="/checkout" element={<Checkout />} />
+                            </Route>
+                            <Route path="/order-confirmation" element={<Confirmation />} />
+                          </Route>
                           <Route path="/Admin" element={
                             <AdminProvider>
                               <Adminpannel />
@@ -169,24 +170,20 @@ const App = () => {
                           }
                           />
 
-                          <Route element={<CheckoutGuard />}>
-                            <Route path="/checkout" element={<Checkout />} />
-                          </Route>
-                        </Route>
+                          <Route path="/login" element={<Login />} />
 
-                        <Route path="/login" element={<Login />} />
+                          <Route
+                            path="/sso-callback"
+                            element={
+                              <>
+                                <AuthenticateWithRedirectCallback />
+                                <SsoCallbackLoader />
+                              </>
+                            }
+                          />
 
-                        <Route
-                          path="/sso-callback"
-                          element={
-                            <>
-                              <AuthenticateWithRedirectCallback />
-                              <SsoCallbackLoader />
-                            </>
-                          }
-                        />
-
-                      </Routes>
+                        </Routes>
+                      </SmoothScroll>
                       {/* </Suspense> */}
                     </Router>
                   </NotificationProvider>

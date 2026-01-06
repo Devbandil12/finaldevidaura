@@ -53,7 +53,7 @@ export default function Loader({ text = "Loading..." }) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-center space-y-2"
         >
-          <h1 className="text-4xl md:text-5xl text-gray-900 font-serif tracking-[0.2em] uppercase">
+          <h1 className="text-4xl md:text-5xl text-gray-900  tracking-[0.2em] uppercase">
             Devid Aura
           </h1>
           

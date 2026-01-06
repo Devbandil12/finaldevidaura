@@ -180,7 +180,7 @@ const ContactUs = () => {
   );
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-16 sm:pt-20 lg:pt-18 pb-16 sm:pb-20 lg:pb-24 font-sans">
+    <div className="bg-gray-50 min-h-screen pt-16 sm:pt-20 lg:pt-18 pb-16 sm:pb-20 lg:pb-24 ">
       <div className="max-w-6xl mx-auto px-4">
 
         <div className="text-center mb-12">

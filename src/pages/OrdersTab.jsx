@@ -169,7 +169,7 @@ const OrdersTab = ({
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
 
   return (
-    <div className="space-y-6 p-4 sm:p-8 bg-[#F9FAFB] min-h-screen text-gray-900 font-sans w-full overflow-hidden">
+    <div className="space-y-6 p-4 sm:p-8 bg-[#F9FAFB] min-h-screen text-gray-900  w-full overflow-hidden">
 
       {/* --- Header --- */}
       <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-gray-100 gap-4">

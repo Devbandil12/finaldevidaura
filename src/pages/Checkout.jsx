@@ -6,9 +6,8 @@ import { OrderContext } from "../contexts/OrderContext";
 import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
-import Confirmation from "./Confirmation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldCheck, Lock } from "lucide-react";
+import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldCheck } from "lucide-react";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
@@ -17,7 +16,9 @@ const luxuryEase = [0.25, 0.1, 0.25, 1];
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { getCartitems } = useContext(CartContext);
+  // We still need CartContext to check if cart is empty initially, 
+  // but we won't call getCartitems() to clear it here anymore.
+  const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
 
@@ -31,7 +32,7 @@ export default function Checkout() {
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  // --- Logic (Unchanged) ---
+  // --- Logic ---
   useEffect(() => {
     try {
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
@@ -67,20 +68,35 @@ export default function Checkout() {
     fetchBreakdown();
   }, [selectedItems, appliedCoupon, selectedAddress]);
 
-  const cleanupAfterOrder = useCallback(async () => {
-    localStorage.removeItem("selectedItems");
-    localStorage.removeItem("appliedCoupon");
-    await getCartitems();
-    if (getorders) await getorders();
-  }, [getorders, getCartitems]);
+  // 🟢 HELPER: Refreshes orders in background (Fire & Forget)
+  const refreshOrdersOnly = useCallback(() => {
+    if (getorders) getorders().catch(err => console.log("Bg refresh error", err));
+  }, [getorders]);
 
-  const handleRazorpaySuccess = useCallback(async () => {
-    setIsSubmitting(true);
-    try { await cleanupAfterOrder(); setStep(3); }
-    catch (error) { window.toast.error("Order processed, but session update failed."); }
-    finally { setIsSubmitting(false); }
-  }, [cleanupAfterOrder]);
+  // 🟢 OPTIMIZED: ONLINE SUCCESS
+ const handleRazorpaySuccess = useCallback(async (paymentId) => { // <--- Accept ID here
+  setIsSubmitting(true);
+  try { 
+    // Navigate IMMEDIATELY using the passed ID
+    navigate('/order-confirmation', { 
+      state: { 
+        // Use the passed 'paymentId' first. 
+        // If undefined, fall back to state or "ONLINE-PAYMENT"
+        transactionId: paymentId || transactionId || "ONLINE-PAYMENT", 
+        status: "success" 
+      } 
+    });
 
+    // Trigger background refresh
+    refreshOrdersOnly();
+  }
+  catch (error) { 
+      window.toast.error("Order processed, but navigation failed."); 
+  }
+  finally { setIsSubmitting(false); }
+}, [refreshOrdersOnly, navigate, transactionId]);
+
+  // 🟢 OPTIMIZED: COD SUCCESS
   const handlePlaceOrderCOD = useCallback(async () => {
     if (isSubmitting) return;
     if (!selectedAddress) return window.toast.error("Please select a delivery address.");
@@ -99,24 +115,43 @@ export default function Checkout() {
           breakdown: breakdown
         }),
       });
-      if (!res.ok) throw new Error("Order failed.");
-      await cleanupAfterOrder();
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.msg || "Order failed.");
+      }
+      
+      // 1. Navigate IMMEDIATELY. Speed is priority.
+      navigate('/order-confirmation', { 
+        state: { 
+          transactionId: data.orderId, 
+          status: "success" 
+        } 
+      });
+
+      // 2. Show Success
       window.toast.success("Order placed successfully!");
-      setStep(3);
-    } catch (err) { window.toast.error(err.message); } finally { setIsSubmitting(false); }
-  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, cleanupAfterOrder, isSubmitting]);
+      
+      // 3. Background Refresh
+      refreshOrdersOnly();
+
+    } catch (err) { 
+      window.toast.error(err.message); 
+      setIsSubmitting(false); // Only stop loading if error
+    } 
+  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, refreshOrdersOnly, isSubmitting, navigate]);
 
   const handleNext = () => {
     if (loadingPrices) return;
     if (step === 1 && !selectedAddress) return window.toast.warn("Please select a delivery address.");
-    setStep(prev => Math.min(prev + 1, 3));
+    setStep(prev => Math.min(prev + 1, 2)); 
   };
 
   const handlePrev = () => {
     if (step === 1) navigate("/cart");
     else setStep(prev => Math.max(prev - 1, 1));
   };
-  const resetCheckout = () => setStep(1);
 
   const steps = [
     { name: "Address", icon: MapPin },
@@ -126,33 +161,23 @@ export default function Checkout() {
 
   return (
     <>
-      {/* Reduced padding top for mobile: py-20 */}
-      <div className="min-h-screen bg-white font-sans py-20 sm:py-24 px-4 sm:px-6 flex items-start justify-center">
+      <div className="min-h-screen bg-white  py-20 sm:py-24 px-4 sm:px-6 flex items-start justify-center">
 
         <div className="w-full max-w-8xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
 
-          {/* Header padding reduced */}
-          {/* Header Section */}
           <div className="
   relative overflow-hidden transition-colors duration-300
-  /* Mobile: Dark Background */
   bg-black text-white 
-  /* Desktop: White Background with bottom border */
   md:bg-white md:text-slate-900 md:border-b md:border-slate-100
   px-4 pb-10 pt-4 sm:px-12 sm:pb-12
 ">
-
-            {/* Background Effects (Mobile Only - Hidden on Desktop) */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
 
-              {/* Secure Badge: Adaptive Colors */}
               <div className={`
       flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
-      /* Mobile Style */
       bg-white/10 border-white/10
-      /* Desktop Style */
       md:bg-emerald-50 md:border-emerald-100
     `}>
                 <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 md:text-emerald-600" />
@@ -161,15 +186,12 @@ export default function Checkout() {
                 </span>
               </div>
 
-              {/* Stepper Container */}
               <div className="relative w-full max-w-4xl">
 
-                {/* Inactive Line (Background) */}
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 
         bg-white/20 md:bg-slate-200"
                 />
 
-                {/* Active Line (Progress) */}
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
                     className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none
@@ -180,7 +202,6 @@ export default function Checkout() {
                   />
                 </div>
 
-                {/* Steps Icons */}
                 <div className="flex justify-between w-full relative">
                   {steps.map((s, i) => {
                     const isActive = step === i + 1;
@@ -191,11 +212,9 @@ export default function Checkout() {
                         <motion.div
                           className={`
                   relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10
-                  
-                  /* LOGIC FOR COLORS BASED ON STATE & SCREEN SIZE */
                   ${isActive || isCompleted
-                              ? "bg-white text-black border-white md:bg-black md:text-white md:border-black md:shadow-md" // Active/Done
-                              : "bg-black text-slate-500 border-slate-700 md:bg-white md:text-slate-300 md:border-slate-200" // Inactive
+                              ? "bg-white text-black border-white md:bg-black md:text-white md:border-black md:shadow-md"
+                              : "bg-black text-slate-500 border-slate-700 md:bg-white md:text-slate-300 md:border-slate-200"
                             }
                 `}
                           animate={{ scale: isActive ? 1.15 : 1 }}
@@ -227,7 +246,7 @@ export default function Checkout() {
 
               <motion.main
                 layout
-                className={`${step === 3 ? "lg:col-span-12 max-w-3xl mx-auto w-full" : "lg:col-span-7 xl:col-span-8"}`}
+                className="lg:col-span-7 xl:col-span-8"
                 transition={{ duration: 0.6, ease: luxuryEase }}
               >
                 <AnimatePresence mode="wait">
@@ -257,14 +276,10 @@ export default function Checkout() {
                         setTransactionId={setTransactionId}
                       />
                     )}
-                    {step === 3 && (
-                      <Confirmation resetCheckout={resetCheckout} transactionId={transactionId} />
-                    )}
                   </motion.div>
                 </AnimatePresence>
 
-                {step < 3 && (
-                  <motion.div
+                <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
                     className="mt-12 flex items-center justify-between border-t border-slate-100 pt-5 px-1 sm:px-5"
                   >
@@ -290,12 +305,10 @@ export default function Checkout() {
                       </motion.button>
                     )}
                   </motion.div>
-                )}
               </motion.main>
 
               <AnimatePresence>
-                {step < 3 && (
-                  <motion.aside
+                <motion.aside
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20, transition: { duration: 0.3 } }}
@@ -314,7 +327,6 @@ export default function Checkout() {
                       <span className="font-medium">100% Secure Payment Processing</span>
                     </div>
                   </motion.aside>
-                )}
               </AnimatePresence>
             </div>
           </div>

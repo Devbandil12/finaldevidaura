@@ -63,7 +63,7 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
   };
 
   return (
-    <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
+    <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 ">
       
       {/* --- HEADER --- */}
       <div className="pb-6 border-b border-gray-200">

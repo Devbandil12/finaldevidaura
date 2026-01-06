@@ -2,7 +2,7 @@ import React from "react";
 
 export default function TermsAndConditions() {
   return (
-    <div className="font-sans text-zinc-700 space-y-12 px-2 pb-6">
+    <div className=" text-zinc-700 space-y-12 px-2 pb-6">
       
       {/* Header */}
       <div className="text-center mb-10">

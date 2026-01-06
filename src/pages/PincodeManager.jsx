@@ -274,7 +274,7 @@ export default function PincodeManager() {
 
     // --- RENDER ---
     return (
-        <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-6 md:p-10 font-sans text-slate-800">
+        <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-6 md:p-10  text-slate-800">
             {/* 1. HEADER */}
             <div className="max-w-6xl mx-auto mb-8 sm:mb-12">
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">

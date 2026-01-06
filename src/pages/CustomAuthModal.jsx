@@ -39,10 +39,25 @@ export default function CustomAuthModal({ onClose }) {
   const otpRefs = useRef([]);
   const modalContentRef = useRef(null);
 
+
   const navigateAndClose = useCallback((path) => {
     navigate(path);
-    onClose();
+    if (onClose && typeof onClose === "function") {
+      onClose();
+    }
   }, [navigate, onClose]);
+
+  // 🟢 PERMANENT FIX: Handle closing logic for both Modal and Route modes
+  const handleClose = useCallback(() => {
+    if (onClose && typeof onClose === "function") {
+      // Mode 1: We are a modal (e.g., opened from Navbar)
+      onClose();
+    } else {
+      // Mode 2: We are a full page (e.g., /login route)
+      // "Closing" means going back to Home
+      navigate("/");
+    }
+  }, [onClose, navigate]);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -128,10 +143,10 @@ export default function CustomAuthModal({ onClose }) {
           await setSignUpActive({ session: result.createdSessionId });
           setVerified(true);
           window.toast.success("Account created successfully!");
-          
+
           // 🟢 FIX 2: Clear storage immediately, but use the captured variable
           sessionStorage.removeItem("post_login_redirect");
-          
+
           setTimeout(() => navigateAndClose(redirectUrl), 1200);
         }
       } else {
@@ -158,7 +173,7 @@ export default function CustomAuthModal({ onClose }) {
   };
 
   const handleGoogle = async () => {
-    if (isGoogleLoading || sendingOtp || otpSent) return; 
+    if (isGoogleLoading || sendingOtp || otpSent) return;
     setIsGoogleLoading(true);
     setError("");
 
@@ -188,7 +203,7 @@ export default function CustomAuthModal({ onClose }) {
       } catch (finalErr) {
         console.error("Google Auth Final Error:", finalErr);
         setError(finalErr.errors?.[0]?.message || "Google authentication failed.");
-        setIsGoogleLoading(false); 
+        setIsGoogleLoading(false);
       }
     }
   };
@@ -211,7 +226,7 @@ export default function CustomAuthModal({ onClose }) {
       className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget) { handleClose(); } }}
     >
       <title>{isSignUp ? "Create Account" : "Log In"} | Devid Aura</title>
       <AnimatePresence>
@@ -224,7 +239,7 @@ export default function CustomAuthModal({ onClose }) {
           ref={modalContentRef}
           className="w-full max-w-4xl min-h-[650px] bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-50"
         >
-          <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-gray-900 transition-colors bg-white rounded-full shadow-lg">
+          <button onClick={handleClose} className="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-gray-900 transition-colors bg-white rounded-full shadow-lg">
             <X size={24} />
           </button>
 
@@ -254,7 +269,7 @@ export default function CustomAuthModal({ onClose }) {
                   <span className="px-2 text-xs text-gray-400 font-medium">OR</span>
                   <div className="flex-grow h-px bg-gray-200"></div>
                 </div>
-                
+
                 <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
                   {isSignUp && (
                     <div className="grid grid-cols-2 gap-4 mb-4">

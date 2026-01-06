@@ -3,7 +3,7 @@ import { Clock, Ban, Video, CheckCircle2, PackageX } from "lucide-react";
 
 export default function RefundPolicy() {
   return (
-    <div className="text-zinc-700 font-sans space-y-10 px-2 pb-6">
+    <div className="text-zinc-700  space-y-10 px-2 pb-6">
       
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">Refund Policy</h2>

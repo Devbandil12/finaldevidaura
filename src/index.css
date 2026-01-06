@@ -1,3 +1,6 @@
+/* src/index.css */
+/* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Manrope:wght@200..800&display=swap');
 @import "tailwindcss";
 
 
@@ -23,13 +26,11 @@
   src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Libre Baskerville Bold';
   src: url('/fonts/LibreBaskerville-Bold.ttf') format('truetype');
   font-display: swap;
 }
-
 @font-face {
   font-family: 'Libre Baskerville Italic';
   src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
@@ -37,41 +38,62 @@
 }
 
 
-html {
-  overflow-x: hidden !important;
-  scroll-behavior: smooth;
 
+/* 2. LUXURY DESIGN TOKENS */
+:root {
+  /* Palette */
+  --color-gold: #C5A059;
+  --color-gold-light: #D4AF37;
+  --color-black: #1A1C20;
+  --color-off-white: #ffffff; /* The signature "Warm Luxury" bg */
+  --color-text-body: #4a4a4a;
+
+  /* Typography Mapping */
+  --font-heading: 'Libre Baskerville Bold', serif;
+  --font-body: 'Montserrat', sans-serif; /* Assuming you want a clean sans for body */
+  --font-accent: 'Libre Baskerville Italic', serif;
 }
 
+/* 3. GLOBAL RESET */
+html.lenis, html.lenis body {
+  height: auto;
+}
 
 body {
-  overflow-x: hidden !important;
-  /* font-family: "Luxury"; Fallback to sans-serif */
-  background: hsl(var(--background));
-  /* color: hsl(var(--foreground)); */
-  
-}
-
-/* Apply the heading font to all heading tags */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: "Libre Baskerville Bold";
-  font-weight: 600;
-}
-
-/* Paragraphs and Spans will inherit the body font ("Luxury") by default */
-p {
-  font-family: "Libre Baskerville Italic";
+  background-color: var(--color-off-white);
+  color: var(--color-black);
+  font-family: "Manrope", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  margin: 0;
   line-height: 1.6;
-  font-weight: 400;
 }
 
-span {
-  font-family: "Libre Baskerville";
+h1, h2, h3, h4, h5, h6 {
+ font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  /* letter-spacing: -0.02em; */
+}
+
+h3, h4, h5, h6 {
+ font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-size: 22px;
+  /* letter-spacing: -0.02em; */
+}
+
+
+
+p {
+ font-family: "Cormorant Garamond", serif;
+  color: var(--color-text-body);
+  line-height: 1.75;
+  font-size: 16px;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: white;
 }
 
 
@@ -158,63 +180,36 @@ span {
 
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out;
+}y
+
+
+/* 4. SMOOTH SCROLL UTILS (Lenis) */
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
-
-/* Shimmer container */
-.shimmer-wrapper {
-  position: relative;
+/* 5. UTILITY: VISUAL CONNECTORS */
+/* This is the line that physically connects your sections */
+.connector-line {
+  width: 1px;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--color-gold), transparent);
+  margin: 0 auto;
+  opacity: 0.4;
 }
 
-/* Gold shimmer animation */
-@keyframes goldShimmer {
-  0% {
-    background-position: -200% center;
+@layer components {
+  .form-input {
+    @apply block w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black;
   }
-
-  100% {
-    background-position: 200% center;
-  }
 }
 
-
-
-section {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-
-
-/* Heading shimmer */
-.shimmer-text {
-  background: linear-gradient(90deg,
-      #b8860b 0%,
-      #ffd700 25%,
-      #fff5cc 50%,
-      #ffd700 75%,
-      #b8860b 100%);
-  background-size: 300% auto;
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: goldShimmer 4s linear infinite;
-}
-
-/* Subtext shimmer (softer) */
-.shimmer-subtext {
-  background: linear-gradient(90deg,
-      #d4af37 0%,
-      #fff8dc 50%,
-      #d4af37 100%);
-  background-size: 200% auto;
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: goldShimmer 6s linear infinite;
-  opacity: 0.9;
-}
 
 /* ===========================
    Modern Date Picker Styling (Full & Fixed)

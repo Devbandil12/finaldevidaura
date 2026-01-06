@@ -283,7 +283,7 @@ const AdminPanel = () => {
     user?.profileImageUrl;
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans fixed inset-0 z-[10000]">
+    <div className="flex h-screen w-full bg-gray-50 overflow-hidden  fixed inset-0 z-[10000]">
 
       {/* --- MOBILE SIDEBAR --- */}
       <AnimatePresence>
@@ -412,7 +412,7 @@ const AdminPanel = () => {
         </div>
 
         {/* Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto scroll-smooth">
+        <div className="flex-1 overflow-y-auto scroll-smooth" data-lenis-prevent>
           <div className="max-w-[1600px] mx-auto min-h-full pb-20">
             {openModal && <ImageUploadModal isopen={openModal} onClose={() => setOpenModal(false)} />}
             {editingProduct && <ProductVariantEditor product={editingProduct} onClose={() => { setEditingProduct(null); getArchivedProducts(); }} />}

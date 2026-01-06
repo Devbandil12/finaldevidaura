@@ -102,7 +102,7 @@ useEffect(() => {
         <meta name="description" content="The fragrance you are looking for could not be found. Please return to our home page to explore our collection." />
         <div className="flex items-center justify-center min-h-screen bg-white px-4">
           <div className="text-center p-8 bg-gray-50 rounded-xl shadow-lg max-w-md">
-            <h2 className="text-3xl font-serif font-bold text-gray-900 mb-2">Product Not Found</h2>
+            <h2 className="text-3xl  font-bold text-gray-900 mb-2">Product Not Found</h2>
             <p className="text-gray-500 mb-6">The fragrance you're looking for doesn't exist or has no variants.</p>
             <Button onClick={() => navigate("/")}>Return Home</Button>
           </div>
@@ -175,7 +175,7 @@ useEffect(() => {
       <title>{`${product.name} | Devid Aura`}</title>
       <meta name="description" content={`Discover ${product.name}, a captivating fragrance by Devid Aura. ${product.description || 'Experience a scent that defines you.'}`} />
 
-      <div className="min-h-screen bg-white text-gray-800 font-sans">
+      <div className="min-h-screen bg-white text-gray-800 ">
         <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
           <main className="relative max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-16 mt-[40px] md:mt-0">
             <motion.div
@@ -260,7 +260,7 @@ useEffect(() => {
                 <div className="mb-6">
                   <div className="flex items-start justify-between mb-4 mt-8">
                     <div className="flex-1">
-                      <h1 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
+                      <h1 className="text-3xl md:text-4xl  font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
                         {product.name}
                       </h1>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${selectedVariant.stock > 0 ? 'bg-teal-500/10 text-teal-600' : 'bg-red-500/10 text-red-600'}`}>
@@ -329,11 +329,11 @@ useEffect(() => {
                 {/* --- Description & Fragrance Profile (Unchanged) --- */}
                 <div className="space-y-8 mb-8">
                   <div>
-                    <h2 className="text-2xl font-serif font-semibold text-gray-900 mb-3">About This Fragrance</h2>
+                    <h2 className="text-2xl  font-semibold text-gray-900 mb-3">About This Fragrance</h2>
                     <p className="text-gray-600 leading-relaxed">{product.description}</p>
                   </div>
                   <div className="space-y-4">
-                    <h3 className="text-xl font-serif font-semibold text-gray-900">Fragrance Profile</h3>
+                    <h3 className="text-xl  font-semibold text-gray-900">Fragrance Profile</h3>
                     <div className="grid gap-4">
                       <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
                         <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Top Notes</div>
@@ -389,7 +389,7 @@ useEffect(() => {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="mt-20 lg:mt-24 "
             >
-              <h2 className="text-3xl px-4 lg:text-4xl font-serif font-bold text-gray-900 mb-8">Customer Reviews</h2>
+              <h2 className="text-3xl px-4 lg:text-4xl  font-bold text-gray-900 mb-8">Customer Reviews</h2>
               <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50  md:p-10">
                 <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
               </div>

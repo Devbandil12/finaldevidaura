@@ -383,7 +383,7 @@ function useCurrentLocationInForm() {
               whileHover={{ scale: 1.005, backgroundColor: "#f8fafc" }} 
               whileTap={{ scale: 0.99 }}
               transition={{ duration: 0.2 }}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-slate-200 text-slate-500 py-4 rounded-xl font-medium hover:border-slate-400 hover:text-black transition-colors duration-300"
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-slate-200 text-slate-500 py-4 rounded-xl  hover:border-slate-400 hover:text-black transition-colors duration-300"
             >
               <Plus className="w-4 h-4" /> Add New Address
             </motion.button>

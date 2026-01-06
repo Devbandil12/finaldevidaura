@@ -625,7 +625,7 @@ export default function UserPage() {
   if (!userdetails) return <div className="h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-slate-300" /></div>;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pt-14 sm:pt-20 pb-20 px-2 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50/50 pt-14 sm:pt-20 pb-20 px-2  text-slate-900">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
         {/* LEFT SIDEBAR (Sticky) */}
