@@ -177,7 +177,7 @@ export default function AboutUs() {
                                 <Star size={12} className="text-yellow-600" /> Our Heritage
                             </span>
                             <h1 className="text-5xl md:text-7xl font-serif font-medium mb-4 text-[#1a1a1a]">
-                                The Devid Aura Story
+                                The Story Behind Devid Aura 
                             </h1>
                             <p className="text-xl text-neutral-500 max-w-3xl mx-auto font-light">
                                 We believe in the invisible power of scent to define presence. 
