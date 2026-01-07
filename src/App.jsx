@@ -27,6 +27,7 @@ const ContactUs = lazy(() => import("./pages/ContactUs"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const CustomComboBuilder = lazy(() => import("./pages/CustomComboBuilder"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
 // --- Utilities & Contexts (Keep these) ---
 import CheckoutGuard from "./CheckoutGuard";
 import ScrollToTop from "./ScrollToTop";
@@ -145,6 +146,7 @@ const App = () => {
                           <Route element={<MainLayout />}>
                             {/* Home is now lazy-loaded here */}
                             <Route path="/" element={<Home />} />
+                            <Route path="/about" element={<AboutUs />} />
                             <Route path="/products" element={<Products />} />
                             <Route path="/custom-combo" element={<CustomComboBuilder />} />
                             <Route path="/privacy" element={<PrivacyPolicy />} />

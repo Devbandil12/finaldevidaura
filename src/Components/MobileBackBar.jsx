@@ -15,10 +15,10 @@ import {
   LayoutGrid, 
   Sparkles, 
   CheckCircle,
-  ShoppingBag
+  ShoppingBag,
+  Info 
 } from "lucide-react";
 
-// 🟢 REMOVED: import "../style/MobileBackBar.css";
 
 const PRODUCT_DETAIL_PATH = "/product/:productId";
 
@@ -37,6 +37,7 @@ const pageConfig = {
   "/privacy": { title: "Privacy Policy", icon: Shield },
   "/terms": { title: "Terms & Conditions", icon: FileText },
   "/order-confirmation": { title: "Order Confirmed", icon: CheckCircle },
+  "/about": { title: "Our Story", icon: Info },
 };
 
 const MobileBackBar = () => {

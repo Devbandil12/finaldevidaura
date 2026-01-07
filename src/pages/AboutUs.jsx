@@ -49,12 +49,12 @@ export default function AboutUs() {
         
         pillar1: {
             title: cmsData?.pillar1Title || "Unrefined Nature.",
-            desc: cmsData?.pillar1Desc || "We harvest when the sun is highest. Petals, roots, and resins gathered by hand.",
+            desc: cmsData?.pillar1Desc || "We harvest when the sun is highest. Petals, roots, and resins gathered by hand from the finest estates across the globe.",
             image: cmsData?.pillar1Image || pillar_1
         },
         pillar2: {
             title: cmsData?.pillar2Title || "Liquid Patience.",
-            desc: cmsData?.pillar2Desc || "Speed is the enemy of luxury. Our blends macerate in glass for 90 days.",
+            desc: cmsData?.pillar2Desc || "Speed is the enemy of luxury. Our blends macerate in glass vessels for 90 days, allowing each note to find its harmony.",
             image: cmsData?.pillar2Image || pillar_2
         },
         pillar3: {

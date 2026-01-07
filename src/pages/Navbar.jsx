@@ -1,7 +1,7 @@
-// File: src/Components/Navbar.jsx
+// src/Components/Navbar.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { motion, AnimatePresence } from "framer-motion";
 
 // Assets
@@ -30,7 +30,7 @@ import { gsap } from "gsap";
 // Icons
 import { BiHomeHeart } from "react-icons/bi";
 import { TbPerfume } from "react-icons/tb";
-import { Feather, Bell, ShoppingCart } from "lucide-react";
+import { Feather, Bell, ShoppingCart, Sparkles, Store } from "lucide-react"; // 🟢 ADDED: Sparkles, Store
 
 // Import Custom Auth Modal
 import CustomAuthModal from "./CustomAuthModal";
@@ -98,6 +98,7 @@ const Navbar = ({ onVisibilityChange }) => {
   const { signOut } = useClerk();
   const isLoggedIn = isSignedIn;
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Refs
   const navRef = useRef(null);
@@ -167,43 +168,32 @@ const Navbar = ({ onVisibilityChange }) => {
     }, {});
   }, [notifications]);
 
-  // --- 🟢 OPTIMIZED SCROLL HANDLER ---
-  // Merged the layout logic and the dropdown closing logic into one RAF loop
-useEffect(() => {
+  // --- Scroll Handler ---
+  useEffect(() => {
     let lastScrollTop = 0;
     let ticking = false;
 
     const handleScroll = () => {
-      // 1. Close Dropdowns on any scroll
-      // Using functional updates allows us to check state without adding dependencies (preventing re-binding)
       setIsProfileOpen(prev => (prev ? false : prev));
       setIsNotificationOpen(prev => (prev ? false : prev));
 
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-          
-          // 1. Calculate the difference
           const scrollDelta = Math.abs(currentScroll - lastScrollTop);
 
-          // 2. IGNORE micro-movements (The Fix for Shaking)
-          // If the scroll changed by less than 10px, do nothing.
           if (scrollDelta < 10) {
             ticking = false;
             return;
           }
 
-          // 3. Navbar Visibility Logic (Only runs if moved > 10px)
-          // Hide if scrolling DOWN, Show if scrolling UP or at the very top
           const isVisible = currentScroll < lastScrollTop || currentScroll < 50;
           
           setNavbarVisible(isVisible);
           if (onVisibilityChange) onVisibilityChange(isVisible);
 
-          // 4. Pill Shape Logic
           setIsScrolled(currentScroll > 50);
 
-          // Update last position
           lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
           ticking = false;
         });
@@ -213,7 +203,7 @@ useEffect(() => {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [onVisibilityChange]); // Dependencies kept minimal for performance
+  }, [onVisibilityChange]); 
 
   // --- Sidebar & Auth Modal Body Lock ---
   useEffect(() => {
@@ -307,12 +297,13 @@ useEffect(() => {
     }
   }, [navigate]);
 
-  // Links Data
+  // 🟢 UPDATED SIDEBAR LINKS (Best for use)
   const primaryLinks = useMemo(() => [
     { label: "Home", icon: BiHomeHeart, onClick: () => { navigate("/"); closeSidebar(); } },
-    { label: "About", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { handleNavScroll("about-section"); closeSidebar(); } },
-    { label: "Collection", icon: TbPerfume, onClick: () => { handleNavScroll("collection-section"); closeSidebar(); } },
-  ], [navigate, closeSidebar, handleNavScroll]);
+    { label: "All Products", icon: Store, onClick: () => { navigate("/products"); closeSidebar(); } },
+    { label: "Build Combo", icon: Sparkles, onClick: () => { navigate("/custom-combo"); closeSidebar(); } },
+    { label: "About Us", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { navigate("/about"); closeSidebar(); } },
+  ], [navigate, closeSidebar]);
 
   const accountLinks = useMemo(() => [
     ...(isLoggedIn ? [{ label: "My Orders", icon: MyOrderIcon, onClick: () => { navigate("/myorder"); closeSidebar(); } }] : []),
@@ -329,7 +320,6 @@ useEffect(() => {
       <nav
         id="navbar"
         className={`${isScrolled ? "scrolled" : ""} ${isOpen ? "sidebar-open" : ""}`}
-        // 🟢 TRANSFORMATION: Using -180% to ensure navbar fully clears shadows on mobile
         style={{
           transform: navbarVisible ? "translateY(0)" : "translateY(-180%)",
           willChange: "transform",
@@ -341,9 +331,11 @@ useEffect(() => {
 
         <div className="part-2">
           <ul className="nav-links">
+            {/* 🟢 UPDATED DESKTOP LINKS (Best for use) */}
             <li><a onClick={() => navigate("/")}>Home</a></li>
-            <li><a onClick={() => handleNavScroll("about-section")}>About</a></li>
-            <li><a onClick={() => handleNavScroll("collection-section")}>Collection</a></li>
+            <li><a onClick={() => navigate("/products")}>Shop</a></li>
+            <li><a onClick={() => navigate("/custom-combo")}>Build Combo</a></li>
+            <li><a onClick={() => navigate("/about")}>About Us</a></li>
           </ul>
         </div>
 
