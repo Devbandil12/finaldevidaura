@@ -255,7 +255,7 @@ const HeroSection = () => {
                   alt="fragrance notes card"
                   className="relative w-full opacity-50 blur-[1.5px] mix-blend-multiply rounded-lg"
                   style={{ filter: "saturate(0.6) contrast(0.95)" }}
-                  loading="lazy"
+                
                 />
               </div>
             )}
@@ -274,7 +274,7 @@ const HeroSection = () => {
                   alt="fragrance notes card 2"
                   className="relative w-full opacity-50 blur-[2px] mix-blend-multiply rounded-lg"
                   style={{ filter: "saturate(0.55) contrast(0.9)" }}
-                  loading="lazy"
+                  
                 />
               </div>
             )}
@@ -302,7 +302,6 @@ const HeroSection = () => {
                   src={displayData.image}
                   alt="Devid Aura Sapphire Mist perfume bottle"
                   className="relative z-10 w-full h-full object-contain filter sepia-[0.15] contrast-[1] brightness-[1] blur-[0.2px] ml-8 opacity-85"
-                  loading="lazy"
                   style={{
                     maskImage: "linear-gradient(to bottom, black 92%, transparent 100%)",
                     WebkitMaskImage: "linear-gradient(to bottom, black 92%, transparent 100%)"
