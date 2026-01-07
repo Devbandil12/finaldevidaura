@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigat
 import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
 // --- Minimal Imports (Load these immediately) ---
-import SmoothScroll from "./components/SmoothScroll";
+import SmoothScroll from "./Components/SmoothScroll";
 
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
 import Home from "./pages/Home";
