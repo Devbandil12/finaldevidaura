@@ -12,44 +12,75 @@ export default function Footer() {
   const footerRef = useRef(null);
 
   useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      // 1. Creative Brand Animation: 3D Staggered Reveal
-      gsap.fromTo(
-        ".brand-char",
-        { y: 100, opacity: 0, rotateX: -90 },
-        {
-          y: 0,
-          opacity: 1,
-          rotateX: 0,
-          stagger: 0.05,
-          duration: 1.2,
-          ease: "power4.out",
+    // 🟢 Fix: Wait for layout to settle before initializing ScrollTrigger
+    // This prevents the "refresh at top" bug by ensuring the page height is correct.
+    const timer = setTimeout(() => {
+      if (!footerRef.current) return;
+
+      const ctx = gsap.context(() => {
+        // Force refresh to recalculate start/end positions based on final page height
+        ScrollTrigger.refresh();
+
+        // 1. Creative Animation: "Cinematic Blur & Focus"
+        gsap.fromTo(
+          ".brand-char",
+          { 
+            filter: "blur(12px)", 
+            opacity: 0, 
+            y: 40,   
+            scale: 1.1,
+          },
+          {
+            filter: "blur(0px)",
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            stagger: 0.05, 
+            duration: 1.2,
+            ease: "power2.out", 
+            scrollTrigger: {
+              trigger: footerRef.current,
+              // 🟢 Fix: Start ONLY when top of footer is 100px inside the viewport bottom
+              start: "top bottom-=100", 
+              toggleActions: "play none none reverse", 
+            },
+          }
+        );
+
+        // 2. Background Watermark Parallax
+        gsap.to(".footer-watermark", {
+          y: 100,
+          ease: "none",
           scrollTrigger: {
             trigger: footerRef.current,
-            start: "top 75%",
-          },
-        }
-      );
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          }
+        });
 
-      // 2. Links & Socials Fade In
-      gsap.fromTo(
-        [".footer-column", ".social-btn"],
-        { y: 20, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.1,
-          duration: 0.8,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: footerRef.current,
-            start: "top 80%",
-          },
-        }
-      );
-    }, footerRef);
+        // 3. Elements Fade In
+        gsap.fromTo(
+          [".footer-column", ".social-btn"],
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            stagger: 0.05,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: footerRef.current,
+              start: "top bottom-=100", // Sync with brand animation
+            },
+          }
+        );
+      }, footerRef);
 
-    return () => ctx.revert();
+      return () => ctx.revert();
+    }, 100); // 100ms delay to allow DOM to paint
+
+    return () => clearTimeout(timer);
   }, []);
 
   const brandName = "DEVID AURA".split("");
@@ -59,9 +90,11 @@ export default function Footer() {
       ref={footerRef} 
       className="bg-white text-gray-900 pt-24 pb-10 border-t border-gray-100 relative overflow-hidden"
     >
-      {/* Background Watermark - Using your imported font directly */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full pointer-events-none opacity-[0.02] select-none flex justify-center">
-         <span className="text-[15vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap">DEVID AURA</span>
+      {/* Background Watermark */}
+      <div className="footer-watermark absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none opacity-[0.03] select-none flex justify-center mt-20">
+         <span className="text-[18vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap leading-none">
+            DEVID AURA
+         </span>
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
@@ -70,19 +103,21 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-20">
           
           <div className="flex-1">
-            {/* Animated Brand Title - Using your imported font directly */}
-            <div className="flex overflow-hidden mb-6 perspective-[400px]">
+            {/* Animated Brand Title */}
+            <div className="flex flex-wrap mb-6">
               {brandName.map((char, index) => (
                 <span 
                   key={index} 
-                  className={`brand-char text-5xl md:text-8xl font-['Cormorant_Garamond'] font-medium inline-block text-black ${char === " " ? "w-4 md:w-8" : ""}`}
+                  // 🟢 Fix: opacity-0 ensures it's hidden BEFORE JS loads
+                  className={`brand-char text-5xl md:text-8xl font-['Cormorant_Garamond'] font-medium inline-block text-black ${char === " " ? "w-4 md:w-8" : ""} opacity-0`}
+                  style={{ willChange: "transform, opacity, filter" }} 
                 >
                   {char}
                 </span>
               ))}
             </div>
             
-            <p className="footer-column text-gray-500 font-light text-lg leading-relaxed max-w-md">
+            <p className="footer-column opacity-0 text-gray-500 font-light text-lg leading-relaxed max-w-md">
               An olfactory signature. A presence unseen but always felt. 
               Crafted for those who leave a mark.
             </p>
@@ -90,7 +125,7 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="flex gap-4 mt-8">
               {[
-                { Icon: Instagram, link: "https://www.instagram.com/devidaura.official/?utm_source=ig_web_button_share_sheet" },
+                { Icon: Instagram, link: "#" },
                 { Icon: Facebook, link: "#" },
                 { Icon: Twitter, link: "#" }
               ].map(({ Icon, link }, i) => (
@@ -99,7 +134,7 @@ export default function Footer() {
                   href={link} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="social-btn w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-300 group"
+                  className="social-btn opacity-0 w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-300 group"
                 >
                   <Icon size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
                 </a>
@@ -111,7 +146,7 @@ export default function Footer() {
           <div className="flex gap-12 md:gap-24 flex-wrap">
             
             {/* Shop Column */}
-            <div className="footer-column min-w-[120px]">
+            <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Discover</h4>
               <ul className="space-y-3">
                 <FooterLink onClick={() => navigate('/products')} label="All Products" />
@@ -122,7 +157,7 @@ export default function Footer() {
             </div>
 
             {/* Company Column */}
-            <div className="footer-column min-w-[120px]">
+            <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Company</h4>
               <ul className="space-y-3">
                 <FooterLink onClick={() => navigate('/about')} label="Our Story" />
@@ -132,7 +167,7 @@ export default function Footer() {
             </div>
 
             {/* Legal Column */}
-            <div className="footer-column min-w-[120px]">
+            <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Legal</h4>
               <ul className="space-y-3">
                 <FooterLink onClick={() => navigate('/privacy')} label="Privacy Policy" />
@@ -144,7 +179,7 @@ export default function Footer() {
         </div>
 
         {/* BOTTOM SECTION */}
-        <div className="footer-column pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 font-medium tracking-wide">
+        <div className="footer-column opacity-0 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 font-medium tracking-wide">
           <p>© {new Date().getFullYear()} Devid Aura. All rights reserved.</p>
           <div className="flex items-center gap-1 mt-3 md:mt-0 opacity-70 hover:opacity-100 transition-opacity">
             <span>Designed with Precision</span>
