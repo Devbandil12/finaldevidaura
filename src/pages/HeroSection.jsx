@@ -177,7 +177,7 @@ const HeroSection = () => {
     >
       {/* BACKGROUND TYPOGRAPHY */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 flex items-center justify-center opacity-[0.03]">
-        <h1 className="text-[20vw] font-serif font-bold tracking-tighter text-black whitespace-nowrap parallax-layer-back">
+        <h1 className="text-[20vw]  font-bold tracking-tighter text-black whitespace-nowrap parallax-layer-back">
           DEVID AURA
         </h1>
       </div>
@@ -197,13 +197,13 @@ const HeroSection = () => {
           </div>
 
           <div className="overflow-hidden mb-2">
-            <h1 className="hero-text-reveal text-5xl lg:text-7xl xl:text-8xl font-serif font-medium leading-[1.2] pb-2 text-gray-900">
+            <h1 className="hero-text-reveal text-5xl lg:text-7xl xl:text-8xl  font-medium leading-[1.2] pb-2 text-gray-900">
               {displayData.title}
             </h1>
           </div>
 
           <div className="overflow-hidden mb-8">
-            <p className="hero-text-reveal text-xl lg:text-2xl font-serif italic text-gray-400">
+            <p className="hero-text-reveal text-xl lg:text-2xl  italic text-gray-400">
               {displayData.poeticLine}
             </p>
           </div>

@@ -105,7 +105,7 @@ const MobileBackBar = () => {
 
       <div className="flex items-center justify-center gap-2 overflow-hidden w-full">
         {Icon && <Icon size={18} className="text-gray-700 shrink-0 -mt-[1px]" strokeWidth={2} />}
-        <span className="text-base font-semibold text-black truncate capitalize tracking-wide font-sans">
+        <span className="text-base font-semibold text-black truncate capitalize tracking-wide ">
           {title}
         </span>
       </div>

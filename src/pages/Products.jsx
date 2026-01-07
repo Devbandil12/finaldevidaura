@@ -135,7 +135,7 @@ const Products = () => {
                 <span className="mb-6 px-6 py-2 rounded-full border border-[#D4AF37]/30 bg-white text-xs font-bold tracking-[0.3em] uppercase text-[#D4AF37]">
                     Olfactory Library
                 </span>
-                <h1 className="text-6xl md:text-8xl text-stone-900 tracking-tight leading-[0.9] font-serif">
+                <h1 className="text-6xl md:text-8xl text-stone-900 tracking-tight leading-[0.9] ">
                     The <span className="italic font-light text-[#C5A059]">Collection</span>
                 </h1>
             </motion.div>
@@ -162,18 +162,18 @@ const Products = () => {
               >
                 {/* --- HEADING --- */}
                 <div className="relative mb-12 pl-2 md:pl-6">
-                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem] font-serif text-[#F2F0EB] leading-none select-none z-0">
+                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem]  text-[#F2F0EB] leading-none select-none z-0">
                        {indexStr}
                     </span>
                     <div className="relative z-10 pt-6 pl-4">
                        <span className="block text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase mb-1">
                           {meta.tagline}
                        </span>
-                       <h2 className="text-4xl md:text-6xl font-serif text-stone-900 leading-none mb-3">
+                       <h2 className="text-4xl md:text-6xl  text-stone-900 leading-none mb-3">
                          {meta.title}
                        </h2>
                        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                           <p className="text-sm md:text-base text-stone-500 italic font-serif">
+                           <p className="text-sm md:text-base text-stone-500 italic ">
                              {meta.description}
                            </p>
                            <div className="hidden md:block w-8 h-[1px] bg-stone-300"></div>
@@ -264,7 +264,7 @@ const Products = () => {
 
                         {/* TEXT */}
                         <div className="pt-5 px-2 text-center">
-                          <h3 className={`text-xl font-serif leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
+                          <h3 className={`text-xl  leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
                               {product.name}
                           </h3>
                           <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light">
