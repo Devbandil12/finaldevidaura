@@ -3,9 +3,12 @@ export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
-           colors: {
-        // Map Tailwind color names to your CSS variables (HSL values defined in src/index.css)
-        // Use the `hsl(var(--...) / <alpha-value>)` form so Tailwind's `/<opacity>` syntax works (eg. `bg-gold/20`).
+      fontFamily: {
+        // 🟢 ADDED: Cormorant Garamond for easy usage (e.g., font-cormorant)
+        cormorant: ["Cormorant Garamond", "serif"],
+        sans: ["Manrope", "sans-serif"], 
+      },
+      colors: {
         background: 'hsl(var(--background) / <alpha-value>)',
         foreground: 'hsl(var(--foreground) / <alpha-value>)',
         card: 'hsl(var(--card) / <alpha-value>)',
