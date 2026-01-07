@@ -21,7 +21,10 @@ const baseTheme = {
     },
 };
 
-/* ------------------ ANIMATION VARIANTS ------------------ */
+/* ------------------ ANIMATION VARIANTS (Optimized) ------------------ */
+// Helper to detect mobile width safely
+const getIsMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
+
 const infoVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -31,7 +34,7 @@ const infoVariants = {
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, x: -10 }, // Reduced movement from -20 to -10 for simpler feel
     visible: { 
         opacity: 1, 
         x: 0, 
@@ -39,12 +42,13 @@ const itemVariants = {
     },
 };
 
+// SIMPLIFIED VARIANTS: Checks if mobile to remove 3D rotation
 const luxuryImageVariants = {
-    enter: (direction) => ({
-        x: direction > 0 ? 100 : -100,
+    enter: ({ direction, isMobile }) => ({
+        x: direction > 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100), // Less distance on mobile
         opacity: 0,
-        scale: 0.9,
-        rotateY: direction > 0 ? -15 : 15,
+        scale: 0.95,
+        rotateY: isMobile ? 0 : (direction > 0 ? -15 : 15), // Disable 3D on mobile
     }),
     center: {
         zIndex: 1,
@@ -54,12 +58,12 @@ const luxuryImageVariants = {
         rotateY: 0,
         transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] },
     },
-    exit: (direction) => ({
+    exit: ({ direction, isMobile }) => ({
         zIndex: 0,
-        x: direction < 0 ? 100 : -100,
+        x: direction < 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100),
         opacity: 0,
-        scale: 0.9,
-        rotateY: direction > 0 ? 15 : -15,
+        scale: 0.95,
+        rotateY: isMobile ? 0 : (direction > 0 ? 15 : -15), // Disable 3D on mobile
         transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
     }),
 };
@@ -73,35 +77,33 @@ const rotateCircle = {
 };
 
 /* ------------------ HELPER: BLUR IMAGE COMPONENT ------------------ */
-// This component handles the "Blur until loaded" logic
 const BlurImage = ({ src, alt, className }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     return (
         <div className={`relative overflow-hidden ${className} bg-gray-200`}>
-            {/* 1. Placeholder (Optional: You can put a tiny base64 thumb here if you have one) */}
-            {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 backdrop-blur-md z-0">
-                   {/* Optional: Add a spinner or logo here if desired */}
-                </div>
-            )}
+            {/* Smooth fading placeholder */}
+            <motion.div 
+                className="absolute inset-0 bg-gray-300 z-10"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: isLoading ? 1 : 0 }}
+                transition={{ duration: 0.5, ease: "linear" }}
+            />
 
-            {/* 2. Main Image */}
             <motion.img
                 src={src}
                 alt={alt}
-                initial={{ opacity: 0, filter: "blur(20px)", scale: 1.1 }}
+                initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
                 animate={{ 
                     opacity: isLoading ? 0 : 1, 
-                    filter: isLoading ? "blur(20px)" : "blur(0px)",
-                    scale: isLoading ? 1.1 : 1
+                    filter: isLoading ? "blur(10px)" : "blur(0px)",
+                    scale: 1
                 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 onLoad={() => setIsLoading(false)}
-                // Use fetchPriority only for the main visible image if possible
                 fetchPriority="high"
                 decoding="async"
-                className="relative z-10 w-full h-full object-cover"
+                className="relative z-0 w-full h-full object-cover"
             />
         </div>
     );
@@ -113,6 +115,16 @@ export default function ImmersiveProductShowcase() {
     const [activeIdx, setActiveIdx] = useState(0);
     const [direction, setDirection] = useState(0);
     const [storyExpanded, setStoryExpanded] = useState(false);
+    
+    // Track mobile state for animation logic
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
     // Filter valid products
     const visibleProducts = useMemo(() => {
@@ -343,12 +355,12 @@ export default function ImmersiveProductShowcase() {
                             </div>
 
                             {/* Main Product Image Container */}
-                            <AnimatePresence custom={direction} mode="wait">
+                            <AnimatePresence custom={{ direction, isMobile }} mode="wait">
                                 <motion.div
                                     key={product.id ?? activeIdx}
                                     className="relative z-10 w-64 md:w-80 aspect-[3/4]"
                                     variants={luxuryImageVariants}
-                                    custom={direction}
+                                    custom={{ direction, isMobile }}
                                     initial="enter"
                                     animate="center"
                                     exit="exit"
@@ -356,9 +368,6 @@ export default function ImmersiveProductShowcase() {
                                 >
                                     <div className="relative w-full h-full rounded-t-[100px] rounded-b-[40px] overflow-hidden shadow-2xl transition-all duration-500 bg-white/5 backdrop-blur-sm border border-black/5 group">
                                         
-                                        {/* ✨ NEW BLUR-UP COMPONENT 
-                                            Replaces the standard <img> tag to handle the "paint" issue.
-                                        */}
                                         {product.imageurl?.[0] ? (
                                             <BlurImage 
                                                 src={product.imageurl[0]} 
