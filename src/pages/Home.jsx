@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import React, { useEffect, useState, useContext } from "react";
 import HeroSection from "./HeroSection";
 // 🟢 Restored Imports
@@ -16,19 +17,7 @@ const Home = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminStats, setAdminStats] = useState({ todayCount: 0, pendingCount: 0 });
 
-  useEffect(() => {
-    const target = sessionStorage.getItem("scrollToSection");
-    if (target) {
-      const el = document.getElementById(target);
-      if (el) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: "smooth" });
-        }, 300);
-      }
-      sessionStorage.removeItem("scrollToSection");
-    }
-  }, []);
-
+ 
   // Admin Check Effect
   useEffect(() => {
     const fetchAdminStats = async () => {

@@ -12,14 +12,12 @@ export default function Footer() {
   const footerRef = useRef(null);
 
   useLayoutEffect(() => {
-    // 🟢 Fix: Wait for layout to settle before initializing ScrollTrigger
-    // This prevents the "refresh at top" bug by ensuring the page height is correct.
+    // 🟢 FIX: Safety delay to allow content (Hero/Products) to push footer down
     const timer = setTimeout(() => {
       if (!footerRef.current) return;
 
       const ctx = gsap.context(() => {
-        // Force refresh to recalculate start/end positions based on final page height
-        ScrollTrigger.refresh();
+        ScrollTrigger.refresh(); // Recalculate positions after layout settles
 
         // 1. Creative Animation: "Cinematic Blur & Focus"
         gsap.fromTo(
@@ -40,9 +38,15 @@ export default function Footer() {
             ease: "power2.out", 
             scrollTrigger: {
               trigger: footerRef.current,
-              // 🟢 Fix: Start ONLY when top of footer is 100px inside the viewport bottom
-              start: "top bottom-=100", 
-              toggleActions: "play none none reverse", 
+              // 🟢 FIX: Trigger only when top of footer is 50px inside viewport
+              start: "top bottom-=50", 
+              toggleActions: "play none none reverse",
+              // Prevent triggering if page is top but footer is technically in view due to loading
+              onEnter: (self) => {
+                 if (window.scrollY === 0 && self.start === 0) {
+                     self.kill(false, true); // Kill if layout is broken
+                 }
+              }
             },
           }
         );
@@ -71,14 +75,14 @@ export default function Footer() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: footerRef.current,
-              start: "top bottom-=100", // Sync with brand animation
+              start: "top bottom-=50", 
             },
           }
         );
       }, footerRef);
 
       return () => ctx.revert();
-    }, 100); // 100ms delay to allow DOM to paint
+    }, 200); // 200ms delay for layout stability
 
     return () => clearTimeout(timer);
   }, []);
@@ -108,7 +112,7 @@ export default function Footer() {
               {brandName.map((char, index) => (
                 <span 
                   key={index} 
-                  // 🟢 Fix: opacity-0 ensures it's hidden BEFORE JS loads
+                  // 🟢 FIX: opacity-0 ensures hidden before JS loads
                   className={`brand-char text-5xl md:text-8xl font-['Cormorant_Garamond'] font-medium inline-block text-black ${char === " " ? "w-4 md:w-8" : ""} opacity-0`}
                   style={{ willChange: "transform, opacity, filter" }} 
                 >
