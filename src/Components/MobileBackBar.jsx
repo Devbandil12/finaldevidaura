@@ -1,87 +1,118 @@
 // src/Components/MobileBackBar.jsx
-import React, { useContext } from 'react'; // 🟢 ADDED: useContext
-import { useLocation, useNavigate, matchPath } from 'react-router-dom'; // 🟢 ADDED: matchPath
-import { ProductContext } from "../contexts/productContext"; // 🟢 ADDED: ProductContext
-import "../style/MobileBackBar.css";
+import React, { useContext } from 'react';
+import { useLocation, useNavigate, matchPath } from 'react-router-dom';
+import { ProductContext } from "../contexts/productContext";
+import { 
+  ArrowLeft, 
+  ShoppingCart, 
+  Heart, 
+  Package, 
+  User, 
+  Phone, 
+  Settings, 
+  FileText, 
+  Shield, 
+  LayoutGrid, 
+  Sparkles, 
+  CheckCircle,
+  ShoppingBag
+} from "lucide-react";
 
-// 🟢 NEW: Product Detail Route Pattern
+// 🟢 REMOVED: import "../style/MobileBackBar.css";
+
 const PRODUCT_DETAIL_PATH = "/product/:productId";
 
-const pageTitles = {
-  "/login": "Login",
-  "/cart": "Cart",
-  "/wishlist": "Wishlist",
-  "/myorder": "My Orders",
-  "/checkout": "Checkout",
-  "/contact": "Contact",
-  "/admin": "Admin Panel", 
+const pageConfig = {
+  "/login": { title: "Sign In", icon: User },
+  "/cart": { title: "Your Cart", icon: ShoppingCart },
+  "/wishlist": { title: "Wishlist", icon: Heart },
+  "/myorder": { title: "My Orders", icon: Package },
+  "/checkout": { title: "Checkout", icon: ShoppingBag },
+  "/contact": { title: "Contact Us", icon: Phone },
+  "/admin": { title: "Admin Panel", icon: Settings },
+  "/Admin": { title: "Admin Panel", icon: Settings },
+  "/products": { title: "Collection", icon: LayoutGrid },
+  "/custom-combo": { title: "Build Your Combo", icon: Sparkles },
+  "/myaccount": { title: "My Profile", icon: User },
+  "/privacy": { title: "Privacy Policy", icon: Shield },
+  "/terms": { title: "Terms & Conditions", icon: FileText },
+  "/order-confirmation": { title: "Order Confirmed", icon: CheckCircle },
 };
 
+const MobileBackBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { products } = useContext(ProductContext);
 
+  const currentPath = location.pathname;
+  let config = pageConfig[currentPath];
+  let title = config?.title;
+  let Icon = config?.icon;
 
-const MobileBackBar = ({ isNavbarVisible }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  // 🟢 NEW: Get products from context
-  const { products } = useContext(ProductContext); 
+  const handleBack = () => navigate(-1);
 
-  const currentPath = location.pathname;
-  let currentTitle = pageTitles[currentPath];
-
-  const handleBack = () => navigate(-1);
-  const isMobile = window.innerWidth <= 768;
-
-  // 🟢 NEW: Logic to determine if it's the Product Detail Page
+  // Logic for Dynamic Product Detail Page
   const match = matchPath(PRODUCT_DETAIL_PATH, currentPath);
 
-  if (match && match.params.productId && !currentTitle) {
-    // This is the Product Detail page, try to find the product name
+  if (match && match.params.productId && !title) {
     const productId = match.params.productId;
     const product = products.find(p => p.id === productId);
 
     if (product) {
-        currentTitle = product.name;
+        title = product.name;
     } else {
-        // Fallback title while product is loading or not found
-        currentTitle = "Product Detail";
+        title = "Product Detail";
     }
+    Icon = null;
   }
 
-  // Fallback for other pages not in pageTitles
-  if (!currentTitle && currentPath.includes('/product/')) {
-      currentTitle = "Product Detail";
-  } else if (!currentTitle && currentPath !== '/') {
-      // Default for other non-home, non-product dynamic routes like /myaccount
-      currentTitle = "Page"; 
+  // Fallback for other pages
+  if (!title) {
+      if (currentPath.includes('/product/')) {
+          title = "Product Detail";
+      } else if (currentPath !== '/') {
+          const derived = currentPath.substring(1).charAt(0).toUpperCase() + currentPath.slice(2);
+          title = derived || "Page";
+      }
   }
 
+  // Don't show on Home page
+  if (currentPath === '/') return null;
 
-  if (!isMobile || currentPath === '/') return null;
+  return (
+    <div 
+      className="
+        fixed top-0 left-0 right-0 w-full h-14 px-1
+        grid grid-cols-[48px_1fr_48px] items-center
+        bg-white/98 backdrop-blur-md
+        border-b border-black/5 shadow-sm
+        z-[998] transition-transform duration-300
+        md:hidden
+      "
+    >
+      <button 
+        onClick={handleBack} 
+        aria-label="Go Back"
+        className="
+          w-12 h-12 flex items-center justify-center 
+          rounded-full text-gray-900 
+          active:bg-black/5 transition-colors
+        "
+      >
+        <ArrowLeft size={24} strokeWidth={2} />
+      </button>
 
-  return (
-    <div className="mobile-back-bar"
-      style={{ top: isNavbarVisible ? '50px' : '0px' }}
-    >
-      <button className="back-btn" onClick={handleBack}>
-        <svg
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M15 18L9 12L15 6"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      <div className="page-title">{currentTitle}</div>
-</div>
-  );
+      <div className="flex items-center justify-center gap-2 overflow-hidden w-full">
+        {Icon && <Icon size={18} className="text-gray-700 shrink-0 -mt-[1px]" strokeWidth={2} />}
+        <span className="text-base font-semibold text-black truncate capitalize tracking-wide font-sans">
+          {title}
+        </span>
+      </div>
+
+      {/* Spacer to balance grid */}
+      <div className="w-12"></div>
+    </div>
+  );
 };
 
 export default MobileBackBar;
