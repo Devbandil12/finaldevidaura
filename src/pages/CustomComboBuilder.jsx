@@ -60,7 +60,7 @@ const cardVariants = {
 };
 
 // --- PERFUME CARD (Mobile Optimized) ---
-const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => {
+const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSelect }) => {
     const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
         ? product.imageurl[0]
         : "/placeholder.png";
@@ -68,6 +68,9 @@ const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => 
     const oprice = variant.oprice || product.oprice || 0;
     const discount = variant.discount || product.discount || 0;
     const discountedPrice = Math.floor(oprice * (1 - discount / 100));
+
+    // Determine if we should show selection styling
+    const isSelected = count > 0;
 
     return (
         <motion.div
@@ -80,7 +83,12 @@ const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => 
                 // NOT SELECTED: Transparent
                 : "" 
             }
-            ${isDisabled && !isSelected ? "opacity-40 grayscale cursor-not-allowed" : ""}
+            ${isOutOfStock 
+                ? "opacity-40 grayscale cursor-not-allowed" // OUT OF STOCK: Grayscale
+                : isDisabled 
+                    ? "opacity-60 cursor-not-allowed" // DISABLED (e.g. box full): Faded but not grayscale
+                    : ""
+            }
             `}
         >
             {/* LEFT: COMPACT IMAGE BOX */}
@@ -89,13 +97,9 @@ const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => 
                     src={imageUrl}
                     alt={product.name}
                     className={`w-full h-full object-cover transition-all duration-500 ease-in-out
-                    ${isSelected 
-                        ? "grayscale-0 opacity-100" // Selected: Always Color
-                        : "grayscale-0 opacity-100 lg:grayscale lg:opacity-80 lg:group-hover:grayscale-0 lg:group-hover:opacity-100" 
-                        // ^ EXPLANATION:
-                        // 1. grayscale-0 opacity-100: DEFAULT (Mobile) is COLOR.
-                        // 2. lg:grayscale: On Desktop, make it B&W.
-                        // 3. lg:group-hover:grayscale-0: On Desktop Hover, make it COLOR.
+                    ${isOutOfStock 
+                        ? "grayscale" 
+                        : "grayscale-0 opacity-100" // CHANGED: Always color if in stock
                     }`}
                 />
             </div>
@@ -119,18 +123,13 @@ const PerfumeCard = ({ variant, product, isSelected, isDisabled, onSelect }) => 
                 </div>
 
                 <div>
-                    {isSelected ? (
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="inline-flex items-center gap-2 bg-[#1a1a1a] px-3 py-1.5 rounded-full"
-                        >
-                             <FaCheck size={8} className="text-[#C5A059]" />
-                             <span className="text-[9px] font-bold tracking-widest text-white uppercase">ADDED</span>
-                        </motion.div>
+                    {isOutOfStock ? (
+                         <span className="text-[10px] font-bold tracking-widest text-red-400 uppercase">
+                             OUT OF STOCK
+                         </span>
                     ) : (
                         <span className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase transition-colors duration-300 group-hover:text-[#8a6d3b]">
-                            ADD TO SET
+                            {count > 0 ? `ADD ANOTHER (${count})` : "ADD TO SET"}
                             <FaArrowRight 
                                 size={10} 
                                 className="transition-transform duration-300 group-hover:translate-x-1"
@@ -178,27 +177,29 @@ const CustomComboBuilder = () => {
             .filter((p) => !p.isArchived && p.category !== "Template")
             .flatMap((product) =>
                 product.variants
-                    .filter((v) => !v.isArchived && v.size === 30 && v.stock > 0)
+                    .filter((v) => !v.isArchived && v.size === 30) // Show all, even out of stock
                     .map((variant) => ({ product, variant }))
             );
     }, [products]);
 
     const handleSelectPerfume = useCallback((variant) => {
         if (isProcessing) return;
+        if ((variant.stock || 0) <= 0) return; // Prevent adding out of stock items
+
         setSelectedPerfumes((prev) => {
-            const exists = prev.some((v) => v.id === variant.id);
-            if (exists) return prev.filter((v) => v.id !== variant.id);
             if (prev.length >= 4) {
                 window.toast?.error("Box full.") || alert("Box full");
                 return prev;
             }
+            // Always add the item, allowing duplicates
             return [...prev, variant];
         });
     }, [isProcessing]);
 
-    const handleRemoveFromSlot = (id) => {
+    const handleRemoveFromSlot = (indexToRemove) => {
         if (isProcessing) return;
-        setSelectedPerfumes((prev) => prev.filter((v) => v.id !== id));
+        // Remove item at specific index
+        setSelectedPerfumes((prev) => prev.filter((_, index) => index !== indexToRemove));
     };
 
     const validateAndProceed = () => {
@@ -307,16 +308,22 @@ const CustomComboBuilder = () => {
                                 animate="show"
                                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                             >
-                                {availablePerfumes.map(({ product, variant }) => (
-                                    <PerfumeCard
-                                        key={variant.id}
-                                        variant={variant}
-                                        product={product}
-                                        isSelected={selectedPerfumes.some((v) => v.id === variant.id)}
-                                        isDisabled={isProcessing || (isFull && !selectedPerfumes.some((v) => v.id === variant.id))}
-                                        onSelect={() => !isProcessing && handleSelectPerfume(variant)}
-                                    />
-                                ))}
+                                {availablePerfumes.map(({ product, variant }) => {
+                                    const count = selectedPerfumes.filter(v => v.id === variant.id).length;
+                                    const isOutOfStock = (variant.stock || 0) <= 0;
+                                    
+                                    return (
+                                        <PerfumeCard
+                                            key={variant.id}
+                                            variant={variant}
+                                            product={product}
+                                            count={count}
+                                            isOutOfStock={isOutOfStock}
+                                            isDisabled={isProcessing || isOutOfStock || (isFull)}
+                                            onSelect={() => !isProcessing && handleSelectPerfume(variant)}
+                                        />
+                                    );
+                                })}
                             </motion.div>
                         </div>
 
@@ -376,7 +383,7 @@ const CustomComboBuilder = () => {
                                                             <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
                                                         </div>
                                                         <button
-                                                            onClick={() => !isProcessing && handleRemoveFromSlot(variant.id)}
+                                                            onClick={() => !isProcessing && handleRemoveFromSlot(i)}
                                                             disabled={isProcessing}
                                                             className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors"
                                                         >

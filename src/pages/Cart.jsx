@@ -428,7 +428,7 @@ const ShoppingCart = () => {
       ts: Date.now(),
       source: isBuyNowActive ? "buy_now" : "cart"
     };
-    
+
 
     sessionStorage.setItem("checkout_intent", JSON.stringify(intentData));
     if (!isSignedIn) {
@@ -1147,6 +1147,8 @@ const ShoppingCart = () => {
                 type="text"
                 value={pincode}
                 onChange={handlePincodeChange}
+                inputmode="numeric"
+                pattern="[0-9]*"
                 placeholder="Enter 6-digit Pincode"
                 onKeyDown={(e) => e.key === "Enter" && checkDeliveryAvailability()}
                 maxLength="6"

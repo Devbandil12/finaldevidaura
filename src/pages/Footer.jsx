@@ -22,10 +22,10 @@ export default function Footer() {
         // 1. Creative Animation: "Cinematic Blur & Focus"
         gsap.fromTo(
           ".brand-char",
-          { 
-            filter: "blur(12px)", 
-            opacity: 0, 
-            y: 40,   
+          {
+            filter: "blur(12px)",
+            opacity: 0,
+            y: 40,
             scale: 1.1,
           },
           {
@@ -33,19 +33,19 @@ export default function Footer() {
             opacity: 1,
             y: 0,
             scale: 1,
-            stagger: 0.05, 
+            stagger: 0.05,
             duration: 1.2,
-            ease: "power2.out", 
+            ease: "power2.out",
             scrollTrigger: {
               trigger: footerRef.current,
               // 🟢 FIX: Trigger only when top of footer is 50px inside viewport
-              start: "top bottom-=50", 
+              start: "top bottom-=50",
               toggleActions: "play none none reverse",
               // Prevent triggering if page is top but footer is technically in view due to loading
               onEnter: (self) => {
-                 if (window.scrollY === 0 && self.start === 0) {
-                     self.kill(false, true); // Kill if layout is broken
-                 }
+                if (window.scrollY === 0 && self.start === 0) {
+                  self.kill(false, true); // Kill if layout is broken
+                }
               }
             },
           }
@@ -75,7 +75,7 @@ export default function Footer() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: footerRef.current,
-              start: "top bottom-=50", 
+              start: "top bottom-=50",
             },
           }
         );
@@ -90,39 +90,49 @@ export default function Footer() {
   const brandName = "DEVID AURA".split("");
 
   return (
-    <footer 
-      ref={footerRef} 
+    <footer
+      ref={footerRef}
       className="bg-white text-gray-900 pt-24 pb-10 border-t border-gray-100 relative overflow-hidden"
     >
       {/* Background Watermark */}
       <div className="footer-watermark absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none opacity-[0.03] select-none flex justify-center mt-20">
-         <span className="text-[18vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap leading-none">
-            DEVID AURA
-         </span>
+        <span className="text-[18vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap leading-none">
+          DEVID AURA
+        </span>
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
-        
+
         {/* TOP SECTION: Brand & Socials */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-20">
-          
+
           <div className="flex-1">
             {/* Animated Brand Title */}
-            <div className="flex flex-wrap mb-6">
-              {brandName.map((char, index) => (
-                <span 
-                  key={index} 
-                  // 🟢 FIX: opacity-0 ensures hidden before JS loads
-                  className={`brand-char text-5xl md:text-8xl font-['Cormorant_Garamond'] font-medium inline-block text-black ${char === " " ? "w-4 md:w-8" : ""} opacity-0`}
-                  style={{ willChange: "transform, opacity, filter" }} 
-                >
-                  {char}
-                </span>
+            {/* Animated Brand Title */}
+            <div className="flex flex-wrap mb-6 gap-x-3 sm:gap-x-6">
+              {["DEVID", "AURA"].map((word, wordIndex) => (
+                <div key={wordIndex} className="flex">
+                  {word.split("").map((char, charIndex) => (
+                    <span
+                      key={`${wordIndex}-${charIndex}`}
+                      // 🟢 The class "brand-char" is kept here, so GSAP finds it automatically
+                      className="brand-char font-['Cormorant_Garamond'] font-medium inline-block text-black opacity-0 
+                                 text-5xl        /* Mobile */
+                                 sm:text-6xl     /* Small Tablet */
+                                 md:text-7xl     /* iPad/Tablet */
+                                 lg:text-8xl     /* Laptop */
+                                 xl:text-9xl"    /* Large Desktop */
+                      style={{ willChange: "transform, opacity, filter" }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </div>
               ))}
             </div>
-            
+
             <p className="footer-column opacity-0 text-gray-500 font-light text-lg leading-relaxed max-w-md">
-              An olfactory signature. A presence unseen but always felt. 
+              An olfactory signature. A presence unseen but always felt.
               Crafted for those who leave a mark.
             </p>
 
@@ -133,10 +143,10 @@ export default function Footer() {
                 { Icon: Facebook, link: "https://www.facebook.com/profile.php?id=61573374430156" },
                 { Icon: Twitter, link: "https://x.com/devida89667?s=11" }
               ].map(({ Icon, link }, i) => (
-                <a 
-                  key={i} 
-                  href={link} 
-                  target="_blank" 
+                <a
+                  key={i}
+                  href={link}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="social-btn opacity-0 w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-300 group"
                 >
@@ -148,7 +158,7 @@ export default function Footer() {
 
           {/* Links Section */}
           <div className="flex gap-12 md:gap-24 flex-wrap">
-            
+
             {/* Shop Column */}
             <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Discover</h4>
@@ -196,8 +206,8 @@ export default function Footer() {
 
 // Helper Component for consistent links
 const FooterLink = ({ onClick, label, highlight }) => (
-  <li 
-    onClick={onClick} 
+  <li
+    onClick={onClick}
     className={`
       group flex items-center gap-1 cursor-pointer transition-all duration-300 
       ${highlight ? "text-amber-700 font-semibold" : "text-gray-600 hover:text-black"}
@@ -207,9 +217,9 @@ const FooterLink = ({ onClick, label, highlight }) => (
       {label}
       <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-current transition-all duration-300 group-hover:w-full"></span>
     </span>
-    <ArrowUpRight 
-      size={12} 
-      className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" 
+    <ArrowUpRight
+      size={12}
+      className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
     />
   </li>
 );
