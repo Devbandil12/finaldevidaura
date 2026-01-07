@@ -129,9 +129,9 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="flex gap-4 mt-8">
               {[
-                { Icon: Instagram, link: "#" },
-                { Icon: Facebook, link: "#" },
-                { Icon: Twitter, link: "#" }
+                { Icon: Instagram, link: "https://www.instagram.com/devidaura.official/?utm_source=ig_web_button_share_sheet" },
+                { Icon: Facebook, link: "https://www.facebook.com/profile.php?id=61573374430156" },
+                { Icon: Twitter, link: "https://x.com/devida89667?s=11" }
               ].map(({ Icon, link }, i) => (
                 <a 
                   key={i} 
