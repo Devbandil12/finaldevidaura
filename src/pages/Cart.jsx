@@ -1147,7 +1147,7 @@ const ShoppingCart = () => {
                 type="text"
                 value={pincode}
                 onChange={handlePincodeChange}
-                inputmode="numeric"
+                inputMode="numeric"
                 pattern="[0-9]*"
                 placeholder="Enter 6-digit Pincode"
                 onKeyDown={(e) => e.key === "Enter" && checkDeliveryAvailability()}
