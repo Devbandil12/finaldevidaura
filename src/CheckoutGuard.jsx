@@ -33,8 +33,6 @@ export default function CheckoutGuard() {
   if (!isLoaded) return <Loader text="Verifying..." />;
 
   // 🔒 2. SECURITY FIRST: No Ticket? No Entry.
-  // If the user typed the URL manually, 'intent' is null.
-  // We block them IMMEDIATELY and send them to Cart.
   if (!intent) {
      return <Navigate to="/cart" replace />;
   }
@@ -50,8 +48,9 @@ export default function CheckoutGuard() {
   // 4. Wait for Cart Data
   if (isCartLoading) return <Loader text="Loading your cart..." />;
 
-  // 5. Check if Cart is Empty
-  if (!cart || cart.length === 0) {
+  // 5. Check if Cart is Empty (BUT allow if it's a "Buy Now" flow)
+  // We check if the source is NOT 'buy_now'. If it is 'buy_now', we skip this check.
+  if (intent?.source !== "buy_now" && (!cart || cart.length === 0)) {
     return <Navigate to="/cart" replace />;
   }
 
