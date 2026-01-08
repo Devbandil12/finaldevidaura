@@ -1,6 +1,6 @@
 // src/pages/Footer.jsx
 import React, { useLayoutEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { Instagram, Facebook, Twitter, ArrowUpRight } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -9,97 +9,116 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function Footer() {
   const navigate = useNavigate();
+  const location = useLocation(); // 1. Hook to detect route changes
   const footerRef = useRef(null);
 
   useLayoutEffect(() => {
-    let resizeObserver; 
-    let ctx = gsap.context(() => {
-      
-      // 1. Define the Master Timeline (Paused initially)
-      const tl = gsap.timeline({ paused: true });
+    // 2. Kill all existing ScrollTriggers to prevent conflicts from previous pages
+    ScrollTrigger.getAll().forEach(t => t.kill());
 
-      tl.fromTo(
-        ".brand-char",
-        { filter: "blur(12px)", opacity: 0, y: 40, scale: 1.1 },
-        {
-          filter: "blur(0px)",
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          stagger: 0.05,
-          duration: 1.2,
-          ease: "power2.out",
+    let ctx;
+    let resizeObserver;
+
+    // Small delay ensures the new page has physically rendered its DOM before we calculate
+    const timer = setTimeout(() => {
+      if (!footerRef.current) return;
+
+      // 3. Create the GSAP Context
+      ctx = gsap.context(() => {
+        
+        // Force a refresh immediately to catch the new page height
+        ScrollTrigger.refresh();
+
+        // --- DEFINE ANIMATION TIMELINE ---
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo(
+          ".brand-char",
+          { filter: "blur(12px)", opacity: 0, y: 40, scale: 1.1 },
+          {
+            filter: "blur(0px)",
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            stagger: 0.05,
+            duration: 1.2,
+            ease: "power2.out",
+          }
+        ).fromTo(
+          [".footer-column", ".social-btn"],
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            stagger: 0.05,
+            duration: 0.8,
+            ease: "power2.out",
+          },
+          "<"
+        );
+
+        // --- CHECK: IS FOOTER ALREADY VISIBLE? ---
+        // (e.g., Short pages like Cart/Wishlist or Reloads)
+        const rect = footerRef.current.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight;
+        
+        if (isVisible) {
+          // If visible, set to end state immediately so it doesn't look "broken/hidden"
+          tl.progress(1);
         }
-      ).fromTo(
-        [".footer-column", ".social-btn"],
-        { y: 30, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.05,
-          duration: 0.8,
-          ease: "power2.out",
-        },
-        "<"
-      );
 
-      // 🟢 FIX 1: Immediate Visibility Check
-      // If the footer is already in the viewport (e.g., Short Page like Cart or Refresh),
-      // set progress to 1 immediately so content is NOT hidden.
-      const rect = footerRef.current.getBoundingClientRect();
-      if (rect.top < window.innerHeight) {
-        tl.progress(1);
-      }
-
-      // 🟢 FIX 2: Dual Triggers for "Enter Early / Reverse Late" Logic
-      
-      // Trigger A: PLAY when ANY part enters viewport (bottom of screen)
-      ScrollTrigger.create({
-        trigger: footerRef.current,
-        start: "top 98%", // Triggers as soon as it touches bottom
-        onEnter: () => tl.play(),
-      });
-
-      // Trigger B: REVERSE when scrolling up, but only after 60% is visible
-      ScrollTrigger.create({
-        trigger: footerRef.current,
-        start: "top 60%", // Triggers well inside the viewport
-        end: "bottom bottom",
-        onLeaveBack: () => tl.reverse(), // Reverse only when we scroll up past this point
-        onEnter: () => tl.play(),        // Ensure it plays if we scroll down past this point
-        onEnterBack: () => tl.play(),    // Ensure it plays if we scroll back down
-      });
-
-      // 3. Parallax Background (Independent)
-      gsap.to(".footer-watermark", {
-        y: 100,
-        ease: "none",
-        scrollTrigger: {
+        // --- TRIGGER 1: ENTRY (Plays when footer hits bottom of viewport) ---
+        ScrollTrigger.create({
           trigger: footerRef.current,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1,
-        }
+          start: "top 85%", // Start slightly before bottom to catch fast scrolls
+          end: "bottom bottom",
+          onEnter: () => tl.play(),
+        });
+
+        // --- TRIGGER 2: REVERSE (Handles the "60% visible" logic) ---
+        ScrollTrigger.create({
+          trigger: footerRef.current,
+          start: "top 30%", // Triggers well inside the viewport
+          end: "bottom bottom",
+          onLeaveBack: () => tl.reverse(), // Reverse only when we scroll up past this point
+          onEnter: () => tl.play(),        // Play if we scroll down past this
+          onEnterBack: () => tl.play(),    // Play if we scroll back down
+        });
+
+        // --- BACKGROUND PARALLAX ---
+        gsap.to(".footer-watermark", {
+          y: 100,
+          ease: "none",
+          scrollTrigger: {
+            trigger: footerRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          }
+        });
+
+      }, footerRef);
+
+      // 4. RESIZE OBSERVER (The "Home Page" Fix)
+      // Watches the BODY height. If images load and push the footer down,
+      // this fires and recalculates ScrollTrigger positions automatically.
+      resizeObserver = new ResizeObserver(() => {
+        ScrollTrigger.refresh();
       });
+      resizeObserver.observe(document.body);
 
-    }, footerRef);
+    }, 100); // 100ms delay to allow React Router to swap DOM
 
-    // 🟢 FIX 3: Robust Layout Shift Handling (ResizeObserver)
-    // This fixes the "Home Page" issue where images load later and push the footer down.
-    resizeObserver = new ResizeObserver(() => {
-      ScrollTrigger.refresh();
-    });
-    resizeObserver.observe(document.body);
-
-    // Initial Refresh to catch current state
-    ScrollTrigger.refresh();
-
-    // Cleanup
+    // Cleanup function
     return () => {
-      resizeObserver.disconnect();
-      ctx.revert();
+      clearTimeout(timer);
+      if (ctx) ctx.revert(); // Revert animations
+      if (resizeObserver) resizeObserver.disconnect(); // Stop watching body
+      ScrollTrigger.getAll().forEach(t => t.kill()); // Extra safety: Kill triggers
     };
-  }, []); // Run once on mount
+
+  // 5. DEPENDENCY ARRAY: Re-run this ENTIRE effect when the route (location.pathname) changes
+  }, [location.pathname]); 
 
   return (
     <footer
@@ -114,10 +133,8 @@ export default function Footer() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
-
         {/* TOP SECTION: Brand & Socials */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-20">
-
           <div className="flex-1">
             {/* Animated Brand Title */}
             <div className="flex flex-wrap mb-6 gap-x-3 sm:gap-x-6">
@@ -168,7 +185,6 @@ export default function Footer() {
 
           {/* Links Section */}
           <div className="flex gap-12 md:gap-24 flex-wrap">
-
             {/* Shop Column */}
             <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Discover</h4>
