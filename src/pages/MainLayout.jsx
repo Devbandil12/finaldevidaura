@@ -1,15 +1,14 @@
 // src/Layouts/MainLayout.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, Suspense } from "react";
 import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar"; //
-import MobileBackBar from "../Components/MobileBackBar"; //
-import Footer from "./Footer"; //
+import Navbar from "./Navbar";
+import MobileBackBar from "../Components/MobileBackBar";
+import Footer from "./Footer";
+import Loader from "../Components/Loader"; // Import your Loader component
 
 const MainLayout = () => {
-  // 1. Lift state up so Navbar can control BackBar
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
 
-  // 2. Callback passed to Navbar to report scroll direction
   const handleNavVisibility = useCallback((isVisible) => {
     setIsNavbarVisible(isVisible);
   }, []);
@@ -17,15 +16,21 @@ const MainLayout = () => {
   return (
       <div className="flex flex-col min-h-screen bg-[var(--color-off-white)]">
         
-        {/* Navbar reports visibility changes */}
         <Navbar onVisibilityChange={handleNavVisibility} />
         
-        {/* BackBar listens to visibility state */}
         <MobileBackBar isNavbarVisible={isNavbarVisible} />
         
         {/* Content flows underneath */}
-        <main className="flex-grow relative z-10 w-full">
-          <Outlet />
+        {/* Added 'flex flex-col' to ensure the loader centers correctly if needed */}
+        <main className="flex-grow relative z-10 w-full flex flex-col">
+          {/* Wrap Outlet in Suspense to hold layout while content loads */}
+          <Suspense fallback={
+            <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+              <Loader text="Loading..." />
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
         </main>
         
         <Footer />

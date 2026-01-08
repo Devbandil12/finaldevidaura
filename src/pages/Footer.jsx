@@ -12,82 +12,94 @@ export default function Footer() {
   const footerRef = useRef(null);
 
   useLayoutEffect(() => {
-    // 🟢 FIX: Safety delay to allow content (Hero/Products) to push footer down
-    const timer = setTimeout(() => {
-      if (!footerRef.current) return;
+    let resizeObserver; 
+    let ctx = gsap.context(() => {
+      
+      // 1. Define the Master Timeline (Paused initially)
+      const tl = gsap.timeline({ paused: true });
 
-      const ctx = gsap.context(() => {
-        ScrollTrigger.refresh(); // Recalculate positions after layout settles
+      tl.fromTo(
+        ".brand-char",
+        { filter: "blur(12px)", opacity: 0, y: 40, scale: 1.1 },
+        {
+          filter: "blur(0px)",
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          stagger: 0.05,
+          duration: 1.2,
+          ease: "power2.out",
+        }
+      ).fromTo(
+        [".footer-column", ".social-btn"],
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          stagger: 0.05,
+          duration: 0.8,
+          ease: "power2.out",
+        },
+        "<"
+      );
 
-        // 1. Creative Animation: "Cinematic Blur & Focus"
-        gsap.fromTo(
-          ".brand-char",
-          {
-            filter: "blur(12px)",
-            opacity: 0,
-            y: 40,
-            scale: 1.1,
-          },
-          {
-            filter: "blur(0px)",
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            stagger: 0.05,
-            duration: 1.2,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: footerRef.current,
-              // 🟢 FIX: Trigger only when top of footer is 50px inside viewport
-              start: "top bottom-=50",
-              toggleActions: "play none none reverse",
-              // Prevent triggering if page is top but footer is technically in view due to loading
-              onEnter: (self) => {
-                if (window.scrollY === 0 && self.start === 0) {
-                  self.kill(false, true); // Kill if layout is broken
-                }
-              }
-            },
-          }
-        );
+      // 🟢 FIX 1: Immediate Visibility Check
+      // If the footer is already in the viewport (e.g., Short Page like Cart or Refresh),
+      // set progress to 1 immediately so content is NOT hidden.
+      const rect = footerRef.current.getBoundingClientRect();
+      if (rect.top < window.innerHeight) {
+        tl.progress(1);
+      }
 
-        // 2. Background Watermark Parallax
-        gsap.to(".footer-watermark", {
-          y: 100,
-          ease: "none",
-          scrollTrigger: {
-            trigger: footerRef.current,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1,
-          }
-        });
+      // 🟢 FIX 2: Dual Triggers for "Enter Early / Reverse Late" Logic
+      
+      // Trigger A: PLAY when ANY part enters viewport (bottom of screen)
+      ScrollTrigger.create({
+        trigger: footerRef.current,
+        start: "top 98%", // Triggers as soon as it touches bottom
+        onEnter: () => tl.play(),
+      });
 
-        // 3. Elements Fade In
-        gsap.fromTo(
-          [".footer-column", ".social-btn"],
-          { y: 30, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            stagger: 0.05,
-            duration: 0.8,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: footerRef.current,
-              start: "top bottom-=50",
-            },
-          }
-        );
-      }, footerRef);
+      // Trigger B: REVERSE when scrolling up, but only after 60% is visible
+      ScrollTrigger.create({
+        trigger: footerRef.current,
+        start: "top 60%", // Triggers well inside the viewport
+        end: "bottom bottom",
+        onLeaveBack: () => tl.reverse(), // Reverse only when we scroll up past this point
+        onEnter: () => tl.play(),        // Ensure it plays if we scroll down past this point
+        onEnterBack: () => tl.play(),    // Ensure it plays if we scroll back down
+      });
 
-      return () => ctx.revert();
-    }, 200); // 200ms delay for layout stability
+      // 3. Parallax Background (Independent)
+      gsap.to(".footer-watermark", {
+        y: 100,
+        ease: "none",
+        scrollTrigger: {
+          trigger: footerRef.current,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1,
+        }
+      });
 
-    return () => clearTimeout(timer);
-  }, []);
+    }, footerRef);
 
-  const brandName = "DEVID AURA".split("");
+    // 🟢 FIX 3: Robust Layout Shift Handling (ResizeObserver)
+    // This fixes the "Home Page" issue where images load later and push the footer down.
+    resizeObserver = new ResizeObserver(() => {
+      ScrollTrigger.refresh();
+    });
+    resizeObserver.observe(document.body);
+
+    // Initial Refresh to catch current state
+    ScrollTrigger.refresh();
+
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+      ctx.revert();
+    };
+  }, []); // Run once on mount
 
   return (
     <footer
@@ -108,14 +120,12 @@ export default function Footer() {
 
           <div className="flex-1">
             {/* Animated Brand Title */}
-            {/* Animated Brand Title */}
             <div className="flex flex-wrap mb-6 gap-x-3 sm:gap-x-6">
               {["DEVID", "AURA"].map((word, wordIndex) => (
                 <div key={wordIndex} className="flex">
                   {word.split("").map((char, charIndex) => (
                     <span
                       key={`${wordIndex}-${charIndex}`}
-                      // 🟢 The class "brand-char" is kept here, so GSAP finds it automatically
                       className="brand-char font-['Cormorant_Garamond'] font-medium inline-block text-black opacity-0 
                                  text-5xl        /* Mobile */
                                  sm:text-6xl     /* Small Tablet */

@@ -68,7 +68,7 @@ const Wishlist = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center border-2 border-dashed border-gray-300 rounded-xl p-12"
+              className="min-h-[70vh] flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-300 rounded-xl p-12"
             >
               <Heart
                 className="mx-auto h-12 w-12 text-gray-400"
