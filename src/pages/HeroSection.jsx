@@ -271,12 +271,12 @@ const HeroSection = () => {
                 <img src={displayData.layer2} alt="Front Layer" className="relative w-full opacity-50 blur-[2px] mix-blend-multiply rounded-lg" style={{ filter: "saturate(0.55) contrast(0.9)" }} />
               </div>
             )}
-            <div className="relative z-10 w-[220px] lg:w-[280px] h-auto aspect-[4/6]">
+            <div className="relative z-10 w-[220px] lg:w-[280px] h-auto aspect-[5/5] lg:aspect-[4/6] mt-5 lg:mt-12">
               <figure ref={bottleRef} className="w-full h-full cursor-default" style={{ transformStyle: "preserve-3d", perspective: 1500 }}>
                 <img
                   src={displayData.image}
                   alt="Devid Aura Perfume"
-                  className="relative z-10 w-full h-full object-contain filter sepia-[0.15] contrast-[1] brightness-[1] ml-10 opacity-85"
+                  className="relative z-10 w-full h-full object-contain filter sepia-[0.15] contrast-[1] brightness-[1] ml-10 lg:ml-13 opacity-85"
                   style={{ maskImage: "linear-gradient(to bottom, black 92%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 92%, transparent 100%)" }}
                 />
               </figure>
