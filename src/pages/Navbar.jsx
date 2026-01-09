@@ -302,7 +302,7 @@ const Navbar = ({ onVisibilityChange }) => {
     { label: "Home", icon: BiHomeHeart, onClick: () => { navigate("/"); closeSidebar(); } },
     { label: "All Products", icon: Store, onClick: () => { navigate("/products"); closeSidebar(); } },
     { label: "Build Combo", icon: Sparkles, onClick: () => { navigate("/custom-combo"); closeSidebar(); } },
-    { label: "About Us", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { navigate("/about"); closeSidebar(); } },
+    { label: "Our Story", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { navigate("/about"); closeSidebar(); } },
   ], [navigate, closeSidebar]);
 
   const accountLinks = useMemo(() => [
@@ -335,7 +335,7 @@ const Navbar = ({ onVisibilityChange }) => {
             <li><a onClick={() => navigate("/")}>Home</a></li>
             <li><a onClick={() => navigate("/products")}>Shop</a></li>
             <li><a onClick={() => navigate("/custom-combo")}>Build Combo</a></li>
-            <li><a onClick={() => navigate("/about")}>About Us</a></li>
+            <li><a onClick={() => navigate("/about")}>Our Story</a></li>
           </ul>
         </div>
 

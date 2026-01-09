@@ -189,7 +189,7 @@ header {
 
 .nav-links li a {
   text-decoration: none;
-  font-weight: 00;
+  font-weight: 300;
 }
 
 .part-2 a {
@@ -197,6 +197,7 @@ header {
   text-decoration: none !important;
   position: relative;
   font-weight: 200;
+  color: #fefefd !important;
 }
 
 .part-2 a::after {

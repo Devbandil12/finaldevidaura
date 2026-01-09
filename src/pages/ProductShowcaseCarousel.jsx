@@ -16,39 +16,35 @@ const baseTheme = {
     colors: {
         luxuryDark: "225 15% 11%",
         background: "210 20% 98%",
-        accentPrimary: "222 47% 11%", 
-        accentSecondary: "215 16% 47%",    
+        accentPrimary: "222 47% 11%",
+        accentSecondary: "215 16% 47%",
     },
 };
 
-/* ------------------ ANIMATION VARIANTS (Optimized) ------------------ */
-// Helper to detect mobile width safely
-const getIsMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
-
+/* ------------------ ANIMATION VARIANTS ------------------ */
 const infoVariants = {
     hidden: { opacity: 0 },
-    visible: { 
-        opacity: 1, 
-        transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1, delayChildren: 0.2 } 
+    visible: {
+        opacity: 1,
+        transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1, delayChildren: 0.2 }
     },
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, x: -10 }, // Reduced movement from -20 to -10 for simpler feel
-    visible: { 
-        opacity: 1, 
-        x: 0, 
-        transition: { duration: 0.6, ease: "easeOut" } 
+    hidden: { opacity: 0, x: -10 },
+    visible: {
+        opacity: 1,
+        x: 0,
+        transition: { duration: 0.6, ease: "easeOut" }
     },
 };
 
-// SIMPLIFIED VARIANTS: Checks if mobile to remove 3D rotation
 const luxuryImageVariants = {
     enter: ({ direction, isMobile }) => ({
-        x: direction > 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100), // Less distance on mobile
+        x: direction > 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100),
         opacity: 0,
         scale: 0.95,
-        rotateY: isMobile ? 0 : (direction > 0 ? -15 : 15), // Disable 3D on mobile
+        rotateY: isMobile ? 0 : (direction > 0 ? -15 : 15),
     }),
     center: {
         zIndex: 1,
@@ -63,27 +59,26 @@ const luxuryImageVariants = {
         x: direction < 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100),
         opacity: 0,
         scale: 0.95,
-        rotateY: isMobile ? 0 : (direction > 0 ? 15 : -15), // Disable 3D on mobile
+        rotateY: isMobile ? 0 : (direction > 0 ? 15 : -15),
         transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
     }),
 };
 
-const rotateCircleTransition = { duration: 20, repeat: Infinity, ease: "linear" };
 const rotateCircle = {
     animate: {
         rotate: 360,
-        transition: rotateCircleTransition
+        transition: { duration: 20, repeat: Infinity, ease: "linear" }
     }
 };
 
 /* ------------------ HELPER: BLUR IMAGE COMPONENT ------------------ */
-const BlurImage = ({ src, alt, className }) => {
+const BlurImage = ({ src, alt, className, priority = false }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     return (
         <div className={`relative overflow-hidden ${className} bg-gray-200`}>
             {/* Smooth fading placeholder */}
-            <motion.div 
+            <motion.div
                 className="absolute inset-0 bg-gray-300 z-10"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: isLoading ? 1 : 0 }}
@@ -94,14 +89,15 @@ const BlurImage = ({ src, alt, className }) => {
                 src={src}
                 alt={alt}
                 initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
-                animate={{ 
-                    opacity: isLoading ? 0 : 1, 
+                animate={{
+                    opacity: isLoading ? 0 : 1,
                     filter: isLoading ? "blur(10px)" : "blur(0px)",
                     scale: 1
                 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 onLoad={() => setIsLoading(false)}
-                fetchPriority="high"
+                fetchPriority={priority ? "high" : "auto"}
+                loading={priority ? "eager" : "lazy"}
                 decoding="async"
                 className="relative z-0 w-full h-full object-cover"
             />
@@ -111,38 +107,87 @@ const BlurImage = ({ src, alt, className }) => {
 
 /* ------------------ MAIN COMPONENT ------------------ */
 export default function ImmersiveProductShowcase() {
-    const { products = [] } = useContext(ProductContext);
+    const { products: contextProducts } = useContext(ProductContext);
+
+    // ⚡ 1. INSTANT STATE: Initialize from LocalStorage (Cache)
+    // This ensures the carousel appears immediately, even if Context is still fetching.
+    const [products, setProducts] = useState(() => {
+        try {
+            const cached = localStorage.getItem("immersive_showcase_cache");
+            return cached ? JSON.parse(cached) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
     const [activeIdx, setActiveIdx] = useState(0);
     const [direction, setDirection] = useState(0);
     const [storyExpanded, setStoryExpanded] = useState(false);
-    
-    // Track mobile state for animation logic
     const [isMobile, setIsMobile] = useState(false);
 
+    // ⚡ 2. SYNC & CACHE: Update local state when Context data arrives
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        if (contextProducts && contextProducts.length > 0) {
+            // Filter valid products
+            const valid = contextProducts.filter(p => p.category !== "Template" && !p.isArchived);
+            
+            setProducts(prev => {
+                // Only update if data actually changed to avoid re-renders
+                if (JSON.stringify(prev) !== JSON.stringify(valid)) {
+                    localStorage.setItem("immersive_showcase_cache", JSON.stringify(valid));
+                    return valid;
+                }
+                return prev;
+            });
+        }
+    }, [contextProducts]);
+
+    // Resize Listener
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
         checkMobile();
         window.addEventListener("resize", checkMobile);
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    // Filter valid products
-    const visibleProducts = useMemo(() => {
-        return products.filter(p => p.category !== "Template" && !p.isArchived);
-    }, [products]);
+    // ⚡ 3. PRELOAD IMAGES: Preload Current, Next, and Prev images
+    useEffect(() => {
+        if (!products.length) return;
+        
+        const indicesToLoad = [
+            activeIdx,
+            (activeIdx + 1) % products.length,
+            (activeIdx - 1 + products.length) % products.length
+        ];
+
+        indicesToLoad.forEach(idx => {
+            const p = products[idx];
+            if (p) {
+                // Handle both camelCase imageUrl and lowercase imageurl, or array format
+                const src = p.imageUrl || (Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl);
+                if (src) {
+                    const img = new Image();
+                    img.src = src;
+                }
+            }
+        });
+    }, [activeIdx, products]);
+
 
     // --- Handlers ---
     const onNext = useCallback(() => {
+        if (!products.length) return;
         setDirection(1);
-        setActiveIdx((i) => (visibleProducts.length ? (i + 1) % visibleProducts.length : 0));
+        setActiveIdx((i) => (i + 1) % products.length);
         setStoryExpanded(false);
-    }, [visibleProducts.length]);
+    }, [products.length]);
 
     const onPrev = useCallback(() => {
+        if (!products.length) return;
         setDirection(-1);
-        setActiveIdx((i) => (visibleProducts.length ? (i - 1 + visibleProducts.length) % visibleProducts.length : 0));
+        setActiveIdx((i) => (i - 1 + products.length) % products.length);
         setStoryExpanded(false);
-    }, [visibleProducts.length]);
+    }, [products.length]);
 
     const goToIndex = (i) => {
         setDirection(i > activeIdx ? 1 : -1);
@@ -157,6 +202,7 @@ export default function ImmersiveProductShowcase() {
         preventScrollOnSwipe: true,
     });
 
+    // Keyboard Nav
     useEffect(() => {
         const handleKey = (e) => {
             if (e.key === "ArrowRight") onNext();
@@ -166,14 +212,19 @@ export default function ImmersiveProductShowcase() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [onNext, onPrev]);
 
+    // Safety check for index
     useEffect(() => {
-        if (!visibleProducts || visibleProducts.length === 0) return;
-        if (activeIdx >= visibleProducts.length) setActiveIdx(0);
-    }, [visibleProducts, activeIdx]);
+        if (products.length > 0 && activeIdx >= products.length) setActiveIdx(0);
+    }, [products, activeIdx]);
 
-    // --- Data Preparation ---
-    const product = visibleProducts[activeIdx] || {};
+
+    // --- Render Logic ---
     
+    // If absolutely no data (no cache AND no context), show nothing or a skeleton
+    if (products.length === 0) return null;
+
+    const product = products[activeIdx] || {};
+
     const colors = {
         bg: `hsl(${baseTheme.colors.background})`,
         text: `hsl(${baseTheme.colors.luxuryDark})`,
@@ -185,19 +236,25 @@ export default function ImmersiveProductShowcase() {
     const teaser = storyText.slice(0, 150).trim();
     const isLongStory = storyText && storyText.length > 150;
 
-    const allNotes = useMemo(() => {
-        const parseNotes = (source) => {
-            if (!source) return [];
-            if (Array.isArray(source)) return source;
-            return source.split(',').map(n => n.trim());
-        };
-        const top = parseNotes(product.composition);
-        const heart = parseNotes(product.fragrance);
-        const base = parseNotes(product.fragranceNotes);
-        return [...top, ...heart, ...base];
-    }, [product]);
+    // Robust Note Parsing
+    const allNotes = (() => {
+        try {
+            const parseNotes = (source) => {
+                if (!source) return [];
+                if (Array.isArray(source)) return source;
+                return typeof source === 'string' ? source.split(',').map(n => n.trim()) : [];
+            };
+            const top = parseNotes(product.composition);
+            const heart = parseNotes(product.fragrance);
+            const base = parseNotes(product.fragranceNotes);
+            return [...top, ...heart, ...base];
+        } catch (e) {
+            return [];
+        }
+    })();
 
-    if (visibleProducts.length === 0 && products.length > 0) return null;
+    // Handle Image Source (CamelCase or Array support)
+    const displayImage = product.imageUrl || (Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl);
 
     return (
         <PageTransition>
@@ -211,11 +268,11 @@ export default function ImmersiveProductShowcase() {
                         An immersive journey into our signature fragrances.
                     </p>
                 </div>
-                
+
                 {/* --- MAIN SHOWCASE --- */}
                 <section className="relative w-full py-16 md:py-24 min-h-screen flex flex-col items-center justify-center overflow-hidden ">
                     <div className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-16 md:gap-22 px-6 touch-action-pan-y" {...swipeHandlers}>
-                        
+
                         {/* --- LEFT PANEL --- */}
                         <motion.div
                             key={activeIdx}
@@ -226,17 +283,17 @@ export default function ImmersiveProductShowcase() {
                             viewport={{ once: true, amount: 0.3 }}
                         >
                             <div className="relative w-full flex flex-col items-start justify-center">
-                                <motion.div 
-                                    initial={{ height: 0 }} 
-                                    animate={{ height: "100%" }} 
+                                <motion.div
+                                    initial={{ height: 0 }}
+                                    animate={{ height: "100%" }}
                                     transition={{ duration: 1, delay: 0.2 }}
                                     className="absolute left-0 top-0 bottom-0 w-[4px] lg:w-1.5 opacity-100 rounded-full"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: colors.brandLight,
-                                        boxShadow: `0 0 15px rgba(0,0,0,0.1)` 
+                                        boxShadow: `0 0 15px rgba(0,0,0,0.1)`
                                     }}
                                 />
-                                
+
                                 <div className="pl-6 lg:pl-8 w-full">
                                     <motion.div variants={itemVariants} className="flex items-center gap-4 mb-4 lg:mb-6">
                                         <span className="text-xs lg:text-sm font-bold tracking-[0.2em] opacity-80" style={{ color: colors.brandDeep }}>
@@ -244,22 +301,22 @@ export default function ImmersiveProductShowcase() {
                                         </span>
                                     </motion.div>
 
-                                    <motion.h1 
-                                        className="text-5xl md:text-8xl  font-medium tracking-tight uppercase leading-none" 
-                                        style={{ 
+                                    <motion.h1
+                                        className="text-5xl md:text-8xl  font-medium tracking-tight uppercase leading-none"
+                                        style={{
                                             color: colors.text,
                                             textShadow: "0 2px 40px rgba(0, 0, 0, 0.05)"
-                                        }} 
+                                        }}
                                         variants={itemVariants}
                                     >
                                         {product.name || "Untitled"}
                                     </motion.h1>
-                                    
+
                                     <motion.div variants={itemVariants} className="mt-6 text-sm lg:text-base leading-relaxed max-w-lg opacity-80" style={{ color: colors.text }}>
                                         <p id="scent-story" className="transition-all duration-500 text-left">
                                             {storyExpanded ? storyText : teaser + (isLongStory ? "..." : "")}
                                         </p>
-                                        
+
                                         {isLongStory && (
                                             <button
                                                 className="group flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-widest transition-all hover:opacity-70"
@@ -286,12 +343,12 @@ export default function ImmersiveProductShowcase() {
                                                             {note}
                                                         </span>
                                                         {i < allNotes.length - 1 && (
-                                                            <span 
-                                                                className="w-1.5 h-1.5 rounded-full" 
-                                                                style={{ 
+                                                            <span
+                                                                className="w-1.5 h-1.5 rounded-full"
+                                                                style={{
                                                                     backgroundColor: colors.brandLight,
                                                                     opacity: 0.3
-                                                                }} 
+                                                                }}
                                                             />
                                                         )}
                                                     </div>
@@ -303,7 +360,7 @@ export default function ImmersiveProductShowcase() {
                                     </motion.div>
 
                                     <motion.div variants={itemVariants} className="flex gap-3 mt-10">
-                                        {visibleProducts.map((_, i) => (
+                                        {products.map((_, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => goToIndex(i)}
@@ -319,21 +376,21 @@ export default function ImmersiveProductShowcase() {
 
                         {/* --- RIGHT PANEL --- */}
                         <div className="relative w-full h-[450px] md:h-[700px] flex items-center justify-center perspective-1200 overflow-visible mt-10 lg:mt-0">
-                            
-                            <motion.div 
+
+                            <motion.div
                                 className="absolute inset-0 z-0 flex items-center justify-center transition-colors duration-1000"
                                 animate={{ background: `radial-gradient(circle at center, ${colors.brandLight} 0%, transparent 70%)` }}
-                                style={{ opacity: 0.1, willChange: "opacity" }} 
+                                style={{ opacity: 0.1, willChange: "opacity" }}
                             />
-                            
+
                             <div className="absolute inset-0 z-0 flex items-center justify-center">
-                                <motion.div 
+                                <motion.div
                                     className="w-[280px] h-[280px] md:w-[450px] md:h-[450px] rounded-full border border-dashed"
                                     style={{ borderColor: colors.brandLight, opacity: 0.2, willChange: "transform" }}
                                     variants={rotateCircle}
                                     animate="animate"
                                 />
-                                <motion.div 
+                                <motion.div
                                     className="absolute w-[240px] h-[240px] md:w-[380px] md:h-[380px] rounded-full border"
                                     style={{ borderColor: colors.brandLight, opacity: 0.1, willChange: "transform" }}
                                     animate={{ rotate: -360 }}
@@ -342,7 +399,7 @@ export default function ImmersiveProductShowcase() {
                             </div>
 
                             <div className="absolute right-0 top-0 bottom-0 z-0 flex items-center justify-end overflow-hidden pointer-events-none opacity-5 select-none">
-                                <motion.span 
+                                <motion.span
                                     key={product.name}
                                     initial={{ y: 50, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
@@ -367,11 +424,12 @@ export default function ImmersiveProductShowcase() {
                                     style={{ willChange: "transform, opacity" }}
                                 >
                                     <div className="relative w-full h-full rounded-t-[100px] rounded-b-[40px] overflow-hidden shadow-2xl transition-all duration-500 bg-white/5 backdrop-blur-sm border border-black/5 group">
-                                        
-                                        {product.imageurl?.[0] ? (
-                                            <BlurImage 
-                                                src={product.imageurl[0]} 
+
+                                        {displayImage ? (
+                                            <BlurImage
+                                                src={displayImage}
                                                 alt={product.name}
+                                                priority={true} // Prioritize active image
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                             />
                                         ) : (
@@ -379,17 +437,17 @@ export default function ImmersiveProductShowcase() {
                                                 <span className="text-7xl font-bold opacity-30">{product.name?.[0]}</span>
                                             </div>
                                         )}
-                                        
+
                                         <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10 pointer-events-none" />
                                     </div>
-                                    
-                                    <div 
-                                        className="absolute -bottom-8 left-4 right-4 h-6 rounded-[50%] blur-xl opacity-30" 
-                                        style={{ backgroundColor: "#000" }} 
+
+                                    <div
+                                        className="absolute -bottom-8 left-4 right-4 h-6 rounded-[50%] blur-xl opacity-30"
+                                        style={{ backgroundColor: "#000" }}
                                     />
                                 </motion.div>
                             </AnimatePresence>
-                            
+
                             <div className="absolute bottom-4 right-0 left-0 z-20 flex justify-center gap-12">
                                 <button onClick={onPrev} className="group flex items-center gap-2 text-sm uppercase tracking-widest font-medium transition-all hover:-translate-x-1" style={{ color: colors.text }}>
                                     <ChevronLeft size={16} />
@@ -399,8 +457,8 @@ export default function ImmersiveProductShowcase() {
                                     <ChevronRight size={16} />
                                 </button>
                             </div>
-                            
-                            <motion.div 
+
+                            <motion.div
                                 className="absolute top-1/4 right-1/4 opacity-80"
                                 animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
                                 transition={{ duration: 3, repeat: Infinity }}

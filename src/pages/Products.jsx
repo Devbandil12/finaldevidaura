@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 
-import { Heart, Sparkles, Bell, Check } from "lucide-react"; // Added 'Check' icon
+import { Heart, Sparkles, Bell, Check } from "lucide-react";
 import PageTransition from "./PageTransition";
 
 // --- CONTENT MAPPING ---
@@ -46,8 +46,8 @@ const cardVariants = {
   visible: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.5, ease: "circOut" } }
 };
 
-// --- BLUR IMAGE COMPONENT ---
-const BlurImage = ({ src, alt, className }) => {
+// --- BLUR IMAGE COMPONENT (OPTIMIZED) ---
+const BlurImage = ({ src, alt, className, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   return (
     <div className={`relative overflow-hidden w-full h-full bg-[#f0eee6] ${className}`}>
@@ -58,7 +58,10 @@ const BlurImage = ({ src, alt, className }) => {
         animate={{ opacity: isLoaded ? 1 : 0 }}
         transition={{ duration: 0.5 }}
         onLoad={() => setIsLoaded(true)}
-        loading="lazy"
+        // ⚡ OPTIMIZATION: Eager load if priority is true
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        decoding="async"
         className={`w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105 ${isLoaded ? 'blur-0' : 'blur-lg'}`}
       />
     </div>
@@ -66,9 +69,33 @@ const BlurImage = ({ src, alt, className }) => {
 };
 
 const Products = () => {
-  const { products } = useContext(ProductContext);
+  const { products: contextProducts } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
   const navigate = useNavigate();
+
+  // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem("all_products_cache");
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // ⚡ 2. SYNC WITH CONTEXT: Update silently when fresh data arrives
+  useEffect(() => {
+    if (contextProducts && contextProducts.length > 0) {
+      // Sort/Filter logic if needed, or just raw
+      setProducts(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(contextProducts)) {
+            localStorage.setItem("all_products_cache", JSON.stringify(contextProducts));
+            return contextProducts;
+        }
+        return prev;
+      });
+    }
+  }, [contextProducts]);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -83,8 +110,6 @@ const Products = () => {
     }
   };
 
-  // 🟢 FIXED: Use handleToggleWishlist directly
-  // This ensures the item is added to your existing Wishlist state
   const handleJoinWaitlist = (e, product) => {
     handleToggleWishlist(e, product);
   };
@@ -143,8 +168,8 @@ const Products = () => {
 
         {/* --- SECTIONS --- */}
         {Object.keys(groupedProducts).length > 0 ? (
-           Object.entries(groupedProducts).map(([category, categoryProducts], index) => {
-            const indexStr = String(index + 1).padStart(2, '0');
+           Object.entries(groupedProducts).map(([category, categoryProducts], groupIndex) => {
+            const indexStr = String(groupIndex + 1).padStart(2, '0');
             const meta = categoryMetadata[category] || { 
                 title: category, 
                 description: "Explore our exclusive selection.", 
@@ -197,6 +222,9 @@ const Products = () => {
                     const sizeLabel = displayVariant.size ? `${displayVariant.size}ml` : "Std";
                     const staggerClass = (idx % 2 !== 0) ? "md:translate-y-12" : "";
 
+                    // ⚡ OPTIMIZATION: Prioritize images for the first category, first 4 items
+                    const isPriority = groupIndex === 0 && idx < 4;
+
                     return (
                       <motion.div
                         key={product.id}
@@ -209,6 +237,7 @@ const Products = () => {
                           <BlurImage 
                               src={imageUrl} 
                               alt={product.name} 
+                              priority={isPriority} // Pass priority here
                               className={isOutOfStock ? "grayscale-[0.8] opacity-85" : ""}
                           />
 
@@ -230,10 +259,9 @@ const Products = () => {
                                     </button>
                                 </div>
                              ) : (
-                                // --- OUT OF STOCK: FUNCTIONAL BUTTON ---
+                                // --- OUT OF STOCK ---
                                 <button 
                                     onClick={(e) => handleJoinWaitlist(e, product)}
-                                    // Change color based on 'inWishlist' status
                                     className={`w-full px-4 py-3 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${
                                         inWishlist 
                                             ? "bg-[#C5A059] text-white" 
@@ -279,6 +307,7 @@ const Products = () => {
             );
            })
         ) : (
+            // Only shows if Cache AND Context are empty
             <div className="h-[40vh] w-full flex flex-col items-center justify-center text-stone-400">
                 <Sparkles className="mb-4 opacity-20" size={48} />
                 <p className="text-sm tracking-widest uppercase">Collection Empty</p>

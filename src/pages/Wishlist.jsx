@@ -1,200 +1,229 @@
 // src/pages/Wishlist.jsx
-
 import React, { useContext } from "react";
-import { Heart, ShoppingBag, Trash2 } from "lucide-react";
+import { ShoppingCart, X, Trash2, ArrowRight, Sparkles } from "lucide-react";
 import { CartContext } from "../contexts/CartContext";
 import Loader from "../Components/Loader";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+
+// --- UI Button (Matched with ProductDetail) ---
+const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children, disabled }) => {
+  const baseStyles = "inline-flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none active:scale-95";
+
+  const sizeStyles = {
+    default: "h-12 py-2 px-6",
+    sm: "h-9 px-4 text-xs",
+    icon: "h-10 w-10"
+  };
+
+  const variantStyles = {
+    primary: "bg-gray-900 text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.2)] hover:bg-black",
+    secondary: "bg-white text-gray-700 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]",
+    text: "bg-transparent text-gray-400 hover:text-gray-900 px-0 h-auto"
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+    >
+      {children}
+    </button>
+  );
+};
 
 const Wishlist = () => {
+  const navigate = useNavigate();
   const {
     wishlist,
     isWishlistLoading,
     removeFromWishlist,
     clearWishlist,
-    moveFromWishlistToCart, 
+    moveFromWishlistToCart,
   } = useContext(CartContext);
-
-  // 🟢 FIXED: Pass product and variant objects
-  const handleMoveToCart = (wishlistItem) => {
-    // moveFromWishlistToCart expects (product, variant)
-    moveFromWishlistToCart(wishlistItem.product, wishlistItem.variant);
-  };
-
-  // 🟢 FIXED: Pass variant object
-  const handleRemoveItem = (wishlistItem) => {
-    // removeFromWishlist expects (variant)
-    removeFromWishlist(wishlistItem.variant);
-  };
-
-  const handleClearWishlist = () => {
-    clearWishlist();
-  };
 
   if (isWishlistLoading) {
     return (
-      <>
-        <title>Loading Wishlist... | Devid Aura</title>
-        <Loader text="Loading wishlist..." />
-      </>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFDFD]">
+        <Loader text="Loading collection..." />
+      </div>
     );
   }
 
   return (
     <>
       <title>My Wishlist | Devid Aura</title>
-      <meta name="description" content="View and manage your saved items. Keep track of all your favorite fragrances from Devid Aura." />
 
-      <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8 pt-[50px]">
-        <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            My Wishlist
-          </h1>
-          {wishlist.length > 0 && (
-            <motion.button 
-              onClick={handleClearWishlist} 
-              className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Trash2 className="h-4 w-4" /> <span className="hidden sm:inline">Clear Wishlist</span>
-            </motion.button>
-          )}
-        </div>
+      <div className="min-h-screen text-gray-800 bg-[#FDFDFD] selection:bg-gray-100 selection:text-black">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 w-full pt-[80px] pb-32">
 
-        <AnimatePresence>
-          {wishlist.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="min-h-[70vh] flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-300 rounded-xl p-12"
-            >
-              <Heart
-                className="mx-auto h-12 w-12 text-gray-400"
-                strokeWidth={1}
-              />
-              <h2 className="mt-4 text-xl font-semibold text-zinc-800">
-                Your Wishlist is a Blank Canvas
-              </h2>
-              <p className="mt-2 text-sm text-gray-500">
-                Find something you love and add it here to save for later.
+          {/* --- Header --- */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mb-2 tracking-tight">
+                Wishlist
+              </h1>
+              <p className="text-gray-400 text-sm font-light tracking-wide">
+                {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} curated in your collection
               </p>
-              <a
-                href="/"
-                className="mt-6 inline-block bg-black text-white text-sm font-medium px-6 py-2.5 rounded-md shadow-sm hover:opacity-90 transition-opacity"
+            </div>
+
+            {wishlist.length > 0 && (
+              <Button
+                onClick={clearWishlist}
+                variant="text"
+                className="gap-2 text-xs font-bold uppercase tracking-widest"
               >
-                Discover Products
-              </a>
-            </motion.div>
-          ) : (
-            <motion.div layout className="space-y-4">
-              <AnimatePresence>
-                {wishlist.map((wishlistItem) => {
-                  // Destructuring is correct
-                  const { product, variant, wishlistId } = wishlistItem;
+                <Trash2 className="h-3.5 w-3.5" /> Clear All
+              </Button>
+            )}
+          </div>
 
-                  if (!product || !variant) {
-                    console.error("Invalid wishlist item found:", wishlistItem);
-                    return null;
-                  }
-                  
-                  // Price/stock logic is correct
-                  const discountedPrice = Math.floor(
-                    variant.oprice * (1 - variant.discount / 100)
-                  );
-                  
-                  const stockStatus = variant.stock === 0
-                    ? "Out of Stock"
-                    : variant.stock <= 10
-                    ? `Only ${variant.stock} left!`
-                    : "In Stock"; 
+          <AnimatePresence mode="wait">
+            {wishlist.length === 0 ? (
+              // --- Empty State (Matched with ProductDetail Empty states) ---
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)]"
+              >
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                  <Sparkles className="h-6 w-6 text-gray-400" strokeWidth={1.5} />
+                </div>
+                <h2 className="text-2xl font-light text-gray-900 mb-3">Your collection is empty</h2>
+                <p className="text-gray-500 mb-8 max-w-sm font-light">
+                  Discover our captivating fragrances and curate your personal olfactory signature.
+                </p>
+                <Button onClick={() => navigate("/")} variant="primary" className="gap-3">
+                  Discover Collection <ArrowRight className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            ) : (
+              // --- Grid Layout ---
+              <motion.div
+                layout
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+              >
+                <AnimatePresence>
+                  {wishlist.map((wishlistItem) => {
+                    const { product, variant, wishlistId } = wishlistItem;
+                    if (!product || !variant) return null;
 
-                  return (
-                    <motion.article
-                      key={wishlistId} // Use unique wishlistId
-                      layout
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}
-                      className="bg-white rounded-lg p-4 flex items-start gap-4 shadow-lg shadow-gray-100/50 border border-gray-100 hover:shadow-gray-200/50 transition duration-300 ease-in-out"
-                      aria-labelledby={`wl-${product.id}-name`}
-                    >
-                      {/* Left: Image */}
-                      <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center">
-                        <img
-                          src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
-                          alt={product.name}
-                          className="h-20 w-20 object-contain"
-                          loading="lazy"
-                        />
-                      </div>
+                    const price = Math.floor(variant.oprice * (1 - variant.discount / 100));
+                    const isOutOfStock = variant.stock === 0;
+                    const img = Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl;
 
-                      {/* Right: All Content */}
-                      <div className="flex-grow flex flex-col min-[570px]:flex-row min-[570px]:items-center min-[570px]:gap-4">
-                        {/* Text Section */}
-                        <div className="flex-grow">
-                          <h3
-                            id={`wl-${product.id}-name`}
-                            className="text-lg font-semibold text-zinc-800"
-                            title={product.name}
-                          >
-                            {product.name}
-                          </h3>
-                          
-                          <p className="text-sm text-gray-500 mt-1">
-                           {variant.size}ml
-                          </p>
+                    return (
+                      <motion.div
+                        key={wishlistId}
+                        layout
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="group relative bg-white rounded-[2rem] p-4 flex flex-col transition-all duration-500 border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                      >
+                        {/* Remove Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromWishlist(variant);
+                          }}
+                          className="absolute top-6 right-6 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-gray-100"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
 
-                          <p className={`mt-1 text-sm font-medium ${variant.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {stockStatus}
-                          </p>
-                          
-                          <div className="mt-2 flex items-baseline justify-between min-[570px]:justify-start min-[570px]:gap-2">
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-xl font-bold text-zinc-900">
-                                ₹{discountedPrice}
+                        {/* Image Area */}
+                        <div
+                          className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-6 cursor-pointer bg-gray-50/30"
+                          onClick={() => navigate(`/product/${product.id}`)}
+                        >
+                          <img
+                            src={img}
+                            alt={product.name}
+                            className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
+                            loading="lazy"
+                          />
+
+                          {/* Badges (Matched teal/red style from ProductDetail) */}
+                          <div className="absolute top-4 left-4 flex flex-col gap-2">
+                            {isOutOfStock ? (
+                              <span className="bg-red-50 text-red-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-red-100/50">
+                                Out of Stock
                               </span>
-                              <span className="text-sm line-through text-gray-400">
-                                ₹{variant.oprice}
-                              </span>
-                            </div>
-                            {variant.discount > 0 && (
-                              <span className="text-sm font-semibold text-green-600">
-                                ({variant.discount}% OFF)
-                              </span>
+                            ) : (
+                              variant.discount > 0 && (
+                                <span className="bg-teal-50 text-teal-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-teal-100/50">
+                                  -{variant.discount}% OFF
+                                </span>
+                              )
                             )}
                           </div>
                         </div>
 
-                        {/* Buttons Section */}
-                        <div className="w-full min-[570px]:w-auto flex items-center gap-3 mt-4 min-[570px]:mt-0">
-                          <button
-                            onClick={() => handleMoveToCart(wishlistItem)} // 🟢 Pass full item
-                            aria-label="Move to Bag"
-                            disabled={variant.stock === 0} 
-                            className="flex-1 min-[570px]:flex-initial w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-medium py-2 px-4 rounded-md hover:opacity-90 transition-opacity disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        {/* Content */}
+                        <div className="flex flex-col flex-grow px-2">
+                          <h3
+                            onClick={() => navigate(`/product/${product.id}`)}
+                            className="text-xl font-medium text-gray-900 cursor-pointer hover:text-gray-600 transition-colors mb-1"
                           >
-                            <ShoppingBag className="h-4 w-4" />
-                            {variant.stock === 0 ? "Out of Stock" : "Move to Bag"}
-                          </button>
-                          <button
-                            onClick={() => handleRemoveItem(wishlistItem)} // 🟢 Pass full item
-                            aria-label="Remove from Wishlist"
-                            className="p-2 text-gray-500 border border-gray-300 rounded-md hover:bg-gray-100 hover:text-zinc-800 transition-colors"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
+                            {product.name}
+                          </h3>
+
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-4">
+                            {variant.name || `${variant.size}ML`}
+                          </p>
+
+                          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between gap-4">
+                            <div className="flex flex-col">
+                              <span className="text-lg font-light text-gray-900">
+                                ₹{price.toLocaleString("en-IN")}
+                              </span>
+                              {variant.discount > 0 && (
+                                <span className="text-xs line-through text-gray-400 font-light">
+                                  ₹{variant.oprice.toLocaleString("en-IN")}
+                                </span>
+                              )}
+                            </div>
+
+                            <Button
+                              onClick={() => {
+                                if (isOutOfStock) {
+                                  // Navigate to product page if out of stock
+                                  navigate(`/product/${product.id}`);
+                                } else {
+                                  // Add to cart if in stock
+                                  moveFromWishlistToCart(product, variant);
+                                }
+                              }}
+                              // Removed disabled={isOutOfStock} so the button remains clickable for "Detail"
+                              variant={isOutOfStock ? "secondary" : "primary"}
+                              size="sm"
+                            >
+                              {isOutOfStock ? (
+                                <>
+                                  <ArrowRight className="h-3.5 w-3.5 mr-2" />
+                                  Detail
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingCart className="h-3.5 w-3.5 mr-2" />
+                                  Add
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </motion.article>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
     </>
   );
 };

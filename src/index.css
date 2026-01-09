@@ -277,3 +277,51 @@ p {
   color: #cbd5e1;
   /* slate-300 */
 }
+
+
+/* index.css */
+
+/* ... (keep existing code) ... */
+
+@layer components {
+  /* Enhanced Typography for the Feature Grid */
+  .usp-title {
+    font-family: "Manrope", sans-serif; /* Clean sans for small headers */
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--color-black);
+  }
+
+  .usp-description {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    color: #666; /* Softer than the body text */
+    line-height: 1.4;
+  }
+}
+
+/* Fix for background blending on images with slight backgrounds */
+.blend-luxury {
+  mix-blend-mode: darken;
+  filter: saturate(0.8) contrast(1.05);
+}
+
+
+@layer utilities {
+  /* Allows smooth snapping to each card on mobile */
+  .snap-x-mandatory {
+    scroll-snap-type: x mandatory;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

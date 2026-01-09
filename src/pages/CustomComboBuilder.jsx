@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, useCallback } from "react";
+import React, { useState, useContext, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -60,7 +60,7 @@ const cardVariants = {
 };
 
 // --- PERFUME CARD (Mobile Optimized) ---
-const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSelect }) => {
+const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSelect, priority = false }) => {
     const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
         ? product.imageurl[0]
         : "/placeholder.png";
@@ -96,10 +96,13 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
                 <img
                     src={imageUrl}
                     alt={product.name}
+                    loading={priority ? "eager" : "lazy"} // ⚡ Instant load for top items
+                    fetchPriority={priority ? "high" : "auto"}
+                    decoding="async"
                     className={`w-full h-full object-cover transition-all duration-500 ease-in-out
                     ${isOutOfStock 
                         ? "grayscale" 
-                        : "grayscale-0 opacity-100" // CHANGED: Always color if in stock
+                        : "grayscale-0 opacity-100" 
                     }`}
                 />
             </div>
@@ -124,9 +127,9 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
 
                 <div>
                     {isOutOfStock ? (
-                         <span className="text-[10px] font-bold tracking-widest text-red-400 uppercase">
-                             OUT OF STOCK
-                         </span>
+                          <span className="text-[10px] font-bold tracking-widest text-red-400 uppercase">
+                              OUT OF STOCK
+                          </span>
                     ) : (
                         <span className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase transition-colors duration-300 group-hover:text-[#8a6d3b]">
                             {count > 0 ? `ADD ANOTHER (${count})` : "ADD TO SET"}
@@ -146,18 +149,42 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
 // --- MAIN COMPONENT ---
 const CustomComboBuilder = () => {
     const navigate = useNavigate();
-    const { products, loading: productsLoading } = useContext(ProductContext);
+    const { products: contextProducts, loading: contextLoading } = useContext(ProductContext);
     const { addCustomBundle, startBuyNow } = useContext(CartContext);
     const { userdetails } = useContext(UserContext);
+
+    // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+    const [products, setProducts] = useState(() => {
+        try {
+            const cached = localStorage.getItem("all_products_cache");
+            return cached ? JSON.parse(cached) : [];
+        } catch (e) {
+            return [];
+        }
+    });
 
     const [selectedPerfumes, setSelectedPerfumes] = useState([]);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
+    // ⚡ 2. SYNC WITH CONTEXT: Update silently
+    useEffect(() => {
+        if (contextProducts && contextProducts.length > 0) {
+            setProducts(prev => {
+                if (JSON.stringify(prev) !== JSON.stringify(contextProducts)) {
+                    // Update cache for next time
+                    localStorage.setItem("all_products_cache", JSON.stringify(contextProducts));
+                    return contextProducts;
+                }
+                return prev;
+            });
+        }
+    }, [contextProducts]);
+
     const isProcessing = isAddingToCart || isBuyingNow;
 
     // --- Data Logic ---
-    const { templateVariant, comboOriginalPrice, comboFinalPrice, comboDiscount, comboSavings } = useMemo(() => {
+    const { templateVariant, comboOriginalPrice, comboFinalPrice } = useMemo(() => {
         const templateProduct = products.find((p) => p.category === "Template");
         if (templateProduct && templateProduct.variants.length > 0) {
             const tv = templateProduct.variants[0];
@@ -177,28 +204,40 @@ const CustomComboBuilder = () => {
             .filter((p) => !p.isArchived && p.category !== "Template")
             .flatMap((product) =>
                 product.variants
-                    .filter((v) => !v.isArchived && v.size === 30) // Show all, even out of stock
+                    .filter((v) => !v.isArchived && v.size === 30) 
                     .map((variant) => ({ product, variant }))
             );
     }, [products]);
 
+    // ⚡ 3. PRELOAD IMAGES: Preload the perfume thumbnails immediately
+    useEffect(() => {
+        if (availablePerfumes.length > 0) {
+            // Preload first 6 images for instant visibility
+            availablePerfumes.slice(0, 6).forEach(({ product }) => {
+                const src = product.imageurl?.[0];
+                if (src) {
+                    const img = new Image();
+                    img.src = src;
+                }
+            });
+        }
+    }, [availablePerfumes]);
+
     const handleSelectPerfume = useCallback((variant) => {
         if (isProcessing) return;
-        if ((variant.stock || 0) <= 0) return; // Prevent adding out of stock items
+        if ((variant.stock || 0) <= 0) return; 
 
         setSelectedPerfumes((prev) => {
             if (prev.length >= 4) {
                 window.toast?.error("Box full.") || alert("Box full");
                 return prev;
             }
-            // Always add the item, allowing duplicates
             return [...prev, variant];
         });
     }, [isProcessing]);
 
     const handleRemoveFromSlot = (indexToRemove) => {
         if (isProcessing) return;
-        // Remove item at specific index
         setSelectedPerfumes((prev) => prev.filter((_, index) => index !== indexToRemove));
     };
 
@@ -241,7 +280,15 @@ const CustomComboBuilder = () => {
 
     const isFull = selectedPerfumes.length === 4;
 
-    if (productsLoading) return <Loader text="Curating Library..." />;
+    // ⚡ 4. NON-BLOCKING LOADER: Only show if NO cache AND fetching
+    if (products.length === 0 && contextLoading) return <Loader text="Curating Library..." />;
+
+    // If cache is empty and not loading, probably an error or no products found
+    if (products.length === 0 && !contextLoading) return (
+        <div className="min-h-screen flex items-center justify-center text-gray-400">
+            No products available.
+        </div>
+    );
 
     if (!templateVariant) return (
         <div className="p-12 text-center text-gray-500 bg-gray-100 rounded-3xl m-4">
@@ -268,7 +315,7 @@ const CustomComboBuilder = () => {
 
                 {/* HEADER */}
                 <div className="max-w-4xl mx-auto mb-16 text-center">
-                     <motion.div 
+                      <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
@@ -308,10 +355,13 @@ const CustomComboBuilder = () => {
                                 animate="show"
                                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                             >
-                                {availablePerfumes.map(({ product, variant }) => {
+                                {availablePerfumes.map(({ product, variant }, index) => {
                                     const count = selectedPerfumes.filter(v => v.id === variant.id).length;
                                     const isOutOfStock = (variant.stock || 0) <= 0;
                                     
+                                    // ⚡ Prioritize first 6 items for LCP
+                                    const isPriority = index < 6;
+
                                     return (
                                         <PerfumeCard
                                             key={variant.id}
@@ -321,6 +371,7 @@ const CustomComboBuilder = () => {
                                             isOutOfStock={isOutOfStock}
                                             isDisabled={isProcessing || isOutOfStock || (isFull)}
                                             onSelect={() => !isProcessing && handleSelectPerfume(variant)}
+                                            priority={isPriority} 
                                         />
                                     );
                                 })}
@@ -425,10 +476,10 @@ const CustomComboBuilder = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-8 flex items-center justify-center gap-2 text-gray-500 bg-gray-100 py-4 rounded-xl border border-gray-100 shadow-inner">
-                                            <FaLock size={12} />
-                                            <span className="text-[10px] uppercase tracking-widest font-bold">
-                                                Add {4 - selectedPerfumes.length} more to unlock
-                                            </span>
+                                                <FaLock size={12} />
+                                                <span className="text-[10px] uppercase tracking-widest font-bold">
+                                                    Add {4 - selectedPerfumes.length} more to unlock
+                                                </span>
                                     </div>
                                 )}
 

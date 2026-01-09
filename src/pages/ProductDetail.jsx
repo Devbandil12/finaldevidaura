@@ -1,23 +1,37 @@
 // src/pages/ProductDetail.jsx
-import React, { useState, useContext, useEffect, useMemo } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
-import { Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { 
+  Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight, 
+  Sparkles, Wind, Layers, Droplets, Minus, Plus 
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// --- A mock Button component (Unchanged) ---
+// --- UI Components ---
+
+// Soft, rounded buttons with subtle interactions
 const Button = ({ onClick, variant = 'primary', size = 'default', className = '', children, disabled }) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
-  const sizeStyles = { default: "h-10 py-2 px-4", sm: "h-7 px-3 rounded-md", lg: "h-11 px-8 rounded-md", icon: "h-10 w-10" };
-  const variantStyles = {
-    primary: "bg-gray-900 text-gray-50 hover:bg-gray-900/90",
-    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-100/80",
-    destructive: "bg-red-600 text-gray-50 hover:bg-red-600/90",
-    ghost: "hover:bg-gray-100 hover:text-gray-900",
+  const baseStyles = "inline-flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:opacity-50 disabled:pointer-events-none active:scale-95";
+  
+  const sizeStyles = { 
+    default: "h-12 py-2 px-6", 
+    sm: "h-8 px-3 text-xs", 
+    lg: "h-14 px-8 text-base", 
+    icon: "h-10 w-10" 
   };
+  
+  const variantStyles = {
+    primary: "bg-gray-900 text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.2)] hover:bg-black",
+    secondary: "bg-white text-gray-700 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]",
+    destructive: "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100",
+    ghost: "hover:bg-gray-50 text-gray-600 hover:text-gray-900",
+    outline: "border border-gray-200 text-gray-900 hover:bg-gray-50"
+  };
+
   return (
     <button
       onClick={onClick}
@@ -28,112 +42,148 @@ const Button = ({ onClick, variant = 'primary', size = 'default', className = ''
     </button>
   );
 };
-const buttonVariants = {
-  hover: { scale: 1.03, transition: { type: "spring", stiffness: 400, damping: 15 } },
-  tap: { scale: 0.97 }
-};
-const iconVariants = {
-  tap: { scale: 1.2, rotate: -10, transition: { type: "spring", stiffness: 300, damping: 10 } }
-};
-// --- End of Button ---
 
+// Animation Variants
+const fadeIn = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { productId } = useParams();
+  
   const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
-  const { productId } = useParams();
-  const [product, setProduct] = useState(null);
+  // ⚡ 1. INSTANT STATE: Initialize from Cache
+  const [product, setProduct] = useState(() => {
+    try {
+      const cached = localStorage.getItem("all_products_cache");
+      if (cached) {
+        const list = JSON.parse(cached);
+        return list.find((p) => p.id === productId) || null;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  });
 
-  // 🟢 NEW: State for selected variant
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  // Initialize selected variant based on the cached product immediately
+  const [selectedVariant, setSelectedVariant] = useState(() => {
+    if (product && product.variants?.length > 0) return product.variants[0];
+    return null;
+  });
 
-  const [isFindingProduct, setIsFindingProduct] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [currentImg, setCurrentImg] = useState(0);
   const editReviewId = location.state?.editReviewId || null;
-  // 🟢 MODIFIED: Effect to find product and set default variant
+
+  // ⚡ 2. SYNC WITH CONTEXT
   useEffect(() => {
-    if (!productsLoading) {
-      // This now gets the product *with* its 'variants' array
+    if (products.length > 0) {
       const foundProduct = products.find((p) => p.id === productId);
-      setProduct(foundProduct);
+      
+      if (foundProduct) {
+        setProduct((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(foundProduct)) {
+            return foundProduct;
+          }
+          return prev;
+        });
 
-      // 🟢 NEW: Set the first variant as the default
-      if (foundProduct && foundProduct.variants && foundProduct.variants.length > 0) {
-        setSelectedVariant(foundProduct.variants[0]);
-      } else {
-        setSelectedVariant(null); // No variants found
+        setSelectedVariant((prev) => {
+          if (!prev && foundProduct.variants?.length > 0) return foundProduct.variants[0];
+          
+          if (prev && foundProduct.variants) {
+            const freshVariant = foundProduct.variants.find(v => v.id === prev.id);
+            if (freshVariant && JSON.stringify(freshVariant) !== JSON.stringify(prev)) {
+                return freshVariant;
+            }
+          }
+          return prev;
+        });
       }
-      setIsFindingProduct(false);
     }
-  }, [productId, products, productsLoading]);
+  }, [productId, products]);
 
-useEffect(() => {
-    // MODIFIED: Only scroll to top if we are NOT navigating here to edit a review.
+  // ⚡ 3. IMAGE PRELOAD
+  useEffect(() => {
+    if (product?.imageurl?.[0]) {
+      const img = new Image();
+      img.src = product.imageurl[0];
+    }
+  }, [product]);
+
+  // Scroll to top logic
+  useEffect(() => {
     if (product && !editReviewId) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [product, editReviewId]);
+  }, [productId, editReviewId]);
 
-  // 🟢 MODIFIED: Loading/Error states
-  if (productsLoading || isFindingProduct) {
+  // --- LOADING STATE ---
+  if (!product && productsLoading) {
     return (
-      <>
-        <title>Loading Fragrance... | Devid Aura</title>
-        <div className="flex items-center justify-center min-h-screen bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border-4 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            <p className="text-lg text-gray-800 font-medium">Loading...</p>
-          </div>
-        </div>
-      </>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFDFD]">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          className="w-12 h-12 border-[3px] border-gray-100 border-t-gray-800 rounded-full mb-6"
+        />
+        <p className="text-gray-400 font-light tracking-widest text-sm uppercase">Loading Essence</p>
+      </div>
     );
   }
 
-  // 🟢 MODIFIED: Check for product OR variant
+  // --- NOT FOUND STATE ---
   if (!product || !selectedVariant) {
-    return (
-      <>
-        <title>Product Not Found | Devid Aura</title>
-        <meta name="description" content="The fragrance you are looking for could not be found. Please return to our home page to explore our collection." />
-        <div className="flex items-center justify-center min-h-screen bg-white px-4">
-          <div className="text-center p-8 bg-gray-50 rounded-xl shadow-lg max-w-md">
-            <h2 className="text-3xl  font-bold text-gray-900 mb-2">Product Not Found</h2>
-            <p className="text-gray-500 mb-6">The fragrance you're looking for doesn't exist or has no variants.</p>
-            <Button onClick={() => navigate("/")}>Return Home</Button>
+    if (!productsLoading) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFDFD] px-6">
+            <div className="text-center max-w-md p-10 bg-white rounded-[2rem] border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)]">
+              <h2 className="text-2xl font-light text-gray-900 mb-3">Product Unavailable</h2>
+              <p className="text-gray-500 mb-8 font-light">The fragrance you seek is currently beyond reach.</p>
+              <Button onClick={() => navigate("/")} variant="outline">Return to Collection</Button>
+            </div>
           </div>
-        </div>
-      </>
-    );
+        );
+    }
+    return null; 
   }
 
-  // All images from main product
+  // --- RENDER CONTENT ---
   const allImages = product.imageurl || [];
-
-  // 🟢 MODIFIED: Cart/Wishlist checks now use variantId
   const isInCart = cart?.some((i) => i.variant?.id === selectedVariant.id);
   const isInWishlist = wishlist?.some((w) => (w.variantId ?? w.variant?.id) === selectedVariant.id);
 
-  // 🟢 MODIFIED: Price is now read from the *selected variant*
   const basePrice = Math.floor(Number(selectedVariant.oprice) || 0);
   const discount = Math.floor(Number(selectedVariant.discount) || 0);
   const discountedPrice = Math.floor(basePrice * (1 - discount / 100));
 
   const changeImage = (newIndex) => setCurrentImg(newIndex);
 
-  // 🟢 MODIFIED: Handlers now pass the correct (product, variant) order
   const handleAddToCart = async () => {
     if (selectedVariant.stock <= 0) {
       window.toast.error("This item is currently out of stock.");
       return;
     }
     isInCart
-      ? await removeFromCart(selectedVariant) // Pass variant object
-      : await addToCart(product, selectedVariant, quantity); // Pass (product, variant, qty)
+      ? await removeFromCart(selectedVariant)
+      : await addToCart(product, selectedVariant, quantity);
   };
 
   const handleBuyNow = async () => {
@@ -141,14 +191,11 @@ useEffect(() => {
       window.toast.error("This item is currently out of stock.");
       return;
     }
-    startBuyNow(product, selectedVariant, quantity); // 🟢 FIXED: Pass (product, variant, qty)
-    navigate("/cart", {
-      replace: true,
-      state: { isBuyNow: true }
-    });
+    startBuyNow(product, selectedVariant, quantity);
+    navigate("/cart", { replace: true, state: { isBuyNow: true } });
   };
 
-  const handleToggleWishlist = () => toggleWishlist(product, selectedVariant); // 🟢 FIXED: Pass (product, variant)
+  const handleToggleWishlist = () => toggleWishlist(product, selectedVariant);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -163,239 +210,289 @@ useEffect(() => {
     }
   };
 
-  // 🟢 MODIFIED: Get stock status from the variant
   const stockStatus = selectedVariant.stock === 0
     ? "Out of Stock"
     : selectedVariant.stock <= 10
-      ? `Only ${selectedVariant.stock} left!`
+      ? `Only ${selectedVariant.stock} left`
       : "In Stock";
 
   return (
     <>
       <title>{`${product.name} | Devid Aura`}</title>
-      <meta name="description" content={`Discover ${product.name}, a captivating fragrance by Devid Aura. ${product.description || 'Experience a scent that defines you.'}`} />
+      <meta name="description" content={`Discover ${product.name}, a captivating fragrance by Devid Aura.`} />
 
-      <div className="min-h-screen bg-white text-gray-800 ">
-        <div className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
-          <main className="relative max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-16 mt-[40px] md:mt-0">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16"
-            >
-              {/* --- Image Carousel --- */}
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="lg:sticky lg:top-24 h-fit"
+      <div className="min-h-screen bg-[#FDFDFD] text-gray-800 overflow-x-hidden selection:bg-gray-100 selection:text-black">
+        
+        {/* Main Container: pt-[50px] applied here for mobile navbar spacing */}
+        <main className="max-w-7xl mx-auto pt-[80px]  pb-20 px-4 md:px-8">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20">
+            
+            {/* --- Left Column: Image Gallery --- */}
+            <div className="lg:col-span-7">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="sticky "
               >
-                <div className="flex flex-col-reverse lg:flex-row gap-4">
+                <div className="relative aspect-[4/6] md:aspect-[1/1] lg:aspect-[4/3] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
+                  
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentImg}
+                      src={allImages.length > 0 ? allImages[currentImg] : "/placeholder.svg"}
+                      alt={product.name}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.6 }}
+                      loading="eager"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </AnimatePresence>
+
+                  {/* Soft Navigation Arrows */}
                   {allImages.length > 1 && (
-                    <div className="hidden lg:flex flex-col gap-3">
-                      {allImages.slice(0, 5).map((img, idx) => (
-                        <motion.div
-                          key={idx}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => changeImage(idx)}
-                          className={`w-20 h-20 rounded-lg cursor-pointer bg-gray-100 overflow-hidden transition-all duration-300 ${currentImg === idx ? 'ring-2 ring-teal-500 shadow-lg' : 'opacity-60 hover:opacity-100'}`}
-                        >
-                          <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" />
-                        </motion.div>
-                      ))}
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 z-20 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75">
+                      <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+                        <ChevronLeft className="h-5 w-5 text-gray-600" />
+                      </Button>
+                      <Button onClick={() => changeImage((currentImg + 1) % allImages.length)} variant="secondary" size="icon" className="bg-white/80 backdrop-blur-sm border-0 shadow-sm">
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                      </Button>
                     </div>
                   )}
-                  <div className="relative w-full aspect-square rounded-2xl bg-gray-100 overflow-hidden shadow-lg shadow-gray-200/50 flex-1">
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={currentImg}
-                        src={allImages.length > 0 ? allImages[currentImg] : "/placeholder.svg"}
-                        alt={product.name}
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.4 }}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    </AnimatePresence>
-                    {allImages.length > 1 && (
-                      <>
-                        <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="absolute top-1/2 left-4 -translate-y-1/2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md">
-                          <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                        <Button onClick={() => changeImage((currentImg + 1) % allImages.length)} variant="secondary" size="icon" className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white shadow-md">
-                          <ChevronRight className="h-5 w-5" />
-                        </Button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium text-gray-800">
-                          {currentImg + 1} / {allImages.length}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-                {allImages.length > 1 && (
-                  <div className="mt-4 flex lg:hidden gap-3 overflow-x-auto pb-2">
-                    {allImages.slice(0, 5).map((img, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => changeImage(idx)}
-                        className={`flex-shrink-0 w-16 h-16 rounded-lg cursor-pointer bg-gray-100 overflow-hidden transition-all duration-300 ${currentImg === idx ? 'ring-2 ring-teal-500' : 'opacity-60'}`}
-                      >
-                        <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+
+                  {/* Soft Pagination Dots */}
+                  {allImages.length > 1 && (
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+                      <div className="bg-white/30 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full flex gap-2 shadow-sm">
+                        {allImages.map((_, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`h-1.5 rounded-full transition-all duration-500 ease-out ${idx === currentImg ? 'w-5 bg-white shadow-sm' : 'w-1.5 bg-white/50'}`} 
+                          />
+                        ))}
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Thumbnails (Desktop) */}
+                {allImages.length > 1 && (
+                  <div className="hidden lg:flex mt-6 gap-3 overflow-x-auto py-2 px-1">
+                    {allImages.map((img, idx) => (
+                      <motion.button
+                        key={idx}
+                        whileHover={{ y: -2 }}
+                        onClick={() => changeImage(idx)}
+                        className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 border ${currentImg === idx ? 'border-gray-300 ring-1 ring-gray-100' : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-200'}`}
+                      >
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </motion.button>
                     ))}
                   </div>
                 )}
               </motion.div>
+            </div>
 
-              {/* --- Product Info Column --- */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="flex flex-col px-4 "
+            {/* --- Right Column: Product Details --- */}
+            <div className="lg:col-span-5">
+              <motion.div 
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col h-full pt-2 px-4 lg:px-0"
               >
-                <div className="mb-6">
-                  <div className="flex items-start justify-between mb-4 mt-8">
-                    <div className="flex-1">
-                      <h1 className="text-3xl md:text-4xl  font-bold text-gray-900 mb-2" style={{ textWrap: 'balance' }}>
-                        {product.name}
-                      </h1>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${selectedVariant.stock > 0 ? 'bg-teal-500/10 text-teal-600' : 'bg-red-500/10 text-red-600'}`}>
-                        <Sparkles className="h-3 w-3" />
+                {/* Header Section */}
+                <motion.div variants={fadeIn} className="mb-8">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-3">
+                       {/* Subtle Stock Badge */}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${selectedVariant.stock > 0 ? 'bg-teal-50/30 text-teal-800 border-teal-100/50' : 'bg-red-50/30 text-red-800 border-red-100/50'}`}>
+                        <Sparkles className="h-2.5 w-2.5" />
                         {stockStatus}
                       </span>
+                      <h1 className="text-3xl md:text-5xl font-medium text-gray-900 leading-tight tracking-tight" style={{ textWrap: 'balance' }}>
+                        {product.name}
+                      </h1>
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button onClick={handleToggleWishlist} variant="secondary" size="icon" className="rounded-full">
-                        <Heart className={`h-5 w-5 transition-colors ${isInWishlist ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
+                    
+                    {/* Floating Action Buttons */}
+                    <div className="flex gap-2">
+                       <Button onClick={handleToggleWishlist} variant="secondary" size="icon" className="rounded-full h-11 w-11 border-gray-100 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.03)] bg-white hover:bg-white hover:shadow-md">
+                        <Heart className={`h-5 w-5 transition-all duration-300 ${isInWishlist ? 'fill-red-400 text-red-400' : 'text-gray-400'}`} />
                       </Button>
-                      <Button onClick={handleShare} variant="secondary" size="icon" className="rounded-full">
-                        <Share2 className="h-5 w-5 text-gray-500" />
+                      <Button onClick={handleShare} variant="secondary" size="icon" className="rounded-full h-11 w-11 border-gray-100 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.03)] bg-white hover:bg-white hover:shadow-md">
+                        <Share2 className="h-4 w-4 text-gray-400" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-baseline gap-3 flex-wrap mb-6">
-                    <span className="text-4xl font-bold text-teal-600">
+                  {/* Clean Price Display */}
+                  <div className="mt-6 flex items-baseline gap-3">
+                    <span className="text-3xl font-light text-gray-900">
                       ₹{discountedPrice.toLocaleString("en-IN")}
                     </span>
                     {discount > 0 && (
-                      <>
-                        <span className="text-xl text-gray-400 line-through">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base text-gray-400 line-through font-light">
                           ₹{basePrice.toLocaleString("en-IN")}
                         </span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-600 text-white">
-                          {discount}% OFF
+                        <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-semibold">
+                          -{discount}%
                         </span>
-                      </>
+                      </div>
                     )}
                   </div>
+                </motion.div>
 
-                  <div className="mb-6">
-                    <span className="text-sm font-semibold text-gray-900 mb-2 block">
-                      Size: {selectedVariant.name}
+                <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-100 to-transparent mb-8" />
+
+                {/* Variant & Quantity */}
+                <motion.div variants={fadeIn} className="space-y-8 mb-8">
+                  
+                  {/* Variants (Soft Pills) */}
+                  <div>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 block">
+                      Select Size
                     </span>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {product.variants.map((variant) => (
-                        <Button
+                        <button
                           key={variant.id}
                           onClick={() => setSelectedVariant(variant)}
-                          variant={selectedVariant.id === variant.id ? 'primary' : 'secondary'}
-                          className={`rounded-full ${selectedVariant.id === variant.id ? 'ring-2 ring-offset-2 ring-gray-900' : ''} ${variant.stock === 0 ? 'relative opacity-50' : ''}`}
                           disabled={variant.stock === 0}
+                          className={`
+                            relative px-6 py-2.5 rounded-full text-sm transition-all duration-300
+                            ${selectedVariant.id === variant.id 
+                              ? 'bg-gray-900 text-white shadow-[0_8px_16px_-4px_rgba(0,0,0,0.15)] font-medium' 
+                              : 'bg-white text-gray-600 border border-gray-100 hover:border-gray-300'
+                            }
+                            ${variant.stock === 0 ? 'opacity-40 cursor-not-allowed border-dashed' : ''}
+                          `}
                         >
                           {variant.name}
-                          {variant.stock === 0 && <span className="absolute -top-1.5 -right-1.5 text-xs bg-red-600 text-white px-1 rounded-full leading-none"></span>}
-                        </Button>
+                        </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row  items-start sm:items-center ">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">Quantity:</span>
-                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                        <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="sm" className="rounded-none h-3 w-8 text-lg">－</Button>
-                        <span className="px-2 font-600 text-gray-900">{quantity}</span>
-                        <Button onClick={() => setQuantity(quantity + 1)} variant="ghost" size="sm" className="rounded-none h-3 w-8 text-lg">＋</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* --- Description & Fragrance Profile (Unchanged) --- */}
-                <div className="space-y-8 mb-8">
+                  {/* Quantity (Minimal) */}
                   <div>
-                    <h2 className="text-2xl  font-semibold text-gray-900 mb-3">About This Fragrance</h2>
-                    <p className="text-gray-600 leading-relaxed">{product.description}</p>
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="text-xl  font-semibold text-gray-900">Fragrance Profile</h3>
-                    <div className="grid gap-4">
-                      <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
-                        <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Top Notes</div>
-                        <div className="text-sm text-gray-600">{product.composition}</div>
-                      </div>
-                      <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
-                        <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Base Notes</div>
-                        <div className="text-sm text-gray-600">{product.fragranceNotes}</div>
-                      </div>
-                      <div className="flex gap-4 p-4 rounded-lg bg-gray-100/70">
-                        <div className="flex-shrink-0 w-24 text-sm font-semibold text-teal-600">Heart Notes</div>
-                        <div className="text-sm text-gray-600">{product.fragrance}</div>
-                      </div>
+                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 block">
+                      Quantity
+                    </span>
+                    <div className="inline-flex items-center bg-white border border-gray-100 rounded-full shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] p-1">
+                      <Button 
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-900"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="w-10 text-center font-medium text-gray-900">{quantity}</span>
+                      <Button 
+                        onClick={() => setQuantity(quantity + 1)} 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-900"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* --- Action Buttons --- */}
-                <div className="mt-auto space-y-3 ">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <motion.button
-                      onClick={handleAddToCart}
-                      disabled={selectedVariant.stock === 0}
-                      variants={buttonVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                      className={`flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md transition-colors ${isInCart ? "bg-red-600 text-white hover:bg-red-600/90" : "bg-gray-100 text-gray-900 hover:bg-gray-100/80"} disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <motion.div variants={iconVariants} className="mr-2">
-                        <ShoppingCart className="h-5 w-5" />
-                      </motion.div>
-                      {isInCart ? "Remove from Cart" : (selectedVariant.stock === 0 ? "Out of Stock" : "Add to Cart")}
-                    </motion.button>
-                    <motion.button
-                      onClick={handleBuyNow}
-                      disabled={selectedVariant.stock === 0}
-                      variants={buttonVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                      className="flex-1 px-4 py-2 lg:px-6 lg:py-3 text-base font-semibold inline-flex items-center justify-center rounded-md bg-gray-900 text-gray-50 hover:bg-gray-900/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {selectedVariant.stock === 0 ? "Out of Stock" : "Buy Now"}
-                    </motion.button>
-                  </div>
-                </div>
+                {/* Note Cards (Ultra Light) */}
+                <motion.div variants={fadeIn} className="grid grid-cols-3 gap-4 mb-10">
+                    <div className="bg-white border border-gray-50 rounded-2xl p-4 flex flex-col items-center text-center gap-3 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.04)] transition-shadow duration-300">
+                        <div className="p-2 bg-gray-50/50 rounded-full text-gray-600">
+                            <Wind className="h-4 w-4 stroke-[1.5]" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Top</p>
+                            <p className="text-xs font-medium text-gray-700 mt-1 line-clamp-2 leading-relaxed">{product.composition}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white border border-gray-50 rounded-2xl p-4 flex flex-col items-center text-center gap-3 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.04)] transition-shadow duration-300">
+                        <div className="p-2 bg-gray-50/50 rounded-full text-gray-600">
+                            <Droplets className="h-4 w-4 stroke-[1.5]" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Heart</p>
+                            <p className="text-xs font-medium text-gray-700 mt-1 line-clamp-2 leading-relaxed">{product.fragrance}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white border border-gray-50 rounded-2xl p-4 flex flex-col items-center text-center gap-3 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.04)] transition-shadow duration-300">
+                         <div className="p-2 bg-gray-50/50 rounded-full text-gray-600">
+                            <Layers className="h-4 w-4 stroke-[1.5]" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Base</p>
+                            <p className="text-xs font-medium text-gray-700 mt-1 line-clamp-2 leading-relaxed">{product.fragranceNotes}</p>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Description */}
+                <motion.div variants={fadeIn} className="mb-10">
+                   <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">The Scent</h3>
+                   <p className="text-gray-500 leading-7 font-light text-sm md:text-base">
+                     {product.description}
+                   </p>
+                </motion.div>
+
+                {/* Bottom Action Bar */}
+                <motion.div 
+                    variants={fadeIn} 
+                    className="mt-auto flex flex-col sm:flex-row gap-4"
+                >
+                  <Button 
+                    onClick={handleAddToCart}
+                    disabled={selectedVariant.stock === 0}
+                    variant={isInCart ? "destructive" : "secondary"}
+                    className="flex-1 text-sm tracking-wide"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    {isInCart ? "REMOVE" : "ADD TO CART"}
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleBuyNow}
+                    disabled={selectedVariant.stock === 0}
+                    className="flex-1 text-sm tracking-wide bg-gray-900 hover:bg-black"
+                  >
+                     {selectedVariant.stock === 0 ? "OUT OF STOCK" : "BUY NOW"}
+                  </Button>
+                </motion.div>
+
               </motion.div>
-            </motion.div>
+            </div>
+          </div>
 
-            {/* --- Review Component (Unchanged) --- */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-20 lg:mt-24 "
-            >
-              <h2 className="text-3xl px-4 lg:text-4xl  font-bold text-gray-900 mb-8">Customer Reviews</h2>
-              <div className="bg-gray-50 rounded-2xl shadow-lg shadow-gray-200/50  md:p-10">
+          {/* --- Reviews Section --- */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="mt-24 md:mt-32 pt-16 border-t border-gray-100"
+          >
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                  <h2 className="text-2xl md:text-3xl font-light text-gray-900 mb-2">Reflections</h2>
+                  <p className="text-gray-400 text-sm">Customer experiences and stories</p>
+              </div>
+              <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] border border-gray-50 p-2 md:p-10">
                 <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
               </div>
-            </motion.div>
-          </main>
-        </div>
+            </div>
+          </motion.div>
+
+        </main>
       </div>
     </>
   );
