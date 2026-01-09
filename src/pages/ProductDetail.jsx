@@ -7,7 +7,7 @@ import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import {
   Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight,
-  Sparkles, Wind, Layers, Droplets, Minus, Plus
+  Sparkles, Wind, Layers, Droplets, Minus, Plus, ArrowRight, Ban, ShoppingBag
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -66,7 +66,7 @@ const ProductDetail = () => {
 
   const { userdetails } = useContext(UserContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
-  const { cart, wishlist, addToCart, removeFromCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+  const { cart, wishlist, addToCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
   // ⚡ 1. INSTANT STATE: Initialize from Cache
   const [product, setProduct] = useState(() => {
@@ -177,18 +177,25 @@ const ProductDetail = () => {
   const changeImage = (newIndex) => setCurrentImg(newIndex);
 
   const handleAddToCart = async () => {
-    if (selectedVariant.stock <= 0) {
-      window.toast.error("This item is currently out of stock.");
+    // If already in cart, go to cart
+    if (isInCart) {
+      navigate("/cart");
       return;
     }
-    isInCart
-      ? await removeFromCart(selectedVariant)
-      : await addToCart(product, selectedVariant, quantity);
+
+    // Strict Stock Check
+    if (selectedVariant.stock <= 0) {
+      window.toast.error("Sorry, this item is currently sold out.");
+      return;
+    }
+    
+    await addToCart(product, selectedVariant, quantity);
   };
 
   const handleBuyNow = async () => {
+    // Strict Stock Check
     if (selectedVariant.stock <= 0) {
-      window.toast.error("This item is currently out of stock.");
+      window.toast.error("Sorry, this item is currently sold out.");
       return;
     }
     startBuyNow(product, selectedVariant, quantity);
@@ -210,8 +217,9 @@ const ProductDetail = () => {
     }
   };
 
+  // 🟢 REFINED STATUS TEXT
   const stockStatus = selectedVariant.stock === 0
-    ? "Out of Stock"
+    ? "Sold Out"
     : selectedVariant.stock <= 10
       ? `Only ${selectedVariant.stock} left`
       : "In Stock";
@@ -224,7 +232,7 @@ const ProductDetail = () => {
       <div className="min-h-screen bg-[#FDFDFD] text-gray-800 overflow-x-hidden selection:bg-gray-100 selection:text-black">
 
         {/* Main Container: pt-[50px] applied here for mobile navbar spacing */}
-        <main className="max-w-7xl mx-auto pt-[80px]  pb-20 px-4 md:px-8">
+        <main className="max-w-7xl mx-auto pt-[80px] pb-20 px-4 md:px-8">
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20">
 
@@ -387,6 +395,7 @@ const ProductDetail = () => {
                     <div className="inline-flex items-center bg-white border border-gray-100 rounded-full shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] p-1">
                       <Button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={selectedVariant.stock === 0}
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-900"
@@ -396,6 +405,7 @@ const ProductDetail = () => {
                       <span className="w-10 text-center font-medium text-gray-900">{quantity}</span>
                       <Button
                         onClick={() => setQuantity(quantity + 1)}
+                        disabled={selectedVariant.stock === 0}
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 rounded-full hover:bg-gray-50 text-gray-400 hover:text-gray-900"
@@ -407,70 +417,50 @@ const ProductDetail = () => {
                 </motion.div>
 
 
-                {/* Note Cards (Expand on Hover/Tap) */}
-{/* --- Redesigned Note Cards: Smooth Reflow Version --- */}
-<motion.div
-  variants={fadeIn}
-  className="flex gap-3 mb-10 w-full h-[200px] items-stretch group/container" 
->
-  {[
-    { label: 'Top', icon: Wind, data: product.composition, color: "bg-blue-50/40" },
-    { label: 'Heart', icon: Droplets, data: product.fragrance, color: "bg-rose-50/40" },
-    { label: 'Base', icon: Layers, data: product.fragranceNotes, color: "bg-amber-50/40" },
-  ].map((note, index) => {
-    const Icon = note.icon;
-    return (
-      <motion.div
-        key={index}
-        layout
-        transition={{
-          layout: { type: "spring", stiffness: 200, damping: 25 },
-        }}
-        whileHover={{ flexGrow: 10 }} 
-        className="group relative flex-[1] min-w-[65px] cursor-pointer bg-white border border-gray-100 rounded-[2.5rem] p-4 flex flex-col items-center justify-start overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] transition-all duration-500"
-      >
-        {/* Background Glow */}
-        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ${note.color} -z-10`} />
-
-        {/* Icon */}
-        <motion.div layout className="p-3 bg-gray-50 group-hover:bg-white rounded-2xl text-gray-700 shadow-sm mb-3 transition-colors duration-500">
-          <Icon className="h-5 w-5 stroke-[1.5]" />
-        </motion.div>
-
-        {/* Label */}
-        <motion.span layout="position" className="text-[9px] uppercase font-bold text-gray-400 tracking-[0.25em] mb-2 whitespace-nowrap">
-          {note.label}
-        </motion.span>
-
-        {/* THE SMOOTH TEXT WRAPPER */}
-        <motion.div
-          layout
-          className="w-full relative opacity-100 group-hover/container:opacity-0 group-hover:!opacity-100 transition-opacity duration-300"
-        >
-          <div className="w-full flex justify-center">
-            <motion.p 
-              layout="position"
-              // Removed line-clamp. Fixed width container + overflow handles the "hiding" smoothly.
-              className="text-xs font-medium text-gray-800 leading-relaxed text-center px-1 max-w-[200px]"
-              style={{ 
-                textWrap: 'balance', // Distributes text evenly
-                hyphens: 'auto'      // Prevents awkward gaps
-              }}
-            >
-              {note.data}
-            </motion.p>
-          </div>
-        </motion.div>
-
-        {/* Indicator */}
-        <motion.div 
-          layout
-          className="mt-auto mb-2 w-1.5 h-1.5 bg-gray-900 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500"
-        />
-      </motion.div>
-    );
-  })}
-</motion.div>
+                {/* Note Cards */}
+                <motion.div
+                  variants={fadeIn}
+                  className="flex gap-3 mb-10 w-full h-[200px] items-stretch group/container"
+                >
+                  {[
+                    { label: 'Top', icon: Wind, data: product.composition, color: "bg-blue-50/40" },
+                    { label: 'Heart', icon: Droplets, data: product.fragrance, color: "bg-rose-50/40" },
+                    { label: 'Base', icon: Layers, data: product.fragranceNotes, color: "bg-amber-50/40" },
+                  ].map((note, index) => {
+                    const Icon = note.icon;
+                    return (
+                      <motion.div
+                        key={index}
+                        layout
+                        transition={{
+                          layout: { type: "spring", stiffness: 200, damping: 25 },
+                        }}
+                        whileHover={{ flexGrow: 10 }}
+                        className="group relative flex-[1] min-w-[65px] cursor-pointer bg-white border border-gray-100 rounded-[2.5rem] p-4 flex flex-col items-center justify-start overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] transition-all duration-500"
+                      >
+                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ${note.color} -z-10`} />
+                        <motion.div layout className="p-3 bg-gray-50 group-hover:bg-white rounded-2xl text-gray-700 shadow-sm mb-3 transition-colors duration-500">
+                          <Icon className="h-5 w-5 stroke-[1.5]" />
+                        </motion.div>
+                        <motion.span layout="position" className="text-[9px] uppercase font-bold text-gray-400 tracking-[0.25em] mb-2 whitespace-nowrap">
+                          {note.label}
+                        </motion.span>
+                        <motion.div layout className="w-full relative opacity-100 group-hover/container:opacity-0 group-hover:!opacity-100 transition-opacity duration-300">
+                          <div className="w-full flex justify-center">
+                            <motion.p
+                              layout="position"
+                              className="text-xs font-medium text-gray-800 leading-relaxed text-center px-1 max-w-[200px]"
+                              style={{ textWrap: 'balance', hyphens: 'auto' }}
+                            >
+                              {note.data}
+                            </motion.p>
+                          </div>
+                        </motion.div>
+                        <motion.div layout className="mt-auto mb-2 w-1.5 h-1.5 bg-gray-900 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
 
                 {/* Description */}
                 <motion.div variants={fadeIn} className="mb-10">
@@ -487,12 +477,27 @@ const ProductDetail = () => {
                 >
                   <Button
                     onClick={handleAddToCart}
-                    disabled={selectedVariant.stock === 0}
-                    variant={isInCart ? "destructive" : "secondary"}
-                    className="flex-1 text-sm tracking-wide"
+                    // 🟢 ENABLE "VIEW BAG" even if stock is 0, but DISABLE "ADD" if stock is 0
+                    disabled={!isInCart && selectedVariant.stock === 0}
+                    variant="secondary"
+                    className={`flex-1 text-sm tracking-wide ${isInCart ? "border-gray-200" : ""}`}
                   >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    {isInCart ? "REMOVE" : "ADD TO CART"}
+                    {isInCart ? (
+                        <>
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            VIEW BAG
+                        </>
+                    ) : selectedVariant.stock === 0 ? (
+                        <>
+                            <Ban className="mr-2 h-4 w-4" />
+                            SOLD OUT
+                        </>
+                    ) : (
+                        <>
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            ADD TO BAG
+                        </>
+                    )}
                   </Button>
 
                   <Button
@@ -500,7 +505,7 @@ const ProductDetail = () => {
                     disabled={selectedVariant.stock === 0}
                     className="flex-1 text-sm tracking-wide bg-gray-900 hover:bg-black"
                   >
-                    {selectedVariant.stock === 0 ? "OUT OF STOCK" : "BUY NOW"}
+                    {selectedVariant.stock === 0 ? "SOLD OUT" : "BUY NOW"}
                   </Button>
                 </motion.div>
 

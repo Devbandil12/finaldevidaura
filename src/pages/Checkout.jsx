@@ -1,5 +1,7 @@
+// src/pages/Checkout.jsx
+
 import React, { useState, useEffect, useContext, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom"; // 🟢 Added useSearchParams
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -16,13 +18,17 @@ const luxuryEase = [0.25, 0.1, 0.25, 1];
 
 export default function Checkout() {
   const navigate = useNavigate();
-  // We still need CartContext to check if cart is empty initially, 
-  // but we won't call getCartitems() to clear it here anymore.
+  // 🟢 Professional URL Management
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
 
-  const [step, setStep] = useState(1);
+  // 🟢 Derive Step from URL (Default to 'address' -> Step 1)
+  const stepParam = searchParams.get("step");
+  const step = stepParam === "payment" ? 2 : 1;
+
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -32,8 +38,9 @@ export default function Checkout() {
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  // --- Logic ---
+  // --- Logic: Init & Validation ---
   useEffect(() => {
+    // 1. Validate Cart
     try {
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
       if (items.length > 0) setSelectedItems(items);
@@ -41,8 +48,29 @@ export default function Checkout() {
       const coupon = localStorage.getItem("appliedCoupon");
       if (coupon) setAppliedCoupon(JSON.parse(coupon));
     } catch (error) { navigate("/cart"); }
-  }, [navigate]);
 
+    // 2. Ensure URL looks professional on load
+    if (!stepParam) {
+      setSearchParams({ step: "address" }, { replace: true });
+    }
+    
+    // 3. Security: If on payment step but no address, force back to address
+    if (step === 2 && !selectedAddress) {
+       // Wait a tick to allow address to potentially load if it was cached (optional, but good safety)
+       // For now, immediate revert is safer to prevent broken states
+       setSearchParams({ step: "address" }, { replace: true });
+       window.toast.info("Please select a delivery address first.");
+    }
+
+    // 4. Professional Title Update
+    document.title = step === 1 ? "Secure Checkout | Delivery" : "Secure Checkout | Payment";
+    
+    // 5. Scroll to top on step change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  }, [navigate, stepParam, setSearchParams, step, selectedAddress]);
+
+  // --- Logic: Price Breakdown ---
   useEffect(() => {
     const fetchBreakdown = async () => {
       if (selectedItems.length === 0 || !selectedAddress) {
@@ -74,20 +102,13 @@ export default function Checkout() {
   }, [getorders]);
 
   // 🟢 OPTIMIZED: ONLINE SUCCESS
- const handleRazorpaySuccess = useCallback(async (paymentId) => { // <--- Accept ID here
+ const handleRazorpaySuccess = useCallback(async (paymentId) => {
   setIsSubmitting(true);
   try { 
-    // Navigate IMMEDIATELY using the passed ID
-    navigate('/order-confirmation', { 
-      state: { 
-        // Use the passed 'paymentId' first. 
-        // If undefined, fall back to state or "ONLINE-PAYMENT"
-        transactionId: paymentId || transactionId || "ONLINE-PAYMENT", 
-        status: "success" 
-      } 
+    // Pass Order ID in URL for robustness
+    navigate(`/order-confirmation?orderId=${paymentId || transactionId || "ONLINE-PAYMENT"}`, { 
+      replace: true 
     });
-
-    // Trigger background refresh
     refreshOrdersOnly();
   }
   catch (error) { 
@@ -122,35 +143,32 @@ export default function Checkout() {
         throw new Error(data.msg || "Order failed.");
       }
       
-      // 1. Navigate IMMEDIATELY. Speed is priority.
-      navigate('/order-confirmation', { 
-        state: { 
-          transactionId: data.orderId, 
-          status: "success" 
-        } 
+      // Navigate using URL Param for robustness against refreshes
+      navigate(`/order-confirmation?orderId=${data.orderId}`, { 
+        replace: true 
       });
 
-      // 2. Show Success
       window.toast.success("Order placed successfully!");
-      
-      // 3. Background Refresh
       refreshOrdersOnly();
 
     } catch (err) { 
       window.toast.error(err.message); 
-      setIsSubmitting(false); // Only stop loading if error
+      setIsSubmitting(false); 
     } 
   }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, refreshOrdersOnly, isSubmitting, navigate]);
 
+  // 🟢 NAVIGATION HANDLERS (Update URL Params)
   const handleNext = () => {
     if (loadingPrices) return;
     if (step === 1 && !selectedAddress) return window.toast.warn("Please select a delivery address.");
-    setStep(prev => Math.min(prev + 1, 2)); 
+    
+    // Instead of setStep, we update URL
+    setSearchParams({ step: "payment" });
   };
 
   const handlePrev = () => {
     if (step === 1) navigate("/cart");
-    else setStep(prev => Math.max(prev - 1, 1));
+    else setSearchParams({ step: "address" });
   };
 
   const steps = [
@@ -166,20 +184,20 @@ export default function Checkout() {
         <div className="w-full max-w-8xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
 
           <div className="
-  relative overflow-hidden transition-colors duration-300
-  bg-black text-white 
-  md:bg-white md:text-slate-900 md:border-b md:border-slate-100
-  px-4 pb-10 pt-4 sm:px-12 sm:pb-12
-">
+            relative overflow-hidden transition-colors duration-300
+            bg-black text-white 
+            md:bg-white md:text-slate-900 md:border-b md:border-slate-100
+            px-4 pb-10 pt-4 sm:px-12 sm:pb-12
+          ">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
 
               <div className={`
-      flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
-      bg-white/10 border-white/10
-      md:bg-emerald-50 md:border-emerald-100
-    `}>
+                  flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
+                  bg-white/10 border-white/10
+                  md:bg-emerald-50 md:border-emerald-100
+                `}>
                 <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 md:text-emerald-600" />
                 <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap text-white md:text-emerald-800">
                   Secure Encrypted Checkout
@@ -189,13 +207,12 @@ export default function Checkout() {
               <div className="relative w-full max-w-4xl">
 
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 
-        bg-white/20 md:bg-slate-200"
+                  bg-white/20 md:bg-slate-200"
                 />
 
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
-                    className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none
-            bg-white md:bg-black"
+                    className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none bg-white md:bg-black"
                     initial={{ width: "0%" }}
                     animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
                     transition={{ duration: 0.8, ease: luxuryEase }}
@@ -211,12 +228,12 @@ export default function Checkout() {
                       <div key={i} className="relative flex flex-col items-center w-12 group">
                         <motion.div
                           className={`
-                  relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10
-                  ${isActive || isCompleted
+                            relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10
+                            ${isActive || isCompleted
                               ? "bg-white text-black border-white md:bg-black md:text-white md:border-black md:shadow-md"
                               : "bg-black text-slate-500 border-slate-700 md:bg-white md:text-slate-300 md:border-slate-200"
                             }
-                `}
+                          `}
                           animate={{ scale: isActive ? 1.15 : 1 }}
                         >
                           <s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isActive || isCompleted ? "stroke-2" : "stroke-1"}`} />
@@ -224,12 +241,12 @@ export default function Checkout() {
 
                         <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-32 text-center">
                           <span className={`
-                  text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300
-                  ${isActive
+                            text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300
+                            ${isActive
                               ? "text-white md:text-black"
                               : "text-slate-600 md:text-slate-400"
                             }
-                `}>
+                          `}>
                             {s.name}
                           </span>
                         </div>
