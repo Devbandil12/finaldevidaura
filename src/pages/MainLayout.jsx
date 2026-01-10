@@ -2,7 +2,7 @@
 import React, { useState, useCallback, Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
-import MobileBackBar from "../Components/MobileBackBar";
+import MobileBackBar from "../components/MobileBackBar";
 import Footer from "./Footer";
 import Loader from "../Components/Loader"; // Import your Loader component
 

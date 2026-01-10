@@ -327,17 +327,18 @@ const Navbar = ({ onVisibilityChange }) => {
   ], [navigate, closeSidebar]);
 
   // --- Dynamic Class Builders ---
+  const isHomePage = location.pathname === "/";
 
   // Common Transition string matching CSS: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), etc.
   const navbarTransitionClass = "transition-[transform,width,border-radius,background-color,top,box-shadow,padding] duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]";
 
   // Base Navbar Classes
   const navbarBaseClass = `fixed left-0 right-0 mx-auto flex items-center justify-between z-[9999] pointer-events-auto backface-hidden antialiased will-change-[transform,width,border-radius,background-color,top] ${navbarTransitionClass}
-  max-[750px]:!w-full max-[750px]:!top-0 max-[750px]:!rounded-none max-[750px]:!left-0 max-[750px]:!px-[5px] max-[750px]:!mt-0 max-[750px]:!bg-white max-[750px]:z-[9999] max-[700px]:!px-[5px] max-[700px]:!pr-[10px]`;
+  ${!isHomePage ? "max-[750px]:!bg-white" : ""}`;
 
   // Scrolled vs Top State
   const navbarStateClass = isScrolled
-    ? `w-[95%] max-w-[1440px] h-[60px] top-[10px] rounded-[50px] px-[25px] bg-white/85 backdrop-blur-[12px] saturate-[180%] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-black max-[885px]:px-[0.8rem]`
+    ? `w-[95%] max-w-[1440px] h-[60px] top-[10px] rounded-[50px] px-[25px] bg-white/70 backdrop-blur-[8px] saturate-[180%] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-black max-[885px]:px-[0.8rem]`
     : `w-full h-[60px] top-0 px-[2rem] pt-[0.7rem] rounded-none bg-transparent max-[885px]:px-[0.8rem]`;
 
   // Text colors for non-scrolled state (scrolled is always black)
@@ -609,7 +610,7 @@ const Navbar = ({ onVisibilityChange }) => {
                       role="dialog"
                       aria-modal={isOpen}
                     >
-                      <div className="menu-icon flex items-center wifull p-[1rem] pl-[1.4rem] pb-[1.18rem] justify-start">
+                      <div className="menu-icon flex items-center wifull p-[1rem] pl-[1.4rem] pt-[1.38rem] pb-[0.8rem] justify-start">
                         <button
                           ref={hamburgerRef}
                           className="hamburger-btn bg-none border-none p-0 cursor-pointer relative pointer-events-auto"
