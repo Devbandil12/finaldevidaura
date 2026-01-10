@@ -88,7 +88,7 @@ const MobileBackBar = () => {
         bg-white/98 backdrop-blur-md
         border-b border-black/5 shadow-sm
         z-[998] transition-transform duration-300
-        md:hidden
+        min-[750px]:hidden
       "
     >
       <button 
