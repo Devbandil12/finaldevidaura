@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Zap, Star, ShieldCheck } from 'lucide-react';
+// 👇 IMPORT OPTIMIZER
+import { optimizeImage } from "../utils/imageOptimizer"; 
 
-const MidSectionBanner = ({ index = 0 }) => {
+const MidSectionBanner = memo(({ index = 0 }) => {
     const [banner, setBanner] = useState(null);
     const [isVisible, setIsVisible] = useState(false); 
     const sectionRef = useRef(null); 
@@ -13,7 +15,10 @@ const MidSectionBanner = ({ index = 0 }) => {
 
     // 1. DATA FETCHING
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/cms/banners`)
+        // AbortController to cancel fetch if component unmounts fast
+        const controller = new AbortController();
+        
+        fetch(`${BACKEND_URL}/api/cms/banners`, { signal: controller.signal })
             .then(res => res.json())
             .then(data => {
                 const midBanners = data
@@ -24,7 +29,11 @@ const MidSectionBanner = ({ index = 0 }) => {
                     setBanner(midBanners[index]);
                 }
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                if (err.name !== 'AbortError') console.error(err);
+            });
+
+        return () => controller.abort();
     }, [index, BACKEND_URL]);
 
     // 2. SCROLL TRIGGER ANIMATION LOGIC
@@ -47,6 +56,11 @@ const MidSectionBanner = ({ index = 0 }) => {
 
         return () => observer.disconnect();
     }, [banner]);
+
+    // ⚡ 3. OPTIMIZE IMAGE URL
+    const optimizedBannerImage = useMemo(() => {
+        return banner?.imageUrl ? optimizeImage(banner.imageUrl, 1200) : null;
+    }, [banner?.imageUrl]);
 
     if (!banner) return null;
 
@@ -144,9 +158,14 @@ const MidSectionBanner = ({ index = 0 }) => {
 
                         {/* Main Image */}
                         <div className="relative w-full h-[320px] md:h-[400px] rounded-[2rem] overflow-hidden shadow-2xl bg-neutral-100">
+                            {/* ⚡ OPTIMIZED IMAGE */}
                             <img
-                                src={banner.imageUrl}
+                                src={optimizedBannerImage}
                                 alt={banner.title}
+                                loading="lazy" // Standard lazy load for mid-section
+                                decoding="async"
+                                width="1200"
+                                height="800"
                                 className="w-full h-full object-cover transition-transform duration-[1.5s] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 pointer-events-none" />
@@ -196,6 +215,6 @@ const MidSectionBanner = ({ index = 0 }) => {
             </div>
         </section>
     );
-};
+});
 
 export default MidSectionBanner;

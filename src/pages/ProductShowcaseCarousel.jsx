@@ -4,12 +4,15 @@ import React, {
     useEffect,
     useMemo,
     useState,
+    memo // ⚡ Added memo
 } from "react";
 import { ProductContext } from "../contexts/productContext";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, MoveRight } from "lucide-react";
 import PageTransition from "./PageTransition";
+// 👇 IMPORT THE OPTIMIZER
+import { optimizeImage } from "../utils/imageOptimizer";
 
 /* ------------------ THEME & UTILS ------------------ */
 const baseTheme = {
@@ -39,6 +42,7 @@ const itemVariants = {
     },
 };
 
+// ⚡ PERFORMANCE: 3D Transforms optimized for GPU
 const luxuryImageVariants = {
     enter: ({ direction, isMobile }) => ({
         x: direction > 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100),
@@ -71,9 +75,12 @@ const rotateCircle = {
     }
 };
 
-/* ------------------ HELPER: BLUR IMAGE COMPONENT ------------------ */
-const BlurImage = ({ src, alt, className, priority = false }) => {
+/* ------------------ HELPER: BLUR IMAGE COMPONENT (OPTIMIZED) ------------------ */
+const BlurImage = memo(({ src, alt, className, priority = false }) => {
     const [isLoading, setIsLoading] = useState(true);
+
+    // ⚡ OPTIMIZATION: Resize to 800px (larger for carousel detail)
+    const optimizedSrc = useMemo(() => optimizeImage(src, 800), [src]);
 
     return (
         <div className={`relative overflow-hidden ${className} bg-gray-200`}>
@@ -86,7 +93,7 @@ const BlurImage = ({ src, alt, className, priority = false }) => {
             />
 
             <motion.img
-                src={src}
+                src={optimizedSrc}
                 alt={alt}
                 initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
                 animate={{
@@ -103,14 +110,13 @@ const BlurImage = ({ src, alt, className, priority = false }) => {
             />
         </div>
     );
-};
+});
 
 /* ------------------ MAIN COMPONENT ------------------ */
 export default function ImmersiveProductShowcase() {
     const { products: contextProducts } = useContext(ProductContext);
 
     // ⚡ 1. INSTANT STATE: Initialize from LocalStorage (Cache)
-    // This ensures the carousel appears immediately, even if Context is still fetching.
     const [products, setProducts] = useState(() => {
         try {
             const cached = localStorage.getItem("immersive_showcase_cache");
@@ -125,14 +131,12 @@ export default function ImmersiveProductShowcase() {
     const [storyExpanded, setStoryExpanded] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
-    // ⚡ 2. SYNC & CACHE: Update local state when Context data arrives
+    // ⚡ 2. SYNC & CACHE
     useEffect(() => {
         if (contextProducts && contextProducts.length > 0) {
-            // Filter valid products
             const valid = contextProducts.filter(p => p.category !== "Template" && !p.isArchived);
             
             setProducts(prev => {
-                // Only update if data actually changed to avoid re-renders
                 if (JSON.stringify(prev) !== JSON.stringify(valid)) {
                     localStorage.setItem("immersive_showcase_cache", JSON.stringify(valid));
                     return valid;
@@ -150,7 +154,7 @@ export default function ImmersiveProductShowcase() {
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    // ⚡ 3. PRELOAD IMAGES: Preload Current, Next, and Prev images
+    // ⚡ 3. SMART PRELOAD: Preload only OPTIMIZED versions of Next/Prev
     useEffect(() => {
         if (!products.length) return;
         
@@ -163,11 +167,11 @@ export default function ImmersiveProductShowcase() {
         indicesToLoad.forEach(idx => {
             const p = products[idx];
             if (p) {
-                // Handle both camelCase imageUrl and lowercase imageurl, or array format
-                const src = p.imageUrl || (Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl);
-                if (src) {
+                const rawSrc = p.imageUrl || (Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl);
+                if (rawSrc) {
                     const img = new Image();
-                    img.src = src;
+                    // ⚡ IMPORTANT: Preload the optimized URL, not the original 5MB file
+                    img.src = optimizeImage(rawSrc, 800); 
                 }
             }
         });
@@ -212,15 +216,13 @@ export default function ImmersiveProductShowcase() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [onNext, onPrev]);
 
-    // Safety check for index
+    // Safety check
     useEffect(() => {
         if (products.length > 0 && activeIdx >= products.length) setActiveIdx(0);
     }, [products, activeIdx]);
 
 
     // --- Render Logic ---
-    
-    // If absolutely no data (no cache AND no context), show nothing or a skeleton
     if (products.length === 0) return null;
 
     const product = products[activeIdx] || {};
@@ -236,7 +238,6 @@ export default function ImmersiveProductShowcase() {
     const teaser = storyText.slice(0, 150).trim();
     const isLongStory = storyText && storyText.length > 150;
 
-    // Robust Note Parsing
     const allNotes = (() => {
         try {
             const parseNotes = (source) => {
@@ -248,12 +249,9 @@ export default function ImmersiveProductShowcase() {
             const heart = parseNotes(product.fragrance);
             const base = parseNotes(product.fragranceNotes);
             return [...top, ...heart, ...base];
-        } catch (e) {
-            return [];
-        }
+        } catch (e) { return []; }
     })();
 
-    // Handle Image Source (CamelCase or Array support)
     const displayImage = product.imageUrl || (Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl);
 
     return (

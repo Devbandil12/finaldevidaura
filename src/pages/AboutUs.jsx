@@ -1,11 +1,13 @@
-import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
+import React, { useLayoutEffect, useRef, useState, useEffect, useMemo } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, Star, Droplets, Sun, Fingerprint, Quote } from 'lucide-react'; 
+import { Star, Droplets, Sun, Fingerprint } from 'lucide-react'; 
 import PageTransition from "./PageTransition";
 import Loader from "../Components/Loader"; 
+// 👇 IMPORT OPTIMIZER
+import { optimizeImage } from "../utils/imageOptimizer"; 
 
-// --- ASSETS ---
+// --- ASSETS (Fallbacks) ---
 import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 
 import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; 
 import hero from "../assets/images/banner-2.png";
@@ -39,43 +41,51 @@ export default function AboutUs() {
             }
         };
         fetchData();
-    }, []);
+    }, [BACKEND_URL]);
 
-    const content = {
-        heroTitle: cmsData?.heroTitle || "DEVID AURA",
-        heroSubtitle: cmsData?.heroSubtitle || "Est. 2023",
-        heroImage: cmsData?.heroImage || hero,
-        pillar1: {
-            title: cmsData?.pillar1Title || "Unrefined Nature.",
-            desc: cmsData?.pillar1Desc || "We harvest when the sun is highest. Petals, roots, and resins gathered by hand from the finest estates across the globe.",
-            image: cmsData?.pillar1Image || pillar_1
-        },
-        pillar2: {
-            title: cmsData?.pillar2Title || "Liquid Patience.",
-            desc: cmsData?.pillar2Desc || "Speed is the enemy of luxury. Our blends macerate in glass vessels for 90 days, allowing each note to find its harmony.",
-            image: cmsData?.pillar2Image || pillar_2
-        },
-        pillar3: {
-            title: cmsData?.pillar3Title || "The Human Canvas.",
-            desc: cmsData?.pillar3Desc || "A perfume is unfinished until it meets your warmth. It is not a mask you wear — it is an invisible signature.",
-            image: cmsData?.pillar3Image || pillar_3
-        },
-        founders: {
-            title: cmsData?.foundersTitle || "Architects of Memory.",
-            quote: cmsData?.foundersQuote || "We believe that luxury is transparency. We stripped away the marketing noise to reveal the soul of fragrance.",
-            desc: cmsData?.foundersDesc || "Harsh & Yomesh founded Devid Aura with a simple premise: to modernize the ancient art of Indian perfumery, crafting fragrances that speak to both heritage and innovation.",
-            image: cmsData?.foundersImage || founder_img,
-            f1Name: cmsData?.founder1Name || "Harsh",
-            f1Role: cmsData?.founder1Role || "The Nose",
-            f2Name: cmsData?.founder2Name || "Yomesh",
-            f2Role: cmsData?.founder2Role || "The Eye",
-        },
-        footer: {
-            title: cmsData?.footerTitle || "Define Your Presence.",
-            desktop: cmsData?.footerImageDesktop || footer_bg_desktop,
-            mobile: cmsData?.footerImageMobile || footer_bg_mobile,
-        }
-    };
+    // ⚡ 2. OPTIMIZE CONTENT & MEMOIZE (Prevents GSAP glitches)
+    const content = useMemo(() => {
+        return {
+            heroTitle: cmsData?.heroTitle || "DEVID AURA",
+            heroSubtitle: cmsData?.heroSubtitle || "Est. 2023",
+            // Optimize Hero (Large)
+            heroImage: optimizeImage(cmsData?.heroImage || hero, 1500),
+            
+            pillar1: {
+                title: cmsData?.pillar1Title || "Unrefined Nature.",
+                desc: cmsData?.pillar1Desc || "We harvest when the sun is highest. Petals, roots, and resins gathered by hand from the finest estates across the globe.",
+                // Optimize Pillars (Medium)
+                image: optimizeImage(cmsData?.pillar1Image || pillar_1, 800)
+            },
+            pillar2: {
+                title: cmsData?.pillar2Title || "Liquid Patience.",
+                desc: cmsData?.pillar2Desc || "Speed is the enemy of luxury. Our blends macerate in glass vessels for 90 days, allowing each note to find its harmony.",
+                image: optimizeImage(cmsData?.pillar2Image || pillar_2, 800)
+            },
+            pillar3: {
+                title: cmsData?.pillar3Title || "The Human Canvas.",
+                desc: cmsData?.pillar3Desc || "A perfume is unfinished until it meets your warmth. It is not a mask you wear — it is an invisible signature.",
+                image: optimizeImage(cmsData?.pillar3Image || pillar_3, 800)
+            },
+            founders: {
+                title: cmsData?.foundersTitle || "Architects of Memory.",
+                quote: cmsData?.foundersQuote || "We believe that luxury is transparency. We stripped away the marketing noise to reveal the soul of fragrance.",
+                desc: cmsData?.foundersDesc || "Harsh & Yomesh founded Devid Aura with a simple premise: to modernize the ancient art of Indian perfumery, crafting fragrances that speak to both heritage and innovation.",
+                // Optimize Founder (Medium)
+                image: optimizeImage(cmsData?.foundersImage || founder_img, 800),
+                f1Name: cmsData?.founder1Name || "Harsh",
+                f1Role: cmsData?.founder1Role || "The Nose",
+                f2Name: cmsData?.founder2Name || "Yomesh",
+                f2Role: cmsData?.founder2Role || "The Eye",
+            },
+            footer: {
+                title: cmsData?.footerTitle || "Define Your Presence.",
+                // Optimize Footer (Large)
+                desktop: optimizeImage(cmsData?.footerImageDesktop || footer_bg_desktop, 1200),
+                mobile: optimizeImage(cmsData?.footerImageMobile || footer_bg_mobile, 600),
+            }
+        };
+    }, [cmsData]);
 
     const handleImageLoad = () => ScrollTrigger.refresh();
 
@@ -204,6 +214,7 @@ export default function AboutUs() {
 
         }, containerRef);
 
+        // Ensure ScrollTrigger refreshes after a moment to catch any layout shifts
         const timer = setTimeout(() => ScrollTrigger.refresh(), 500);
         return () => { ctx.revert(); clearTimeout(timer); };
     }, [loading]);
@@ -247,7 +258,11 @@ export default function AboutUs() {
                             src={content.heroImage} 
                             alt="Hero Bottle" 
                             className="w-full h-full object-cover" 
-                            onLoad={handleImageLoad} 
+                            onLoad={handleImageLoad}
+                            // ⚡ LCP OPTIMIZATION: Eager load hero
+                            loading="eager"
+                            fetchPriority="high" 
+                            decoding="async"
                         />
                         <div className="absolute inset-0 bg-black/10" />
                     </div>
@@ -262,7 +277,13 @@ export default function AboutUs() {
                             <div key={i} className="h-slide-desktop w-screen h-full flex items-center justify-center px-12">
                                 <div className="max-w-7xl w-full grid grid-cols-2 gap-24 items-center">
                                     <div className={`relative h-[55vh] w-full rounded-[32px] overflow-hidden shadow-lg bg-gray-200 ${i === 1 ? 'order-1' : ''}`}>
-                                        <img src={pillar.image} alt={pillar.title} className="w-full h-full object-cover" />
+                                        <img 
+                                            src={pillar.image} 
+                                            alt={pillar.title} 
+                                            className="w-full h-full object-cover" 
+                                            loading="lazy" 
+                                            decoding="async" 
+                                        />
                                     </div>
                                     <div className={`flex flex-col justify-center ${i === 1 ? 'order-2' : ''}`}>
                                         <div className="mb-6 flex items-center gap-3">
@@ -283,22 +304,20 @@ export default function AboutUs() {
                     </div>
                 </div>
 
-                {/* MOBILE (Vertical Sticky Stack - Optimized Spacing) */}
+                {/* MOBILE (Vertical Sticky Stack) */}
                 <div className="block md:hidden w-full bg-white pb-10">
                     {[content.pillar1, content.pillar2, content.pillar3].map((pillar, i) => (
-                        // Changed h-screen to h-screen but tightened content inside
                         <div key={i} className="mobile-pillar-card sticky top-0 h-screen w-full flex items-center justify-center bg-white border-t border-gray-100/50">
-                            
-                            {/* Inner Content - Tightened margins & Increased image height */}
                             <div className="inner-content relative w-full h-full px-5 flex flex-col justify-center items-center bg-white">
-                                
-                                {/* Image Area - Taller (max-h-[55vh]) to fill empty space */}
                                 <div className="relative w-full aspect-[4/5] max-h-[55vh] rounded-[24px] overflow-hidden shadow-lg mb-5">
-                                    <img src={pillar.image} alt={pillar.title} className="w-full h-full object-cover" />
+                                    <img 
+                                        src={pillar.image} 
+                                        alt={pillar.title} 
+                                        className="w-full h-full object-cover" 
+                                        loading="lazy" 
+                                    />
                                     <div className="absolute inset-0 bg-black/5" />
                                 </div>
-
-                                {/* Text Area - Closer to image (mb-5 instead of mb-8) */}
                                 <div className="w-full text-center">
                                     <div className="mb-2 flex items-center justify-center gap-2">
                                         <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-neutral-400">
@@ -315,7 +334,6 @@ export default function AboutUs() {
                             </div>
                         </div>
                     ))}
-                    {/* Spacer to allow full scroll of last item */}
                     <div className="h-[5vh] w-full bg-white"></div>
                 </div>
 
@@ -324,7 +342,12 @@ export default function AboutUs() {
                     <div className="max-w-[1400px]  px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-48 items-center">
                         <div className="w-full flex justify-center lg:justify-end">
                              <div className="relative w-full max-w-md aspect-[3/4] rounded-[32px] overflow-hidden bg-gray-100 shadow-xl">
-                                <img src={content.founders.image} alt="Founders" className="founder-img-anim w-full h-full object-cover grayscale" />
+                                <img 
+                                    src={content.founders.image} 
+                                    alt="Founders" 
+                                    className="founder-img-anim w-full h-full object-cover grayscale" 
+                                    loading="lazy"
+                                />
                             </div>
                         </div>
                         <div className="flex flex-col justify-center relative z-10">
@@ -364,7 +387,12 @@ export default function AboutUs() {
                 {/* --- FOOTER --- */}
                 <section className="footer-wrapper w-full bg-white pb-12 pt-10 flex justify-center items-center">
                     <div className="footer-card-anim relative w-[92%] h-[50vh] md:h-[70vh] rounded-[30px] md:rounded-[3rem] overflow-hidden shadow-2xl bg-black">
-                        <img src={content.footer.desktop} alt="Footer" className="w-full h-full object-cover opacity-80" />
+                        <img 
+                            src={content.footer.desktop} 
+                            alt="Footer" 
+                            className="w-full h-full object-cover opacity-80" 
+                            loading="lazy"
+                        />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex flex-col justify-end items-center pb-12">
                             <h2 className="footer-content-reveal text-3xl md:text-6xl  text-white mb-8 text-center px-4">
                                 {content.footer.title}

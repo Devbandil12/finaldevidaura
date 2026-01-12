@@ -1,11 +1,7 @@
-import React, { useEffect, useRef, useContext, useMemo, useState } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Sparkles, Tag, Zap, Crown, Star, Diamond } from "lucide-react";
+import React, { useContext, useMemo } from "react";
+import { Tag, Sparkles, Crown, Star, Diamond } from "lucide-react";
 import "../style/DualMarquee.css";
 import { CouponContext } from "../contexts/CouponContext";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const defaultPhrases = [
   "Timeless Elegance",
@@ -20,52 +16,28 @@ const defaultPhrases = [
   "Art in a Bottle"   
 ];
 
-const MarqueeRow = ({ items, direction = 1, className }) => {
-  const trackRef = useRef(null);
-  const timelineRef = useRef(null);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    setIsReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isReady || !trackRef.current) return;
-
-    const ctx = gsap.context(() => {
-      const track = trackRef.current;
-      const totalWidth = track.scrollWidth;
-      // We duplicate content 4 times, so one full loop is 1/4th the width
-      const singleSetWidth = totalWidth / 4; 
-
-      // Set initial position
-      gsap.set(track, { x: direction === 1 ? 0 : -singleSetWidth });
-
-      // PERFORMANCE FIX: Removed the Velocity ScrollTrigger logic.
-      // Changing timeScale() on scroll causes heavy recalculations on mobile.
-      // A linear, constant speed is much smoother (60fps).
-      timelineRef.current = gsap.to(track, {
-        x: direction === 1 ? -singleSetWidth : 0,
-        duration: 40, // Adjusted for steady flow
-        ease: "none",
-        repeat: -1,
-      });
-
-    }, trackRef);
-
-    return () => ctx.revert();
-  }, [direction, items, isReady]);
-
+// --- ⚡ PURE CSS MARQUEE ROW (Optimized) ---
+const MarqueeRow = ({ items, reverse = false, className }) => {
   if (!items || items.length === 0) return null;
 
+  // Duplicate items enough times to fill screen seamlessly
+  const loopedItems = [...items, ...items, ...items, ...items];
+
   return (
-    <div className={`marquee-track-wrapper ${className}`}>
-      <div ref={trackRef} className="marquee-track">
-        {/* Duplicate 4 times for seamless loop */}
-        {[...items, ...items, ...items, ...items].map((item, i) => {
+    // Added 'pointer-events-none' to prevent any hover interaction from stopping it
+    <div className={`marquee-track-wrapper pointer-events-none ${className}`}>
+      <div 
+        className="marquee-track" 
+        style={{ 
+            animationName: reverse ? "marquee-reverse" : "marquee-normal",
+            animationDuration: "80s", // ⚡ FIXED: Slower speed (was 40s)
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            animationPlayState: "running" // ⚡ FIXED: Force play (never pause)
+        }}
+      >
+        {loopedItems.map((item, i) => {
           const isOffer = typeof item === 'object' && item.type === 'offer';
-          
-          // Note: float classes are handled in CSS via media queries now
           const floatClass = i % 2 === 0 ? "float-slow" : "float-fast";
           
           const Separator = i % 4 === 0 ? <Diamond className="sep-icon" /> : 
@@ -180,12 +152,22 @@ export default function DualMarquee() {
 
   return (
     <section className="dual-marquee-section">
-      <MarqueeRow items={marqueeItems} direction={1} className="normal" />
+      <style>{`
+        @keyframes marquee-normal {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee-reverse {
+          0% { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
+      `}</style>
+      <MarqueeRow items={marqueeItems} reverse={false} className="normal" />
       <MarqueeRow 
          items={[...marqueeItems].reverse()} 
-         direction={-1} 
+         reverse={true} 
          className="reverse" 
       />
     </section>
   );
-}
+};

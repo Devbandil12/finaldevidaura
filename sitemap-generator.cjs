@@ -1,43 +1,64 @@
 const { SitemapStream, streamToPromise } = require('sitemap');
 const { createWriteStream } = require('fs');
 const { Readable } = require('stream');
+require('dotenv').config(); // Load environment variables
 
-// Your website's domain
+// 1. CONFIGURATION
 const hostname = 'https://www.devidaura.com';
-
-// An array of your app's routes
-const links = [
-    { url: '/', changefreq: 'daily', priority: 1.0 },
-    { url: '/products', changefreq: 'weekly', priority: 0.8 },
-    { url: '/myorder', changefreq: 'monthly', priority: 0.5 },
-    { url: '/wishlist', changefreq: 'monthly', priority: 0.5 },
-    { url: '/cart', changefreq: 'monthly', priority: 0.5 },
-    { url: '/myaccount', changefreq: 'monthly', priority: 0.5 },
-    { url: '/contact', changefreq: 'monthly', priority: 0.5 },
-    { url: '/privacy', changefreq: 'yearly', priority: 0.3 },
-    { url: '/terms', changefreq: 'yearly', priority: 0.3 },
-    // Add other static routes here
-];
-
-// The destination file
+const BACKEND_URL = process.env.VITE_BACKEND_URL?.replace(/\/$/, "") || 'http://localhost:5000';
 const destination = './public/sitemap.xml';
 
-// Create a stream to write to
-const sitemapStream = new SitemapStream({ hostname });
-const writeStream = createWriteStream(destination);
+// 2. STATIC ROUTES (Cleaned: Removed Cart, Account, Orders)
+const staticLinks = [
+  { url: '/', changefreq: 'daily', priority: 1.0 },
+  { url: '/products', changefreq: 'daily', priority: 0.9 },
+  { url: '/custom-combo', changefreq: 'weekly', priority: 0.8 },
+  { url: '/about', changefreq: 'monthly', priority: 0.7 },
+  { url: '/contact', changefreq: 'monthly', priority: 0.6 },
+  { url: '/privacy', changefreq: 'yearly', priority: 0.3 },
+  { url: '/terms', changefreq: 'yearly', priority: 0.3 },
+];
 
-console.log('Starting sitemap generation...');
+async function generateSitemap() {
+  console.log('⏳ Starting sitemap generation...');
 
-// Pipe the stream to the file
-sitemapStream.pipe(writeStream);
+  try {
+    // 3. FETCH DYNAMIC PRODUCTS FROM BACKEND
+    console.log(`🔍 Fetching products from ${BACKEND_URL}...`);
+    const response = await fetch(`${BACKEND_URL}/api/products`);
+    const productsData = await response.json();
+    
+    // Handle array or { data: [] } structure
+    const productList = Array.isArray(productsData) ? productsData : (productsData.data || []);
 
-// Create a readable stream from your links and pipe it to the sitemap stream
-const linkStream = Readable.from(links);
-linkStream.pipe(sitemapStream);
+    // 4. MAP PRODUCTS TO SITEMAP LINKS
+    const productLinks = productList.map(product => ({
+      // ⚠️ Check if your route is /product/:id or /product/:slug
+      url: `/product/${product.id}`,
+      changefreq: 'weekly',
+      priority: 0.8
+    }));
 
-// When the stream is finished, log a success message
-streamToPromise(sitemapStream).then(() => {
-    console.log('Sitemap generated successfully in ./public/sitemap.xml!');
-}).catch((error) => {
-    console.error('Sitemap generation failed:', error);
-});
+    console.log(`✅ Found ${productLinks.length} products.`);
+
+    // 5. COMBINE ALL LINKS
+    const allLinks = [...staticLinks, ...productLinks];
+
+    // 6. CREATE STREAM & WRITE
+    const stream = new SitemapStream({ hostname });
+    const writeStream = createWriteStream(destination);
+
+    // Pipe results to file
+    Readable.from(allLinks).pipe(stream).pipe(writeStream);
+
+    // Wait for completion
+    await streamToPromise(stream);
+    console.log(`🎉 Sitemap successfully generated at ${destination}`);
+
+  } catch (error) {
+    console.error('❌ Sitemap generation failed:', error);
+    process.exit(1);
+  }
+}
+
+generateSitemap();

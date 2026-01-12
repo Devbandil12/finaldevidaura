@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useMemo } from "react";
+import React, { useContext, useEffect, useState, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -7,6 +7,9 @@ import { CartContext } from "../contexts/CartContext";
 
 import { Heart, Sparkles, Bell, Check } from "lucide-react";
 import PageTransition from "./PageTransition";
+
+// 👇 IMPORT THE OPTIMIZER UTILITY
+import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- CONTENT MAPPING ---
 const categoryMetadata = {
@@ -37,43 +40,47 @@ const sectionVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 } // Faster stagger for performance
   }
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, scale: 0.96, filter: "blur(4px)" },
-  visible: { opacity: 1, scale: 1, filter: "blur(0px)", transition: { duration: 0.5, ease: "circOut" } }
+  hidden: { opacity: 0, scale: 0.96 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: "circOut" } }
 };
 
-// --- BLUR IMAGE COMPONENT (OPTIMIZED) ---
-const BlurImage = ({ src, alt, className, priority = false }) => {
+// --- BLUR IMAGE COMPONENT (FULLY OPTIMIZED) ---
+const BlurImage = memo(({ src, alt, className, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // ⚡ OPTIMIZATION: Automatically resize image to 600px width using Cloudinary
+  const optimizedSrc = useMemo(() => optimizeImage(src, 600), [src]);
+
   return (
     <div className={`relative overflow-hidden w-full h-full bg-[#f0eee6] ${className}`}>
       <motion.img
-        src={src}
+        src={optimizedSrc}
         alt={alt}
         initial={{ opacity: 0 }}
         animate={{ opacity: isLoaded ? 1 : 0 }}
         transition={{ duration: 0.5 }}
         onLoad={() => setIsLoaded(true)}
-        // ⚡ OPTIMIZATION: Eager load if priority is true
+        // ⚡ OPTIMIZATION: Eager load if priority is true (Top 4 items)
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
-        className={`w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105 ${isLoaded ? 'blur-0' : 'blur-lg'}`}
+        className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
       />
     </div>
   );
-};
+});
 
 const Products = () => {
   const { products: contextProducts } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
   const navigate = useNavigate();
 
-  // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+  // ⚡ 1. INSTANT STATE: Initialize from LocalStorage for speed
   const [products, setProducts] = useState(() => {
     try {
       const cached = localStorage.getItem("all_products_cache");
@@ -86,7 +93,6 @@ const Products = () => {
   // ⚡ 2. SYNC WITH CONTEXT: Update silently when fresh data arrives
   useEffect(() => {
     if (contextProducts && contextProducts.length > 0) {
-      // Sort/Filter logic if needed, or just raw
       setProducts(prev => {
         if (JSON.stringify(prev) !== JSON.stringify(contextProducts)) {
             localStorage.setItem("all_products_cache", JSON.stringify(contextProducts));
@@ -125,7 +131,7 @@ const Products = () => {
     return product.variants.sort((a, b) => a.oprice - b.oprice)[0];
   };
 
-  // Grouping Logic
+  // Memoized Grouping Logic to prevent CPU spikes
   const groupedProducts = useMemo(() => {
     const groups = {};
     products.forEach(product => {
@@ -152,7 +158,7 @@ const Products = () => {
 
   return (
     <PageTransition>
-      <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40 ">
+      <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40">
         
         {/* --- HEADER --- */}
         <div className="max-w-[1600px] mx-auto mb-20 md:mb-28 text-center">
@@ -160,7 +166,7 @@ const Products = () => {
                 <span className="mb-6 px-6 py-2 rounded-full border border-[#D4AF37]/30 bg-white text-xs font-bold tracking-[0.3em] uppercase text-[#D4AF37]">
                     Olfactory Library
                 </span>
-                <h1 className="text-6xl md:text-8xl text-stone-900 tracking-tight leading-[0.9] ">
+                <h1 className="text-6xl md:text-8xl text-stone-900 tracking-tight leading-[0.9]">
                     The <span className="italic font-light text-[#C5A059]">Collection</span>
                 </h1>
             </motion.div>
@@ -187,18 +193,18 @@ const Products = () => {
               >
                 {/* --- HEADING --- */}
                 <div className="relative mb-12 pl-2 md:pl-6">
-                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem]  text-[#F2F0EB] leading-none select-none z-0">
+                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem] text-[#F2F0EB] leading-none select-none z-0">
                        {indexStr}
                     </span>
                     <div className="relative z-10 pt-6 pl-4">
                        <span className="block text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase mb-1">
                           {meta.tagline}
                        </span>
-                       <h2 className="text-4xl md:text-6xl  text-stone-900 leading-none mb-3">
-                         {meta.title}
+                       <h2 className="text-4xl md:text-6xl text-stone-900 leading-none mb-3">
+                          {meta.title}
                        </h2>
                        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                           <p className="text-sm md:text-base text-stone-500 italic ">
+                           <p className="text-sm md:text-base text-stone-500 italic">
                              {meta.description}
                            </p>
                            <div className="hidden md:block w-8 h-[1px] bg-stone-300"></div>
@@ -237,7 +243,7 @@ const Products = () => {
                           <BlurImage 
                               src={imageUrl} 
                               alt={product.name} 
-                              priority={isPriority} // Pass priority here
+                              priority={isPriority} 
                               className={isOutOfStock ? "grayscale-[0.8] opacity-85" : ""}
                           />
 
@@ -253,6 +259,7 @@ const Products = () => {
                                     </div>
                                     <button 
                                         onClick={(e) => handleToggleWishlist(e, product)} 
+                                        aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                                         className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                                     >
                                         <Heart size={14} className={inWishlist ? "fill-red-500 text-red-500" : "text-stone-600"} />
@@ -292,7 +299,7 @@ const Products = () => {
 
                         {/* TEXT */}
                         <div className="pt-5 px-2 text-center">
-                          <h3 className={`text-xl  leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
+                          <h3 className={`text-xl leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
                               {product.name}
                           </h3>
                           <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light">

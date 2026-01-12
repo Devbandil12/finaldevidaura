@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useContext, useMemo, useCallback, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -11,10 +11,12 @@ import { FiAlertTriangle } from "react-icons/fi";
 import { HiOutlineSparkles } from "react-icons/hi";
 import { BsStars } from "react-icons/bs"; 
 import PageTransition from "./PageTransition";
+// 👇 IMPORT OPTIMIZER
+import { optimizeImage } from "../utils/imageOptimizer"; 
 
 // --- UI HELPERS ---
 
-const HeroButton = ({ children, className, variant = "primary", ...props }) => {
+const HeroButton = memo(({ children, className, variant = "primary", ...props }) => {
     const baseStyle = "flex items-center justify-center px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed";
     
     const variants = {
@@ -32,7 +34,7 @@ const HeroButton = ({ children, className, variant = "primary", ...props }) => {
             {children}
         </motion.button>
     );
-};
+});
 
 const Loader = ({ text = "Loading..." }) => (
     <div className="min-h-[400px] flex flex-col items-center justify-center">
@@ -59,17 +61,20 @@ const cardVariants = {
     }
 };
 
-// --- PERFUME CARD (Mobile Optimized) ---
-const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSelect, priority = false }) => {
-    const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
+// --- PERFUME CARD (OPTIMIZED & MEMOIZED) ---
+const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, onSelect, priority = false }) => {
+    
+    const rawUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
         ? product.imageurl[0]
         : "/placeholder.png";
+
+    // ⚡ OPTIMIZATION: Resize to 200px (Thumbnail size)
+    const imageUrl = useMemo(() => optimizeImage(rawUrl, 200), [rawUrl]);
 
     const oprice = variant.oprice || product.oprice || 0;
     const discount = variant.discount || product.discount || 0;
     const discountedPrice = Math.floor(oprice * (1 - discount / 100));
 
-    // Determine if we should show selection styling
     const isSelected = count > 0;
 
     return (
@@ -78,15 +83,13 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
             onClick={!isDisabled ? onSelect : undefined}
             className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer
             ${isSelected 
-                // SELECTED: White background + Gold Ring
                 ? "bg-white ring-1 ring-[#C5A059]/30" 
-                // NOT SELECTED: Transparent
                 : "" 
             }
             ${isOutOfStock 
-                ? "opacity-40 grayscale cursor-not-allowed" // OUT OF STOCK: Grayscale
+                ? "opacity-40 grayscale cursor-not-allowed" 
                 : isDisabled 
-                    ? "opacity-60 cursor-not-allowed" // DISABLED (e.g. box full): Faded but not grayscale
+                    ? "opacity-60 cursor-not-allowed"
                     : ""
             }
             `}
@@ -96,7 +99,7 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
                 <img
                     src={imageUrl}
                     alt={product.name}
-                    loading={priority ? "eager" : "lazy"} // ⚡ Instant load for top items
+                    loading={priority ? "eager" : "lazy"}
                     fetchPriority={priority ? "high" : "auto"}
                     decoding="async"
                     className={`w-full h-full object-cover transition-all duration-500 ease-in-out
@@ -121,7 +124,7 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
                     </div>
 
                     <p className=" italic text-gray-400 text-[10px] leading-snug line-clamp-2">
-                        {product.description || "ekdam jhakaas faadu fragrance"}
+                        {product.description || "Premium fragrance"}
                     </p>
                 </div>
 
@@ -143,7 +146,7 @@ const PerfumeCard = ({ variant, product, count, isOutOfStock, isDisabled, onSele
             </div>
         </motion.div>
     );
-};
+});
 
 
 // --- MAIN COMPONENT ---
@@ -167,12 +170,11 @@ const CustomComboBuilder = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
-    // ⚡ 2. SYNC WITH CONTEXT: Update silently
+    // ⚡ 2. SYNC WITH CONTEXT
     useEffect(() => {
         if (contextProducts && contextProducts.length > 0) {
             setProducts(prev => {
                 if (JSON.stringify(prev) !== JSON.stringify(contextProducts)) {
-                    // Update cache for next time
                     localStorage.setItem("all_products_cache", JSON.stringify(contextProducts));
                     return contextProducts;
                 }
@@ -209,19 +211,21 @@ const CustomComboBuilder = () => {
             );
     }, [products]);
 
-    // ⚡ 3. PRELOAD IMAGES: Preload the perfume thumbnails immediately
+    // ⚡ 3. PRELOAD OPTIMIZED IMAGES
     useEffect(() => {
         if (availablePerfumes.length > 0) {
-            // Preload first 6 images for instant visibility
+            // Preload first 6 images using the OPTIMIZED url
             availablePerfumes.slice(0, 6).forEach(({ product }) => {
                 const src = product.imageurl?.[0];
                 if (src) {
                     const img = new Image();
-                    img.src = src;
+                    img.src = optimizeImage(src, 200); // 👈 Preload 200px version
                 }
             });
         }
     }, [availablePerfumes]);
+
+    const isFull = selectedPerfumes.length === 4;
 
     const handleSelectPerfume = useCallback((variant) => {
         if (isProcessing) return;
@@ -236,10 +240,10 @@ const CustomComboBuilder = () => {
         });
     }, [isProcessing]);
 
-    const handleRemoveFromSlot = (indexToRemove) => {
+    const handleRemoveFromSlot = useCallback((indexToRemove) => {
         if (isProcessing) return;
         setSelectedPerfumes((prev) => prev.filter((_, index) => index !== indexToRemove));
-    };
+    }, [isProcessing]);
 
     const validateAndProceed = () => {
         if (selectedPerfumes.length !== 4) {
@@ -278,12 +282,9 @@ const CustomComboBuilder = () => {
         }
     };
 
-    const isFull = selectedPerfumes.length === 4;
-
-    // ⚡ 4. NON-BLOCKING LOADER: Only show if NO cache AND fetching
+    // ⚡ 4. LOADER STRATEGY
     if (products.length === 0 && contextLoading) return <Loader text="Curating Library..." />;
 
-    // If cache is empty and not loading, probably an error or no products found
     if (products.length === 0 && !contextLoading) return (
         <div className="min-h-screen flex items-center justify-center text-gray-400">
             No products available.
@@ -358,8 +359,6 @@ const CustomComboBuilder = () => {
                                 {availablePerfumes.map(({ product, variant }, index) => {
                                     const count = selectedPerfumes.filter(v => v.id === variant.id).length;
                                     const isOutOfStock = (variant.stock || 0) <= 0;
-                                    
-                                    // ⚡ Prioritize first 6 items for LCP
                                     const isPriority = index < 6;
 
                                     return (
@@ -369,8 +368,10 @@ const CustomComboBuilder = () => {
                                             product={product}
                                             count={count}
                                             isOutOfStock={isOutOfStock}
-                                            isDisabled={isProcessing || isOutOfStock || (isFull)}
-                                            onSelect={() => !isProcessing && handleSelectPerfume(variant)}
+                                            isDisabled={isProcessing || isOutOfStock || (isFull && count === 0)}
+                                            // ⚡ Passing arrow function is okay if child is cheap, but better to memoize handler if possible. 
+                                            // For simplicity and readability here, we keep it inline as PerfumeCard is memoized and prop change will be minimal.
+                                            onSelect={() => handleSelectPerfume(variant)}
                                             priority={isPriority} 
                                         />
                                     );
@@ -425,7 +426,8 @@ const CustomComboBuilder = () => {
                                                         className="flex items-center gap-4 bg-white border border-gray-100 p-2 rounded-2xl group shadow-sm"
                                                     >
                                                         <img
-                                                            src={productInfo.product.imageurl?.[0] || "/placeholder.png"}
+                                                            // ⚡ Optimize thumbnail in slot too
+                                                            src={optimizeImage(productInfo.product.imageurl?.[0], 100) || "/placeholder.png"}
                                                             className="w-12 h-12 rounded-xl object-cover opacity-90"
                                                             alt=""
                                                         />
@@ -476,10 +478,10 @@ const CustomComboBuilder = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-8 flex items-center justify-center gap-2 text-gray-500 bg-gray-100 py-4 rounded-xl border border-gray-100 shadow-inner">
-                                                <FaLock size={12} />
-                                                <span className="text-[10px] uppercase tracking-widest font-bold">
-                                                    Add {4 - selectedPerfumes.length} more to unlock
-                                                </span>
+                                            <FaLock size={12} />
+                                            <span className="text-[10px] uppercase tracking-widest font-bold">
+                                                Add {4 - selectedPerfumes.length} more to unlock
+                                            </span>
                                     </div>
                                 )}
 

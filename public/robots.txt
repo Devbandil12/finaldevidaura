@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow sensitive or useless pages for SEO
+Disallow: /admin/
+Disallow: /myaccount/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /myorder/
+
+# Point to your Sitemap (we will create this later if you haven't)
+Sitemap: https://yourdomain.com/sitemap.xml
