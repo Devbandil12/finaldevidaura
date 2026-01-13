@@ -6,7 +6,6 @@ import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 
 import { Heart, Sparkles, Bell, Check } from "lucide-react";
-import PageTransition from "./PageTransition";
 
 // 👇 IMPORT THE OPTIMIZER UTILITY
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -157,7 +156,7 @@ const Products = () => {
   }, [products]);
 
   return (
-    <PageTransition>
+    
       <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40">
         
         {/* --- HEADER --- */}
@@ -321,7 +320,7 @@ const Products = () => {
             </div>
         )}
       </section>
-    </PageTransition>
+    
   );
 };
 

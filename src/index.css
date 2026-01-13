@@ -1,8 +1,35 @@
 /* src/index.css */
-/* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap'); */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Manrope:wght@200..800&display=swap');
 @import "tailwindcss";
 
+/* ⚡️ PERFORMANCE OPTIMIZATION LAYER */
+@layer base {
+  html {
+    /* 1. Prevents elastic "bounce" which fights with Lenis */
+    overscroll-behavior: none;
+    /* 2. Optimizes scroll for vertical only (removes side-swipe delay) */
+    touch-action: pan-y;
+  }
+
+  body {
+    /* 3. Rendering speed optimizations */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Use optimizeSpeed if still laggy */
+    background-color: var(--color-off-white);
+    color: var(--color-black);
+    font-family: "Manrope", sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* 4. GPU Acceleration for images to prevent stutter */
+  img {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
 
 @layer components {
 
@@ -20,52 +47,41 @@
   }
 }
 
-
-
 /* 2. LUXURY DESIGN TOKENS */
 :root {
-  /* Palette */
   --color-gold: #C5A059;
   --color-gold-light: #D4AF37;
   --color-black: #1A1C20;
-  --color-off-white: #ffffff; /* The signature "Warm Luxury" bg */
+  --color-off-white: #ffffff;
   --color-text-body: #4a4a4a;
-
 }
 
-/* 3. GLOBAL RESET */
-html.lenis, html.lenis body {
+/* 3. GLOBAL RESET & TYPOGRAPHY */
+/* Lenis required setup */
+html.lenis,
+html.lenis body {
   height: auto;
 }
 
-body {
-  background-color: var(--color-off-white);
-  color: var(--color-black);
-  font-family: "Manrope", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  margin: 0;
-  line-height: 1.6;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
 }
 
-h1, h2, h3, h4, h5, h6 {
- font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
-  /* letter-spacing: -0.02em; */
-}
-
-h3, h4, h5, h6 {
- font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
+h3,
+h4,
+h5,
+h6 {
   font-size: 22px;
-  /* letter-spacing: -0.02em; */
 }
-
-
 
 p {
- font-family: "Cormorant Garamond", serif;
-  /* color: var(--color-text-body); */
+  font-family: "Cormorant Garamond", serif;
   line-height: 1.25;
   font-size: 16px;
 }
@@ -75,33 +91,22 @@ p {
   color: white;
 }
 
-
-
-/* --- SCROLLBAR AND OTHER STYLES --- */
-
-/* Scrollbar container */
+/* --- SCROLLBAR --- */
 ::-webkit-scrollbar {
   width: 6px;
   margin-right: 5px;
 }
 
-/* Track (background) */
-/* Track (background) */
 ::-webkit-scrollbar-track {
   background: transparent;
-  /* removes the white background */
   border: none;
-  /* ensures no border line shows up */
 }
 
-
-/* Thumb (scroll indicator) */
 ::-webkit-scrollbar-thumb {
   background: #000000;
   border-radius: 6px;
 }
 
-/* Hover effect for the thumb */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
@@ -115,14 +120,15 @@ p {
   scrollbar-width: none;
 }
 
-
+/* --- BUTTON ANIMATIONS --- */
 .button-hero {
   position: relative;
   overflow: hidden;
   border-radius: 12px;
   transition: transform 0.15s ease;
+  /* ⚡️ Performance: Tell browser this element changes */
+  will-change: transform;
 }
-
 
 .button-hero:active {
   transform: scale(0.97);
@@ -135,7 +141,7 @@ p {
   animation: hero-pulse 600ms ease-out;
   pointer-events: none;
   filter: blur(3px);
-  will-change: transform, opacity
+  will-change: transform, opacity;
 }
 
 @keyframes hero-pulse {
@@ -159,22 +165,22 @@ p {
 
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out;
-}y
-
+}
 
 /* 4. SMOOTH SCROLL UTILS (Lenis) */
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
+
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
+
 .lenis.lenis-stopped {
   overflow: hidden;
 }
 
-/* 5. UTILITY: VISUAL CONNECTORS */
-/* This is the line that physically connects your sections */
+/* 5. VISUAL CONNECTORS */
 .connector-line {
   width: 1px;
   height: 80px;
@@ -183,18 +189,9 @@ p {
   opacity: 0.4;
 }
 
-@layer components {
-  .form-input {
-    @apply block w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black;
-  }
-}
-
-
 /* ===========================
-   Modern Date Picker Styling (Full & Fixed)
-   =========================== */
-
-/* The calendar pop-up */
+   Modern Date Picker Styling
+   =========================== */
 .react-datepicker-popper {
   z-index: 30 !important;
 }
@@ -202,48 +199,41 @@ p {
 .react-datepicker {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   border-radius: 1rem !important;
-  /* 16px */
   border: 1px solid #f0f0f0 !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
   padding: 8px !important;
 }
 
-/* * The header (which holds your CustomDatePickerHeader component)
- * We make it transparent and remove padding/borders.
- */
 .react-datepicker__header {
   background-color: #ffffff !important;
   border-bottom: none !important;
   padding: 0 !important;
 }
 
-/* This is the container for the "Su, Mo, Tu..." row */
 .react-datepicker__day-names {
-  margin-top: 8px; /* Adds a little space above the day names */
+  margin-top: 8px;
   padding-bottom: 4px;
   margin-bottom: 2px !important;
 }
 
 .react-datepicker__day-name {
-  /* --- FONT FIX --- */
   font-family: inherit;
-  color: #334155;    
-  font-size: 0.875rem; 
-  font-weight: 500; 
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
   text-transform: none;
   background-color: rgba(208, 204, 204, 0.203);
   border-radius: 0.375rem;
   padding: 2px;
   width: 1.7rem;
   line-height: 1.7rem;
-  margin: 0.166rem; 
+  margin: 0.166rem;
   text-align: center;
 }
-/* The day cells */
+
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
   background-color: #4f46e5 !important;
-  /* Indigo color */
   border-radius: 0.5rem !important;
 }
 
@@ -254,18 +244,11 @@ p {
 
 .react-datepicker__day--outside-month {
   color: #cbd5e1;
-  /* slate-300 */
 }
 
-
-/* index.css */
-
-/* ... (keep existing code) ... */
-
 @layer components {
-  /* Enhanced Typography for the Feature Grid */
   .usp-title {
-    font-family: "Manrope", sans-serif; /* Clean sans for small headers */
+    font-family: "Manrope", sans-serif;
     font-weight: 700;
     letter-spacing: 0.1em;
     color: var(--color-black);
@@ -274,31 +257,43 @@ p {
   .usp-description {
     font-family: "Cormorant Garamond", serif;
     font-style: italic;
-    color: #666; /* Softer than the body text */
+    color: #666;
     line-height: 1.4;
   }
 }
 
-/* Fix for background blending on images with slight backgrounds */
+/* ⚡️ PERFORMANCE FIX FOR BLEND MODES */
+/* mix-blend-mode is VERY expensive on scrolling. 
+   We add 'transform: translateZ(0)' to force it into its own GPU layer. */
 .blend-luxury {
   mix-blend-mode: darken;
   filter: saturate(0.8) contrast(1.05);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
+/* ⚡️ CRITICAL FIX: CONTENT VISIBILITY 
+   Add this class to your long sections (like Products Grid) 
+   It stops the browser from rendering stuff way down the page. */
+.optimize-scrolling {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
+  /* Approximate height of section */
+}
 
 @layer utilities {
-  /* Allows smooth snapping to each card on mobile */
   .snap-x-mandatory {
     scroll-snap-type: x mandatory;
   }
+
   .snap-center {
     scroll-snap-align: center;
   }
-  
-  /* Hide scrollbar but keep functionality */
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

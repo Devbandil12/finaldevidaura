@@ -30,7 +30,6 @@ const CustomComboBuilder = lazy(() => import("./pages/CustomComboBuilder"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
 // --- Utilities & Contexts (Keep these) ---
 import CheckoutGuard from "./CheckoutGuard";
-import ScrollToTop from "./ScrollToTop";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { CartProvider } from "./contexts/CartContext";
@@ -65,7 +64,18 @@ function reportError(type, details) {
 }
 
 if (typeof window !== "undefined") {
+  // Save the original handler
+  const originalErrorHandler = window.onerror;
+
   window.onerror = function (msg, url, lineNo, columnNo, error) {
+    // 1. CHECK: Is this the specific benign warning?
+    if (msg.includes("ResizeObserver loop completed with undelivered notifications")) {
+      // 2. ACTION: Return true to tell the browser "I handled this, don't show it."
+      // This effectively "swallows" the error log.
+      return true;
+    }
+
+    // 3. FALLBACK: If it's a REAL error (like a crash), run your normal reporting
     const details = {
       message: msg,
       file: url,
@@ -76,15 +86,6 @@ if (typeof window !== "undefined") {
     console.error("Global Error Handler:", details);
     reportError("runtime", details);
     return false;
-  };
-
-  window.onunhandledrejection = function (event) {
-    const details = {
-      reason: event.reason?.message || event.reason || "Unknown",
-      stack: event.reason?.stack || "N/A",
-    };
-    console.error("Unhandled Promise Rejection:", details);
-    reportError("promiseRejection", details);
   };
 }
 // --- End Error Reporting ---
@@ -135,7 +136,7 @@ const App = () => {
                 <ReviewProvider>
                   <NotificationProvider>
                     <Router>
-                      <ScrollToTop />
+                      
                       <PostLoginRedirector />
 
                       {/* Suspense handles the loading state for lazy pages */}

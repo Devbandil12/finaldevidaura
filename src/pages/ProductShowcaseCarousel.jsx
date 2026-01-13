@@ -1,20 +1,11 @@
-import React, {
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
-    memo // ⚡ Added memo
-} from "react";
+// src/pages/ProductShowcaseCarousel.jsx
+import React, { useCallback, useContext, useEffect, useState, useMemo, memo } from "react";
 import { ProductContext } from "../contexts/productContext";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, MoveRight } from "lucide-react";
-import PageTransition from "./PageTransition";
-// 👇 IMPORT THE OPTIMIZER
 import { optimizeImage } from "../utils/imageOptimizer";
 
-/* ------------------ THEME & UTILS ------------------ */
 const baseTheme = {
     colors: {
         luxuryDark: "225 15% 11%",
@@ -24,7 +15,6 @@ const baseTheme = {
     },
 };
 
-/* ------------------ ANIMATION VARIANTS ------------------ */
 const infoVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -42,7 +32,6 @@ const itemVariants = {
     },
 };
 
-// ⚡ PERFORMANCE: 3D Transforms optimized for GPU
 const luxuryImageVariants = {
     enter: ({ direction, isMobile }) => ({
         x: direction > 0 ? (isMobile ? 30 : 100) : (isMobile ? -30 : -100),
@@ -75,16 +64,14 @@ const rotateCircle = {
     }
 };
 
-/* ------------------ HELPER: BLUR IMAGE COMPONENT (OPTIMIZED) ------------------ */
-const BlurImage = memo(({ src, alt, className, priority = false }) => {
+/* ------------------ HELPER: BLUR IMAGE COMPONENT (FIXED) ------------------ */
+// ✅ UPDATE: Accepting width and height props
+const BlurImage = memo(({ src, alt, className, priority = false, width, height }) => {
     const [isLoading, setIsLoading] = useState(true);
-
-    // ⚡ OPTIMIZATION: Resize to 800px (larger for carousel detail)
     const optimizedSrc = useMemo(() => optimizeImage(src, 800), [src]);
 
     return (
         <div className={`relative overflow-hidden ${className} bg-gray-200`}>
-            {/* Smooth fading placeholder */}
             <motion.div
                 className="absolute inset-0 bg-gray-300 z-10"
                 initial={{ opacity: 1 }}
@@ -95,6 +82,9 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
             <motion.img
                 src={optimizedSrc}
                 alt={alt}
+                // ✅ UPDATE: Applying dimensions to prevent layout shift
+                width={width}
+                height={height}
                 initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
                 animate={{
                     opacity: isLoading ? 0 : 1,
@@ -112,11 +102,9 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
     );
 });
 
-/* ------------------ MAIN COMPONENT ------------------ */
-export default function ImmersiveProductShowcase() {
+export default function ProductShowcaseCarousel() {
     const { products: contextProducts } = useContext(ProductContext);
 
-    // ⚡ 1. INSTANT STATE: Initialize from LocalStorage (Cache)
     const [products, setProducts] = useState(() => {
         try {
             const cached = localStorage.getItem("immersive_showcase_cache");
@@ -131,11 +119,9 @@ export default function ImmersiveProductShowcase() {
     const [storyExpanded, setStoryExpanded] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
-    // ⚡ 2. SYNC & CACHE
     useEffect(() => {
         if (contextProducts && contextProducts.length > 0) {
             const valid = contextProducts.filter(p => p.category !== "Template" && !p.isArchived);
-            
             setProducts(prev => {
                 if (JSON.stringify(prev) !== JSON.stringify(valid)) {
                     localStorage.setItem("immersive_showcase_cache", JSON.stringify(valid));
@@ -146,7 +132,6 @@ export default function ImmersiveProductShowcase() {
         }
     }, [contextProducts]);
 
-    // Resize Listener
     useEffect(() => {
         const checkMobile = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
         checkMobile();
@@ -154,31 +139,21 @@ export default function ImmersiveProductShowcase() {
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    // ⚡ 3. SMART PRELOAD: Preload only OPTIMIZED versions of Next/Prev
     useEffect(() => {
         if (!products.length) return;
-        
-        const indicesToLoad = [
-            activeIdx,
-            (activeIdx + 1) % products.length,
-            (activeIdx - 1 + products.length) % products.length
-        ];
-
+        const indicesToLoad = [activeIdx, (activeIdx + 1) % products.length, (activeIdx - 1 + products.length) % products.length];
         indicesToLoad.forEach(idx => {
             const p = products[idx];
             if (p) {
                 const rawSrc = p.imageUrl || (Array.isArray(p.imageurl) ? p.imageurl[0] : p.imageurl);
                 if (rawSrc) {
                     const img = new Image();
-                    // ⚡ IMPORTANT: Preload the optimized URL, not the original 5MB file
                     img.src = optimizeImage(rawSrc, 800); 
                 }
             }
         });
     }, [activeIdx, products]);
 
-
-    // --- Handlers ---
     const onNext = useCallback(() => {
         if (!products.length) return;
         setDirection(1);
@@ -206,7 +181,6 @@ export default function ImmersiveProductShowcase() {
         preventScrollOnSwipe: true,
     });
 
-    // Keyboard Nav
     useEffect(() => {
         const handleKey = (e) => {
             if (e.key === "ArrowRight") onNext();
@@ -216,17 +190,13 @@ export default function ImmersiveProductShowcase() {
         return () => window.removeEventListener("keydown", handleKey);
     }, [onNext, onPrev]);
 
-    // Safety check
     useEffect(() => {
         if (products.length > 0 && activeIdx >= products.length) setActiveIdx(0);
     }, [products, activeIdx]);
 
-
-    // --- Render Logic ---
     if (products.length === 0) return null;
 
     const product = products[activeIdx] || {};
-
     const colors = {
         bg: `hsl(${baseTheme.colors.background})`,
         text: `hsl(${baseTheme.colors.luxuryDark})`,
@@ -255,9 +225,8 @@ export default function ImmersiveProductShowcase() {
     const displayImage = product.imageUrl || (Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl);
 
     return (
-        <PageTransition>
+        
             <>
-                {/* --- HEADER --- */}
                 <div className="text-center px-4 pt-20 md:pt-32">
                     <h2 className="text-5xl md:text-7xl font-medium tracking-tight" style={{ color: colors.text }}>
                         Explore Our Scents
@@ -267,11 +236,9 @@ export default function ImmersiveProductShowcase() {
                     </p>
                 </div>
 
-                {/* --- MAIN SHOWCASE --- */}
                 <section className="relative w-full py-16 md:py-24 min-h-screen flex flex-col items-center justify-center overflow-hidden ">
                     <div className="relative w-full max-w-7xl h-full grid grid-cols-1 lg:grid-cols-2 items-center gap-16 md:gap-22 px-6 touch-action-pan-y" {...swipeHandlers}>
 
-                        {/* --- LEFT PANEL --- */}
                         <motion.div
                             key={activeIdx}
                             className="w-full h-full flex flex-col justify-center text-left items-start relative z-10 p-2 lg:p-0"
@@ -372,7 +339,6 @@ export default function ImmersiveProductShowcase() {
                             </div>
                         </motion.div>
 
-                        {/* --- RIGHT PANEL --- */}
                         <div className="relative w-full h-[450px] md:h-[700px] flex items-center justify-center perspective-1200 overflow-visible mt-10 lg:mt-0">
 
                             <motion.div
@@ -409,7 +375,6 @@ export default function ImmersiveProductShowcase() {
                                 </motion.span>
                             </div>
 
-                            {/* Main Product Image Container */}
                             <AnimatePresence custom={{ direction, isMobile }} mode="wait">
                                 <motion.div
                                     key={product.id ?? activeIdx}
@@ -427,7 +392,10 @@ export default function ImmersiveProductShowcase() {
                                             <BlurImage
                                                 src={displayImage}
                                                 alt={product.name}
-                                                priority={true} // Prioritize active image
+                                                priority={true}
+                                                // ✅ UPDATE: Explicit dimensions passed here
+                                                width={320}
+                                                height={430}
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                             />
                                         ) : (
@@ -468,6 +436,6 @@ export default function ImmersiveProductShowcase() {
                     </div>
                 </section>
             </>
-        </PageTransition>
+        
     );
 }

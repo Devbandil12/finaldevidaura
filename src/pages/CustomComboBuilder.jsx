@@ -10,7 +10,6 @@ import { FaCheck, FaShoppingBag, FaArrowRight, FaArrowDown, FaLock } from "react
 import { FiAlertTriangle } from "react-icons/fi";
 import { HiOutlineSparkles } from "react-icons/hi";
 import { BsStars } from "react-icons/bs"; 
-import PageTransition from "./PageTransition";
 // 👇 IMPORT OPTIMIZER
 import { optimizeImage } from "../utils/imageOptimizer"; 
 
@@ -299,7 +298,7 @@ const CustomComboBuilder = () => {
     );
 
     return (
-        <PageTransition>
+ <>
             <style>{`
                 .smooth-scrollbar {
                     -ms-overflow-style: none;
@@ -509,7 +508,7 @@ const CustomComboBuilder = () => {
                     </div>
                 </div>
             </section>
-        </PageTransition>
+       </>
     );
 };
 

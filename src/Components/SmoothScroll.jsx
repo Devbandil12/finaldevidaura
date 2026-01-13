@@ -3,15 +3,15 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom'; // 1. Import useNavigationType
 
 export default function SmoothScroll({ children }) {
   const lenisRef = useRef(null);
   const location = useLocation();
+  const navType = useNavigationType(); // 2. Get the navigation type (PUSH, POP, or REPLACE)
 
-  // 1. Disable browser's automatic scroll restoration so we can control it manually
-  // This stops the "double jump" effect.
   useLayoutEffect(() => {
+    // Keep this. It prevents the browser from fighting with Lenis.
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
@@ -25,7 +25,10 @@ export default function SmoothScroll({ children }) {
       gestureDirection: 'vertical',
       smooth: true,
       mouseMultiplier: 1,
-      smoothTouch: false,
+      // 🟢 GOOD DECISION: smoothTouch: false
+      // This forces mobile to use native scrolling. 
+      // This is the #1 way to ensure your site is fast/smooth on mobile.
+      smoothTouch: false, 
       touchMultiplier: 2,
     });
 
@@ -45,18 +48,16 @@ export default function SmoothScroll({ children }) {
     };
   }, []);
 
-  // 2. THIS IS KEY: Reset scroll only on route change, via Lenis
+  // 3. OPTIMIZED SCROLL RESET
   useEffect(() => {
     if (lenisRef.current) {
-        // If it's NOT the first load (handled by browser), scroll to top
-        // But since we set scrollRestoration to manual, we might actually WANT 
-        // to force top on refresh IF you prefer that. 
-        // However, to keep your position on refresh, we usually DON'T call this on mount.
-        
-        // This effect runs on location change.
+      // ONLY scroll to top if it's a new page visit (PUSH) or a fresh load.
+      // If it's a "Back" button click (POP), let the browser handle the position (or stay where it is).
+      if (navType !== 'POP') {
         lenisRef.current.scrollTo(0, { immediate: true });
+      }
     }
-  }, [location.pathname]);
+  }, [location.pathname, navType]); // Add navType to dependencies
 
   return <div className="w-full min-h-screen">{children}</div>;
 }

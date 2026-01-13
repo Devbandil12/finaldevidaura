@@ -380,7 +380,7 @@ const Navbar = ({ onVisibilityChange }) => {
         <div className={`part-1 nav-brand flex items-center text-[1.5rem] pl-0 shrink-0 max-[885px]:text-[1.2rem] max-[700px]:text-[1rem] ${textColorClass}`}>
           {/* UPDATED: Use Link for logo */}
           <Link to="/" className="logo no-underline cursor-pointer max-[700px]:text-[1.2rem]">
-            <h1 className="pl-[10px] text-[1.8rem] tracking-[0.5px] m-0 max-[885px]:text-[1.5rem] max-[300px]:text-[1.2rem] !text-black">Devid Aura</h1>
+            <h1 className="pl-[10px] text-[1.6rem] tracking-[0.5px] m-0 max-[885px]:text-[1.5rem] max-[300px]:text-[1.3rem] !text-black">DEVID AURA</h1>
           </Link>
         </div>
 

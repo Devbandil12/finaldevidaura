@@ -2,7 +2,6 @@ import React, { useLayoutEffect, useRef, useState, useEffect, useMemo } from 're
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Star, Droplets, Sun, Fingerprint } from 'lucide-react'; 
-import PageTransition from "./PageTransition";
 import Loader from "../Components/Loader"; 
 // 👇 IMPORT OPTIMIZER
 import { optimizeImage } from "../utils/imageOptimizer"; 
@@ -222,7 +221,7 @@ export default function AboutUs() {
     if (loading) return <Loader />;
 
     return (
-        <PageTransition>
+        
             <div ref={containerRef} className="text-[#1a1a1a] w-full overflow-hidden bg-white">
 
                 {/* --- HEADER --- */}
@@ -405,6 +404,6 @@ export default function AboutUs() {
                 </section>
 
             </div>
-        </PageTransition>
+        
     );
 }

@@ -4,7 +4,6 @@ import { AnimatePresence } from "framer-motion";
 
 // --- Components ---
 import MainLayout from "./MainLayout"; // Import the isolated layout
-import PageTransition from "./PageTransition";
 
 // --- Static Components (Home) ---
 import HeroSection from "./HeroSection";
@@ -34,7 +33,7 @@ import { AdminProvider } from "../contexts/AdminContext";
 
 // Helper for Home Page Composition
 const HomePage = () => (
-  <PageTransition>
+<>
     <HeroSection />
     <DualMarquee />
     <div id="scents-section"><ProductShowcaseCarousel /></div>
@@ -42,7 +41,7 @@ const HomePage = () => (
     <div id="custom-combo-section"><CustomComboBuillder /></div>
     <div id="about-section"><AboutUs /></div>
     <TestimonialsSection />
-  </PageTransition>
+  </>
 );
 
 const AnimatedRoutes = () => {
@@ -58,39 +57,39 @@ const AnimatedRoutes = () => {
         <Route
           path="*"
           element={
-            <AnimatePresence mode="wait">
+           
               <Routes location={location} key={location.pathname}>
                 
                 <Route path="/" element={<HomePage />} />
 
-                <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
-                <Route path="/privacy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
-                <Route path="/terms" element={<PageTransition><TermsAndConditions /></PageTransition>} />
-                <Route path="/myorder" element={<PageTransition><MyOrder /></PageTransition>} />
-                <Route path="/product/:productId" element={<PageTransition><ProductDetail /></PageTransition>} />
-                <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
-                <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
-                <Route path="/myaccount" element={<PageTransition><UserPage /></PageTransition>} />
-                <Route path="/contact" element={<PageTransition><ContactUs /></PageTransition>} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/myorder" element={<MyOrder />} />
+                <Route path="/product/:productId" element={<ProductDetail />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/myaccount" element={<UserPage />} />
+                <Route path="/contact" element={<ContactUs />} />
 
                 <Route path="/Admin" element={
                   <AdminProvider>
-                    <PageTransition><Adminpannel /></PageTransition>
+                    <Adminpannel />
                   </AdminProvider>
                 } />
 
                 <Route element={<CheckoutGuard />}>
-                  <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
+                  <Route path="/checkout" element={<Checkout />} />
                 </Route>
 
               </Routes>
-            </AnimatePresence>
+      
           }
         />
       </Route>
 
       {/* Login is outside the MainLayout */}
-      <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+      <Route path="/login" element={<Login />} />
 
     </Routes>
   );

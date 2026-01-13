@@ -14,7 +14,7 @@ const MainLayout = () => {
   }, []);
 
   return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-off-white)]">
+      <div className="flex flex-col min-h-screen bg-[var(--color-off-white)] ">
         
         <Navbar onVisibilityChange={handleNavVisibility} />
         

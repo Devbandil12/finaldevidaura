@@ -238,7 +238,7 @@ const HeroSection = () => {
                     </div>
                   </div>
                   <div className="text-left flex flex-col justify-center">
-                    <h3 className="usp-title text-[11px] mb-1 group-hover:text-[#D4AF37] transition-colors duration-300">{item.title}</h3>
+                    <h2 className="usp-title text-[22px] mb-1 group-hover:text-[#D4AF37] transition-colors duration-300">{item.title}</h2>
                     <p className="usp-description text-sm opacity-80 leading-snug">{item.desc}</p>
                   </div>
                 </div>
