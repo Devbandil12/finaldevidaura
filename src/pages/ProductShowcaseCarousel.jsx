@@ -65,7 +65,6 @@ const rotateCircle = {
 };
 
 /* ------------------ HELPER: BLUR IMAGE COMPONENT (FIXED) ------------------ */
-// ✅ UPDATE: Accepting width and height props
 const BlurImage = memo(({ src, alt, className, priority = false, width, height }) => {
     const [isLoading, setIsLoading] = useState(true);
     const optimizedSrc = useMemo(() => optimizeImage(src, 'card'), [src]);
@@ -82,7 +81,6 @@ const BlurImage = memo(({ src, alt, className, priority = false, width, height }
             <motion.img
                 src={optimizedSrc}
                 alt={alt}
-                // ✅ UPDATE: Applying dimensions to prevent layout shift
                 width={width}
                 height={height}
                 initial={{ opacity: 0, filter: "blur(10px)", scale: 1.05 }}
@@ -92,7 +90,10 @@ const BlurImage = memo(({ src, alt, className, priority = false, width, height }
                     scale: 1
                 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                onLoad={() => setIsLoading(false)}
+                onLoad={() => {
+                    // ⚡ FIX: Defer state update to next frame to avoid ResizeObserver loops
+                    requestAnimationFrame(() => setIsLoading(false));
+                }}
                 fetchPriority={priority ? "high" : "auto"}
                 loading={priority ? "eager" : "lazy"}
                 decoding="async"
@@ -133,10 +134,22 @@ export default function ProductShowcaseCarousel() {
     }, [contextProducts]);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+        // ⚡ FIX: Wrap resize handler in RAF to debounce and prevent loop errors
+        let rafId;
+        const checkMobile = () => {
+            cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+            });
+        };
+        
         checkMobile();
         window.addEventListener("resize", checkMobile);
-        return () => window.removeEventListener("resize", checkMobile);
+        
+        return () => {
+            window.removeEventListener("resize", checkMobile);
+            cancelAnimationFrame(rafId);
+        };
     }, []);
 
     useEffect(() => {
@@ -393,7 +406,6 @@ export default function ProductShowcaseCarousel() {
                                                 src={displayImage}
                                                 alt={product.name}
                                                 priority={true}
-                                                // ✅ UPDATE: Explicit dimensions passed here
                                                 width={320}
                                                 height={430}
                                                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
@@ -436,6 +448,5 @@ export default function ProductShowcaseCarousel() {
                     </div>
                 </section>
             </>
-        
     );
 }

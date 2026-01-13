@@ -30,10 +30,12 @@ const MarqueeRow = ({ items, reverse = false, className }) => {
         className="marquee-track" 
         style={{ 
             animationName: reverse ? "marquee-reverse" : "marquee-normal",
-            animationDuration: "80s", // ⚡ FIXED: Slower speed (was 40s)
+            animationDuration: "80s",
             animationTimingFunction: "linear",
             animationIterationCount: "infinite",
-            animationPlayState: "running" // ⚡ FIXED: Force play (never pause)
+            animationPlayState: "running",
+            // ⚡ FIX: Promote to GPU layer to isolate layout and prevent Observer loops
+            willChange: "transform",
         }}
       >
         {loopedItems.map((item, i) => {

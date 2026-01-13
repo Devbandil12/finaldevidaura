@@ -11,13 +11,14 @@ import TestimonialsSection from "./TestimonialsSection";
 import AboutUs from "./AboutUs";
 import MidSectionBanner from "./MidSectionBanner";
 import { UserContext } from "../contexts/UserContext";
+import AuraFinder from "../components/AuraFinder";
 
 const Home = () => {
   const { userdetails } = useContext(UserContext);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminStats, setAdminStats] = useState({ todayCount: 0, pendingCount: 0 });
 
- 
+
   // Admin Check Effect
   useEffect(() => {
     const fetchAdminStats = async () => {
@@ -50,39 +51,30 @@ const Home = () => {
       fetchAdminStats();
     }
   }, [userdetails]);
-
+  
   return (
     <>
-      {/* Admin Modal */}
+    <AuraFinder />
+      {/* Admin Modal - Luxury Style */}
       {showAdminModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 99999,
-          display: 'flex', justifyContent: 'center', alignItems: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white', padding: '30px', borderRadius: '16px',
-            maxWidth: '400px', width: '90%', textAlign: 'center',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
-          }}>
-            <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '24px', marginBottom: '10px' }}>Admin Dashboard</h2>
-            <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '25px' }}>
-              <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '10px', minWidth: '100px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#D4AF37' }}>{adminStats.todayCount}</div>
-                <div style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }}>New Today</div>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
+          <div className="w-[90%] max-w-md transform overflow-hidden rounded-2xl bg-white p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] ring-1 ring-gray-900/5 transition-all">
+            <h2 className="font-cormorant text-3xl font-medium text-gray-900 mb-6">Admin Dashboard</h2>
+
+            <div className="flex justify-around gap-4 mb-8">
+              <div className="flex-1 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100">
+                <div className="text-3xl font-bold text-gold-dark mb-1">{adminStats.todayCount}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">New Today</div>
               </div>
-              <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '10px', minWidth: '100px' }}>
-                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111' }}>{adminStats.pendingCount}</div>
-                <div style={{ fontSize: '12px', color: '#888', textTransform: 'uppercase', fontWeight: '600' }}>Pending</div>
+              <div className="flex-1 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100">
+                <div className="text-3xl font-bold text-gray-900 mb-1">{adminStats.pendingCount}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Pending</div>
               </div>
             </div>
+
             <button
               onClick={() => setShowAdminModal(false)}
-              style={{
-                backgroundColor: '#111', color: '#fff', border: 'none',
-                padding: '12px 30px', borderRadius: '50px', cursor: 'pointer',
-                fontSize: '14px', fontWeight: '600'
-              }}
+              className="w-full rounded-full bg-gray-900 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition-transform hover:scale-[1.02] hover:bg-black active:scale-[0.98]"
             >
               Dismiss
             </button>
@@ -93,16 +85,15 @@ const Home = () => {
       <HeroSection />
       <DualMarquee />
       <MidSectionBanner index={0} />
-      
+
       <div id="scents-section"><ProductShowcaseCarousel /></div>
-      
       {/* 🟢 Render actual Products component with flag to hide big banner */}
       <div id="collection-section">
         <Products isStandalone={false} />
       </div>
 
       <MidSectionBanner index={1} />
-      
+
       {/* 🟢 Render actual Combo Builder with flag */}
       <div id="custom-combo-section">
         <CustomComboBuilder isStandalone={false} />

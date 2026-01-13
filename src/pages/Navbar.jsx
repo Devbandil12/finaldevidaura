@@ -59,7 +59,7 @@ const timeAgo = (date, now) => {
   return getRelativeTimeGroup(date, now);
 };
 
-// --- Memoized Sidebar Item (Updated for SEO) ---
+// --- Memoized Sidebar Item ---
 const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
   const commonClasses = "group relative flex items-center cursor-pointer py-3 px-6 transition-colors duration-200 hover:bg-[#f5f5f5] w-full text-left";
 
@@ -87,7 +87,6 @@ const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
     </>
   );
 
-  // If 'to' prop is present, render a Link (Crawlable)
   if (to) {
     return (
       <li>
@@ -98,7 +97,6 @@ const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
     );
   }
 
-  // Otherwise render a standard list item (for actions like Log Out)
   return (
     <li
       className={commonClasses}
@@ -107,6 +105,36 @@ const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
       tabIndex={0}
     >
       {content}
+    </li>
+  );
+});
+
+// --- ⚡ OPTIMIZATION: Memoized Notification Item ---
+// Extracts logic from the map loop to prevent full list repaints on parent re-renders
+const NotificationItem = memo(({ notif, onNavigate }) => {
+  
+  // Use a callback here to ensure the handler is stable
+  const handleClick = useCallback(() => {
+    onNavigate(notif.link);
+  }, [onNavigate, notif.link]);
+
+  return (
+    <li
+      onClick={handleClick}
+      className={`notification-item flex items-center gap-[12px] p-[5px_12px] !important cursor-pointer transition-colors duration-200 rounded-[8px] hover:bg-[#f0f0f0]
+      ${notif.isRead ? '' : 'unread bg-[#f8f9fa]'}
+      before:text-[18px] before:leading-none before:shrink-0
+      ${notif.type === 'order' ? "before:content-['📦']" :
+          notif.type === 'system' ? "before:content-['⚙️']" :
+            notif.type === 'coupon' ? "before:content-['🏷️']" :
+              "before:content-['🔔']"
+        }`}
+      data-type={notif.type}
+    >
+      <div className="notification-item-content flex flex-col min-w-0">
+        <span className={`notification-message text-[10px] !text-[#333] whitespace-normal break-words ${!notif.isRead ? 'font-[600] !text-black' : ''}`}>{notif.message}</span>
+        <span className="notification-time text-[8px] !text-[#6c757d] mt-[2px]">{notif.timeAgo}</span>
+      </div>
     </li>
   );
 });
@@ -181,6 +209,12 @@ const Navbar = ({ onVisibilityChange }) => {
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
   }, []);
+
+  // ⚡ STABLE HANDLER FOR NOTIFICATIONS
+  const handleNotificationClick = useCallback((link) => {
+    navigate(link || '/');
+    setIsNotificationOpen(false);
+  }, [navigate]);
 
   const groupedNotifications = useMemo(() => {
     const now = new Date();
@@ -329,7 +363,6 @@ const Navbar = ({ onVisibilityChange }) => {
     }
   }, [navigate]);
 
-  // 泙 UPDATED SIDEBAR LINKS (Best for use)
   const primaryLinks = useMemo(() => [
     { label: "Home", icon: BiHomeHeart, to: "/", onClick: closeSidebar },
     { label: "All Products", icon: Store, to: "/products", onClick: closeSidebar },
@@ -347,25 +380,16 @@ const Navbar = ({ onVisibilityChange }) => {
     { label: "Contact Us", icon: MailUsIcon, to: "/contact", onClick: closeSidebar },
   ], [closeSidebar]);
 
-  // --- Dynamic Class Builders ---
   const isHomePage = location.pathname === "/";
-
-  // Common Transition string matching CSS: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), etc.
   const navbarTransitionClass = "transition-[transform,width,border-radius,background-color,top,box-shadow,padding] duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]";
-
-  // Base Navbar Classes
   const navbarBaseClass = `fixed left-0 right-0 mx-auto flex items-center justify-between z-[9999] pointer-events-auto backface-hidden antialiased will-change-[transform,width,border-radius,background-color,top] ${navbarTransitionClass}
   ${!isHomePage ? "max-[750px]:!bg-white" : ""}`;
 
-  // Scrolled vs Top State
   const navbarStateClass = isScrolled
     ? `w-[95%] max-w-[1440px] h-[60px] top-[10px] rounded-[50px] px-[25px] bg-white/70 backdrop-blur-[8px] saturate-[180%] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-black max-[885px]:px-[0.8rem]`
     : `w-full h-[60px] top-0 px-[2rem] pt-[0.7rem] rounded-none bg-transparent max-[885px]:px-[0.8rem]`;
 
-  // Text colors for non-scrolled state (scrolled is always black)
   const textColorClass = !isScrolled ? "text-black mix-blend-normal shadow-none" : "text-black shadow-none font-normal";
-
-  // Icon Button Class
   const iconBtnClass = `group relative inline-flex items-center justify-center border-none bg-transparent cursor-pointer p-[8px] rounded-full transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] hover:bg-black/6 hover:scale-115 active:scale-95 ${!isScrolled ? "text-black" : "text-black hover:bg-black/8"}`;
 
   return (
@@ -378,16 +402,13 @@ const Navbar = ({ onVisibilityChange }) => {
         }}
       >
         <div className={`part-1 nav-brand flex items-center text-[1.5rem] pl-0 shrink-0 max-[885px]:text-[1.2rem] max-[700px]:text-[1rem] ${textColorClass}`}>
-          {/* UPDATED: Use Link for logo */}
           <Link to="/" className="logo no-underline cursor-pointer max-[700px]:text-[1.2rem]">
             <h1 className="pl-[10px] text-[1.6rem] tracking-[0.5px] m-0 max-[885px]:text-[1.5rem] max-[300px]:text-[1.3rem] !text-black">DEVID AURA</h1>
           </Link>
         </div>
 
-        {/* Part 2: Desktop Links - Centered */}
         <div className="part-2 absolute left-1/2 -translate-x-1/2 w-auto flex items-center justify-center max-[750px]:hidden">
           <ul className="nav-links flex gap-[3rem] m-0 p-0 list-none max-[1095px]:gap-[1.2rem] max-[885px]:gap-[1.5rem]">
-            {/* UPDATED: Map to Links instead of <a> with onClick */}
             {["Home", "Shop", "Build Combo", "Our Story"].map((text, idx) => {
               const paths = ["/", "/products", "/custom-combo", "/about"];
               return (
@@ -397,7 +418,7 @@ const Navbar = ({ onVisibilityChange }) => {
                     className={`relative text-[16px] no-underline font-[200] !text-black transition-all
                             after:content-[''] after:absolute after:left-0 after:-bottom-[2px] after:w-0 after:h-[1px] after:transition-[width] after:duration-500 after:ease-in-out hover:after:w-full
                             ${!isScrolled ? "after:bg-black after:shadow-none" : "after:bg-black text-black"}`}
-                    style={{ color: '#000000' }} // Force black as per CSS !important
+                    style={{ color: '#000000' }}
                   >
                     {text}
                   </Link>
@@ -411,7 +432,6 @@ const Navbar = ({ onVisibilityChange }) => {
           <motion.div className="icons flex items-center gap-[6px]" layout transition={springConfig}>
 
             <motion.div layout className="wishlist-icon flex items-center max-[750px]:hidden">
-              {/* UPDATED: Direct Link for Wishlist */}
               <Link to="/wishlist" id="wishlist-icon" className={iconBtnClass} aria-label={`Wishlist (${wishCount})`}>
                 <img className="w-[24px] h-[24px] object-contain brightness-0" src={WishlistIcon} alt="wishlist" />
                 {wishCount > 0 && (
@@ -423,7 +443,6 @@ const Navbar = ({ onVisibilityChange }) => {
             </motion.div>
 
             <motion.div layout className="cart-icon flex items-center">
-              {/* UPDATED: Direct Link for Cart */}
               <Link to="/cart" id="cart-icon" className={iconBtnClass} aria-label={`Cart (${cartCount})`}>
                 <ShoppingCart strokeWidth={1.2} className="w-[24px] h-[24px] stroke-black text-black" />
                 {cartCount > 0 && (
@@ -446,7 +465,6 @@ const Navbar = ({ onVisibilityChange }) => {
                     )}
                   </button>
                 </div>
-                {/* Notification Dropdown */}
                 <div
                   className={`profile-content notification-dropdown absolute top-[60px] right-0 max-[750px]:right-[50px] bg-white rounded-[16px] min-w-[300px] max-w-[300px] min-h-[350px] max-h-[350px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000]
                     ${isNotificationOpen ? "opacity-100 translate-y-0 scale-100 visible" : "opacity-0 -translate-y-[10px] scale-[0.98] invisible"}`}
@@ -459,7 +477,6 @@ const Navbar = ({ onVisibilityChange }) => {
                       {notifications.length > 0 && <button onClick={clearAllNotifications} className="notification-header-btn danger text-[11px] font-[500] bg-none border-none !text-[#dc3545] cursor-pointer whitespace-nowrap p-[4px]">Clear All</button>}
                     </div>
                   </div>
-                  {/* 🟢 FIXED: added overscroll-contain to stop page scroll when list ends */}
                   <ul className="notification-list list-none m-0 p-[8px] max-h-[300px] overflow-y-auto overscroll-contain">
                     {notifications.length === 0 ? (
                       <li className="notification-empty p-[20px] text-center text-[#6c757d] text-[12px] pointer-events-none"><a>No new notifications</a></li>
@@ -476,24 +493,12 @@ const Navbar = ({ onVisibilityChange }) => {
                           <React.Fragment key={groupKey}>
                             <li className="notification-group-header p-[3px_12px] !important text-[10px] font-bold text-[#6c757d] bg-white pointer-events-none"><a>{groupKey}</a></li>
                             {groupedNotifications[groupKey].map(notif => (
-                              <li
+                              // ⚡ USE MEMOIZED ITEM COMPONENT HERE
+                              <NotificationItem
                                 key={notif.id}
-                                onClick={() => { navigate(notif.link || '/'); setIsNotificationOpen(false); }}
-                                className={`notification-item flex items-center gap-[12px] p-[5px_12px] !important cursor-pointer transition-colors duration-200 rounded-[8px] hover:bg-[#f0f0f0]
-                                ${notif.isRead ? '' : 'unread bg-[#f8f9fa]'}
-                                before:text-[18px] before:leading-none before:shrink-0
-                                ${notif.type === 'order' ? "before:content-['📦']" :
-                                    notif.type === 'system' ? "before:content-['⚙️']" :
-                                      notif.type === 'coupon' ? "before:content-['🏷️']" :
-                                        "before:content-['🔔']"
-                                  }`}
-                                data-type={notif.type}
-                              >
-                                <div className="notification-item-content flex flex-col min-w-0">
-                                  <span className={`notification-message text-[10px] !text-[#333] whitespace-normal break-words ${!notif.isRead ? 'font-[600] !text-black' : ''}`}>{notif.message}</span>
-                                  <span className="notification-time text-[8px] !text-[#6c757d] mt-[2px]">{notif.timeAgo}</span>
-                                </div>
-                              </li>
+                                notif={notif}
+                                onNavigate={handleNotificationClick}
+                              />
                             ))}
                           </React.Fragment>
                         ))
@@ -515,12 +520,10 @@ const Navbar = ({ onVisibilityChange }) => {
                     className="profile-wrapper flex items-center max-[750px]:hidden"
                   >
                     <div className="profile-icon" id="profile-btn">
-                      {/* UPDATED: Added accessible label */}
                       <button id="profileButton" className={iconBtnClass} onClick={toggleProfile} aria-expanded={isProfileOpen} aria-label="User Profile">
                         <img src={ProfileIcon} alt="Profile" className="w-[24px] h-[24px] object-contain brightness-0" />
                       </button>
                     </div>
-                    {/* Profile Dropdown Content */}
                     <div className="profile-container">
                       <div
                         className={`profile-content absolute top-[60px] right-0 bg-white rounded-[16px] min-w-[300px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000] 
@@ -542,7 +545,6 @@ const Navbar = ({ onVisibilityChange }) => {
                           </div>
                         </div>
                         <ul className="list-none m-0 p-[8px]">
-                          {/* UPDATED: Use Link for dropdown items */}
                           {[
                             { icon: ProfileIcon, text: "My Account", path: "/myaccount" },
                             { icon: MyOrderIcon, text: "My Orders", path: "/myorder" },
