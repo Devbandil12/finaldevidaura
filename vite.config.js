@@ -9,8 +9,6 @@ export default defineConfig({
   plugins: [
     react(),
     beasties({
-      // 1. Prune the CSS (remove unused styles)
-      pruneSource: true,
       // 2. Inline the critical styles for speed
       inlineFonts: true,
     }),
