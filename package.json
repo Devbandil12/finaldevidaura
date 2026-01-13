@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "dnf install -y git-lfs && git-lfs install && git-lfs pull",
-    "build": "npm run sitemap && vite build",
+    "build": "npm run sitemap && vite build && node inline-css.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server.js",
@@ -52,6 +52,7 @@
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "glob": "^13.0.0",
     "globals": "^15.15.0",
     "postcss": "^8.5.3",
     "sharp": "^0.34.5",
