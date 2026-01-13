@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
+import { beasties } from 'vite-plugin-beasties'
 
 export default defineConfig({
   base: "/",
@@ -14,6 +15,10 @@ export default defineConfig({
       jpeg: { quality: 75 },
       webp: { quality: 80 },
       avif: { quality: 70 },
+    }),
+    beasties({
+      // 2. Inline the critical styles for speed
+      inlineFonts: true,
     }),
   ],
   server: {
