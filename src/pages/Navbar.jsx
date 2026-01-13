@@ -62,7 +62,7 @@ const timeAgo = (date, now) => {
 // --- Memoized Sidebar Item (Updated for SEO) ---
 const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
   const commonClasses = "group relative flex items-center cursor-pointer py-3 px-6 transition-colors duration-200 hover:bg-[#f5f5f5] w-full text-left";
-  
+
   const content = (
     <>
       {Icon &&
@@ -549,8 +549,8 @@ const Navbar = ({ onVisibilityChange }) => {
                             { icon: MailUsIcon, text: "Contact Us", path: "/contact" }
                           ].map((item, i) => (
                             <li key={i} className="group">
-                              <Link 
-                                to={item.path} 
+                              <Link
+                                to={item.path}
                                 onClick={() => setIsProfileOpen(false)}
                                 className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] no-underline"
                               >
@@ -562,8 +562,8 @@ const Navbar = ({ onVisibilityChange }) => {
 
                           {userdetails?.role === "admin" && (
                             <li className="group">
-                              <Link 
-                                to="/admin" 
+                              <Link
+                                to="/admin"
                                 onClick={() => setIsProfileOpen(false)}
                                 className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] no-underline"
                               >
@@ -638,6 +638,7 @@ const Navbar = ({ onVisibilityChange }) => {
                       id="sidebar"
                       role="dialog"
                       aria-modal={isOpen}
+                      aria-label="Mobile Navigation Menu"
                     >
                       <div className="menu-icon flex items-center wifull p-[1rem] pl-[1.4rem] pt-[1.38rem] pb-[0.8rem] justify-start">
                         <button
@@ -704,20 +705,19 @@ const Navbar = ({ onVisibilityChange }) => {
 
                       <nav className="sidebar-nav p-[1rem_0] grow overflow-y-auto">
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</h5>
-                          <ul className="list-none m-0 p-0">
+                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</div>                          <ul className="list-none m-0 p-0">
                             {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
                           </ul>
                         </div>
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Account</h5>
+                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Account</div>
                           <ul className="list-none m-0 p-0">
                             {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} to={l.to} onClick={l.onClick} />))}
                             {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} to={'/admin'} onClick={() => { closeSidebar(); }} />)}
                           </ul>
                         </div>
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Support</h5>
+                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Support</div>
                           <ul className="list-none m-0 p-0">
                             {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
                           </ul>

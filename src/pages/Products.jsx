@@ -157,7 +157,7 @@ const Products = () => {
 
   return (
     
-      <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40">
+      <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40 optimize-scrolling">
         
         {/* --- HEADER --- */}
         <div className="max-w-[1600px] mx-auto mb-20 md:mb-28 text-center">

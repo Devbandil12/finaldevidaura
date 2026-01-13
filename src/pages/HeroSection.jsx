@@ -209,12 +209,12 @@ const HeroSection = () => {
             </h1>
           </div>
           <div className="overflow-hidden mb-8">
-            <p className="hero-text-reveal text-xl lg:text-2xl italic text-gray-400 opacity-0">
+            <p className="hero-text-reveal text-xl lg:text-2xl italic text-gray-600 opacity-0">
               {displayData.poeticLine}
             </p>
           </div>
           <div className="overflow-hidden max-w-md mb-10">
-            <p className="hero-text-reveal text-sm lg:text-base text-gray-600 leading-relaxed font-light opacity-0">
+            <p className="hero-text-reveal text-sm lg:text-base text-stone-700 leading-relaxed font-light opacity-0">
               {displayData.description}
             </p>
           </div>
@@ -239,7 +239,7 @@ const HeroSection = () => {
                   </div>
                   <div className="text-left flex flex-col justify-center">
                     <h2 className="usp-title text-[22px] mb-1 group-hover:text-[#D4AF37] transition-colors duration-300">{item.title}</h2>
-                    <p className="usp-description text-sm opacity-80 leading-snug">{item.desc}</p>
+                    <p className="usp-description text-sm opacity-80 text-stone-600 leading-snug">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -258,12 +258,28 @@ const HeroSection = () => {
           <div className="hero-image-container relative w-full h-full flex items-center justify-center opacity-0 scale-125">
             {displayData.layer1 && (
               <div ref={layerBackRef} className="parallax-layer-back absolute top-[6%] left-[6%] lg:left-[10%] w-[140px] lg:w-[220px] pointer-events-none transform rotate-[10deg] z-0">
-                <img src={displayData.layer1} alt="Back Layer" className="relative w-full opacity-50 blur-[1.5px] mix-blend-multiply rounded-lg" style={{ filter: "saturate(0.6) contrast(0.95)" }} />
+                <img
+                  src={displayData.layer1}
+                  alt="Back Layer"
+                  className="relative w-full opacity-50 blur-[1.5px] mix-blend-multiply rounded-lg"
+                  style={{ filter: "saturate(0.6) contrast(0.95)" }}
+                  fetchPriority="high"
+                  decoding="async"
+                  loading="eager"
+                />
               </div>
             )}
             {displayData.layer2 && (
               <div ref={layerMidRef} className="parallax-layer-mid absolute bottom-[16%] right-[6%] lg:right-[10%] w-[120px] lg:w-[180px] pointer-events-none transform -rotate-[8deg] z-0">
-                <img src={displayData.layer2} alt="Front Layer" className="relative w-full opacity-50 blur-[2px] mix-blend-multiply rounded-lg" style={{ filter: "saturate(0.55) contrast(0.9)" }} />
+                <img
+                  src={displayData.layer2}
+                  alt="Front Layer"
+                  className="relative w-full opacity-50 blur-[2px] mix-blend-multiply rounded-lg"
+                  style={{ filter: "saturate(0.55) contrast(0.9)" }}
+                  fetchPriority="high"
+                  decoding="async"
+                  loading="eager"
+                />
               </div>
             )}
             <div className="parallax-layer-front relative z-10 w-[220px] lg:w-[280px] h-auto aspect-[5/5] lg:aspect-[4/6] mt-5 lg:mt-12">
