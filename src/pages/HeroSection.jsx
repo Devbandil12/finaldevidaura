@@ -290,8 +290,6 @@ const HeroSection = () => {
                   className="relative z-10 w-full h-full object-contain filter sepia-[0.15] contrast-[1] brightness-[1] ml-10 lg:ml-13 opacity-85"
                   style={{ maskImage: "linear-gradient(to bottom, black 92%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 92%, transparent 100%)" }}
                   loading="eager"
-                  width="400"  // Add explicit width approx
-                  height="600"
                   fetchPriority="high"
                   decoding="async"
                 />
