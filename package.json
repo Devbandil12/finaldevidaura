@@ -54,9 +54,12 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "postcss": "^8.5.3",
+    "sharp": "^0.34.5",
     "sitemap": "^8.0.2",
+    "svgo": "^4.0.0",
     "tailwindcss": "^4.1.16",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-image-optimizer": "^2.0.3"
   },
   "description": "This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.",
   "main": "drizzle.config.js",

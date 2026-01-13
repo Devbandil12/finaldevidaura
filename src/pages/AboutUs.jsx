@@ -9,7 +9,8 @@ import { optimizeImage } from "../utils/imageOptimizer";
 // --- ASSETS (Fallbacks) ---
 import footer_bg_desktop from "../assets/images/aboutus-footer.webp"; 
 import footer_bg_mobile from "../assets/images/aboutus-footer.webp"; 
-import hero from "../assets/images/banner-2.png";
+import hero from "../assets/images/banner.webp";
+import hero_2 from "../assets/images/banner-2.webp";
 import pillar_1 from "../assets/images/saphire-mist-2.webp";
 import pillar_2 from "../assets/images/vigor.webp";
 import pillar_3 from "../assets/images/scarlet-night.webp";
