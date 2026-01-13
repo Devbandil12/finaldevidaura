@@ -237,7 +237,7 @@ const ProductDetail = () => {
                 <motion.img 
                    layoutId={`product-image-${product.id}`}
                    src={primaryImageSrc}
-                   className="w-full h-full object-contain drop-shadow-2xl"
+                   className="w-full h-full object-cover drop-shadow-2xl"
                    initial={{ scale: 1.1, y: 20 }}
                    animate={{ scale: 1, y: 0 }}
                    transition={{ duration: 1 }}
@@ -272,7 +272,7 @@ const ProductDetail = () => {
                          animate={{ opacity: 1 }}
                          exit={{ opacity: 0 }}
                          transition={{ duration: 0.8, ease: "easeOut" }} // Smooth settle
-                         className="absolute inset-0 w-full h-full object-contain p-8"
+                         className="absolute inset-0 w-full h-full object-cover object-center"
                        />
                     )}
                   </AnimatePresence>
