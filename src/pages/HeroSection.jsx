@@ -73,7 +73,7 @@ const HeroSection = () => {
     description: activeBanner?.description || "A symphony of crushed petals and sun-drenched amber. Designed not just to be worn, but to be felt.",
     buttonText: activeBanner?.buttonText || "Discover Your Scent",
     link: activeBanner?.link || "custom-combo-section",
-    image: optimizeImage(activeBanner?.imageUrl || bottleMain, 800),
+    image: optimizeImage(activeBanner?.imageUrl || bottleMain, 'card'),
     layer1: optimizeImage(activeBanner?.imageLayer1 || (!activeBanner ? bottleLayer1 : null), 400),
     layer2: optimizeImage(activeBanner?.imageLayer2 || (!activeBanner ? bottleLayer2 : null), 400),
   }), [activeBanner]);

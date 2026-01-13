@@ -10,6 +10,7 @@ import {
   Sparkles, Wind, Layers, Droplets, Minus, Plus, ArrowRight, Ban, ShoppingBag
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- UI Components ---
 
@@ -120,11 +121,12 @@ const ProductDetail = () => {
     }
   }, [productId, products]);
 
-  // ⚡ 3. IMAGE PRELOAD
+ // ⚡ 3. IMAGE PRELOAD (Optimized)
   useEffect(() => {
     if (product?.imageurl?.[0]) {
       const img = new Image();
-      img.src = product.imageurl[0];
+      // Preload the 'gallery' size, not the raw huge image
+      img.src = optimizeImage(product.imageurl[0], 'gallery');
     }
   }, [product]);
 
@@ -188,7 +190,7 @@ const ProductDetail = () => {
       window.toast.error("Sorry, this item is currently sold out.");
       return;
     }
-    
+
     await addToCart(product, selectedVariant, quantity);
   };
 
@@ -234,29 +236,28 @@ const ProductDetail = () => {
         {/* Main Container: pt-[50px] applied here for mobile navbar spacing */}
         <main className="max-w-7xl mx-auto pt-[80px] pb-20 px-4 md:px-8">
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-25">
 
             {/* --- Left Column: Image Gallery --- */}
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-6">
               <motion.div
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="sticky "
               >
-                <div className="relative aspect-[4/6] md:aspect-[1/1] lg:aspect-[4/3] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
+                <div className="relative aspect-[3/3] md:aspect-[1/1] lg:aspect-[5/5] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
 
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={currentImg}
-                      src={allImages.length > 0 ? allImages[currentImg] : "/placeholder.svg"}
-                      alt={product.name}
+                      src={allImages.length > 0 ? optimizeImage(allImages[currentImg], 'hero') : "/placeholder.svg"} alt={product.name}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.6 }}
                       loading="eager"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-contain "
                     />
                   </AnimatePresence>
 
@@ -297,7 +298,11 @@ const ProductDetail = () => {
                         onClick={() => changeImage(idx)}
                         className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 border ${currentImg === idx ? 'border-gray-300 ring-1 ring-gray-100' : 'border-transparent opacity-60 hover:opacity-100 hover:border-gray-200'}`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img 
+                          src={optimizeImage(img, 'thumbnail')} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                        />
                       </motion.button>
                     ))}
                   </div>
@@ -483,20 +488,20 @@ const ProductDetail = () => {
                     className={`flex-1 text-sm tracking-wide ${isInCart ? "border-gray-200" : ""}`}
                   >
                     {isInCart ? (
-                        <>
-                            <ShoppingBag className="mr-2 h-4 w-4" />
-                            VIEW BAG
-                        </>
+                      <>
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        VIEW BAG
+                      </>
                     ) : selectedVariant.stock === 0 ? (
-                        <>
-                            <Ban className="mr-2 h-4 w-4" />
-                            SOLD OUT
-                        </>
+                      <>
+                        <Ban className="mr-2 h-4 w-4" />
+                        SOLD OUT
+                      </>
                     ) : (
-                        <>
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            ADD TO BAG
-                        </>
+                      <>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        ADD TO BAG
+                      </>
                     )}
                   </Button>
 

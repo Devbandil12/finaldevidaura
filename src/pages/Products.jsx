@@ -53,7 +53,7 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   // ⚡ OPTIMIZATION: Automatically resize image to 600px width using Cloudinary
-  const optimizedSrc = useMemo(() => optimizeImage(src, 600), [src]);
+  const optimizedSrc = useMemo(() => optimizeImage(src, 'card'), [src]);
 
   return (
     <div className={`relative overflow-hidden w-full h-full bg-[#f0eee6] ${className}`}>

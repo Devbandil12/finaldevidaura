@@ -49,23 +49,23 @@ export default function AboutUs() {
             heroTitle: cmsData?.heroTitle || "DEVID AURA",
             heroSubtitle: cmsData?.heroSubtitle || "Est. 2023",
             // Optimize Hero (Large)
-            heroImage: optimizeImage(cmsData?.heroImage || hero, 1500),
+            heroImage: optimizeImage(cmsData?.heroImage || hero, 'hero'),
             
             pillar1: {
                 title: cmsData?.pillar1Title || "Unrefined Nature.",
                 desc: cmsData?.pillar1Desc || "We harvest when the sun is highest. Petals, roots, and resins gathered by hand from the finest estates across the globe.",
                 // Optimize Pillars (Medium)
-                image: optimizeImage(cmsData?.pillar1Image || pillar_1, 800)
+                image: optimizeImage(cmsData?.pillar1Image || pillar_1, 'card')
             },
             pillar2: {
                 title: cmsData?.pillar2Title || "Liquid Patience.",
                 desc: cmsData?.pillar2Desc || "Speed is the enemy of luxury. Our blends macerate in glass vessels for 90 days, allowing each note to find its harmony.",
-                image: optimizeImage(cmsData?.pillar2Image || pillar_2, 800)
+                image: optimizeImage(cmsData?.pillar2Image || pillar_2, 'card')
             },
             pillar3: {
                 title: cmsData?.pillar3Title || "The Human Canvas.",
                 desc: cmsData?.pillar3Desc || "A perfume is unfinished until it meets your warmth. It is not a mask you wear — it is an invisible signature.",
-                image: optimizeImage(cmsData?.pillar3Image || pillar_3, 800)
+                image: optimizeImage(cmsData?.pillar3Image || pillar_3, 'card')
             },
             founders: {
                 title: cmsData?.foundersTitle || "Architects of Memory.",

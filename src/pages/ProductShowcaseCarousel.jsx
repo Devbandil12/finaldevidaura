@@ -68,7 +68,7 @@ const rotateCircle = {
 // ✅ UPDATE: Accepting width and height props
 const BlurImage = memo(({ src, alt, className, priority = false, width, height }) => {
     const [isLoading, setIsLoading] = useState(true);
-    const optimizedSrc = useMemo(() => optimizeImage(src, 800), [src]);
+    const optimizedSrc = useMemo(() => optimizeImage(src, 'card'), [src]);
 
     return (
         <div className={`relative overflow-hidden ${className} bg-gray-200`}>

@@ -247,7 +247,7 @@ export default function TestimonialsSection() {
                         <div className="text-center group">
                           <div className="relative p-1 rounded-full border-2 border-gray-100 group-hover:border-gray-300 transition-colors">
                             <img
-                                src={optimizeImage(form.avatar, 150)}
+                                src={optimizeImage(form.avatar, 'thumbnail')}
                                 alt="User"
                                 className="w-28 h-28 rounded-full object-cover"
                             />
@@ -458,7 +458,7 @@ function Marquee({ children, direction = "left", speed = 40 }) {
 const TestimonialCard = memo(({ data }) => {
   const [loaded, setLoaded] = useState(false);
   const avatarUrl = useMemo(
-    () => optimizeImage(data.avatar || FALLBACK_AVATAR, 100),
+    () => optimizeImage(data.avatar || FALLBACK_AVATAR, 'thumbnail'),
     [data.avatar]
   );
 
