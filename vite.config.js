@@ -18,6 +18,7 @@ export default defineConfig({
     }),
     beasties({
       // 2. Inline the critical styles for speed
+      pruneSource: false,
       inlineFonts: true,
     }),
   ],
