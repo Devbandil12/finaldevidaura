@@ -11,7 +11,7 @@ import TestimonialsSection from "./TestimonialsSection";
 import AboutUs from "./AboutUs";
 import MidSectionBanner from "./MidSectionBanner";
 import { UserContext } from "../contexts/UserContext";
-import AuraFinder from "../components/AuraFinder";
+import AuraFinder from "../Components/AuraFinder";
 
 const Home = () => {
   const { userdetails } = useContext(UserContext);
