@@ -1,11 +1,11 @@
 // src/Components/Navbar.jsx
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useContext, useMemo, memo } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Assets
-import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolated.png";
+import UserIcon from "../assets/images/blond-man-with-eyeglasses-icon-isolate.jpeg";
 import MyOrderIcon from "../assets/order-svgrepo-com.svg";
 import MailUsIcon from "../assets/mail-svgrepo-com.svg";
 import LogOutIcon from "../assets/logout-svgrepo-com.svg";
@@ -26,7 +26,6 @@ import { gsap } from "gsap";
 
 // Icons
 import { BiHomeHeart } from "react-icons/bi";
-import { TbPerfume } from "react-icons/tb";
 import { Feather, Bell, ShoppingCart, Sparkles, Store } from "lucide-react";
 
 // Import Custom Auth Modal
@@ -60,35 +59,57 @@ const timeAgo = (date, now) => {
   return getRelativeTimeGroup(date, now);
 };
 
-// --- Memoized Sidebar Item ---
-const SidebarItem = memo(({ icon: Icon, label, onClick, badge }) => (
-  <li
-    className="group relative flex items-center cursor-pointer py-3 px-6 transition-colors duration-200 hover:bg-[#f5f5f5]"
-    onClick={onClick}
-    role="button"
-    tabIndex={0}
-  >
-    {Icon &&
-      (typeof Icon === "string" ? (
-        <img
-          src={Icon}
-          alt=""
-          aria-hidden="true"
-          className="w-6 mr-4 grayscale transition-all duration-200 group-hover:grayscale-0 group-hover:scale-105"
-        />
-      ) : (
-        <Icon
-          className="w-[22px] h-[22px] mr-4 text-[#333] shrink-0 transition-all duration-200 group-hover:text-black group-hover:scale-105"
-          aria-hidden="true"
-          size={20}
-        />
-      ))}
-    <span className="text-[0.95rem] text-[#333] grow shadow-none">{label}</span>
-    {typeof badge === "number" && (
-      <span className="text-[0.8rem] font-semibold py-[2px] px-[8px] bg-[#e0e0e0] text-[#333] rounded-[12px]" aria-hidden="true">{badge}</span>
-    )}
-  </li>
-));
+// --- Memoized Sidebar Item (Updated for SEO) ---
+const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
+  const commonClasses = "group relative flex items-center cursor-pointer py-3 px-6 transition-colors duration-200 hover:bg-[#f5f5f5] w-full text-left";
+  
+  const content = (
+    <>
+      {Icon &&
+        (typeof Icon === "string" ? (
+          <img
+            src={Icon}
+            alt=""
+            aria-hidden="true"
+            className="w-6 mr-4 grayscale transition-all duration-200 group-hover:grayscale-0 group-hover:scale-105"
+          />
+        ) : (
+          <Icon
+            className="w-[22px] h-[22px] mr-4 text-[#333] shrink-0 transition-all duration-200 group-hover:text-black group-hover:scale-105"
+            aria-hidden="true"
+            size={20}
+          />
+        ))}
+      <span className="text-[0.95rem] text-[#333] grow shadow-none">{label}</span>
+      {typeof badge === "number" && (
+        <span className="text-[0.8rem] font-semibold py-[2px] px-[8px] bg-[#e0e0e0] text-[#333] rounded-[12px]" aria-hidden="true">{badge}</span>
+      )}
+    </>
+  );
+
+  // If 'to' prop is present, render a Link (Crawlable)
+  if (to) {
+    return (
+      <li>
+        <Link to={to} className={commonClasses} onClick={onClick}>
+          {content}
+        </Link>
+      </li>
+    );
+  }
+
+  // Otherwise render a standard list item (for actions like Log Out)
+  return (
+    <li
+      className={commonClasses}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+    >
+      {content}
+    </li>
+  );
+});
 
 const springConfig = { type: "spring", stiffness: 500, damping: 30, mass: 1 };
 
@@ -310,21 +331,21 @@ const Navbar = ({ onVisibilityChange }) => {
 
   // 泙 UPDATED SIDEBAR LINKS (Best for use)
   const primaryLinks = useMemo(() => [
-    { label: "Home", icon: BiHomeHeart, onClick: () => { navigate("/"); closeSidebar(); } },
-    { label: "All Products", icon: Store, onClick: () => { navigate("/products"); closeSidebar(); } },
-    { label: "Build Combo", icon: Sparkles, onClick: () => { navigate("/custom-combo"); closeSidebar(); } },
-    { label: "Our Story", icon: (props) => <Feather {...props} strokeWidth={1.75} />, onClick: () => { navigate("/about"); closeSidebar(); } },
-  ], [navigate, closeSidebar]);
+    { label: "Home", icon: BiHomeHeart, to: "/", onClick: closeSidebar },
+    { label: "All Products", icon: Store, to: "/products", onClick: closeSidebar },
+    { label: "Build Combo", icon: Sparkles, to: "/custom-combo", onClick: closeSidebar },
+    { label: "Our Story", icon: (props) => <Feather {...props} strokeWidth={1.75} />, to: "/about", onClick: closeSidebar },
+  ], [closeSidebar]);
 
   const accountLinks = useMemo(() => [
-    ...(isLoggedIn ? [{ label: "My Orders", icon: MyOrderIcon, onClick: () => { navigate("/myorder"); closeSidebar(); } }] : []),
-    { label: "Wishlist", icon: WishlistIcon, onClick: () => { navigate("/wishlist"); closeSidebar(); }, badge: wishCount },
-    { label: "Cart", icon: ShoppingCart, onClick: () => { navigate("/cart"); closeSidebar(); }, badge: cartCount },
-  ], [isLoggedIn, navigate, closeSidebar, wishCount, cartCount]);
+    ...(isLoggedIn ? [{ label: "My Orders", icon: MyOrderIcon, to: "/myorder", onClick: closeSidebar }] : []),
+    { label: "Wishlist", icon: WishlistIcon, to: "/wishlist", onClick: closeSidebar, badge: wishCount },
+    { label: "Cart", icon: ShoppingCart, to: "/cart", onClick: closeSidebar, badge: cartCount },
+  ], [isLoggedIn, closeSidebar, wishCount, cartCount]);
 
   const supportLinks = useMemo(() => [
-    { label: "Contact Us", icon: MailUsIcon, onClick: () => { navigate("/contact"); closeSidebar(); } },
-  ], [navigate, closeSidebar]);
+    { label: "Contact Us", icon: MailUsIcon, to: "/contact", onClick: closeSidebar },
+  ], [closeSidebar]);
 
   // --- Dynamic Class Builders ---
   const isHomePage = location.pathname === "/";
@@ -357,28 +378,29 @@ const Navbar = ({ onVisibilityChange }) => {
         }}
       >
         <div className={`part-1 nav-brand flex items-center text-[1.5rem] pl-0 shrink-0 max-[885px]:text-[1.2rem] max-[700px]:text-[1rem] ${textColorClass}`}>
-          <a className="logo no-underline cursor-pointer max-[700px]:text-[1.2rem]" onClick={() => navigate("/")}>
+          {/* UPDATED: Use Link for logo */}
+          <Link to="/" className="logo no-underline cursor-pointer max-[700px]:text-[1.2rem]">
             <h1 className="pl-[10px] text-[1.8rem] tracking-[0.5px] m-0 max-[885px]:text-[1.5rem] max-[300px]:text-[1.2rem] !text-black">Devid Aura</h1>
-          </a>
+          </Link>
         </div>
 
         {/* Part 2: Desktop Links - Centered */}
         <div className="part-2 absolute left-1/2 -translate-x-1/2 w-auto flex items-center justify-center max-[750px]:hidden">
           <ul className="nav-links flex gap-[3rem] m-0 p-0 list-none max-[1095px]:gap-[1.2rem] max-[885px]:gap-[1.5rem]">
-            {/* 泙 UPDATED DESKTOP LINKS (Best for use) */}
+            {/* UPDATED: Map to Links instead of <a> with onClick */}
             {["Home", "Shop", "Build Combo", "Our Story"].map((text, idx) => {
               const paths = ["/", "/products", "/custom-combo", "/about"];
               return (
                 <li key={text} className="text-[1.2rem] cursor-pointer">
-                  <a
-                    onClick={() => navigate(paths[idx])}
+                  <Link
+                    to={paths[idx]}
                     className={`relative text-[16px] no-underline font-[200] !text-black transition-all
                             after:content-[''] after:absolute after:left-0 after:-bottom-[2px] after:w-0 after:h-[2px] after:transition-[width] after:duration-500 after:ease-in-out hover:after:w-full
                             ${!isScrolled ? "after:bg-black after:shadow-none" : "after:bg-black text-black"}`}
                     style={{ color: '#000000' }} // Force black as per CSS !important
                   >
                     {text}
-                  </a>
+                  </Link>
                 </li>
               )
             })}
@@ -389,29 +411,27 @@ const Navbar = ({ onVisibilityChange }) => {
           <motion.div className="icons flex items-center gap-[6px]" layout transition={springConfig}>
 
             <motion.div layout className="wishlist-icon flex items-center max-[750px]:hidden">
-              <a onClick={() => navigate("/wishlist")} className="no-underline">
-                <button id="wishlist-icon" className={iconBtnClass} aria-label={`Wishlist (${wishCount})`}>
-                  <img className="w-[24px] h-[24px] object-contain brightness-0" src={WishlistIcon} alt="wishlist" />
-                  {wishCount > 0 && (
-                    <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
-                      {wishCount}
-                    </span>
-                  )}
-                </button>
-              </a>
+              {/* UPDATED: Direct Link for Wishlist */}
+              <Link to="/wishlist" id="wishlist-icon" className={iconBtnClass} aria-label={`Wishlist (${wishCount})`}>
+                <img className="w-[24px] h-[24px] object-contain brightness-0" src={WishlistIcon} alt="wishlist" />
+                {wishCount > 0 && (
+                  <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
+                    {wishCount}
+                  </span>
+                )}
+              </Link>
             </motion.div>
 
             <motion.div layout className="cart-icon flex items-center">
-              <a onClick={() => navigate("/cart")} className="no-underline">
-                <button id="cart-icon" className={iconBtnClass} aria-label={`Cart (${cartCount})`}>
-                  <ShoppingCart strokeWidth={1.2} className="w-[24px] h-[24px] stroke-black text-black" />
-                  {cartCount > 0 && (
-                    <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
-                      {cartCount}
-                    </span>
-                  )}
-                </button>
-              </a>
+              {/* UPDATED: Direct Link for Cart */}
+              <Link to="/cart" id="cart-icon" className={iconBtnClass} aria-label={`Cart (${cartCount})`}>
+                <ShoppingCart strokeWidth={1.2} className="w-[24px] h-[24px] stroke-black text-black" />
+                {cartCount > 0 && (
+                  <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
             </motion.div>
 
             {isLoggedIn && (
@@ -495,7 +515,8 @@ const Navbar = ({ onVisibilityChange }) => {
                     className="profile-wrapper flex items-center max-[750px]:hidden"
                   >
                     <div className="profile-icon" id="profile-btn">
-                      <button id="profileButton" className={iconBtnClass} onClick={toggleProfile} aria-expanded={isProfileOpen}>
+                      {/* UPDATED: Added accessible label */}
+                      <button id="profileButton" className={iconBtnClass} onClick={toggleProfile} aria-expanded={isProfileOpen} aria-label="User Profile">
                         <img src={ProfileIcon} alt="Profile" className="w-[24px] h-[24px] object-contain brightness-0" />
                       </button>
                     </div>
@@ -521,21 +542,34 @@ const Navbar = ({ onVisibilityChange }) => {
                           </div>
                         </div>
                         <ul className="list-none m-0 p-[8px]">
+                          {/* UPDATED: Use Link for dropdown items */}
                           {[
-                            { icon: ProfileIcon, text: "My Account", action: () => { navigate("/myaccount"); setIsProfileOpen(false); } },
-                            { icon: MyOrderIcon, text: "My Orders", action: () => { navigate("/myorder"); setIsProfileOpen(false); } },
-                            { icon: MailUsIcon, text: "Contact Us", action: () => { navigate("/contact"); setIsProfileOpen(false); } }
+                            { icon: ProfileIcon, text: "My Account", path: "/myaccount" },
+                            { icon: MyOrderIcon, text: "My Orders", path: "/myorder" },
+                            { icon: MailUsIcon, text: "Contact Us", path: "/contact" }
                           ].map((item, i) => (
-                            <li key={i} onClick={item.action} className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] group">
-                              <img src={item.icon} alt="" className="w-[24px] h-[24px]" />
-                              <a className="no-underline text-[#333] font-[500] text-[14px] grow shadow-none group-hover:text-black">{item.text}</a>
+                            <li key={i} className="group">
+                              <Link 
+                                to={item.path} 
+                                onClick={() => setIsProfileOpen(false)}
+                                className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] no-underline"
+                              >
+                                <img src={item.icon} alt="" className="w-[24px] h-[24px]" />
+                                <span className="text-[#333] font-[500] text-[14px] grow shadow-none group-hover:text-black">{item.text}</span>
+                              </Link>
                             </li>
                           ))}
 
                           {userdetails?.role === "admin" && (
-                            <li onClick={() => { navigate("/admin"); setIsProfileOpen(false); }} className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] group">
-                              <img src={AdminIcon} alt="" className="w-[24px] h-[24px]" />
-                              <a className="no-underline text-[#333] font-[500] text-[14px] grow shadow-none group-hover:text-black">Admin Panel</a>
+                            <li className="group">
+                              <Link 
+                                to="/admin" 
+                                onClick={() => setIsProfileOpen(false)}
+                                className="p-[12px] cursor-pointer transition-colors duration-200 rounded-[8px] flex items-center gap-[12px] hover:bg-[#f5f5f5] no-underline"
+                              >
+                                <img src={AdminIcon} alt="" className="w-[24px] h-[24px]" />
+                                <span className="text-[#333] font-[500] text-[14px] grow shadow-none group-hover:text-black">Admin Panel</span>
+                              </Link>
                             </li>
                           )}
                           <li
@@ -578,21 +612,16 @@ const Navbar = ({ onVisibilityChange }) => {
                     onClick={(e) => { toggleSidebar(e); }}
                   >
                     <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
-                      {/* TOP LINE */}
                       <div
                         className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
                         ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
                         style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
                       />
-
-                      {/* MIDDLE LINE */}
                       <div
                         className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
                         ${isOpen ? "" : "w-[35px]"}`}
                         style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
                       />
-
-                      {/* BOTTOM LINE */}
                       <div
                         className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
                         ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
@@ -620,21 +649,16 @@ const Navbar = ({ onVisibilityChange }) => {
                           onClick={(e) => { toggleSidebar(e); }}
                         >
                           <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
-                            {/* TOP LINE */}
                             <div
                               className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
                         ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
                               style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
                             />
-
-                            {/* MIDDLE LINE */}
                             <div
                               className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
                         ${isOpen ? "" : "w-[35px]"}`}
                               style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
                             />
-
-                            {/* BOTTOM LINE */}
                             <div
                               className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
                         ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
@@ -682,20 +706,20 @@ const Navbar = ({ onVisibilityChange }) => {
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
                           <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</h5>
                           <ul className="list-none m-0 p-0">
-                            {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />))}
+                            {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
                           </ul>
                         </div>
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
                           <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Account</h5>
                           <ul className="list-none m-0 p-0">
-                            {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} onClick={l.onClick} />))}
-                            {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} onClick={() => { navigate('/admin'); closeSidebar(); }} />)}
+                            {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} to={l.to} onClick={l.onClick} />))}
+                            {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} to={'/admin'} onClick={() => { closeSidebar(); }} />)}
                           </ul>
                         </div>
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
                           <h5 className="section-title text-[0.7rem] font-[400] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Support</h5>
                           <ul className="list-none m-0 p-0">
-                            {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} onClick={l.onClick} />))}
+                            {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
                           </ul>
                         </div>
                       </nav>

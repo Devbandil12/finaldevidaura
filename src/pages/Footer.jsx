@@ -1,6 +1,6 @@
 // src/pages/Footer.jsx
 import React, { useLayoutEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
+import { useNavigate, useLocation, Link } from "react-router-dom"; // ✅ Added Link
 import { Instagram, Facebook, Twitter, ArrowUpRight } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -9,27 +9,20 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function Footer() {
   const navigate = useNavigate();
-  const location = useLocation(); // 1. Hook to detect route changes
+  const location = useLocation();
   const footerRef = useRef(null);
 
   useLayoutEffect(() => {
-    // 2. Kill all existing ScrollTriggers to prevent conflicts from previous pages
     ScrollTrigger.getAll().forEach(t => t.kill());
 
     let ctx;
     let resizeObserver;
 
-    // Small delay ensures the new page has physically rendered its DOM before we calculate
     const timer = setTimeout(() => {
       if (!footerRef.current) return;
 
-      // 3. Create the GSAP Context
       ctx = gsap.context(() => {
-        
-        // Force a refresh immediately to catch the new page height
         ScrollTrigger.refresh();
-
-        // --- DEFINE ANIMATION TIMELINE ---
         const tl = gsap.timeline({ paused: true });
 
         tl.fromTo(
@@ -57,35 +50,29 @@ export default function Footer() {
           "<"
         );
 
-        // --- CHECK: IS FOOTER ALREADY VISIBLE? ---
-        // (e.g., Short pages like Cart/Wishlist or Reloads)
         const rect = footerRef.current.getBoundingClientRect();
         const isVisible = rect.top < window.innerHeight;
         
         if (isVisible) {
-          // If visible, set to end state immediately so it doesn't look "broken/hidden"
           tl.progress(1);
         }
 
-        // --- TRIGGER 1: ENTRY (Plays when footer hits bottom of viewport) ---
         ScrollTrigger.create({
           trigger: footerRef.current,
-          start: "top 85%", // Start slightly before bottom to catch fast scrolls
+          start: "top 85%",
           end: "bottom bottom",
           onEnter: () => tl.play(),
         });
 
-        // --- TRIGGER 2: REVERSE (Handles the "60% visible" logic) ---
         ScrollTrigger.create({
           trigger: footerRef.current,
-          start: "top 30%", // Triggers well inside the viewport
+          start: "top 30%",
           end: "bottom bottom",
-          onLeaveBack: () => tl.reverse(), // Reverse only when we scroll up past this point
-          onEnter: () => tl.play(),        // Play if we scroll down past this
-          onEnterBack: () => tl.play(),    // Play if we scroll back down
+          onLeaveBack: () => tl.reverse(),
+          onEnter: () => tl.play(),
+          onEnterBack: () => tl.play(),
         });
 
-        // --- BACKGROUND PARALLAX ---
         gsap.to(".footer-watermark", {
           y: 100,
           ease: "none",
@@ -99,33 +86,27 @@ export default function Footer() {
 
       }, footerRef);
 
-      // 4. RESIZE OBSERVER (The "Home Page" Fix)
-      // Watches the BODY height. If images load and push the footer down,
-      // this fires and recalculates ScrollTrigger positions automatically.
       resizeObserver = new ResizeObserver(() => {
         ScrollTrigger.refresh();
       });
       resizeObserver.observe(document.body);
 
-    }, 100); // 100ms delay to allow React Router to swap DOM
+    }, 100);
 
-    // Cleanup function
     return () => {
       clearTimeout(timer);
-      if (ctx) ctx.revert(); // Revert animations
-      if (resizeObserver) resizeObserver.disconnect(); // Stop watching body
-      ScrollTrigger.getAll().forEach(t => t.kill()); // Extra safety: Kill triggers
+      if (ctx) ctx.revert();
+      if (resizeObserver) resizeObserver.disconnect();
+      ScrollTrigger.getAll().forEach(t => t.kill());
     };
 
-  // 5. DEPENDENCY ARRAY: Re-run this ENTIRE effect when the route (location.pathname) changes
-  }, [location.pathname]); 
+  }, [location.pathname]);
 
   return (
     <footer
       ref={footerRef}
       className="bg-white text-gray-900 pt-24 pb-10 border-t border-gray-100 relative overflow-hidden"
     >
-      {/* Background Watermark */}
       <div className="footer-watermark absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none opacity-[0.03] select-none flex justify-center mt-20">
         <span className="text-[18vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap leading-none">
           DEVID AURA
@@ -133,10 +114,8 @@ export default function Footer() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
-        {/* TOP SECTION: Brand & Socials */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-20">
           <div className="flex-1">
-            {/* Animated Brand Title */}
             <div className="flex flex-wrap mb-6 gap-x-3 sm:gap-x-6">
               {["DEVID", "AURA"].map((word, wordIndex) => (
                 <div key={wordIndex} className="flex">
@@ -144,11 +123,7 @@ export default function Footer() {
                     <span
                       key={`${wordIndex}-${charIndex}`}
                       className="brand-char font-['Cormorant_Garamond'] font-medium inline-block text-black opacity-0 
-                                 text-5xl        /* Mobile */
-                                 sm:text-6xl     /* Small Tablet */
-                                 md:text-7xl     /* iPad/Tablet */
-                                 lg:text-8xl     /* Laptop */
-                                 xl:text-9xl"    /* Large Desktop */
+                                 text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
                       style={{ willChange: "transform, opacity, filter" }}
                     >
                       {char}
@@ -163,18 +138,19 @@ export default function Footer() {
               Crafted for those who leave a mark.
             </p>
 
-            {/* Social Icons */}
+            {/* ✅ FIX: Added accessible labels for social icons */}
             <div className="flex gap-4 mt-8">
               {[
-                { Icon: Instagram, link: "https://www.instagram.com/devidaura.official/?utm_source=ig_web_button_share_sheet" },
-                { Icon: Facebook, link: "https://www.facebook.com/profile.php?id=61573374430156" },
-                { Icon: Twitter, link: "https://x.com/devida89667?s=11" }
-              ].map(({ Icon, link }, i) => (
+                { Icon: Instagram, link: "https://www.instagram.com/devidaura.official/?utm_source=ig_web_button_share_sheet", label: "Instagram" },
+                { Icon: Facebook, link: "https://www.facebook.com/profile.php?id=61573374430156", label: "Facebook" },
+                { Icon: Twitter, link: "https://x.com/devida89667?s=11", label: "X (Twitter)" }
+              ].map(({ Icon, link, label }, i) => (
                 <a
                   key={i}
                   href={link}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={label} // Added Aria Label
                   className="social-btn opacity-0 w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-300 group"
                 >
                   <Icon size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
@@ -183,42 +159,38 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Links Section */}
+          {/* ✅ FIX: Updated links to use 'to' prop and Link component */}
           <div className="flex gap-12 md:gap-24 flex-wrap">
-            {/* Shop Column */}
             <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Discover</h4>
               <ul className="space-y-3">
-                <FooterLink onClick={() => navigate('/products')} label="All Products" />
-                <FooterLink onClick={() => navigate('/custom-combo')} label="Build Your Combo" highlight />
-                <FooterLink onClick={() => navigate('/wishlist')} label="Wishlist" />
-                <FooterLink onClick={() => navigate('/cart')} label="My Cart" />
+                <FooterLink to='/products' label="All Products" />
+                <FooterLink to='/custom-combo' label="Build Your Combo" highlight />
+                <FooterLink to='/wishlist' label="Wishlist" />
+                <FooterLink to='/cart' label="My Cart" />
               </ul>
             </div>
 
-            {/* Company Column */}
             <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Company</h4>
               <ul className="space-y-3">
-                <FooterLink onClick={() => navigate('/about')} label="Our Story" />
-                <FooterLink onClick={() => navigate('/contact')} label="Contact Us" />
-                <FooterLink onClick={() => navigate('/myorder')} label="Track Order" />
+                <FooterLink to='/about' label="Our Story" />
+                <FooterLink to='/contact' label="Contact Us" />
+                <FooterLink to='/myorder' label="Track Order" />
               </ul>
             </div>
 
-            {/* Legal Column */}
             <div className="footer-column opacity-0 min-w-[120px]">
               <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Legal</h4>
               <ul className="space-y-3">
-                <FooterLink onClick={() => navigate('/privacy')} label="Privacy Policy" />
-                <FooterLink onClick={() => navigate('/terms')} label="Terms of Service" />
-                <FooterLink onClick={() => navigate('/refund-policy')} label="Refund Policy" />
+                <FooterLink to='/privacy' label="Privacy Policy" />
+                <FooterLink to='/terms' label="Terms of Service" />
+                <FooterLink to='/refund-policy' label="Refund Policy" />
               </ul>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM SECTION */}
         <div className="footer-column opacity-0 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 font-medium tracking-wide">
           <p>© {new Date().getFullYear()} Devid Aura. All rights reserved.</p>
           <div className="flex items-center gap-1 mt-3 md:mt-0 opacity-70 hover:opacity-100 transition-opacity">
@@ -230,22 +202,24 @@ export default function Footer() {
   );
 }
 
-// Helper Component for consistent links
-const FooterLink = ({ onClick, label, highlight }) => (
-  <li
-    onClick={onClick}
-    className={`
-      group flex items-center gap-1 cursor-pointer transition-all duration-300 
-      ${highlight ? "text-amber-700 font-semibold" : "text-gray-600 hover:text-black"}
-    `}
-  >
-    <span className="relative">
-      {label}
-      <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-current transition-all duration-300 group-hover:w-full"></span>
-    </span>
-    <ArrowUpRight
-      size={12}
-      className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
-    />
+// ✅ FIX: Updated Helper Component to use <Link>
+const FooterLink = ({ to, label, highlight }) => (
+  <li>
+    <Link
+      to={to}
+      className={`
+        group flex items-center gap-1 cursor-pointer transition-all duration-300 
+        ${highlight ? "text-amber-700 font-semibold" : "text-gray-600 hover:text-black"}
+      `}
+    >
+      <span className="relative">
+        {label}
+        <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-current transition-all duration-300 group-hover:w-full"></span>
+      </span>
+      <ArrowUpRight
+        size={12}
+        className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
+      />
+    </Link>
   </li>
 );

@@ -51,8 +51,8 @@ const HeroSection = () => {
             });
           }
         }
-      } catch (err) { 
-        if (err.name !== 'AbortError') console.error("Banner fetch failed:", err); 
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error("Banner fetch failed:", err);
       }
     };
     fetchBanners();
@@ -136,49 +136,49 @@ const HeroSection = () => {
     if (isMobile || !containerRef.current) return;
 
     const handleMouseMove = (e) => {
-        const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-        
-        // Normalize mouse position (-1 to 1)
-        const x = ((e.clientX - left) / width - 0.5) * 2;
-        const y = ((e.clientY - top) / height - 0.5) * 2;
+      const { left, top, width, height } = containerRef.current.getBoundingClientRect();
 
-        // Use gsap.to instead of quickSetter for fluid elasticity
-        gsap.to(".parallax-bg-text", {
-            x: x * -50,  // Move horizontally
-            y: y * -30,  // Move vertically
-            
-            // RUBBER EFFECT: Stretch based on distance from center
-            scaleX: 1 + Math.abs(x) * 0.15, // Stretch up to 15% wider
-            scaleY: 1 + Math.abs(y) * 0.10, // Stretch up to 10% taller
-            
-            // SHEAR: Slight skew to feel like material is pulling
-            skewX: x * 5, 
-            
-            duration: 0.8,    // Adds the "heavy" rubber feel
-            ease: "power3.out", // Smooth deceleration
-            overwrite: "auto"
-        });
+      // Normalize mouse position (-1 to 1)
+      const x = ((e.clientX - left) / width - 0.5) * 2;
+      const y = ((e.clientY - top) / height - 0.5) * 2;
+
+      // Use gsap.to instead of quickSetter for fluid elasticity
+      gsap.to(".parallax-bg-text", {
+        x: x * -50,  // Move horizontally
+        y: y * -30,  // Move vertically
+
+        // RUBBER EFFECT: Stretch based on distance from center
+        scaleX: 1 + Math.abs(x) * 0.15, // Stretch up to 15% wider
+        scaleY: 1 + Math.abs(y) * 0.10, // Stretch up to 10% taller
+
+        // SHEAR: Slight skew to feel like material is pulling
+        skewX: x * 5,
+
+        duration: 0.8,    // Adds the "heavy" rubber feel
+        ease: "power3.out", // Smooth deceleration
+        overwrite: "auto"
+      });
     };
 
     const handleMouseLeave = () => {
-        // Snap back to original shape when mouse leaves
-        gsap.to(".parallax-bg-text", {
-            x: 0,
-            y: 0,
-            scaleX: 1,
-            scaleY: 1,
-            skewX: 0,
-            duration: 1.2,
-            ease: "elastic.out(1, 0.3)" // Wobbly snap back
-        });
+      // Snap back to original shape when mouse leaves
+      gsap.to(".parallax-bg-text", {
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        skewX: 0,
+        duration: 1.2,
+        ease: "elastic.out(1, 0.3)" // Wobbly snap back
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     containerRef.current.addEventListener("mouseleave", handleMouseLeave);
-    
+
     return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        if (containerRef.current) containerRef.current.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (containerRef.current) containerRef.current.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [isMobile]);
 
@@ -274,6 +274,8 @@ const HeroSection = () => {
                   className="relative z-10 w-full h-full object-contain filter sepia-[0.15] contrast-[1] brightness-[1] ml-10 lg:ml-13 opacity-85"
                   style={{ maskImage: "linear-gradient(to bottom, black 92%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 92%, transparent 100%)" }}
                   loading="eager"
+                  width="400"  // Add explicit width approx
+                  height="600"
                   fetchPriority="high"
                   decoding="async"
                 />
