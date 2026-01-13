@@ -21,23 +21,6 @@
 }
 
 
-@font-face {
-  font-family: 'Libre Baskerville';
-  src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Libre Baskerville Bold';
-  src: url('/fonts/LibreBaskerville-Bold.ttf') format('truetype');
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Libre Baskerville Italic';
-  src: url('/fonts/LibreBaskerville-Regular.ttf') format('truetype');
-  font-display: swap;
-}
-
-
 
 /* 2. LUXURY DESIGN TOKENS */
 :root {
@@ -48,10 +31,6 @@
   --color-off-white: #ffffff; /* The signature "Warm Luxury" bg */
   --color-text-body: #4a4a4a;
 
-  /* Typography Mapping */
-  --font-heading: 'Libre Baskerville Bold', serif;
-  --font-body: 'Montserrat', sans-serif; /* Assuming you want a clean sans for body */
-  --font-accent: 'Libre Baskerville Italic', serif;
 }
 
 /* 3. GLOBAL RESET */
