@@ -395,7 +395,7 @@ const Navbar = ({ onVisibilityChange }) => {
                   <Link
                     to={paths[idx]}
                     className={`relative text-[16px] no-underline font-[200] !text-black transition-all
-                            after:content-[''] after:absolute after:left-0 after:-bottom-[2px] after:w-0 after:h-[2px] after:transition-[width] after:duration-500 after:ease-in-out hover:after:w-full
+                            after:content-[''] after:absolute after:left-0 after:-bottom-[2px] after:w-0 after:h-[1px] after:transition-[width] after:duration-500 after:ease-in-out hover:after:w-full
                             ${!isScrolled ? "after:bg-black after:shadow-none" : "after:bg-black text-black"}`}
                     style={{ color: '#000000' }} // Force black as per CSS !important
                   >

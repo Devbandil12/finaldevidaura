@@ -131,54 +131,67 @@ const HeroSection = () => {
     return () => ctx.revert();
   }, [isMobile]);
 
-  // 5. ⚡ UPDATED: RUBBER STRETCH MOUSE EFFECT
+  // 5. ⚡ UPDATED: PERFORMANCE OPTIMIZED MOUSE EFFECT
   useEffect(() => {
     if (isMobile || !containerRef.current) return;
 
+    // Cache dimensions here so we don't calculate them in the loop
+    let bounds = { left: 0, top: 0, width: 0, height: 0 };
+
+    const updateBounds = () => {
+      if (containerRef.current) {
+        bounds = containerRef.current.getBoundingClientRect();
+      }
+    };
+
+    const handleMouseEnter = () => {
+      updateBounds();
+      // Hint browser to expect changes (Performance boost)
+      gsap.set(".parallax-bg-text", { willChange: "transform" });
+    };
+
     const handleMouseMove = (e) => {
-      const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+      // Math logic using cached 'bounds' instead of getBoundingClientRect()
+      const x = ((e.clientX - bounds.left) / bounds.width - 0.5) * 2;
+      const y = ((e.clientY - bounds.top) / bounds.height - 0.5) * 2;
 
-      // Normalize mouse position (-1 to 1)
-      const x = ((e.clientX - left) / width - 0.5) * 2;
-      const y = ((e.clientY - top) / height - 0.5) * 2;
-
-      // Use gsap.to instead of quickSetter for fluid elasticity
       gsap.to(".parallax-bg-text", {
-        x: x * -50,  // Move horizontally
-        y: y * -30,  // Move vertically
-
-        // RUBBER EFFECT: Stretch based on distance from center
-        scaleX: 1 + Math.abs(x) * 0.15, // Stretch up to 15% wider
-        scaleY: 1 + Math.abs(y) * 0.10, // Stretch up to 10% taller
-
-        // SHEAR: Slight skew to feel like material is pulling
+        x: x * -50,
+        y: y * -30,
+        scaleX: 1 + Math.abs(x) * 0.15,
+        scaleY: 1 + Math.abs(y) * 0.10,
         skewX: x * 5,
-
-        duration: 0.8,    // Adds the "heavy" rubber feel
-        ease: "power3.out", // Smooth deceleration
+        duration: 0.8,
+        ease: "power3.out",
         overwrite: "auto"
       });
     };
 
     const handleMouseLeave = () => {
-      // Snap back to original shape when mouse leaves
       gsap.to(".parallax-bg-text", {
-        x: 0,
-        y: 0,
-        scaleX: 1,
-        scaleY: 1,
-        skewX: 0,
+        x: 0, y: 0, scaleX: 1, scaleY: 1, skewX: 0,
         duration: 1.2,
-        ease: "elastic.out(1, 0.3)" // Wobbly snap back
+        ease: "elastic.out(1, 0.3)",
+        onComplete: () => gsap.set(".parallax-bg-text", { willChange: "auto" }) // Clean up
       });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    containerRef.current.addEventListener("mouseleave", handleMouseLeave);
+    // Add listeners
+    window.addEventListener("resize", updateBounds);
+    // Important: Update bounds on scroll too if the hero isn't fixed
+    window.addEventListener("scroll", updateBounds);
+
+    const container = containerRef.current;
+    container.addEventListener("mouseenter", handleMouseEnter);
+    container.addEventListener("mousemove", handleMouseMove);
+    container.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (containerRef.current) containerRef.current.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("resize", updateBounds);
+      window.removeEventListener("scroll", updateBounds);
+      container.removeEventListener("mouseenter", handleMouseEnter);
+      container.removeEventListener("mousemove", handleMouseMove);
+      container.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [isMobile]);
 

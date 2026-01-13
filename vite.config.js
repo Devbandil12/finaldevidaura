@@ -43,6 +43,7 @@ export default defineConfig({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'gsap-vendor': ['gsap'],
           'ui-vendor': ['lucide-react'],
+          'clerk-vendor': ['@clerk/clerk-react', '@clerk/shared'],
         },
       },
     },

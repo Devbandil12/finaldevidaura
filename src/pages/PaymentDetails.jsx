@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { CreditCard, Truck, Loader2, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { loadRazorpayScript } from "../utils/useRazorpay"; // Ensure this path is correct
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
@@ -14,14 +15,25 @@ export default function PaymentDetails({
     selectedItems,
     appliedCoupon,
     loadingPrices,
-    isSubmitting,
+    isSubmitting, // This comes from parent, but we need a local one for immediate clicks
     onPaymentVerified,
     paymentVerified,
     setTransactionId,
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+    
+    // 🟢 NEW: Local state to disable button INSTANTLY when clicked
+    const [isProcessing, setIsProcessing] = useState(false);
+    
     const { user } = useUser();
+
+    // 🟢 1. PERFORMANCE FIX: Preload Script on Mount
+    // This starts downloading the 50KB script as soon as the user sees this screen.
+    // It won't block the Homepage, but it will be ready by the time they click "Pay".
+    useEffect(() => {
+        loadRazorpayScript();
+    }, []);
 
     useEffect(() => {
         if (paymentMethod === "Cash on Delivery") {
@@ -38,7 +50,19 @@ export default function PaymentDetails({
 
 
     const handleRazorpayPayment = async () => {
+        // 🟢 2. UI FIX: Disable button immediately
+        setIsProcessing(true);
+
         try {
+            // Check if script is loaded (It likely is, thanks to the useEffect above)
+            const isScriptLoaded = await loadRazorpayScript();
+
+            if (!isScriptLoaded) {
+                window.toast.error("Failed to load payment gateway. Check connection.");
+                setIsProcessing(false);
+                return;
+            }
+
             const cartItemsPayload = selectedItems.map(item => ({
                 variant: { id: item.variant.id },
                 product: { id: item.product.id },
@@ -60,8 +84,6 @@ export default function PaymentDetails({
 
             const orderData = await orderResponse.json();
 
-            // 🟢 PRE-CHECK: Stock Unavailable? Stop here.
-            // This prevents opening the Razorpay window if stock is 0.
             if (!orderResponse.ok) {
                 throw new Error(orderData.msg || "Could not create order.");
             }
@@ -81,7 +103,8 @@ export default function PaymentDetails({
                     contact: selectedAddress?.phone || "",
                 },
                 handler: async function (response) {
-                    setIsVerifyingPayment(true);
+                    setIsVerifyingPayment(true); // Show full screen loader
+                    setIsProcessing(false);      // Re-enable button logic (hidden behind loader anyway)
 
                     try {
                         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
@@ -104,7 +127,6 @@ export default function PaymentDetails({
 
                         const verifyData = await verifyRes.json();
 
-                        // 🟢 CHECK FOR SUCCESS (Or Race Condition Error)
                         if (verifyData.success) {
                             setTransactionId(razorpay_payment_id);
                             onPaymentVerified(true);
@@ -112,7 +134,6 @@ export default function PaymentDetails({
                             onRazorpaySuccess(razorpay_payment_id);
                         } else {
                             setIsVerifyingPayment(false);
-                            // Show the specific error (e.g., "Item went out of stock... Refund initiated")
                             window.toast.error(verifyData.error || "Payment verification failed.");
                         }
                     } catch (error) {
@@ -123,20 +144,28 @@ export default function PaymentDetails({
                 },
                 modal: {
                     ondismiss: function () {
+                        setIsProcessing(false); // Re-enable button if they close popup
                         window.toast.info("Payment was cancelled.");
                     },
                 },
             };
+            
             const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response){
+                setIsProcessing(false);
+                window.toast.error(response.error.description);
+            });
             rzp.open();
+
         } catch (err) {
             console.error("Payment error:", err);
-            // This catches the Pre-Check stock error and shows it to the user.
             window.toast.error(err.message);
+            setIsProcessing(false); // Re-enable button on error
         }
     };
 
-    const isBusy = isSubmitting || loadingPrices || isVerifyingPayment;
+    // Combine all busy states
+    const isBusy = isSubmitting || loadingPrices || isVerifyingPayment || isProcessing;
 
     return (
         <div className="relative">
@@ -171,7 +200,6 @@ export default function PaymentDetails({
                 )}
             </AnimatePresence>
 
-            {/* Responsive padding: p-4 sm:p-8 */}
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-6">
                 <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                     <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
@@ -202,7 +230,6 @@ export default function PaymentDetails({
                             disabled={isBusy}
                             className="hidden"
                         />
-                        {/* min-w-0 for text truncation */}
                         <div className="flex-1 min-w-0">
                             <span className={`block font-semibold transition-colors ${paymentMethod === 'Razorpay' ? 'text-black' : 'text-slate-700'}`}>Razorpay Secure</span>
                             <span className="text-xs text-slate-500 mt-0.5 block truncate">UPI, Cards, NetBanking, Wallets</span>
@@ -237,7 +264,6 @@ export default function PaymentDetails({
                                 disabled={!breakdown.codAvailable || isBusy}
                                 className="hidden"
                             />
-                            {/* min-w-0 for text truncation */}
                             <div className="flex-1 min-w-0">
                                 <span className={`block font-semibold transition-colors ${!breakdown.codAvailable ? 'text-slate-400' : paymentMethod === 'Cash on Delivery' ? 'text-black' : 'text-slate-700'}`}>
                                     Cash on Delivery
@@ -263,7 +289,7 @@ export default function PaymentDetails({
                             whileTap={!isBusy ? { scale: 0.98 } : {}}
                             className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
-                            {isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
+                            {isProcessing ? "Processing..." : isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
                         </motion.button>
                     )}
 
