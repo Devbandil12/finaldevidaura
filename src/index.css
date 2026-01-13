@@ -1,5 +1,29 @@
 /* src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Manrope:wght@200..800&display=swap');
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/Manrope-VariableFont_wght.woff2') format('woff2');
+  font-weight: 200 800; /* Defines the available range */
+  font-style: normal;
+  font-display: swap; /* Critical for LCP: Shows text immediately */
+}
+
+/* 2. Cormorant Garamond (Variable Normal: Weights 300-700) */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/CormorantGaramond-VariableFont_wght.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 3. Cormorant Garamond (Variable Italic: Weights 300-700) */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/CormorantGaramond-Italic-VariableFont_wght.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
 @import "tailwindcss";
 
 /* ⚡️ PERFORMANCE OPTIMIZATION LAYER */

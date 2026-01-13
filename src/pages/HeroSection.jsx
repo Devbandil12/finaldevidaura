@@ -5,7 +5,7 @@ import { ArrowRight, Droplet, Clock, Sparkles, ShieldCheck } from "lucide-react"
 import { optimizeImage } from "../utils/imageOptimizer";
 
 // DEFAULT ASSETS
-import bottleMain from "../assets/images/SAPPHIRE-MIST.webp";
+import bottleMain from "/images/SAPPHIRE-MIST.webp";
 import bottleLayer1 from "../assets/images/PERFUME-B0X.webp";
 import bottleLayer2 from "../assets/images/PERFUME-B0X.webp";
 

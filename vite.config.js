@@ -2,11 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
+import { beasties } from 'vite-plugin-beasties'
 
 export default defineConfig({
   base: "/",
   plugins: [
     react(),
+    beasties({
+      // 1. Prune the CSS (remove unused styles)
+      pruneSource: true,
+      // 2. Inline the critical styles for speed
+      inlineFonts: true,
+    }),
     tailwindcss(),
     // Automatically compress images during build
     ViteImageOptimizer({
