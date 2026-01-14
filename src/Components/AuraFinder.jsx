@@ -281,7 +281,7 @@ export default function AuraFinder() {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="w-full mt-16 md:mt-0"
+                      className="w-full mt-176 md:mt-0"
                     >
                       {/* Header */}
                       <motion.div variants={itemVariants} className="mb-10 md:mb-24 text-center md:text-left">
