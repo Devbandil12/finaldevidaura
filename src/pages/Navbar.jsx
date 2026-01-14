@@ -112,7 +112,7 @@ const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
 // --- ⚡ OPTIMIZATION: Memoized Notification Item ---
 // Extracts logic from the map loop to prevent full list repaints on parent re-renders
 const NotificationItem = memo(({ notif, onNavigate }) => {
-  
+
   // Use a callback here to ensure the handler is stable
   const handleClick = useCallback(() => {
     onNavigate(notif.link);
@@ -705,7 +705,7 @@ const Navbar = ({ onVisibilityChange }) => {
                         </div>
                       </header>
 
-                      <nav className="sidebar-nav p-[1rem_0] grow overflow-y-auto">
+                      <nav className="sidebar-nav p-[1rem_0] grow overflow-y-auto ">
                         <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
                           <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</div>                          <ul className="list-none m-0 p-0">
                             {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}

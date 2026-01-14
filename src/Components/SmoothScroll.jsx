@@ -3,15 +3,14 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLocation, useNavigationType } from 'react-router-dom'; // 1. Import useNavigationType
+import { useLocation, useNavigationType } from 'react-router-dom';
 
 export default function SmoothScroll({ children }) {
   const lenisRef = useRef(null);
   const location = useLocation();
-  const navType = useNavigationType(); // 2. Get the navigation type (PUSH, POP, or REPLACE)
+  const navType = useNavigationType();
 
   useLayoutEffect(() => {
-    // Keep this. It prevents the browser from fighting with Lenis.
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
@@ -25,11 +24,25 @@ export default function SmoothScroll({ children }) {
       gestureDirection: 'vertical',
       smooth: true,
       mouseMultiplier: 1,
-      // 🟢 GOOD DECISION: smoothTouch: false
-      // This forces mobile to use native scrolling. 
-      // This is the #1 way to ensure your site is fast/smooth on mobile.
-      smoothTouch: false, 
+      smoothTouch: false,
       touchMultiplier: 2,
+      // 🟢 ADD THIS BLOCK: Global Prevent Logic
+      prevent: (node) => {
+        return (
+          node.nodeName === 'VERCEL-LIVE-FEEDBACK' ||
+          node.id === 'the-id' ||
+          // 1. Automatically ignore elements with these Tailwind classes
+          node.classList?.contains('overflow-y-auto') ||
+          node.classList?.contains('overflow-scroll') ||
+          // 2. Check if any parent element has these classes (safe fallback)
+          node.closest?.('.overflow-y-auto') ||
+          node.closest?.('.overflow-scroll') ||
+          // 3. Specifically ignore your Sidebar and Notification dropdowns
+          node.closest?.('.sidebar') ||
+          node.closest?.('.notification-list') ||
+          node.closest?.('.react-datepicker') 
+        );
+      },
     });
 
     lenisRef.current = lenis;
@@ -48,16 +61,13 @@ export default function SmoothScroll({ children }) {
     };
   }, []);
 
-  // 3. OPTIMIZED SCROLL RESET
   useEffect(() => {
     if (lenisRef.current) {
-      // ONLY scroll to top if it's a new page visit (PUSH) or a fresh load.
-      // If it's a "Back" button click (POP), let the browser handle the position (or stay where it is).
       if (navType !== 'POP') {
         lenisRef.current.scrollTo(0, { immediate: true });
       }
     }
-  }, [location.pathname, navType]); // Add navType to dependencies
+  }, [location.pathname, navType]);
 
   return <div className="w-full min-h-screen">{children}</div>;
 }
