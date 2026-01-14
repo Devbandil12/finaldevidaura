@@ -1,45 +1,138 @@
 // src/Components/AuraFinder.jsx
 import React, { useState } from "react";
-import { createPortal } from "react-dom"; // 🟢 1. IMPORT THIS
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, Loader2, RefreshCcw } from "lucide-react"; // Removed ArrowRight as it wasn't used in snippet
+import { Sparkles, X, ArrowRight, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { optimizeImage } from "../utils/imageOptimizer";
 
-// ... (Keep your existing CONFIGURATION array: questions, options, etc.) ...
+// --- CONFIGURATION ---
 const questions = [
   {
     id: "occasion",
-    title: "Where is your next chapter being written?",
+    title: "The Setting",
+    subtitle: "Where will your presence be felt?",
     options: [
-      { label: "An Intimate Evening", keywords: ["night", "sensual", "warm", "spicy", "intense", "romance", "seductive"] },
-      { label: "The Boardroom", keywords: ["fresh", "clean", "citrus", "light", "professional", "crisp", "subtle"] },
-      { label: "A Grand Celebration", keywords: ["elegant", "floral", "sophisticated", "rich", "gold", "luxury", "oud"] },
-      { label: "Everyday Signature", keywords: ["balanced", "modern", "classic", "air", "daily", "soft", "aqua"] },
+      { 
+        label: "Daily Ritual", 
+        keywords: ["balanced", "clean", "fresh", "daily", "versatile", "soft", "modern"],
+        desc: "For the effortless moments of everyday life."
+      },
+      { 
+        label: "The Workspace", 
+        keywords: ["professional", "subtle", "crisp", "citrus", "clean", "office", "elegant"],
+        desc: "Commanding respect with subtle elegance."
+      },
+      { 
+        label: "Intimate Evening", 
+        keywords: ["romantic", "seductive", "warm", "spicy", "night", "sensual", "vanilla"],
+        desc: "A night of closeness and whispered secrets."
+      },
+      { 
+        label: "Grand Gala", 
+        keywords: ["sophisticated", "rich", "luxury", "oud", "classic", "gold", "formal"],
+        desc: "For moments that require your absolute best."
+      },
+      { 
+        label: "High Energy", 
+        keywords: ["bold", "loud", "sweet", "playful", "projection", "club", "energy"],
+        desc: "To stand out in the crowd and pulse with life."
+      },
+      { 
+        label: "Active Pursuit", 
+        keywords: ["sport", "aqua", "energy", "fresh", "citrus", "dynamic", "cool"],
+        desc: "Freshness that keeps pace with your intensity."
+      },
+      { 
+        label: "Coastal Escape", 
+        keywords: ["tropical", "marine", "coconut", "relaxing", "summer", "sun", "breeze"],
+        desc: "Sun-drenched skin and salt in the air."
+      },
+      { 
+        label: "Sanctuary", 
+        keywords: ["comfort", "warm", "woody", "soft", "calm", "peace", "intimate"],
+        desc: "Quiet moments of reflection and peace."
+      },
     ],
   },
   {
     id: "vibe",
-    title: "What presence do you wish to project?",
+    title: "The Essence",
+    subtitle: "What story should your scent tell?",
     options: [
-      { label: "Commanding & Powerful", keywords: ["bold", "musk", "oud", "strong", "commanding", "leather", "tobacco"] },
-      { label: "Mysterious & Complex", keywords: ["smoky", "amber", "dark", "complex", "enigma", "deep", "incense"] },
-      { label: "Playful & Radiant", keywords: ["sweet", "fruity", "vanilla", "bright", "joy", "energy", "citrus"] },
-      { label: "Grounded & Serene", keywords: ["wood", "earth", "calm", "sandalwood", "peace", "nature", "vetiver"] },
+      { 
+        label: "Clean Minimalism", 
+        keywords: ["citrus", "aqua", "clean", "fresh", "soapy", "crisp", "uplifting"],
+        desc: "Pure, untouched, and crystal clear."
+      },
+      { 
+        label: "Playful Sweetness", 
+        keywords: ["sweet", "fruity", "vanilla", "gourmand", "playful", "bright", "joy"],
+        desc: "A radiant burst of joy and indulgence."
+      },
+      { 
+        label: "Dark Power", 
+        keywords: ["strong", "musk", "tobacco", "spicy", "bold", "leather", "power"],
+        desc: "Unapologetic strength and dominance."
+      },
+      { 
+        label: "Enigmatic Mystery", 
+        keywords: ["smoky", "incense", "dark", "complex", "enigma", "deep", "mystique"],
+        desc: "A riddle wrapped in smoke and shadows."
+      },
+      { 
+        label: "Timeless Elegance", 
+        keywords: ["floral", "refined", "powdery", "chic", "timeless", "luxury", "classy"],
+        desc: "Grace that transcends eras."
+      },
+      { 
+        label: "Warm Seduction", 
+        keywords: ["amber", "warm", "spicy", "cinnamon", "sexy", "alluring", "cozy"],
+        desc: "A magnetic pull that cannot be resisted."
+      },
+      { 
+        label: "Earthy Roots", 
+        keywords: ["woody", "moss", "earthy", "vetiver", "natural", "calm", "serene"],
+        desc: "Grounded in the strength of nature."
+      },
+      { 
+        label: "Royal Opulence", 
+        keywords: ["oud", "gold", "saffron", "oriental", "intense", "expensive", "regal"],
+        desc: "The scent of kings and queens."
+      },
     ],
   },
 ];
 
-// ... (Keep your existing ANIMATION VARIANTS) ...
+const transitionSettings = { duration: 0.8, ease: [0.25, 0.4, 0.25, 1] };
+
 const overlayVariants = {
-  hidden: { opacity: 0, backdropFilter: "blur(0px)" },
-  visible: { opacity: 1, backdropFilter: "blur(12px)", transition: { duration: 0.6 } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.6 } },
+  exit: { opacity: 0, transition: { duration: 0.6, delay: 0.2 } }
 };
 
 const contentVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 30, stiffness: 300, staggerChildren: 0.1 } },
-  exit: { opacity: 0, y: -40, transition: { duration: 0.4 } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      staggerChildren: 0.1, 
+      delayChildren: 0.2,
+      ...transitionSettings 
+    } 
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20, 
+    transition: { duration: 0.5, ease: "easeInOut" } 
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: transitionSettings },
 };
 
 export default function AuraFinder() {
@@ -52,7 +145,6 @@ export default function AuraFinder() {
   const navigate = useNavigate();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
-  // ... (Keep your existing Handlers: handleStart, handleClose, handleSelection, findMatchOnServer, restart) ...
   const handleStart = () => {
     setIsOpen(true);
     setStep(1);
@@ -67,7 +159,7 @@ export default function AuraFinder() {
       setStep(0);
       setSelections({ occasion: null, vibe: null });
       setRecommendation(null);
-    }, 500);
+    }, 800);
   };
 
   const handleSelection = (option) => {
@@ -91,17 +183,16 @@ export default function AuraFinder() {
       });
 
       if (!response.ok) throw new Error("Consultation failed");
-
       const bestMatch = await response.json();
       
       setTimeout(() => {
         setRecommendation(bestMatch);
         setStep(4);
-      }, 1800);
+      }, 2500);
 
     } catch (err) {
       console.error("Aura Match Error:", err);
-      setError("Our concierge is currently unavailable. Please explore our full collection.");
+      setError("Our concierge is momentarily unavailable.");
       setStep(4);
     }
   };
@@ -115,28 +206,22 @@ export default function AuraFinder() {
 
   return (
     <>
-      {/* ⚡️ TRIGGER BUTTON (Stays where it is in the DOM) */}
+      {/* ⚡️ TRIGGER BUTTON (Updated with Text) */}
       {!isOpen && (
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.02, paddingRight: "1.5rem" }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleStart}
-          className="fixed bottom-8 right-8 z-40 bg-white text-black px-6 py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] flex items-center gap-3 border border-gray-100 group transition-all duration-300"
+          className="fixed bottom-10 right-10 z-40 bg-black text-white px-8 py-4 rounded-full flex items-center gap-3 shadow-2xl shadow-black/30 hover:bg-[#D4AF49] hover:text-black transition-colors duration-500 group"
         >
-          <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-[#D4AF37]">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Concierge</span>
-            <span className="font-serif italic text-lg leading-none pr-1">Find your Aura</span>
-          </div>
+          <Sparkles className="w-5 h-5 group-hover:rotate-360 transition-transform duration-500" />
+          <span className="font-serif italic text-lg tracking-wide">Find Your Aura</span>
         </motion.button>
       )}
 
-      {/* ⚡️ FULL SCREEN OVERLAY (MOVED TO PORTAL) */}
-      {/* 🟢 2. WRAP THIS SECTION IN createPortal */}
+      {/* ⚡️ FULL SCREEN OVERLAY (Portal) */}
       {createPortal(
         <AnimatePresence>
           {isOpen && (
@@ -144,24 +229,35 @@ export default function AuraFinder() {
               variants={overlayVariants}
               initial="hidden"
               animate="visible"
-              exit="hidden"
-              // 🟢 3. Ensure Z-index is higher than Navbar (9999)
-              className="fixed inset-0 z-[10001] flex items-center justify-center bg-white/90 overflow-y-auto"
-              // 🟢 4. Add this to prevent Lenis scroll issues here too
+              exit="exit"
+              className="fixed inset-0 z-[10001] flex items-center justify-center bg-[#fafafa] overflow-y-auto overflow-x-hidden"
               data-lenis-prevent 
             >
-              {/* Background Texture */}
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/noise.png')]"></div>
+              {/* Decorative Lines */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute left-10 top-0 bottom-0 w-[1px] bg-black/5 hidden md:block"></div>
+                <div className="absolute right-10 top-0 bottom-0 w-[1px] bg-black/5 hidden md:block"></div>
+                <div className="absolute top-24 left-0 right-0 h-[1px] bg-black/5 hidden md:block"></div>
+                <div className="absolute bottom-10 left-0 right-0 h-[1px] bg-black/5 hidden md:block"></div>
+              </div>
 
+              {/* 🟢 NEW: PREMIUM MAIN HEADING (Fixed at top) */}
+              <div className="absolute top-0 left-0 w-full flex justify-center py-8 z-20 pointer-events-none">
+                <div className="flex flex-col items-center">
+                   <h1 className="text-xs font-bold uppercase tracking-[0.3em] text-[#D4AF37] mb-1">Devid Aura</h1>
+                   <h2 className="font-serif italic text-2xl text-black">The Olfactory Concierge</h2>
+                </div>
+              </div>
+
+              {/* Close Button (Updated Hover) */}
               <button 
                 onClick={handleClose}
-                className="absolute top-8 right-8 p-4 rounded-full hover:bg-black hover:text-white transition-colors duration-300 z-50 group"
+                className="fixed top-8 right-8 z-50 p-3 rounded-full hover:bg-black group transition-colors duration-300"
               >
-                <X className="w-6 h-6 text-gray-400 group-hover:text-white" />
-                <span className="sr-only">Close</span>
+                <X className="w-6 h-6 text-black/60 group-hover:text-white transition-colors duration-300" />
               </button>
 
-              <div className="w-full max-w-5xl px-6 relative z-10 max-h-screen " data-lenis-prevent>
+              <div className="w-full max-w-7xl px-6 md:px-20 relative z-10 py-10 min-h-screen flex flex-col justify-center" data-lenis-prevent>
                 <AnimatePresence mode="wait">
                   
                   {/* --- QUESTIONS (STEP 1 & 2) --- */}
@@ -172,154 +268,188 @@ export default function AuraFinder() {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="flex flex-col items-center text-center my-10"
+                      className="w-full mt-16 md:mt-0"
                     >
-                      <motion.span className="text-xs font-bold text-[#D4AF37] uppercase tracking-[0.25em] mb-6 border border-[#D4AF37]/30 px-4 py-2 rounded-full">
-                        Step {step} of 2
-                      </motion.span>
+                      {/* Header */}
+                      <motion.div variants={itemVariants} className="mb-16 md:mb-24 text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                           <span className="text-[10px] md:text-xs font-bold font-sans tracking-[0.3em] text-[#D4AF37]">
+                             0{step} <span className="text-gray-300 mx-2">/</span> 02
+                           </span>
+                           <div className="h-[1px] w-12 bg-[#D4AF37] hidden md:block"></div>
+                        </div>
+                        
+                        <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif italic text-black mb-4 tracking-tight">
+                          {questions[step - 1].title}
+                        </h2>
+                        <p className="text-sm md:text-base text-gray-500 font-sans tracking-wide uppercase max-w-xl">
+                          {questions[step - 1].subtitle}
+                        </p>
+                      </motion.div>
                       
-                      <motion.h2 className="text-4xl md:text-6xl font-serif text-gray-900 mb-16 max-w-3xl leading-tight">
-                        {questions[step - 1].title}
-                      </motion.h2>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+                      {/* Options Grid - Editorial Style */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-12">
                         {questions[step - 1].options.map((option, idx) => (
                           <motion.button
                             key={option.label}
-                            variants={contentVariants}
-                            whileHover={{ scale: 1.02, backgroundColor: "#1a1a1a", color: "#ffffff" }}
-                            whileTap={{ scale: 0.98 }}
+                            variants={itemVariants}
+                            whileHover={{ y: -5 }}
                             onClick={() => handleSelection(option)}
-                            className="group relative p-8 md:p-10 text-left border border-gray-200 bg-white transition-all duration-500 ease-out overflow-hidden"
+                            className="group relative flex flex-col text-left outline-none"
                           >
-                            <span className="relative z-10 text-2xl md:text-3xl font-serif italic text-gray-400 group-hover:text-white/40 absolute top-4 right-6">
+                            {/* Top Border */}
+                            <div className="w-full h-[1px] bg-black/10 group-hover:bg-[#D4AF37] transition-colors duration-500 mb-6 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-[#D4AF37] -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-[0.22,1,0.36,1]"></div>
+                            </div>
+
+                            <span className="text-[10px] font-sans font-bold text-gray-400 group-hover:text-[#D4AF37] transition-colors mb-3">
                               0{idx + 1}
                             </span>
-                            <h3 className="relative z-10 text-xl md:text-2xl font-medium text-gray-900 group-hover:text-white mb-2 transition-colors">
+                            
+                            <h3 className="text-2xl md:text-3xl font-serif text-gray-900 group-hover:italic transition-all duration-300 mb-3">
                               {option.label}
                             </h3>
-                            <div className="relative z-10 w-8 h-[1px] bg-gray-300 group-hover:bg-[#D4AF37] group-hover:w-16 transition-all duration-500 mt-4"></div>
+                            
+                            <p className="text-xs md:text-sm text-gray-500 font-light leading-relaxed group-hover:text-black transition-colors duration-300">
+                              {option.desc}
+                            </p>
+
+                            {/* Hover Icon */}
+                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2 group-hover:translate-x-2">
+                               <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+                            </div>
                           </motion.button>
                         ))}
                       </div>
                     </motion.div>
                   )}
 
-                  {/* --- ANALYZING (STEP 3) --- */}
+                  {/* --- ANALYZING (STEP 3) - Minimalist --- */}
                   {step === 3 && (
                     <motion.div
                       key="analyzing"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center h-[50vh]"
+                      className="absolute inset-0 flex flex-col items-center justify-center bg-[#fafafa] z-50"
                     >
-                       <div className="relative">
+                       {/* Elegant Spinner */}
+                       <div className="w-24 h-24 border-[1px] border-black/5 rounded-full relative flex items-center justify-center">
                           <motion.div 
-                            className="absolute inset-0 border border-gray-200 rounded-full"
-                            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
+                             className="absolute inset-0 border-t-[1px] border-black rounded-full"
+                             animate={{ rotate: 360 }}
+                             transition={{ duration: 2, ease: "linear", repeat: Infinity }}
                           />
                           <motion.div 
-                            className="absolute inset-0 border border-[#D4AF37]/30 rounded-full"
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.8, 0, 0.8] }}
-                            transition={{ repeat: Infinity, duration: 2, delay: 0.5 }}
+                             className="w-16 h-16 bg-[#D4AF37]/10 rounded-full blur-xl"
+                             animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                           />
-                          <Loader2 className="w-12 h-12 text-black animate-spin relative z-10" />
                        </div>
-                       <h3 className="mt-8 text-2xl font-serif text-gray-900">Curating your essence...</h3>
-                       <p className="text-gray-500 mt-2 font-light">Analyzing notes of {selections.occasion?.keywords[1]} and {selections.vibe?.keywords[1]}</p>
+                       
+                       <motion.div 
+                         initial={{ opacity: 0, y: 10 }}
+                         animate={{ opacity: 1, y: 0 }}
+                         transition={{ delay: 0.5 }}
+                         className="mt-10 text-center space-y-2"
+                       >
+                         <h3 className="text-lg uppercase tracking-[0.2em] font-sans font-bold">Curating</h3>
+                         <p className="font-serif italic text-2xl text-gray-400">
+                           Harmonizing {selections.occasion?.keywords[1]} & {selections.vibe?.keywords[1]}...
+                         </p>
+                       </motion.div>
                     </motion.div>
                   )}
 
-                  {/* --- RESULT (STEP 4) --- */}
+                  {/* --- RESULT (STEP 4) - Magazine Spread --- */}
                   {step === 4 && (
                     <motion.div
                       key="result"
                       variants={contentVariants}
                       initial="hidden"
                       animate="visible"
-                      className="w-full max-w-6xl mx-auto my-10"
+                      className="w-full flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-24 mt-16 md:mt-0"
                     >
                       {error ? (
-                         <div className="text-center py-20">
-                            <h3 className="text-3xl font-serif mb-4">Connection Interrupted</h3>
-                            <p className="text-gray-500 mb-8">{error}</p>
-                            <button onClick={handleClose} className="text-black underline">Close</button>
+                         <div className="text-center py-20 w-full">
+                            <h3 className="text-3xl font-serif mb-4 italic">Connection Interrupted</h3>
+                            <button onClick={handleClose} className="text-xs uppercase tracking-widest underline decoration-[#D4AF37] underline-offset-4">Close Concierge</button>
                          </div>
                       ) : recommendation && (
-                        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
-                          
-                          {/* Left: Product Image */}
+                        <>
+                          {/* Left: Product Image (Tall & Heroic) */}
                           <motion.div 
-                            className="w-full lg:w-1/2 relative group cursor-pointer"
+                            variants={itemVariants}
+                            className="w-full lg:w-[45%] relative group cursor-pointer"
                             onClick={() => navigate(`/product/${recommendation.id}`)}
-                            whileHover={{ scale: 0.98 }}
-                            transition={{ duration: 0.5 }}
                           >
-                             <div className="aspect-[4/5] bg-[#f4f4f4] overflow-hidden relative">
-                               <div className="absolute inset-4 border border-black/5 z-20 pointer-events-none"></div>
-                               <img 
+                             <div className="aspect-[3/4] overflow-hidden bg-[#f0f0f0] relative">
+                               {/* Image */}
+                               <motion.img 
+                                 initial={{ scale: 1.1 }}
+                                 animate={{ scale: 1 }}
+                                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
                                  src={optimizeImage(recommendation.imageurl?.[0] || recommendation.imageUrl, "hero")} 
                                  alt={recommendation.name}
                                  className="w-full h-full object-cover"
                                />
-                               <div className="absolute bottom-8 left-8 z-30 bg-white/90 backdrop-blur px-6 py-3">
-                                 <p className="text-xs uppercase tracking-widest font-bold">Your Match</p>
+                               
+                               {/* Overlay Gradient */}
+                               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                               {/* Floating Label */}
+                               <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 border border-white/20">
+                                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold">The Match</span>
                                </div>
                              </div>
                           </motion.div>
 
-                          {/* Right: Story */}
-                          <div className="w-full lg:w-1/2 text-left">
-                             <motion.div 
-                               initial={{ opacity: 0, x: 20 }}
-                               animate={{ opacity: 1, x: 0 }}
-                               transition={{ delay: 0.3 }}
-                             >
-                               <div className="flex items-center gap-4 mb-6">
-                                 <span className="h-[1px] w-12 bg-black"></span>
-                                 <span className="text-sm font-bold uppercase tracking-widest text-gray-500">
-                                   AI Concierge Recommendation
-                                 </span>
+                          {/* Right: The Story */}
+                          <motion.div variants={contentVariants} className="w-full lg:w-[55%] pt-4 lg:pt-12 text-center lg:text-left">
+                             
+                             <div className="inline-flex flex-col items-center lg:items-start mb-6">
+                               <span className="text-[#D4AF37] text-xs font-bold uppercase tracking-[0.3em] mb-2">Devid Aura Exclusive</span>
+                               <div className="h-[1px] w-full bg-[#D4AF37]/30"></div>
+                             </div>
+
+                             <h1 className="text-6xl lg:text-8xl font-serif italic text-black mb-8 leading-[0.9]">
+                               {recommendation.name}
+                             </h1>
+
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                               <div>
+                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Composition</h4>
+                                  <p className="text-lg font-serif leading-relaxed text-gray-800">
+                                    {recommendation.description?.slice(0, 100)}...
+                                  </p>
                                </div>
-
-                               <h1 className="text-5xl md:text-7xl font-serif text-black mb-6 leading-[0.9]">
-                                 {recommendation.name}
-                               </h1>
-
-                               <p className="text-lg md:text-xl text-gray-600 font-light leading-relaxed mb-8 max-w-xl">
-                                 {recommendation.description}
-                               </p>
-
-                               <div className="bg-[#fafafa] p-6 border-l-2 border-[#D4AF37] mb-10">
-                                 <p className="font-serif italic text-xl text-gray-800 mb-2">
-                                   "A perfect harmony."
-                                 </p>
-                                 <p className="text-sm text-gray-500">
-                                   Selected because you desired a <strong className="text-black">{selections.vibe?.label}</strong> aura for <strong className="text-black">{selections.occasion?.label}</strong>.
-                                 </p>
+                               <div>
+                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Why It Fits</h4>
+                                  <p className="text-sm text-gray-500 leading-relaxed font-light">
+                                    Ideally suited for a <span className="text-black font-medium">{selections.occasion?.label}</span> setting where you wish to project <span className="text-black font-medium">{selections.vibe?.label}</span>.
+                                  </p>
                                </div>
+                             </div>
 
-                               <div className="flex flex-wrap gap-4">
-                                 <button 
-                                   onClick={() => navigate(`/product/${recommendation.id}`)}
-                                   className="bg-black text-white px-10 py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#D4AF37] hover:text-black transition-colors duration-300"
-                                 >
-                                   Explore Scent
-                                 </button>
-                                 <button 
-                                   onClick={restart}
-                                   className="px-8 py-4 text-sm font-bold uppercase tracking-widest border border-gray-200 hover:border-black transition-colors flex items-center gap-2"
-                                 >
-                                   <RefreshCcw className="w-4 h-4" />
-                                   Start Over
-                                 </button>
-                               </div>
-                             </motion.div>
-                          </div>
+                             {/* Action Buttons */}
+                             <div className="flex flex-col md:flex-row gap-4 justify-center lg:justify-start">
+                               <button 
+                                 onClick={() => navigate(`/product/${recommendation.id}`)}
+                                 className="bg-black text-white px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] hover:bg-[#D4AF37] hover:text-black transition-all duration-500 min-w-[200px]"
+                               >
+                                 View Product
+                               </button>
+                               <button 
+                                 onClick={restart}
+                                 className="px-8 py-5 text-xs font-bold uppercase tracking-[0.2em] border border-black/10 hover:border-black transition-all duration-500 flex items-center justify-center gap-3 min-w-[160px] group"
+                               >
+                                 <RefreshCcw className="w-3 h-3 group-hover:-rotate-180 transition-transform duration-700" />
+                                 Restart
+                               </button>
+                             </div>
 
-                        </div>
+                          </motion.div>
+                        </>
                       )}
                     </motion.div>
                   )}
@@ -329,7 +459,7 @@ export default function AuraFinder() {
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body // 🟢 5. Render directly to body
+        document.body
       )}
     </>
   );
