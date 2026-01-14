@@ -1,56 +1,85 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, X, ArrowRight, RefreshCcw } from "lucide-react";
+import { 
+  Sparkles, 
+  X, 
+  ArrowRight, 
+  RefreshCcw, 
+  Sun, 
+  Briefcase, 
+  Moon, 
+  Gem, 
+  Zap, 
+  Activity, 
+  Waves, 
+  Leaf,
+  Droplets,
+  Smile,
+  Flame,
+  CloudFog,
+  Flower2,
+  Heart,
+  Trees,
+  Crown
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { optimizeImage } from "../utils/imageOptimizer";
 
-// ... (Configuration arrays remain the same) ...
+// --- ORIGINAL DATA (Preserved) ---
 const questions = [
   {
     id: "occasion",
     title: "The Setting",
     subtitle: "Where will your presence be felt?",
     options: [
-      { 
-        label: "Daily Ritual", 
+      {
+        label: "Daily Ritual",
         keywords: ["balanced", "clean", "fresh", "daily", "versatile", "soft", "modern"],
-        desc: "For the effortless moments of everyday life."
+        desc: "For the effortless moments of everyday life.",
+        icon: Sun
       },
-      { 
-        label: "The Workspace", 
+      {
+        label: "The Workspace",
         keywords: ["professional", "subtle", "crisp", "citrus", "clean", "office", "elegant"],
-        desc: "Commanding respect with subtle elegance."
+        desc: "Commanding respect with subtle elegance.",
+        icon: Briefcase
       },
-      { 
-        label: "Intimate Evening", 
+      {
+        label: "Intimate Evening",
         keywords: ["romantic", "seductive", "warm", "spicy", "night", "sensual", "vanilla"],
-        desc: "A night of closeness and whispered secrets."
+        desc: "A night of closeness and whispered secrets.",
+        icon: Moon
       },
-      { 
-        label: "Grand Gala", 
+      {
+        label: "Grand Gala",
         keywords: ["sophisticated", "rich", "luxury", "oud", "classic", "gold", "formal"],
-        desc: "For moments that require your absolute best."
+        desc: "For moments that require your absolute best.",
+        icon: Gem
       },
-      { 
-        label: "High Energy", 
+      {
+        label: "High Energy",
         keywords: ["bold", "loud", "sweet", "playful", "projection", "club", "energy"],
-        desc: "To stand out in the crowd and pulse with life."
+        desc: "To stand out in the crowd and pulse with life.",
+        icon: Zap
       },
-      { 
-        label: "Active Pursuit", 
+      {
+        label: "Active Pursuit",
         keywords: ["sport", "aqua", "energy", "fresh", "citrus", "dynamic", "cool"],
-        desc: "Freshness that keeps pace with your intensity."
+        desc: "Freshness that keeps pace with your intensity.",
+        icon: Activity
       },
-      { 
-        label: "Coastal Escape", 
+      {
+        label: "Coastal Escape",
         keywords: ["tropical", "marine", "coconut", "relaxing", "summer", "sun", "breeze"],
-        desc: "Sun-drenched skin and salt in the air."
+        desc: "Sun-drenched skin and salt in the air.",
+        icon: Waves
       },
-      { 
-        label: "Sanctuary", 
+      {
+        label: "Sanctuary",
         keywords: ["comfort", "warm", "woody", "soft", "calm", "peace", "intimate"],
-        desc: "Quiet moments of reflection and peace."
+        desc: "Quiet moments of reflection and peace.",
+        icon: Leaf
       },
     ],
   },
@@ -59,106 +88,104 @@ const questions = [
     title: "The Essence",
     subtitle: "What story should your scent tell?",
     options: [
-      { 
-        label: "Clean Minimalism", 
+      {
+        label: "Clean Minimalism",
         keywords: ["citrus", "aqua", "clean", "fresh", "soapy", "crisp", "uplifting"],
-        desc: "Pure, untouched, and crystal clear."
+        desc: "Pure, untouched, and crystal clear.",
+        icon: Droplets
       },
-      { 
-        label: "Playful Sweetness", 
+      {
+        label: "Playful Sweetness",
         keywords: ["sweet", "fruity", "vanilla", "gourmand", "playful", "bright", "joy"],
-        desc: "A radiant burst of joy and indulgence."
+        desc: "A radiant burst of joy and indulgence.",
+        icon: Smile
       },
-      { 
-        label: "Dark Power", 
+      {
+        label: "Dark Power",
         keywords: ["strong", "musk", "tobacco", "spicy", "bold", "leather", "power"],
-        desc: "Unapologetic strength and dominance."
+        desc: "Unapologetic strength and dominance.",
+        icon: Flame
       },
-      { 
-        label: "Enigmatic Mystery", 
+      {
+        label: "Enigmatic Mystery",
         keywords: ["smoky", "incense", "dark", "complex", "enigma", "deep", "mystique"],
-        desc: "A riddle wrapped in smoke and shadows."
+        desc: "A riddle wrapped in smoke and shadows.",
+        icon: CloudFog
       },
-      { 
-        label: "Timeless Elegance", 
+      {
+        label: "Timeless Elegance",
         keywords: ["floral", "refined", "powdery", "chic", "timeless", "luxury", "classy"],
-        desc: "Grace that transcends eras."
+        desc: "Grace that transcends eras.",
+        icon: Flower2
       },
-      { 
-        label: "Warm Seduction", 
+      {
+        label: "Warm Seduction",
         keywords: ["amber", "warm", "spicy", "cinnamon", "sexy", "alluring", "cozy"],
-        desc: "A magnetic pull that cannot be resisted."
+        desc: "A magnetic pull that cannot be resisted.",
+        icon: Heart
       },
-      { 
-        label: "Earthy Roots", 
+      {
+        label: "Earthy Roots",
         keywords: ["woody", "moss", "earthy", "vetiver", "natural", "calm", "serene"],
-        desc: "Grounded in the strength of nature."
+        desc: "Grounded in the strength of nature.",
+        icon: Trees
       },
-      { 
-        label: "Royal Opulence", 
+      {
+        label: "Royal Opulence",
         keywords: ["oud", "gold", "saffron", "oriental", "intense", "expensive", "regal"],
-        desc: "The scent of kings and queens."
+        desc: "The scent of kings and queens.",
+        icon: Crown
       },
     ],
   },
 ];
 
-const transitionSettings = { duration: 0.8, ease: [0.25, 0.4, 0.25, 1] };
-
-const overlayVariants = {
+// --- ANIMATION CONFIG ---
+const springTransition = { type: "spring", stiffness: 120, damping: 20, mass: 1 };
+const staggerContainer = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.6 } },
-  exit: { opacity: 0, transition: { duration: 0.6, delay: 0.2 } }
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+  },
+  exit: { opacity: 0, transition: { duration: 0.3 } }
 };
 
-const contentVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      staggerChildren: 0.1, 
-      delayChildren: 0.2,
-      ...transitionSettings 
-    } 
-  },
-  exit: { 
-    opacity: 0, 
-    y: -20, 
-    transition: { duration: 0.5, ease: "easeInOut" } 
-  },
+const itemVariant = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: springTransition }
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: transitionSettings },
-};
+// --- COMPONENTS ---
 
 export default function AuraFinder() {
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState(0); 
+  const [step, setStep] = useState(0);
   const [selections, setSelections] = useState({ occasion: null, vibe: null });
   const [recommendation, setRecommendation] = useState(null);
   const [error, setError] = useState(null);
-  
+
   const navigate = useNavigate();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+
+  // Helper to map icons if not in data object (fallback)
+  const getIcon = (OptionIcon) => OptionIcon ? <OptionIcon className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />;
 
   const handleStart = () => {
     setIsOpen(true);
     setStep(1);
     setError(null);
-    document.body.style.overflow = "hidden"; 
+    document.body.style.overflow = "hidden";
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    document.body.style.overflow = "auto"; 
+    document.body.style.overflow = "auto";
     setTimeout(() => {
       setStep(0);
       setSelections({ occasion: null, vibe: null });
       setRecommendation(null);
-    }, 800);
+    }, 600);
   };
 
   const handleSelection = (option) => {
@@ -183,7 +210,7 @@ export default function AuraFinder() {
 
       if (!response.ok) throw new Error("Consultation failed");
       const bestMatch = await response.json();
-      
+
       setTimeout(() => {
         setRecommendation(bestMatch);
         setStep(4);
@@ -205,264 +232,244 @@ export default function AuraFinder() {
 
   return (
     <>
-      {/* ⚡️ TRIGGER BUTTON (Responsive Update) */}
-      {!isOpen && (
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.02, paddingRight: "1.5rem" }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleStart}
-          // UPDATED CLASSES HERE:
-          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 bg-white text-black px-4 py-3 md:px-6 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] flex items-center gap-2 md:gap-3 border border-gray-100 group transition-all duration-300 max-w-[calc(100vw-2rem)]"
-        >
-          {/* Icon Container - slightly smaller on mobile */}
-          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-black flex items-center justify-center text-[#D4AF37] shrink-0">
-            <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
-          </div>
-          
-          <div className="flex flex-col items-start">
-            {/* Subtitle - smaller on mobile */}
-            <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">
-              Concierge
-            </span>
-            {/* Main Text - text-sm on mobile, text-lg on desktop */}
-            <span className="font-serif italic text-sm md:text-lg leading-none pr-1 whitespace-nowrap">
-              Find your Aura
-            </span>
-          </div>
-        </motion.button>
-      )}
+      {/* ⚡️ TRIGGER BUTTON (Floating Pill) */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleStart}
+            className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-white pl-2 pr-6 py-2 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-black/5 group"
+          >
+            <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-[#D4AF37]">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Concierge</span>
+              <span className="font-serif italic text-black leading-none">Find your Aura</span>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      {/* ⚡️ FULL SCREEN OVERLAY (Portal) */}
+      {/* ⚡️ MAIN MODAL OVERLAY */}
       {createPortal(
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              variants={overlayVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              className="fixed inset-0 z-[10001] flex items-center justify-center bg-[#fafafa] overflow-y-auto overflow-x-hidden"
-              data-lenis-prevent 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[10000] bg-[#FAFAFA] overflow-y-auto smooth-scrolling overflow-x-hidden"
             >
-              {/* Decorative Lines */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute left-10 top-0 bottom-0 w-[1px] bg-black/5 hidden md:block"></div>
-                <div className="absolute right-10 top-0 bottom-0 w-[1px] bg-black/5 hidden md:block"></div>
-                <div className="absolute top-24 left-0 right-0 h-[1px] bg-black/5 hidden md:block"></div>
-                <div className="absolute bottom-10 left-0 right-0 h-[1px] bg-black/5 hidden md:block"></div>
-              </div>
-
-              {/* 🟢 NEW: PREMIUM MAIN HEADING (Fixed at top) */}
-              <div className="absolute top-0 left-0 w-full flex justify-center py-8 z-20 pointer-events-none">
-                <div className="flex flex-col items-center">
-                   <h1 className="text-xs font-bold uppercase tracking-[0.3em] text-[#D4AF37] mb-1">Devid Aura</h1>
-                   <h2 className="font-serif italic text-xl md:text-2xl text-black">The Olfactory Concierge</h2>
-                </div>
-              </div>
-
-              {/* Close Button (Updated Hover) */}
-              <button 
-                onClick={handleClose}
-                className="fixed top-6 right-6 md:top-8 md:right-8 z-50 p-3 rounded-full hover:bg-black group transition-colors duration-300"
-              >
-                <X className="w-6 h-6 text-black/60 group-hover:text-white transition-colors duration-300" />
-              </button>
-
-              <div className="w-full max-w-7xl px-6 md:px-20 relative z-10 py-10 min-h-screen flex flex-col justify-center" data-lenis-prevent>
-                <AnimatePresence mode="wait">
-                  
-                  {/* --- QUESTIONS (STEP 1 & 2) --- */}
-                  {(step === 1 || step === 2) && (
-                    <motion.div
-                      key={`step-${step}`}
-                      variants={contentVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="w-full mt-196 md:mt-90 lg:mt-0"
+              <div className="min-h-screen relative flex flex-col items-center">
+                
+                {/* 🟢 STICKY HEADER (Glassmorphism Pill) */}
+                <motion.div 
+                  initial={{ y: -50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, ...springTransition }}
+                  className="sticky top-6 z-[10001] w-full flex justify-center pointer-events-none px-4"
+                >
+                  <div className="pointer-events-auto bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_30px_-5px_rgba(0,0,0,0.05)] rounded-full px-6 py-3 flex items-center gap-6">
+                    <div className="flex align-items-center gap-4">
+                      <h1 className="font-bold uppercase tracking-[0.2em] text-[#D4AF37]">Devid Aura</h1>
+                      <h3 className=" italic text-sm text-black">
+                        {step === 3 ? "Analyzing..." : step === 4 ? "Recommendation" : "Concierge"}
+                      </h3>
+                    </div>
+                    <div className="w-[1px] h-6 bg-black/5"></div>
+                    <button 
+                      onClick={handleClose}
+                      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black hover:text-white transition-colors duration-300"
                     >
-                      {/* Header */}
-                      <motion.div variants={itemVariants} className="mb-10 md:mb-24 text-center md:text-left">
-                        <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
-                           <span className="text-[10px] md:text-xs font-bold font-sans tracking-[0.3em] text-[#D4AF37]">
-                             0{step} <span className="text-gray-300 mx-2">/</span> 02
-                           </span>
-                           <div className="h-[1px] w-12 bg-[#D4AF37] hidden md:block"></div>
-                        </div>
-                        
-                        <h2 className="text-4xl md:text-7xl lg:text-8xl font-serif italic text-black mb-4 tracking-tight">
-                          {questions[step - 1].title}
-                        </h2>
-                        <p className="text-xs md:text-base text-gray-500 font-sans tracking-wide uppercase max-w-xl mx-auto md:mx-0">
-                          {questions[step - 1].subtitle}
-                        </p>
-                      </motion.div>
-                      
-                      {/* Options Grid - Editorial Style */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-y-12">
-                        {questions[step - 1].options.map((option, idx) => (
-                          <motion.button
-                            key={option.label}
-                            variants={itemVariants}
-                            whileHover={{ y: -5 }}
-                            onClick={() => handleSelection(option)}
-                            className="group relative flex flex-col text-left outline-none p-2 md:p-0"
-                          >
-                            {/* Top Border */}
-                            <div className="w-full h-[1px] bg-black/10 group-hover:bg-[#D4AF37] transition-colors duration-500 mb-4 md:mb-6 relative overflow-hidden">
-                              <div className="absolute inset-0 bg-[#D4AF37] -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-[0.22,1,0.36,1]"></div>
-                            </div>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
 
-                            <span className="text-[10px] font-sans font-bold text-gray-400 group-hover:text-[#D4AF37] transition-colors mb-2 md:mb-3">
-                              0{idx + 1}
-                            </span>
-                            
-                            <h3 className="text-xl md:text-3xl font-serif text-gray-900 group-hover:italic transition-all duration-300 mb-2 md:mb-3">
-                              {option.label}
-                            </h3>
-                            
-                            <p className="text-xs md:text-sm text-gray-500 font-light leading-relaxed group-hover:text-black transition-colors duration-300">
-                              {option.desc}
-                            </p>
+                <div className="w-full max-w-7xl px-6 md:px-12 py-20 md:py-12 flex-grow flex flex-col justify-center">
+                  <AnimatePresence mode="wait">
 
-                            {/* Hover Icon */}
-                            <div className="absolute top-2 right-2 md:top-0 md:right-0 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2 group-hover:translate-x-2">
-                               <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* --- ANALYZING (STEP 3) --- */}
-                  {step === 3 && (
-                    <motion.div
-                      key="analyzing"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center bg-[#fafafa] z-50"
-                    >
-                        {/* Elegant Spinner */}
-                        <div className="w-24 h-24 border-[1px] border-black/5 rounded-full relative flex items-center justify-center">
-                          <motion.div 
-                             className="absolute inset-0 border-t-[1px] border-black rounded-full"
-                             animate={{ rotate: 360 }}
-                             transition={{ duration: 2, ease: "linear", repeat: Infinity }}
-                          />
-                          <motion.div 
-                             className="w-16 h-16 bg-[#D4AF37]/10 rounded-full blur-xl"
-                             animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                        </div>
-                        
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.5 }}
-                          className="mt-10 text-center space-y-2"
-                        >
-                          <h3 className="text-lg uppercase tracking-[0.2em] font-sans font-bold">Curating</h3>
-                          <p className="font-serif italic text-xl md:text-2xl text-gray-400">
-                            Harmonizing {selections.occasion?.keywords[1]} & {selections.vibe?.keywords[1]}...
+                    {/* --- STEP 1 & 2: SELECTION --- */}
+                    {(step === 1 || step === 2) && (
+                      <motion.div
+                        key={`step-${step}`}
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="w-full"
+                      >
+                        <motion.div variants={itemVariant} className="text-center mb-16">
+                          <span className="inline-block px-3 py-1 rounded-full bg-black/5 text-black/60 text-[10px] font-bold uppercase tracking-widest mb-4">
+                            0{step} / 02
+                          </span>
+                          <h2 className="text-4xl md:text-6xl font-serif text-black mb-4">
+                            {questions[step - 1].title}
+                          </h2>
+                          <p className="text-gray-400 uppercase tracking-widest text-xs font-medium">
+                            {questions[step - 1].subtitle}
                           </p>
                         </motion.div>
-                    </motion.div>
-                  )}
 
-                  {/* --- RESULT (STEP 4) --- */}
-                  {step === 4 && (
-                    <motion.div
-                      key="result"
-                      variants={contentVariants}
-                      initial="hidden"
-                      animate="visible"
-                      className="w-full flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-24 mt-16 md:mt-0"
-                    >
-                      {error ? (
-                          <div className="text-center py-20 w-full">
-                             <h3 className="text-3xl font-serif mb-4 italic">Connection Interrupted</h3>
-                             <button onClick={handleClose} className="text-xs uppercase tracking-widest underline decoration-[#D4AF37] underline-offset-4">Close Concierge</button>
-                          </div>
-                      ) : recommendation && (
-                        <>
-                          {/* Left: Product Image */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                          {questions[step - 1].options.map((option, idx) => (
+                            <motion.button
+                              key={option.label}
+                              variants={itemVariant}
+                              onClick={() => handleSelection(option)}
+                              className="group relative bg-white rounded-3xl p-8 text-left border border-black/[0.02] shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] transition-all duration-500 overflow-hidden"
+                            >
+                              {/* Hover Gradient */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                              
+                              <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-6">
+                                  <div className="w-10 h-10 rounded-2xl bg-gray-50 group-hover:bg-[#D4AF37]/10 flex items-center justify-center text-gray-400 group-hover:text-[#D4AF37] transition-colors duration-300">
+                                    {getIcon(option.icon)}
+                                  </div>
+                                  <span className="text-[10px] font-bold text-gray-300 group-hover:text-black transition-colors">
+                                    0{idx + 1}
+                                  </span>
+                                </div>
+                                
+                                <h3 className="text-xl font-serif text-gray-900 group-hover:text-black mb-2 transition-colors">
+                                  {option.label}
+                                </h3>
+                                
+                                <p className="text-xs text-gray-500 font-medium leading-relaxed group-hover:text-gray-700 transition-colors">
+                                  {option.desc}
+                                </p>
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* --- STEP 3: ANALYZING --- */}
+                    {step === 3 && (
+                      <motion.div
+                        key="analyzing"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center min-h-[50vh]"
+                      >
+                        <div className="relative w-24 h-24 mb-10">
                           <motion.div 
-                            variants={itemVariants}
-                            className="w-full lg:w-[45%] relative group cursor-pointer"
-                            onClick={() => navigate(`/product/${recommendation.id}`)}
-                          >
-                             <div className="aspect-[3/4] overflow-hidden bg-[#f0f0f0] relative">
-                               <motion.img 
-                                 initial={{ scale: 1.1 }}
-                                 animate={{ scale: 1 }}
-                                 transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-                                 src={optimizeImage(recommendation.imageurl?.[0] || recommendation.imageUrl, "hero")} 
-                                 alt={recommendation.name}
-                                 className="w-full h-full object-cover"
-                               />
-                               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                               <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 border border-white/20">
-                                 <span className="text-[10px] uppercase tracking-[0.2em] font-bold">The Match</span>
-                               </div>
-                             </div>
-                          </motion.div>
+                            className="absolute inset-0 border-4 border-gray-100 rounded-full" 
+                          />
+                          <motion.div 
+                            className="absolute inset-0 border-4 border-t-[#D4AF37] border-r-[#D4AF37] border-b-transparent border-l-transparent rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1.5, ease: "linear", repeat: Infinity }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Sparkles className="w-6 h-6 text-[#D4AF37] opacity-50" />
+                          </div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Curating</h3>
+                          <p className="font-serif text-2xl md:text-3xl text-black">
+                            {selections.occasion?.keywords[0]} <span className="text-gray-300">&</span> {selections.vibe?.keywords[0]}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
 
-                          {/* Right: The Story */}
-                          <motion.div variants={contentVariants} className="w-full lg:w-[55%] pt-4 lg:pt-12 text-center lg:text-left pb-10 lg:pb-0">
-                             
-                             <div className="inline-flex flex-col items-center lg:items-start mb-6">
-                               <span className="text-[#D4AF37] text-xs font-bold uppercase tracking-[0.3em] mb-2">Devid Aura Exclusive</span>
-                               <div className="h-[1px] w-full bg-[#D4AF37]/30"></div>
-                             </div>
+                    {/* --- STEP 4: RESULT --- */}
+                    {step === 4 && (
+                      <motion.div
+                        key="result"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full flex flex-col items-center"
+                      >
+                        {error ? (
+                          <div className="text-center">
+                            <h3 className="text-2xl font-serif italic mb-4">Connection Interrupted</h3>
+                            <button onClick={handleClose} className="text-xs uppercase tracking-widest border-b border-[#D4AF37]">Close</button>
+                          </div>
+                        ) : recommendation && (
+                          <div className="w-full max-w-6xl flex flex-col md:flex-row items-center md:items-stretch gap-10 md:gap-20">
+                            
+                            {/* Left: Soft Rounded Image */}
+                            <motion.div 
+                              initial={{ scale: 0.95, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
+                              className="w-full md:w-5/12 aspect-[3/4] relative rounded-[2.5rem] overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.1)] bg-white border border-black/[0.02]"
+                            >
+                              <img 
+                                src={optimizeImage(recommendation.imageurl?.[0] || recommendation.imageUrl, "hero")}
+                                alt={recommendation.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 shadow-sm">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-black">Perfect Match</span>
+                              </div>
+                            </motion.div>
 
-                             <h1 className="text-5xl md:text-6xl lg:text-8xl font-serif italic text-black mb-8 leading-[0.9]">
-                               {recommendation.name}
-                             </h1>
+                            {/* Right: Content */}
+                            <motion.div 
+                              initial={{ x: 20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: 0.3, duration: 0.8 }}
+                              className="w-full md:w-7/12 flex flex-col justify-center text-center md:text-left py-8"
+                            >
+                              <div className="mb-6">
+                                <span className="text-[#D4AF37] text-[10px] font-bold uppercase tracking-[0.3em] block mb-4">
+                                  Devid Aura Exclusive
+                                </span>
+                                <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-black leading-[0.9] mb-8">
+                                  {recommendation.name}
+                                </h1>
+                              </div>
 
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                               <div>
-                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Composition</h4>
-                                  <p className="text-base md:text-lg font-serif leading-relaxed text-gray-800">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                                <div className="bg-white p-6 rounded-3xl border border-black/[0.02] shadow-sm">
+                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-3">The Composition</h4>
+                                  <p className="font-serif text-lg leading-relaxed text-gray-800">
                                     {recommendation.description?.slice(0, 100)}...
                                   </p>
-                               </div>
-                               <div>
-                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Why It Fits</h4>
-                                  <p className="text-xs md:text-sm text-gray-500 leading-relaxed font-light">
-                                    Ideally suited for a <span className="text-black font-medium">{selections.occasion?.label}</span> setting where you wish to project <span className="text-black font-medium">{selections.vibe?.label}</span>.
-                                  </p>
-                               </div>
-                             </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-3xl border border-black/[0.02] shadow-sm flex flex-col justify-center">
+                                   <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                                     Selected for its ability to harmonize the <span className="text-black">{selections.occasion?.label}</span> environment with your desire for <span className="text-black">{selections.vibe?.label}</span>.
+                                   </p>
+                                </div>
+                              </div>
 
-                             {/* Action Buttons */}
-                             <div className="flex flex-col md:flex-row gap-4 justify-center lg:justify-start">
-                               <button 
-                                 onClick={() => navigate(`/product/${recommendation.id}`)}
-                                 className="bg-black text-white px-10 py-5 text-xs font-bold uppercase tracking-[0.2em] hover:bg-[#D4AF37] hover:text-black transition-all duration-500 min-w-[200px]"
-                               >
-                                 View Product
-                               </button>
-                               <button 
-                                 onClick={restart}
-                                 className="px-8 py-5 text-xs font-bold uppercase tracking-[0.2em] border border-black/10 hover:border-black transition-all duration-500 flex items-center justify-center gap-3 min-w-[160px] group"
-                               >
-                                 <RefreshCcw className="w-3 h-3 group-hover:-rotate-180 transition-transform duration-700" />
-                                 Restart
-                               </button>
-                             </div>
+                              <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                                <button
+                                  onClick={() => navigate(`/product/${recommendation.id}`)}
+                                  className="bg-black text-white px-10 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] shadow-lg shadow-black/20 hover:scale-105 hover:shadow-xl transition-all duration-300"
+                                >
+                                  View Product
+                                </button>
+                                <button
+                                  onClick={restart}
+                                  className="px-8 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] border border-gray-200 hover:border-black hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-2"
+                                >
+                                  <RefreshCcw className="w-3 h-3" />
+                                  Restart
+                                </button>
+                              </div>
 
-                          </motion.div>
-                        </>
-                      )}
-                    </motion.div>
-                  )}
+                            </motion.div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
 
-                </AnimatePresence>
+                  </AnimatePresence>
+                </div>
               </div>
             </motion.div>
           )}
