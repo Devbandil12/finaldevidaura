@@ -1,4 +1,3 @@
-// src/Components/AuraFinder.jsx
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +5,7 @@ import { Sparkles, X, ArrowRight, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { optimizeImage } from "../utils/imageOptimizer";
 
-// --- CONFIGURATION ---
+// ... (Configuration arrays remain the same) ...
 const questions = [
   {
     id: "occasion",
@@ -206,18 +205,32 @@ export default function AuraFinder() {
 
   return (
     <>
-      {/* ⚡️ TRIGGER BUTTON (Updated with Text) */}
+      {/* ⚡️ TRIGGER BUTTON (Responsive Update) */}
       {!isOpen && (
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.02, paddingRight: "1.5rem" }}
           whileTap={{ scale: 0.95 }}
           onClick={handleStart}
-          className="fixed bottom-10 right-10 z-40 bg-black text-white px-8 py-4 rounded-full flex items-center gap-3 shadow-2xl shadow-black/30 hover:bg-[#D4AF49] hover:text-black transition-colors duration-500 group"
+          // UPDATED CLASSES HERE:
+          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 bg-white text-black px-4 py-3 md:px-6 md:py-4 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] flex items-center gap-2 md:gap-3 border border-gray-100 group transition-all duration-300 max-w-[calc(100vw-2rem)]"
         >
-          <Sparkles className="w-5 h-5 group-hover:rotate-360 transition-transform duration-500" />
-          <span className="font-serif italic text-lg tracking-wide">Find Your Aura</span>
+          {/* Icon Container - slightly smaller on mobile */}
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-black flex items-center justify-center text-[#D4AF37] shrink-0">
+            <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
+          </div>
+          
+          <div className="flex flex-col items-start">
+            {/* Subtitle - smaller on mobile */}
+            <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-bold">
+              Concierge
+            </span>
+            {/* Main Text - text-sm on mobile, text-lg on desktop */}
+            <span className="font-serif italic text-sm md:text-lg leading-none pr-1 whitespace-nowrap">
+              Find your Aura
+            </span>
+          </div>
         </motion.button>
       )}
 
@@ -245,14 +258,14 @@ export default function AuraFinder() {
               <div className="absolute top-0 left-0 w-full flex justify-center py-8 z-20 pointer-events-none">
                 <div className="flex flex-col items-center">
                    <h1 className="text-xs font-bold uppercase tracking-[0.3em] text-[#D4AF37] mb-1">Devid Aura</h1>
-                   <h2 className="font-serif italic text-2xl text-black">The Olfactory Concierge</h2>
+                   <h2 className="font-serif italic text-xl md:text-2xl text-black">The Olfactory Concierge</h2>
                 </div>
               </div>
 
               {/* Close Button (Updated Hover) */}
               <button 
                 onClick={handleClose}
-                className="fixed top-8 right-8 z-50 p-3 rounded-full hover:bg-black group transition-colors duration-300"
+                className="fixed top-6 right-6 md:top-8 md:right-8 z-50 p-3 rounded-full hover:bg-black group transition-colors duration-300"
               >
                 <X className="w-6 h-6 text-black/60 group-hover:text-white transition-colors duration-300" />
               </button>
@@ -271,7 +284,7 @@ export default function AuraFinder() {
                       className="w-full mt-16 md:mt-0"
                     >
                       {/* Header */}
-                      <motion.div variants={itemVariants} className="mb-16 md:mb-24 text-center md:text-left">
+                      <motion.div variants={itemVariants} className="mb-10 md:mb-24 text-center md:text-left">
                         <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
                            <span className="text-[10px] md:text-xs font-bold font-sans tracking-[0.3em] text-[#D4AF37]">
                              0{step} <span className="text-gray-300 mx-2">/</span> 02
@@ -279,34 +292,34 @@ export default function AuraFinder() {
                            <div className="h-[1px] w-12 bg-[#D4AF37] hidden md:block"></div>
                         </div>
                         
-                        <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif italic text-black mb-4 tracking-tight">
+                        <h2 className="text-4xl md:text-7xl lg:text-8xl font-serif italic text-black mb-4 tracking-tight">
                           {questions[step - 1].title}
                         </h2>
-                        <p className="text-sm md:text-base text-gray-500 font-sans tracking-wide uppercase max-w-xl">
+                        <p className="text-xs md:text-base text-gray-500 font-sans tracking-wide uppercase max-w-xl mx-auto md:mx-0">
                           {questions[step - 1].subtitle}
                         </p>
                       </motion.div>
                       
                       {/* Options Grid - Editorial Style */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-12">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-y-12">
                         {questions[step - 1].options.map((option, idx) => (
                           <motion.button
                             key={option.label}
                             variants={itemVariants}
                             whileHover={{ y: -5 }}
                             onClick={() => handleSelection(option)}
-                            className="group relative flex flex-col text-left outline-none"
+                            className="group relative flex flex-col text-left outline-none p-2 md:p-0"
                           >
                             {/* Top Border */}
-                            <div className="w-full h-[1px] bg-black/10 group-hover:bg-[#D4AF37] transition-colors duration-500 mb-6 relative overflow-hidden">
+                            <div className="w-full h-[1px] bg-black/10 group-hover:bg-[#D4AF37] transition-colors duration-500 mb-4 md:mb-6 relative overflow-hidden">
                               <div className="absolute inset-0 bg-[#D4AF37] -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-[0.22,1,0.36,1]"></div>
                             </div>
 
-                            <span className="text-[10px] font-sans font-bold text-gray-400 group-hover:text-[#D4AF37] transition-colors mb-3">
+                            <span className="text-[10px] font-sans font-bold text-gray-400 group-hover:text-[#D4AF37] transition-colors mb-2 md:mb-3">
                               0{idx + 1}
                             </span>
                             
-                            <h3 className="text-2xl md:text-3xl font-serif text-gray-900 group-hover:italic transition-all duration-300 mb-3">
+                            <h3 className="text-xl md:text-3xl font-serif text-gray-900 group-hover:italic transition-all duration-300 mb-2 md:mb-3">
                               {option.label}
                             </h3>
                             
@@ -315,7 +328,7 @@ export default function AuraFinder() {
                             </p>
 
                             {/* Hover Icon */}
-                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2 group-hover:translate-x-2">
+                            <div className="absolute top-2 right-2 md:top-0 md:right-0 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2 group-hover:translate-x-2">
                                <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
                             </div>
                           </motion.button>
@@ -324,7 +337,7 @@ export default function AuraFinder() {
                     </motion.div>
                   )}
 
-                  {/* --- ANALYZING (STEP 3) - Minimalist --- */}
+                  {/* --- ANALYZING (STEP 3) --- */}
                   {step === 3 && (
                     <motion.div
                       key="analyzing"
@@ -333,8 +346,8 @@ export default function AuraFinder() {
                       exit={{ opacity: 0 }}
                       className="absolute inset-0 flex flex-col items-center justify-center bg-[#fafafa] z-50"
                     >
-                       {/* Elegant Spinner */}
-                       <div className="w-24 h-24 border-[1px] border-black/5 rounded-full relative flex items-center justify-center">
+                        {/* Elegant Spinner */}
+                        <div className="w-24 h-24 border-[1px] border-black/5 rounded-full relative flex items-center justify-center">
                           <motion.div 
                              className="absolute inset-0 border-t-[1px] border-black rounded-full"
                              animate={{ rotate: 360 }}
@@ -345,23 +358,23 @@ export default function AuraFinder() {
                              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                           />
-                       </div>
-                       
-                       <motion.div 
-                         initial={{ opacity: 0, y: 10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         transition={{ delay: 0.5 }}
-                         className="mt-10 text-center space-y-2"
-                       >
-                         <h3 className="text-lg uppercase tracking-[0.2em] font-sans font-bold">Curating</h3>
-                         <p className="font-serif italic text-2xl text-gray-400">
-                           Harmonizing {selections.occasion?.keywords[1]} & {selections.vibe?.keywords[1]}...
-                         </p>
-                       </motion.div>
+                        </div>
+                        
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                          className="mt-10 text-center space-y-2"
+                        >
+                          <h3 className="text-lg uppercase tracking-[0.2em] font-sans font-bold">Curating</h3>
+                          <p className="font-serif italic text-xl md:text-2xl text-gray-400">
+                            Harmonizing {selections.occasion?.keywords[1]} & {selections.vibe?.keywords[1]}...
+                          </p>
+                        </motion.div>
                     </motion.div>
                   )}
 
-                  {/* --- RESULT (STEP 4) - Magazine Spread --- */}
+                  {/* --- RESULT (STEP 4) --- */}
                   {step === 4 && (
                     <motion.div
                       key="result"
@@ -371,20 +384,19 @@ export default function AuraFinder() {
                       className="w-full flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-24 mt-16 md:mt-0"
                     >
                       {error ? (
-                         <div className="text-center py-20 w-full">
-                            <h3 className="text-3xl font-serif mb-4 italic">Connection Interrupted</h3>
-                            <button onClick={handleClose} className="text-xs uppercase tracking-widest underline decoration-[#D4AF37] underline-offset-4">Close Concierge</button>
-                         </div>
+                          <div className="text-center py-20 w-full">
+                             <h3 className="text-3xl font-serif mb-4 italic">Connection Interrupted</h3>
+                             <button onClick={handleClose} className="text-xs uppercase tracking-widest underline decoration-[#D4AF37] underline-offset-4">Close Concierge</button>
+                          </div>
                       ) : recommendation && (
                         <>
-                          {/* Left: Product Image (Tall & Heroic) */}
+                          {/* Left: Product Image */}
                           <motion.div 
                             variants={itemVariants}
                             className="w-full lg:w-[45%] relative group cursor-pointer"
                             onClick={() => navigate(`/product/${recommendation.id}`)}
                           >
                              <div className="aspect-[3/4] overflow-hidden bg-[#f0f0f0] relative">
-                               {/* Image */}
                                <motion.img 
                                  initial={{ scale: 1.1 }}
                                  animate={{ scale: 1 }}
@@ -393,11 +405,7 @@ export default function AuraFinder() {
                                  alt={recommendation.name}
                                  className="w-full h-full object-cover"
                                />
-                               
-                               {/* Overlay Gradient */}
                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-
-                               {/* Floating Label */}
                                <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 border border-white/20">
                                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold">The Match</span>
                                </div>
@@ -405,27 +413,27 @@ export default function AuraFinder() {
                           </motion.div>
 
                           {/* Right: The Story */}
-                          <motion.div variants={contentVariants} className="w-full lg:w-[55%] pt-4 lg:pt-12 text-center lg:text-left">
+                          <motion.div variants={contentVariants} className="w-full lg:w-[55%] pt-4 lg:pt-12 text-center lg:text-left pb-10 lg:pb-0">
                              
                              <div className="inline-flex flex-col items-center lg:items-start mb-6">
                                <span className="text-[#D4AF37] text-xs font-bold uppercase tracking-[0.3em] mb-2">Devid Aura Exclusive</span>
                                <div className="h-[1px] w-full bg-[#D4AF37]/30"></div>
                              </div>
 
-                             <h1 className="text-6xl lg:text-8xl font-serif italic text-black mb-8 leading-[0.9]">
+                             <h1 className="text-5xl md:text-6xl lg:text-8xl font-serif italic text-black mb-8 leading-[0.9]">
                                {recommendation.name}
                              </h1>
 
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                                <div>
                                   <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Composition</h4>
-                                  <p className="text-lg font-serif leading-relaxed text-gray-800">
+                                  <p className="text-base md:text-lg font-serif leading-relaxed text-gray-800">
                                     {recommendation.description?.slice(0, 100)}...
                                   </p>
                                </div>
                                <div>
                                   <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2">Why It Fits</h4>
-                                  <p className="text-sm text-gray-500 leading-relaxed font-light">
+                                  <p className="text-xs md:text-sm text-gray-500 leading-relaxed font-light">
                                     Ideally suited for a <span className="text-black font-medium">{selections.occasion?.label}</span> setting where you wish to project <span className="text-black font-medium">{selections.vibe?.label}</span>.
                                   </p>
                                </div>
