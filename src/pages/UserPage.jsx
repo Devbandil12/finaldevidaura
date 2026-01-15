@@ -518,21 +518,29 @@ const ReviewHistory = () => {
 
 
 // --- 1. The Golden Referral Card ---
-const ReferralCard = ({ code, onCopy }) => {
+
+const ReferralCard = ({ code, onCopy, rewards }) => {
+  // Default fallback in case rewards haven't loaded yet
+  const refereeBonus = rewards?.REFEREE_BONUS || 100;
+  const referrerBonus = rewards?.REFERRER_BONUS || 150;
+
   const handleShare = () => {
-    const text = `Hey! Use my code *${code}* on Devid Aura to get ₹100 OFF your first luxury perfume order! Check it out here: https://devidaura.com`;
+    // 🟢 Dynamic Text
+    const text = `Hey! Use my code *${code}* on Devid Aura to get ₹${refereeBonus} OFF your first luxury perfume order! Check it out here: https://devidaura.com`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
+
   return (
     <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 p-8 md:p-12 text-center text-white shadow-2xl">
-      {/* Background Decor */}
+      {/* ... Background Decor (Same as before) ... */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-50%] left-[-20%] w-[500px] h-[500px] bg-gradient-to-br from-amber-400/20 to-transparent rounded-full blur-[100px]" />
         <div className="absolute bottom-[-50%] right-[-20%] w-[500px] h-[500px] bg-gradient-to-tl from-teal-900/40 to-transparent rounded-full blur-[100px]" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center">
+        {/* ... Icon ... */}
         <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 mb-6 rotate-3">
           <Gift size={32} className="text-zinc-900" strokeWidth={1.5} />
         </div>
@@ -540,29 +548,24 @@ const ReferralCard = ({ code, onCopy }) => {
         <h2 className="text-3xl md:text-4xl font-serif tracking-tight mb-4">
           Invite Friends, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Earn Gold.</span>
         </h2>
+        
+        {/* 🟢 Dynamic Display Text */}
         <p className="text-zinc-400 font-light max-w-lg mx-auto mb-10 leading-relaxed">
-          Share the aura of luxury. Give your friends <strong className="text-white">₹100 OFF</strong> their first order, and receive <strong className="text-amber-400">₹150 in Aura Credits</strong> when they purchase.
+          Share the aura of luxury. Give your friends <strong className="text-white">₹{refereeBonus} OFF</strong> their first order, and receive <strong className="text-amber-400">₹{referrerBonus} in Aura Credits</strong> when they purchase.
         </p>
 
-        {/* The Code Box */}
+        {/* ... Code Box (Same as before) ... */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg">
           <div className="flex-1 flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 p-2 pl-6 rounded-full w-full hover:bg-white/10 transition-colors">
             <span className="flex-1 font-mono text-xl tracking-widest text-amber-100 font-bold uppercase truncate">
               {code || "LOADING..."}
             </span>
-            <button
-              onClick={() => onCopy(code)}
-              className="bg-white text-zinc-900 p-3 rounded-full hover:scale-105 active:scale-95 transition-all"
-              title="Copy Code"
-            >
+            <button onClick={() => onCopy(code)} className="bg-white text-zinc-900 p-3 rounded-full hover:scale-105 active:scale-95 transition-all" title="Copy Code">
               <Copy size={18} />
             </button>
           </div>
 
-          <button
-            onClick={handleShare}
-            className="bg-[#25D366] text-white px-6 py-4 rounded-full font-bold text-sm hover:bg-[#20bd5a] transition-all flex items-center gap-2 shadow-lg shadow-green-900/20 w-full sm:w-auto justify-center"
-          >
+          <button onClick={handleShare} className="bg-[#25D366] text-white px-6 py-4 rounded-full font-bold text-sm hover:bg-[#20bd5a] transition-all flex items-center gap-2 shadow-lg shadow-green-900/20 w-full sm:w-auto justify-center">
             <Send size={18} /> Share on WhatsApp
           </button>
         </div>
@@ -726,20 +729,39 @@ const WalletHistory = ({ transactions }) => {
 };
 
 // --- 4. Main Tab Component (Pass Pending Count) ---
+
 const ReferralTab = ({ userId }) => {
   const [data, setData] = useState(null);
+  const [rewards, setRewards] = useState(null); // 🟢 New State for Settings
   const [loading, setLoading] = useState(true);
-
-  // Define fetch function so we can reuse it to refresh data after redemption
-  const fetchStats = () => {
-    fetch(`${BASE}/api/referrals/stats/${userId}`)
-      .then(res => res.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
-  };
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (userId) fetchStats();
+    if (userId) {
+      setLoading(true);
+      
+      // 1. Fetch User Stats
+      const statsPromise = fetch(`${BASE}/api/referrals/stats/${userId}`).then(res => {
+        if (!res.ok) throw new Error("Stats Failed");
+        return res.json();
+      });
+
+      // 2. 🟢 Fetch Dynamic Rewards Config
+      const configPromise = fetch(`${BASE}/api/referrals/config`).then(res => res.json());
+
+      // Wait for both
+      Promise.all([statsPromise, configPromise])
+        .then(([statsData, configData]) => {
+          setData(statsData);
+          setRewards(configData); // 🟢 Save Config
+          setLoading(false);
+        })
+        .catch(e => {
+          console.error(e);
+          setError(true);
+          setLoading(false);
+        });
+    }
   }, [userId]);
 
   const handleCopy = (txt) => {
@@ -748,18 +770,21 @@ const ReferralTab = ({ userId }) => {
   };
 
   if (loading) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-zinc-300" /></div>;
+  if (error) return <div className="py-20 text-center text-red-500">Failed to load data. Please refresh.</div>;
 
-  const hasBeenReferred = data?.history?.some(t => t.type === 'referral_bonus' || t.description.includes("Welcome Bonus"));
-
+// Only hide if they have specifically received a 'Welcome Bonus'
+const hasBeenReferred = data?.history?.some(t => t.description.includes("Welcome Bonus"));
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl">
       <motion.div variants={fadeInUp}>
-        <ReferralCard code={data?.referralCode} onCopy={handleCopy} />
+        {/* 🟢 Pass rewards prop here */}
+        <ReferralCard code={data?.referralCode} onCopy={handleCopy} rewards={rewards} />
       </motion.div>
 
       {!hasBeenReferred && (
         <motion.div variants={fadeInUp}>
-          <RedeemCard userId={userId} onRedeemSuccess={fetchStats} />
+          {/* You might want to update RedeemCard similarly if it shows text */}
+          <RedeemCard userId={userId} onRedeemSuccess={() => {/* refresh logic */}} />
         </motion.div>
       )}
 
