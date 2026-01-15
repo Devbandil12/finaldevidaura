@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Tag, Package, Layers } from "lucide-react";
+import { ShoppingBag, Tag, Package, Layers, Wallet } from "lucide-react"; // 🟢 Added Wallet Icon
 
 const smoothTransition = {
   type: "tween",
@@ -33,6 +33,8 @@ export default function OrderSummary({
   loadingPrices
 }) {
   const productDiscount = breakdown.originalTotal - breakdown.productTotal;
+  // 🟢 Extract walletUsed if available, otherwise 0
+  const walletUsed = breakdown.walletUsed || 0; 
 
   return (
     <>
@@ -133,10 +135,8 @@ export default function OrderSummary({
                           </div>
                       </div>
 
-                      {/* 🟢 NEW CLEAN BUNDLE DESIGN */}
                       {item.isBundle ? (
                         <div className="mt-2 relative pl-3">
-                          {/* Vertical Guide Line */}
                           <div className="absolute left-0 top-1 bottom-1 w-0.5 bg-slate-200 rounded-full"></div>
                           
                           <div className="space-y-1.5">
@@ -203,6 +203,23 @@ export default function OrderSummary({
                 <span className="whitespace-nowrap">-₹{offer.amount}</span>
               </div>
             ))}
+
+            {/* Wallet Usage Row */}
+            <AnimatePresence>
+                {walletUsed > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="flex justify-between text-sm bg-emerald-50 p-2 rounded-lg border border-emerald-100"
+                    >
+                        <span className="text-emerald-800 font-medium flex items-center gap-2">
+                            <Wallet className="w-3.5 h-3.5" />
+                            Wallet Used
+                        </span>
+                        <span className="text-emerald-700 font-bold">-₹{walletUsed}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <AnimatePresence>
               {appliedCoupon && (

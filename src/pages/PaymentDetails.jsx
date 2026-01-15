@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { CreditCard, Truck, Loader2, ShieldCheck } from "lucide-react";
+import { CreditCard, Truck, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadRazorpayScript } from "../utils/useRazorpay"; // Ensure this path is correct
+import { loadRazorpayScript } from "../utils/useRazorpay"; 
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
@@ -15,32 +15,29 @@ export default function PaymentDetails({
     selectedItems,
     appliedCoupon,
     loadingPrices,
-    isSubmitting, // This comes from parent, but we need a local one for immediate clicks
+    isSubmitting,
     onPaymentVerified,
     paymentVerified,
     setTransactionId,
+    useWallet, // 🟢 Prop
+    setUseWallet // 🟢 Prop
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
-    
-    // 🟢 NEW: Local state to disable button INSTANTLY when clicked
     const [isProcessing, setIsProcessing] = useState(false);
     
     const { user } = useUser();
 
-    // 🟢 1. PERFORMANCE FIX: Preload Script on Mount
-    // This starts downloading the 50KB script as soon as the user sees this screen.
-    // It won't block the Homepage, but it will be ready by the time they click "Pay".
     useEffect(() => {
         loadRazorpayScript();
     }, []);
 
-    useEffect(() => {
-        if (paymentMethod === "Cash on Delivery") {
-            onPaymentVerified(false);
-        }
-    }, [paymentMethod, onPaymentVerified]);
+    // 🟢 Use the breakdown provided by parent
+    const walletBalance = userdetails?.walletBalance || 0;
+    const finalPayable = breakdown.total; 
+    const walletDeduction = breakdown.walletUsed || 0;
 
+    // Auto-select 'Razorpay' if COD is not available
     useEffect(() => {
         if (!breakdown.codAvailable && paymentMethod === "Cash on Delivery") {
             setPaymentMethod("Razorpay");
@@ -49,12 +46,28 @@ export default function PaymentDetails({
     }, [breakdown.codAvailable, paymentMethod]);
 
 
-    const handleRazorpayPayment = async () => {
-        // 🟢 2. UI FIX: Disable button immediately
+    const handlePayment = async () => {
         setIsProcessing(true);
 
+        // 🟢 SCENARIO: Fully Paid via Wallet
+        if (finalPayable === 0) {
+            // Treat as COD flow in frontend, pass useWallet=true
+            await handlePlaceOrder(true); 
+            setIsProcessing(false);
+            return;
+        }
+
+        if (paymentMethod === "Cash on Delivery") {
+            await handlePlaceOrder(useWallet); 
+            setIsProcessing(false);
+        } else {
+            await handleRazorpayPayment();
+        }
+    };
+
+
+    const handleRazorpayPayment = async () => {
         try {
-            // Check if script is loaded (It likely is, thanks to the useEffect above)
             const isScriptLoaded = await loadRazorpayScript();
 
             if (!isScriptLoaded) {
@@ -79,6 +92,7 @@ export default function PaymentDetails({
                     paymentMode: "Razorpay",
                     cartItems: cartItemsPayload,
                     userAddressId: selectedAddress.id,
+                    useWallet: useWallet // 🟢 Pass Wallet Flag
                 }),
             });
 
@@ -92,7 +106,7 @@ export default function PaymentDetails({
 
             const options = {
                 key: orderData.keyId,
-                amount: breakdown.total * 100,
+                amount: finalPayable * 100, // 🟢 Charge the remainder
                 currency: "INR",
                 name: "Devid Aura",
                 description: "Order Payment",
@@ -103,8 +117,8 @@ export default function PaymentDetails({
                     contact: selectedAddress?.phone || "",
                 },
                 handler: async function (response) {
-                    setIsVerifyingPayment(true); // Show full screen loader
-                    setIsProcessing(false);      // Re-enable button logic (hidden behind loader anyway)
+                    setIsVerifyingPayment(true);
+                    setIsProcessing(false);
 
                     try {
                         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
@@ -122,6 +136,7 @@ export default function PaymentDetails({
                                 phone: selectedAddress.phone,
                                 cartItems: cartItemsPayload,
                                 couponCode: appliedCoupon?.code,
+                                useWallet: useWallet
                             }),
                         });
 
@@ -144,7 +159,7 @@ export default function PaymentDetails({
                 },
                 modal: {
                     ondismiss: function () {
-                        setIsProcessing(false); // Re-enable button if they close popup
+                        setIsProcessing(false);
                         window.toast.info("Payment was cancelled.");
                     },
                 },
@@ -160,11 +175,10 @@ export default function PaymentDetails({
         } catch (err) {
             console.error("Payment error:", err);
             window.toast.error(err.message);
-            setIsProcessing(false); // Re-enable button on error
+            setIsProcessing(false);
         }
     };
 
-    // Combine all busy states
     const isBusy = isSubmitting || loadingPrices || isVerifyingPayment || isProcessing;
 
     return (
@@ -201,6 +215,33 @@ export default function PaymentDetails({
             </AnimatePresence>
 
             <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-8 space-y-6">
+                
+                {/* 🟢 WALLET TOGGLE */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <label className={`flex items-center gap-4 cursor-pointer ${walletBalance === 0 ? 'opacity-50' : ''}`}>
+                        <div className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${useWallet ? 'bg-black border-black text-white' : 'border-slate-300 bg-white'}`}>
+                            {useWallet && <ShieldCheck size={14} />}
+                        </div>
+                        <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={useWallet} 
+                            onChange={() => setUseWallet(!useWallet)} // 🟢 Use Prop Setter
+                            disabled={walletBalance === 0}
+                        />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                                <Wallet className="w-4 h-4 text-emerald-600" />
+                                <span>Use Wallet Balance</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">Available balance: ₹{walletBalance}</p>
+                        </div>
+                        {useWallet && walletDeduction > 0 && (
+                            <span className="font-bold text-emerald-600 text-sm">-₹{walletDeduction}</span>
+                        )}
+                    </label>
+                </div>
+
                 <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
                     <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
                         <CreditCard className="w-4 h-4" />
@@ -208,102 +249,100 @@ export default function PaymentDetails({
                     Payment Method
                 </h3>
 
-                <div className="flex flex-col gap-4">
-                    {/* Razorpay Option */}
-                    <label
-                        className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${paymentMethod === "Razorpay"
+                {finalPayable > 0 ? (
+                    <div className="flex flex-col gap-4">
+                        {/* Razorpay Option */}
+                        <label
+                            className={`group relative flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300 border ${paymentMethod === "Razorpay"
                                 ? "bg-slate-50 border-slate-800 shadow-sm"
                                 : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
                             } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
-                    >
-                        <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
-                            {paymentMethod === "Razorpay" && (
-                                <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
-                            )}
-                        </div>
-                        <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="Razorpay"
-                            checked={paymentMethod === "Razorpay"}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            disabled={isBusy}
-                            className="hidden"
-                        />
-                        <div className="flex-1 min-w-0">
-                            <span className={`block font-semibold transition-colors ${paymentMethod === 'Razorpay' ? 'text-black' : 'text-slate-700'}`}>Razorpay Secure</span>
-                            <span className="text-xs text-slate-500 mt-0.5 block truncate">UPI, Cards, NetBanking, Wallets</span>
-                        </div>
-                        {paymentMethod === "Razorpay" && <ShieldCheck className="w-5 h-5 text-emerald-500 opacity-80 flex-shrink-0" />}
-                    </label>
-
-                    {/* COD Option */}
-                    <label
-                        className={`group relative flex flex-col items-start p-4 sm:p-5 rounded-2xl transition-all duration-300 border ${paymentMethod === "Cash on Delivery" && breakdown.codAvailable
-                                ? "bg-slate-50 border-slate-800 shadow-sm"
-                                : "bg-white border-slate-200"
-                            } ${!breakdown.codAvailable
-                                ? "bg-slate-50/50 border-slate-100 cursor-not-allowed"
-                                : "cursor-pointer hover:border-slate-300 hover:shadow-sm"
-                            } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
-                    >
-                        <div className="flex items-center w-full gap-3 sm:gap-4">
-                            <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${!breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
-                                    paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
-                                }`}>
-                                {paymentMethod === "Cash on Delivery" && breakdown.codAvailable && (
+                        >
+                            <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${paymentMethod === 'Razorpay' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
+                                {paymentMethod === "Razorpay" && (
                                     <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
                                 )}
                             </div>
                             <input
                                 type="radio"
                                 name="paymentMethod"
-                                value="Cash on Delivery"
-                                checked={paymentMethod === "Cash on Delivery"}
+                                value="Razorpay"
+                                checked={paymentMethod === "Razorpay"}
                                 onChange={(e) => setPaymentMethod(e.target.value)}
-                                disabled={!breakdown.codAvailable || isBusy}
+                                disabled={isBusy}
                                 className="hidden"
                             />
                             <div className="flex-1 min-w-0">
-                                <span className={`block font-semibold transition-colors ${!breakdown.codAvailable ? 'text-slate-400' : paymentMethod === 'Cash on Delivery' ? 'text-black' : 'text-slate-700'}`}>
-                                    Cash on Delivery
-                                </span>
-                                <span className={`text-xs mt-0.5 block truncate ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
+                                <span className={`block font-semibold transition-colors ${paymentMethod === 'Razorpay' ? 'text-black' : 'text-slate-700'}`}>Pay Online</span>
+                                <span className="text-xs text-slate-500 mt-0.5 block truncate">UPI, Cards, NetBanking, Wallets</span>
                             </div>
-                            <Truck className={`w-5 h-5 flex-shrink-0 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
-                        </div>
-                        {!breakdown.codAvailable && (
-                            <div className="mt-3 ml-8 sm:ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
-                                Not available for this pincode.
+                            {paymentMethod === "Razorpay" && <ShieldCheck className="w-5 h-5 text-emerald-500 opacity-80 flex-shrink-0" />}
+                        </label>
+
+                        {/* COD Option */}
+                        <label
+                            className={`group relative flex flex-col items-start p-4 sm:p-5 rounded-2xl transition-all duration-300 border ${paymentMethod === "Cash on Delivery" && breakdown.codAvailable
+                                ? "bg-slate-50 border-slate-800 shadow-sm"
+                                : "bg-white border-slate-200"
+                            } ${!breakdown.codAvailable
+                                ? "bg-slate-50/50 border-slate-100 cursor-not-allowed"
+                                : "cursor-pointer hover:border-slate-300 hover:shadow-sm"
+                            } ${isBusy ? "opacity-50 pointer-events-none" : ""}`}
+                        >
+                            <div className="flex items-center w-full gap-3 sm:gap-4">
+                                <div className={`w-5 h-5 flex-shrink-0 rounded-full border flex items-center justify-center transition-colors duration-300 ${!breakdown.codAvailable ? 'border-slate-200 bg-slate-100' :
+                                    paymentMethod === 'Cash on Delivery' ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'
+                                }`}>
+                                    {paymentMethod === "Cash on Delivery" && breakdown.codAvailable && (
+                                        <motion.div layoutId="radio-dot" className="w-2.5 h-2.5 rounded-full bg-black" />
+                                    )}
+                                </div>
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="Cash on Delivery"
+                                    checked={paymentMethod === "Cash on Delivery"}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                    disabled={!breakdown.codAvailable || isBusy}
+                                    className="hidden"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <span className={`block font-semibold transition-colors ${!breakdown.codAvailable ? 'text-slate-400' : paymentMethod === 'Cash on Delivery' ? 'text-black' : 'text-slate-700'}`}>
+                                        Cash on Delivery
+                                    </span>
+                                    <span className={`text-xs mt-0.5 block truncate ${!breakdown.codAvailable ? 'text-slate-400' : 'text-slate-500'}`}>Pay with cash when order arrives</span>
+                                </div>
+                                <Truck className={`w-5 h-5 flex-shrink-0 transition-colors ${!breakdown.codAvailable ? 'text-slate-300' : 'text-slate-400'}`} />
                             </div>
-                        )}
-                    </label>
-                </div>
+                            {!breakdown.codAvailable && (
+                                <div className="mt-3 ml-8 sm:ml-9 text-xs font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">
+                                    Not available for this pincode.
+                                </div>
+                            )}
+                        </label>
+                    </div>
+                ) : (
+                    <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
+                        <ShieldCheck className="text-emerald-600 w-5 h-5" />
+                        <p className="text-sm font-medium text-emerald-800">Order fully covered by Wallet Balance.</p>
+                    </div>
+                )}
 
                 <div className="pt-4">
-                    {paymentMethod === "Razorpay" && (
-                        <motion.button
-                            onClick={handleRazorpayPayment}
-                            disabled={isBusy}
-                            whileHover={!isBusy ? { scale: 1.01 } : {}}
-                            whileTap={!isBusy ? { scale: 0.98 } : {}}
-                            className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                        >
-                            {isProcessing ? "Processing..." : isVerifyingPayment ? "Processing..." : isSubmitting ? "Processing..." : loadingPrices ? "Loading Prices..." : `Pay ₹${breakdown.total}`}
-                        </motion.button>
-                    )}
-
-                    {paymentMethod === "Cash on Delivery" && (
-                        <motion.button
-                            onClick={handlePlaceOrder}
-                            disabled={isBusy}
-                            whileHover={!isBusy ? { scale: 1.01 } : {}}
-                            whileTap={!isBusy ? { scale: 0.98 } : {}}
-                            className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? "Placing Order..." : (loadingPrices ? "Loading Prices..." : "Place Order (COD)")}
-                        </motion.button>
-                    )}
+                    <motion.button
+                        onClick={handlePayment}
+                        disabled={isBusy}
+                        whileHover={!isBusy ? { scale: 1.01 } : {}}
+                        whileTap={!isBusy ? { scale: 0.98 } : {}}
+                        className="w-full py-4 rounded-xl bg-black text-white font-bold text-sm shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 disabled:bg-slate-300 disabled:shadow-none disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                    >
+                        {isProcessing || isVerifyingPayment || isSubmitting 
+                            ? "Processing..." 
+                            : loadingPrices 
+                                ? "Loading Prices..." 
+                                : `Pay ₹${finalPayable}`
+                        }
+                    </motion.button>
                 </div>
             </div>
         </div>

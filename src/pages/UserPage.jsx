@@ -13,7 +13,7 @@ import {
   Trash2, CheckCircle, X, ShoppingBag, Bell, LogOut, User as UserIcon,
   Heart, ChevronDown, Loader2, Upload,
   ChevronRight, Send, Lock, RefreshCw, Clock, Headphones, Ticket, Sparkles, Layers,
-  LayoutDashboard, ShieldAlert, UserCog, ShoppingCart, Calendar
+  LayoutDashboard, ShieldAlert, UserCog, ShoppingCart, Calendar, Copy, Gift, Coins, TrendingUp, Users, ArrowUpRight, ArrowDownLeft
 } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import useCloudinary from "../utils/useCloudinary";
@@ -133,6 +133,7 @@ const FloatingDropdown = ({ label, value, onChange, options = [] }) => {
 const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
   const menu = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'wallet', label: 'Aura Circle', icon: Coins },
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'offers', label: 'Coupons', icon: Ticket },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
@@ -514,6 +515,269 @@ const ReviewHistory = () => {
   );
 };
 
+
+
+// --- 1. The Golden Referral Card ---
+const ReferralCard = ({ code, onCopy }) => {
+  const handleShare = () => {
+    const text = `Hey! Use my code *${code}* on Devid Aura to get ₹100 OFF your first luxury perfume order! Check it out here: https://devidaura.com`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+  return (
+    <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 p-8 md:p-12 text-center text-white shadow-2xl">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-50%] left-[-20%] w-[500px] h-[500px] bg-gradient-to-br from-amber-400/20 to-transparent rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-50%] right-[-20%] w-[500px] h-[500px] bg-gradient-to-tl from-teal-900/40 to-transparent rounded-full blur-[100px]" />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 mb-6 rotate-3">
+          <Gift size={32} className="text-zinc-900" strokeWidth={1.5} />
+        </div>
+
+        <h2 className="text-3xl md:text-4xl font-serif tracking-tight mb-4">
+          Invite Friends, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Earn Gold.</span>
+        </h2>
+        <p className="text-zinc-400 font-light max-w-lg mx-auto mb-10 leading-relaxed">
+          Share the aura of luxury. Give your friends <strong className="text-white">₹100 OFF</strong> their first order, and receive <strong className="text-amber-400">₹150 in Aura Credits</strong> when they purchase.
+        </p>
+
+        {/* The Code Box */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg">
+          <div className="flex-1 flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 p-2 pl-6 rounded-full w-full hover:bg-white/10 transition-colors">
+            <span className="flex-1 font-mono text-xl tracking-widest text-amber-100 font-bold uppercase truncate">
+              {code || "LOADING..."}
+            </span>
+            <button
+              onClick={() => onCopy(code)}
+              className="bg-white text-zinc-900 p-3 rounded-full hover:scale-105 active:scale-95 transition-all"
+              title="Copy Code"
+            >
+              <Copy size={18} />
+            </button>
+          </div>
+
+          <button
+            onClick={handleShare}
+            className="bg-[#25D366] text-white px-6 py-4 rounded-full font-bold text-sm hover:bg-[#20bd5a] transition-all flex items-center gap-2 shadow-lg shadow-green-900/20 w-full sm:w-auto justify-center"
+          >
+            <Send size={18} /> Share on WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- New Component: Redeem Referral Code ---
+const RedeemCard = ({ userId, onRedeemSuccess }) => {
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleRedeem = async () => {
+    if (!code.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referrals/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, code: code.toUpperCase() })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.toast.success(data.message);
+        setCode("");
+        if (onRedeemSuccess) onRedeemSuccess(); // Refresh parent data
+      } else {
+        window.toast.error(data.error || "Invalid Code");
+      }
+    } catch (err) {
+      window.toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-[2rem] border border-zinc-100 shadow-sm mt-8">
+      <h3 className="text-xl font-medium text-zinc-900 mb-2">Have a Referral Code?</h3>
+      <p className="text-sm text-zinc-500 font-light mb-6">Enter a friend's code to unlock your <strong className="text-teal-600">₹100 Welcome Bonus</strong>.</p>
+
+      <div className="flex gap-3">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="Enter Code (e.g. HARSH4521)"
+          className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-5 py-3 text-sm outline-none focus:border-zinc-900 uppercase tracking-widest font-bold transition-all"
+        />
+        <Button onClick={handleRedeem} disabled={loading || !code} variant="primary">
+          {loading ? <Loader2 className="animate-spin" size={18} /> : "Redeem"}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// --- 2. Wallet Stats Row (Updated) ---
+const WalletStats = ({ balance, earnings, friendsCount, pendingCount }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-amber-200 transition-colors">
+        <div className="flex justify-between items-start">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <Coins size={24} strokeWidth={1.5} />
+          </div>
+          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Available</span>
+        </div>
+        <div className="mt-6">
+          <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">₹{balance}</h4>
+          <p className="text-xs text-zinc-500 mt-1">Current Wallet Balance</p>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-teal-200 transition-colors">
+        <div className="flex justify-between items-start">
+          <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
+            <TrendingUp size={24} strokeWidth={1.5} />
+          </div>
+          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Lifetime</span>
+        </div>
+        <div className="mt-6">
+          <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">₹{earnings}</h4>
+          <p className="text-xs text-zinc-500 mt-1">Total Earned</p>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-purple-200 transition-colors">
+        <div className="flex justify-between items-start">
+          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
+            <Users size={24} strokeWidth={1.5} />
+          </div>
+          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Network</span>
+        </div>
+        <div className="mt-6">
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">{friendsCount}</h4>
+            {pendingCount > 0 && <span className="text-sm font-medium text-amber-500">({pendingCount} Pending)</span>}
+          </div>
+          <p className="text-xs text-zinc-500 mt-1">Friends Referred</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 3. Wallet History List (Updated for Pending Items) ---
+const WalletHistory = ({ transactions }) => {
+  return (
+    <div className="mt-8 bg-white rounded-[2rem] border border-zinc-100 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-zinc-50 flex justify-between items-center">
+        <h3 className="font-medium text-xl text-zinc-900">Activity History</h3>
+        <button className="text-xs font-bold text-zinc-400 hover:text-zinc-900 uppercase tracking-wider">View All</button>
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto">
+        {transactions && transactions.length > 0 ? (
+          transactions.map((tx) => {
+            // Determine styles based on transaction type
+            const isPending = tx.type === 'pending_referral';
+            let iconBg = tx.amount > 0 ? 'bg-teal-50 text-teal-600' : 'bg-red-50 text-red-600';
+            let Icon = tx.amount > 0 ? ArrowDownLeft : ArrowUpRight;
+            let amountColor = tx.amount > 0 ? 'text-teal-600' : 'text-zinc-900';
+
+            if (isPending) {
+              iconBg = 'bg-amber-50 text-amber-600';
+              Icon = Clock;
+              amountColor = 'text-amber-500';
+            }
+
+            return (
+              <div key={tx.id} className="flex items-center justify-between p-6 hover:bg-zinc-50 transition-colors border-b border-zinc-50 last:border-0">
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
+                    <Icon size={18} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-zinc-900 text-sm">{tx.description}</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      {new Date(tx.createdAt).toLocaleDateString()}
+                      {isPending && <span className="ml-2 text-amber-500 font-medium text-[10px] uppercase tracking-wide">• Waiting for Order</span>}
+                    </p>
+                  </div>
+                </div>
+                <span className={`font-mono font-medium ${amountColor}`}>
+                  {isPending ? 'Pending' : (tx.amount > 0 ? `+₹${Math.abs(tx.amount)}` : `₹${Math.abs(tx.amount)}`)}
+                </span>
+              </div>
+            );
+          })
+        ) : (
+          <div className="py-12 text-center">
+            <Coins className="w-12 h-12 text-zinc-200 mx-auto mb-3" />
+            <p className="text-zinc-400 text-sm font-light">No transactions yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- 4. Main Tab Component (Pass Pending Count) ---
+const ReferralTab = ({ userId }) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Define fetch function so we can reuse it to refresh data after redemption
+  const fetchStats = () => {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referrals/stats/${userId}`)
+      .then(res => res.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(e => { console.error(e); setLoading(false); });
+  };
+
+  useEffect(() => {
+    if (userId) fetchStats();
+  }, [userId]);
+
+  const handleCopy = (txt) => {
+    navigator.clipboard.writeText(txt);
+    window.toast.success("Referral Code Copied!");
+  };
+
+  if (loading) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-zinc-300" /></div>;
+
+  const hasBeenReferred = data?.history?.some(t => t.type === 'referral_bonus' || t.description.includes("Welcome Bonus"));
+
+  return (
+    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl">
+      <motion.div variants={fadeInUp}>
+        <ReferralCard code={data?.referralCode} onCopy={handleCopy} />
+      </motion.div>
+
+      {!hasBeenReferred && (
+        <motion.div variants={fadeInUp}>
+          <RedeemCard userId={userId} onRedeemSuccess={fetchStats} />
+        </motion.div>
+      )}
+
+      <motion.div variants={fadeInUp}>
+        <WalletStats
+          balance={data?.walletBalance || 0}
+          earnings={data?.stats?.totalEarnings || 0}
+          friendsCount={data?.stats?.successfulReferrals || 0}
+          pendingCount={data?.stats?.pendingReferrals || 0}
+        />
+      </motion.div>
+
+      <motion.div variants={fadeInUp}>
+        <WalletHistory transactions={data?.history} />
+      </motion.div>
+    </motion.div>
+  );
+};
 /* ========================================================================
    MAIN PAGE
    ======================================================================== */
@@ -615,26 +879,26 @@ export default function UserPage() {
 
                     {/* 1. Hero / Welcome Card - Clean Light Version */}
                     <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 md:p-10 border border-zinc-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)]">
-                       <div className="relative z-10 flex flex-col items-start gap-4">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                            <span className="relative flex h-1.5 w-1.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
-                            </span>
-                            Dashboard
-                          </div>
+                      <div className="relative z-10 flex flex-col items-start gap-4">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
+                          </span>
+                          Dashboard
+                        </div>
 
-                          <h2 className="text-4xl font-medium text-zinc-900 tracking-tight">
-                            Hello, {userdetails.name.split(" ")[0]}
-                          </h2>
-                          <p className="text-zinc-500 font-light max-w-md">
-                            Welcome back to your personal dashboard. Manage your orders, update your preferences, and explore exclusive offers.
-                          </p>
-                        </div>
-                        <div className="mt-8 flex gap-4">
-                           <Button onClick={() => setActiveTab('offers')} variant="secondary">View Coupons</Button>
-                           <Button onClick={() => navigate('/')} variant="primary">Start Shopping</Button>
-                        </div>
+                        <h2 className="text-4xl font-medium text-zinc-900 tracking-tight">
+                          Hello, {userdetails.name.split(" ")[0]}
+                        </h2>
+                        <p className="text-zinc-500 font-light max-w-md">
+                          Welcome back to your personal dashboard. Manage your orders, update your preferences, and explore exclusive offers.
+                        </p>
+                      </div>
+                      <div className="mt-8 flex gap-4">
+                        <Button onClick={() => setActiveTab('offers')} variant="secondary">View Coupons</Button>
+                        <Button onClick={() => navigate('/')} variant="primary">Start Shopping</Button>
+                      </div>
                     </div>
 
                     {/* 2. Stats & Profile Split */}
@@ -691,6 +955,9 @@ export default function UserPage() {
                   </div>
                 </div>
               )}
+              {activeTab === 'wallet' && (
+                <ReferralTab userId={userdetails.id} />
+              )}
 
               {activeTab === 'orders' && (
                 <div className="space-y-8">
@@ -718,7 +985,7 @@ export default function UserPage() {
                         });
                         const remaining = order.orderItems.length - 4;
                         const isDelivered = order.status.toLowerCase() === 'delivered';
-                        
+
                         let statusColor = "bg-zinc-100 text-zinc-600";
                         if (isDelivered) statusColor = "bg-teal-50 text-teal-700 border border-teal-100";
                         else if (order.status.toLowerCase().includes('cancel')) statusColor = "bg-red-50 text-red-700 border border-red-100";
@@ -919,7 +1186,7 @@ const ProfileSettingsWrapper = ({ user, onUpdate }) => {
           <h3 className="font-medium text-zinc-900">Profile Photo</h3>
           <p className="text-xs text-zinc-500 mb-3 font-light">Update your public avatar.</p>
           {imagePreview && !loading && (
-             <button onClick={async () => { if(window.confirm("Remove?")) { await onUpdate({profileImage: ""}); setImagePreview(null); }}} className="text-xs text-red-500 font-bold hover:underline">Remove Photo</button>
+            <button onClick={async () => { if (window.confirm("Remove?")) { await onUpdate({ profileImage: "" }); setImagePreview(null); } }} className="text-xs text-red-500 font-bold hover:underline">Remove Photo</button>
           )}
         </div>
       </div>

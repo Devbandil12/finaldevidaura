@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, BarChart3, Package, Ticket, ShoppingBag, Users,
   MessageSquare, ShoppingCart, MapPin, Menu, X, LogOut, ChevronRight, Home,
-  LineChart, History // 1. Added Icon for Insights
+  LineChart, History, Gift
 } from 'lucide-react';
 
 // Modals & Components
@@ -18,7 +18,7 @@ import ImageUploadModal from "./ImageUploadModal";
 import PincodeManager from "./PincodeManager";
 import Reports from "./Reports";
 import DashboardTab from "./DashboardTab";
-import InsightsTab from "./InsightsTab"; // 2. Imported InsightsTab
+import InsightsTab from "./InsightsTab";
 import ProductsTab from "./ProductsTab";
 import CouponsTab from "./CouponsTab";
 import OrdersTab from "./OrdersTab";
@@ -26,8 +26,9 @@ import UsersTab from "./UsersTab";
 import QueriesTab from "./QueriesTab";
 import CartsWishlistsTab from "./CartsWishlistsTab";
 import ProductVariantEditor from "./ProductVariantEditor";
-import ActivityLogsTab from "./ActivityLogsTab"; // 2. Import the new component
+import ActivityLogsTab from "./ActivityLogsTab";
 import CmsTab from "./CmsTab";
+import ReferralsTab from "./ReferralsTab";
 
 import {
   Chart as ChartJS,
@@ -261,6 +262,7 @@ const AdminPanel = () => {
     { id: 'queries', label: 'Messages', icon: MessageSquare },
     { id: 'pincodes', label: 'Logistics', icon: MapPin },
     { id: 'cms', label: 'Site Content', icon: LayoutDashboard },
+    { id: 'referrals', label: 'Referrals', icon: Gift },
   ];
 
   // Tooltip Logic
@@ -432,6 +434,7 @@ const AdminPanel = () => {
               {activeTab === "carts" && <CartsWishlistsTab flatCarts={abandonedCarts} stats={wishlistStats} />}
               {activeTab === "pincodes" && <PincodeManager />}
               {activeTab === "cms" && <CmsTab />}
+              {activeTab === "referrals" && <ReferralsTab />}
             </motion.div>
           </div>
         </div>

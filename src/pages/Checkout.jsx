@@ -1,7 +1,7 @@
 // src/pages/Checkout.jsx
 
-import React, { useState, useEffect, useContext, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom"; // 🟢 Added useSearchParams
+import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom"; 
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -13,19 +13,18 @@ import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldChec
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
-// 🟢 Luxury Easing
+// Luxury Easing
 const luxuryEase = [0.25, 0.1, 0.25, 1];
 
 export default function Checkout() {
   const navigate = useNavigate();
-  // 🟢 Professional URL Management
   const [searchParams, setSearchParams] = useSearchParams();
   
   const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
 
-  // 🟢 Derive Step from URL (Default to 'address' -> Step 1)
+  // Derive Step from URL (Default to 'address' -> Step 1)
   const stepParam = searchParams.get("step");
   const step = stepParam === "payment" ? 2 : 1;
 
@@ -37,6 +36,32 @@ export default function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [transactionId, setTransactionId] = useState("");
+
+  // 🟢 NEW: Lifted Wallet State
+  const [useWallet, setUseWallet] = useState(false);
+
+  // 🟢 NEW: Calculate Final Breakdown with Wallet
+  // This ensures both OrderSummary and PaymentDetails see the exact same numbers
+  const finalBreakdown = useMemo(() => {
+    const walletBalance = userdetails?.walletBalance || 0;
+    const currentTotal = breakdown.total; // Total after coupons/shipping
+    
+    let walletUsed = 0;
+    let finalPayable = currentTotal;
+
+    if (useWallet && walletBalance > 0) {
+      walletUsed = Math.min(currentTotal, walletBalance);
+      finalPayable = currentTotal - walletUsed;
+    }
+
+    return {
+      ...breakdown,
+      total: finalPayable, // Update total to be the payable amount
+      walletUsed: walletUsed, // Add wallet usage info
+      originalTotalBeforeWallet: breakdown.total // Keep reference if needed
+    };
+  }, [breakdown, useWallet, userdetails]);
+
 
   // --- Logic: Init & Validation ---
   useEffect(() => {
@@ -56,8 +81,6 @@ export default function Checkout() {
     
     // 3. Security: If on payment step but no address, force back to address
     if (step === 2 && !selectedAddress) {
-       // Wait a tick to allow address to potentially load if it was cached (optional, but good safety)
-       // For now, immediate revert is safer to prevent broken states
        setSearchParams({ step: "address" }, { replace: true });
        window.toast.info("Please select a delivery address first.");
     }
@@ -96,28 +119,29 @@ export default function Checkout() {
     fetchBreakdown();
   }, [selectedItems, appliedCoupon, selectedAddress]);
 
-  // 🟢 HELPER: Refreshes orders in background (Fire & Forget)
+  // HELPER: Refreshes orders in background (Fire & Forget)
   const refreshOrdersOnly = useCallback(() => {
     if (getorders) getorders().catch(err => console.log("Bg refresh error", err));
   }, [getorders]);
 
-  // 🟢 OPTIMIZED: ONLINE SUCCESS
- const handleRazorpaySuccess = useCallback(async (paymentId) => {
-  setIsSubmitting(true);
-  try { 
-    // Pass Order ID in URL for robustness
-    navigate(`/order-confirmation?orderId=${paymentId || transactionId || "ONLINE-PAYMENT"}`, { 
-      replace: true 
-    });
-    refreshOrdersOnly();
-  }
-  catch (error) { 
-      window.toast.error("Order processed, but navigation failed."); 
-  }
-  finally { setIsSubmitting(false); }
-}, [refreshOrdersOnly, navigate, transactionId]);
+  // OPTIMIZED: ONLINE SUCCESS
+  const handleRazorpaySuccess = useCallback(async (paymentId) => {
+    setIsSubmitting(true);
+    try { 
+      // Pass Order ID in URL for robustness
+      navigate(`/order-confirmation?orderId=${paymentId || transactionId || "ONLINE-PAYMENT"}`, { 
+        replace: true 
+      });
+      refreshOrdersOnly();
+    }
+    catch (error) { 
+        window.toast.error("Order processed, but navigation failed."); 
+    }
+    finally { setIsSubmitting(false); }
+  }, [refreshOrdersOnly, navigate, transactionId]);
 
-  // 🟢 OPTIMIZED: COD SUCCESS
+  // OPTIMIZED: COD SUCCESS
+  // 🟢 Uses the `useWallet` state from this component scope
   const handlePlaceOrderCOD = useCallback(async () => {
     if (isSubmitting) return;
     if (!selectedAddress) return window.toast.error("Please select a delivery address.");
@@ -133,7 +157,8 @@ export default function Checkout() {
           couponCode: appliedCoupon?.code || null,
           cartItems: selectedItems.map(i => ({ ...i, variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
           userAddressId: selectedAddress.id,
-          breakdown: breakdown
+          breakdown: breakdown, // Pass ORIGINAL breakdown to backend (it recalculates anyway)
+          useWallet: useWallet // 🟢 Pass wallet flag from state
         }),
       });
       
@@ -155,14 +180,12 @@ export default function Checkout() {
       window.toast.error(err.message); 
       setIsSubmitting(false); 
     } 
-  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, refreshOrdersOnly, isSubmitting, navigate]);
+  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, refreshOrdersOnly, isSubmitting, navigate, useWallet]);
 
-  // 🟢 NAVIGATION HANDLERS (Update URL Params)
+  // NAVIGATION HANDLERS (Update URL Params)
   const handleNext = () => {
     if (loadingPrices) return;
     if (step === 1 && !selectedAddress) return window.toast.warn("Please select a delivery address.");
-    
-    // Instead of setStep, we update URL
     setSearchParams({ step: "payment" });
   };
 
@@ -189,10 +212,10 @@ export default function Checkout() {
             md:bg-white md:text-slate-900 md:border-b md:border-slate-100
             px-4 pb-10 pt-4 sm:px-12 sm:pb-12
           ">
+            {/* ... (Header Visuals same as before) ... */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
-
               <div className={`
                   flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
                   bg-white/10 border-white/10
@@ -205,11 +228,7 @@ export default function Checkout() {
               </div>
 
               <div className="relative w-full max-w-4xl">
-
-                <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 
-                  bg-white/20 md:bg-slate-200"
-                />
-
+                <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 bg-white/20 md:bg-slate-200" />
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
                     className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none bg-white md:bg-black"
@@ -223,7 +242,6 @@ export default function Checkout() {
                   {steps.map((s, i) => {
                     const isActive = step === i + 1;
                     const isCompleted = step > i + 1;
-
                     return (
                       <div key={i} className="relative flex flex-col items-center w-12 group">
                         <motion.div
@@ -238,14 +256,10 @@ export default function Checkout() {
                         >
                           <s.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${isActive || isCompleted ? "stroke-2" : "stroke-1"}`} />
                         </motion.div>
-
                         <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-32 text-center">
                           <span className={`
                             text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300
-                            ${isActive
-                              ? "text-white md:text-black"
-                              : "text-slate-600 md:text-slate-400"
-                            }
+                            ${isActive ? "text-white md:text-black" : "text-slate-600 md:text-slate-400"}
                           `}>
                             {s.name}
                           </span>
@@ -283,7 +297,7 @@ export default function Checkout() {
                         userdetails={userdetails}
                         selectedItems={selectedItems}
                         appliedCoupon={appliedCoupon}
-                        breakdown={breakdown}
+                        breakdown={finalBreakdown} // 🟢 Pass the CALCULATED breakdown
                         loadingPrices={loadingPrices}
                         isSubmitting={isSubmitting}
                         onRazorpaySuccess={handleRazorpaySuccess}
@@ -291,6 +305,8 @@ export default function Checkout() {
                         onPaymentVerified={setPaymentVerified}
                         paymentVerified={paymentVerified}
                         setTransactionId={setTransactionId}
+                        useWallet={useWallet} // 🟢 Pass State
+                        setUseWallet={setUseWallet} // 🟢 Pass Setter
                       />
                     )}
                   </motion.div>
@@ -335,7 +351,7 @@ export default function Checkout() {
                       selectedAddress={selectedAddress}
                       selectedItems={selectedItems}
                       appliedCoupon={appliedCoupon}
-                      breakdown={breakdown}
+                      breakdown={finalBreakdown} // 🟢 Pass the CALCULATED breakdown
                       loadingPrices={loadingPrices}
                     />
 
