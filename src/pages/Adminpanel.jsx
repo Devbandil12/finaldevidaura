@@ -29,6 +29,8 @@ import ProductVariantEditor from "./ProductVariantEditor";
 import ActivityLogsTab from "./ActivityLogsTab";
 import CmsTab from "./CmsTab";
 import ReferralsTab from "./ReferralsTab";
+import AdminRewardsTab from './AdminRewardsTab'; // 🟢 Import
+import AdminLotteryTab from './AdminLotteryTab'; // 🟢 Import
 
 import {
   Chart as ChartJS,
@@ -263,6 +265,8 @@ const AdminPanel = () => {
     { id: 'pincodes', label: 'Logistics', icon: MapPin },
     { id: 'cms', label: 'Site Content', icon: LayoutDashboard },
     { id: 'referrals', label: 'Referrals', icon: Gift },
+    { id: 'rewards', label: 'Rewards Admin', icon: Gift },
+    { id: 'lottery', label: 'Lottery Draw', icon: Gift },
   ];
 
   // Tooltip Logic
@@ -435,6 +439,8 @@ const AdminPanel = () => {
               {activeTab === "pincodes" && <PincodeManager />}
               {activeTab === "cms" && <CmsTab />}
               {activeTab === "referrals" && <ReferralsTab />}
+              {activeTab === "rewards" && <AdminRewardsTab />}
+              {activeTab === "lottery" && <AdminLotteryTab />}
             </motion.div>
           </div>
         </div>

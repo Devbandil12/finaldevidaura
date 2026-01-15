@@ -20,6 +20,7 @@ import useCloudinary from "../utils/useCloudinary";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from "framer-motion";
+import EarnCashTab from './EarnCashTab'; // 🟢 Import
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -141,6 +142,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onSignOut }) => {
     { id: 'support', label: 'Support Chat', icon: MessageSquare },
     { id: 'settings', label: 'Settings', icon: UserIcon },
     { id: 'notifications', label: 'Alerts', icon: Bell },
+    { id: 'earncash', label: 'Earn Cash', icon: Coins }, // 🟢 Add this
   ];
 
   const initials = (user?.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -1121,6 +1123,7 @@ export default function UserPage() {
               )}
 
               {activeTab === 'notifications' && <div className="bg-white p-8 rounded-[2rem] border border-zinc-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)]"><NotificationSettings user={userdetails} onUpdate={updateUser} /></div>}
+              {activeTab === 'earncash' && <EarnCashTab userId={userdetails.id} />}
             </motion.div>
           </AnimatePresence>
         </div>
