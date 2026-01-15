@@ -732,7 +732,7 @@ const ReferralTab = ({ userId }) => {
 
   // Define fetch function so we can reuse it to refresh data after redemption
   const fetchStats = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referrals/stats/${userId}`)
+    fetch(`${BASE}/api/referrals/stats/${userId}`)
       .then(res => res.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(e => { console.error(e); setLoading(false); });
