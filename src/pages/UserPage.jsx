@@ -518,57 +518,82 @@ const ReviewHistory = () => {
 };
 
 
+/* ========================================================================
+   ANIMATION VARIANTS
+   ======================================================================== */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
 
-// --- 1. The Golden Referral Card ---
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+};
 
+/* ========================================================================
+   1. THE GOLDEN REFERRAL CARD (Luxury Dark Mode)
+   ======================================================================== */
 const ReferralCard = ({ code, onCopy, rewards }) => {
-  // Default fallback in case rewards haven't loaded yet
   const refereeBonus = rewards?.REFEREE_BONUS || 100;
   const referrerBonus = rewards?.REFERRER_BONUS || 150;
 
   const handleShare = () => {
-    // 🟢 Dynamic Text
-    const text = `Hey! Use my code *${code}* on Devid Aura to get ₹${refereeBonus} OFF your first luxury perfume order! Check it out here: https://devidaura.com`;
+    const text = `✨ Discover Devid Aura. Use my code *${code}* to get ₹${refereeBonus} OFF your first luxury perfume order. Experience it here: https://devidaura.com`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 p-8 md:p-12 text-center text-white shadow-2xl">
-      {/* ... Background Decor (Same as before) ... */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-50%] left-[-20%] w-[500px] h-[500px] bg-gradient-to-br from-amber-400/20 to-transparent rounded-full blur-[100px]" />
-        <div className="absolute bottom-[-50%] right-[-20%] w-[500px] h-[500px] bg-gradient-to-tl from-teal-900/40 to-transparent rounded-full blur-[100px]" />
+    <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 p-8 md:p-12 text-center text-white shadow-2xl isolate">
+      {/* Background Decor (Abstract Gold/Teal Glow) */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-[-50%] left-[-20%] w-[600px] h-[600px] bg-gradient-to-br from-amber-500/20 to-transparent rounded-full blur-[120px] opacity-60" />
+        <div className="absolute bottom-[-50%] right-[-20%] w-[600px] h-[600px] bg-gradient-to-tl from-indigo-900/40 to-transparent rounded-full blur-[120px] opacity-60" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center">
-        {/* ... Icon ... */}
-        <div className="w-16 h-16 bg-gradient-to-br from-amber-200 to-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 mb-6 rotate-3">
-          <Gift size={32} className="text-zinc-900" strokeWidth={1.5} />
+      <div className="flex flex-col items-center relative z-10">
+        {/* Floating Icon */}
+        <div className="w-20 h-20 bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 rounded-3xl flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(251,191,36,0.4)] mb-8 rotate-3 border border-white/20">
+          <Gift size={40} className="text-zinc-900 drop-shadow-sm" strokeWidth={1.5} />
         </div>
 
-        <h2 className="text-3xl md:text-4xl font-serif tracking-tight mb-4">
-          Invite Friends, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">Earn Gold.</span>
+        <h2 className="text-4xl md:text-5xl font-serif tracking-tight mb-4 leading-tight">
+          Invite Friends. <br/>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-300 to-amber-500">Earn Pure Gold.</span>
         </h2>
         
-        {/* 🟢 Dynamic Display Text */}
-        <p className="text-zinc-400 font-light max-w-lg mx-auto mb-10 leading-relaxed">
-          Share the aura of luxury. Give your friends <strong className="text-white">₹{refereeBonus} OFF</strong> their first order, and receive <strong className="text-amber-400">₹{referrerBonus} in Aura Credits</strong> when they purchase.
+        <p className="text-zinc-400 font-light max-w-xl mx-auto mb-10 text-sm md:text-base leading-relaxed">
+          Gift your circle <span className="text-white font-medium border-b border-white/20">₹{refereeBonus} OFF</span> their first signature scent. 
+          You receive <span className="text-amber-400 font-medium border-b border-amber-400/20">₹{referrerBonus} Credits</span> instantly when they purchase.
         </p>
 
-        {/* ... Code Box (Same as before) ... */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-lg">
-          <div className="flex-1 flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 p-2 pl-6 rounded-full w-full hover:bg-white/10 transition-colors">
-            <span className="flex-1 font-mono text-xl tracking-widest text-amber-100 font-bold uppercase truncate">
-              {code || "LOADING..."}
-            </span>
-            <button onClick={() => onCopy(code)} className="bg-white text-zinc-900 p-3 rounded-full hover:scale-105 active:scale-95 transition-all" title="Copy Code">
-              <Copy size={18} />
+        {/* Action Area */}
+        <div className="flex flex-col sm:flex-row items-stretch gap-4 w-full max-w-lg">
+          {/* Code Box */}
+          <div className="flex-1 flex items-center gap-3 bg-white/5 backdrop-blur-xl border border-white/10 p-2 pl-6 rounded-2xl group hover:bg-white/10 transition-colors">
+            <div className="flex-1 text-left">
+               <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Your Code</p>
+               <span className="font-mono text-xl tracking-widest text-amber-100 font-bold uppercase truncate">
+                 {code || "..."}
+               </span>
+            </div>
+            <button 
+              onClick={() => onCopy(code)} 
+              className="w-12 h-12 flex items-center justify-center bg-white text-zinc-900 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg" 
+              title="Copy Code"
+            >
+              <Copy size={20} />
             </button>
           </div>
 
-          <button onClick={handleShare} className="bg-[#25D366] text-white px-6 py-4 rounded-full font-bold text-sm hover:bg-[#20bd5a] transition-all flex items-center gap-2 shadow-lg shadow-green-900/20 w-full sm:w-auto justify-center">
-            <Send size={18} /> Share on WhatsApp
+          {/* Share Button */}
+          <button 
+            onClick={handleShare} 
+            className="px-8 py-4 bg-[#25D366] text-white rounded-2xl font-bold text-sm hover:bg-[#20bd5a] transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-95"
+          >
+            <Send size={18} /> 
+            <span>WhatsApp</span>
           </button>
         </div>
       </div>
@@ -576,7 +601,9 @@ const ReferralCard = ({ code, onCopy, rewards }) => {
   );
 };
 
-// --- New Component: Redeem Referral Code ---
+/* ========================================================================
+   2. REDEEM CARD (Clean & Minimal)
+   ======================================================================== */
 const RedeemCard = ({ userId, onRedeemSuccess }) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -585,7 +612,7 @@ const RedeemCard = ({ userId, onRedeemSuccess }) => {
     if (!code.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/referrals/apply`, {
+      const res = await fetch(`${BASE}/api/referrals/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, code: code.toUpperCase() })
@@ -595,7 +622,7 @@ const RedeemCard = ({ userId, onRedeemSuccess }) => {
       if (res.ok) {
         window.toast.success(data.message);
         setCode("");
-        if (onRedeemSuccess) onRedeemSuccess(); // Refresh parent data
+        if (onRedeemSuccess) onRedeemSuccess();
       } else {
         window.toast.error(data.error || "Invalid Code");
       }
@@ -607,91 +634,123 @@ const RedeemCard = ({ userId, onRedeemSuccess }) => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-[2rem] border border-zinc-100 shadow-sm mt-8">
-      <h3 className="text-xl font-medium text-zinc-900 mb-2">Have a Referral Code?</h3>
-      <p className="text-sm text-zinc-500 font-light mb-6">Enter a friend's code to unlock your <strong className="text-teal-600">₹100 Welcome Bonus</strong>.</p>
+    <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.03)] mt-8 relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-50 rounded-bl-[100%] -z-0 transition-transform group-hover:scale-110" />
+      
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-zinc-900 text-white rounded-lg">
+                <Ticket size={18} />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900">Have a Code?</h3>
+        </div>
+        <p className="text-sm text-zinc-500 font-light mb-6 ml-1">Unlock your <strong className="text-zinc-900">Welcome Bonus</strong> instantly.</p>
 
-      <div className="flex gap-3">
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Enter Code (e.g. HARSH4521)"
-          className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-5 py-3 text-sm outline-none focus:border-zinc-900 uppercase tracking-widest font-bold transition-all"
-        />
-        <Button onClick={handleRedeem} disabled={loading || !code} variant="primary">
-          {loading ? <Loader2 className="animate-spin" size={18} /> : "Redeem"}
-        </Button>
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+             <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder=" "
+                className="peer w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-5 py-4 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 uppercase tracking-widest font-bold transition-all pt-6 pb-2"
+              />
+              <label className="absolute left-5 top-4 text-xs font-bold text-zinc-400 uppercase tracking-wider transition-all peer-focus:top-1.5 peer-focus:text-[9px] peer-not-placeholder-shown:top-1.5 peer-not-placeholder-shown:text-[9px]">
+                  Enter Referral Code
+              </label>
+          </div>
+          <button 
+             onClick={handleRedeem} 
+             disabled={loading || !code} 
+             className="px-8 rounded-2xl bg-zinc-900 text-white font-medium hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {loading ? <Loader2 className="animate-spin" size={20} /> : "Redeem"}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-// --- 2. Wallet Stats Row (Updated) ---
+/* ========================================================================
+   3. WALLET STATS (Glassy/Premium Look)
+   ======================================================================== */
 const WalletStats = ({ balance, earnings, friendsCount, pendingCount }) => {
+  const StatItem = ({ icon: Icon, label, value, subtext, colorClass, delay }) => (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-zinc-300 transition-all hover:shadow-lg relative overflow-hidden"
+    >
+       <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${colorClass} opacity-[0.08] rounded-bl-[3rem] transition-transform group-hover:scale-125`} />
+       
+       <div className="flex justify-between items-start relative z-10">
+         <div className="p-3 bg-zinc-50 text-zinc-900 rounded-2xl border border-zinc-100 group-hover:bg-white group-hover:shadow-md transition-all">
+           <Icon size={24} strokeWidth={1.5} />
+         </div>
+         {subtext && <span className="px-2 py-1 bg-zinc-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest">{subtext}</span>}
+       </div>
+       
+       <div className="mt-6 relative z-10">
+         <h4 className="text-4xl font-serif font-medium text-zinc-900 tracking-tight">{value}</h4>
+         <p className="text-xs text-zinc-500 mt-1 font-medium uppercase tracking-wide opacity-60">{label}</p>
+       </div>
+    </motion.div>
+  );
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-amber-200 transition-colors">
-        <div className="flex justify-between items-start">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-            <Coins size={24} strokeWidth={1.5} />
-          </div>
-          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Available</span>
-        </div>
-        <div className="mt-6">
-          <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">₹{balance}</h4>
-          <p className="text-xs text-zinc-500 mt-1">Current Wallet Balance</p>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-teal-200 transition-colors">
-        <div className="flex justify-between items-start">
-          <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
-            <TrendingUp size={24} strokeWidth={1.5} />
-          </div>
-          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Lifetime</span>
-        </div>
-        <div className="mt-6">
-          <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">₹{earnings}</h4>
-          <p className="text-xs text-zinc-500 mt-1">Total Earned</p>
-        </div>
-      </div>
-
-      <div className="bg-white p-6 rounded-[2rem] border border-zinc-100 shadow-sm flex flex-col justify-between group hover:border-purple-200 transition-colors">
-        <div className="flex justify-between items-start">
-          <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
-            <Users size={24} strokeWidth={1.5} />
-          </div>
-          <span className="px-2 py-1 bg-zinc-50 rounded-lg text-[10px] font-bold uppercase tracking-widest text-zinc-400">Network</span>
-        </div>
-        <div className="mt-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+      <StatItem 
+        icon={Coins} 
+        label="Wallet Balance" 
+        value={`₹${balance}`} 
+        subtext="Available"
+        colorClass="from-amber-400 to-yellow-600"
+        delay={0.1}
+      />
+      <StatItem 
+        icon={TrendingUp} 
+        label="Total Earnings" 
+        value={`₹${earnings}`} 
+        colorClass="from-emerald-400 to-teal-600"
+        delay={0.2}
+      />
+      <StatItem 
+        icon={Users} 
+        label="Network" 
+        value={
           <div className="flex items-baseline gap-2">
-            <h4 className="text-4xl font-medium text-zinc-900 tracking-tight">{friendsCount}</h4>
-            {pendingCount > 0 && <span className="text-sm font-medium text-amber-500">({pendingCount} Pending)</span>}
+            {friendsCount}
+            {pendingCount > 0 && <span className="text-sm font-sans text-amber-500 font-bold">({pendingCount} Pending)</span>}
           </div>
-          <p className="text-xs text-zinc-500 mt-1">Friends Referred</p>
-        </div>
-      </div>
+        } 
+        colorClass="from-indigo-400 to-purple-600"
+        delay={0.3}
+      />
     </div>
   );
 };
 
-// --- 3. Wallet History List (Updated for Pending Items) ---
+/* ========================================================================
+   4. WALLET HISTORY (Clean Table)
+   ======================================================================== */
 const WalletHistory = ({ transactions }) => {
   return (
-    <div className="mt-8 bg-white rounded-[2rem] border border-zinc-100 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-zinc-50 flex justify-between items-center">
-        <h3 className="font-medium text-xl text-zinc-900">Activity History</h3>
-        <button className="text-xs font-bold text-zinc-400 hover:text-zinc-900 uppercase tracking-wider">View All</button>
+    <div className="mt-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl overflow-hidden">
+      <div className="p-8 border-b border-zinc-50 flex justify-between items-center bg-zinc-50/30">
+        <div>
+           <h3 className="font-serif text-xl text-zinc-900">Transaction History</h3>
+           <p className="text-xs text-zinc-400 mt-1 font-light">Your recent rewards and usage.</p>
+        </div>
       </div>
 
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
         {transactions && transactions.length > 0 ? (
-          transactions.map((tx) => {
-            // Determine styles based on transaction type
+          transactions.map((tx, i) => {
             const isPending = tx.type === 'pending_referral';
-            let iconBg = tx.amount > 0 ? 'bg-teal-50 text-teal-600' : 'bg-red-50 text-red-600';
+            let iconBg = tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600';
             let Icon = tx.amount > 0 ? ArrowDownLeft : ArrowUpRight;
-            let amountColor = tx.amount > 0 ? 'text-teal-600' : 'text-zinc-900';
+            let amountColor = tx.amount > 0 ? 'text-emerald-600' : 'text-zinc-900';
 
             if (isPending) {
               iconBg = 'bg-amber-50 text-amber-600';
@@ -700,29 +759,37 @@ const WalletHistory = ({ transactions }) => {
             }
 
             return (
-              <div key={tx.id} className="flex items-center justify-between p-6 hover:bg-zinc-50 transition-colors border-b border-zinc-50 last:border-0">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
-                    <Icon size={18} />
+              <motion.div 
+                key={tx.id} 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ delay: i * 0.05 }}
+                className="flex items-center justify-between p-6 hover:bg-zinc-50 transition-colors border-b border-zinc-50 last:border-0 group"
+              >
+                <div className="flex items-center gap-5">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg} transition-transform group-hover:scale-110`}>
+                    <Icon size={20} strokeWidth={2} />
                   </div>
                   <div>
-                    <p className="font-medium text-zinc-900 text-sm">{tx.description}</p>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      {new Date(tx.createdAt).toLocaleDateString()}
-                      {isPending && <span className="ml-2 text-amber-500 font-medium text-[10px] uppercase tracking-wide">• Waiting for Order</span>}
+                    <p className="font-bold text-zinc-900 text-sm">{tx.description}</p>
+                    <p className="text-xs text-zinc-400 mt-1 font-mono">
+                      {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {isPending && <span className="ml-2 text-amber-500 font-bold text-[10px] uppercase tracking-wide">• Waiting for Order</span>}
                     </p>
                   </div>
                 </div>
-                <span className={`font-mono font-medium ${amountColor}`}>
-                  {isPending ? 'Pending' : (tx.amount > 0 ? `+₹${Math.abs(tx.amount)}` : `₹${Math.abs(tx.amount)}`)}
+                <span className={`font-mono font-bold text-lg ${amountColor}`}>
+                  {isPending ? 'Pending' : (tx.amount > 0 ? `+₹${Math.abs(tx.amount)}` : `-₹${Math.abs(tx.amount)}`)}
                 </span>
-              </div>
+              </motion.div>
             );
           })
         ) : (
-          <div className="py-12 text-center">
-            <Coins className="w-12 h-12 text-zinc-200 mx-auto mb-3" />
-            <p className="text-zinc-400 text-sm font-light">No transactions yet.</p>
+          <div className="py-20 text-center flex flex-col items-center">
+            <div className="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mb-4 text-zinc-300">
+               <Coins size={24} />
+            </div>
+            <p className="text-zinc-400 text-sm font-light">No transactions yet. Start referring!</p>
           </div>
         )}
       </div>
@@ -730,11 +797,12 @@ const WalletHistory = ({ transactions }) => {
   );
 };
 
-// --- 4. Main Tab Component (Pass Pending Count) ---
-
+/* ========================================================================
+   MAIN TAB EXPORT
+   ======================================================================== */
 const ReferralTab = ({ userId }) => {
   const [data, setData] = useState(null);
-  const [rewards, setRewards] = useState(null); // 🟢 New State for Settings
+  const [rewards, setRewards] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -742,20 +810,17 @@ const ReferralTab = ({ userId }) => {
     if (userId) {
       setLoading(true);
       
-      // 1. Fetch User Stats
       const statsPromise = fetch(`${BASE}/api/referrals/stats/${userId}`).then(res => {
         if (!res.ok) throw new Error("Stats Failed");
         return res.json();
       });
 
-      // 2. 🟢 Fetch Dynamic Rewards Config
       const configPromise = fetch(`${BASE}/api/referrals/config`).then(res => res.json());
 
-      // Wait for both
       Promise.all([statsPromise, configPromise])
         .then(([statsData, configData]) => {
           setData(statsData);
-          setRewards(configData); // 🟢 Save Config
+          setRewards(configData);
           setLoading(false);
         })
         .catch(e => {
@@ -768,29 +833,32 @@ const ReferralTab = ({ userId }) => {
 
   const handleCopy = (txt) => {
     navigator.clipboard.writeText(txt);
-    window.toast.success("Referral Code Copied!");
+    if(window.toast) window.toast.success("Referral Code Copied!");
   };
 
-  if (loading) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-zinc-300" /></div>;
-  if (error) return <div className="py-20 text-center text-red-500">Failed to load data. Please refresh.</div>;
+  if (loading) return <div className="py-32 flex justify-center"><Loader2 className="animate-spin text-zinc-300 w-8 h-8" /></div>;
+  if (error) return <div className="py-32 text-center text-red-500 font-light">Failed to load data. Please refresh.</div>;
 
-// Only hide if they have specifically received a 'Welcome Bonus'
-const hasBeenReferred = data?.history?.some(t => t.description.includes("Welcome Bonus"));
+  const hasBeenReferred = data?.history?.some(t => t.description.toLowerCase().includes("welcome bonus"));
+
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl">
-      <motion.div variants={fadeInUp}>
-        {/* 🟢 Pass rewards prop here */}
+    <motion.div 
+      variants={containerVariants} 
+      initial="hidden" 
+      animate="visible" 
+      className="max-w-5xl mx-auto pb-10"
+    >
+      <motion.div variants={itemVariants}>
         <ReferralCard code={data?.referralCode} onCopy={handleCopy} rewards={rewards} />
       </motion.div>
 
       {!hasBeenReferred && (
-        <motion.div variants={fadeInUp}>
-          {/* You might want to update RedeemCard similarly if it shows text */}
-          <RedeemCard userId={userId} onRedeemSuccess={() => {/* refresh logic */}} />
+        <motion.div variants={itemVariants}>
+          <RedeemCard userId={userId} onRedeemSuccess={() => window.location.reload()} />
         </motion.div>
       )}
 
-      <motion.div variants={fadeInUp}>
+      <motion.div variants={itemVariants}>
         <WalletStats
           balance={data?.walletBalance || 0}
           earnings={data?.stats?.totalEarnings || 0}
@@ -799,12 +867,12 @@ const hasBeenReferred = data?.history?.some(t => t.description.includes("Welcome
         />
       </motion.div>
 
-      <motion.div variants={fadeInUp}>
+      <motion.div variants={itemVariants}>
         <WalletHistory transactions={data?.history} />
       </motion.div>
     </motion.div>
   );
-};
+}
 /* ========================================================================
    MAIN PAGE
    ======================================================================== */
