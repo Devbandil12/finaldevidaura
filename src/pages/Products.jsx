@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
-import { Heart, Sparkles, Bell, Check } from "lucide-react";
+import { Heart, Sparkles, Bell, Check, Star, ShoppingBag } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- METADATA ---
@@ -215,6 +215,11 @@ const Products = () => {
                   const staggerClass = (idx % 2 !== 0) ? "md:translate-y-12" : "";
                   const isPriority = groupIndex === 0 && idx < 4;
 
+                  // --- PLACEHOLDER DATA FOR STATS ---
+                  // Ensure your backend adds these fields, or they will default to 0
+                  const reviewCount = product.reviewCount || 0;
+                  const soldCount = product.soldCount || 0;
+
                   return (
                     <motion.div
                       key={product.id}
@@ -266,9 +271,27 @@ const Products = () => {
                         <h3 className={`text-xl leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
                           {product.name}
                         </h3>
-                        <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light">
+                        <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light mb-3">
                           {product.description}
                         </p>
+                        
+                        {/* --- NEW STATS SECTION --- */}
+                        <div className="flex items-center justify-center gap-4">
+                          {reviewCount >= 1 && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                             <Star size={11} className="text-[#C5A059] fill-[#C5A059]" />
+                             <span>{reviewCount} Reviews</span>
+                          </div>
+                          )}
+                          <div className="w-[1px] h-2.5 bg-stone-200"></div>
+                           {soldCount >= 1 && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                             <ShoppingBag size={11} className="text-stone-400" />
+                             <span>{soldCount} Sold</span>
+                          </div>
+                          )}
+                        </div>
+
                       </div>
                     </motion.div>
                   );

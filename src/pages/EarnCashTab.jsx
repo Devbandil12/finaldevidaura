@@ -201,7 +201,7 @@ export default function EarnCashTab({ userId }) {
              title="The Paparazzi"
              reward={rewards.paparazzi}
              colorClass="from-purple-500 to-indigo-500"
-             description="Post a Story with your bottle. Tag @devidaura. Upload a screenshot showing views."
+             description="Post a Story with your bottle. Tag @devidaura.official  . Upload a screenshot showing views."
              buttonText="Upload Story Proof"
              loading={uploading === 'paparazzi'}
              status={getStatus('paparazzi')}
