@@ -7,7 +7,7 @@ import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import {
   Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight,
-  Sparkles, Wind, Layers, Droplets, Minus, Plus, Ban, ShoppingBag, X
+  Sparkles, Wind, Layers, Droplets, Minus, Plus, Ban, ShoppingBag, X, Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -193,6 +193,10 @@ const ProductDetail = () => {
 
   const stockStatus = selectedVariant.stock === 0 ? "Sold Out" : selectedVariant.stock <= 10 ? `Only ${selectedVariant.stock} left` : "In Stock";
 
+  // Data for badges
+  const avgRating = product.avgRating || 0;
+  const soldCount = product.soldCount || 0;
+
   return (
     <>
       <title>{`${product.name} | Devid Aura`}</title>
@@ -258,9 +262,6 @@ const ProductDetail = () => {
                 <div className="relative aspect-[3/3] md:aspect-[1/1] lg:aspect-[5/5] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
                   
                   {/* MAIN GALLERY IMAGE */}
-                  {/* We conditionally render this. It only appears when unboxing is DONE (or currentImg changes). 
-                      If it's the first load (isUnboxing=true), the Overlay holds the image. 
-                      When Overlay unmounts, this mounts, and Framer morphs them. */}
                   <AnimatePresence mode="wait">
                     {(!isUnboxing || currentImg !== 0) && (
                          <motion.img
@@ -351,6 +352,27 @@ const ProductDetail = () => {
                     </div>
                   </div>
 
+                  {/* ⚡ NEW: STATS ROW */}
+                  <div className="flex items-center gap-4 mt-4">
+                      {avgRating >= 1 && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-[#C5A059] uppercase tracking-wider">
+                            <Star size={13} className="fill-[#C5A059]" />
+                            <span>{avgRating} Reviews</span>
+                        </div>
+                      )}
+                      
+                      {avgRating >= 1 && soldCount >= 1 && (
+                          <div className="w-[1px] h-3 bg-gray-300"></div>
+                      )}
+
+                      {soldCount >= 1 && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            <ShoppingBag size={13} />
+                            <span>{soldCount} Sold</span>
+                        </div>
+                      )}
+                  </div>
+
                   <div className="mt-6 flex items-baseline gap-3">
                     <span className="text-3xl font-light text-gray-900">₹{discountedPrice.toLocaleString("en-IN")}</span>
                     {discount > 0 && (
@@ -399,9 +421,9 @@ const ProductDetail = () => {
                 {/* Note Cards */}
                 <motion.div variants={textFadeIn} className="flex gap-3 mb-10 w-full h-[180px] group/container">
                   {[
-                    { label: 'Top', icon: Wind, data: product.composition, color: "bg-blue-50/50" },
-                    { label: 'Heart', icon: Droplets, data: product.fragrance, color: "bg-rose-50/50" },
-                    { label: 'Base', icon: Layers, data: product.fragranceNotes, color: "bg-amber-50/50" },
+                    { label: 'Top', icon: Wind, data: product.composition},
+                    { label: 'Heart', icon: Droplets, data: product.fragrance },
+                    { label: 'Base', icon: Layers, data: product.fragranceNotes},
                   ].map((note, index) => {
                     const Icon = note.icon;
                     return (
@@ -411,7 +433,6 @@ const ProductDetail = () => {
                         whileHover={{ flexGrow: 3 }}
                         className="relative flex-[1] min-w-[60px] cursor-pointer bg-white border border-gray-100 rounded-[2rem] p-4 flex flex-col items-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,0.4,0.25,1)]"
                       >
-                        <div className={`absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500 ${note.color}`} />
                         <div className="relative z-10 p-3 bg-gray-50 rounded-2xl mb-2 text-gray-600"><Icon className="h-5 w-5" /></div>
                         <span className="relative z-10 text-[9px] uppercase font-bold text-gray-400 tracking-widest mb-2">{note.label}</span>
                         <div className="relative z-10 text-center opacity-0 hover:opacity-100 transition-opacity duration-300 delay-100">

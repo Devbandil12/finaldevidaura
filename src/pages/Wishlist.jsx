@@ -1,6 +1,5 @@
-// src/pages/Wishlist.jsx
 import React, { useContext } from "react";
-import { ShoppingCart, X, Trash2, ArrowRight, Sparkles } from "lucide-react";
+import { ShoppingCart, X, Trash2, ArrowRight, Sparkles, Star, ShoppingBag } from "lucide-react";
 import { CartContext } from "../contexts/CartContext";
 import Loader from "../Components/Loader";
 import { motion, AnimatePresence } from "framer-motion";
@@ -82,7 +81,7 @@ const Wishlist = () => {
 
           <AnimatePresence mode="wait">
             {wishlist.length === 0 ? (
-              // --- Empty State (Matched with ProductDetail Empty states) ---
+              // --- Empty State ---
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -114,6 +113,10 @@ const Wishlist = () => {
                     const isOutOfStock = variant.stock === 0;
                     const img = Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl;
 
+                    // Data from Backend
+                    const avgRating = product.avgRating || 0;
+                    const soldCount = product.soldCount || 0;
+
                     return (
                       <motion.div
                         key={wishlistId}
@@ -129,7 +132,7 @@ const Wishlist = () => {
                             e.stopPropagation();
                             removeFromWishlist(variant);
                           }}
-                          className="absolute top-6 right-6 z-20 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-gray-100"
+                          className="absolute top-6 right-6 z-30 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-gray-100"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -145,6 +148,25 @@ const Wishlist = () => {
                             className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
                             loading="lazy"
                           />
+                          
+                          {/* ⚡ STATS OVERLAY (TOP RIGHT) */}
+                          <div className="absolute top-3 left-3 flex  gap-1.5 z-20 mr-10">
+                              {/* Review Badge */}
+                              {avgRating >= 1 && (
+                                  <div className="bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center gap-1.5 border border-white/40">
+                                      <Star size={10} className="text-[#C5A059] fill-[#C5A059]" />
+                                      <span className="text-[10px] font-bold text-stone-700 leading-none pt-[1px]">{avgRating}</span>
+                                  </div>
+                              )}
+                              
+                              {/* Sold Badge */}
+                              {soldCount >= 1 && (
+                                  <div className="bg-stone-900/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.1)] flex items-center gap-1.5 border border-white/10">
+                                      <ShoppingBag size={10} className="text-[#F2F0EB]" />
+                                      <span className="text-[9px] font-bold text-[#F2F0EB] uppercase tracking-wider leading-none pt-[1px]">{soldCount} Sold</span>
+                                  </div>
+                              )}
+                          </div>
 
                           {/* Badges (Matched teal/red style from ProductDetail) */}
                           <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -197,7 +219,6 @@ const Wishlist = () => {
                                   moveFromWishlistToCart(product, variant);
                                 }
                               }}
-                              // Removed disabled={isOutOfStock} so the button remains clickable for "Detail"
                               variant={isOutOfStock ? "secondary" : "primary"}
                               size="sm"
                             >

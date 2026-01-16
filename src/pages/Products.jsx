@@ -217,7 +217,7 @@ const Products = () => {
 
                   // --- PLACEHOLDER DATA FOR STATS ---
                   // Ensure your backend adds these fields, or they will default to 0
-                  const reviewCount = product.reviewCount || 0;
+                  const avgRating = product.avgRating || 0;
                   const soldCount = product.soldCount || 0;
 
                   return (
@@ -276,11 +276,12 @@ const Products = () => {
                         </p>
                         
                         {/* --- NEW STATS SECTION --- */}
+                        {avgRating >= 1 || soldCount >= 1 ? (
                         <div className="flex items-center justify-center gap-4">
-                          {reviewCount >= 1 && (
+                          {avgRating >= 1 && (
                           <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
                              <Star size={11} className="text-[#C5A059] fill-[#C5A059]" />
-                             <span>{reviewCount} Reviews</span>
+                             <span>{avgRating} Reviews</span>
                           </div>
                           )}
                           <div className="w-[1px] h-2.5 bg-stone-200"></div>
@@ -291,6 +292,7 @@ const Products = () => {
                           </div>
                           )}
                         </div>
+                        ) : ("")}
 
                       </div>
                     </motion.div>
