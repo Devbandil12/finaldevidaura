@@ -16,10 +16,6 @@ const MainLayout = () => {
   return (
       <div className="flex flex-col min-h-screen bg-[var(--color-off-white)]">
         
-        {/* ⚡️ LUXURY NOISE OVERLAY */}
-        {/* Fixed position, sits on top of everything to give texture to images/text too */}
-        <div className="noise-overlay" />
-        
         <Navbar onVisibilityChange={handleNavVisibility} />
         
         <MobileBackBar isNavbarVisible={isNavbarVisible} />

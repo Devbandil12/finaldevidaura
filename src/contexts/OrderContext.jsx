@@ -58,36 +58,38 @@ export const OrderProvider = ({ children }) => {
   }, [BACKEND_URL, getorders, userdetails?.id]);
 
   // 🟢 Cancel order (With actorId)
-  const cancelOrder = useCallback(
-    async (orderId, paymentMode, amount, isAdmin = false) => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            orderId, 
-            amount,
-            actorId: userdetails?.id // 🟢 Added actorId
-          }),
-        });
+ const cancelOrder = useCallback(
+  async (orderId, paymentMode, amount) => {
+    try {
+      // 🟢 USER ONLY: Always hits the restricted Refund Controller
+      const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          orderId, 
+          amount,
+          actorId: userdetails?.id 
+        }),
+      });
 
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || "Cancellation failed");
-        }
-
-        const data = await res.json();
-        window.toast.success(data.message || `Order ${orderId} canceled successfully.`);
-        
-        await getorders(true, isAdmin);
-
-      } catch (error) {
-        console.error("❌ Failed to cancel order:", error);
-        window.toast.error(error.message || "Failed to cancel order.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Cancellation failed");
       }
-    },
-    [BACKEND_URL, getorders, userdetails?.id]
-  );
+
+      const data = await res.json();
+      window.toast.success(data.message || `Order ${orderId} cancelled successfully.`);
+      
+      // Refresh User's personal order list
+      await getorders(true, false); 
+
+    } catch (error) {
+      console.error("❌ Failed to cancel order:", error);
+      window.toast.error(error.message || "Failed to cancel order.");
+    }
+  },
+  [BACKEND_URL, getorders, userdetails?.id]
+);
 
   const getSingleOrderDetails = useCallback(async (orderId) => {
     try {

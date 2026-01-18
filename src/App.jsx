@@ -9,6 +9,7 @@ import SmoothScroll from "./Components/SmoothScroll";
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
 import Home from "./pages/Home";
 import MainLayout from "./pages/MainLayout"; // Import the new layout
+import Loader from "./Components/Loader";
 
 // --- Lazy Load the Heavy Stuff ---
 // These won't load when the user is just logging in
@@ -140,7 +141,7 @@ const App = () => {
                       <PostLoginRedirector />
 
                       {/* Suspense handles the loading state for lazy pages */}
-                      {/* <Suspense fallback={<Loader text="Loading..." />}> */}
+                      <Suspense fallback={<Loader text="Loading..." />}>
                       <SmoothScroll>
                         <Routes>
 
@@ -187,7 +188,7 @@ const App = () => {
 
                         </Routes>
                       </SmoothScroll>
-                      {/* </Suspense> */}
+                      </Suspense>
                     </Router>
                   </NotificationProvider>
                 </ReviewProvider>

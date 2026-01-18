@@ -272,7 +272,7 @@ export default function MyOrders() {
 
   const canDownloadInvoice = (order) => {
     const status = order.status?.toLowerCase() || "";
-    const isOnline = order.paymentMode === 'online';
+    const isOnline = order.paymentMode === 'online' || order.paymentMode === 'wallet';
     if (status.includes('cancelled')) return false;
     if (isOnline) {
       return status !== 'order placed';
@@ -361,7 +361,7 @@ export default function MyOrders() {
 
   const renderCancellationModal = () => {
     if (!modalOrder) return null;
-    const isOnlinePayment = modalOrder.paymentMode === "online";
+    const isOnlinePayment = modalOrder.paymentMode === "online" || modalOrder.paymentMode === "wallet";
     const refundAmount = modalOrder.totalAmount * 0.95;
 
     return createPortal(
@@ -416,11 +416,18 @@ export default function MyOrders() {
   // Helper to render a single card (to avoid duplication across sections)
   const renderOrderCard = (order) => {
     const isExpanded = expandedOrderId === order.id;
-    const isPrepaid = order.paymentMode === "online";
+    const isPrepaid = order.paymentMode === "online" || order.paymentMode === "wallet";
     const refundInfo = order.refund_status ? {
       status: order.refund_status, amount: order.refund_amount,
       refund_completed_at: order.refund_completed_at, speed: order.refund_speed,
     } : null;
+
+    // 🟢 CALCULATE BREAKDOWN
+    const subtotal = order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = (order.discountAmount || 0) + (order.offerDiscount || 0);
+    const wallet = order.walletAmountUsed || 0;
+    // Reverse calc delivery
+    const delivery = Math.max(0, order.totalAmount - subtotal + discount + wallet);
 
     return (
       <motion.div
@@ -502,8 +509,38 @@ export default function MyOrders() {
             )}
           </AnimatePresence>
 
+          {/* 🟢 NEW: PRICE BREAKDOWN SUMMARY */}
+          <div className="mt-6 p-4 bg-zinc-50/50 rounded-2xl border border-zinc-50 space-y-2">
+            <div className="flex justify-between items-center text-xs text-zinc-500">
+              <span>Subtotal</span>
+              <span>₹{subtotal.toFixed(2)}</span>
+            </div>
+
+            {discount > 0 && (
+              <div className="flex justify-between items-center text-xs text-emerald-600 font-medium">
+                <span className="flex items-center gap-1">
+                  Savings 
+                  {order.couponCode && <span className="bg-emerald-100 px-1.5 py-0.5 rounded text-[10px]">{order.couponCode}</span>}
+                </span>
+                <span>-₹{discount.toFixed(2)}</span>
+              </div>
+            )}
+
+            {wallet > 0 && (
+              <div className="flex justify-between items-center text-xs text-zinc-700 font-medium">
+                <span>Wallet Used</span>
+                <span>-₹{wallet.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-xs text-zinc-500">
+              <span>Delivery</span>
+              <span>{delivery === 0 ? "Free" : `₹${delivery.toFixed(2)}`}</span>
+            </div>
+          </div>
+
           {/* Action Bar */}
-          <div className="mt-6 md:mt-8 pt-6 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div className="mt-4 pt-4 border-t border-zinc-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start w-full sm:w-auto mr-auto">
               <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-0 sm:mb-1">Total Amount</span>
               <span className="text-lg md:text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>

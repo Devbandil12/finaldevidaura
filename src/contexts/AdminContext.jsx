@@ -13,9 +13,9 @@ export const AdminProvider = ({ children }) => {
   const [activityLogs, setActivityLogs] = useState([]); // ✅ Added State
   const [loading, setLoading] = useState(true);
   const [reportOrders, setReportOrders] = useState([]);
-  
+
   const { userdetails, isUserLoading } = useContext(UserContext);
-  
+
   // URL Helpers
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -116,15 +116,41 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  const updateBulkOrderStatus = async (orderIds, status) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/orders/bulk-status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            orderIds, 
+            status, 
+            actorId: userdetails?.id 
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to update orders");
+      
+      const data = await res.json();
+      window.toast.success(data.message || "Bulk update successful");
+      await getAllOrders(); // Refresh list
+      return true;
+    } catch (err) {
+      console.error("❌ updateBulkOrderStatus failed:", err);
+      window.toast.error("Failed to update orders");
+      return false;
+    }
+  };
+
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
-        method: "POST",
+      // 🟢 CHANGE 1: Point to the Admin Route (routes/orders.js)
+      // 🟢 CHANGE 2: Use PUT instead of POST (to match router.put)
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId,
-          amount,
-          actorId: userdetails?.id
+          amount, // Optional: In case you want to refund a partial amount
+          actorId: userdetails?.id // Admin ID for logging
         }),
       });
 
@@ -134,7 +160,9 @@ export const AdminProvider = ({ children }) => {
       }
 
       const data = await res.json();
-      window.toast.success(data.message || `Order #${orderId} cancelled`);
+      window.toast.success(data.message || `Order #${orderId} cancelled by Admin`);
+
+      // Refresh list to show updated status
       await getAllOrders();
 
     } catch (err) {
@@ -240,12 +268,12 @@ export const AdminProvider = ({ children }) => {
       setLoading(false);
     }
   }, [
-    isUserLoading, 
-    userdetails, 
-    getAllUsers, 
-    getAllOrders, 
-    getAbandonedCarts, 
-    getWishlistStats, 
+    isUserLoading,
+    userdetails,
+    getAllUsers,
+    getAllOrders,
+    getAbandonedCarts,
+    getWishlistStats,
     getActivityLogs
   ]);
 
@@ -259,18 +287,19 @@ export const AdminProvider = ({ children }) => {
         abandonedCarts,
         wishlistStats,
         activityLogs, // ✅ Exposed to consumers
-        
+
         getAllUsers,
         updateUser,
         deleteUser,
         getAllOrders,
         getSingleOrderDetails,
         updateOrderStatus,
+        updateBulkOrderStatus,
         cancelOrder,
         createCoupon,
         getReportData,
         getActivityLogs,
-        
+
         exportUsers,
         exportOrders,
       }}

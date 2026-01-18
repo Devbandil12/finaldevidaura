@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Download, Search, Package, Truck, CheckCircle,
   ChevronDown, ChevronUp, User, MapPin, CreditCard, Phone, Mail,
-  Box, Loader2, Check, Calendar, AlertCircle
+  Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X
 } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import { useAdmin } from '../contexts/AdminContext';
 
 // --- CUSTOM STATUS DROPDOWN ---
 const StatusDropdown = ({ currentStatus, onUpdate }) => {
@@ -69,15 +71,40 @@ const OrdersTab = ({
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [orderDetailsData, setOrderDetailsData] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  
+  // State for bulk selection
+  const [selectedOrders, setSelectedOrders] = useState(new Set());
+  const { updateBulkOrderStatus } = useAdmin(); 
+
+  // --- Helper: Check if order is selectable ---
+  const isOrderSelectable = (order) => {
+    const s = (order.status || "").toLowerCase();
+    return s !== "delivered" && s !== "order cancelled";
+  };
 
   // --- Helper: Status Timeline Steps ---
   const getProgressStep = (status) => {
-    // Treat 'pending_payment' as step 0 or 1 depending on your preference
     if (status === 'pending_payment') return 0;
-    
     const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
     const index = steps.indexOf(status);
     return index === -1 ? 0 : index + 1;
+  };
+
+  // --- Helper: Calculate Price Breakdown ---
+  const calculateBreakdown = (orderData) => {
+    if (!orderData) return null;
+    
+    const subtotal = (orderData.orderItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = (orderData.discountAmount || 0) + (orderData.offerDiscount || 0);
+    const wallet = orderData.walletAmountUsed || 0;
+    const total = orderData.totalAmount || 0;
+    
+    // Reverse calculate delivery to match Grand Total exactly
+    // Formula: Total = Sub - Disc - Wallet + Delivery
+    // So: Delivery = Total - Sub + Disc + Wallet
+    const delivery = Math.max(0, total - subtotal + discount + wallet);
+
+    return { subtotal, discount, wallet, delivery, total };
   };
 
   const toggleOrderDetails = async (orderId) => {
@@ -102,7 +129,6 @@ const OrdersTab = ({
   };
 
   const getStatusBadge = (status) => {
-    // Normalize status for styling check
     const normalizedStatus = (status || "").toLowerCase();
 
     const styles = {
@@ -111,12 +137,10 @@ const OrdersTab = ({
       "processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
       "order cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
       "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
-      // 🟢 Added explicit style for pending payment so you can see it
       "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
       "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
     };
 
-    // Fallback logic
     let styleClass = styles["order placed"];
     if (styles[normalizedStatus]) {
       styleClass = styles[normalizedStatus];
@@ -134,42 +158,56 @@ const OrdersTab = ({
   const filteredOrders = orders?.filter((o) => {
     // 1. All Filter
     if (orderStatusTab === "All") return true;
-    
     // 2. Cancelled Filter
     if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-    
-    // 3. Payment Pending Filter (ROBUST LOGIC)
+    // 3. Payment Pending Filter
     if (orderStatusTab === "Payment Pending") {
-      
       const status = (o.status || "").toLowerCase();
       const pMode = (o.paymentMode || "").toLowerCase();
       const pStatus = (o.paymentStatus || "").toLowerCase();
-
-      // Condition A: Order Status matches variants of 'pending_payment'
       const matchesStatus = status.includes("pending") && status.includes("payment"); 
-      // This catches "pending_payment", "payment_pending", "Payment Pending"
-
-      // Condition B: Payment Mode is Online (Not COD/Cash)
       const isOnline = !pMode.includes("cod") && !pMode.includes("cash");
-
-      // Condition C: Payment Status is NOT Paid (Pending, Failed, Initiated)
-      // We check what it is NOT, to be safer against slight variations like 'initiated'
       const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
-
-      // Debug log to help you (check browser console if list is still empty)
-      if (matchesStatus && isOnline && isNotPaid) {
-          // console.log("Found Pending Order:", o.id);
-      }
-
       return matchesStatus && isOnline && isNotPaid;
     }
-
     // 4. Standard Status Filter
     return o.status === orderStatusTab;
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
 
+  const selectableFilteredOrders = filteredOrders?.filter(isOrderSelectable) || [];
+
+  // Bulk Selection Logic
+  const toggleSelectOrder = (orderId) => {
+    const newSelected = new Set(selectedOrders);
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId);
+    } else {
+      newSelected.add(orderId);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    const allSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
+    if (allSelected) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(selectableFilteredOrders.map(o => o.id)));
+    }
+  };
+
+  const executeBulkUpdate = async (status) => {
+    if (!window.confirm(`Update ${selectedOrders.size} orders to "${status}"?`)) return;
+    const success = await updateBulkOrderStatus(Array.from(selectedOrders), status);
+    if (success) {
+      setSelectedOrders(new Set());
+    }
+  };
+
+  const isAllSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
+
   return (
-    <div className="space-y-6 p-4 sm:p-8 bg-[#F9FAFB] min-h-screen text-gray-900  w-full overflow-hidden">
+    <div className="space-y-6 p-4 sm:p-8 bg-[#F9FAFB] min-h-screen text-gray-900 w-full overflow-hidden relative pb-24">
 
       {/* --- Header --- */}
       <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-gray-100 gap-4">
@@ -194,7 +232,7 @@ const OrdersTab = ({
           {["All", "Payment Pending", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
             <button
               key={status}
-              onClick={() => setOrderStatusTab(status)}
+              onClick={() => { setOrderStatusTab(status); setSelectedOrders(new Set()); }}
               className={`px-4 py-2 rounded-full text-[11px] font-bold whitespace-nowrap transition-all duration-300 border 
               ${orderStatusTab === status
                   ? "bg-black text-white border-black shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
@@ -216,14 +254,32 @@ const OrdersTab = ({
         </div>
       </div>
 
+      {/* Selection Info Bar */}
+      {selectableFilteredOrders.length > 0 && (
+        <div className="flex justify-between items-center px-1">
+          <button 
+              onClick={toggleSelectAll}
+              className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors"
+          >
+              {isAllSelected ? (
+                  <CheckSquare size={18} className="text-indigo-600" />
+              ) : (
+                  <Square size={18} />
+              )}
+              {selectedOrders.size > 0 ? `${selectedOrders.size} Selected` : "Select All"}
+          </button>
+        </div>
+      )}
+
       {/* --- Orders List --- */}
       <div className="space-y-4">
         {filteredOrders?.length > 0 ? filteredOrders.map((order, idx) => {
 
-          // Prevent editing if cancelled/delivered (or if payment pending, usually you can't ship it yet)
           const isEditable = order.status !== "Order Cancelled" && order.status !== "Delivered";
           const isExpanded = expandedOrderId === order.id;
           const progressStep = getProgressStep(order.status);
+          const isSelected = selectedOrders.has(order.id);
+          const canSelect = isOrderSelectable(order);
 
           // Payment Status Logic
           const pMode = (order.paymentMode || "").toUpperCase();
@@ -238,14 +294,20 @@ const OrdersTab = ({
           }
           const isPaid = (finalPaymentStatus || "").toUpperCase() === "PAID" || (finalPaymentStatus || "").toLowerCase() === "refunded";
 
+          // Calculate Breakdown if expanded
+          const breakdown = orderDetailsData && isExpanded ? calculateBreakdown(orderDetailsData) : null;
+
           return (
             <div
               key={order.id}
               style={{ zIndex: 1000 - idx, position: 'relative' }}
-              className={`bg-white rounded-2xl transition-all duration-300 group overflow-hidden
-              ${isExpanded
-                  ? 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] ring-0 border border-gray-100'
-                  : 'border border-gray-100/50 hover:border-gray-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.04)]'}`}
+              className={`bg-white rounded-2xl transition-all duration-300 group overflow-hidden border
+              ${isSelected 
+                  ? 'border-indigo-500 shadow-md bg-indigo-50/10' 
+                  : isExpanded
+                    ? 'shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] ring-0 border-gray-100'
+                    : 'border-gray-100/50 hover:border-gray-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.04)]'
+              }`}
             >
 
               {/* Main Summary Row */}
@@ -254,6 +316,18 @@ const OrdersTab = ({
                 onClick={() => toggleOrderDetails(order.id)}
               >
                 <div className="flex items-center gap-5">
+                  {/* Selection Checkbox */}
+                  {canSelect ? (
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }} 
+                      className="cursor-pointer text-gray-300 hover:text-indigo-600 transition-colors"
+                    >
+                        {isSelected ? <CheckSquare size={24} className="text-indigo-600" /> : <Square size={24} />}
+                    </div>
+                  ) : (
+                    <div className="w-6" /> 
+                  )}
+
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors duration-300
                     ${isExpanded ? 'bg-black text-white shadow-lg' : 'bg-gray-50 text-gray-400'}`}>
                     <Package size={20} strokeWidth={1.5} />
@@ -386,9 +460,38 @@ const OrdersTab = ({
                                 </div>
                               ))}
                             </div>
-                            <div className="p-5 bg-gray-50/50 flex justify-between items-center">
+
+                            {/* PRICE BREAKDOWN SECTION */}
+                            <div className="p-5 bg-gray-50/30 space-y-2 border-t border-gray-50">
+                              <div className="flex justify-between items-center text-xs text-gray-500">
+                                <span>Subtotal</span>
+                                <span>₹{breakdown.subtotal.toLocaleString()}</span>
+                              </div>
+                              
+                              {breakdown.discount > 0 && (
+                                <div className="flex justify-between items-center text-xs text-emerald-600">
+                                  <span>Discount {orderDetailsData.couponCode && `(${orderDetailsData.couponCode})`}</span>
+                                  <span>-₹{breakdown.discount.toLocaleString()}</span>
+                                </div>
+                              )}
+
+                              {breakdown.wallet > 0 && (
+                                <div className="flex justify-between items-center text-xs text-indigo-600">
+                                  <span>Wallet Used</span>
+                                  <span>-₹{breakdown.wallet.toLocaleString()}</span>
+                                </div>
+                              )}
+
+                              <div className="flex justify-between items-center text-xs text-gray-500">
+                                <span>Delivery</span>
+                                <span>{breakdown.delivery === 0 ? "Free" : `₹${breakdown.delivery}`}</span>
+                              </div>
+                            </div>
+
+                            {/* Grand Total */}
+                            <div className="p-5 bg-gray-100/50 flex justify-between items-center border-t border-gray-100">
                               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Grand Total</span>
-                              <span className="text-xl font-extrabold text-gray-900">₹{orderDetailsData.totalAmount.toLocaleString()}</span>
+                              <span className="text-xl font-extrabold text-gray-900">₹{breakdown.total.toLocaleString()}</span>
                             </div>
                           </div>
                         </div>
@@ -478,6 +581,41 @@ const OrdersTab = ({
           </div>
         )}
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      <AnimatePresence>
+        {selectedOrders.size > 0 && (
+            <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 100, opacity: 0 }}
+                className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 shadow-2xl rounded-full px-6 py-3 flex items-center gap-4 z-[99999]"
+            >
+                <span className="font-bold text-gray-800 text-sm">{selectedOrders.size} Orders Selected</span>
+                <div className="h-6 w-px bg-gray-200"></div>
+                
+                <div className="flex gap-2">
+                    {["Processing", "Shipped", "Delivered"].map(status => (
+                        <button
+                            key={status}
+                            onClick={() => executeBulkUpdate(status)}
+                            className="px-4 py-2 rounded-full text-xs font-bold bg-gray-100 hover:bg-black hover:text-white transition-all"
+                        >
+                            Mark {status}
+                        </button>
+                    ))}
+                </div>
+
+                <button 
+                    onClick={() => setSelectedOrders(new Set())}
+                    className="ml-2 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500"
+                >
+                    <X size={16} />
+                </button>
+            </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import React, { useState, useContext, useMemo, useCallback, useEffect, memo } from "react";
+import React, { useState, useContext, useMemo, useCallback, useEffect, memo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -16,22 +17,53 @@ import { optimizeImage } from "../utils/imageOptimizer";
 // --- UI HELPERS ---
 
 const HeroButton = memo(({ children, className, variant = "primary", ...props }) => {
-    const baseStyle = "flex items-center justify-center px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed";
+    const buttonRef = useRef(null);
+    const { contextSafe } = useGSAP({ scope: buttonRef });
+
+    const baseStyle = "flex items-center justify-center px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs disabled:opacity-50 disabled:cursor-not-allowed";
     
     const variants = {
-        primary: "bg-[#C5A059] text-black hover:bg-[#1a1a1a] hover:text-white shadow-lg shadow-[#C5A059]/20",
-        outline: "border border-white/20 text-white hover:bg-white hover:text-black hover:border-white"
+        primary: "bg-[#C5A059] text-black shadow-lg shadow-[#C5A059]/20",
+        outline: "border border-white/20 text-white"
     };
 
+    // GSAP Interactions mimicking Framer Motion whileHover/whileTap
+    const handleMouseEnter = contextSafe(() => {
+        if (!props.disabled) {
+            gsap.to(buttonRef.current, { scale: 1.05, duration: 0.3, ease: "back.out(1.7)" });
+            if (variant === "primary") gsap.to(buttonRef.current, { backgroundColor: "#1a1a1a", color: "#fff" });
+            if (variant === "outline") gsap.to(buttonRef.current, { backgroundColor: "#fff", color: "#000", borderColor: "#fff" });
+        }
+    });
+
+    const handleMouseLeave = contextSafe(() => {
+        if (!props.disabled) {
+            gsap.to(buttonRef.current, { scale: 1, duration: 0.3, ease: "power2.out" });
+            if (variant === "primary") gsap.to(buttonRef.current, { backgroundColor: "#C5A059", color: "#000" });
+            if (variant === "outline") gsap.to(buttonRef.current, { backgroundColor: "transparent", color: "#fff", borderColor: "rgba(255,255,255,0.2)" });
+        }
+    });
+
+    const handleMouseDown = contextSafe(() => {
+        if (!props.disabled) gsap.to(buttonRef.current, { scale: 0.95, duration: 0.1 });
+    });
+
+    const handleMouseUp = contextSafe(() => {
+        if (!props.disabled) gsap.to(buttonRef.current, { scale: 1.05, duration: 0.1 });
+    });
+
     return (
-        <motion.button
-            whileHover={props.disabled ? {} : { scale: 1.02 }}
-            whileTap={props.disabled ? {} : { scale: 0.98 }}
+        <button
+            ref={buttonRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
             {...props}
             className={`${baseStyle} ${variants[variant]} ${className}`}
         >
             {children}
-        </motion.button>
+        </button>
     );
 });
 
@@ -42,55 +74,51 @@ const Loader = ({ text = "Loading..." }) => (
     </div>
 );
 
-// --- ANIMATION VARIANTS ---
-const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: { staggerChildren: 0.05 }
-    }
-};
-
-const cardVariants = {
-    hidden: { opacity: 0, y: 10 },
-    show: { 
-        opacity: 1, 
-        y: 0, 
-        transition: { duration: 0.4, ease: "easeOut" } 
-    }
-};
-
-// --- PERFUME CARD (OPTIMIZED & MEMOIZED) ---
+// --- PERFUME CARD (GSAP ANIMATED) ---
 const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, onSelect, priority = false }) => {
+    const cardRef = useRef(null);
     
     const rawUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
         ? product.imageurl[0]
         : "/placeholder.png";
 
-    // ⚡ OPTIMIZATION: Resize to 200px (Thumbnail size)
     const imageUrl = useMemo(() => optimizeImage(rawUrl, 200), [rawUrl]);
 
     const oprice = variant.oprice || product.oprice || 0;
     const discount = variant.discount || product.discount || 0;
     const discountedPrice = Math.floor(oprice * (1 - discount / 100));
-
     const isSelected = count > 0;
 
+    // Hover Animation
+    useGSAP(() => {
+        const card = cardRef.current;
+        if (!card || isDisabled) return;
+
+        const anim = gsap.to(card, { 
+            y: -5, 
+            boxShadow: "0 10px 30px -10px rgba(197, 160, 89, 0.3)",
+            paused: true, 
+            duration: 0.3,
+            ease: "power2.out" 
+        });
+
+        card.addEventListener("mouseenter", () => anim.play());
+        card.addEventListener("mouseleave", () => anim.reverse());
+
+        return () => {
+            card.removeEventListener("mouseenter", () => anim.play());
+            card.removeEventListener("mouseleave", () => anim.reverse());
+        };
+    }, { scope: cardRef, dependencies: [isDisabled] });
+
     return (
-        <motion.div
-            variants={cardVariants}
+        <div
+            ref={cardRef}
             onClick={!isDisabled ? onSelect : undefined}
-            className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer
-            ${isSelected 
-                ? "bg-white ring-1 ring-[#C5A059]/30" 
-                : "" 
-            }
-            ${isOutOfStock 
-                ? "opacity-40 grayscale cursor-not-allowed" 
-                : isDisabled 
-                    ? "opacity-60 cursor-not-allowed"
-                    : ""
-            }
+            // Add 'perfume-card-item' class for the staggered entrance animation in parent
+            className={`perfume-card-item group flex items-start gap-3 p-3 rounded-xl transition-colors duration-300 cursor-pointer will-change-transform
+            ${isSelected ? "bg-white ring-1 ring-[#C5A059]/30" : ""}
+            ${isOutOfStock ? "opacity-40 grayscale cursor-not-allowed" : isDisabled ? "opacity-60 cursor-not-allowed" : ""}
             `}
         >
             {/* LEFT: COMPACT IMAGE BOX */}
@@ -100,50 +128,38 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
                     alt={product.name}
                     loading={priority ? "eager" : "lazy"}
                     fetchPriority={priority ? "high" : "auto"}
-                    decoding="async"
-                    className={`w-full h-full object-cover transition-all duration-500 ease-in-out
-                    ${isOutOfStock 
-                        ? "grayscale" 
-                        : "grayscale-0 opacity-100" 
-                    }`}
+                    className={`w-full h-full object-cover transition-all duration-500 ease-in-out ${isOutOfStock ? "grayscale" : "grayscale-0 opacity-100"}`}
                 />
             </div>
 
             {/* RIGHT: TEXT CONTENT */}
             <div className="flex flex-col flex-1 min-w-0 h-28 py-0.5 justify-between">
                 <div>
-                    <h3 className=" text-lg text-[#1a1a1a]  leading-none mb-1.5 truncate capitalize">
+                    <h3 className="text-lg text-[#1a1a1a] leading-none mb-1.5 truncate capitalize font-medium">
                         {product.name}
                     </h3>
-
                     <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1">
                         <span>{variant.size}ML</span>
                         <span className="text-gray-300">•</span>
                         <span className={isSelected ? "text-[#C5A059]" : "text-gray-600"}>₹{discountedPrice}</span>
                     </div>
-
-                    <p className=" italic text-gray-400 text-[10px] leading-snug line-clamp-2">
+                    <p className="italic text-gray-400 text-[10px] leading-snug line-clamp-2 font-serif">
                         {product.description || "Premium fragrance"}
                     </p>
                 </div>
 
                 <div>
                     {isOutOfStock ? (
-                          <span className="text-[10px] font-bold tracking-widest text-red-400 uppercase">
-                              OUT OF STOCK
-                          </span>
+                          <span className="text-[10px] font-bold tracking-widest text-red-400 uppercase">OUT OF STOCK</span>
                     ) : (
-                        <span className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase transition-colors duration-300 group-hover:text-[#8a6d3b]">
+                        <span className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-[#C5A059] uppercase">
                             {count > 0 ? `ADD ANOTHER (${count})` : "ADD TO SET"}
-                            <FaArrowRight 
-                                size={10} 
-                                className="transition-transform duration-300 group-hover:translate-x-1"
-                            />
+                            <FaArrowRight size={10} className="transition-transform duration-300 group-hover:translate-x-1"/>
                         </span>
                     )}
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 });
 
@@ -151,25 +167,23 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
 // --- MAIN COMPONENT ---
 const CustomComboBuilder = () => {
     const navigate = useNavigate();
+    const containerRef = useRef(null); // Ref for GSAP Scope
+
     const { products: contextProducts, loading: contextLoading } = useContext(ProductContext);
     const { addCustomBundle, startBuyNow } = useContext(CartContext);
     const { userdetails } = useContext(UserContext);
 
-    // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+    // Data State
     const [products, setProducts] = useState(() => {
-        try {
-            const cached = localStorage.getItem("all_products_cache");
-            return cached ? JSON.parse(cached) : [];
-        } catch (e) {
-            return [];
-        }
+        try { return JSON.parse(localStorage.getItem("all_products_cache")) || []; } 
+        catch (e) { return []; }
     });
 
     const [selectedPerfumes, setSelectedPerfumes] = useState([]);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
-    // ⚡ 2. SYNC WITH CONTEXT
+    // Sync Context
     useEffect(() => {
         if (contextProducts && contextProducts.length > 0) {
             setProducts(prev => {
@@ -184,7 +198,7 @@ const CustomComboBuilder = () => {
 
     const isProcessing = isAddingToCart || isBuyingNow;
 
-    // --- Data Logic ---
+    // Derived Data
     const { templateVariant, comboOriginalPrice, comboFinalPrice } = useMemo(() => {
         const templateProduct = products.find((p) => p.category === "Template");
         if (templateProduct && templateProduct.variants.length > 0) {
@@ -194,10 +208,9 @@ const CustomComboBuilder = () => {
             let finalPrice = tv.price || 0;
             if (!finalPrice && discount) finalPrice = Math.floor(oprice * (1 - discount / 100));
             if (!finalPrice) finalPrice = oprice;
-            const savings = Math.max(0, oprice - finalPrice);
-            return { templateVariant: tv, comboOriginalPrice: oprice, comboFinalPrice: finalPrice, comboDiscount: discount, comboSavings: savings };
+            return { templateVariant: tv, comboOriginalPrice: oprice, comboFinalPrice: finalPrice };
         }
-        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0, comboDiscount: 0, comboSavings: 0 };
+        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0 };
     }, [products]);
 
     const availablePerfumes = useMemo(() => {
@@ -210,19 +223,69 @@ const CustomComboBuilder = () => {
             );
     }, [products]);
 
-    // ⚡ 3. PRELOAD OPTIMIZED IMAGES
+    // Preload Images
     useEffect(() => {
         if (availablePerfumes.length > 0) {
-            // Preload first 6 images using the OPTIMIZED url
             availablePerfumes.slice(0, 6).forEach(({ product }) => {
-                const src = product.imageurl?.[0];
-                if (src) {
+                if (product.imageurl?.[0]) {
                     const img = new Image();
-                    img.src = optimizeImage(src, 200); // 👈 Preload 200px version
+                    img.src = optimizeImage(product.imageurl[0], 200);
                 }
             });
         }
     }, [availablePerfumes]);
+
+    // --- GSAP ANIMATIONS ---
+    
+    // 1. Initial Page Load (Hero & Grid Stagger)
+    useGSAP(() => {
+        if(availablePerfumes.length === 0) return;
+
+        // Hero Fade In
+        gsap.fromTo(".hero-element", 
+            { y: 50, opacity: 0 }, 
+            { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: "power3.out" }
+        );
+
+        // Cards Stagger (Batch animate using class)
+        gsap.fromTo(".perfume-card-item",
+            { y: 30, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, delay: 0.3, ease: "back.out(1.2)" }
+        );
+
+        // Right Panel Entrance
+        gsap.fromTo(".summary-panel",
+            { x: 50, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.8, delay: 0.2, ease: "power3.out" }
+        );
+
+    }, { scope: containerRef, dependencies: [availablePerfumes.length > 0] });
+
+
+    // 2. Progress Bar Animation
+    useGSAP(() => {
+        const percent = (selectedPerfumes.length / 4) * 100;
+        gsap.to(".progress-bar-fill", { 
+            width: `${percent}%`, 
+            duration: 0.6, 
+            ease: "elastic.out(1, 0.7)" 
+        });
+    }, { scope: containerRef, dependencies: [selectedPerfumes.length] });
+
+
+    // 3. New Slot Item Entrance (Micro-interaction)
+    useGSAP(() => {
+        // Animate the most recently added slot if it exists
+        const filledSlots = gsap.utils.toArray(".filled-slot");
+        if(filledSlots.length > 0) {
+            const lastSlot = filledSlots[filledSlots.length - 1];
+            gsap.fromTo(lastSlot,
+                { scale: 0.8, opacity: 0, x: -10 },
+                { scale: 1, opacity: 1, x: 0, duration: 0.4, ease: "back.out(1.7)" }
+            );
+        }
+    }, { scope: containerRef, dependencies: [selectedPerfumes] });
+
 
     const isFull = selectedPerfumes.length === 4;
 
@@ -232,6 +295,8 @@ const CustomComboBuilder = () => {
 
         setSelectedPerfumes((prev) => {
             if (prev.length >= 4) {
+                // Shake animation for error
+                gsap.to(".summary-panel", { x: 5, duration: 0.1, yoyo: true, repeat: 3 });
                 window.toast?.error("Box full.") || alert("Box full");
                 return prev;
             }
@@ -246,6 +311,7 @@ const CustomComboBuilder = () => {
 
     const validateAndProceed = () => {
         if (selectedPerfumes.length !== 4) {
+            gsap.to(".summary-panel", { x: 5, duration: 0.1, yoyo: true, repeat: 3 });
             window.toast?.error("Please select 4 perfumes.") || alert("Please select 4 perfumes.");
             return false;
         }
@@ -263,7 +329,6 @@ const CustomComboBuilder = () => {
     const handleBuyNow = async () => {
         if (!validateAndProceed()) return;
         if (!userdetails?.id) {
-            window.toast?.error("Please log in.") || alert("Please log in.");
             navigate("/login");
             return;
         }
@@ -274,20 +339,15 @@ const CustomComboBuilder = () => {
                 if (typeof newItem === "object") startBuyNow(newItem);
                 navigate("/cart", { state: { isBuyNow: true } });
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsBuyingNow(false);
-        }
+        } catch (err) { console.error(err); } 
+        finally { setIsBuyingNow(false); }
     };
 
-    // ⚡ 4. LOADER STRATEGY
+    // --- RENDER ---
     if (products.length === 0 && contextLoading) return <Loader text="Curating Library..." />;
-
+    
     if (products.length === 0 && !contextLoading) return (
-        <div className="min-h-screen flex items-center justify-center text-gray-400">
-            No products available.
-        </div>
+        <div className="min-h-screen flex items-center justify-center text-gray-400">No products available.</div>
     );
 
     if (!templateVariant) return (
@@ -298,39 +358,23 @@ const CustomComboBuilder = () => {
     );
 
     return (
- <>
-            <style>{`
-                .smooth-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                    -webkit-overflow-scrolling: touch; 
-                    scroll-behavior: smooth;
-                }
-                .smooth-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
+        <div ref={containerRef}>
+            
 
             <section className="min-h-screen py-22 px-4 md:px-12 ">
 
                 {/* HEADER */}
                 <div className="max-w-4xl mx-auto mb-16 text-center">
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm">
-                            <BsStars size={12} className="text-[#C5A059]" />
-                            Bespoke Signature Set
-                        </span>
-                        <h1 className="text-4xl md:text-6xl   mb-6 text-[#1a1a1a]">
-                            Build Your Collection
-                        </h1>
-                        <p className="text-gray-500 text-lg font-light max-w-2xl mx-auto">
-                            Select 4 signature scents to unlock the exclusive bundle price.
-                        </p>
-                    </motion.div>
+                    <div className="hero-element inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm">
+                        <BsStars size={12} className="text-[#C5A059]" />
+                        Bespoke Signature Set
+                    </div>
+                    <h1 className="hero-element text-4xl md:text-6xl mb-6 text-[#1a1a1a]">
+                        Build Your Collection
+                    </h1>
+                    <p className="hero-element text-gray-500 text-lg font-light max-w-2xl mx-auto">
+                        Select 4 signature scents to unlock the exclusive bundle price.
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start max-w-[1600px] mx-auto">
@@ -349,12 +393,7 @@ const CustomComboBuilder = () => {
 
                         {/* Scrollable Container */}
                         <div className="max-h-[80vh] overflow-y-auto smooth-scrollbar pb-24 pr-2">
-                            <motion.div
-                                variants={containerVariants}
-                                initial="hidden"
-                                animate="show"
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                            >
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {availablePerfumes.map(({ product, variant }, index) => {
                                     const count = selectedPerfumes.filter(v => v.id === variant.id).length;
                                     const isOutOfStock = (variant.stock || 0) <= 0;
@@ -368,96 +407,77 @@ const CustomComboBuilder = () => {
                                             count={count}
                                             isOutOfStock={isOutOfStock}
                                             isDisabled={isProcessing || isOutOfStock || (isFull && count === 0)}
-                                            // ⚡ Passing arrow function is okay if child is cheap, but better to memoize handler if possible. 
-                                            // For simplicity and readability here, we keep it inline as PerfumeCard is memoized and prop change will be minimal.
                                             onSelect={() => handleSelectPerfume(variant)}
                                             priority={isPriority} 
                                         />
                                     );
                                 })}
-                            </motion.div>
+                            </div>
                         </div>
 
-                        {/* Slide Indicator: Hidden on Desktop */}
+                        {/* Slide Indicator */}
                         <div className="lg:hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce opacity-50 pointer-events-none">
                             <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Slide</span>
                             <FaArrowDown className="text-gray-400" size={12} />
                         </div>
                     </div>
 
-                    {/* RIGHT: FLOATING SUMMARY BOX (Light Theme) */}
-                    <div className="lg:col-span-4 lg:sticky lg:top-32 self-start">
+                    {/* RIGHT: FLOATING SUMMARY BOX */}
+                    <div className="lg:col-span-4 lg:sticky lg:top-32 self-start summary-panel">
                         <div className="bg-white text-[#1a1a1a] rounded-[2rem] shadow-xl shadow-black/5 p-8 relative overflow-hidden border border-gray-100">
 
                             {/* Header */}
                             <div className="relative z-10 mb-8">
                                 <div className="flex justify-between items-center mb-1">
-                                    <h3 className="text-2xl  text-[#1a1a1a]">Your Personal Set</h3>
+                                    <h3 className="text-2xl text-[#1a1a1a]">Your Personal Set</h3>
                                     <FaShoppingBag className="text-[#C5A059]" />
                                 </div>
-                                <p className="text-[#C5A059] text-xs  italic mb-3">
-                                    The Devid Aura Signature Edit
-                                </p>
+                                <p className="text-[#C5A059] text-xs italic mb-3">The Devid Aura Signature Edit</p>
+                                
+                                {/* Progress Bar */}
                                 <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                                    <motion.div
-                                        className="h-full bg-[#C5A059]"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(selectedPerfumes.length / 4) * 100}%` }}
-                                        transition={{ type: "spring", stiffness: 50 }}
-                                    />
+                                    <div className="progress-bar-fill h-full bg-[#C5A059] w-0" />
                                 </div>
                             </div>
 
                             {/* Visual Slots */}
                             <div className="space-y-3 relative z-10">
-                                <AnimatePresence mode="popLayout">
-                                    {[...Array(4)].map((_, i) => {
-                                        const variant = selectedPerfumes[i];
-                                        const productInfo = variant ? availablePerfumes.find(p => p.variant.id === variant.id) : null;
+                                {[...Array(4)].map((_, i) => {
+                                    const variant = selectedPerfumes[i];
+                                    const productInfo = variant ? availablePerfumes.find(p => p.variant.id === variant.id) : null;
 
-                                        return (
-                                            <div key={i}>
-                                                {variant && productInfo ? (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        exit={{ opacity: 0, scale: 0.9 }}
-                                                        className="flex items-center gap-4 bg-white border border-gray-100 p-2 rounded-2xl group shadow-sm"
+                                    return (
+                                        <div key={i}>
+                                            {variant && productInfo ? (
+                                                <div className="filled-slot flex items-center gap-4 bg-white border border-gray-100 p-2 rounded-2xl group shadow-sm">
+                                                    <img
+                                                        src={optimizeImage(productInfo.product.imageurl?.[0], 100) || "/placeholder.png"}
+                                                        className="w-12 h-12 rounded-xl object-cover opacity-90"
+                                                        alt=""
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <h5 className="text-sm text-[#1a1a1a] truncate">{productInfo.product.name}</h5>
+                                                        <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => !isProcessing && handleRemoveFromSlot(i)}
+                                                        disabled={isProcessing}
+                                                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors"
                                                     >
-                                                        <img
-                                                            // ⚡ Optimize thumbnail in slot too
-                                                            src={optimizeImage(productInfo.product.imageurl?.[0], 100) || "/placeholder.png"}
-                                                            className="w-12 h-12 rounded-xl object-cover opacity-90"
-                                                            alt=""
-                                                        />
-                                                        <div className="flex-1 min-w-0">
-                                                            <h5 className="text-sm  text-[#1a1a1a] truncate">{productInfo.product.name}</h5>
-                                                            <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => !isProcessing && handleRemoveFromSlot(i)}
-                                                            disabled={isProcessing}
-                                                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors"
-                                                        >
-                                                            <span className="text-xl leading-none">-</span>
-                                                        </button>
-                                                    </motion.div>
-                                                ) : (
-                                                    <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        className="flex items-center gap-4 p-2 rounded-2xl border border-dashed border-gray-200"
-                                                    >
-                                                        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-bold ">
-                                                            {i + 1}
-                                                        </div>
-                                                        <span className="text-xs text-gray-500 uppercase tracking-widest">Empty Slot</span>
-                                                    </motion.div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </AnimatePresence>
+                                                        <span className="text-xl leading-none">-</span>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-4 p-2 rounded-2xl border border-dashed border-gray-200">
+                                                    <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-bold ">
+                                                        {i + 1}
+                                                    </div>
+                                                    <span className="text-xs text-gray-500 uppercase tracking-widest">Empty Slot</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {/* Pricing & Actions */}
@@ -467,7 +487,7 @@ const CustomComboBuilder = () => {
                                         <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
                                             <div className="flex justify-between items-center mb-1">
                                                 <span className="text-sm text-[#1a1a1a] ">Final Price</span>
-                                                <span className="text-3xl  text-[#C5A059]">₹{comboFinalPrice}</span>
+                                                <span className="text-3xl text-[#C5A059]">₹{comboFinalPrice}</span>
                                             </div>
                                             <div className="flex justify-between items-center opacity-80">
                                                 <span className="text-xs text-gray-500 uppercase tracking-widest">Original Value</span>
@@ -477,10 +497,10 @@ const CustomComboBuilder = () => {
                                     </div>
                                 ) : (
                                     <div className="mb-8 flex items-center justify-center gap-2 text-gray-500 bg-gray-100 py-4 rounded-xl border border-gray-100 shadow-inner">
-                                            <FaLock size={12} />
-                                            <span className="text-[10px] uppercase tracking-widest font-bold">
-                                                Add {4 - selectedPerfumes.length} more to unlock
-                                            </span>
+                                        <FaLock size={12} />
+                                        <span className="text-[10px] uppercase tracking-widest font-bold">
+                                            Add {4 - selectedPerfumes.length} more to unlock
+                                        </span>
                                     </div>
                                 )}
 
@@ -489,7 +509,7 @@ const CustomComboBuilder = () => {
                                         variant="primary"
                                         onClick={handleBuyNow}
                                         disabled={!isFull || isProcessing}
-                                        className="w-full shadow-xl shadow-[#C5A059]/20"
+                                        className="w-full"
                                     >
                                         {isBuyingNow ? "Processing..." : "Buy Bundle Now"}
                                     </HeroButton>
@@ -498,7 +518,7 @@ const CustomComboBuilder = () => {
                                         variant="outline"
                                         onClick={handleAddToCart}
                                         disabled={!isFull || isProcessing}
-                                        className="w-full !border-[#1a1a1a]/30 !text-[#1a1a1a] hover:!bg-[#1a1a1a] hover:!text-white hover:!border-[#1a1a1a]"
+                                        className="w-full !border-[#1a1a1a]/30 !text-[#1a1a1a] hover:!border-[#1a1a1a]"
                                     >
                                         {isAddingToCart ? "Adding..." : "Add to Cart"}
                                     </HeroButton>
@@ -508,7 +528,7 @@ const CustomComboBuilder = () => {
                     </div>
                 </div>
             </section>
-       </>
+        </div>
     );
 };
 

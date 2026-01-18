@@ -8,7 +8,7 @@ import ReviewComponent from "./ReviewComponent";
 import {
   Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight,
   Sparkles, Minus, Plus, ShoppingBag, Star,
-  MapPin, Clock, Sprout // New minimal icons
+  MapPin, Clock, ShieldCheck, Truck, AlertCircle, Info // 🟢 Icons
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -61,12 +61,10 @@ const textFadeIn = {
   }
 };
 
-// ⚡ NEW: OLFACTORY PYRAMID (Accordion Style)
-// Replaces the old "Note Cards" with a high-end interactive list
+// ⚡ OLFACTORY PYRAMID
 const OlfactoryPyramid = ({ product }) => {
-  const [activeNote, setActiveNote] = useState('heart'); // Default open 'Heart'
+  const [activeNote, setActiveNote] = useState('heart');
 
-  // Dynamic Content Generation
   const notesData = [
     {
       id: 'top',
@@ -95,12 +93,11 @@ const OlfactoryPyramid = ({ product }) => {
   ];
 
   return (
-    <div className="w-full mb-12 border-t border-gray-100">
+    <div className="w-full mb-8 border-t border-gray-100">
       {notesData.map((note) => {
         const isActive = activeNote === note.id;
         return (
           <div key={note.id} className="border-b border-gray-100 overflow-hidden">
-            {/* Header / Trigger */}
             <button
               onClick={() => setActiveNote(isActive ? null : note.id)}
               className="w-full py-5 flex items-center justify-between group text-left transition-colors hover:bg-gray-50/50"
@@ -119,7 +116,6 @@ const OlfactoryPyramid = ({ product }) => {
               </div>
             </button>
 
-            {/* Expandable Content */}
             <AnimatePresence>
               {isActive && (
                 <motion.div
@@ -129,13 +125,10 @@ const OlfactoryPyramid = ({ product }) => {
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className="pb-6 pt-2 pr-4 space-y-4">
-                    {/* The Scent */}
                     <div>
                       <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Notes</span>
                       <p className="text-gray-900 font-medium">{note.scent}</p>
                     </div>
-
-                    {/* The Story & Origin */}
                     <div className="flex gap-6 mt-4">
                       <div className="flex-1">
                         <span className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold flex items-center gap-1 mb-1">
@@ -150,13 +143,6 @@ const OlfactoryPyramid = ({ product }) => {
                         <p className="text-sm text-gray-600">{note.duration}</p>
                       </div>
                     </div>
-
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100/50 mt-2">
-                      <p className="text-xs leading-relaxed text-gray-500 font-light">
-                        <span className="text-gray-900 font-medium">Why we chose this: </span>
-                        {note.story}
-                      </p>
-                    </div>
                   </div>
                 </motion.div>
               )}
@@ -166,6 +152,44 @@ const OlfactoryPyramid = ({ product }) => {
       })}
     </div>
   );
+};
+
+const ShippingRefundSection = () => {
+    return (
+        <div className="max-w-3xl mx-auto px-4 py-12 border-t border-gray-100">
+            <div className="flex flex-col md:flex-row gap-8 justify-between">
+                {/* Shipping Col */}
+                <div className="flex gap-4 flex-1">
+                    <div className="shrink-0 mt-1">
+                        <Truck className="w-6 h-6 text-gray-900" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-gray-900 mb-2">Shipping & Delivery</h4>
+                        <p className="text-sm text-gray-500 leading-relaxed">
+                            Dispatched in 24-48 hrs. Delivery takes 3-5 days.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Divider for Desktop */}
+                <div className="hidden md:block w-px bg-gray-100" />
+
+                {/* Refund Col */}
+                <div className="flex gap-4 flex-1">
+                    <div className="shrink-0 mt-1">
+                        <ShieldCheck className="w-6 h-6 text-gray-900" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-gray-900 mb-2">Strict Refund Policy</h4>
+                        <p className="text-sm text-gray-500 leading-relaxed mb-2">
+                            <span className="font-bold text-gray-900">No Return, Only Refund.</span> Refund is applicable only when the order status is <strong>'Order Placed'</strong>. Once status changes, no refund is allowed. The order status will not change for <strong>6 hours</strong> after placing the order.
+                        </p>
+                      
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 
@@ -178,20 +202,15 @@ const ProductDetail = () => {
   const { products, loading: productsLoading } = useContext(ProductContext);
   const { cart, wishlist, addToCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
-  // ⚡ UNBOXING STATE
   const [isUnboxing, setIsUnboxing] = useState(true);
 
-  // Trigger the unboxing sequence on load
   useEffect(() => {
-    // Small delay to ensure image is ready, then trigger reveal
     const timer = setTimeout(() => {
       setIsUnboxing(false);
-    }, 1200); // 1.2s delay before curtain opens
+    }, 1200);
     return () => clearTimeout(timer);
   }, [productId]);
 
-
-  // ⚡ INSTANT STATE
   const [product, setProduct] = useState(() => {
     try {
       const cached = localStorage.getItem("all_products_cache");
@@ -212,7 +231,6 @@ const ProductDetail = () => {
   const [currentImg, setCurrentImg] = useState(0);
   const editReviewId = location.state?.editReviewId || null;
 
-  // ⚡ SYNC WITH CONTEXT
   useEffect(() => {
     if (products.length > 0) {
       const foundProduct = products.find((p) => p.id === productId);
@@ -233,7 +251,6 @@ const ProductDetail = () => {
     }
   }, [productId, products]);
 
-  // ⚡ IMAGE PRELOAD
   useEffect(() => {
     if (product?.imageurl?.[0]) {
       const img = new Image();
@@ -245,8 +262,6 @@ const ProductDetail = () => {
     if (product && !editReviewId) window.scrollTo({ top: 0, behavior: "smooth" });
   }, [productId, editReviewId]);
 
-
-  // --- LOADING / NOT FOUND ---
   if (!product && productsLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFDFD]">
@@ -264,7 +279,6 @@ const ProductDetail = () => {
     return null;
   }
 
-  // --- RENDER CONTENT ---
   const allImages = product.imageurl || [];
   const primaryImageSrc = allImages.length > 0 ? optimizeImage(allImages[0], 'hero') : "/placeholder.svg";
 
@@ -300,8 +314,6 @@ const ProductDetail = () => {
   };
 
   const stockStatus = selectedVariant.stock === 0 ? "Sold Out" : selectedVariant.stock <= 10 ? `Only ${selectedVariant.stock} left` : "In Stock";
-
-  // Data for badges
   const avgRating = product.avgRating || 0;
   const soldCount = product.soldCount || 0;
 
@@ -309,29 +321,25 @@ const ProductDetail = () => {
     <>
       <title>{`${product.name} | Devid Aura`}</title>
 
-      {/* ⚡ UNBOXING CURTAIN OVERLAY */}
+      {/* UNBOXING OVERLAY */}
       <AnimatePresence>
         {isUnboxing && (
           <motion.div
             key="unboxing-overlay"
             className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
           >
-            {/* Left Curtain */}
             <motion.div
               className="absolute inset-y-0 left-0 w-1/2 bg-[#F9F8F6] border-r border-[#D4AF37]/20"
               initial={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             />
-            {/* Right Curtain */}
             <motion.div
               className="absolute inset-y-0 right-0 w-1/2 bg-[#F9F8F6] border-l border-[#D4AF37]/20"
               initial={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             />
-
-            {/* Center Brand Text (Fades out) */}
             <motion.div
               className="absolute z-10 flex flex-col items-center"
               initial={{ opacity: 0 }}
@@ -342,8 +350,6 @@ const ProductDetail = () => {
               <span className="font-serif italic text-2xl text-[#D4AF37] mb-2">Devid Aura</span>
               <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Presents</span>
             </motion.div>
-
-            {/* THE HERO BOTTLE (Center Stage) */}
             <motion.div className="relative z-20 w-64 h-64 md:w-96 md:h-96">
               <motion.img
                 layoutId={`product-image-${product.id}`}
@@ -358,17 +364,16 @@ const ProductDetail = () => {
         )}
       </AnimatePresence>
 
-
       <div className="min-h-screen bg-[#FDFDFD] text-gray-800 overflow-x-hidden">
         <main className="max-w-7xl mx-auto pt-[80px] pb-20 px-4 md:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-25">
+          
+          {/* --- MAIN PRODUCT GRID --- */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-25 mb-20">
 
-            {/* --- Left Column: Image Gallery --- */}
+            {/* --- Left Column: Images --- */}
             <div className="lg:col-span-6">
               <div className="sticky top-24">
                 <div className="relative aspect-[3/3] md:aspect-[1/1] lg:aspect-[5/5] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
-
-                  {/* MAIN GALLERY IMAGE */}
                   <AnimatePresence mode="wait">
                     {(!isUnboxing || currentImg !== 0) && (
                       <motion.img
@@ -379,13 +384,11 @@ const ProductDetail = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }} // Smooth settle
+                        transition={{ duration: 0.8, ease: "easeOut" }}
                         className="absolute inset-0 w-full h-full object-cover object-center"
                       />
                     )}
                   </AnimatePresence>
-
-                  {/* Navigation Arrows */}
                   {allImages.length > 1 && (
                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="bg-white/80 backdrop-blur-sm">
@@ -396,8 +399,6 @@ const ProductDetail = () => {
                       </Button>
                     </div>
                   )}
-
-                  {/* Dots */}
                   {allImages.length > 1 && (
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                       {allImages.map((_, idx) => (
@@ -406,8 +407,6 @@ const ProductDetail = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Thumbnails */}
                 {allImages.length > 1 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -429,12 +428,12 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* --- Right Column: Product Details --- */}
+            {/* --- Right Column: Details --- */}
             <div className="lg:col-span-5">
               <motion.div
                 variants={contentContainerVariants}
                 initial="hidden"
-                animate={isUnboxing ? "hidden" : "visible"} // Wait for unboxing
+                animate={isUnboxing ? "hidden" : "visible"}
                 className="flex flex-col h-full pt-2 px-4 lg:px-0"
               >
                 {/* Header */}
@@ -459,7 +458,6 @@ const ProductDetail = () => {
                     </div>
                   </div>
 
-                  {/* STATS ROW */}
                   <div className="flex items-center gap-4 mt-4">
                     {avgRating >= 1 && (
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#C5A059] uppercase tracking-wider">
@@ -467,11 +465,7 @@ const ProductDetail = () => {
                         <span>{avgRating}</span>
                       </div>
                     )}
-
-                    {avgRating >= 1 && soldCount >= 1 && (
-                      <div className="w-[1px] h-3 bg-gray-300"></div>
-                    )}
-
+                    {avgRating >= 1 && soldCount >= 1 && <div className="w-[1px] h-3 bg-gray-300"></div>}
                     {soldCount >= 1 && (
                       <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
                         <ShoppingBag size={13} />
@@ -479,8 +473,6 @@ const ProductDetail = () => {
                       </div>
                     )}
                   </div>
-
-
                 </motion.div>
 
                 <motion.div variants={textFadeIn} className="w-full h-px bg-gray-100 mb-2" />
@@ -512,7 +504,6 @@ const ProductDetail = () => {
                       </div>
                     </div>
                   </div>
-
                   <div>
                     <div className="inline-flex items-center bg-white border border-gray-100 rounded-full p-1 shadow-sm">
                       <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="icon" className="h-9 w-9 rounded-full">
@@ -532,13 +523,13 @@ const ProductDetail = () => {
                   <p className="text-gray-500 leading-7 font-light text-sm md:text-base">{product.description}</p>
                 </motion.div>
 
-                {/* ⚡ UPDATED: Integrated Olfactory Pyramid (Replaces Old Cards) */}
+                {/* OLFACTORY PYRAMID (Notes) */}
                 <motion.div variants={textFadeIn}>
                   <OlfactoryPyramid product={product} />
                 </motion.div>
 
                 {/* Actions */}
-                <motion.div variants={textFadeIn} className="mt-auto flex flex-col sm:flex-row gap-4">
+                <motion.div variants={textFadeIn} className="mt-auto flex flex-col sm:flex-row gap-4 pt-4">
                   <Button onClick={handleAddToCart} disabled={!isInCart && selectedVariant.stock === 0} variant="secondary" className="flex-1">
                     {isInCart ? <><ShoppingBag className="mr-2 h-4 w-4" /> VIEW BAG</> : selectedVariant.stock === 0 ? "SOLD OUT" : <><ShoppingCart className="mr-2 h-4 w-4" /> ADD TO BAG</>}
                   </Button>
@@ -549,6 +540,16 @@ const ProductDetail = () => {
               </motion.div>
             </div>
           </div>
+          
+          {/* 🟢 SHIPPING & REFUND SECTION (Separate Section Above Reviews) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+             <ShippingRefundSection />
+          </motion.div>
 
           {/* Reviews */}
           <motion.div
@@ -556,7 +557,7 @@ const ProductDetail = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="mt-24 md:mt-32 pt-16 border-t border-gray-100"
+            className="pt-16 border-t border-gray-100"
           >
             <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
           </motion.div>
