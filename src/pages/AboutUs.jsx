@@ -276,18 +276,20 @@ export default function AboutUs() {
             <div className="block md:hidden bg-white pt-[80px]">
 
                 {/* MOBILE HEADER TEXT (Static top) */}
-                <div className="px-6 mb-8">
-                    <h1 className="text-4xl font-medium text-[#1a1a1a] leading-tight mb-2">The Story</h1>
-                    <p className="text-sm text-neutral-500">Unveiling the soul of fragrance.</p>
-                </div>
+                 <section className="pt-14 pb-8 px-20 text-[#0F0F0F]">
+                    <div className="mx-auto text-center">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm text-neutral-500">
+                            <Star size={12} className="text-yellow-600" /> Our Heritage
+                        </span>
+                        <h1 className="text-4xl font-medium mb-4 text-[#1a1a1a]">The Story Behind Devid Aura</h1>
+                        <p className="text-xl text-neutral-500  mx-auto font-light">We believe in the invisible power of scent to define presence.</p>
+                    </div>
+                </section>
 
                 {/* MOBILE HERO */}
                 <section className="relative w-full aspect-[4/5] px-4 mb-16">
                     <div className="w-full h-full rounded-[2rem] overflow-hidden relative shadow-lg">
                         <img src={content.heroImage} alt="Mobile Hero" className="m-hero-img-inner w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                            <h2 className="text-4xl font-bold text-white tracking-widest mix-blend-overlay opacity-90">{content.heroTitle}</h2>
-                        </div>
                     </div>
                 </section>
 
