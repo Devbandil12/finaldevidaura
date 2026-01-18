@@ -276,7 +276,7 @@ export default function AboutUs() {
             <div className="block md:hidden bg-white pt-[80px]">
 
                 {/* MOBILE HEADER TEXT (Static top) */}
-                 <section className="pt-14 pb-8 px-20 text-[#0F0F0F]">
+                 <section className="pt-10 pb-8 px-20 text-[#0F0F0F]">
                     <div className="mx-auto text-center">
                         <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-100 bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm text-neutral-500">
                             <Star size={12} className="text-yellow-600" /> Our Heritage
