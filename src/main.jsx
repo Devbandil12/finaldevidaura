@@ -5,6 +5,9 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import { ToastProvider } from "./contexts/ToastContext"; 
 import "./index.css";
 import App from "./App.jsx";
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
+
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -14,6 +17,8 @@ if (!PUBLISHABLE_KEY) {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
+        <Analytics/>
+        <SpeedInsights />
     <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
       <ToastProvider position="bottom-right">
         <App />
