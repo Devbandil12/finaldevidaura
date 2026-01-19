@@ -1,11 +1,12 @@
+// src/pages/CartRecommendations.jsx
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaShoppingCart, FaMagic } from "react-icons/fa";
-import { FiCheckCircle } from "react-icons/fi"; 
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
-import HeroButton from "../Components/HeroButton"; // 🟢 Added HeroButton import
+import HeroButton from "../Components/HeroButton"; 
+import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- ANIMATION CONFIGURATION ---
 const gpuStyle = {
@@ -69,38 +70,42 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
     };
 
     fetchRecommendations();
-  }, [cartIds, userdetails?.id, BACKEND_URL]); // Dependencies ensure refetch on cart change
+  }, [cartIds, userdetails?.id, BACKEND_URL]);
 
   // --- HANDLER: Add to Cart ---
   const handleAddToCart = (variant, product) => {
     if (addingProductId) return;
     setAddingProductId(variant.id);
     addToCart(product, variant, 1);
-    // setTimeout(() => setAddingProductId(null));
+    setTimeout(() => setAddingProductId(null), 1000);
   };
 
   if (recommendations.length === 0) return null;
 
   return (
-    <div className="pt-8 mt-12 border-t border-gray-100">
-      {/* Header Section */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="p-2 bg-yellow-50 rounded-full text-[#D4AF37]">
-            <FaMagic className="w-5 h-5" /> 
+    <div className="pt-12 mt-8 border-t border-gray-100">
+      
+      {/* --- HEADER --- */}
+      <div className="flex items-center gap-3 mb-8 px-1">
+        <div className="p-2.5 bg-[#FEF9E8] rounded-full text-[#D4AF37] border border-[#FDEECC]">
+            <FaMagic className="w-4 h-4" /> 
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 leading-none">
-            Recommended
+          <h2 className="text-xl md:text-2xl font-serif text-gray-900 leading-none">
+            Recommended for You
           </h2>
-          <p className="text-xs text-gray-400 font-medium mt-1">
+          <p className="text-xs text-gray-400 font-medium mt-1.5 tracking-wide">
             Curated based on your taste profile
           </p>
         </div>
       </div>
 
-      {/* Grid Section */}
+      {/* --- GRID / SCROLL CONTAINER --- */}
+      {/* Mobile: flex overflow-x-auto (Horizontal Scroll) 
+          Desktop: grid grid-cols-4 (Standard Grid)
+      */}
       <motion.div
-        className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
+        className="flex md:grid md:grid-cols-4 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0"
       >
         <AnimatePresence mode="popLayout">
           {recommendations.map((product) => {
@@ -114,19 +119,14 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
               variants[0]
             );
 
-            // Price Calc
             const price = Math.trunc(
               cheapestVariant.oprice * (1 - (cheapestVariant.discount || 0) / 100)
             );
-            const showLineThrough =
-              Number(cheapestVariant.oprice) > Number(price) &&
-              Number(cheapestVariant.discount) > 0;
-
             const isAdding = addingProductId === cheapestVariant.id;
             
-            const imageUrl = Array.isArray(product.imageurl)
-              ? product.imageurl[0]
-              : product.imageurl?.default || product.image || "/placeholder.png";
+            const imageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0
+              ? optimizeImage(product.imageurl[0], 'card')
+              : "/placeholder.png";
 
             return (
               <motion.div
@@ -136,74 +136,69 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 style={gpuStyle}
                 transition={rigidTransition}
-                // 🟢 MATCHED DESIGN: Exact class string from your provided snippet
-                className="bg-white rounded-xl overflow-hidden flex flex-col shadow-lg shadow-gray-100/50 border border-gray-50 group h-full"
+                // 🟢 MATCHED CARD STYLING (Fixed width on mobile for scroll)
+                className="group relative flex flex-col bg-white rounded-2xl min-w-[180px] w-[60vw] md:w-auto flex-shrink-0 snap-center h-full border border-transparent hover:border-gray-100 transition-colors"
               >
-                {/* Image Section */}
-                <div className="relative aspect-square overflow-hidden bg-gray-50">
+                
+                {/* --- IMAGE SECTION --- */}
+                <div 
+                  className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-50 mb-3 cursor-pointer"
+                  onClick={() => {
+                    window.scrollTo(0,0);
+                    navigate(`/product/${product.id}`);
+                  }}
+                >
                   <img
                     src={imageUrl}
                     alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer" 
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                   />
+                  
+                  {/* Discount Badge */}
+                  {cheapestVariant.discount > 0 && (
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                      -{cheapestVariant.discount}%
+                    </div>
+                  )}
 
-
-                  {/* 🟢 MATCHED DESIGN: Quick View Overlay */}
-                  <div
-                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  >
-                    <span className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full">
-                      View Details
-                    </span>
-                  </div>
+                  {/* Quick View Overlay (Desktop Only) */}
+                  <div className="absolute inset-0 bg-black/10 transition-opacity duration-300 opacity-0 group-hover:opacity-100 hidden md:block" />
                 </div>
 
-                {/* Content Section */}
-                <div className="p-3 flex-grow flex flex-col justify-between text-left">
-                  <div>
-                    {/* 🟢 MATCHED DESIGN: Title Typography */}
-                    <h3
-                      className="font-bold text-sm text-gray-900 leading-tight mb-1 cursor-pointer hover:underline truncate"
-                      onClick={() => navigate(`/product/${product.id}`)}
-                    >
-                      {product.name}
-                    </h3>
-                    
-                    {/* 🟢 MATCHED DESIGN: Subtitle Typography */}
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">
-                        {cheapestVariant.size} ml 
-                    </p>
+                {/* --- CONTENT SECTION --- */}
+                <div className="flex flex-col gap-1 px-1 flex-grow">
+                  
+                  {/* Title */}
+                  <h3 
+                    className="font-serif text-lg text-gray-900 group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate cursor-pointer"
+                    onClick={() => navigate(`/product/${product.id}`)}
+                  >
+                    {product.name}
+                  </h3>
 
-                    {/* 🟢 MATCHED DESIGN: Price Row */}
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="font-bold text-sm text-gray-900">
-                        ₹{price}
+                  {/* Price Row */}
+                  <div className="flex items-center gap-2 text-sm mb-3">
+                    <span className="font-bold text-gray-900">₹{price}</span>
+                    {cheapestVariant.discount > 0 && (
+                      <span className="text-gray-400 line-through text-xs">
+                        ₹{cheapestVariant.oprice}
                       </span>
-                      {showLineThrough && (
-                        <span className="text-xs text-gray-400 line-through">
-                          ₹{cheapestVariant.oprice}
-                        </span>
-                      )}
-                      {Number(cheapestVariant.discount) > 0 && (
-                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1 rounded">
-                          -{cheapestVariant.discount}%
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
 
-                  {/* 🟢 MATCHED DESIGN: HeroButton Implementation */}
-              <HeroButton
+                  {/* Add Button */}
+                  <HeroButton
                     onClick={() => handleAddToCart(cheapestVariant, product)}
                     disabled={isAdding}
-                    className="mt-auto w-full py-2 rounded-xl flex justify-center items-center gap-2 transition-all duration-200 bg-black text-white hover:bg-gray-900 shadow-sm"
+                    className="mt-auto w-full py-2.5 rounded-xl text-xs font-bold bg-black text-white hover:bg-gray-800 transition-all shadow-none hover:shadow-lg flex items-center justify-center gap-2"
                   >
-                    <span className="flex items-center gap-2 text-xs tracking-wide">
-                        Add to Cart <FaShoppingCart size={14} />
-                    </span>
+                    {isAdding ? (
+                       <span className="animate-pulse">Adding...</span>
+                    ) : (
+                       <>Add to Bag <FaShoppingCart size={12} /></>
+                    )}
                   </HeroButton>
+
                 </div>
               </motion.div>
             );
