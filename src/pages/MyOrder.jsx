@@ -1,7 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom"; // Added for navigation
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
+import { CartContext } from "../contexts/CartContext"; // Added CartContext
 import Loader from "../Components/Loader";
 import MiniLoader from "../Components/MiniLoader";
 import { motion, AnimatePresence } from "framer-motion";
@@ -180,8 +182,10 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
 };
 
 export default function MyOrders() {
+  const navigate = useNavigate(); // Hook for navigation
   const { orders, setOrders, cancelOrder, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
+  const { startBuyNow } = useContext(CartContext); // Hook for Buy Now logic
 
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
@@ -233,23 +237,37 @@ export default function MyOrders() {
     setCancellingOrderId(null);
   };
 
-  const reorder = (orderId) => {
+const reorder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-    const items = order.orderItems.map((item) => ({
+    if (!order || !order.orderItems || order.orderItems.length === 0) return;
+
+    // Grab the first item (Current "Buy Now" system supports single item flow)
+    const item = order.orderItems[0];
+
+    // Construct the Buy Now object
+    const buyNowItem = {
       product: {
         id: item.productId,
         name: item.productName,
-        oprice: item.price,
-        discount: item.discount || 0,
-        quantity: item.quantity,
-        imageurl: item.img,
-        size: item.size || "100",
+        imageurl: [item.img], // Cart expects array
+      },
+      variant: {
+        id: item.variantId || item.productId,
+        name: item.size ? `${item.size}ml` : "Standard",
+        size: item.size,
+        oprice: item.price, 
+        price: item.price,
+        stock: 999, // Assume stock exists for UI; API will validate later
+        discount: 0
       },
       quantity: item.quantity,
-    }));
-    localStorage.setItem("selectedItems", JSON.stringify(items));
-    window.location.href = "/checkout";
+    };
+
+    // 1. Set the Buy Now state in CartContext
+    startBuyNow(buyNowItem);
+
+    // 2. Navigate to Cart Page (NOT Checkout) with Buy Now flag
+    navigate("/cart", { state: { isBuyNow: true } });
   };
 
   const toggleTrackOrder = (orderId) => {
