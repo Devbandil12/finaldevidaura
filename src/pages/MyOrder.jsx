@@ -445,7 +445,7 @@ export default function MyOrders() {
                 <Receipt size={16} strokeWidth={1.5} className="md:w-[18px] md:h-[18px]" />
               </div>
               <div>
-                <h3 className="text-sm md:text-base font-semibold text-zinc-900 break-all">Order #{order.id}</h3>
+                <span className="text-sm md:text-base font-semibold text-zinc-900 break-all">Order #{order.id}</span>
                 <p className="text-[10px] md:text-xs text-zinc-400 font-medium">{formatDateTime(order.createdAt)}</p>
               </div>
             </div>
@@ -575,7 +575,7 @@ export default function MyOrders() {
                 )
               )}
 
-              {order.status === "delivered" && (
+              {order.status.toLowerCase() === "delivered" && (
                 <button
                   onClick={() => reorder(order.id)}
                   className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
