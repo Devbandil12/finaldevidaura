@@ -6,7 +6,7 @@ import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
 import { UserContext } from "../contexts/UserContext";
 
-import { FaCheck, FaShoppingBag, FaArrowRight, FaArrowDown, FaLock } from "react-icons/fa";
+import { FaShoppingBag, FaArrowRight, FaLock, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FiAlertTriangle } from "react-icons/fi";
 import { HiOutlineSparkles } from "react-icons/hi";
 import { BsStars } from "react-icons/bs";
@@ -48,7 +48,8 @@ const containerVariants = {
     show: {
         opacity: 1,
         transition: { staggerChildren: 0.05 }
-    }
+    },
+    exit: { opacity: 0 }
 };
 
 const cardVariants = {
@@ -80,10 +81,10 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
         <motion.div
             variants={cardVariants}
             onClick={!isDisabled ? onSelect : undefined}
-            className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer
+            className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer border border-transparent
             ${isSelected
-                    ? "bg-white ring-1 ring-[#C5A059]/30"
-                    : ""
+                    ? "bg-white ring-1 ring-[#C5A059]/30 border-[#C5A059]/10 shadow-sm"
+                    : "hover:bg-white/50 hover:border-gray-100"
                 }
             ${isOutOfStock
                     ? "opacity-40 grayscale cursor-not-allowed"
@@ -94,25 +95,21 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
             `}
         >
             {/* LEFT: COMPACT IMAGE BOX */}
-            <div className="relative w-20 h-28 shrink-0 bg-black rounded-lg overflow-hidden shadow-md">
+            <div className="relative w-20 h-28 shrink-0 bg-gray-50 rounded-lg overflow-hidden shadow-sm">
                 <img
                     src={imageUrl}
                     alt={product.name}
                     loading={priority ? "eager" : "lazy"}
-                    fetchPriority={priority ? "high" : "auto"}
                     decoding="async"
                     className={`w-full h-full object-cover transition-all duration-500 ease-in-out
-                    ${isOutOfStock
-                            ? "grayscale"
-                            : "grayscale-0 opacity-100"
-                        }`}
+                    ${isOutOfStock ? "grayscale" : "grayscale-0 opacity-100"}`}
                 />
             </div>
 
             {/* RIGHT: TEXT CONTENT */}
             <div className="flex flex-col flex-1 min-w-0 h-28 py-0.5 justify-between">
                 <div>
-                    <h3 className=" text-lg text-[#1a1a1a]  leading-none mb-1.5 truncate capitalize">
+                    <h3 className="text-lg text-[#1a1a1a] leading-none mb-1.5 truncate capitalize">
                         {product.name}
                     </h3>
 
@@ -122,7 +119,7 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
                         <span className={isSelected ? "text-[#C5A059]" : "text-gray-600"}>₹{discountedPrice}</span>
                     </div>
 
-                    <p className=" italic text-gray-400 text-[10px] leading-snug line-clamp-2">
+                    <p className="italic text-gray-400 text-[10px] leading-snug line-clamp-2">
                         {product.description || "Premium fragrance"}
                     </p>
                 </div>
@@ -155,7 +152,34 @@ const CustomComboBuilder = () => {
     const { addCustomBundle, startBuyNow } = useContext(CartContext);
     const { userdetails } = useContext(UserContext);
 
-    // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+    // ⚡ DYNAMIC PAGINATION STATE
+    const [page, setPage] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(9); // Default to desktop
+
+    // ⚡ RESIZE LISTENER
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            if (width >= 1024) {
+                setItemsPerPage(9); // Desktop: 3 cols x 3 rows
+            } else if (width >= 768) {
+                setItemsPerPage(6); // Tablet: 2 cols x 3 rows
+            } else {
+                setItemsPerPage(4); // Mobile: 1 col x 4 rows
+            }
+        };
+
+        handleResize(); // Run immediately
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    // Reset page to 0 if the view mode changes
+    useEffect(() => {
+        setPage(0);
+    }, [itemsPerPage]);
+
+    // ⚡ INSTANT STATE: Initialize from LocalStorage
     const [products, setProducts] = useState(() => {
         try {
             const cached = localStorage.getItem("all_products_cache");
@@ -169,7 +193,7 @@ const CustomComboBuilder = () => {
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [isBuyingNow, setIsBuyingNow] = useState(false);
 
-    // ⚡ 2. SYNC WITH CONTEXT
+    // ⚡ SYNC WITH CONTEXT
     useEffect(() => {
         if (contextProducts && contextProducts.length > 0) {
             setProducts(prev => {
@@ -194,10 +218,9 @@ const CustomComboBuilder = () => {
             let finalPrice = tv.price || 0;
             if (!finalPrice && discount) finalPrice = Math.floor(oprice * (1 - discount / 100));
             if (!finalPrice) finalPrice = oprice;
-            const savings = Math.max(0, oprice - finalPrice);
-            return { templateVariant: tv, comboOriginalPrice: oprice, comboFinalPrice: finalPrice, comboDiscount: discount, comboSavings: savings };
+            return { templateVariant: tv, comboOriginalPrice: oprice, comboFinalPrice: finalPrice };
         }
-        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0, comboDiscount: 0, comboSavings: 0 };
+        return { templateVariant: null, comboOriginalPrice: 0, comboFinalPrice: 0 };
     }, [products]);
 
     const availablePerfumes = useMemo(() => {
@@ -210,19 +233,26 @@ const CustomComboBuilder = () => {
             );
     }, [products]);
 
-    // ⚡ 3. PRELOAD OPTIMIZED IMAGES
+    // --- ⚡ SLICING LOGIC ---
+    const totalPages = Math.ceil(availablePerfumes.length / itemsPerPage);
+
+    const displayedPerfumes = useMemo(() => {
+        const start = page * itemsPerPage;
+        return availablePerfumes.slice(start, start + itemsPerPage);
+    }, [page, itemsPerPage, availablePerfumes]);
+
+    // ⚡ PRELOAD OPTIMIZED IMAGES
     useEffect(() => {
-        if (availablePerfumes.length > 0) {
-            // Preload first 6 images using the OPTIMIZED url
-            availablePerfumes.slice(0, 6).forEach(({ product }) => {
+        if (displayedPerfumes.length > 0) {
+            displayedPerfumes.forEach(({ product }) => {
                 const src = product.imageurl?.[0];
                 if (src) {
                     const img = new Image();
-                    img.src = optimizeImage(src, 200); // 👈 Preload 200px version
+                    img.src = optimizeImage(src, 200);
                 }
             });
         }
-    }, [availablePerfumes]);
+    }, [displayedPerfumes]);
 
     const isFull = selectedPerfumes.length === 4;
 
@@ -281,7 +311,7 @@ const CustomComboBuilder = () => {
         }
     };
 
-    // ⚡ 4. LOADER STRATEGY
+    // --- RENDER ---
     if (products.length === 0 && contextLoading) return <Loader text="Curating Library..." />;
 
     if (products.length === 0 && !contextLoading) return (
@@ -299,7 +329,6 @@ const CustomComboBuilder = () => {
 
     return (
         <>
-
             <section className="min-h-screen py-22 px-4 md:px-12 ">
 
                 {/* HEADER */}
@@ -313,7 +342,7 @@ const CustomComboBuilder = () => {
                             <BsStars size={12} className="text-[#C5A059]" />
                             Bespoke Signature Set
                         </span>
-                        <h1 className="text-4xl md:text-6xl   mb-6 text-[#1a1a1a]">
+                        <h1 className="text-4xl md:text-6xl  mb-6 text-[#1a1a1a]">
                             Build Your Collection
                         </h1>
                         <p className="text-gray-500 text-lg font-light max-w-2xl mx-auto">
@@ -325,7 +354,7 @@ const CustomComboBuilder = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start max-w-[1600px] mx-auto">
 
                     {/* LEFT: SELECTION GRID */}
-                    <div className="lg:col-span-8 relative">
+                    <div className="lg:col-span-8 relative min-h-[600px] flex flex-col">
                         <div className="flex items-center justify-between mb-8 px-2">
                             <div className="flex items-center gap-3">
                                 <HiOutlineSparkles className="text-[#C5A059]" />
@@ -336,42 +365,70 @@ const CustomComboBuilder = () => {
                             </span>
                         </div>
 
-                        {/* Scrollable Container */}
-                        <div className="max-h-[80vh] overflow-y-auto smooth-scrollbar pb-24 pr-2">
-                            <motion.div
-                                variants={containerVariants}
-                                initial="hidden"
-                                animate="show"
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                            >
-                                {availablePerfumes.map(({ product, variant }, index) => {
-                                    const count = selectedPerfumes.filter(v => v.id === variant.id).length;
-                                    const isOutOfStock = (variant.stock || 0) <= 0;
-                                    const isPriority = index < 6;
+                        {/* PAGINATED GRID CONTAINER */}
+                        <div className="flex-grow">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={page}
+                                    variants={containerVariants}
+                                    initial="hidden"
+                                    animate="show"
+                                    exit="exit"
+                                    // ⚡ Responsive Grid: 1 col (mobile), 2 cols (tablet), 3 cols (desktop)
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4"
+                                >
+                                    {displayedPerfumes.map(({ product, variant }, index) => {
+                                        const count = selectedPerfumes.filter(v => v.id === variant.id).length;
+                                        const isOutOfStock = (variant.stock || 0) <= 0;
 
-                                    return (
-                                        <PerfumeCard
-                                            key={variant.id}
-                                            variant={variant}
-                                            product={product}
-                                            count={count}
-                                            isOutOfStock={isOutOfStock}
-                                            isDisabled={isProcessing || isOutOfStock || (isFull && count === 0)}
-                                            // ⚡ Passing arrow function is okay if child is cheap, but better to memoize handler if possible. 
-                                            // For simplicity and readability here, we keep it inline as PerfumeCard is memoized and prop change will be minimal.
-                                            onSelect={() => handleSelectPerfume(variant)}
-                                            priority={isPriority}
+                                        return (
+                                            <PerfumeCard
+                                                key={variant.id}
+                                                variant={variant}
+                                                product={product}
+                                                count={count}
+                                                isOutOfStock={isOutOfStock}
+                                                isDisabled={isProcessing || isOutOfStock || (isFull && count === 0)}
+                                                onSelect={() => handleSelectPerfume(variant)}
+                                                priority={true}
+                                            />
+                                        );
+                                    })}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+
+                        {/* PAGINATION CONTROLS */}
+                        {totalPages > 1 && (
+                            <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+                                <button
+                                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                                    disabled={page === 0}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <FaChevronLeft /> Prev
+                                </button>
+
+                                <div className="flex gap-2">
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setPage(i)}
+                                            className={`w-2 h-2 rounded-full transition-all duration-300 ${page === i ? "bg-[#C5A059] w-8" : "bg-gray-200 hover:bg-gray-300"
+                                                }`}
                                         />
-                                    );
-                                })}
-                            </motion.div>
-                        </div>
+                                    ))}
+                                </div>
 
-                        {/* Slide Indicator: Hidden on Desktop */}
-                        <div className="lg:hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce opacity-50 pointer-events-none">
-                            <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Slide</span>
-                            <FaArrowDown className="text-gray-400" size={12} />
-                        </div>
+                                <button
+                                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                                    disabled={page === totalPages - 1}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    Next <FaChevronRight />
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT: FLOATING SUMMARY BOX (Light Theme) */}
