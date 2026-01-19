@@ -1,5 +1,5 @@
 // src/pages/ProductDetail.jsx
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useMemo, memo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
@@ -8,7 +8,7 @@ import ReviewComponent from "./ReviewComponent";
 import {
   Heart, ShoppingCart, Share2, ChevronLeft, ChevronRight,
   Sparkles, Minus, Plus, ShoppingBag, Star,
-  MapPin, Clock, ShieldCheck, Truck, AlertCircle, Info // 🟢 Icons
+  MapPin, Clock, ShieldCheck, Truck, ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -61,95 +61,145 @@ const textFadeIn = {
   }
 };
 
+// --- SUGGESTION CARD COMPONENT (Reused for both sections) ---
+const SuggestionCard = memo(({ product, className = "" }) => {
+  const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
+  
+  if (!product || !product.variants?.length) return null;
+
+  const variant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
+  const price = Math.floor(variant.oprice * (1 - (variant.discount || 0) / 100));
+  const imageSrc = product.imageurl?.[0] ? optimizeImage(product.imageurl[0], 'card') : "/placeholder.svg";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className={`group relative flex flex-col cursor-pointer ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => {
+        window.scrollTo(0,0);
+        navigate(`/product/${product.id}`);
+      }}
+    >
+      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100 mb-4 border border-gray-100">
+        <motion.img
+          src={imageSrc}
+          alt={product.name}
+          className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-110"
+        />
+        {/* Quick View Overlay */}
+        <div className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+        
+        {variant.discount > 0 && (
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+            -{variant.discount}%
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1 px-1">
+        <h3 className="font-serif text-lg text-gray-900 group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium text-gray-900">₹{price}</span>
+          {variant.discount > 0 && (
+            <span className="text-gray-400 line-through text-xs">₹{variant.oprice}</span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
 // ⚡ OLFACTORY PYRAMID
 const OlfactoryPyramid = ({ product }) => {
-  const [activeNote, setActiveNote] = useState('heart');
+  const [activeTab, setActiveTab] = useState('top');
 
   const notesData = [
     {
       id: 'top',
-      label: 'The Top Notes',
+      label: 'Top Notes',
       scent: product.composition || "Bergamot, Citrus",
-      origin: "India",
-      story: "Harvested in the early morning to preserve the volatile oils. This provides the initial burst of freshness.",
-      duration: "0 - 2 hours",
+      story: "The first impression. Light, volatile scents that burst forth immediately upon application.",
+      duration: "0-2h",
+      icon: <Sparkles className="w-4 h-4" />
     },
     {
       id: 'heart',
-      label: 'The Heart',
+      label: 'Heart Notes',
       scent: product.fragrance || "Jasmine, Rose",
-      origin: "India",
-      story: "The soul of the fragrance. Sustainably sourced petals that reveal the true character of the aura.",
-      duration: "2 - 4 hours",
+      story: "The core of the fragrance. These notes emerge just as the top notes dissipate.",
+      duration: "2-4h",
+      icon: <Heart className="w-4 h-4" />
     },
     {
       id: 'base',
-      label: 'The Foundation',
+      label: 'Base Notes',
       scent: product.fragranceNotes || "Oud, Amber",
-      origin: "India",
-      story: "Deep, resonant woods aged for richness. These notes linger on the skin, creating your lasting signature.",
-      duration: "8 hours +",
+      story: "The foundation. Rich, heavy notes that linger on the skin for hours.",
+      duration: "8h+",
+      icon: <Clock className="w-4 h-4" />
     }
   ];
 
+  const activeNote = notesData.find(n => n.id === activeTab);
+
   return (
-    <div className="w-full mb-8 border-t border-gray-100">
-      {notesData.map((note) => {
-        const isActive = activeNote === note.id;
-        return (
-          <div key={note.id} className="border-b border-gray-100 overflow-hidden">
-            <button
-              onClick={() => setActiveNote(isActive ? null : note.id)}
-              className="w-full py-5 flex items-center justify-between group text-left transition-colors hover:bg-gray-50/50"
-            >
-              <div className="flex flex-col">
-                <span className={`font-serif text-xl italic transition-colors duration-300 ${isActive ? 'text-[#D4AF37]' : 'text-gray-900'}`}>
-                  {note.label}
-                </span>
-                {!isActive && (
-                  <span className="text-xs text-gray-400 font-light mt-1 truncate max-w-[200px]">{note.scent}</span>
-                )}
-              </div>
+    <div className="mb-12">
+      <div className="bg-[#F9F9F9] rounded-[2rem] p-2 inline-flex mb-8 w-full sm:w-auto">
+        {notesData.map((note) => (
+          <button
+            key={note.id}
+            onClick={() => setActiveTab(note.id)}
+            className={`flex-1 sm:flex-none px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 ${
+              activeTab === note.id 
+                ? 'bg-white text-gray-900 shadow-md transform scale-105' 
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            {note.label}
+          </button>
+        ))}
+      </div>
 
-              <div className={`transition-transform duration-500 ${isActive ? 'rotate-45' : 'rotate-0'}`}>
-                <Plus className="h-4 w-4 text-gray-300" />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white border border-gray-100 rounded-[2.5rem] p-8 md:p-10 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.03)]"
+        >
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="flex-1 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#D4AF37]">
+                {activeNote.icon}
               </div>
-            </button>
-
-            <AnimatePresence>
-              {isActive && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className="pb-6 pt-2 pr-4 space-y-4">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Notes</span>
-                      <p className="text-gray-900 font-medium">{note.scent}</p>
-                    </div>
-                    <div className="flex gap-6 mt-4">
-                      <div className="flex-1">
-                        <span className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold flex items-center gap-1 mb-1">
-                          <MapPin size={10} /> Origin
-                        </span>
-                        <p className="text-sm text-gray-600 font-serif italic">{note.origin}</p>
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold flex items-center gap-1 mb-1">
-                          <Clock size={10} /> Longevity
-                        </span>
-                        <p className="text-sm text-gray-600">{note.duration}</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Primary Scent</span>
+                <h4 className="font-serif text-3xl md:text-4xl text-gray-900">{activeNote.scent}</h4>
+              </div>
+            </div>
+            
+            <div className="flex-1 md:border-l md:border-gray-100 md:pl-8 space-y-4">
+               <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Duration</span>
+                <p className="text-lg font-medium text-gray-900">{activeNote.duration}</p>
+               </div>
+               <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Experience</span>
+                <p className="text-gray-500 font-light leading-relaxed">{activeNote.story}</p>
+               </div>
+            </div>
           </div>
-        );
-      })}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
@@ -203,6 +253,13 @@ const ProductDetail = () => {
   const { cart, wishlist, addToCart, toggleWishlist, startBuyNow } = useContext(CartContext);
 
   const [isUnboxing, setIsUnboxing] = useState(true);
+  
+  // 🟢 NEW STATE FOR COMBINED SECTIONS
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [youMayAlsoLike, setYouMayAlsoLike] = useState([]);
+
+  // Backend URL for fetching API recommendations
+  const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -250,6 +307,77 @@ const ProductDetail = () => {
       }
     }
   }, [productId, products]);
+
+  // 🟢 LOGIC: 1. Recently Viewed & 2. "You May Also Like" (Cart Algo + Category)
+  useEffect(() => {
+    if (!product) return;
+
+    // --- 1. RECENTLY VIEWED (Local Storage) ---
+    try {
+      let viewed = JSON.parse(localStorage.getItem('recently_viewed_products') || '[]');
+      
+      // Filter out current product to avoid duplicates
+      viewed = viewed.filter(p => p.id !== product.id);
+      
+      // Update storage: Add current to front
+      const newHistory = [product, ...viewed].slice(0, 10);
+      localStorage.setItem('recently_viewed_products', JSON.stringify(newHistory));
+      
+      // Display top 4 recent
+      setRecentlyViewed(viewed.slice(0, 4)); 
+    } catch (e) {
+      console.error("Error setting recently viewed", e);
+    }
+
+    // --- 2. YOU MAY ALSO LIKE (API + Category Fallback) ---
+    const fetchSuggestions = async () => {
+        let suggestions = [];
+        
+        // A. Fetch Recommendations based on Cart (like CartRecommendations.jsx)
+        try {
+            // Exclude current product and anything in cart
+            const cartIds = (cart || []).map(item => item.product?.id || item.productId).filter(Boolean);
+            const excludeIds = [...new Set([...cartIds, product.id])];
+
+            const res = await fetch(`${BACKEND_URL}/api/products/recommendations`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    excludeIds,
+                    userId: userdetails?.id || null, 
+                }),
+            });
+
+            if (res.ok) {
+                const apiData = await res.json();
+                if (Array.isArray(apiData)) suggestions = [...suggestions, ...apiData];
+            }
+        } catch (err) {
+            console.warn("Recommendation API failed, falling back to category match.");
+        }
+
+        // B. Fetch Related by Category (Client-side)
+        if (products.length > 0) {
+            const categoryMatches = products
+                .filter(p => p.category === product.category && p.id !== product.id)
+                .slice(0, 4); // Take top 4 from category
+            
+            suggestions = [...suggestions, ...categoryMatches];
+        }
+
+        // C. Deduplicate & Limit
+        const uniqueSuggestions = Array.from(new Map(suggestions.map(item => [item.id, item])).values());
+        
+        // Filter out the current product again just in case
+        const finalSuggestions = uniqueSuggestions.filter(p => p.id !== product.id).slice(0, 4);
+
+        setYouMayAlsoLike(finalSuggestions);
+    };
+
+    fetchSuggestions();
+
+  }, [product, products, cart, userdetails?.id, BACKEND_URL]);
+
 
   useEffect(() => {
     if (product?.imageurl?.[0]) {
@@ -437,7 +565,7 @@ const ProductDetail = () => {
                 className="flex flex-col h-full pt-2 px-4 lg:px-0"
               >
                 {/* Header */}
-                <motion.div variants={textFadeIn} className="mb-8">
+                <motion.div variants={textFadeIn} className="mb-2">
                   <div className="flex justify-between items-start">
                     <div className="space-y-3">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border ${selectedVariant.stock > 0 ? 'bg-teal-50/30 text-teal-800 border-teal-100/50' : 'bg-red-50/30 text-red-800 border-red-100/50'}`}>
@@ -449,12 +577,12 @@ const ProductDetail = () => {
                       </h1>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleToggleWishlist} variant="secondary" size="icon" className="rounded-full">
-                        <Heart className={`h-5 w-5 transition-all ${isInWishlist ? 'fill-red-400 text-red-400' : 'text-gray-400'}`} />
-                      </Button>
-                      <Button onClick={handleShare} variant="secondary" size="icon" className="rounded-full">
-                        <Share2 className="h-4 w-4 text-gray-400" />
-                      </Button>
+                     <button onClick={handleToggleWishlist} className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all active:scale-90 ${isInWishlist ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900'}`}>
+                            <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-current' : ''}`} />
+                        </button>
+                     <button onClick={handleShare} className="w-12 h-12 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center transition-all hover:text-gray-900 hover:border-gray-900 active:scale-90">
+                            <Share2 className="w-5 h-5" />
+                        </button>
                     </div>
                   </div>
 
@@ -475,8 +603,6 @@ const ProductDetail = () => {
                   </div>
                 </motion.div>
 
-                <motion.div variants={textFadeIn} className="w-full h-px bg-gray-100 mb-2" />
-
                 {/* Variants */}
                 <motion.div variants={textFadeIn} className="flex flex-col gap-6 mb-8">
                   <div className="flex justify-between items-center gap-6">
@@ -485,36 +611,39 @@ const ProductDetail = () => {
                       {discount > 0 && (
                         <>
                           <span className="text-base text-gray-400 line-through font-light">₹{basePrice.toLocaleString("en-IN")}</span>
-                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-semibold">-{discount}%</span>
+                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-green-600 text-xs font-semibold">-{discount}%</span>
                         </>
                       )}
                     </div>
+                  </div>
+                 <div className="space-y-8">
+                    {/* Size Selector */}
                     <div>
-                      <div className="flex flex-wrap gap-3">
-                        {product.variants.map((variant) => (
-                          <button
-                            key={variant.id}
-                            onClick={() => setSelectedVariant(variant)}
-                            disabled={variant.stock === 0}
-                            className={`relative px-6 py-2.5 rounded-full text-sm transition-all duration-300 ${selectedVariant.id === variant.id ? 'bg-gray-900 text-white shadow-lg' : 'bg-white text-gray-600 border border-gray-100 hover:border-gray-300'} ${variant.stock === 0 ? 'opacity-40 cursor-not-allowed border-dashed' : ''}`}
-                          >
-                            {variant.name}
-                          </button>
-                        ))}
-                      </div>
+                        <div className="flex justify-between mb-4">
+                             <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">Select Variant</span>
+                             {selectedVariant.stock <= 5 && selectedVariant.stock > 0 && <span className="text-[10px] text-red-500 font-bold animate-pulse">Low Stock</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {product.variants.map((v) => (
+                                <button key={v.id} onClick={() => setSelectedVariant(v)} disabled={v.stock === 0}
+                                    className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${selectedVariant.id === v.id ? 'bg-[#1A1C20] text-white shadow-lg shadow-black/20 scale-105' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'} ${v.stock === 0 ? 'opacity-40 border-dashed bg-gray-50' : ''}`}
+                                >
+                                    {v.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="inline-flex items-center bg-white border border-gray-100 rounded-full p-1 shadow-sm">
-                      <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                        <Minus className="h-3.5 w-3.5" />
-                      </Button>
-                      <span className="w-10 text-center font-medium">{quantity}</span>
-                      <Button onClick={() => setQuantity(quantity + 1)} variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                        <Plus className="h-3.5 w-3.5" />
-                      </Button>
+
+                    {/* Quantity Selector */}
+                    <div>
+                        <span className="text-xs font-bold text-gray-900 uppercase tracking-widest block mb-4">Quantity</span>
+                        <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1.5 shadow-sm">
+                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4" /></button>
+                            <span className="w-12 text-center font-serif text-xl">{quantity}</span>
+                            <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4" /></button>
+                        </div>
                     </div>
-                  </div>
+                 </div>
                 </motion.div>
 
                 {/* Description */}
@@ -541,7 +670,7 @@ const ProductDetail = () => {
             </div>
           </div>
           
-          {/* 🟢 SHIPPING & REFUND SECTION (Separate Section Above Reviews) */}
+          {/* 🟢 SHIPPING & REFUND SECTION */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -550,6 +679,26 @@ const ProductDetail = () => {
           >
              <ShippingRefundSection />
           </motion.div>
+
+          {/* 🟢 SECTION 1: YOU MAY ALSO LIKE (Combined API + Category) */}
+          {youMayAlsoLike.length > 0 && (
+            <div className="pt-20 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-10">
+                <h2 className="text-2xl md:text-3xl font-serif text-gray-900">You May Also Like</h2>
+                <button 
+                  onClick={() => navigate('/products')}
+                  className="group flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                >
+                  View Collection <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+              <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+                {youMayAlsoLike.map(p => (
+                  <SuggestionCard key={p.id} product={p} className="min-w-[160px] w-[45vw] md:w-auto flex-shrink-0 snap-center" />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Reviews */}
           <motion.div
@@ -561,6 +710,22 @@ const ProductDetail = () => {
           >
             <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
           </motion.div>
+
+          {/* 🟢 SECTION 2: RECENTLY VIEWED (LocalStorage) */}
+          {recentlyViewed.length > 0 && (
+            <div className="pt-20 pb-10 border-t border-gray-100 mt-20">
+               <div className="flex items-center gap-3 mb-10">
+                 <div className="h-px bg-gray-200 flex-1"></div>
+                 <h2 className="text-lg uppercase tracking-widest text-gray-400 font-bold">Recently Viewed</h2>
+                 <div className="h-px bg-gray-200 flex-1"></div>
+               </div>
+              <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 opacity-70 hover:opacity-100 transition-opacity duration-500">
+                {recentlyViewed.map(p => (
+                  <SuggestionCard key={p.id} product={p} className="min-w-[160px] w-[45vw] md:w-auto flex-shrink-0 snap-center" />
+                ))}
+              </div>
+            </div>
+          )}
 
         </main>
       </div>
