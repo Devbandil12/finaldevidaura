@@ -370,9 +370,9 @@ const HeroSection = () => {
                   role="presentation"
                   className="relative w-full opacity-50 blur-[1.5px] mix-blend-multiply rounded-lg"
                   style={{ filter: "saturate(0.6) contrast(0.95)" }}
-                  fetchPriority="low"
+                  fetchPriority="high"
                   decoding="async"
-                  loading="lazy"
+                  loading="eager"
                 />
               </div>
             )}
@@ -387,9 +387,9 @@ const HeroSection = () => {
                   role="presentation"
                   className="relative w-full opacity-50 blur-[2px] mix-blend-multiply rounded-lg"
                   style={{ filter: "saturate(0.55) contrast(0.9)" }}
-                  fetchPriority="low"
+                  fetchPriority="high"
                   decoding="async"
-                  loading="lazy"
+                  loading="eager"
                 />
               </div>
             )}
