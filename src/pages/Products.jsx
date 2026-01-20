@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useState, useMemo, memo } from "react";
+import React, { useContext, useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
-import { Heart, Sparkles, Bell, Check, Star, ShoppingBag } from "lucide-react";
+import { Heart, Sparkles, Bell, Star, ShoppingBag } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- METADATA ---
@@ -26,38 +26,70 @@ const categoryMetadata = {
 };
 
 // --- ANIMATION VARIANTS ---
-const headerVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
-};
+const createHeaderVariants = (shouldReduce) => ({
+  hidden: { opacity: shouldReduce ? 1 : 0, y: shouldReduce ? 0 : 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { duration: shouldReduce ? 0.01 : 0.8, ease: "easeOut" } 
+  }
+});
 
-const sectionVariants = {
-  hidden: { opacity: 0 },
+const createSectionVariants = (shouldReduce) => ({
+  hidden: { opacity: shouldReduce ? 1 : 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
+    transition: shouldReduce ? {} : { staggerChildren: 0.05, delayChildren: 0.1 }
   }
-};
+});
 
-const cardVariants = {
-  hidden: { opacity: 0, scale: 0.96 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: "circOut" } }
-};
+const createCardVariants = (shouldReduce) => ({
+  hidden: { opacity: shouldReduce ? 1 : 0, scale: 1 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { duration: shouldReduce ? 0.01 : 0.4, ease: "circOut" } 
+  }
+});
 
 // --- OPTIMIZED IMAGE COMPONENT ---
 const BlurImage = memo(({ src, alt, className, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const optimizedSrc = useMemo(() => optimizeImage(src, 'card'), [src]);
+
+  const handleLoad = useCallback(() => {
+    requestAnimationFrame(() => setIsLoaded(true));
+  }, []);
+
+  const handleError = useCallback(() => {
+    requestAnimationFrame(() => {
+      setIsLoaded(true);
+      setHasError(true);
+    });
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className={`relative w-full h-full bg-[#f0eee6] flex items-center justify-center ${className}`}>
+        <span className="text-6xl font-bold opacity-10">{alt?.[0] || '?'}</span>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative overflow-hidden w-full h-full bg-[#f0eee6] ${className}`}>
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 animate-pulse" />
+      )}
       <motion.img
         src={optimizedSrc}
         alt={alt}
         initial={{ opacity: 0 }}
         animate={{ opacity: isLoaded ? 1 : 0 }}
         transition={{ duration: 0.5 }}
-        onLoad={() => setIsLoaded(true)}
+        onLoad={handleLoad}
+        onError={handleError}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
         decoding="async"
@@ -67,85 +99,243 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
   );
 });
 
+BlurImage.displayName = "BlurImage";
+
+// --- MEMOIZED PRODUCT CARD ---
+const ProductCard = memo(({ 
+  product, 
+  displayVariant, 
+  isOutOfStock, 
+  inWishlist, 
+  onProductClick, 
+  onToggleWishlist, 
+  isPriority,
+  staggerClass,
+  cardVariants 
+}) => {
+  const discountedPrice = Math.floor(displayVariant.oprice * (1 - displayVariant.discount / 100));
+  const imageUrl = product.imageurl?.[0] || "/placeholder.png";
+  const sizeLabel = displayVariant.size ? `${displayVariant.size}ml` : "Std";
+  const avgRating = product.avgRating || 0;
+  const soldCount = product.soldCount || 0;
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      className={`group relative flex flex-col p-3 rounded-[2rem] cursor-pointer ${staggerClass} ${isOutOfStock ? "opacity-90" : ""}`}
+      onClick={() => onProductClick(product)}
+    >
+      <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
+        <BlurImage 
+          src={imageUrl} 
+          alt={product.name} 
+          priority={isPriority} 
+          className={isOutOfStock ? "grayscale-[0.8] opacity-85" : ""}
+        />
+
+        {/* CARD ACTIONS */}
+        <div className="absolute bottom-4 left-4 right-4 z-20">
+          {!isOutOfStock ? (
+            <div className="flex justify-between items-center">
+              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-3 shadow-sm">
+                <span className="text-xs font-bold text-stone-900">₹{discountedPrice}</span>
+                <div className="w-[1px] h-3 bg-stone-300"></div>
+                <span className="text-[10px] font-mono uppercase text-stone-500">{sizeLabel}</span>
+              </div>
+              <button 
+                onClick={(e) => onToggleWishlist(e, product)} 
+                className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart size={14} className={inWishlist ? "fill-red-500 text-red-500" : "text-stone-600"} />
+              </button>
+            </div>
+          ) : (
+            <button 
+              className="w-full px-4 py-3 rounded-full flex items-center justify-center gap-2 shadow-lg bg-stone-900/90 backdrop-blur-md text-[#F2F0EB]"
+              aria-label="Product sold out"
+            >
+              <Bell size={12} className="text-[#C5A059]" />
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Sold Out</span>
+            </button>
+          )}
+        </div>
+
+        {/* BADGES */}
+        {!isOutOfStock && displayVariant.discount > 0 && (
+          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[10px] font-bold px-3 py-1.5 rounded-br-xl shadow-md z-20">
+            -{displayVariant.discount}%
+          </div>
+        )}
+      </div>
+
+      <div className="pt-5 px-2 text-center">
+        <h3 className={`text-xl leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
+          {product.name}
+        </h3>
+        <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light mb-3">
+          {product.description}
+        </p>
+        
+        {/* STATS SECTION */}
+        {(avgRating >= 1 || soldCount >= 1) && (
+          <div className="flex items-center justify-center gap-4">
+            {avgRating >= 1 && (
+              <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                <Star size={11} className="text-[#C5A059] fill-[#C5A059]" />
+                <span>{avgRating} Reviews</span>
+              </div>
+            )}
+            {avgRating >= 1 && soldCount >= 1 && (
+              <div className="w-[1px] h-2.5 bg-stone-200"></div>
+            )}
+            {soldCount >= 1 && (
+              <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                <ShoppingBag size={11} className="text-stone-400" />
+                <span>{soldCount} Sold</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for optimization
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.inWishlist === nextProps.inWishlist &&
+    prevProps.displayVariant?.stock === nextProps.displayVariant?.stock
+  );
+});
+
+ProductCard.displayName = "ProductCard";
+
 const Products = () => {
   const { products: contextProducts } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
   const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
+  const observerRef = useRef(null);
+  const [visibleSections, setVisibleSections] = useState(new Set());
 
-  // ⚡ 1. INSTANT STATE: Initialize from LocalStorage
+  // Animation variants with reduced motion support
+  const headerVariants = useMemo(() => createHeaderVariants(shouldReduceMotion), [shouldReduceMotion]);
+  const sectionVariants = useMemo(() => createSectionVariants(shouldReduceMotion), [shouldReduceMotion]);
+  const cardVariants = useMemo(() => createCardVariants(shouldReduceMotion), [shouldReduceMotion]);
+
+  // ⚡ OPTIMIZED: Initialize from sessionStorage
   const [products, setProducts] = useState(() => {
     try {
-      const cached = localStorage.getItem("all_products_cache");
+      const cached = sessionStorage.getItem("all_products_cache");
       return cached ? JSON.parse(cached) : [];
     } catch (e) {
       return [];
     }
   });
 
-  // ⚡ 2. SYNC WITH CONTEXT: Update only if data changed
+  // ⚡ OPTIMIZED: Sync with context - only update if changed
   useEffect(() => {
     if (contextProducts && contextProducts.length > 0) {
       setProducts(prev => {
-        if (JSON.stringify(prev) !== JSON.stringify(contextProducts)) {
-            localStorage.setItem("all_products_cache", JSON.stringify(contextProducts));
-            return contextProducts;
+        const prevStr = JSON.stringify(prev);
+        const newStr = JSON.stringify(contextProducts);
+        if (prevStr !== newStr) {
+          sessionStorage.setItem("all_products_cache", newStr);
+          return contextProducts;
         }
         return prev;
       });
     }
   }, [contextProducts]);
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  // Scroll to top on mount
+  useEffect(() => { 
+    window.scrollTo({ top: 0, behavior: 'instant' }); 
+  }, []);
 
-  // --- HELPERS ---
-  const handleProductClick = (product) => navigate(`/product/${product.id}`);
+  // --- MEMOIZED HANDLERS ---
+  const handleProductClick = useCallback((product) => {
+    navigate(`/product/${product.id}`);
+  }, [navigate]);
 
-  const handleToggleWishlist = (e, product) => {
+  const handleToggleWishlist = useCallback((e, product) => {
     e.stopPropagation();
     if (product.variants?.length) {
       const variant = product.variants.sort((a, b) => a.oprice - b.oprice)[0];
       toggleWishlist(product, variant);
     }
-  };
+  }, [toggleWishlist]);
 
-  const isProductInWishlist = (product) => {
+  const isProductInWishlist = useCallback((product) => {
     if (!product.variants) return false;
     const variantIds = product.variants.map(v => v.id);
     return wishlist?.some(item => variantIds.includes(item.variantId ?? item.variant?.id));
-  };
+  }, [wishlist]);
 
-  const getDisplayVariant = (product) => {
+  const getDisplayVariant = useCallback((product) => {
     if (!product.variants?.length) return null;
     return product.variants.sort((a, b) => a.oprice - b.oprice)[0];
-  };
+  }, []);
 
-  // Memoized Grouping
+  // ⚡ OPTIMIZED: Memoized grouping with better performance
   const groupedProducts = useMemo(() => {
     const groups = {};
-    products.forEach(product => {
-      if (!product.category || product.category === "Template") return;
+    const validProducts = products.filter(p => p.category && p.category !== "Template");
+    
+    validProducts.forEach(product => {
       const catName = product.category.trim();
       if (!groups[catName]) groups[catName] = [];
       groups[catName].push(product);
     });
 
     const customOrder = ["Him", "Her", "Unisex"];
-    return Object.keys(groups)
-      .sort((a, b) => {
-        const indexA = customOrder.indexOf(a);
-        const indexB = customOrder.indexOf(b);
-        const valA = indexA === -1 ? 999 : indexA;
-        const valB = indexB === -1 ? 999 : indexB;
-        return valA - valB;
-      })
-      .reduce((acc, key) => {
-        acc[key] = groups[key];
-        return acc;
-      }, {});
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const indexA = customOrder.indexOf(a);
+      const indexB = customOrder.indexOf(b);
+      const valA = indexA === -1 ? 999 : indexA;
+      const valB = indexB === -1 ? 999 : indexB;
+      return valA - valB;
+    });
+
+    return sortedKeys.reduce((acc, key) => {
+      acc[key] = groups[key];
+      return acc;
+    }, {});
   }, [products]);
 
+  // ⚡ Intersection Observer for lazy rendering sections
+  useEffect(() => {
+    if (shouldReduceMotion || !('IntersectionObserver' in window)) {
+      // If reduced motion or no support, show all sections
+      const allSections = Object.keys(groupedProducts);
+      setVisibleSections(new Set(allSections));
+      return;
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const category = entry.target.dataset.category;
+            setVisibleSections(prev => new Set([...prev, category]));
+          }
+        });
+      },
+      { rootMargin: '200px 0px' } // Load sections 200px before they enter viewport
+    );
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [groupedProducts, shouldReduceMotion]);
+
+  const groupedEntries = useMemo(() => Object.entries(groupedProducts), [groupedProducts]);
+
   return (
-    <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40 optimize-scrolling">
+    <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40">
       
       {/* HEADER */}
       <div className="max-w-[1600px] mx-auto mb-20 md:mb-28 text-center">
@@ -160,8 +350,8 @@ const Products = () => {
       </div>
 
       {/* SECTIONS */}
-      {Object.keys(groupedProducts).length > 0 ? (
-        Object.entries(groupedProducts).map(([category, categoryProducts], groupIndex) => {
+      {groupedEntries.length > 0 ? (
+        groupedEntries.map(([category, categoryProducts], groupIndex) => {
           const indexStr = String(groupIndex + 1).padStart(2, '0');
           const meta = categoryMetadata[category] || { 
             title: category, 
@@ -172,9 +362,15 @@ const Products = () => {
           return (
             <motion.div 
               key={category}
+              data-category={category}
+              ref={(el) => {
+                if (el && observerRef.current && !shouldReduceMotion) {
+                  observerRef.current.observe(el);
+                }
+              }}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+              viewport={{ once: true, margin: "0px 0px -100px 0px", amount: 0.1 }}
               variants={sectionVariants}
               className="max-w-[1600px] mx-auto mb-32 md:mb-40 last:mb-0"
             >
@@ -209,93 +405,22 @@ const Products = () => {
                   
                   const isOutOfStock = (displayVariant.stock || 0) <= 0;
                   const inWishlist = isProductInWishlist(product);
-                  const discountedPrice = Math.floor(displayVariant.oprice * (1 - displayVariant.discount / 100));
-                  const imageUrl = product.imageurl?.[0] || "/placeholder.png";
-                  const sizeLabel = displayVariant.size ? `${displayVariant.size}ml` : "Std";
                   const staggerClass = (idx % 2 !== 0) ? "md:translate-y-12" : "";
                   const isPriority = groupIndex === 0 && idx < 4;
 
-                  // --- PLACEHOLDER DATA FOR STATS ---
-                  // Ensure your backend adds these fields, or they will default to 0
-                  const avgRating = product.avgRating || 0;
-                  const soldCount = product.soldCount || 0;
-
                   return (
-                    <motion.div
+                    <ProductCard
                       key={product.id}
-                      variants={cardVariants}
-                      className={`group relative flex flex-col p-3 rounded-[2rem] ${staggerClass} ${isOutOfStock ? "opacity-90" : ""}`}
-                      onClick={() => handleProductClick(product)}
-                    >
-                      <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
-                        <BlurImage 
-                          src={imageUrl} 
-                          alt={product.name} 
-                          priority={isPriority} 
-                          className={isOutOfStock ? "grayscale-[0.8] opacity-85" : ""}
-                        />
-
-                        {/* CARD ACTIONS */}
-                        <div className="absolute bottom-4 left-4 right-4 z-20">
-                          {!isOutOfStock ? (
-                            <div className="flex justify-between items-center">
-                              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-3 shadow-sm">
-                                <span className="text-xs font-bold text-stone-900">₹{discountedPrice}</span>
-                                <div className="w-[1px] h-3 bg-stone-300"></div>
-                                <span className="text-[10px] font-mono uppercase text-stone-500">{sizeLabel}</span>
-                              </div>
-                              <button 
-                                onClick={(e) => handleToggleWishlist(e, product)} 
-                                className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform"
-                              >
-                                <Heart size={14} className={inWishlist ? "fill-red-500 text-red-500" : "text-stone-600"} />
-                              </button>
-                            </div>
-                          ) : (
-                            <button className="w-full px-4 py-3 rounded-full flex items-center justify-center gap-2 shadow-lg bg-stone-900/90 backdrop-blur-md text-[#F2F0EB]">
-                               <Bell size={12} className="text-[#C5A059]" />
-                               <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Sold Out</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* BADGES */}
-                        {!isOutOfStock && displayVariant.discount > 0 && (
-                          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[10px] font-bold px-3 py-1.5 rounded-br-xl shadow-md z-20">
-                            -{displayVariant.discount}%
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-5 px-2 text-center">
-                        <h3 className={`text-xl leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
-                          {product.name}
-                        </h3>
-                        <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light mb-3">
-                          {product.description}
-                        </p>
-                        
-                        {/* --- NEW STATS SECTION --- */}
-                        {avgRating >= 1 || soldCount >= 1 ? (
-                        <div className="flex items-center justify-center gap-4">
-                          {avgRating >= 1 && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
-                             <Star size={11} className="text-[#C5A059] fill-[#C5A059]" />
-                             <span>{avgRating} Reviews</span>
-                          </div>
-                          )}
-                          <div className="w-[1px] h-2.5 bg-stone-200"></div>
-                           {soldCount >= 1 && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
-                             <ShoppingBag size={11} className="text-stone-400" />
-                             <span>{soldCount} Sold</span>
-                          </div>
-                          )}
-                        </div>
-                        ) : ("")}
-
-                      </div>
-                    </motion.div>
+                      product={product}
+                      displayVariant={displayVariant}
+                      isOutOfStock={isOutOfStock}
+                      inWishlist={inWishlist}
+                      onProductClick={handleProductClick}
+                      onToggleWishlist={handleToggleWishlist}
+                      isPriority={isPriority}
+                      staggerClass={staggerClass}
+                      cardVariants={cardVariants}
+                    />
                   );
                 })}
               </div>
@@ -308,6 +433,16 @@ const Products = () => {
           <p className="text-sm tracking-widest uppercase">Collection Empty</p>
         </div>
       )}
+
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
     </section>
   );
 };
