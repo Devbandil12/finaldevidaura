@@ -35,10 +35,11 @@ const Reports = () => {
     const dailyMap = {};
 
     orders.forEach(order => {
-       // 🟢 1. STRICT REVENUE CHECK (Exact Match to Dashboard)
+       // 🟢 1. STRICT REVENUE CHECK (Updated for Wallet)
        const isRevenueOrder = () => {
           if (order.status === 'Order Cancelled') return false;
-          if (order.paymentMode === 'online') return order.paymentStatus === 'paid';
+          // ✅ Added 'wallet' check
+          if (order.paymentMode === 'online' || order.paymentMode === 'wallet') return order.paymentStatus === 'paid';
           if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
           return false;
        };
@@ -49,11 +50,14 @@ const Reports = () => {
        
        if (!dailyMap[date]) dailyMap[date] = { date, revenue: 0, orders: 0, profit: 0 };
        
+       // 🟢 2. REVENUE CALCULATION (Cash + Wallet)
        const totalAmount = parseFloat(order.totalAmount || 0);
-       dailyMap[date].revenue += totalAmount;
+       const walletAmount = parseFloat(order.walletAmountUsed || 0);
+       
+       dailyMap[date].revenue += (totalAmount + walletAmount);
        dailyMap[date].orders += 1;
        
-       // 🟢 2. PROFIT CALCULATION (Exact Match to Dashboard)
+       // 🟢 3. PROFIT CALCULATION
        // Logic: Look up detailed order. If cost exists, use it. If not, cost is 0 (100% profit).
        let orderCost = 0;
        
@@ -67,7 +71,8 @@ const Reports = () => {
           return pSum + (cost * qty);
        }, 0);
        
-       dailyMap[date].profit += (totalAmount - orderCost);
+       // Profit = (Total Revenue including Wallet) - Cost
+       dailyMap[date].profit += ((totalAmount + walletAmount) - orderCost);
     });
 
     // Sort by date descending
@@ -107,7 +112,8 @@ const Reports = () => {
         // 🟢 STRICT REVENUE CHECK
         const isRevenueOrder = () => {
           if (order.status === 'Order Cancelled') return false;
-          if (order.paymentMode === 'online') return order.paymentStatus === 'paid';
+          // ✅ Added 'wallet' check
+          if (order.paymentMode === 'online' || order.paymentMode === 'wallet') return order.paymentStatus === 'paid';
           if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
           return false;
         };
@@ -126,7 +132,10 @@ const Reports = () => {
                 city: order.shippingAddress?.city || 'Unknown' 
             };
         }
-        userMap[order.userId].totalSpent += parseFloat(order.totalAmount || 0);
+        
+        // 🟢 Calculate Spent (Cash + Wallet)
+        const spent = parseFloat(order.totalAmount || 0) + parseFloat(order.walletAmountUsed || 0);
+        userMap[order.userId].totalSpent += spent;
         userMap[order.userId].orders += 1;
         
         if (new Date(order.createdAt) > new Date(userMap[order.userId].lastOrder)) {

@@ -161,7 +161,7 @@ const CustomComboBuilder = () => {
         const handleResize = () => {
             const width = window.innerWidth;
             if (width >= 1024) {
-                setItemsPerPage(9); // Desktop: 3 cols x 3 rows
+                setItemsPerPage(8); // Desktop: 3 cols x 3 rows
             } else if (width >= 768) {
                 setItemsPerPage(6); // Tablet: 2 cols x 3 rows
             } else {

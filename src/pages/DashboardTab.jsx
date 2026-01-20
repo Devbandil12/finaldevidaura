@@ -3,15 +3,13 @@ import {
   TrendingUp, TrendingDown, Users, ShoppingBag, DollarSign, Activity, 
   CreditCard, Package, AlertTriangle, Clock, ArrowRight,
   Droplets, RefreshCcw, AlertCircle, UserPlus, Repeat, Ban, Layers,
-  UserCheck 
+  UserCheck, Wallet // 🟢 1. Added Wallet Icon
 } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, 
   Title, Tooltip, Legend, ArcElement, BarElement, Filler 
 } from 'chart.js';
-// 🔴 REMOVE useNavigate
-// import { useNavigate } from 'react-router-dom';
 import { AdminContext } from '../contexts/AdminContext';
 import { ProductContext } from '../contexts/productContext';
 import { UserContext } from '../contexts/UserContext';
@@ -89,9 +87,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, color, loading }) 
   </div>
 );
 
-// 🟢 ACCEPT setActiveTab PROP
 const DashboardTab = ({ setActiveTab }) => {
-  // const navigate = useNavigate(); // Remove this
   const { orders, users, reportOrders, abandonedCarts, loading: adminLoading } = useContext(AdminContext);
   const { products, loading: productsLoading } = useContext(ProductContext);
   
@@ -118,10 +114,11 @@ const DashboardTab = ({ setActiveTab }) => {
 
     const currentTotalOrders = rawCurrentOrders.filter(isValidVolumeOrder);
     
-    // Revenue Order Definition
+    // 🟢 2. Updated Revenue Definition (Includes Wallet)
     const isRevenueOrder = (o) => {
       if (o.status === 'Order Cancelled') return false;
-      if (o.paymentMode === 'online') return o.paymentStatus === 'paid';
+      // Added 'wallet' check
+      if (o.paymentMode === 'online' || o.paymentMode === 'wallet') return o.paymentStatus === 'paid';
       if (o.paymentMode === 'cod' || o.paymentMode === 'cash') return o.status === 'Delivered';
       return false; 
     };
@@ -130,34 +127,47 @@ const DashboardTab = ({ setActiveTab }) => {
     const prevSuccessOrders = rawPrevOrders.filter(isValidVolumeOrder).filter(isRevenueOrder);
     const cancelledOrders = currentTotalOrders.filter(o => o.status === 'Order Cancelled');
 
-    // Financials
-    const calcRevenue = (list) => list.reduce((sum, o) => sum + o.totalAmount, 0);
+    // 🟢 3. Updated Financials (Sum Cash + Wallet for Total Revenue)
+    const calcRevenue = (list) => list.reduce((sum, o) => {
+        const cash = parseFloat(o.totalAmount || 0);
+        const wallet = parseFloat(o.walletAmountUsed || 0);
+        return sum + cash + wallet;
+    }, 0);
+
     const revenue = calcRevenue(successOrders);
     const prevRevenue = calcRevenue(prevSuccessOrders);
-    const lostRevenue = calcRevenue(cancelledOrders);
     
-    // Profit
+    // Only cash lost (usually we don't count wallet as lost revenue in the same way, but let's keep it consistent)
+    const lostRevenue = calcRevenue(cancelledOrders); 
+
+    // 🟢 4. Calculate Wallet Usage Separately
+    const calcWalletUsed = (list) => list.reduce((sum, o) => sum + (parseFloat(o.walletAmountUsed) || 0), 0);
+    const walletUsed = calcWalletUsed(successOrders);
+    const prevWalletUsed = calcWalletUsed(prevSuccessOrders);
+    
+    // 🟢 5. Updated Profit (Revenue - Cost)
     const calcProfit = (list) => list.reduce((sum, order) => {
       let orderCost = 0;
       const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
       const items = detailedOrder.products || detailedOrder.orderItems || [];
       orderCost = items.reduce((pSum, p) => pSum + ((p.costPrice ? parseFloat(p.costPrice) : 0) * p.quantity), 0);
-      return sum + (order.totalAmount - orderCost);
+      
+      // Total Revenue for this specific order
+      const orderRevenue = (parseFloat(order.totalAmount || 0) + parseFloat(order.walletAmountUsed || 0));
+      
+      return sum + (orderRevenue - orderCost);
     }, 0);
 
     const profit = calcProfit(successOrders);
     const prevProfit = calcProfit(prevSuccessOrders);
 
     // --- CUSTOMER METRICS ---
-    
-    // A. New Registrations
     const newCustomersCount = users.filter(u => {
       const joinedAt = new Date(u.createdAt);
       return joinedAt >= current.start && joinedAt <= current.end;
     }).length;
 
     // B. Returning vs First-Time Buyers
-    
     const userHistory = new Map();
     orders.forEach(o => {
       if (!isRevenueOrder(o)) return; 
@@ -250,13 +260,18 @@ const DashboardTab = ({ setActiveTab }) => {
         : pStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       
       const chunk = successOrders.filter(o => { const d = new Date(o.createdAt); return d >= pStart && d < pEnd; });
+      
+      // Chart Revenue must also include Wallet
+      const chunkRevenue = chunk.reduce((sum, o) => sum + (parseFloat(o.totalAmount)||0) + (parseFloat(o.walletAmountUsed)||0), 0);
+      
       chartLabels.push(label);
-      chartRevenue.push(chunk.reduce((sum, o) => sum + o.totalAmount, 0));
+      chartRevenue.push(chunkRevenue);
     }
 
     return {
       revenue, revenueTrend: calculateTrend(revenue, prevRevenue),
       profit, profitTrend: calculateTrend(profit, prevProfit),
+      walletUsed, walletTrend: calculateTrend(walletUsed, prevWalletUsed), // 🟢 6. Added Wallet Data
       totalOrders: currentTotalOrders.length, 
       successOrdersCount: successOrders.length,
       successTrend: calculateTrend(successOrders.length, prevSuccessOrders.length),
@@ -308,12 +323,18 @@ const DashboardTab = ({ setActiveTab }) => {
         </div>
       </div>
 
-      {/* STAT CARDS ROW 1 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* STAT CARDS ROW 1: Financials */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard 
           title="Total Revenue" value={`₹${dashboardData?.revenue.toLocaleString()}`} 
           trend={dashboardData?.revenueTrend} icon={DollarSign} color="indigo" loading={isLoading}
-          subtext="Paid Online & Delivered COD"
+          subtext="Online + COD + Wallet"
+        />
+        {/* 🟢 7. ADDED WALLET STAT CARD */}
+        <StatCard 
+          title="Wallet Used" value={`₹${dashboardData?.walletUsed.toLocaleString()}`} 
+          trend={dashboardData?.walletTrend} icon={Wallet} color="pink" loading={isLoading}
+          subtext="Store credit redeemed"
         />
         <StatCard 
           title="Net Profit (Est.)" value={`₹${dashboardData?.profit.toLocaleString()}`} 
@@ -347,7 +368,7 @@ const DashboardTab = ({ setActiveTab }) => {
         <StatCard 
           title="Returning Buyers" value={`${dashboardData?.returningCustomers}`} 
           icon={Repeat} color="cyan" loading={isLoading}
-          subtext={`of ${dashboardData?.activeBuyersCount} active buyers (Lifetime > 1)`}
+          subtext={`of ${dashboardData?.activeBuyersCount} active buyers`}
         />
         <StatCard 
           title="Lost Revenue" value={`₹${dashboardData?.lostRevenue.toLocaleString()}`} 
@@ -449,7 +470,6 @@ const DashboardTab = ({ setActiveTab }) => {
             <span className="mb-2 font-medium opacity-80">pending</span>
           </div>
           <div className="flex gap-3">
-            {/* 🟢 FIXED REDIRECT: Use setActiveTab to switch tabs in AdminPanel */}
             <button 
               onClick={() => setActiveTab('carts')} 
               className="flex-1 bg-white text-indigo-600 py-3 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
