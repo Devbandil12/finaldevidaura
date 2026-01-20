@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   LayoutDashboard, Coins, Package, Ticket, MapPin, 
   Star, MessageSquare, User as UserIcon, Bell, 
-  LogOut, Clock, IndianRupee, CreditCard 
+  LogOut, Clock, IndianRupee, Sparkles 
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -29,7 +29,7 @@ export default function Sidebar({ user, activeTab, setActiveTab, onSignOut }) {
     
     // 2. Commerce & Rewards (High Priority)
     { id: 'orders', label: 'My Orders', icon: Package },
-    { id: 'wallet', label: 'Aura Circle', icon: CreditCard }, // Changed to CreditCard for "Wallet" feel
+    { id: 'wallet', label: 'Aura Circle', icon: Sparkles }, // Changed to CreditCard for "Wallet" feel
     { id: 'earncash', label: 'Earn Cash', icon: IndianRupee },   // Changed to Sparkles to highlight "New/Special"
     { id: 'offers', label: 'Coupons', icon: Ticket },
     
