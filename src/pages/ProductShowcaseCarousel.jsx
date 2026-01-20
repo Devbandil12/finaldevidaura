@@ -297,16 +297,6 @@ export default function ProductShowcaseCarousel() {
         brandDeep: `hsl(${baseTheme.colors.accentSecondary})`,
     }), []);
 
-    if (products.length === 0) {
-        return (
-            <div className="w-full min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                    <p className="text-lg opacity-50">Loading fragrances...</p>
-                </div>
-            </div>
-        );
-    }
 
     const product = products[activeIdx] || {};
 
@@ -331,6 +321,18 @@ export default function ProductShowcaseCarousel() {
     }, [product.composition, product.fragrance, product.fragranceNotes]);
 
     const displayImage = product.imageUrl || (Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl);
+
+    
+    if (products.length === 0) {
+        return (
+            <div className="w-full min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg opacity-50">Loading fragrances...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
