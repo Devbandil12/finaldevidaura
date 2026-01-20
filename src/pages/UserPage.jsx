@@ -11,18 +11,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
 // Components
-import Sidebar from "../components/UserPage/Sidebar";
-import OverviewTab from "../components/UserPage/OverviewTab";
-import WalletTab from "../components/UserPage/WalletTab";
-import OrdersTab from "../components/UserPage/OrdersTab";
-import CouponsTab from "../components/UserPage/CouponsTab";
-import AddressesTab from "../components/UserPage/AddressesTab";
-import ReviewsTab from "../components/UserPage/ReviewsTab";
-import SupportTab from "../components/UserPage/SupportTab";
-import SettingsTab from "../components/UserPage/SettingsTab";
-import EarnCashTab from "../components/UserPage/EarnCashTab";
-import AlertsTab from "../components/UserPage/AlertsTab";       
-import ActivityLogTab from "../components/UserPage/ActivityLogTab"; 
+import Sidebar from "../Components/UserPage/Sidebar";
+import OverviewTab from "../Components/UserPage/OverviewTab";
+import WalletTab from "../Components/UserPage/WalletTab";
+import OrdersTab from "../Components/UserPage/OrdersTab";
+import CouponsTab from "../Components/UserPage/CouponsTab";
+import AddressesTab from "../Components/UserPage/AddressesTab";
+import ReviewsTab from "../Components/UserPage/ReviewsTab";
+import SupportTab from "../Components/UserPage/SupportTab";
+import SettingsTab from "../Components/UserPage/SettingsTab";
+import EarnCashTab from "../Components/UserPage/EarnCashTab";
+import AlertsTab from "../Components/UserPage/AlertsTab";       
+import ActivityLogTab from "../Components/UserPage/ActivityLogTab"; 
 
 // Shared transition config
 const smoothTransition = { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] };
