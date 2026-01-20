@@ -77,10 +77,10 @@ export default function UserPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] pt-24 pb-20 px-4 sm:px-8 text-zinc-900 selection:bg-zinc-100">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* LEFT SIDEBAR (Sticky) */}
-        <div className="lg:col-span-3 lg:sticky lg:top-28 z-40">
+        <div className="lg:col-span-3 lg:sticky lg:top-24 z-40">
           <Sidebar 
             user={userdetails} 
             activeTab={activeTab} 
