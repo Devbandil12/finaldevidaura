@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// src/pages/PincodeManager.jsx
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   UploadCloud, FileText, Search, MapPin, X, ChevronRight, ChevronDown, Loader2,
   CreditCard, Globe, Wallet, Plus, Edit2, CheckCircle2, XCircle
 } from 'lucide-react';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address/pincodes";
 
@@ -15,9 +18,7 @@ const indianStates = [
   "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
 ];
 
-// --- UTILITY COMPONENTS ---
-
-// Soft Card: Uses a very light ring instead of a heavy border
+// ... (Card, Badge, StatCard, Toggle components remain unchanged) ...
 const Card = ({ children, className = "bg-white" }) => (
     <div className={`rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 ${className}`}>
         {children}
@@ -89,48 +90,27 @@ export default function PincodeManager() {
     const [editingPin, setEditingPin] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    useEffect(() => { fetchPincodes() }, []);
+    // 🟢 AUTH TOKEN
+    const { getToken } = useAuth();
 
-    // --- COMPUTED STATS ---
-    const stats = useMemo(() => {
-        let totalStates = 0;
-        let totalCities = 0;
-        let totalPincodes = 0;
-        let totalCOD = 0;
-        let totalOnlineOnly = 0;
-
-        const states = Object.keys(savedPincodes);
-        totalStates = states.length;
-
-        states.forEach(state => {
-            const cities = Object.keys(savedPincodes[state]);
-            totalCities += cities.length;
-            
-            cities.forEach(city => {
-                const pins = savedPincodes[state][city];
-                totalPincodes += pins.length;
-                pins.forEach(p => {
-                    if (p.isServiceable) {
-                        if (p.codAvailable) totalCOD++;
-                        else totalOnlineOnly++;
-                    }
-                });
-            });
-        });
-
-        return { totalStates, totalCities, totalPincodes, totalCOD, totalOnlineOnly };
-    }, [savedPincodes]);
-
-    // --- API ACTIONS ---
-    const fetchPincodes = async () => {
+    // --- API ACTIONS (SECURED) ---
+    
+    const fetchPincodes = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(API_BASE);
-            const data = await res.json();
-            if (data.success) setSavedPincodes(data.data || {});
+            const token = await getToken();
+            const res = await fetch(API_BASE, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success) setSavedPincodes(data.data || {});
+            }
         } catch (e) { console.error(e); }
         finally { setIsLoading(false); }
-    };
+    }, [getToken]);
+
+    useEffect(() => { fetchPincodes() }, [fetchPincodes]);
 
     const toggleState = (state) => {
         setExpandedStates(prev => ({ ...prev, [state]: !prev[state] }));
@@ -146,7 +126,10 @@ export default function PincodeManager() {
         setExpandedCity(city);
         setCityPincodes([]); 
         try {
-            const res = await fetch(`${API_BASE}/${encodeURIComponent(state)}/${encodeURIComponent(city)}`);
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/${encodeURIComponent(state)}/${encodeURIComponent(city)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             const data = await res.json();
             if (data.success) setCityPincodes(data.data);
         } catch (e) { console.error(e); }
@@ -154,24 +137,35 @@ export default function PincodeManager() {
 
     const handleUpdatePincode = async (updatedData) => {
         try {
+            const token = await getToken();
             const res = await fetch(`${API_BASE}/${updatedData.pincode}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // 🔒
+                },
                 body: JSON.stringify(updatedData)
             });
             if (res.ok) {
                 setEditingPin(null);
-                fetchCityDetails(activeStateForCity, expandedCity);
-                fetchPincodes();
+                // Refresh specific city if open, otherwise full list
+                if (activeStateForCity && expandedCity) {
+                    fetchCityDetails(activeStateForCity, expandedCity);
+                }
+                fetchPincodes(); // Refresh stats
             }
         } catch (e) { alert("Update failed"); }
     };
 
     const handleAddPincode = async (newData) => {
         try {
+            const token = await getToken();
             const res = await fetch(`${API_BASE}/batch`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // 🔒
+                },
                 body: JSON.stringify({ pincodes: [newData] })
             });
             const data = await res.json();
@@ -185,7 +179,7 @@ export default function PincodeManager() {
         } catch (e) { alert("Network error"); }
     };
 
-    // --- CSV PARSING ---
+    // --- CSV PARSING (Unchanged Logic) ---
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -222,20 +216,29 @@ export default function PincodeManager() {
 
     const toTitleCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "Unknown";
 
+    // --- BATCH UPLOAD (SECURED) ---
     const executeBatchUpload = async () => {
         if (!confirm(`Import ${parsedData.length} pincodes? This might take a moment.`)) return;
         setIsUploading(true);
         setUploadProgress(0);
         const chunkSize = 500;
         const totalChunks = Math.ceil(parsedData.length / chunkSize);
+        
         try {
+            const token = await getToken(); // Get token once
+            
             for (let i = 0; i < totalChunks; i++) {
                 const chunk = parsedData.slice(i * chunkSize, (i + 1) * chunkSize).map(p => ({ ...p, ...settings }));
+                
                 await fetch(`${API_BASE}/batch`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // 🔒
+                    },
                     body: JSON.stringify({ pincodes: chunk })
                 });
+                
                 setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
             }
             alert("Success! All pincodes imported.");
@@ -244,12 +247,42 @@ export default function PincodeManager() {
             fetchPincodes();
         } catch (e) {
             alert("Error during upload. Check console.");
+            console.error(e);
         } finally {
             setIsUploading(false);
         }
     };
 
-    // --- FILTER ---
+    // --- FILTER & STATS (Unchanged) ---
+    const stats = useMemo(() => {
+        let totalStates = 0;
+        let totalCities = 0;
+        let totalPincodes = 0;
+        let totalCOD = 0;
+        let totalOnlineOnly = 0;
+
+        const states = Object.keys(savedPincodes);
+        totalStates = states.length;
+
+        states.forEach(state => {
+            const cities = Object.keys(savedPincodes[state]);
+            totalCities += cities.length;
+            
+            cities.forEach(city => {
+                const pins = savedPincodes[state][city];
+                totalPincodes += pins.length;
+                pins.forEach(p => {
+                    if (p.isServiceable) {
+                        if (p.codAvailable) totalCOD++;
+                        else totalOnlineOnly++;
+                    }
+                });
+            });
+        });
+
+        return { totalStates, totalCities, totalPincodes, totalCOD, totalOnlineOnly };
+    }, [savedPincodes]);
+
     const filteredTree = useMemo(() => {
         if (!searchQuery) return savedPincodes;
         const lowerQ = searchQuery.toLowerCase();
@@ -272,7 +305,8 @@ export default function PincodeManager() {
     }, [savedPincodes, searchQuery]);
 
 
-    // --- RENDER ---
+    // --- RENDER (Unchanged) ---
+    // (Copying your exact JSX structure below)
     return (
         <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-6 md:p-10  text-slate-800">
             {/* 1. HEADER */}
@@ -317,7 +351,7 @@ export default function PincodeManager() {
                 {/* 2. STATS GRID */}
                 {!isLoading && (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                         <StatCard 
+                            <StatCard 
                             icon={Globe} 
                             label="States" 
                             value={stats.totalStates} 
@@ -428,7 +462,7 @@ export default function PincodeManager() {
                         </div>
                     </div>
                 ) : (
-                    /* 3. MANAGE TAB (RESTYLED LIST) */
+                    /* 3. MANAGE TAB */
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="relative">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />

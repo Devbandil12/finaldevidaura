@@ -16,7 +16,8 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-export async function subscribeToPush(userId) {
+// 🟢 FIX: Accept 'token' as an argument
+export async function subscribeToPush(userId, token) {
   if (!('serviceWorker' in navigator)) return;
   if (!PUBLIC_KEY) {
       console.error("❌ Push Aborted: VITE_VAPID_PUBLIC_KEY is missing.");
@@ -33,14 +34,16 @@ export async function subscribeToPush(userId) {
       applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
     });
 
-    // Send to Backend
-    const res = await fetch(`${BACKEND_URL}/api/notifications/subscribe?userId=${userId}`, {
+    // 🟢 SECURE REQUEST: Send Token in Header
+    const res = await fetch(`${BACKEND_URL}/api/notifications/subscribe`, {
       method: 'POST',
       body: JSON.stringify(subscription),
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // 🔒 Essential for secured backend
+      }
     });
 
-    // 🟢 CRITICAL FIX: Check if server actually accepted it
     if (!res.ok) {
         throw new Error(`Server returned ${res.status} ${res.statusText}`);
     }

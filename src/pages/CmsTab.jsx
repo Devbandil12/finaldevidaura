@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/CmsTab.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Monitor, Layout, Image as ImageIcon, CheckCircle2, Eye, EyeOff, Link as LinkIcon, Type, Save, Upload, BookOpen, Layers, X } from 'lucide-react';
 import useCloudinary from '../utils/useCloudinary';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-// --- HELPER COMPONENTS ---
-
+// --- HELPER COMPONENTS (Unchanged) ---
 const ImageUploadBox = ({ label, field, value, onUpload, uploading }) => (
     <div className="relative group h-28 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center overflow-hidden hover:border-indigo-300 hover:bg-indigo-50/30 transition-all duration-300">
         {value ? (
@@ -32,16 +34,12 @@ const ImageUploadBox = ({ label, field, value, onUpload, uploading }) => (
     </div>
 );
 
-// 🟢 UPDATED: Now supports removing images
 const AboutUsImageField = ({ label, field, val, onUpload, onRemove }) => (
     <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-100 transition-colors group">
-        
-        {/* Image Preview Area */}
         <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 relative group-hover:shadow-md transition-all">
             {val ? (
                 <>
                     <img src={val} className="w-full h-full object-cover" alt="Preview" />
-                    {/* 🔴 Remove Button (Overlay) */}
                     <button 
                         onClick={(e) => { e.preventDefault(); onRemove(field); }}
                         className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20"
@@ -56,8 +54,6 @@ const AboutUsImageField = ({ label, field, val, onUpload, onRemove }) => (
                 </div>
             )}
         </div>
-
-        {/* Input Area */}
         <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-500 uppercase mb-1">{label}</p>
             <div className="relative">
@@ -86,8 +82,6 @@ const CmsTab = () => {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] p-8  text-slate-600 space-y-10 animate-in fade-in duration-700">
-      
-      {/* Header & Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
             <h2 className="text-3xl font-light text-slate-800 tracking-tight">Content Manager</h2>
@@ -115,12 +109,13 @@ const CmsTab = () => {
   );
 };
 
-// --- SUB-COMPONENT: BANNER MANAGER ---
+// --- SUB-COMPONENT: BANNER MANAGER (SECURED) ---
 const BannerManager = () => {
   const [activeTab, setActiveTab] = useState('hero');
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(false);
   const { uploadImage, uploading } = useCloudinary();
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
   
   const [form, setForm] = useState({ 
     title: '', subtitle: '', imageUrl: '', link: '/products', buttonText: 'Shop Now',
@@ -128,14 +123,18 @@ const BannerManager = () => {
     imageLayer1: '', imageLayer2: '', poeticLine: '', description: ''
   });
 
-  useEffect(() => { fetchBanners(); }, []);
-
-  const fetchBanners = async () => {
+  const fetchBanners = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cms/banners`);
+      // 🟢 SECURE: Get Token (Optional if GET is public, but good for admin views)
+      const token = await getToken();
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+      const res = await fetch(`${BACKEND_URL}/api/cms/banners`, { headers });
       if (res.ok) setBanners(await res.json());
     } catch (err) { console.error(err); }
-  };
+  }, [getToken]);
+
+  useEffect(() => { fetchBanners(); }, [fetchBanners]);
 
   const handleImageSelect = async (file, field = 'imageUrl') => {
     if (file) {
@@ -149,40 +148,66 @@ const BannerManager = () => {
     setLoading(true);
     const payload = { ...form, type: activeTab === 'hero' ? 'hero' : 'mid_section' };
     
-    const res = await fetch(`${BACKEND_URL}/api/cms/banners`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    setLoading(false);
-    
-    if (res.ok) {
-        fetchBanners();
-        setForm({ 
-            title: '', subtitle: '', imageUrl: '', link: '/products', buttonText: 'Shop Now', 
-            type: 'hero', layout: 'split', imageLayer1: '', imageLayer2: '', poeticLine: '', description: '' 
+    try {
+        const token = await getToken(); // 🟢 Get Token
+        const res = await fetch(`${BACKEND_URL}/api/cms/banners`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 🔒 Attach Token
+            },
+            body: JSON.stringify(payload)
         });
-        if (window.toast) window.toast.success("Banner published successfully!");
-    } else {
-        if (window.toast) window.toast.error("Failed to publish banner.");
+        
+        if (res.ok) {
+            fetchBanners();
+            setForm({ 
+                title: '', subtitle: '', imageUrl: '', link: '/products', buttonText: 'Shop Now', 
+                type: 'hero', layout: 'split', imageLayer1: '', imageLayer2: '', poeticLine: '', description: '' 
+            });
+            if (window.toast) window.toast.success("Banner published successfully!");
+        } else {
+            if (window.toast) window.toast.error("Failed to publish banner.");
+        }
+    } catch (error) {
+        console.error(error);
+        if (window.toast) window.toast.error("Network error");
+    } finally {
+        setLoading(false);
     }
   };
 
   const deleteBanner = async (id) => {
     if(!window.confirm("Delete this banner?")) return;
-    await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, { method: 'DELETE' });
-    fetchBanners();
-    if (window.toast) window.toast.success("Banner deleted.");
+    try {
+        const token = await getToken(); // 🟢 Get Token
+        await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, { 
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` } // 🔒 Attach Token
+        });
+        fetchBanners();
+        if (window.toast) window.toast.success("Banner deleted.");
+    } catch(err) {
+        console.error(err);
+    }
   };
 
   const toggleActive = async (id, status) => {
-    await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isActive: !status })
-    });
-    fetchBanners();
-    if (window.toast) window.toast.success(status ? "Banner hidden" : "Banner active");
+    try {
+        const token = await getToken(); // 🟢 Get Token
+        await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 🔒 Attach Token
+            },
+            body: JSON.stringify({ isActive: !status })
+        });
+        fetchBanners();
+        if (window.toast) window.toast.success(status ? "Banner hidden" : "Banner active");
+    } catch(err) {
+        console.error(err);
+    }
   };
 
   const currentBanners = banners.filter(b => activeTab === 'hero' ? b.type === 'hero' : b.type === 'mid_section');
@@ -283,10 +308,12 @@ const BannerManager = () => {
   );
 };
 
-// --- SUB-COMPONENT: ABOUT US MANAGER ---
+// --- SUB-COMPONENT: ABOUT US MANAGER (SECURED) ---
 const AboutUsManager = () => {
   const { uploadImage, uploading } = useCloudinary();
   const [loading, setLoading] = useState(false);
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
+  
   const [data, setData] = useState({
     heroTitle: '', heroSubtitle: '', heroImage: '',
     foundersImage: '', foundersDesc: '', founder1Name: '', founder2Name: '',
@@ -311,20 +338,33 @@ const AboutUsManager = () => {
     if (url) setData(prev => ({ ...prev, [fieldName]: url }));
   };
 
-  // 🟢 NEW: Remove Image Function
   const handleRemoveImage = (fieldName) => {
-    setData(prev => ({ ...prev, [fieldName]: "" })); // Clear the field
+    setData(prev => ({ ...prev, [fieldName]: "" })); 
   };
 
   const handleSave = async () => {
     setLoading(true);
     const { id, createdAt, ...payload } = data;
-    const res = await fetch(`${BACKEND_URL}/api/cms/about`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setLoading(false);
-    if(res.ok) {
-        if(window.toast) window.toast.success("About Us page updated successfully!");
-    } else {
-        if(window.toast) window.toast.error("Failed to update.");
+    try {
+        const token = await getToken(); // 🟢 Get Token
+        const res = await fetch(`${BACKEND_URL}/api/cms/about`, { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 🔒 Attach Token
+            }, 
+            body: JSON.stringify(payload) 
+        });
+        
+        if(res.ok) {
+            if(window.toast) window.toast.success("About Us page updated successfully!");
+        } else {
+            if(window.toast) window.toast.error("Failed to update.");
+        }
+    } catch(err) {
+        console.error(err);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -342,7 +382,6 @@ const AboutUsManager = () => {
                     <input name="heroTitle" placeholder="Title" value={data.heroTitle} onChange={handleChange} className="w-full p-3 bg-slate-50 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100 border-none" />
                     <input name="heroSubtitle" placeholder="Subtitle" value={data.heroSubtitle} onChange={handleChange} className="w-full p-3 bg-slate-50 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100 border-none" />
                 </div>
-                {/* 🟢 PASSING handleRemoveImage */}
                 <AboutUsImageField label="Hero Bottle Image" field="heroImage" val={data.heroImage} onUpload={handleImageUpload} onRemove={handleRemoveImage} />
             </AboutUsSection>
 

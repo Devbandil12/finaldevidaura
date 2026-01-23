@@ -1,10 +1,9 @@
 // src/pages/Home.jsx
 import React, { useEffect, useState, useContext } from "react";
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import HeroSection from "./HeroSection";
-// 🟢 Restored Imports
 import Products from "./Products";
 import CustomComboBuilder from "./CustomComboBuilder";
-
 import ProductShowcaseCarousel from "./ProductShowcaseCarousel";
 import DualMarquee from "./DualMarquee";
 import TestimonialsSection from "./TestimonialsSection";
@@ -15,17 +14,25 @@ import AuraFinder from "../Components/AuraFinder";
 
 const Home = () => {
   const { userdetails } = useContext(UserContext);
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminStats, setAdminStats] = useState({ todayCount: 0, pendingCount: 0 });
-
 
   // Admin Check Effect
   useEffect(() => {
     const fetchAdminStats = async () => {
+      // Only fetch if user is confirmed as admin
       if (userdetails?.role === 'admin') {
         try {
+          const token = await getToken(); // 🟢 Get Token
           const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
-          const res = await fetch(`${BACKEND_URL}/api/orders`);
+          
+          // 🟢 Add Auth Header
+          const res = await fetch(`${BACKEND_URL}/api/orders`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
 
           if (res.ok) {
             const orders = await res.json();
@@ -40,6 +47,8 @@ const Home = () => {
               });
               setShowAdminModal(true);
             }
+          } else {
+            console.error("Failed to fetch admin stats:", res.status);
           }
         } catch (err) {
           console.error("Failed to fetch admin stats for modal", err);
@@ -50,7 +59,7 @@ const Home = () => {
     if (userdetails) {
       fetchAdminStats();
     }
-  }, [userdetails]);
+  }, [userdetails, getToken]); // Added getToken dependency
   
   return (
     <>
@@ -87,14 +96,13 @@ const Home = () => {
       <MidSectionBanner index={0} />
 
       <div id="scents-section"><ProductShowcaseCarousel /></div>
-      {/* 🟢 Render actual Products component with flag to hide big banner */}
+      
       <div id="collection-section">
         <Products isStandalone={false} />
       </div>
 
       <MidSectionBanner index={1} />
 
-      {/* 🟢 Render actual Combo Builder with flag */}
       <div id="custom-combo-section">
         <CustomComboBuilder isStandalone={false} />
       </div>

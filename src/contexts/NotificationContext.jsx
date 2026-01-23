@@ -1,9 +1,9 @@
-// src/contexts/NotificationContext.jsx
 import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import { UserContext } from './UserContext';
+import { useAuth } from "@clerk/clerk-react";
 
 // --------------------------------------------------
-// localStorage helper functions (These are correct)
+// localStorage helper functions 
 // --------------------------------------------------
 const DISMISSED_PROMOS_KEY = 'dismissedPromoIDs';
 
@@ -45,11 +45,10 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const { userdetails, isUserLoading } = useContext(UserContext);
+  const { getToken } = useAuth();
 
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
-  // This function is correct. It fetches personal alerts
-  // and filters out any dismissed promos from localStorage.
   const fetchNotifications = useCallback(async () => {
     if (!userdetails?.id) {
       setNotifications([]);
@@ -60,7 +59,10 @@ export const NotificationProvider = ({ children }) => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/notifications/user/${userdetails.id}`);
+      const token = await getToken();
+      const res = await fetch(`${BASE_URL}/api/notifications/user/${userdetails.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await res.json(); 
       
       const promoRes = await fetch(`${BASE_URL}/api/promos/latest-public`);
@@ -83,7 +85,7 @@ export const NotificationProvider = ({ children }) => {
             isRead: false
           };
         })
-        .filter(promo => !dismissedIDs.includes(promo.id)); // 👈 Filters dismissed promos
+        .filter(promo => !dismissedIDs.includes(promo.id)); 
 
       const allNotifications = [...data.notifications, ...promoNotifications];
       allNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -96,18 +98,12 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [userdetails?.id, BASE_URL]);
+  }, [userdetails?.id, BASE_URL, getToken]);
 
 
-  // --------------------------------------------------
-  // 🟢 START: MODIFIED "Mark all as read"
-  // --------------------------------------------------
-  // This function now ONLY affects personal alerts.
-  // It does NOT touch promos or localStorage.
   const markAllAsRead = useCallback(async () => {
     if (!userdetails?.id || unreadCount === 0) return;
 
-    // 1. Optimistic update: Mark personal alerts as read, leave promos alone
     setUnreadCount(0);
     setNotifications(prev =>
       prev.map(n => 
@@ -115,59 +111,46 @@ export const NotificationProvider = ({ children }) => {
       )
     );
     
-    // 2. Call API for personal alerts
     try {
+      const token = await getToken();
       await fetch(`${BASE_URL}/api/notifications/mark-read/user/${userdetails.id}`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
       });
-      // We don't need to re-fetch, the optimistic update is fine.
-      // Promos will remain visible.
     } catch (err) {
       console.error("[NotificationContext] Error marking as read:", err);
-      fetchNotifications(); // Re-fetch on error to re-sync
+      fetchNotifications(); 
     }
-  }, [userdetails?.id, unreadCount, BASE_URL, fetchNotifications]);
-  // --------------------------------------------------
-  // 🟢 END: MODIFIED "Mark all as read"
-  // --------------------------------------------------
+  }, [userdetails?.id, unreadCount, BASE_URL, fetchNotifications, getToken]);
 
 
-  // --------------------------------------------------
-  // 🟢 START: MODIFIED "Clear All"
-  // --------------------------------------------------
-  // This function now clears BOTH personal alerts (from DB)
-  // AND promos (from localStorage).
   const clearAllNotifications = useCallback(async () => {
     if (!userdetails?.id) return;
     if (!window.confirm("Are you sure you want to clear all your notifications?")) return;
 
-    //   Get IDs of promos that are *currently* showing
     const promoIdsToDismiss = notifications
       .filter(n => String(n.id).startsWith('promo-'))
       .map(n => n.id);
 
-    //  Add them to localStorage to dismiss them
     if (promoIdsToDismiss.length > 0) {
       addDismissedPromoIDs(promoIdsToDismiss);
     }
     
-    //  Optimistic update: clear everything from view
     setNotifications([]);
     setUnreadCount(0);
     
     try {
-      // Call the DELETE API (for personal alerts ONLY)
+      const token = await getToken();
       await fetch(`${BASE_URL}/api/notifications/user/${userdetails.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
       });
-      // No need to re-fetch, we've already cleared everything locally
-      // Promos are handled via localStorage
       fetchNotifications(); 
     } catch (err) {
       console.error("[NotificationContext] Error clearing notifications:", err);
       fetchNotifications(); 
     }
-  }, [userdetails?.id, BASE_URL, fetchNotifications, notifications]);
+  }, [userdetails?.id, BASE_URL, fetchNotifications, notifications, getToken]);
 
   useEffect(() => {
     if (isUserLoading) {

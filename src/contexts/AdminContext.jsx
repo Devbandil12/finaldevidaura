@@ -1,6 +1,6 @@
-// src/contexts/AdminContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { UserContext } from "./UserContext";
+import { useAuth } from "@clerk/clerk-react";
 
 export const AdminContext = createContext();
 export const useAdmin = () => useContext(AdminContext);
@@ -10,21 +10,34 @@ export const AdminProvider = ({ children }) => {
   const [wishlistStats, setWishlistStats] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [activityLogs, setActivityLogs] = useState([]); // ✅ Added State
+  const [activityLogs, setActivityLogs] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [reportOrders, setReportOrders] = useState([]);
 
   const { userdetails, isUserLoading } = useContext(UserContext);
+  const { getToken } = useAuth(); 
 
   // URL Helpers
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
   const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
+  // 🟢 Helper for Auth Headers
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
+  };
+
   /* -------------------- USERS -------------------- */
   const getAllUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/users`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
@@ -34,15 +47,16 @@ export const AdminProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
   // Update User
   const updateUser = async (userId, updates) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...updates, actorId: userdetails?.id }),
+        headers, 
+        body: JSON.stringify({ ...updates }), 
       });
       if (!res.ok) throw new Error("Failed to update user");
       window.toast.success("User updated");
@@ -56,10 +70,10 @@ export const AdminProvider = ({ children }) => {
   // Delete User
   const deleteUser = async (userId) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actorId: userdetails?.id })
+        headers,
       });
       if (!res.ok) throw new Error("Failed to delete user");
       window.toast.success("User deleted");
@@ -74,7 +88,10 @@ export const AdminProvider = ({ children }) => {
   const getAllOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BACKEND_URL}/api/orders`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/orders`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       setOrders(data);
@@ -84,11 +101,14 @@ export const AdminProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
   const getSingleOrderDetails = async (orderId) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch order details");
       return await res.json();
     } catch (error) {
@@ -100,10 +120,11 @@ export const AdminProvider = ({ children }) => {
 
   const updateOrderStatus = async (orderId, status) => {
     try {
+      const headers = await getAuthHeaders(); 
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, actorId: userdetails?.id }),
+        headers,
+        body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Failed to update order");
       const updatedOrder = await res.json();
@@ -118,14 +139,11 @@ export const AdminProvider = ({ children }) => {
 
   const updateBulkOrderStatus = async (orderIds, status) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/bulk-status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            orderIds, 
-            status, 
-            actorId: userdetails?.id 
-        }),
+        headers,
+        body: JSON.stringify({ orderIds, status }),
       });
 
       if (!res.ok) throw new Error("Failed to update orders");
@@ -143,15 +161,11 @@ export const AdminProvider = ({ children }) => {
 
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
-      // 🟢 CHANGE 1: Point to the Admin Route (routes/orders.js)
-      // 🟢 CHANGE 2: Use PUT instead of POST (to match router.put)
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount, // Optional: In case you want to refund a partial amount
-          actorId: userdetails?.id // Admin ID for logging
-        }),
+        headers,
+        body: JSON.stringify({ amount }),
       });
 
       if (!res.ok) {
@@ -161,8 +175,6 @@ export const AdminProvider = ({ children }) => {
 
       const data = await res.json();
       window.toast.success(data.message || `Order #${orderId} cancelled by Admin`);
-
-      // Refresh list to show updated status
       await getAllOrders();
 
     } catch (err) {
@@ -174,10 +186,11 @@ export const AdminProvider = ({ children }) => {
   /* -------------------- COUPONS -------------------- */
   const createCoupon = async (couponData) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/coupons`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...couponData, actorId: userdetails?.id }),
+        headers,
+        body: JSON.stringify({ ...couponData }),
       });
       if (!res.ok) throw new Error("Failed to create coupon");
       window.toast.success("Coupon created");
@@ -191,7 +204,10 @@ export const AdminProvider = ({ children }) => {
   const getReportData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BASE}/api/orders/details/for-reports`);
+      const token = await getToken();
+      const res = await fetch(`${BASE}/api/orders/details/for-reports`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch report data");
       const data = await res.json();
       setReportOrders(data);
@@ -201,41 +217,49 @@ export const AdminProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [BASE]);
+  }, [BASE, getToken]);
 
   const getAbandonedCarts = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cart/admin/abandoned`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/cart/admin/abandoned`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch abandoned carts");
       const data = await res.json();
       setAbandonedCarts(data);
     } catch (err) {
       console.error("❌ getAbandonedCarts failed:", err);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
   const getWishlistStats = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/cart/admin/wishlist-stats`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/cart/admin/wishlist-stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch wishlist stats");
       const data = await res.json();
       setWishlistStats(data);
     } catch (err) {
       console.error("❌ getWishlistStats failed:", err);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
-  // ✅ Added Activity Log Fetcher
   const getActivityLogs = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/admin/all-activity-logs`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/users/admin/all-activity-logs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch activity logs");
       const data = await res.json();
       setActivityLogs(data);
     } catch (err) {
       console.error("❌ getActivityLogs failed:", err);
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
   /* -------------------- EXPORT UTILS -------------------- */
   const exportUsers = (selectedUsers) => console.log("Exporting users:", selectedUsers);
@@ -249,16 +273,14 @@ export const AdminProvider = ({ children }) => {
     }
 
     if (userdetails?.role === "admin") {
-      // ✅ Fetch all admin data
       Promise.all([
         getAllUsers(),
         getAllOrders(),
         getAbandonedCarts(),
         getWishlistStats(),
-        getActivityLogs() // ✅ Added log fetch here
+        getActivityLogs() 
       ]).finally(() => setLoading(false));
     } else {
-      // Reset state if not admin
       setUsers([]);
       setOrders([]);
       setReportOrders([]);
@@ -286,7 +308,7 @@ export const AdminProvider = ({ children }) => {
         reportOrders,
         abandonedCarts,
         wishlistStats,
-        activityLogs, // ✅ Exposed to consumers
+        activityLogs,
 
         getAllUsers,
         updateUser,

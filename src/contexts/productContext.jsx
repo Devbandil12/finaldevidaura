@@ -1,6 +1,6 @@
-// src/contexts/ProductContext.js
 import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
-import { UserContext } from "./UserContext"; // 🟢 Import UserContext
+import { UserContext } from "./UserContext"; 
+import { useAuth } from "@clerk/clerk-react";
 
 export const ProductContext = createContext();
 
@@ -9,10 +9,19 @@ export const ProductProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [archivedProducts, setArchivedProducts] = useState([]);
   
-  // 🟢 Get current user details to send actorId
   const { userdetails } = useContext(UserContext);
+  const { getToken } = useAuth();
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // Helper
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
+  };
 
   // Fetch active products
   const getProducts = useCallback(async () => {
@@ -32,23 +41,26 @@ export const ProductProvider = ({ children }) => {
   // Fetch archived products
   const getArchivedProducts = useCallback(async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/products/archived`);
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/products/archived`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error("Failed to fetch archived products");
       const data = await res.json();
       setArchivedProducts(data);
     } catch (error) {
       console.error("❌ Failed to fetch archived products:", error);
-      window.toast.error("Could not load archived products.");
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
-  // 🟢 Add product (With actorId)
+  // Add product
   const addProduct = useCallback(async (newProduct) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/products`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newProduct, actorId: userdetails?.id }), // 🟢 Added actorId
+        headers,
+        body: JSON.stringify({ ...newProduct }), 
       });
       if (!res.ok) throw new Error("Failed to add product");
       await res.json();
@@ -58,15 +70,16 @@ export const ProductProvider = ({ children }) => {
       console.error("❌ Error adding product:", error);
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
-  // 🟢 Update product (With actorId)
+  // Update product
   const updateProduct = useCallback(async (productId, updatedData) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...updatedData, actorId: userdetails?.id }), // 🟢 Added actorId
+        headers,
+        body: JSON.stringify({ ...updatedData }), 
       });
       if (!res.ok) throw new Error("Failed to update product");
       await res.json();
@@ -76,15 +89,16 @@ export const ProductProvider = ({ children }) => {
       console.error("❌ Error updating product:", error);
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
-  // 🟢 Archive product (With actorId)
+  // Archive product
   const deleteProduct = useCallback(async (productId) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}/archive`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
-        body: JSON.stringify({ actorId: userdetails?.id }), // 🟢 Added Body
+        headers, 
+        body: JSON.stringify({ }), 
       });
       if (!res.ok) throw new Error("Failed to archive product");
       await res.json();
@@ -93,18 +107,18 @@ export const ProductProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error("❌ Error archiving product:", error);
-      // window.toast.error("Failed to archive product.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, getArchivedProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getArchivedProducts, getToken]);
   
-  // 🟢 Unarchive product (With actorId)
+  // Unarchive product
   const unarchiveProduct = useCallback(async (productId) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}/unarchive`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
-        body: JSON.stringify({ actorId: userdetails?.id }), // 🟢 Added Body
+        headers,
+        body: JSON.stringify({ }), 
       });
       if (!res.ok) throw new Error("Failed to unarchive product");
       await res.json();
@@ -117,15 +131,16 @@ export const ProductProvider = ({ children }) => {
       window.toast.error("Failed to unarchive product.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, getArchivedProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getArchivedProducts, getToken]);
 
-  // 🟢 Add variant (With actorId)
+  // Add variant
   const addVariant = useCallback(async (variantData) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/variants`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...variantData, actorId: userdetails?.id }), // 🟢 Added actorId
+        headers,
+        body: JSON.stringify({ ...variantData }), 
       });
       if (!res.ok) throw new Error("Failed to add variant");
       await res.json();
@@ -137,15 +152,16 @@ export const ProductProvider = ({ children }) => {
       window.toast.error("Failed to add variant.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
-  // 🟢 Update variant (With actorId)
+  // Update variant
   const updateVariant = useCallback(async (variantId, variantData) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...variantData, actorId: userdetails?.id }), // 🟢 Added actorId
+        headers,
+        body: JSON.stringify({ ...variantData }), 
       });
       if (!res.ok) throw new Error("Failed to update variant");
       await res.json();
@@ -157,15 +173,16 @@ export const ProductProvider = ({ children }) => {
       window.toast.error("Failed to update variant.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
-  // 🟢 Archive variant (With actorId)
+  // Archive variant
   const deleteVariant = useCallback(async (variantId) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}/archive`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
-        body: JSON.stringify({ actorId: userdetails?.id }), // 🟢 Added Body
+        headers,
+        body: JSON.stringify({ }), 
       });
       if (!res.ok) throw new Error("Failed to archive variant");
       await res.json();
@@ -177,15 +194,16 @@ export const ProductProvider = ({ children }) => {
       window.toast.error("Failed to archive variant.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
   
-  // 🟢 Unarchive variant (With actorId)
+  // Unarchive variant
   const unarchiveVariant = useCallback(async (variantId) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}/unarchive`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
-        body: JSON.stringify({ actorId: userdetails?.id }), // 🟢 Added Body
+        headers,
+        body: JSON.stringify({ }), 
       });
       if (!res.ok) throw new Error("Failed to unarchive variant");
       await res.json();
@@ -197,17 +215,17 @@ export const ProductProvider = ({ children }) => {
       window.toast.error("Failed to unarchive variant.");
       return false;
     }
-  }, [BACKEND_URL, getProducts, userdetails?.id]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
   const refreshProductStock = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Tell backend to clear the cache
+      const headers = await getAuthHeaders();
       await fetch(`${BACKEND_URL}/api/products/cache/invalidate`, { 
-        method: "POST" 
+        method: "POST",
+        headers
       });
       
-      // 2. Fetch fresh data (Backend will now serve live DB data)
       await getProducts();
       window.toast.success("Live stock updated!");
     } catch (error) {
@@ -216,7 +234,7 @@ export const ProductProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL, getProducts]);
+  }, [BACKEND_URL, getProducts, getToken]);
 
   useEffect(() => {
     getProducts();

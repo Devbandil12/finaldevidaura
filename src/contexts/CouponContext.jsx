@@ -1,6 +1,6 @@
-// src/contexts/CouponContext.js
 import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
 import { UserContext } from "./UserContext";
+import { useAuth } from "@clerk/clerk-react";
 
 export const CouponContext = createContext({
   coupons: [],
@@ -23,16 +23,28 @@ export const CouponProvider = ({ children }) => {
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [autoOfferInstructions, setAutoOfferInstructions] = useState([]); 
   
-  // 🟢 We need userdetails to get the actorId
   const { userdetails, isUserLoading } = useContext(UserContext);
+  const { getToken } = useAuth();
   
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
+
+  // Helper
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
+  };
 
   // --- 1. Admin function to get ALL coupons ---
   const refreshCoupons = useCallback(async () => {
     const endpoint = `${BASE_URL}/api/coupons`;
     try {
-      const res = await fetch(endpoint);
+      const token = await getToken();
+      const res = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = await res.json();
       setCoupons(data);
@@ -40,7 +52,7 @@ export const CouponProvider = ({ children }) => {
     } catch (err) {
       console.error("[CouponContext] failed to load:", err);
     }
-  }, [BASE_URL]);
+  }, [BASE_URL, getToken]);
 
   // --- 2. User function to get available MANUAL coupons ---
   const loadAvailableCoupons = useCallback(async (userId) => {
@@ -86,7 +98,7 @@ export const CouponProvider = ({ children }) => {
     }
   }, [isUserLoading, userdetails, refreshCoupons, loadAvailableCoupons, loadAutoOfferInstructions]);
 
-  // 5. 🟢 MODIFIED: saveCoupon (Includes actorId for logging and targetUserId for targeting)
+  // 5. saveCoupon 
   const saveCoupon = async () => {
     if (!editingCoupon?.code) {
       return window.toast.error("Code is required");
@@ -114,11 +126,9 @@ export const CouponProvider = ({ children }) => {
       action_buyX: editingCoupon.action_buyX || null,
       action_getY: editingCoupon.action_getY || null,
 
-      // 🟢 NEW: Pass targetUserId to backend
       targetUserId: editingCoupon.targetUserId || null,
-      targetCategory: editingCoupon.targetCategory || null, // 🟢 NEW
-      // 🟢 CRITICAL FIX: Add actorId so backend logs the Create/Update action
-      actorId: userdetails?.id 
+      targetCategory: editingCoupon.targetCategory || null, 
+      // actorId inferred from token
     };
 
     const url = editingCoupon.id
@@ -127,9 +137,10 @@ export const CouponProvider = ({ children }) => {
     const method = editingCoupon.id ? "PUT" : "POST";
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(formattedPayload), 
       });
       if (!res.ok) {
@@ -144,15 +155,14 @@ export const CouponProvider = ({ children }) => {
     }
   };
 
-  // --- 6. 🟢 MODIFIED: deleteCoupon (Includes actorId for logging) ---
+  // --- 6. deleteCoupon ---
   const deleteCoupon = async (id) => {
     if (!window.confirm("Delete this coupon?")) return;
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BASE_URL}/api/coupons/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" }, // 🟢 Added Header
-        // 🟢 CRITICAL FIX: Send actorId in body for DELETE log
-        body: JSON.stringify({ actorId: userdetails?.id }), 
+        headers,
       });
       if (!res.ok) throw new Error();
       window.toast.success("Coupon deleted");

@@ -1,6 +1,6 @@
-// src/contexts/OrderContext.js
 import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { UserContext } from "./UserContext";
+import { useAuth } from "@clerk/clerk-react"; 
 
 export const OrderContext = createContext();
 
@@ -8,7 +8,18 @@ export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const { userdetails, isUserLoading } = useContext(UserContext);
+  const { getToken } = useAuth();
+  
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // Helper
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+    };
+  };
 
   // Fetch orders
   const getorders = useCallback(async (showLoader = true, isAdmin = false) => {
@@ -16,13 +27,14 @@ export const OrderProvider = ({ children }) => {
     if (showLoader) setLoadingOrders(true);
 
     try {
+      const headers = await getAuthHeaders();
       let res;
       if (isAdmin) {
-        res = await fetch(`${BACKEND_URL}/api/orders/`);
+        res = await fetch(`${BACKEND_URL}/api/orders/`, { headers });
       } else {
         res = await fetch(`${BACKEND_URL}/api/orders/get-my-orders`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ userId: userdetails.id }),
         });
       }
@@ -35,17 +47,18 @@ export const OrderProvider = ({ children }) => {
     } finally {
       if (showLoader) setLoadingOrders(false);
     }
-  }, [BACKEND_URL, userdetails?.id]);
+  }, [BACKEND_URL, userdetails?.id, getToken]);
 
-  // 🟢 Update order status (With actorId)
+  // Update order status (With token)
   const updateOrderStatus = useCallback(async (orderId, newStatus) => {
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ 
             status: newStatus,
-            actorId: userdetails?.id // 🟢 Added actorId
+            // actorId inferred
         }),
       });
       if (!res.ok) throw new Error("Failed to update order status");
@@ -55,20 +68,20 @@ export const OrderProvider = ({ children }) => {
       console.error("❌ Failed to update order status:", error);
       window.toast.error("Failed to update order status.");
     }
-  }, [BACKEND_URL, getorders, userdetails?.id]);
+  }, [BACKEND_URL, getorders, getToken]);
 
-  // 🟢 Cancel order (With actorId)
+  // Cancel order (With token)
  const cancelOrder = useCallback(
   async (orderId, paymentMode, amount) => {
     try {
-      // 🟢 USER ONLY: Always hits the restricted Refund Controller
+      const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/payments/refund`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ 
           orderId, 
           amount,
-          actorId: userdetails?.id 
+          // actorId inferred
         }),
       });
 
@@ -80,7 +93,6 @@ export const OrderProvider = ({ children }) => {
       const data = await res.json();
       window.toast.success(data.message || `Order ${orderId} cancelled successfully.`);
       
-      // Refresh User's personal order list
       await getorders(true, false); 
 
     } catch (error) {
@@ -88,12 +100,13 @@ export const OrderProvider = ({ children }) => {
       window.toast.error(error.message || "Failed to cancel order.");
     }
   },
-  [BACKEND_URL, getorders, userdetails?.id]
+  [BACKEND_URL, getorders, getToken]
 );
 
   const getSingleOrderDetails = useCallback(async (orderId) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`);
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}`, { headers });
       if (!res.ok) throw new Error("Failed to fetch order details");
       return await res.json();
     } catch (error) {
@@ -101,7 +114,7 @@ export const OrderProvider = ({ children }) => {
       window.toast.error("Failed to load order details.");
       return null;
     }
-  }, [BACKEND_URL]);
+  }, [BACKEND_URL, getToken]);
 
   useEffect(() => {
     if (isUserLoading) {

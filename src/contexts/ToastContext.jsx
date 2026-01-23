@@ -116,7 +116,7 @@ export function ToastProvider({ children, position = "bottom-right" }) {
     "top-right": "items-end justify-start",
     "bottom-left": "items-start justify-end",
     "bottom-center": "items-center justify-end",
-    "bottom-right": "items-end justify-end", // Simplified, as mobile is now hidden
+    "bottom-right": "items-end justify-end", 
   };
 
   return (
@@ -125,7 +125,6 @@ export function ToastProvider({ children, position = "bottom-right" }) {
       
       <div
         aria-live="assertive"
-        // 👇 CHANGED HERE: Added 'hidden' and 'sm:flex'
         className={`fixed inset-0 hidden sm:flex flex-col gap-3 p-4 sm:p-4 pointer-events-none ${positionClasses[position]} z-[99999]`}
         style={{ perspective: "1000px" }}
       >

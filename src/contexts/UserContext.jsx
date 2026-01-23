@@ -6,11 +6,8 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react"; 
 import { subscribeToPush } from '../utils/pushNotification';
-
-
-
 
 export const UserContext = createContext();
 
@@ -18,9 +15,9 @@ export const UserProvider = ({ children }) => {
   const [userdetails, setUserdetails] = useState(null);
   const [address, setAddress] = useState([]);
   const { user, isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth(); 
   const [isUserLoading, setIsUserLoading] = useState(true);
 
-  // keep backend url stable
   const BACKEND_URL = useMemo(
     () => (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, ""),
     []
@@ -52,17 +49,15 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      const clerkId = user?.id;
-      const email = user?.primaryEmailAddress?.emailAddress;
-      const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
-
-      if (!clerkId || !email) return;
-
       try {
-        const res = await fetch(
-          `${BACKEND_URL}/api/users/find-by-clerk-id?clerkId=${encodeURIComponent(clerkId)}`,
-          { signal }
-        );
+        const token = await getToken();
+        // 🟢 Use secure /me endpoint
+        const res = await fetch(`${BACKEND_URL}/api/users/me`, {
+          signal,
+          headers: {
+            Authorization: `Bearer ${token}`, 
+          },
+        });
 
         if (signal.aborted) return;
 
@@ -71,9 +66,17 @@ export const UserProvider = ({ children }) => {
           if (!mountedRef.current) return;
           setUserdetails({ ...data, isNew: false });
         } else if (res.status === 404) {
+          // User doesn't exist, create them
+          const clerkId = user?.id;
+          const email = user?.primaryEmailAddress?.emailAddress;
+          const name = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
           const postRes = await fetch(`${BACKEND_URL}/api/users`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}` 
+            },
             body: JSON.stringify({ name, email, clerkId }),
             signal,
           });
@@ -85,10 +88,7 @@ export const UserProvider = ({ children }) => {
           if (!mountedRef.current) return;
           setUserdetails({ ...postData, isNew });
         } else {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            `Failed to fetch user: ${res.status} ${res.statusText} ${text}`
-          );
+          throw new Error(`Failed to fetch user: ${res.status}`);
         }
       } catch (err) {
         if (err.name === "AbortError") return;
@@ -106,14 +106,24 @@ export const UserProvider = ({ children }) => {
     return () => {
       controller.abort();
     };
-  }, [isLoaded, isSignedIn, user?.id, user?.primaryEmailAddress, BACKEND_URL, user?.firstName, user?.lastName]);
+  }, [isLoaded, isSignedIn, user?.id, BACKEND_URL, getToken]);
 
-
+ // --- 🟢 FIX: Pass Token to Push Subscription ---
   useEffect(() => {
-    if (userdetails && userdetails.id) {
-       subscribeToPush(userdetails.id);
-    }
-  }, [userdetails]);
+    const initPush = async () => {
+      if (userdetails && userdetails.id && isSignedIn) {
+        try {
+          const token = await getToken(); // Get secure token
+          if (token) {
+            await subscribeToPush(userdetails.id, token); // Pass token to utility
+          }
+        } catch (err) {
+          console.error("Failed to init push:", err);
+        }
+      }
+    };
+    initPush();
+  }, [userdetails, isSignedIn, getToken]);
   
   const getUserAddress = useCallback(async () => {
     if (!userdetails?.id) {
@@ -124,7 +134,11 @@ export const UserProvider = ({ children }) => {
     const signal = controller.signal;
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`, { signal });
+      const token = await getToken();
+      const res = await fetch(`${BACKEND_URL}/api/address/user/${userdetails.id}`, { 
+          signal,
+          headers: { Authorization: `Bearer ${token}` }
+      });
       if (signal.aborted) return;
       if (!res.ok) throw new Error("Failed to fetch addresses");
       const data = await res.json();
@@ -136,7 +150,7 @@ export const UserProvider = ({ children }) => {
       if (mountedRef.current) setAddress([]);
     }
     return () => controller.abort();
-  }, [userdetails?.id, BACKEND_URL]);
+  }, [userdetails?.id, BACKEND_URL, getToken]);
 
   useEffect(() => {
     let abortFn;
@@ -151,15 +165,18 @@ export const UserProvider = ({ children }) => {
     };
   }, [userdetails, getUserAddress]);
 
-  // 🟢 Update User (With actorId)
   const updateUser = useCallback(
     async (updatedData) => {
       if (!userdetails?.id) return null;
       try {
+        const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...updatedData, actorId: userdetails?.id }), // 🟢 Added actorId
+          headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ ...updatedData }),
         });
         if (!res.ok) throw new Error("Failed to update user");
         const data = await res.json();
@@ -172,16 +189,20 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [userdetails?.id, BACKEND_URL]
+    [userdetails?.id, BACKEND_URL, getToken]
   );
 
   const addAddress = useCallback(
     async (newAddress) => {
       if (!userdetails?.id) return null;
       try {
+        const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/address/`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}` 
+          },
           body: JSON.stringify({ ...newAddress, userId: userdetails.id }),
         });
         const data = await res.json();
@@ -195,15 +216,19 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [userdetails?.id, BACKEND_URL, getUserAddress]
+    [userdetails?.id, BACKEND_URL, getUserAddress, getToken]
   );
 
   const editAddress = useCallback(
     async (addressId, updatedFields) => {
       try {
+        const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}` 
+          },
           body: JSON.stringify(updatedFields),
         });
         const data = await res.json();
@@ -217,14 +242,16 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [BACKEND_URL, getUserAddress]
+    [BACKEND_URL, getUserAddress, getToken]
   );
 
   const deleteAddress = useCallback(
     async (addressId) => {
       try {
+        const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/address/${addressId}`, {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
         if (data?.success) {
@@ -237,14 +264,16 @@ export const UserProvider = ({ children }) => {
         return false;
       }
     },
-    [BACKEND_URL, getUserAddress]
+    [BACKEND_URL, getUserAddress, getToken]
   );
 
   const setDefaultAddress = useCallback(
     async (addressId) => {
       try {
+        const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/address/${addressId}/default`, {
           method: "PUT",
+          headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
         if (data?.success) {
@@ -257,7 +286,7 @@ export const UserProvider = ({ children }) => {
         return null;
       }
     },
-    [BACKEND_URL, getUserAddress]
+    [BACKEND_URL, getUserAddress, getToken]
   );
 
   const contextValue = useMemo(

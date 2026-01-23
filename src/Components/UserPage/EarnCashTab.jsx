@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// src/components/UserPage/EarnCashTab.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Camera, Heart, Star, Ticket, Loader2, Check, 
   ArrowUpRight, Sparkles, TrendingUp, Clock, ArrowRight 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BASE = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 
@@ -11,11 +14,9 @@ const BASE = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
 const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 const formatDate = (date) => new Date(date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 
-// --- Components ---
-
+// --- Components (Unchanged) ---
 const MissionCard = ({ icon: Icon, title, reward, description, status, actionLabel, onClick, loading }) => {
   const isPending = status === 'pending';
-  
   return (
     <motion.div 
       layout
@@ -96,7 +97,7 @@ const HistoryListItem = ({ item }) => {
                 </span>
             </div>
         </div>
-    );
+  );
 };
 
 export default function EarnCashTab({ userId }) {
@@ -104,22 +105,30 @@ export default function EarnCashTab({ userId }) {
   const [history, setHistory] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [rewards, setRewards] = useState({ paparazzi: 100, loyal_follower: 50, reviewer: 50, monthly_lottery: 500 });
+  
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
 
-  const loadData = async () => {
+  // 🟢 SECURE: Load Data with Token
+  const loadData = useCallback(async () => {
     try {
+      const token = await getToken();
+      const headers = { 'Authorization': `Bearer ${token}` }; // 🔒 Auth Header
+
       const [configRes, historyRes] = await Promise.all([
-        fetch(`${BASE}/api/rewards/config`),
-        fetch(`${BASE}/api/rewards/my-history/${userId}`)
+        fetch(`${BASE}/api/rewards/config`, { headers }), // Config might be public, but history is protected
+        fetch(`${BASE}/api/rewards/my-history/${userId}`, { headers })
       ]);
+      
       const configData = await configRes.json();
       const historyData = await historyRes.json();
+      
       if(configData && !configData.error) setRewards(configData);
       if(historyData.success) setHistory(historyData.data);
     } catch (e) { console.error(e); } 
     finally { setLoadingData(false); }
-  };
+  }, [userId, getToken]);
 
-  useEffect(() => { if(userId) loadData(); }, [userId]);
+  useEffect(() => { if(userId) loadData(); }, [userId, loadData]);
 
   const getStatus = (type) => {
     if (type === 'monthly_lottery') {
@@ -127,39 +136,53 @@ export default function EarnCashTab({ userId }) {
       return recent ? 'pending' : null;
     }
     const claim = history.find(h => h.taskType === type && h.status !== 'rejected');
-    return claim ? claim.status : null; // If found, return status. If not found, return null (available).
+    return claim ? claim.status : null; 
   };
 
-  // Check if mission should be shown (Hide if approved)
   const isMissionAvailable = (type) => {
     const status = getStatus(type);
     return status !== 'approved'; 
   };
 
+  // 🟢 SECURE: File Upload
   const handleFileUpload = async (e, taskType) => {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(taskType);
+    
     const formData = new FormData();
     formData.append('userId', userId);
     formData.append('taskType', taskType);
     formData.append('proofImage', file);
 
     try {
-      const res = await fetch(`${BASE}/api/rewards/claim`, { method: 'POST', body: formData });
+      const token = await getToken(); // 🟢 Get Token
+      const res = await fetch(`${BASE}/api/rewards/claim`, { 
+          method: 'POST', 
+          headers: { 'Authorization': `Bearer ${token}` }, // 🔒 Auth Header (No Content-Type for FormData)
+          body: formData 
+      });
+      
       if (res.ok) { loadData(); if(window.toast) window.toast.success("Proof uploaded"); } 
       else { if(window.toast) window.toast.error("Upload failed"); }
     } catch (err) { console.error(err); } 
     finally { setUploading(null); e.target.value = null; }
   };
 
+  // 🟢 SECURE: Simple Claim
   const handleSimpleClaim = async (taskType) => {
     setUploading(taskType);
     try {
+      const token = await getToken(); // 🟢 Get Token
       const res = await fetch(`${BASE}/api/rewards/claim`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', 
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 🔒 Auth Header
+        },
         body: JSON.stringify({ userId, taskType })
       });
+      
       if (res.ok) { loadData(); if(window.toast) window.toast.success("Action verified"); }
       else { if(window.toast) window.toast.error("Verification failed"); }
     } catch (err) { console.error(err); } 
@@ -216,62 +239,62 @@ export default function EarnCashTab({ userId }) {
             </div>
             
             <AnimatePresence>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Task 1: Paparazzi */}
-                    {isMissionAvailable('paparazzi') && (
-                        <>
-                            <input type="file" id="paparazzi-upload" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'paparazzi')} />
-                            <MissionCard 
-                                icon={Camera} title="The Paparazzi" reward={rewards.paparazzi}
-                                description="Post a Story with your bottle. Tag @devidaura.official. Upload screenshot."
-                                loading={uploading === 'paparazzi'} status={getStatus('paparazzi')}
-                                onClick={() => document.getElementById('paparazzi-upload').click()}
-                            />
-                        </>
-                    )}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   {/* Task 1: Paparazzi */}
+                   {isMissionAvailable('paparazzi') && (
+                       <>
+                           <input type="file" id="paparazzi-upload" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'paparazzi')} />
+                           <MissionCard 
+                               icon={Camera} title="The Paparazzi" reward={rewards.paparazzi}
+                               description="Post a Story with your bottle. Tag @devidaura.official. Upload screenshot."
+                               loading={uploading === 'paparazzi'} status={getStatus('paparazzi')}
+                               onClick={() => document.getElementById('paparazzi-upload').click()}
+                           />
+                       </>
+                   )}
 
-                    {/* Task 2: Follower */}
-                    {isMissionAvailable('loyal_follower') && (
-                        <>
-                            <input type="file" id="follower-upload" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'loyal_follower')} />
-                            <MissionCard 
-                                icon={Heart} title="Inner Circle" reward={rewards.loyal_follower}
-                                description="Follow us on Instagram to join our digital community."
-                                loading={uploading === 'loyal_follower'} status={getStatus('loyal_follower')}
-                                onClick={() => document.getElementById('follower-upload').click()}
-                            />
-                        </>
-                    )}
+                   {/* Task 2: Follower */}
+                   {isMissionAvailable('loyal_follower') && (
+                       <>
+                           <input type="file" id="follower-upload" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'loyal_follower')} />
+                           <MissionCard 
+                               icon={Heart} title="Inner Circle" reward={rewards.loyal_follower}
+                               description="Follow us on Instagram to join our digital community."
+                               loading={uploading === 'loyal_follower'} status={getStatus('loyal_follower')}
+                               onClick={() => document.getElementById('follower-upload').click()}
+                           />
+                       </>
+                   )}
 
-                    {/* Task 3: Reviewer */}
-                    {isMissionAvailable('reviewer') && (
-                        <MissionCard 
-                            icon={Star} title="The Critic" reward={rewards.reviewer}
-                            description="Leave a photo review on your recent purchase."
-                            loading={uploading === 'reviewer'} status={getStatus('reviewer')}
-                            onClick={() => handleSimpleClaim('reviewer')}
-                        />
-                    )}
+                   {/* Task 3: Reviewer */}
+                   {isMissionAvailable('reviewer') && (
+                       <MissionCard 
+                           icon={Star} title="The Critic" reward={rewards.reviewer}
+                           description="Leave a photo review on your recent purchase."
+                           loading={uploading === 'reviewer'} status={getStatus('reviewer')}
+                           onClick={() => handleSimpleClaim('reviewer')}
+                       />
+                   )}
 
-                    {/* Task 4: Lottery */}
-                    {isMissionAvailable('monthly_lottery') && (
-                        <MissionCard 
-                            icon={Ticket} title="Golden Ticket" reward={rewards.monthly_lottery}
-                            description="Enter the monthly draw for a chance to win store credit."
-                            loading={uploading === 'monthly_lottery'} status={getStatus('monthly_lottery')}
-                            onClick={() => handleSimpleClaim('monthly_lottery')}
-                        />
-                    )}
-                </div>
+                   {/* Task 4: Lottery */}
+                   {isMissionAvailable('monthly_lottery') && (
+                       <MissionCard 
+                           icon={Ticket} title="Golden Ticket" reward={rewards.monthly_lottery}
+                           description="Enter the monthly draw for a chance to win store credit."
+                           loading={uploading === 'monthly_lottery'} status={getStatus('monthly_lottery')}
+                           onClick={() => handleSimpleClaim('monthly_lottery')}
+                       />
+                   )}
+               </div>
             </AnimatePresence>
 
             {/* Empty State if all Done */}
             {!['paparazzi', 'loyal_follower', 'reviewer', 'monthly_lottery'].some(isMissionAvailable) && (
-                <div className="py-20 text-center bg-zinc-50 rounded-[2.5rem] border border-dashed border-zinc-200">
-                    <Sparkles className="mx-auto text-zinc-300 mb-4" size={48} strokeWidth={1} />
-                    <h3 className="font-serif text-2xl text-zinc-900 mb-2">All Missions Complete</h3>
-                    <p className="text-zinc-500 font-light">You've earned everything for now. Check back later for new drops.</p>
-                </div>
+               <div className="py-20 text-center bg-zinc-50 rounded-[2.5rem] border border-dashed border-zinc-200">
+                   <Sparkles className="mx-auto text-zinc-300 mb-4" size={48} strokeWidth={1} />
+                   <h3 className="font-serif text-2xl text-zinc-900 mb-2">All Missions Complete</h3>
+                   <p className="text-zinc-500 font-light">You've earned everything for now. Check back later for new drops.</p>
+               </div>
             )}
          </div>
 

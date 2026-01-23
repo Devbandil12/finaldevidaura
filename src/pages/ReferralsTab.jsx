@@ -1,11 +1,11 @@
-// file: src/pages/ReferralsTab.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Users, CheckCircle, Clock, Coins, Search, ArrowRight, Settings, Save, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
-// ... StatCard component remains same ...
+// --- StatCard Component ---
 const StatCard = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
@@ -28,43 +28,72 @@ export default function ReferralsTab() {
   const [config, setConfig] = useState({ REFEREE_BONUS: 100, REFERRER_BONUS: 150 });
   const [savingConfig, setSavingConfig] = useState(false);
 
-  const fetchAll = () => {
-    // Fetch Data
-    fetch(`${BASE}/api/referrals/admin/all`)
-      .then(res => res.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(e => { console.error(e); setLoading(false); });
+  // 🟢 Get Token Helper
+  const { getToken } = useAuth(); 
 
-    // Fetch Config
-    fetch(`${BASE}/api/referrals/config`)
-      .then(res => res.json())
-      .then(setConfig)
-      .catch(console.error);
-  };
+  // --- Fetch Data (Secured) ---
+  const fetchAll = useCallback(async () => {
+    try {
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+      const headers = { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // 🔒 Attach Token
+      };
+
+      // Fetch Data
+      const resData = await fetch(`${BASE}/api/referrals/admin/all`, { headers });
+      if (resData.ok) {
+          const d = await resData.json();
+          setData(d);
+      }
+
+      // Fetch Config
+      const resConfig = await fetch(`${BASE}/api/referrals/config`, { headers });
+      if (resConfig.ok) {
+          const c = await resConfig.json();
+          setConfig(c);
+      }
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
+  // --- Save Config (Secured) ---
   const handleSaveConfig = async () => {
     setSavingConfig(true);
     try {
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+      
       const res = await fetch(`${BASE}/api/referrals/config`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 🔒 Attach Token
+        },
         body: JSON.stringify({
           refereeBonus: config.REFEREE_BONUS,
           referrerBonus: config.REFERRER_BONUS
         })
       });
+
       if (res.ok) {
         if(window.toast) window.toast.success("Offers updated successfully!");
         else alert("Offers updated!");
         setShowSettings(false);
+      } else {
+        throw new Error("Failed to update");
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to save settings");
+      if(window.toast) window.toast.error("Failed to save settings");
     } finally {
       setSavingConfig(false);
     }
@@ -199,7 +228,7 @@ export default function ReferralsTab() {
                         {item.status}
                       </span>
                     </td>
-                    {/* 🟢 NEW: Referee Bonus Column */}
+                    {/* Referee Bonus Column */}
                     <td className="px-6 py-4 text-center font-medium text-teal-600">
                       ₹{item.refereeBonus || 0}
                     </td>

@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLocationArrow } from '@fortawesome/free-solid-svg-icons';
-import { MapPin, Plus } from "lucide-react";
+// src/pages/AddressSelection.jsx
 
-const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address";
+import React, { useState, useEffect, useCallback } from "react";
+import { Plus, MapPin, CheckCircle2, Trash2, Edit2, Loader2, X, LocateFixed } from "lucide-react";
+import { useAuth, useUser } from "@clerk/clerk-react"; // 🟢 Import useAuth
+import { motion, AnimatePresence } from "framer-motion";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Assuming you use this
+import { faLocationArrow } from '@fortawesome/free-solid-svg-icons'; // Assuming you use this
+
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "") + "/api/address";
 
 const smoothTransition = {
   type: "tween",
@@ -24,7 +27,6 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
         exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
         transition={smoothTransition}
         onClick={() => selectAddress(index)}
-        // Responsive padding (p-4)
         className={`relative rounded-2xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 cursor-pointer group transition-all duration-300 border ${
           isSelected
             ? 'bg-slate-50 border-slate-800 shadow-sm' 
@@ -47,7 +49,6 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
           </div>
         </div>
         
-        {/* min-w-0 ensures the flex child doesn't overflow parent */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap justify-between items-start gap-2">
             <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
@@ -57,11 +58,9 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
             {addr.isDefault && <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">Default</div>}
           </div>
           
-          {/* break-words handles long addresses */}
           <p className="text-sm text-slate-500 mt-1 leading-relaxed break-words">{fullAddress}</p>
           <p className="text-sm text-slate-500 mt-2">Phone: <span className="text-slate-700">{addr.phone}</span></p>
           
-          {/* Buttons wrap on small screens */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-xs font-semibold opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
             {!addr.isDefault && <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Set Default</button>}
             <button onClick={(e) => { e.stopPropagation(); editAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Edit</button>
@@ -72,8 +71,9 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
     );
 };
 
-
 export default function AddressSelection({ userId, onSelect }) {
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
+  
   const [addresses, setAddresses] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -93,11 +93,18 @@ export default function AddressSelection({ userId, onSelect }) {
   const [loading, setLoading] = useState(false);
   const [customAddressType, setCustomAddressType] = useState("");
 
+  // --- 🟢 1. FETCH ADDRESSES (SECURE) ---
   useEffect(() => {
     if (!userId) return;
-    (async () => {
+    const fetchAddresses = async () => {
       try {
-        const res = await fetch(`${API_BASE}/user/${userId}`);
+        const token = await getToken(); // 🟢 Get Token
+        const res = await fetch(`${API_BASE}/user/${userId}`, {
+            headers: { "Authorization": `Bearer ${token}` } // 🔒 Auth Header
+        });
+        
+        if (!res.ok) throw new Error("Failed to fetch");
+
         const data = await res.json();
         if (data.success) {
           const loadedAddresses = data.data || [];
@@ -112,11 +119,12 @@ export default function AddressSelection({ userId, onSelect }) {
           }
         }
       } catch (err) {
-        console.error("fetch addresses", err);
-        window.toast.error("Failed to load your addresses.");
+        console.error("fetch addresses error", err);
+        // Don't show toast on mount error to avoid spam, just log
       }
-    })();
-  }, [userId, onSelect]);
+    };
+    fetchAddresses();
+  }, [userId, onSelect, getToken]);
 
   function selectAddress(idx) {
     setSelectedIndex(idx);
@@ -143,13 +151,18 @@ export default function AddressSelection({ userId, onSelect }) {
     setCustomAddressType(addr.addressType && !["Home", "Work", "Other"].includes(addr.addressType) ? addr.addressType : "");
   }
 
+  // --- 🟢 2. DELETE ADDRESS (SECURE) ---
   async function deleteAddress(idx) {
     const toDelete = addresses[idx];
     if (!toDelete) return window.toast.error("Address not found.");
     if (!window.confirm("Are you sure you want to delete this address?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/${toDelete.id}`, { method: "DELETE" });
+      const token = await getToken(); // 🟢 Get Token
+      const res = await fetch(`${API_BASE}/${toDelete.id}`, { 
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` } // 🔒 Auth Header
+      });
       const data = await res.json();
       if (data.success) {
         const filtered = addresses.filter((a) => a.id !== toDelete.id);
@@ -173,11 +186,16 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
+  // --- 🟢 3. SET DEFAULT (SECURE) ---
   async function setDefaultAddress(idx) {
     const addr = addresses[idx];
     if (!addr) return;
     try {
-      const res = await fetch(`${API_BASE}/${addr.id}/default`, { method: "PUT" });
+      const token = await getToken(); // 🟢 Get Token
+      const res = await fetch(`${API_BASE}/${addr.id}/default`, { 
+          method: "PUT",
+          headers: { "Authorization": `Bearer ${token}` } // 🔒 Auth Header
+      });
       const data = await res.json();
       if (data.success) {
         setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === addr.id })));
@@ -192,6 +210,7 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
+  // --- 🟢 4. SAVE ADDRESS (SECURE) ---
   async function saveAddress() {
     setFormError("");
     if (!userId) {
@@ -213,12 +232,17 @@ export default function AddressSelection({ userId, onSelect }) {
 
     setLoading(true);
     try {
+      const token = await getToken(); // 🟢 Get Token
       const url = isEditing ? `${API_BASE}/${editingId}` : `${API_BASE}/`;
       const method = isEditing ? "PUT" : "POST";
       const payload = { ...formAddress, addressType: finalAddressType, userId };
+      
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 🔒 Auth Header
+        },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -269,8 +293,8 @@ export default function AddressSelection({ userId, onSelect }) {
     }
   }
 
-
-function useCurrentLocationInForm() {
+  // --- 🟢 5. GEOLOCATION (SECURE) ---
+  function useCurrentLocationInForm() {
     if (!navigator.geolocation) {
       return window.toast.error("Geolocation is not supported by your browser.");
     }
@@ -280,7 +304,10 @@ function useCurrentLocationInForm() {
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         try {
-          const response = await fetch(`${API_BASE}/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+          const token = await getToken(); // 🟢 Get Token (Assuming this route is also secured, if not remove header)
+          const response = await fetch(`${API_BASE}/reverse-geocode?lat=${latitude}&lon=${longitude}`, {
+             headers: { "Authorization": `Bearer ${token}` }
+          });
 
           if (!response.ok) {
             throw new Error('Failed to reverse-geocode location from server.');
@@ -315,7 +342,7 @@ function useCurrentLocationInForm() {
         window.toast.error("Failed to get your location: " + error.message);
       }
     );
-}
+  }
 
   function onPostalBlur() {
     const pc = formAddress.postalCode;
@@ -333,7 +360,6 @@ function useCurrentLocationInForm() {
   }
 
   return (
-    // Reduced padding: p-4 sm:p-8
     <div className="bg-white p-4 sm:p-8 rounded-3xl border border-slate-200">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
@@ -405,7 +431,6 @@ function useCurrentLocationInForm() {
               {formError && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 shadow-sm">{formError}</div>}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Added w-full to inputs */}
                 <div className="relative sm:col-span-2">
                   <input id="name" value={formAddress.name} onChange={(e) => updateFormAddress("name", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="name" className="floating-label">Full Name *</label>
@@ -471,7 +496,6 @@ function useCurrentLocationInForm() {
                         </div>
                     )}
                 </div>
-                {/* Buttons stack on mobile */}
                 <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
                   <motion.button type="button" onClick={() => setShowForm(false)} disabled={loading} whileTap={{ scale: 0.98 }} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 w-full sm:w-auto">Cancel</motion.button>
                   <motion.button type="button" onClick={saveAddress} disabled={loading} whileTap={{ scale: 0.98 }} className="px-8 py-3 bg-black text-white rounded-xl font-semibold text-sm hover:bg-slate-800 disabled:bg-slate-300 shadow-lg shadow-slate-200 transition-all duration-200 w-full sm:w-auto">{loading ? "Saving..." : "Save Address"}</motion.button>

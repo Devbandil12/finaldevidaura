@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// src/components/UserPage/WalletTab.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Loader2, Copy, Check, ArrowUpRight, ArrowDownLeft, 
-  Sparkles, CreditCard, Ticket, History 
+  Sparkles, CreditCard, Ticket
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -17,17 +20,27 @@ export default function WalletTab({ userId }) {
   const [redeemCode, setRedeemCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
 
-  // Fetch Logic
-  const fetchData = async () => {
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
+
+  // 🟢 SECURE: Fetch Logic
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE}/api/referrals/stats/${userId}`);
+      const token = await getToken();
+      const res = await fetch(`${BASE}/api/referrals/stats/${userId}`, {
+          headers: { 'Authorization': `Bearer ${token}` } // 🔒 Auth Header
+      });
       const json = await res.json();
       setData(json);
-    } catch (e) { console.error(e); } 
-    finally { setLoading(false); }
-  };
+    } catch (e) { 
+        console.error(e); 
+    } finally { 
+        setLoading(false); 
+    }
+  }, [userId, getToken]);
 
-  useEffect(() => { if(userId) fetchData(); }, [userId]);
+  useEffect(() => { 
+      if(userId) fetchData(); 
+  }, [userId, fetchData]);
 
   // Actions
   const handleCopy = () => {
@@ -36,24 +49,34 @@ export default function WalletTab({ userId }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // 🟢 SECURE: Redeem Code
   const handleRedeem = async (e) => {
     e.preventDefault();
     if (!redeemCode) return;
     setIsRedeeming(true);
     try {
+      const token = await getToken(); // 🟢 Get Token
       const res = await fetch(`${BASE}/api/referrals/apply`, {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
+        method: 'POST', 
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 🔒 Auth Header
+        },
         body: JSON.stringify({ userId, code: redeemCode })
       });
       const d = await res.json();
       if (res.ok) { 
         if(window.toast) window.toast.success(d.message); 
-        setRedeemCode(""); fetchData(); 
+        setRedeemCode(""); 
+        fetchData(); 
       } else {
         if(window.toast) window.toast.error(d.error);
       }
-    } catch (err) { console.error(err); }
-    finally { setIsRedeeming(false); }
+    } catch (err) { 
+        console.error(err); 
+    } finally { 
+        setIsRedeeming(false); 
+    }
   };
 
   if (loading) return <div className="py-32 flex justify-center"><Loader2 className="animate-spin text-zinc-300" /></div>;

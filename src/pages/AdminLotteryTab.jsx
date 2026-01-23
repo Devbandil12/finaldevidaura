@@ -1,7 +1,8 @@
 // file: src/pages/AdminLotteryTab.jsx
 import React, { useState } from 'react';
-import { Trophy, Check, X, RefreshCw, Loader2, Copy, ExternalLink } from 'lucide-react'; // 🟢 Added Icons
+import { Trophy, Check, X, RefreshCw, Loader2, Copy, ExternalLink } from 'lucide-react'; 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
@@ -9,12 +10,21 @@ export default function AdminLotteryTab() {
   const [winner, setWinner] = useState(null);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
 
   const pickWinner = async () => {
     setLoading(true);
     setWinner(null);
     try {
-      const res = await fetch(`${BASE}/api/rewards/admin/pick-lottery-winner`, { method: 'POST' });
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+      
+      const res = await fetch(`${BASE}/api/rewards/admin/pick-lottery-winner`, { 
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` } // 🔒 Attach Token
+      });
+      
       const data = await res.json();
       if (res.ok) {
         setWinner(data);
@@ -22,25 +32,38 @@ export default function AdminLotteryTab() {
         if(window.toast) window.toast.error(data.error);
         else alert(data.error || "No entries found");
       }
-    } catch (err) { alert("Failed to pick"); } 
-    finally { setLoading(false); }
+    } catch (err) { 
+        alert("Failed to pick"); 
+    } finally { 
+        setLoading(false); 
+    }
   };
 
   const handleDecision = async (decision) => {
     if (!winner) return;
     setActionLoading(true);
     try {
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+
       const res = await fetch(`${BASE}/api/rewards/admin/decide`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 🔒 Attach Token
+        },
         body: JSON.stringify({ claimId: winner.claimId, decision })
       });
+      
       if (res.ok) {
         if(window.toast) window.toast.success(decision === 'approve' ? "Winner Verified & Paid!" : "Rejected. Pick again.");
         setWinner(null);
       }
-    } catch (err) { alert("Error"); } 
-    finally { setActionLoading(false); }
+    } catch (err) { 
+        alert("Error"); 
+    } finally { 
+        setActionLoading(false); 
+    }
   };
 
   return (
@@ -71,7 +94,7 @@ export default function AdminLotteryTab() {
                </div>
             </div>
 
-            {/* 🟢 FIX: Show Instagram Handle Clearly */}
+            {/* Show Instagram Handle Clearly */}
             <div className="text-left bg-gradient-to-r from-pink-50 to-purple-50 p-4 rounded-xl border border-pink-100 mb-6">
               <p className="text-pink-800 text-xs font-bold uppercase tracking-wider mb-2">Instagram Handle</p>
               <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom"; 
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -23,6 +24,7 @@ export default function Checkout() {
   const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
 
   // Derive Step from URL (Default to 'address' -> Step 1)
   const stepParam = searchParams.get("step");
@@ -37,11 +39,10 @@ export default function Checkout() {
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  // 🟢 NEW: Lifted Wallet State
+  // 🟢 Lifted Wallet State
   const [useWallet, setUseWallet] = useState(false);
 
-  // 🟢 NEW: Calculate Final Breakdown with Wallet
-  // This ensures both OrderSummary and PaymentDetails see the exact same numbers
+  // 🟢 Calculate Final Breakdown with Wallet
   const finalBreakdown = useMemo(() => {
     const walletBalance = userdetails?.walletBalance || 0;
     const currentTotal = breakdown.total; // Total after coupons/shipping
@@ -93,7 +94,7 @@ export default function Checkout() {
 
   }, [navigate, stepParam, setSearchParams, step, selectedAddress]);
 
-  // --- Logic: Price Breakdown ---
+  // --- Logic: Price Breakdown (Secured) ---
   useEffect(() => {
     const fetchBreakdown = async () => {
       if (selectedItems.length === 0 || !selectedAddress) {
@@ -103,9 +104,15 @@ export default function Checkout() {
       }
       setLoadingPrices(true);
       try {
+        // 🟢 SECURE: Get Token
+        const token = await getToken();
+        
         const res = await fetch(`${BACKEND}/api/payments/breakdown`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // 🔒 Auth Header
+          },
           body: JSON.stringify({
             cartItems: selectedItems.map(i => ({ variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
             couponCode: appliedCoupon?.code || null,
@@ -117,7 +124,7 @@ export default function Checkout() {
       } catch (error) { console.error(error); } finally { setLoadingPrices(false); }
     };
     fetchBreakdown();
-  }, [selectedItems, appliedCoupon, selectedAddress]);
+  }, [selectedItems, appliedCoupon, selectedAddress, getToken]);
 
   // HELPER: Refreshes orders in background (Fire & Forget)
   const refreshOrdersOnly = useCallback(() => {
@@ -140,25 +147,31 @@ export default function Checkout() {
     finally { setIsSubmitting(false); }
   }, [refreshOrdersOnly, navigate, transactionId]);
 
-  // OPTIMIZED: COD SUCCESS
-  // 🟢 Uses the `useWallet` state from this component scope
+  // OPTIMIZED: COD SUCCESS (Secured)
   const handlePlaceOrderCOD = useCallback(async () => {
     if (isSubmitting) return;
     if (!selectedAddress) return window.toast.error("Please select a delivery address.");
     setIsSubmitting(true);
+    
     try {
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+
       const res = await fetch(`${BACKEND}/api/payments/createOrder`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 🔒 Auth Header
+        },
         body: JSON.stringify({
-          user: { id: userdetails.id, fullName: userdetails.name },
+          // 🛑 REMOVED insecure 'user' object. Backend uses token.
           phone: selectedAddress.phone,
           paymentMode: "cod",
           couponCode: appliedCoupon?.code || null,
           cartItems: selectedItems.map(i => ({ ...i, variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
           userAddressId: selectedAddress.id,
-          breakdown: breakdown, // Pass ORIGINAL breakdown to backend (it recalculates anyway)
-          useWallet: useWallet // 🟢 Pass wallet flag from state
+          // breakdown: breakdown, // No longer needed, backend recalculates
+          useWallet: useWallet 
         }),
       });
       
@@ -180,7 +193,7 @@ export default function Checkout() {
       window.toast.error(err.message); 
       setIsSubmitting(false); 
     } 
-  }, [selectedItems, selectedAddress, userdetails, appliedCoupon, breakdown, refreshOrdersOnly, isSubmitting, navigate, useWallet]);
+  }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, isSubmitting, navigate, useWallet, getToken]);
 
   // NAVIGATION HANDLERS (Update URL Params)
   const handleNext = () => {
@@ -297,7 +310,7 @@ export default function Checkout() {
                         userdetails={userdetails}
                         selectedItems={selectedItems}
                         appliedCoupon={appliedCoupon}
-                        breakdown={finalBreakdown} // 🟢 Pass the CALCULATED breakdown
+                        breakdown={finalBreakdown} 
                         loadingPrices={loadingPrices}
                         isSubmitting={isSubmitting}
                         onRazorpaySuccess={handleRazorpaySuccess}
@@ -305,8 +318,8 @@ export default function Checkout() {
                         onPaymentVerified={setPaymentVerified}
                         paymentVerified={paymentVerified}
                         setTransactionId={setTransactionId}
-                        useWallet={useWallet} // 🟢 Pass State
-                        setUseWallet={setUseWallet} // 🟢 Pass Setter
+                        useWallet={useWallet} 
+                        setUseWallet={setUseWallet} 
                       />
                     )}
                   </motion.div>
@@ -351,7 +364,7 @@ export default function Checkout() {
                       selectedAddress={selectedAddress}
                       selectedItems={selectedItems}
                       appliedCoupon={appliedCoupon}
-                      breakdown={finalBreakdown} // 🟢 Pass the CALCULATED breakdown
+                      breakdown={finalBreakdown} 
                       loadingPrices={loadingPrices}
                     />
 

@@ -6,7 +6,7 @@ import { CartContext } from "../contexts/CartContext";
 import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
-import { useClerk } from "@clerk/clerk-react";
+import { useClerk, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -35,7 +35,9 @@ export default function UserPage() {
   const { tickets, getUserTickets, replyToTicket } = useContext(ContactContext);
   const { userReviews, loadingReviews } = useContext(ReviewContext);
   const { products } = useContext(ProductContext);
+  
   const { signOut } = useClerk();
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
 
   const [activeTab, setActiveTab] = useState("overview");
   const [personalLogs, setPersonalLogs] = useState([]);
@@ -44,14 +46,27 @@ export default function UserPage() {
   useEffect(() => {
     if (userdetails?.email) {
       getUserTickets(userdetails.email);
+      
       if (userdetails.id) {
-        fetch(`${BASE}/api/users/${userdetails.id}/logs`)
-          .then(res => res.json())
-          .then(data => setPersonalLogs(Array.isArray(data) ? data : []))
-          .catch(err => console.error("Failed to fetch logs", err));
+        // 🟢 SECURE: Fetch Logs with Token
+        const fetchLogs = async () => {
+            try {
+                const token = await getToken();
+                const res = await fetch(`${BASE}/api/users/${userdetails.id}/logs`, {
+                    headers: { 'Authorization': `Bearer ${token}` } // 🔒 Auth Header
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setPersonalLogs(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error("Failed to fetch logs", err);
+            }
+        };
+        fetchLogs();
       }
     }
-  }, [userdetails, getUserTickets]);
+  }, [userdetails, getUserTickets, getToken]);
 
   // Scroll to top when tab changes
   useEffect(() => {

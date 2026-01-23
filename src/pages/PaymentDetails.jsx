@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+// src/pages/PaymentDetails.jsx
+
+import React, { useState, useEffect, useMemo } from "react";
+import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { CreditCard, Truck, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadRazorpayScript } from "../utils/useRazorpay"; 
@@ -19,14 +21,15 @@ export default function PaymentDetails({
     onPaymentVerified,
     paymentVerified,
     setTransactionId,
-    useWallet, // 🟢 Prop
-    setUseWallet // 🟢 Prop
+    useWallet, 
+    setUseWallet 
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     
     const { user } = useUser();
+    const { getToken } = useAuth(); // 🟢 Get Token Helper
 
     useEffect(() => {
         loadRazorpayScript();
@@ -51,13 +54,15 @@ export default function PaymentDetails({
 
         // 🟢 SCENARIO: Fully Paid via Wallet
         if (finalPayable === 0) {
-            // Treat as COD flow in frontend, pass useWallet=true
+            // Treat as COD flow in frontend (instant confirmation), pass useWallet=true
+            // Note: handlePlaceOrder (from Checkout.jsx) already has token logic
             await handlePlaceOrder(true); 
             setIsProcessing(false);
             return;
         }
 
         if (paymentMethod === "Cash on Delivery") {
+            // Note: handlePlaceOrder (from Checkout.jsx) already has token logic
             await handlePlaceOrder(useWallet); 
             setIsProcessing(false);
         } else {
@@ -82,17 +87,23 @@ export default function PaymentDetails({
                 quantity: item.quantity
             }));
 
+            // 🟢 SECURE: Get Token
+            const token = await getToken();
+
             const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}` // 🔒 Secure Header
+                },
                 body: JSON.stringify({
-                    user: { id: userdetails.id, fullName: userdetails.name, email: userdetails.email },
+                    // 🛑 REMOVED insecure 'user' object. Backend uses token.
                     phone: selectedAddress.phone,
                     couponCode: appliedCoupon?.code,
                     paymentMode: "Razorpay",
                     cartItems: cartItemsPayload,
                     userAddressId: selectedAddress.id,
-                    useWallet: useWallet // 🟢 Pass Wallet Flag
+                    useWallet: useWallet 
                 }),
             });
 
@@ -106,7 +117,7 @@ export default function PaymentDetails({
 
             const options = {
                 key: orderData.keyId,
-                amount: finalPayable * 100, // 🟢 Charge the remainder
+                amount: finalPayable * 100, 
                 currency: "INR",
                 name: "Devid Aura",
                 description: "Order Payment",
@@ -123,16 +134,22 @@ export default function PaymentDetails({
                     try {
                         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
 
+                        // 🟢 SECURE: Get Token Again (Token might expire if user waits too long)
+                        const verifyToken = await getToken();
+
                         const verifyRes = await fetch(`${BACKEND}/api/payments/verify-payment`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${verifyToken}` // 🔒 Secure Header
+                            },
                             body: JSON.stringify({
                                 razorpay_order_id,
                                 razorpay_payment_id,
                                 razorpay_signature,
                                 orderId: orderData.orderId,
                                 userAddressId: selectedAddress.id,
-                                user: { id: userdetails.id, fullName: userdetails.name },
+                                // 🛑 REMOVED insecure 'user' object. Backend uses token.
                                 phone: selectedAddress.phone,
                                 cartItems: cartItemsPayload,
                                 couponCode: appliedCoupon?.code,

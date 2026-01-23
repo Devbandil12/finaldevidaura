@@ -4,7 +4,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { AdminContext } from "../contexts/AdminContext";
 import { CouponContext } from "../contexts/CouponContext";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -29,8 +29,8 @@ import ProductVariantEditor from "./ProductVariantEditor";
 import ActivityLogsTab from "./ActivityLogsTab";
 import CmsTab from "./CmsTab";
 import ReferralsTab from "./ReferralsTab";
-import AdminRewardsTab from './AdminRewardsTab'; // 🟢 Import
-import AdminLotteryTab from './AdminLotteryTab'; // 🟢 Import
+import AdminRewardsTab from './AdminRewardsTab'; 
+import AdminLotteryTab from './AdminLotteryTab'; 
 
 import {
   Chart as ChartJS,
@@ -46,7 +46,6 @@ import {
   Filler,
 } from 'chart.js';
 
-// ✅ REGISTER THEM HERE
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -87,7 +86,6 @@ const AdminPanel = () => {
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(false);
   const [timeRangeInDays, setTimeRangeInDays] = useState(30);
 
   // Floating Tooltip State
@@ -106,10 +104,11 @@ const AdminPanel = () => {
 
   const {
     users, orders, getAllUsers, getAllOrders, updateOrderStatus, getSingleOrderDetails,
-    reportOrders, getReportData, cancelOrder, abandonedCarts, wishlistStats
+    reportOrders, cancelOrder, abandonedCarts, wishlistStats
   } = useContext(AdminContext);
 
   const { user, isLoaded, signOut } = useUser();
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
   const navigate = useNavigate();
 
   // Local State
@@ -155,7 +154,7 @@ const AdminPanel = () => {
       // 1. Must not be Cancelled
       if (order.status === "Order Cancelled") return false;
 
-      // 2. Must not be explicitly 'pending_payment' (Backend status for unpaid online)
+      // 2. Must not be explicitly 'pending_payment'
       if (order.status === "pending_payment" || order.status === "pending payment") return false;
 
       // 3. Strict Check: If Online and Payment is Pending -> Exclude
@@ -200,32 +199,31 @@ const AdminPanel = () => {
     u?.phone?.includes(userSearchQuery)
   );
 
-  // 🟢 NEW: Handle Role Update from Backend (Includes Actor ID)
+  // 🟢 SECURED: Handle Role Update
   const handleUpdateUserRole = async (userId, newRole) => {
-    // Confirm before changing sensitive permissions
     if (!window.confirm(`Are you sure you want to change this user's role to "${newRole}"?`)) return;
 
     try {
       setLoading(true);
-
-      // 🟢 Get Current Admin ID (Actor)
-      const currentAdminId = userdetails?.id;
+      // 🟢 Get Token
+      const token = await getToken();
 
       const response = await fetch(`${BASE}/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 🔒 Attach Token
+        },
         body: JSON.stringify({
-          role: newRole,
-          actorId: currentAdminId // 🟢 SEND ACTOR ID
+          role: newRole
+          // Removed insecure actorId
         }),
       });
       const data = await response.json();
 
       if (response.ok) {
         window.toast.success(`Role updated to ${newRole}`);
-        // Update local editing state instantly
         setEditingUser(prev => ({ ...prev, role: newRole }));
-        // Refresh full user list
         getAllUsers();
       } else {
         window.toast.error(data.message || "Failed to update role");
@@ -247,7 +245,6 @@ const AdminPanel = () => {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsSidebarOpen(false);
-    // if (tab === "reports") getReportData();
     if (tab === "products") getArchivedProducts();
   };
 
@@ -269,7 +266,6 @@ const AdminPanel = () => {
     { id: 'lottery', label: 'Lottery Draw', icon: Gift },
   ];
 
-  // Tooltip Logic
   const handleMouseEnter = (e, label) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const top = rect.top + (rect.height / 2);
@@ -280,13 +276,7 @@ const AdminPanel = () => {
   if (!isLoaded || !userdetails) return <div className="h-screen w-full flex items-center justify-center bg-gray-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
 
   const adminName = userdetails?.name || user?.fullName || user?.firstName || "Administrator";
-  const adminImage =
-    userdetails?.image ||
-    userdetails?.avatar ||
-    userdetails?.imageUrl ||
-    userdetails?.profileImage ||
-    user?.imageUrl ||
-    user?.profileImageUrl;
+  const adminImage = userdetails?.image || userdetails?.avatar || userdetails?.imageUrl || userdetails?.profileImage || user?.imageUrl || user?.profileImageUrl;
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden  fixed inset-0 z-[10000]">
@@ -295,13 +285,11 @@ const AdminPanel = () => {
       <AnimatePresence>
         {isSidebarOpen && (
           <>
-            {/* BACKDROP: Increased z-index to 9999 to cover all cards */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
               className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9999] lg:hidden"
             />
-            {/* SIDEBAR: Increased z-index to 10000 to sit above backdrop */}
             <motion.aside
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-[10000] lg:hidden shadow-2xl flex flex-col"
@@ -378,7 +366,6 @@ const AdminPanel = () => {
         {/* --- TOP NAVBAR --- */}
         <div className="h-16 w-full bg-white/90 backdrop-blur-md  flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
 
-          {/* Left: Mobile Menu & Breadcrumb */}
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <Menu size={24} />
@@ -395,7 +382,6 @@ const AdminPanel = () => {
             </div>
           </div>
 
-          {/* Right: User Profile */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-3 pr-1 py-1 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all cursor-pointer group">
               <div className="flex flex-col items-end">
@@ -426,8 +412,6 @@ const AdminPanel = () => {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
               {activeTab === "dashboard" && <DashboardTab orders={orders} setActiveTab={setActiveTab} successfulOrders={successfulOrders} totalRevenue={totalRevenue} totalOrders={totalOrders} conversionRate={conversionRate} averageOrderValue={averageOrderValue} newCustomers={newCustomers} returningCustomers={returningCustomers} cancelledOrdersValue={cancelledOrdersValue} totalQueries={totalQueries} />}
               {activeTab === "reports" && <Reports products={products} users={users} orders={reportOrders} />}
-
-              {/* 4. Render InsightsTab when active */}
               {activeTab === "insights" && <InsightsTab />}
               {activeTab === "logs" && <ActivityLogsTab />}
               {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock} />}

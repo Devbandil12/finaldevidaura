@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, memo, useContext, useRef } from "react";
 import { Star, Quote, X, UploadCloud, CheckCircle, Lock } from "lucide-react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
 import useCloudinary from "../utils/useCloudinary";
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -35,6 +35,7 @@ export default function TestimonialsSection() {
   // Context Data
   const { userdetails, isSignedIn } = useContext(UserContext);
   const { user } = useUser();
+  const { getToken } = useAuth(); // 🟢 Get Token Helper
   const { orders } = useContext(OrderContext);
 
   const [form, setForm] = useState({
@@ -106,15 +107,26 @@ export default function TestimonialsSection() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isSignedIn) {
+        window.toast.error("Please login to submit a review.");
+        return;
+    }
+
     if (!form.name || !form.text || form.rating < 1 || !form.avatar) {
       alert("Please complete all fields and upload an avatar.");
       return;
     }
 
     try {
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 🔒 Auth Header
+        },
         body: JSON.stringify(form),
       });
 
@@ -130,9 +142,12 @@ export default function TestimonialsSection() {
         setShowForm(false);
         setShowThankYou(true);
         setTimeout(() => setShowThankYou(false), 2500);
+      } else {
+        throw new Error("Failed to submit review");
       }
     } catch (err) {
       console.error("Submit error:", err);
+      window.toast.error("Failed to submit review.");
     }
   };
 

@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from "react"; // MODIFIED: Added useCallback
+// src/components/ReviewComponent.jsx
+
+import React, { useEffect, useState, useRef, useCallback } from "react"; 
 import {
   Star,
   ArrowDown,
@@ -16,6 +18,7 @@ import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
 import useCloudinary from "../utils/useCloudinary";
 import imageCompression from 'browser-image-compression';
+import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 
 const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/reviews`;
 const REVIEWS_PER_PAGE = 3;
@@ -58,7 +61,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)] bg-white"
+            className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)] bg-white z-50"
           >
             <div className="py-1">
               {options.map((option) => (
@@ -110,7 +113,6 @@ const StarRatingInput = ({ rating, onChange }) => {
   );
 };
 
-// MODIFICATION 1: Accept 'editReviewId' prop
 const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
   // --- States ---
   const [averageRating, setAverageRating] = useState(0);
@@ -133,8 +135,10 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const newImageFiles = useRef([]);
 
-  // MODIFICATION 2: Add state to track if initial edit is done
   const [initEditDone, setInitEditDone] = useState(false);
+  
+  // 🟢 Hook for Token
+  const { getToken } = useAuth();
 
   // --- Effects ---
   useEffect(() => {
@@ -226,21 +230,30 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
         finalPhotoUrls = [...finalPhotoUrls, ...uploadedUrls.filter(Boolean)];
       }
 
+      // 🟢 SECURE: Get Token
+      const token = await getToken();
+
       const payload = {
         productId, rating, comment,
         name: userdetails?.name || "Anonymous",
-        userId: userdetails?.id, clerkId: userdetails?.clerkId,
+        // userId & clerkId are ignored by backend now, but harmless to keep
         photoUrls: finalPhotoUrls,
       };
 
+      const config = {
+        headers: {
+            'Authorization': `Bearer ${token}` // 🔒 Attach Token
+        }
+      };
+
       if (editingReviewId) {
-        const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload);
+        const res = await axios.put(`${API_BASE}/${editingReviewId}`, payload, config);
         const updatedReview = res.data.updated[0];
         setReviews(prev =>
           prev.map(r => (r.id === updatedReview.id ? updatedReview : r))
         );
       } else {
-        const res = await axios.post(API_BASE, payload);
+        const res = await axios.post(API_BASE, payload, config);
         const serverData = res.data;
         const newReview = { ...payload, ...serverData };
         setReviews(prev => [newReview, ...prev]);
@@ -286,7 +299,6 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
     setFormOpen(false);
   };
 
-  // MODIFICATION 3: Wrap handleEdit in useCallback
   const handleEdit = useCallback((review) => {
     setFormOpen(true);
     setEditingReviewId(review.id);
@@ -299,18 +311,17 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
     setTimeout(() => {
       document.getElementById('review-form')?.scrollIntoView({
         behavior: 'smooth',
-        block: 'start' // Scroll to the top of the form
+        block: 'start'
       });
     }, 100);
-  }, [setFormOpen, setEditingReviewId, setName, setRating, setComment, setImages, setImagePreviews]); // Added dependencies
+  }, []); 
 
-  // MODIFICATION 4: Add useEffect to handle auto-edit on load
   useEffect(() => {
     if (editReviewId && !initEditDone && reviews.length > 0) {
       const reviewToEdit = reviews.find(r => r.id === editReviewId);
       if (reviewToEdit) {
         handleEdit(reviewToEdit);
-        setInitEditDone(true); // Mark as done to prevent re-triggering
+        setInitEditDone(true); 
       }
     }
   }, [editReviewId, reviews, initEditDone, handleEdit]);
@@ -424,6 +435,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                     </div>
                   </div>
                 </div>
+                {/* Only show edit button if user ID matches (Local Check + Backend Check) */}
                 {userdetails?.id === r.userId && (
                   <button
                     className="text-slate-500 hover:text-teal-600 transition-colors p-2"
