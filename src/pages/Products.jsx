@@ -25,7 +25,7 @@ const categoryMetadata = {
   }
 };
 
-// --- ANIMATION VARIANTS ---
+// --- ANIMATION VARIANTS (Memoized outside to prevent recreation) ---
 const createHeaderVariants = (shouldReduce) => ({
   hidden: { opacity: shouldReduce ? 1 : 0, y: shouldReduce ? 0 : 20 },
   visible: { 
@@ -59,6 +59,7 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
   const optimizedSrc = useMemo(() => optimizeImage(src, 'card'), [src]);
 
   const handleLoad = useCallback(() => {
+    // Use rAF to avoid state updates during render phase
     requestAnimationFrame(() => setIsLoaded(true));
   }, []);
 
@@ -200,61 +201,39 @@ const ProductCard = memo(({
       </div>
     </motion.div>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison for optimization
+}, (prev, next) => {
   return (
-    prevProps.product.id === nextProps.product.id &&
-    prevProps.inWishlist === nextProps.inWishlist &&
-    prevProps.displayVariant?.stock === nextProps.displayVariant?.stock
+    prev.product.id === next.product.id &&
+    prev.inWishlist === next.inWishlist &&
+    prev.displayVariant?.stock === next.displayVariant?.stock
   );
 });
 
 ProductCard.displayName = "ProductCard";
 
 const Products = () => {
-  const { products: contextProducts } = useContext(ProductContext);
+  // 1. DIRECT CONTEXT USAGE (Removed local sessionStorage cache)
+  const { products } = useContext(ProductContext);
   const { wishlist, toggleWishlist } = useContext(CartContext);
+  
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
   const observerRef = useRef(null);
   const [visibleSections, setVisibleSections] = useState(new Set());
 
-  // Animation variants with reduced motion support
+  // 2. OPTIMIZED WISHLIST LOOKUP (O(1) Set)
+  const wishlistSet = useMemo(() => {
+    return new Set(wishlist?.map(item => item.variantId ?? item.variant?.id) || []);
+  }, [wishlist]);
+
   const headerVariants = useMemo(() => createHeaderVariants(shouldReduceMotion), [shouldReduceMotion]);
   const sectionVariants = useMemo(() => createSectionVariants(shouldReduceMotion), [shouldReduceMotion]);
   const cardVariants = useMemo(() => createCardVariants(shouldReduceMotion), [shouldReduceMotion]);
 
-  // ⚡ OPTIMIZED: Initialize from sessionStorage
-  const [products, setProducts] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem("all_products_cache");
-      return cached ? JSON.parse(cached) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  // ⚡ OPTIMIZED: Sync with context - only update if changed
-  useEffect(() => {
-    if (contextProducts && contextProducts.length > 0) {
-      setProducts(prev => {
-        const prevStr = JSON.stringify(prev);
-        const newStr = JSON.stringify(contextProducts);
-        if (prevStr !== newStr) {
-          sessionStorage.setItem("all_products_cache", newStr);
-          return contextProducts;
-        }
-        return prev;
-      });
-    }
-  }, [contextProducts]);
-
-  // Scroll to top on mount
   useEffect(() => { 
     window.scrollTo({ top: 0, behavior: 'instant' }); 
   }, []);
 
-  // --- MEMOIZED HANDLERS ---
   const handleProductClick = useCallback((product) => {
     navigate(`/product/${product.id}`);
   }, [navigate]);
@@ -269,19 +248,19 @@ const Products = () => {
 
   const isProductInWishlist = useCallback((product) => {
     if (!product.variants) return false;
-    const variantIds = product.variants.map(v => v.id);
-    return wishlist?.some(item => variantIds.includes(item.variantId ?? item.variant?.id));
-  }, [wishlist]);
+    // Check if ANY variant is in the wishlist set
+    return product.variants.some(v => wishlistSet.has(v.id));
+  }, [wishlistSet]);
 
   const getDisplayVariant = useCallback((product) => {
     if (!product.variants?.length) return null;
     return product.variants.sort((a, b) => a.oprice - b.oprice)[0];
   }, []);
 
-  // ⚡ OPTIMIZED: Memoized grouping with better performance
   const groupedProducts = useMemo(() => {
     const groups = {};
-    const validProducts = products.filter(p => p.category && p.category !== "Template");
+    // Ensure Products exist before filtering
+    const validProducts = (products || []).filter(p => p.category && p.category !== "Template");
     
     validProducts.forEach(product => {
       const catName = product.category.trim();
@@ -304,10 +283,8 @@ const Products = () => {
     }, {});
   }, [products]);
 
-  // ⚡ Intersection Observer for lazy rendering sections
   useEffect(() => {
     if (shouldReduceMotion || !('IntersectionObserver' in window)) {
-      // If reduced motion or no support, show all sections
       const allSections = Object.keys(groupedProducts);
       setVisibleSections(new Set(allSections));
       return;
@@ -322,13 +299,11 @@ const Products = () => {
           }
         });
       },
-      { rootMargin: '200px 0px' } // Load sections 200px before they enter viewport
+      { rootMargin: '200px 0px' }
     );
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
+      if (observerRef.current) observerRef.current.disconnect();
     };
   }, [groupedProducts, shouldReduceMotion]);
 
@@ -398,7 +373,8 @@ const Products = () => {
               </div>
 
               {/* GRID */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+              {/* Added pb-12 to handle the translation offset */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12 pb-12">
                 {categoryProducts.map((product, idx) => {
                   const displayVariant = getDisplayVariant(product);
                   if (!displayVariant) return null;

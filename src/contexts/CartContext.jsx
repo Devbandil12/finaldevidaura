@@ -8,6 +8,10 @@ const LS_CART_KEY = "guestCart";
 const LS_WISHLIST_KEY = "guestWishlist";
 const LS_BUY_NOW_KEY = "buyNowItem";
 
+// ⚡ PERFORMANCE: Cache duration (1 minute)
+// Prevents spamming the server when users switch tabs quickly
+const CART_STALE_TIME = 60 * 1000; 
+
 // --- LocalStorage Helpers ---
 const readLS = (key) => {
   try {
@@ -38,7 +42,7 @@ const removeLS = (key) => {
 export const CartProvider = ({ children }) => {
   const { userdetails, isSignedIn, isUserLoading } = useContext(UserContext);
   const { isLoaded } = useUser();
-  const { getToken } = useAuth(); // 🟢 Get Token Helper
+  const { getToken } = useAuth(); 
 
   const [cart, setCart] = useState(() => readLS(LS_CART_KEY));
   const [wishlist, setWishlist] = useState(() => readLS(LS_WISHLIST_KEY));
@@ -50,6 +54,9 @@ export const CartProvider = ({ children }) => {
   const [isSavedLoading, setIsSavedLoading] = useState(false);
 
   const mergeRanForId = useRef(null);
+  // ⚡ PERFORMANCE: Track last fetch time
+  const lastFetchTime = useRef(0);
+  
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   // 🟢 Helper for Auth Headers
@@ -62,7 +69,8 @@ export const CartProvider = ({ children }) => {
   };
 
   // --- 1. Fetch Cart (Guest + User) ---
-  const getCartitems = useCallback(async (showLoader = true) => {
+  // ⚡ UPDATED: Added 'force' parameter for caching
+  const getCartitems = useCallback(async (showLoader = true, force = false) => {
     // 🟢 GUEST LOGIC
     if (!isSignedIn) {
       setCart(readLS(LS_CART_KEY));
@@ -72,6 +80,14 @@ export const CartProvider = ({ children }) => {
 
     // 🔒 AUTHENTICATED LOGIC
     if (!userdetails?.id) return []; 
+
+    // ⚡ CACHE CHECK: If not forced and data is fresh, skip network
+    const now = Date.now();
+    if (!force && (now - lastFetchTime.current < CART_STALE_TIME) && cart.length > 0) {
+        if (showLoader) setIsCartLoading(false);
+        return cart; // Return cached state
+    }
+
     if (showLoader) setIsCartLoading(true);
     
     try {
@@ -82,6 +98,10 @@ export const CartProvider = ({ children }) => {
       if (!res.ok) throw new Error("Failed to fetch cart");
       const rows = await res.json();
       setCart(rows);
+      
+      // ⚡ UPDATE TIMESTAMP
+      lastFetchTime.current = Date.now();
+      
       return rows;
     } catch (e) {
       console.error("getCartitems error:", e);
@@ -90,7 +110,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       if (showLoader) setIsCartLoading(false);
     }
-  }, [isSignedIn, userdetails?.id, BACKEND_URL, getToken]);
+  }, [isSignedIn, userdetails?.id, BACKEND_URL, getToken, cart.length]); // Added cart.length dependency
 
   // --- 2. Fetch Wishlist (Guest + User) ---
   const getwishlist = useCallback(async () => {
@@ -169,7 +189,7 @@ export const CartProvider = ({ children }) => {
             await fetch(`${BACKEND_URL}/api/cart/merge`, {
               method: "POST",
               headers,
-              body: JSON.stringify({ guestCart: payload }), // userId injected by backend token
+              body: JSON.stringify({ guestCart: payload }), 
             });
             removeLS(LS_CART_KEY);
             window.toast.info("Your guest cart has been merged.");
@@ -183,12 +203,13 @@ export const CartProvider = ({ children }) => {
             await fetch(`${BACKEND_URL}/api/cart/wishlist/merge`, {
               method: "POST",
               headers,
-              body: JSON.stringify({ guestWishlist: payload }) // userId injected by backend token
+              body: JSON.stringify({ guestWishlist: payload }) 
             });
             removeLS(LS_WISHLIST_KEY);
           }
 
-          const freshCart = await getCartitems();
+          // ⚡ FORCE FETCH after merge to get fresh data
+          const freshCart = await getCartitems(true, true); 
           await getwishlist();
           await getSavedItems();
 
@@ -207,6 +228,7 @@ export const CartProvider = ({ children }) => {
 
         mergeGuestData();
       } else {
+        // Normal load (uses cache if available)
         getCartitems();
         getwishlist();
         getSavedItems();
@@ -236,7 +258,8 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const handleFocus = () => {
       if (isSignedIn && userdetails?.id) {
-        getCartitems(false);
+        // ⚡ CACHED FETCH: Won't hit server if data is fresh (< 60s)
+        getCartitems(false, false); 
       }
     };
     window.addEventListener("focus", handleFocus);
@@ -305,20 +328,20 @@ export const CartProvider = ({ children }) => {
             method: "POST",
             headers,
             body: JSON.stringify({ 
-              // userId injected by backend token, but okay to send if backend expects it
-              // ideally backend gets it from token
               productId: product.id, 
               variantId: variant.id, 
               quantity: qtyToAdd 
             }),
           });
         }
+        // ⚡ Note: We don't force fetch here because we optimistically updated
         window.toast.success(`${product.name} (${variant.name}) added to cart.`);
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
         window.toast.error(`Failed to add ${product.name} to cart.`);
-        await getCartitems(false); // Revert on error
+        // ⚡ REVERT: Force fetch on error to restore state
+        await getCartitems(false, true); 
         return false;
       }
     },
@@ -351,7 +374,7 @@ export const CartProvider = ({ children }) => {
       } catch (e) {
         console.error("removeFromCart error:", e);
         window.toast.error(`Failed to remove item from cart.`);
-        await getCartitems(false);
+        await getCartitems(false, true); // Force fetch to revert
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL, getToken]
@@ -392,7 +415,7 @@ export const CartProvider = ({ children }) => {
       } catch (e) {
         console.error("changeCartQuantity error:", e);
         window.toast.error("Failed to update quantity.");
-        await getCartitems(false); 
+        await getCartitems(false, true); // Force fetch
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, removeFromCart, BACKEND_URL, getToken]
@@ -634,7 +657,8 @@ export const CartProvider = ({ children }) => {
       }
       
       const newCartItemRow = await res.json(); 
-      const refreshedCart = await getCartitems(false); 
+      // ⚡ FORCE FETCH to update cart with bundle
+      const refreshedCart = await getCartitems(false, true); 
       
       const fullNewItem = refreshedCart.find(
         (item) => item.variant.id === newCartItemRow.variantId
@@ -706,7 +730,7 @@ export const CartProvider = ({ children }) => {
     } catch (e) {
       console.error("saveForLater error:", e);
       window.toast.error("Failed to save item");
-      await getCartitems(false); 
+      await getCartitems(false, true); 
       await getSavedItems(); 
     }
   }, [cart, savedItems, userdetails?.id, BACKEND_URL, getCartitems, getSavedItems, getToken]);
@@ -749,12 +773,12 @@ export const CartProvider = ({ children }) => {
       });
       window.toast.success("Moved back to cart");
       
-      await getCartitems(false); 
+      await getCartitems(false, true); 
     } catch (e) {
       console.error("moveSavedToCart error:", e);
       window.toast.error("Failed to move item");
       await getSavedItems();
-      await getCartitems(false);
+      await getCartitems(false, true);
     }
   }, [savedItems, cart, userdetails?.id, BACKEND_URL, getCartitems, getSavedItems, getToken]);
 
