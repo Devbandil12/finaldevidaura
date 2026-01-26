@@ -9,7 +9,6 @@ const LS_WISHLIST_KEY = "guestWishlist";
 const LS_BUY_NOW_KEY = "buyNowItem";
 
 // ⚡ PERFORMANCE: Cache duration (1 minute)
-// Prevents spamming the server when users switch tabs quickly
 const CART_STALE_TIME = 60 * 1000; 
 
 // --- LocalStorage Helpers ---
@@ -53,8 +52,11 @@ export const CartProvider = ({ children }) => {
   const [savedItems, setSavedItems] = useState([]);
   const [isSavedLoading, setIsSavedLoading] = useState(false);
 
+  // ⚡ REF: Keep track of cart without triggering effect loops
+  const cartRef = useRef(cart);
+  useEffect(() => { cartRef.current = cart; }, [cart]);
+
   const mergeRanForId = useRef(null);
-  // ⚡ PERFORMANCE: Track last fetch time
   const lastFetchTime = useRef(0);
   
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -69,7 +71,7 @@ export const CartProvider = ({ children }) => {
   };
 
   // --- 1. Fetch Cart (Guest + User) ---
-  // ⚡ UPDATED: Added 'force' parameter for caching
+  // ⚡ FIXED: Removed cart.length dependency to prevent useEffect loops
   const getCartitems = useCallback(async (showLoader = true, force = false) => {
     // 🟢 GUEST LOGIC
     if (!isSignedIn) {
@@ -81,11 +83,11 @@ export const CartProvider = ({ children }) => {
     // 🔒 AUTHENTICATED LOGIC
     if (!userdetails?.id) return []; 
 
-    // ⚡ CACHE CHECK: If not forced and data is fresh, skip network
+    // ⚡ CACHE CHECK: Use ref to check length safely
     const now = Date.now();
-    if (!force && (now - lastFetchTime.current < CART_STALE_TIME) && cart.length > 0) {
+    if (!force && (now - lastFetchTime.current < CART_STALE_TIME) && cartRef.current.length > 0) {
         if (showLoader) setIsCartLoading(false);
-        return cart; // Return cached state
+        return cartRef.current; // Return cached state
     }
 
     if (showLoader) setIsCartLoading(true);
@@ -110,7 +112,7 @@ export const CartProvider = ({ children }) => {
     } finally {
       if (showLoader) setIsCartLoading(false);
     }
-  }, [isSignedIn, userdetails?.id, BACKEND_URL, getToken, cart.length]); // Added cart.length dependency
+  }, [isSignedIn, userdetails?.id, BACKEND_URL, getToken]); // REMOVED cart.length
 
   // --- 2. Fetch Wishlist (Guest + User) ---
   const getwishlist = useCallback(async () => {
@@ -208,7 +210,7 @@ export const CartProvider = ({ children }) => {
             removeLS(LS_WISHLIST_KEY);
           }
 
-          // ⚡ FORCE FETCH after merge to get fresh data
+          // Force fetch after merge
           const freshCart = await getCartitems(true, true); 
           await getwishlist();
           await getSavedItems();
@@ -258,7 +260,6 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const handleFocus = () => {
       if (isSignedIn && userdetails?.id) {
-        // ⚡ CACHED FETCH: Won't hit server if data is fresh (< 60s)
         getCartitems(false, false); 
       }
     };
@@ -314,6 +315,9 @@ export const CartProvider = ({ children }) => {
         : [...cart, { product, variant, quantity: qtyToAdd }];
       setCart(optimisticUpdate);
 
+      // ⚡ UPDATE TIME to prevent background fetch
+      lastFetchTime.current = Date.now();
+
       try {
         const headers = await getAuthHeaders();
         if (existing) {
@@ -334,13 +338,11 @@ export const CartProvider = ({ children }) => {
             }),
           });
         }
-        // ⚡ Note: We don't force fetch here because we optimistically updated
         window.toast.success(`${product.name} (${variant.name}) added to cart.`);
         return true;
       } catch (e) {
         console.error("addToCart error:", e);
         window.toast.error(`Failed to add ${product.name} to cart.`);
-        // ⚡ REVERT: Force fetch on error to restore state
         await getCartitems(false, true); 
         return false;
       }
@@ -364,6 +366,9 @@ export const CartProvider = ({ children }) => {
 
       const optimisticUpdate = cart.filter((item) => item.variant?.id !== variant.id);
       setCart(optimisticUpdate);
+      
+      // ⚡ UPDATE TIME
+      lastFetchTime.current = Date.now();
 
       try {
         const token = await getToken();
@@ -374,7 +379,7 @@ export const CartProvider = ({ children }) => {
       } catch (e) {
         console.error("removeFromCart error:", e);
         window.toast.error(`Failed to remove item from cart.`);
-        await getCartitems(false, true); // Force fetch to revert
+        await getCartitems(false, true); 
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, BACKEND_URL, getToken]
@@ -405,6 +410,10 @@ export const CartProvider = ({ children }) => {
         item.variant?.id === variant.id ? { ...item, quantity: nextQty } : item
       );
       setCart(optimisticUpdate);
+
+      // ⚡ UPDATE TIME
+      lastFetchTime.current = Date.now();
+
       try {
         const headers = await getAuthHeaders();
         await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}/${variant.id}`, {
@@ -415,7 +424,7 @@ export const CartProvider = ({ children }) => {
       } catch (e) {
         console.error("changeCartQuantity error:", e);
         window.toast.error("Failed to update quantity.");
-        await getCartitems(false, true); // Force fetch
+        await getCartitems(false, true); 
       }
     },
     [cart, isSignedIn, userdetails?.id, getCartitems, removeFromCart, BACKEND_URL, getToken]
@@ -423,7 +432,6 @@ export const CartProvider = ({ children }) => {
 
   // --- 8. Clear Cart ---
   const clearCart = useCallback(async () => {
-    // 🟢 GUEST LOGIC
     if (!isSignedIn) {
       setCart([]);
       writeLS(LS_CART_KEY, []);
@@ -431,10 +439,12 @@ export const CartProvider = ({ children }) => {
       return;
     }
     
-    // 🔒 AUTHENTICATED LOGIC
     if (!userdetails?.id) return;
     const oldCart = cart;
     setCart([]);
+    // ⚡ UPDATE TIME
+    lastFetchTime.current = Date.now();
+
     try {
       const token = await getToken();
       await fetch(`${BACKEND_URL}/api/cart/${userdetails.id}`, {
@@ -462,7 +472,6 @@ export const CartProvider = ({ children }) => {
         return false;
       }
 
-      // 🟢 GUEST LOGIC
       if (!isSignedIn) {
         const newWishlist = [...wishlist, { product, variant, variantId: variant.id }];
         setWishlist(newWishlist);
@@ -471,7 +480,6 @@ export const CartProvider = ({ children }) => {
         return true;
       }
 
-      // 🔒 AUTHENTICATED LOGIC
       if (!userdetails?.id) return false;
 
       const optimisticUpdate = [...wishlist, { product, variant, variantId: variant.id, userId: userdetails.id }];
@@ -502,7 +510,6 @@ export const CartProvider = ({ children }) => {
   // --- 10. Remove from Wishlist ---
   const removeFromWishlist = useCallback(
     async (variant) => {
-      // 🟢 GUEST LOGIC
       if (!isSignedIn) {
         const newWishlist = wishlist.filter((item) => (item.variantId ?? item.variant?.id) !== variant.id);
         setWishlist(newWishlist);
@@ -511,7 +518,6 @@ export const CartProvider = ({ children }) => {
         return;
       }
 
-      // 🔒 AUTHENTICATED LOGIC
       if (!userdetails?.id) return;
 
       const optimisticUpdate = wishlist.filter((item) => (item.variantId ?? item.variant?.id) !== variant.id);
@@ -558,7 +564,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [wishlist, isSignedIn, userdetails?.id, BACKEND_URL, getToken]);
 
-  // --- 12. Toggle Wishlist ---
   const toggleWishlist = useCallback(
     async (product, variant) => {
       const isAlreadyInWishlist = wishlist?.some(
@@ -574,7 +579,6 @@ export const CartProvider = ({ children }) => {
     [wishlist, addToWishlist, removeFromWishlist]
   );
 
-  // --- 13. Move to Wishlist (from Cart) ---
   const moveToWishlist = useCallback(
     async (product, variant) => {
       const addedSuccessfully = await addToWishlist(product, variant);
@@ -588,7 +592,6 @@ export const CartProvider = ({ children }) => {
     [addToWishlist, removeFromCart]
   );
 
-  // --- 14. Move to Cart (from Wishlist) ---
   const moveFromWishlistToCart = useCallback(
     async (product, variant) => {
       const addedSuccessfully = await addToCart(product, variant, 1);
@@ -602,7 +605,7 @@ export const CartProvider = ({ children }) => {
     [addToCart, removeFromWishlist]
   );
 
-  // --- 15. Buy Now Logic (Local Only) ---
+  // --- 15. Buy Now ---
   const startBuyNow = useCallback((productOrItem, variant, quantity) => {
     let item;
     if (variant && quantity !== undefined) {
@@ -621,15 +624,11 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const clearBuyNow = useCallback(() => {
-    const itemToClear = buyNow || readLS(LS_BUY_NOW_KEY); 
-    if (itemToClear && itemToClear.variant) {
-      removeFromCart(itemToClear.variant);
-    }
     setBuyNow(null);
     removeLS(LS_BUY_NOW_KEY);
-  }, [buyNow, removeFromCart]); 
+  }, []);
 
-  // --- 16. Custom Bundle (Authenticated Only) ---
+  // --- 16. Custom Bundle ---
   const addCustomBundle = useCallback(async (templateVariantId, contentVariantIds) => {
     if (!userdetails?.id) {
       window.toast.error("Please log in to build a bundle.");
@@ -657,7 +656,6 @@ export const CartProvider = ({ children }) => {
       }
       
       const newCartItemRow = await res.json(); 
-      // ⚡ FORCE FETCH to update cart with bundle
       const refreshedCart = await getCartitems(false, true); 
       
       const fullNewItem = refreshedCart.find(
@@ -668,7 +666,6 @@ export const CartProvider = ({ children }) => {
         window.toast.success("Custom bundle added to cart!");
         return fullNewItem;
       } else {
-        console.error("Failed to find new bundle in refreshed cart.");
         window.toast.success("Custom bundle added to cart!");
         return true; 
       }
@@ -690,6 +687,7 @@ export const CartProvider = ({ children }) => {
     const variantId = item.variant.id || item.variantId;
     const quantityToSave = item.quantity;
 
+    // 1. Optimistic Update
     const newCart = cart.filter(c => c.variant.id !== variantId);
     setCart(newCart);
 
@@ -713,8 +711,10 @@ export const CartProvider = ({ children }) => {
       };
       newSaved = [...savedItems, itemToSave];
     }
-    
     setSavedItems(newSaved);
+
+    // ⚡ PREVENT LOOP: Update fetch time so background fetch doesn't revert this
+    lastFetchTime.current = Date.now();
 
     try {
       const headers = await getAuthHeaders();
@@ -730,6 +730,7 @@ export const CartProvider = ({ children }) => {
     } catch (e) {
       console.error("saveForLater error:", e);
       window.toast.error("Failed to save item");
+      // Revert on error only
       await getCartitems(false, true); 
       await getSavedItems(); 
     }
@@ -738,6 +739,7 @@ export const CartProvider = ({ children }) => {
   const moveSavedToCart = useCallback(async (item) => {
     if (!userdetails?.id) return;
 
+    // 1. Optimistic Updates
     const newSaved = savedItems.filter(s => s.variant.id !== item.variant.id);
     setSavedItems(newSaved);
 
@@ -761,6 +763,9 @@ export const CartProvider = ({ children }) => {
     }
     setCart(newCart);
 
+    // ⚡ PREVENT LOOP: Update fetch time
+    lastFetchTime.current = Date.now();
+
     try {
       const headers = await getAuthHeaders();
       await fetch(`${BACKEND_URL}/api/cart/move-to-cart`, {
@@ -773,10 +778,12 @@ export const CartProvider = ({ children }) => {
       });
       window.toast.success("Moved back to cart");
       
-      await getCartitems(false, true); 
+      // ⚠️ DO NOT CALL getCartitems HERE
+      // We trust the optimistic update.
     } catch (e) {
       console.error("moveSavedToCart error:", e);
       window.toast.error("Failed to move item");
+      // Revert on error only
       await getSavedItems();
       await getCartitems(false, true);
     }
