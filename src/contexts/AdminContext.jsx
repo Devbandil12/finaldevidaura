@@ -118,27 +118,50 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  const updateOrderStatus = async (orderId, status) => {
+  // 🟢 OPTIMIZED: Instant Update without Refetch
+  const updateOrderStatus = async (orderId, status, courierData = null) => {
     try {
+      // 1. Optimistic Update (Immediate)
+      setOrders(prevOrders => prevOrders.map(order => 
+        order.id === orderId 
+          ? { ...order, status, ...courierData } // Merge new status & courier details
+          : order
+      ));
+
+      // 2. Server Request
       const headers = await getAuthHeaders(); 
+      const body = { status, ...courierData };
+
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
+
       if (!res.ok) throw new Error("Failed to update order");
+      
       const updatedOrder = await res.json();
       window.toast.success(`Order #${orderId} updated`);
-      await getAllOrders();
+      
+      // Note: Removed await getAllOrders() for efficiency
       return updatedOrder;
     } catch (err) {
       console.error("❌ updateOrderStatus failed:", err);
       window.toast.error("Failed to update order");
+      await getAllOrders(); // Fallback: Revert state on error
     }
   };
 
+  // 🟢 OPTIMIZED: Bulk Update without Refetch
   const updateBulkOrderStatus = async (orderIds, status) => {
     try {
+      // 1. Optimistic Update
+      setOrders(prevOrders => prevOrders.map(order => 
+        orderIds.includes(order.id) || orderIds.includes(parseInt(order.id))
+          ? { ...order, status } 
+          : order
+      ));
+
       const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/bulk-status`, {
         method: "PUT",
@@ -150,17 +173,24 @@ export const AdminProvider = ({ children }) => {
       
       const data = await res.json();
       window.toast.success(data.message || "Bulk update successful");
-      await getAllOrders(); // Refresh list
+      // Note: Removed await getAllOrders() for efficiency
       return true;
     } catch (err) {
       console.error("❌ updateBulkOrderStatus failed:", err);
       window.toast.error("Failed to update orders");
+      await getAllOrders(); // Fallback
       return false;
     }
   };
 
+  // 🟢 OPTIMIZED: Cancel Order without Refetch
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
+      // 1. Optimistic Update
+      setOrders(prevOrders => prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: "Order Cancelled" } : order
+      ));
+
       const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/cancel`, {
         method: "PUT",
@@ -175,11 +205,12 @@ export const AdminProvider = ({ children }) => {
 
       const data = await res.json();
       window.toast.success(data.message || `Order #${orderId} cancelled by Admin`);
-      await getAllOrders();
+      // Note: Removed await getAllOrders() for efficiency
 
     } catch (err) {
       console.error("❌ cancelOrder failed:", err);
       window.toast.error(err.message || "Failed to cancel order");
+      await getAllOrders(); // Fallback
     }
   };
 
@@ -291,7 +322,7 @@ export const AdminProvider = ({ children }) => {
     }
   }, [
     isUserLoading,
-    userdetails,
+    userdetails?.role, // 🟢 Reduced dependency to avoid loops
     getAllUsers,
     getAllOrders,
     getAbandonedCarts,

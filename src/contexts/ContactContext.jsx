@@ -1,11 +1,13 @@
-import React, { createContext, useState, useCallback } from "react";
+import React, { createContext, useState, useCallback, useContext, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import { UserContext } from "./UserContext"; // 🟢 Import UserContext
 
 export const ContactContext = createContext();
 
 export const ContactProvider = ({ children }) => {
   const [tickets, setTickets] = useState([]);
   const { getToken } = useAuth();
+  const { userdetails } = useContext(UserContext); // 🟢 Get user details
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   // Fetch all tickets (For Admin Panel)
@@ -22,6 +24,13 @@ export const ContactProvider = ({ children }) => {
       console.error("❌ Failed to fetch tickets:", error);
     }
   }, [BACKEND_URL, getToken]);
+
+  // 🟢 AUTO-FETCH: Automatically fetch tickets if the user is an admin
+  useEffect(() => {
+    if (userdetails?.role === 'admin') {
+        getAllTickets();
+    }
+  }, [userdetails?.role, getAllTickets]);
 
   // Fetch specific user tickets (For User Dashboard)
   const getUserTickets = useCallback(async (email) => {

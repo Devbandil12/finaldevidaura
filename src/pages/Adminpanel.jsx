@@ -4,7 +4,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { AdminContext } from "../contexts/AdminContext";
 import { CouponContext } from "../contexts/CouponContext";
-import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
+import { useUser, useAuth } from "@clerk/clerk-react"; 
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -108,7 +108,7 @@ const AdminPanel = () => {
   } = useContext(AdminContext);
 
   const { user, isLoaded, signOut } = useUser();
-  const { getToken } = useAuth(); // 🟢 Get Token Helper
+  const { getToken } = useAuth(); 
   const navigate = useNavigate();
 
   // Local State
@@ -130,11 +130,17 @@ const AdminPanel = () => {
     }
   }, [userdetails, navigate, isLoaded, user]);
 
+  // 🟢 FIXED: Removed redundant fetches (users/orders) to stop loops
   useEffect(() => {
     if (isLoaded && user && userdetails?.role === "admin") {
-      getAllUsers(); getAllOrders(); getquery(); refreshCoupons(); getArchivedProducts();
+      // AdminContext handles getAllUsers & getAllOrders automatically.
+      // We only fetch these if they aren't auto-handled by their contexts:
+      getquery(); 
+      refreshCoupons(); 
+      getArchivedProducts();
     }
-  }, [isLoaded, user, userdetails, getAllUsers, getAllOrders, getquery, refreshCoupons, getArchivedProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userdetails?.role]); // 🟢 Only runs once when role is confirmed
 
   // --- Logic from UsersTab.jsx for Avatar Colors ---
   const getAvatarColor = (name) => {
@@ -148,7 +154,6 @@ const AdminPanel = () => {
     return colors[(name ? name.length : 0) % colors.length];
   };
 
-  // 🟢 FIX: Filter successful orders to exclude Pending Payments
   const successfulOrders = useMemo(() => {
     return orders?.filter(order => {
       // 1. Must not be Cancelled
@@ -199,24 +204,21 @@ const AdminPanel = () => {
     u?.phone?.includes(userSearchQuery)
   );
 
-  // 🟢 SECURED: Handle Role Update
   const handleUpdateUserRole = async (userId, newRole) => {
     if (!window.confirm(`Are you sure you want to change this user's role to "${newRole}"?`)) return;
 
     try {
       setLoading(true);
-      // 🟢 Get Token
       const token = await getToken();
 
       const response = await fetch(`${BASE}/api/users/${userId}`, {
         method: "PUT",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 🔒 Attach Token
+            "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify({
           role: newRole
-          // Removed insecure actorId
         }),
       });
       const data = await response.json();
@@ -239,7 +241,12 @@ const AdminPanel = () => {
   const handleEditUser = (u) => setEditingUser(u);
   const handleSaveUser = async () => { };
   const handleDeleteUser = async (id) => { };
-  const handleUpdateOrderStatus = async (id, status) => { await updateOrderStatus(id, status); getAllOrders(); };
+  
+  // 🟢 FIXED: Removed redundant getAllOrders() call to prevent double fetch
+  const handleUpdateOrderStatus = async (id, status) => { 
+      await updateOrderStatus(id, status); 
+  };
+  
   const handleCancelOrder = async (order) => { if (window.confirm(`Cancel Order #${order.id}?`)) await cancelOrder(order.id, order.paymentMode, order.totalAmount); };
 
   const handleTabClick = (tab) => {
