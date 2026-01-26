@@ -1,9 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom"; // Added for navigation
+import { useNavigate } from "react-router-dom"; 
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
-import { CartContext } from "../contexts/CartContext"; // Added CartContext
+import { CartContext } from "../contexts/CartContext"; 
 import Loader from "../Components/Loader";
 import MiniLoader from "../Components/MiniLoader";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,9 +11,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Truck,
-  Package,
-  Cog,
+  Package, // Kept for fallback icons if needed
   ChevronDown,
   ChevronUp,
   RotateCw,
@@ -24,7 +22,10 @@ import {
   Receipt,
   CreditCard,
   Banknote,
-  Download
+  Download,
+  Calendar,      // 🟢 Added
+  PackageCheck,  // 🟢 Added
+  MapPin         // 🟢 Added
 } from "lucide-react";
 
 // --- Soft "Buttery" Animation Config ---
@@ -62,6 +63,79 @@ const formatDateTime = (dateString) => {
 };
 
 // --- Sub-Components ---
+
+// 🟢 NEW: Vertical Timeline Component
+const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
+  // Use timeline if available, otherwise fallback to simple status
+  // Note: Backend returns timeline sorted DESC (latest first)
+  const events = timeline && timeline.length > 0 
+    ? timeline 
+    : [{ title: "Order Placed", description: "Order received", timestamp: new Date(), status: "Order Placed" }];
+
+  return (
+    <div className="mt-6 md:mt-8 space-y-0 relative pl-2 md:pl-4">
+      {/* Vertical Line */}
+      <div className="absolute left-[19px] md:left-[27px] top-4 bottom-4 w-0.5 bg-zinc-100" />
+
+      {events.map((event, index) => {
+        const isLatest = index === 0;
+        const dateObj = new Date(event.timestamp);
+        
+        return (
+          <div key={index} className="relative flex gap-4 md:gap-6 pb-8 last:pb-0">
+            {/* Icon/Dot */}
+            <div className={`relative z-10 h-10 w-10 md:h-12 md:w-12 rounded-full flex items-center justify-center border-4 border-white ${
+              isLatest ? 'bg-zinc-900 text-white shadow-lg shadow-zinc-200' : 'bg-zinc-100 text-zinc-400'
+            }`}>
+              {isLatest ? <PackageCheck size={18} /> : <div className="h-2 w-2 rounded-full bg-zinc-400" />}
+            </div>
+
+            {/* Content */}
+            <div className={`flex-1 pt-1 md:pt-1.5 ${isLatest ? 'opacity-100' : 'opacity-70'}`}>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-1 md:gap-4">
+                <div>
+                  <h4 className="text-sm md:text-base font-semibold text-zinc-900">{event.title}</h4>
+                  <p className="text-xs md:text-sm text-zinc-500 mt-1 max-w-md leading-relaxed">
+                    {event.description}
+                  </p>
+                  
+                  {/* Show Courier Details if this is the Shipped event */}
+                  {event.status === 'Shipped' && courierDetails?.trackingId && (
+                    <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-lg inline-block">
+                        <p className="text-xs text-blue-800 font-medium">
+                            Courier: {courierDetails.courierName}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-0.5">
+                            AWB: {courierDetails.trackingId}
+                        </p>
+                        {courierDetails.trackingUrl && (
+                          <a href={courierDetails.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline mt-1 block">
+                            Track
+                          </a>
+                        )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Timestamp */}
+                <div className="flex flex-row md:flex-col items-center md:items-end gap-2 md:gap-0.5 mt-2 md:mt-0 text-xs font-medium text-zinc-400">
+                  <span className="flex items-center gap-1.5 bg-zinc-50 px-2 py-1 rounded md:bg-transparent md:p-0">
+                    <Calendar size={12} />
+                    {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-zinc-50 px-2 py-1 rounded md:bg-transparent md:p-0">
+                    <Clock size={12} />
+                    {dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   const [expanded, setExpanded] = useState(false);
@@ -237,7 +311,7 @@ export default function MyOrders() {
     setCancellingOrderId(null);
   };
 
-const reorder = (orderId) => {
+  const reorder = (orderId) => {
     const order = orders.find((o) => o.id === orderId);
     if (!order || !order.orderItems || order.orderItems.length === 0) return;
 
@@ -325,57 +399,6 @@ const reorder = (orderId) => {
       setDownloadingInvoiceId(null);
     }
   };
-
-  // ------------------------------------------------------------------
-  //  PERFECTLY ALIGNED STEPPER
-  // ------------------------------------------------------------------
-  const renderStepProgress = (progressStep, status) => {
-    const steps = [
-      { label: "Confirmed", icon: <Package size={14} className="md:w-4 md:h-4" /> },
-      { label: "Processing", icon: <Cog size={14} className="md:w-4 md:h-4" /> },
-      { label: "On The Way", icon: <Truck size={14} className="md:w-4 md:h-4" /> },
-      { label: "Delivered", icon: <ShoppingBag size={14} className="md:w-4 md:h-4" /> },
-    ];
-
-    const isCancelled = status.toLowerCase().includes('cancelled');
-    const currentStepIndex = isCancelled ? -1 : (status === "delivered" ? 3 : (progressStep || 1) - 1);
-
-    return (
-      <div className="w-full pt-6 pb-2 px-1">
-        <div className="relative grid grid-cols-4 w-full">
-          {/* --- TRACK CONTAINER --- */}
-          <div className="absolute top-4 md:top-[1.125rem] left-[12.5%] w-[75%] h-[2px] -z-10 -translate-y-1/2">
-            <div className="absolute inset-0 bg-zinc-100 rounded-full w-full h-full" />
-            <motion.div
-              className="absolute left-0 top-0 h-full bg-zinc-900 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
-              transition={{ duration: 0.8, ease: "circOut" }}
-            />
-          </div>
-
-          {/* --- ICONS --- */}
-          {steps.map((step, idx) => {
-            const isCompleted = idx <= currentStepIndex;
-            return (
-              <div key={idx} className="flex flex-col items-center gap-2 md:gap-4 z-10">
-                <div className={`relative h-8 w-8 md:h-9 md:w-9 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${isCompleted
-                  ? 'bg-zinc-900 border-zinc-900 text-white shadow-lg shadow-zinc-200'
-                  : 'bg-white border-zinc-100 text-zinc-300'
-                  }`}>
-                  {step.icon}
-                </div>
-                <p className={`text-[9px] md:text-[10px] uppercase tracking-wider font-semibold transition-colors duration-300 text-center ${isCompleted ? 'text-zinc-900' : 'text-zinc-300'}`}>
-                  {step.label}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-  // ------------------------------------------------------------------
 
   const renderCancellationModal = () => {
     if (!modalOrder) return null;
@@ -630,7 +653,16 @@ const reorder = (orderId) => {
               className="bg-zinc-50/50 border-t border-zinc-50"
             >
               <div className="p-5 md:p-8">
-                {renderStepProgress(order.progressStep, order.status)}
+                {/* 🟢 MODIFIED: Use Vertical Timeline */}
+                <VerticalTimeline 
+                    timeline={order.timeline} 
+                    currentStatus={order.status}
+                    courierDetails={{
+                        courierName: order.courierName,
+                        trackingId: order.trackingId,
+                        trackingUrl: order.trackingUrl
+                    }} 
+                />
               </div>
             </motion.div>
           )}

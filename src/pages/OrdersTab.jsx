@@ -1,18 +1,77 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Download, Search, Package, Truck, CheckCircle,
   ChevronDown, ChevronUp, User, MapPin, CreditCard, Phone, Mail,
-  Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X
+  Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X,
+  Clock, PackageCheck, Link as LinkIcon 
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from '../contexts/AdminContext';
+
+// --- CONSTANTS ---
+const STATUS_SEQUENCE = ["Order Placed", "Processing", "Shipped", "Delivered"];
+
+// --- VERTICAL TIMELINE COMPONENT ---
+const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
+  const events = timeline && timeline.length > 0 
+    ? timeline 
+    : [{ title: "Order Placed", description: "Order received", timestamp: new Date(), status: "Order Placed" }];
+
+  return (
+    <div className="mt-4 mb-8 space-y-0 relative pl-2">
+      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Order History</h4>
+      <div className="absolute left-[27px] top-10 bottom-4 w-0.5 bg-gray-100" />
+
+      {events.map((event, index) => {
+        const isLatest = index === 0;
+        const dateObj = new Date(event.timestamp);
+        
+        return (
+          <div key={index} className="relative flex gap-6 pb-8 last:pb-0">
+            <div className={`relative z-10 h-12 w-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${
+              isLatest ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-400'
+            }`}>
+              {isLatest ? <PackageCheck size={18} /> : <div className="h-2 w-2 rounded-full bg-gray-400" />}
+            </div>
+            <div className={`flex-1 pt-1.5 ${isLatest ? 'opacity-100' : 'opacity-70'}`}>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900">{event.title}</h4>
+                  <p className="text-xs text-gray-500 mt-1 max-w-md leading-relaxed">{event.description}</p>
+                  {event.status === 'Shipped' && courierDetails?.trackingId && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg inline-block">
+                        <p className="text-xs text-blue-800 font-bold">Courier: {courierDetails.courierName}</p>
+                        <p className="text-xs text-blue-600 mt-0.5">AWB: {courierDetails.trackingId}</p>
+                        {courierDetails.trackingUrl && (
+                           <a href={courierDetails.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline mt-1 block">Track Shipment</a>
+                        )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-0.5 text-xs font-medium text-gray-400">
+                  <span className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-gray-100 sm:border-0 sm:bg-transparent sm:p-0">
+                    <Calendar size={12} />
+                    {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-gray-100 sm:border-0 sm:bg-transparent sm:p-0">
+                    <Clock size={12} />
+                    {dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 // --- CUSTOM STATUS DROPDOWN ---
 const StatusDropdown = ({ currentStatus, onUpdate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  const statuses = ["Order Placed", "Processing", "Shipped", "Delivered"];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -29,14 +88,14 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
     setIsOpen(false);
   };
 
+  const currentIndex = STATUS_SEQUENCE.indexOf(currentStatus);
+
   return (
     <div className="relative" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center justify-between w-full sm:min-w-[140px] px-2 py-1.5 sm:px-3 sm:py-2 bg-white border rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 
-        ${isOpen
-            ? 'border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-black'
-            : 'border-gray-100 hover:border-gray-200 text-gray-600 shadow-sm hover:shadow-md'}`}
+        ${isOpen ? 'border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-black' : 'border-gray-100 hover:border-gray-200 text-gray-600 shadow-sm hover:shadow-md'}`}
       >
         <span className="truncate mr-2">{currentStatus}</span>
         <ChevronDown size={14} className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -45,22 +104,221 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-75 border border-gray-50">
           <div className="p-1">
-            {statuses.map((status) => (
-              <button
-                key={status}
-                onClick={() => handleSelect(status)}
-                className={`w-full text-left px-3 py-2 text-[10px] sm:text-xs font-medium flex items-center justify-between rounded-lg transition-colors ${currentStatus === status ? 'bg-gray-50 text-black font-bold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}
-              >
-                {status}
-                {currentStatus === status && <Check size={12} className="text-black" />}
-              </button>
-            ))}
+            {STATUS_SEQUENCE.map((status, index) => {
+               const isDisabled = index < currentIndex;
+               return (
+                  <button
+                    key={status}
+                    disabled={isDisabled}
+                    onClick={() => !isDisabled && handleSelect(status)}
+                    className={`w-full text-left px-3 py-2 text-[10px] sm:text-xs font-medium flex items-center justify-between rounded-lg transition-colors 
+                    ${currentStatus === status ? 'bg-gray-50 text-black font-bold' : ''}
+                    ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}
+                    `}
+                  >
+                    {status}
+                    {currentStatus === status && <Check size={12} className="text-black" />}
+                  </button>
+               )
+            })}
           </div>
         </div>
       )}
     </div>
   );
 };
+
+// --- SHIPMENT MODAL ---
+const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) => {
+  const [courierName, setCourierName] = useState('');
+  const [singleTrackingId, setSingleTrackingId] = useState('');
+  const [singleTrackingUrl, setSingleTrackingUrl] = useState('');
+  const [bulkData, setBulkData] = useState({});
+
+  useEffect(() => {
+      if (isOpen) {
+          setCourierName('');
+          setSingleTrackingId('');
+          setSingleTrackingUrl('');
+          const initialBulk = {};
+          selectedIds.forEach(id => {
+              initialBulk[id] = { trackingId: '', trackingUrl: '' };
+          });
+          setBulkData(initialBulk);
+      }
+  }, [isOpen, selectedIds]);
+
+  const handleBulkChange = (id, field, value) => {
+      setBulkData(prev => ({
+          ...prev,
+          [id]: { ...prev[id], [field]: value }
+      }));
+  };
+
+  const handleSubmit = () => {
+      if (isBulk) {
+          const updates = selectedIds.map(id => ({
+              id,
+              courierName,
+              trackingId: bulkData[id]?.trackingId || '',
+              trackingUrl: bulkData[id]?.trackingUrl || ''
+          }));
+          onSubmit(updates);
+      } else {
+          onSubmit({
+              courierName,
+              trackingId: singleTrackingId,
+              trackingUrl: singleTrackingUrl
+          });
+      }
+  };
+
+  if (!isOpen) return null;
+
+  const isValid = isBulk 
+    ? courierName && selectedIds.every(id => bulkData[id]?.trackingId) 
+    : courierName && singleTrackingId;
+
+return (
+    <div className="fixed inset-0 bg-black/80 z-[99999] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white rounded-xl shadow-2xl w-[95%] ${isBulk ? 'md:max-w-4xl' : 'md:max-w-md'} flex flex-col max-h-[90vh] overflow-hidden border border-gray-200`}
+      >
+        {/* 🟢 HEADER: Minimal Black/White */}
+        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-black text-white rounded-lg">
+              <Truck size={20} strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="font-bold text-black text-lg leading-tight">
+                {isBulk ? "Bulk Shipment" : "Shipment Details"}
+              </h3>
+              <p className="text-xs text-gray-500 font-medium">
+                {isBulk ? `Processing ${selectedIds.length} orders` : "Update tracking info"}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-black"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
+        {/* 🟢 SCROLLABLE BODY */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+          
+          {/* Courier Input */}
+          <div className="mb-8">
+            <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">
+              Courier Partner <span className="text-black">*</span>
+            </label>
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400 text-black"
+              placeholder="e.g. BlueDart, FedEx"
+              value={courierName}
+              onChange={e => setCourierName(e.target.value)}
+              autoFocus
+            />
+            {isBulk && (
+              <p className="text-[10px] text-gray-500 mt-2 font-medium">
+                • This courier will be applied to all selected orders
+              </p>
+            )}
+          </div>
+
+          {isBulk ? (
+            <div className="space-y-4">
+               <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <label className="text-xs font-bold text-black uppercase tracking-wider">Tracking Numbers</label>
+                  <span className="text-[10px] bg-gray-100 text-black px-2 py-1 rounded font-bold">Total: {selectedIds.length}</span>
+               </div>
+               
+               <div className="space-y-3">
+                  {selectedIds.map(id => (
+                      <div key={id} className="p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-start gap-4 hover:border-black transition-colors">
+                          {/* Order ID Badge */}
+                          <div className="md:w-20 flex-shrink-0">
+                              <span className="inline-block px-2 py-1 bg-black text-white text-xs font-bold rounded">
+                                #{id}
+                              </span>
+                          </div>
+                          
+                          {/* Inputs */}
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <input 
+                                type="text" 
+                                placeholder="AWB / Tracking ID *"
+                                className="w-full px-3 py-2 rounded border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm placeholder:text-gray-400"
+                                value={bulkData[id]?.trackingId || ''}
+                                onChange={e => handleBulkChange(id, 'trackingId', e.target.value)}
+                              />
+                              <input 
+                                type="text" 
+                                placeholder="Tracking URL (Optional)"
+                                className="w-full px-3 py-2 rounded border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm placeholder:text-gray-400"
+                                value={bulkData[id]?.trackingUrl || ''}
+                                onChange={e => handleBulkChange(id, 'trackingUrl', e.target.value)}
+                              />
+                          </div>
+                      </div>
+                  ))}
+               </div>
+            </div>
+          ) : (
+             <div className="space-y-6">
+                <div>
+                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">Tracking ID / AWB <span className="text-black">*</span></label>
+                    <input 
+                      type="text" 
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400"
+                      placeholder="e.g. 123456789"
+                      value={singleTrackingId}
+                      onChange={e => setSingleTrackingId(e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">Tracking Link (Optional)</label>
+                    <input 
+                        type="text" 
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400"
+                        placeholder="https://..."
+                        value={singleTrackingUrl}
+                        onChange={e => setSingleTrackingUrl(e.target.value)}
+                    />
+                </div>
+             </div>
+          )}
+        </div>
+
+        {/* 🟢 FOOTER: High Contrast */}
+        <div className="px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 flex-shrink-0 bg-gray-50">
+          <button 
+            onClick={onClose} 
+            className="w-full sm:w-auto px-5 py-3 text-sm font-bold text-black bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-all"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSubmit}
+            disabled={!isValid}
+            className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all"
+          >
+            {isBulk ? `Confirm (${selectedIds.length})` : 'Confirm Shipment'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 // --- MAIN COMPONENT ---
 const OrdersTab = ({
@@ -71,128 +329,52 @@ const OrdersTab = ({
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [orderDetailsData, setOrderDetailsData] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  
-  // State for bulk selection
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const { updateBulkOrderStatus } = useAdmin(); 
 
-  // --- Helper: Check if order is selectable ---
-  const isOrderSelectable = (order) => {
-    const s = (order.status || "").toLowerCase();
-    return s !== "delivered" && s !== "order cancelled";
-  };
+  // --- Modal States ---
+  const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
+  const [orderIdToShip, setOrderIdToShip] = useState(null); 
+  const [isBulkShipment, setIsBulkShipment] = useState(false); 
 
-  // --- Helper: Status Timeline Steps ---
-  const getProgressStep = (status) => {
-    if (status === 'pending_payment') return 0;
-    const steps = ["Order Placed", "Processing", "Shipped", "Delivered"];
-    const index = steps.indexOf(status);
-    return index === -1 ? 0 : index + 1;
-  };
+  // --- Handlers ---
 
-  // --- Helper: Calculate Price Breakdown ---
-  const calculateBreakdown = (orderData) => {
-    if (!orderData) return null;
-    
-    const subtotal = (orderData.orderItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const discount = (orderData.discountAmount || 0) + (orderData.offerDiscount || 0);
-    const wallet = orderData.walletAmountUsed || 0;
-    const total = orderData.totalAmount || 0;
-    
-    // Reverse calculate delivery to match Grand Total exactly
-    // Formula: Total = Sub - Disc - Wallet + Delivery
-    // So: Delivery = Total - Sub + Disc + Wallet
-    const delivery = Math.max(0, total - subtotal + discount + wallet);
-
-    return { subtotal, discount, wallet, delivery, total };
-  };
-
-  const toggleOrderDetails = async (orderId) => {
-    if (expandedOrderId === orderId) {
-      setExpandedOrderId(null);
-      setOrderDetailsData(null);
-      return;
-    }
-
-    setExpandedOrderId(orderId);
-    setLoadingDetails(true);
-
-    try {
-      const details = await getSingleOrderDetails(orderId);
-      setOrderDetailsData(details || null);
-    } catch (error) {
-      console.error("Failed to fetch order details", error);
-      setOrderDetailsData(null);
-    } finally {
-      setLoadingDetails(false);
-    }
-  };
-
-  const getStatusBadge = (status) => {
-    const normalizedStatus = (status || "").toLowerCase();
-
-    const styles = {
-      "delivered": "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
-      "shipped": "bg-blue-50/50 text-blue-600 border-blue-100/50",
-      "processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
-      "order cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
-      "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
-      "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
-      "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
-    };
-
-    let styleClass = styles["order placed"];
-    if (styles[normalizedStatus]) {
-      styleClass = styles[normalizedStatus];
-    } else if (normalizedStatus.includes('pending')) {
-       styleClass = styles["pending_payment"];
-    }
-
-    return (
-      <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styleClass}`}>
-        {status?.replace(/_/g, " ")}
-      </span>
-    );
-  };
-
-  const filteredOrders = orders?.filter((o) => {
-    // 1. All Filter
-    if (orderStatusTab === "All") return true;
-    // 2. Cancelled Filter
-    if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
-    // 3. Payment Pending Filter
-    if (orderStatusTab === "Payment Pending") {
-      const status = (o.status || "").toLowerCase();
-      const pMode = (o.paymentMode || "").toLowerCase();
-      const pStatus = (o.paymentStatus || "").toLowerCase();
-      const matchesStatus = status.includes("pending") && status.includes("payment"); 
-      const isOnline = !pMode.includes("cod") && !pMode.includes("cash");
-      const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
-      return matchesStatus && isOnline && isNotPaid;
-    }
-    // 4. Standard Status Filter
-    return o.status === orderStatusTab;
-  }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
-
-  const selectableFilteredOrders = filteredOrders?.filter(isOrderSelectable) || [];
-
-  // Bulk Selection Logic
-  const toggleSelectOrder = (orderId) => {
-    const newSelected = new Set(selectedOrders);
-    if (newSelected.has(orderId)) {
-      newSelected.delete(orderId);
+  const handleStatusChangeRequest = (orderId, newStatus) => {
+    if (newStatus === "Shipped") {
+        setOrderIdToShip(orderId);
+        setIsBulkShipment(false);
+        setIsShipmentModalOpen(true);
     } else {
-      newSelected.add(orderId);
+        handleUpdateOrderStatus(orderId, newStatus);
     }
-    setSelectedOrders(newSelected);
   };
 
-  const toggleSelectAll = () => {
-    const allSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
-    if (allSelected) {
-      setSelectedOrders(new Set());
-    } else {
-      setSelectedOrders(new Set(selectableFilteredOrders.map(o => o.id)));
+  const handleBulkActionClick = (status) => {
+      if (status === "Shipped") {
+          setIsBulkShipment(true);
+          setIsShipmentModalOpen(true);
+      } else {
+          executeBulkUpdate(status);
+      }
+  }
+
+  const handleShipmentSubmit = async (data) => {
+    if (isBulkShipment) {
+        // data is Array of updates: [{ id, courierName, trackingId, trackingUrl }, ...]
+        setIsShipmentModalOpen(false); 
+        setSelectedOrders(new Set()); 
+
+        for (const item of data) {
+            await handleUpdateOrderStatus(item.id, "Shipped", {
+                courierName: item.courierName,
+                trackingId: item.trackingId,
+                trackingUrl: item.trackingUrl
+            });
+        }
+    } else if (orderIdToShip) {
+        handleUpdateOrderStatus(orderIdToShip, "Shipped", data);
+        setIsShipmentModalOpen(false);
+        setOrderIdToShip(null);
     }
   };
 
@@ -204,7 +386,107 @@ const OrdersTab = ({
     }
   };
 
+  const isOrderSelectable = (order) => {
+    const s = (order.status || "").toLowerCase();
+    return s !== "delivered" && s !== "order cancelled";
+  };
+
+  const calculateBreakdown = (orderData) => {
+    if (!orderData) return null;
+    const subtotal = (orderData.orderItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const discount = (orderData.discountAmount || 0) + (orderData.offerDiscount || 0);
+    const wallet = orderData.walletAmountUsed || 0;
+    const total = orderData.totalAmount || 0;
+    const delivery = Math.max(0, total - subtotal + discount + wallet);
+    return { subtotal, discount, wallet, delivery, total };
+  };
+
+  const toggleOrderDetails = async (orderId) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+      setOrderDetailsData(null);
+      return;
+    }
+    setExpandedOrderId(orderId);
+    setLoadingDetails(true);
+    try {
+      const details = await getSingleOrderDetails(orderId);
+      setOrderDetailsData(details || null);
+    } catch (error) {
+      setOrderDetailsData(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const normalizedStatus = (status || "").toLowerCase();
+    const styles = {
+      "delivered": "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
+      "shipped": "bg-blue-50/50 text-blue-600 border-blue-100/50",
+      "processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
+      "order cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
+      "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
+      "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
+      "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
+    };
+    let styleClass = styles["order placed"];
+    if (styles[normalizedStatus]) styleClass = styles[normalizedStatus];
+    else if (normalizedStatus.includes('pending')) styleClass = styles["pending_payment"];
+
+    return (
+      <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styleClass}`}>
+        {status?.replace(/_/g, " ")}
+      </span>
+    );
+  };
+
+  const filteredOrders = orders?.filter((o) => {
+    if (orderStatusTab === "All") return true;
+    if (orderStatusTab === "Cancelled") return o.status === "Order Cancelled";
+    if (orderStatusTab === "Payment Pending") {
+      const status = (o.status || "").toLowerCase();
+      const pMode = (o.paymentMode || "").toLowerCase();
+      const pStatus = (o.paymentStatus || "").toLowerCase();
+      const matchesStatus = status.includes("pending") && status.includes("payment"); 
+      const isOnline = !pMode.includes("cod") && !pMode.includes("cash");
+      const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
+      return matchesStatus && isOnline && isNotPaid;
+    }
+    return o.status === orderStatusTab;
+  }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
+
+  const selectableFilteredOrders = filteredOrders?.filter(isOrderSelectable) || [];
+
+  const toggleSelectOrder = (orderId) => {
+    const newSelected = new Set(selectedOrders);
+    if (newSelected.has(orderId)) newSelected.delete(orderId);
+    else newSelected.add(orderId);
+    setSelectedOrders(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    const allSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
+    if (allSelected) setSelectedOrders(new Set());
+    else setSelectedOrders(new Set(selectableFilteredOrders.map(o => o.id)));
+  };
+
   const isAllSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
+
+  // 🟢 2. Selection Logic (Disabled in 'All' Tab)
+  const isSelectionEnabled = orderStatusTab !== "All";
+
+  // 🟢 3. Smart Bulk Actions Logic
+  // Get index of current tab
+  const currentTabIndex = STATUS_SEQUENCE.indexOf(orderStatusTab);
+  
+  // Filter actions: Only show statuses AFTER the current tab status
+  // If currentTabIndex is -1 (e.g. 'All' or 'Payment Pending'), we might want default or none. 
+  // User asked to hide in 'All', so checking isSelectionEnabled covers that.
+  const availableBulkActions = STATUS_SEQUENCE.filter((status, index) => {
+      // Show only future steps
+      return index > currentTabIndex;
+  });
 
   return (
     <div className="space-y-6 p-4 sm:p-8 bg-[#F9FAFB] min-h-screen text-gray-900 w-full overflow-hidden relative pb-24">
@@ -255,7 +537,7 @@ const OrdersTab = ({
       </div>
 
       {/* Selection Info Bar */}
-      {selectableFilteredOrders.length > 0 && (
+      {isSelectionEnabled && selectableFilteredOrders.length > 0 && (
         <div className="flex justify-between items-center px-1">
           <button 
               onClick={toggleSelectAll}
@@ -277,11 +559,9 @@ const OrdersTab = ({
 
           const isEditable = order.status !== "Order Cancelled" && order.status !== "Delivered";
           const isExpanded = expandedOrderId === order.id;
-          const progressStep = getProgressStep(order.status);
           const isSelected = selectedOrders.has(order.id);
-          const canSelect = isOrderSelectable(order);
+          const canSelect = isOrderSelectable(order) && isSelectionEnabled; 
 
-          // Payment Status Logic
           const pMode = (order.paymentMode || "").toUpperCase();
           const isCOD = pMode.includes("COD") || pMode.includes("CASH");
           let finalPaymentStatus = "Pending";
@@ -294,7 +574,6 @@ const OrdersTab = ({
           }
           const isPaid = (finalPaymentStatus || "").toUpperCase() === "PAID" || (finalPaymentStatus || "").toLowerCase() === "refunded";
 
-          // Calculate Breakdown if expanded
           const breakdown = orderDetailsData && isExpanded ? calculateBreakdown(orderDetailsData) : null;
 
           return (
@@ -309,8 +588,6 @@ const OrdersTab = ({
                     : 'border-gray-100/50 hover:border-gray-200 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.04)]'
               }`}
             >
-
-              {/* Main Summary Row */}
               <div
                 className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer"
                 onClick={() => toggleOrderDetails(order.id)}
@@ -355,12 +632,11 @@ const OrdersTab = ({
                   </div>
 
                   <div className="flex items-center gap-3 ml-auto">
-                    {/* CUSTOM DROPDOWN */}
                     {isEditable && (
                       <div onClick={(e) => e.stopPropagation()} className="min-w-[120px] sm:min-w-[140px]">
                         <StatusDropdown
                           currentStatus={order.status}
-                          onUpdate={(newStatus) => handleUpdateOrderStatus(order.id, newStatus)}
+                          onUpdate={(newStatus) => handleStatusChangeRequest(order.id, newStatus)}
                         />
                       </div>
                     )}
@@ -376,10 +652,8 @@ const OrdersTab = ({
                 </div>
               </div>
 
-              {/* --- DROPDOWN DETAILS --- */}
               {isExpanded && (
                 <div className="border-t border-gray-50 bg-gray-50/30 animate-in slide-in-from-top-1 duration-300 cursor-default pb-6 px-4 sm:px-8">
-
                   {loadingDetails ? (
                     <div className="py-12 flex flex-col justify-center items-center text-gray-400">
                       <Loader2 className="w-6 h-6 animate-spin mb-3 text-gray-300" />
@@ -387,47 +661,18 @@ const OrdersTab = ({
                     </div>
                   ) : orderDetailsData ? (
                     <div className="pt-8">
-
-                      {/* 1. TIMELINE STEPPER */}
                       {order.status !== "Order Cancelled" && order.status !== "pending_payment" && (
-                        <div className="mb-10 pb-8 border-b border-gray-100 overflow-x-auto">
-                          <div className="relative flex justify-between w-full min-w-[300px] max-w-3xl mx-auto px-2">
-                            <div className="absolute top-5 left-0 w-full h-[2px] bg-gray-100 -z-0 rounded-full"></div>
-                            <div
-                              className="absolute top-5 left-0 h-[2px] bg-black -z-0 transition-all duration-1000 ease-out rounded-full"
-                              style={{ width: `${((progressStep - 1) / 3) * 100}%` }}
-                            ></div>
-
-                            {[
-                              { label: "Placed", icon: Box },
-                              { label: "Processing", icon: Loader2 },
-                              { label: "Shipped", icon: Truck },
-                              { label: "Delivered", icon: CheckCircle }
-                            ].map((step, idx) => {
-                              const isCompleted = idx + 1 <= progressStep;
-                              const isCurrent = idx + 1 === progressStep;
-                              const Icon = step.icon;
-
-                              return (
-                                <div key={step.label} className="relative z-10 flex flex-col items-center group">
-                                  <div
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center border-[3px] transition-all duration-500 shadow-sm ${isCompleted
-                                      ? "bg-black border-black text-white shadow-md"
-                                      : "bg-white border-white text-gray-200"
-                                      }`}
-                                  >
-                                    <Icon size={18} className={`${isCurrent ? 'animate-pulse' : ''}`} strokeWidth={isCompleted ? 2.5 : 2} />                                      </div>
-                                  <span className={`text-[10px] mt-3 font-bold uppercase tracking-widest transition-colors ${isCompleted ? "text-black" : "text-gray-300"}`}>
-                                    {step.label}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <VerticalTimeline 
+                            timeline={orderDetailsData.timeline} 
+                            currentStatus={order.status}
+                            courierDetails={{
+                                courierName: orderDetailsData.courierName,
+                                trackingId: orderDetailsData.trackingId,
+                                trackingUrl: orderDetailsData.trackingUrl
+                            }}
+                        />
                       )}
                       
-                      {/* Warning for Pending Payment */}
                       {order.status === "pending_payment" && (
                           <div className="mb-8 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center gap-3 text-orange-700 text-sm">
                               <AlertCircle size={20} />
@@ -436,8 +681,6 @@ const OrdersTab = ({
                       )}
 
                       <div className="flex flex-col xl:flex-row gap-8">
-
-                        {/* LEFT: PRODUCTS TABLE */}
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 px-1">Items Ordered</h4>
                           <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
@@ -461,34 +704,29 @@ const OrdersTab = ({
                               ))}
                             </div>
 
-                            {/* PRICE BREAKDOWN SECTION */}
                             <div className="p-5 bg-gray-50/30 space-y-2 border-t border-gray-50">
                               <div className="flex justify-between items-center text-xs text-gray-500">
                                 <span>Subtotal</span>
                                 <span>₹{breakdown.subtotal.toLocaleString()}</span>
                               </div>
-                              
                               {breakdown.discount > 0 && (
                                 <div className="flex justify-between items-center text-xs text-emerald-600">
                                   <span>Discount {orderDetailsData.couponCode && `(${orderDetailsData.couponCode})`}</span>
                                   <span>-₹{breakdown.discount.toLocaleString()}</span>
                                 </div>
                               )}
-
                               {breakdown.wallet > 0 && (
                                 <div className="flex justify-between items-center text-xs text-indigo-600">
                                   <span>Wallet Used</span>
                                   <span>-₹{breakdown.wallet.toLocaleString()}</span>
                                 </div>
                               )}
-
                               <div className="flex justify-between items-center text-xs text-gray-500">
                                 <span>Delivery</span>
                                 <span>{breakdown.delivery === 0 ? "Free" : `₹${breakdown.delivery}`}</span>
                               </div>
                             </div>
 
-                            {/* Grand Total */}
                             <div className="p-5 bg-gray-100/50 flex justify-between items-center border-t border-gray-100">
                               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Grand Total</span>
                               <span className="text-xl font-extrabold text-gray-900">₹{breakdown.total.toLocaleString()}</span>
@@ -496,10 +734,7 @@ const OrdersTab = ({
                           </div>
                         </div>
 
-                        {/* RIGHT: INFO SIDEBAR */}
                         <div className="w-full xl:w-80 space-y-5">
-
-                          {/* Customer Card */}
                           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]">
                             <h4 className="text-xs font-bold text-gray-300 uppercase mb-4 flex items-center gap-2"><User size={14} /> Customer</h4>
                             <div className="flex items-center gap-3 mb-4">
@@ -521,7 +756,6 @@ const OrdersTab = ({
                             </div>
                           </div>
 
-                          {/* Shipping Card */}
                           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]">
                             <h4 className="text-xs font-bold text-gray-300 uppercase mb-4 flex items-center gap-2"><MapPin size={14} /> Shipping</h4>
                             <div className="text-sm text-gray-500 leading-relaxed pl-1">
@@ -531,16 +765,13 @@ const OrdersTab = ({
                             </div>
                           </div>
 
-                          {/* Payment Card */}
                           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]">
                             <h4 className="text-xs font-bold text-gray-300 uppercase mb-4 flex items-center gap-2"><CreditCard size={14} /> Payment</h4>
-
                             <div className="space-y-3">
                               <div className="flex justify-between items-center p-2.5 bg-gray-50/50 rounded-xl">
                                 <span className="text-xs font-medium text-gray-400">Method</span>
                                 <span className="text-xs font-bold text-gray-800 uppercase">{orderDetailsData.paymentMode}</span>
                               </div>
-
                               <div className="flex justify-between items-center px-1">
                                 <span className="text-xs text-gray-400">Status</span>
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
@@ -548,7 +779,6 @@ const OrdersTab = ({
                                 </span>
                               </div>
                             </div>
-
                             {isEditable && (
                               <button
                                 onClick={() => handleCancelOrder(order)}
@@ -558,10 +788,8 @@ const OrdersTab = ({
                               </button>
                             )}
                           </div>
-
                         </div>
                       </div>
-
                     </div>
                   ) : (
                     <div className="p-12 text-center flex flex-col items-center justify-center text-gray-300">
@@ -582,7 +810,6 @@ const OrdersTab = ({
         )}
       </div>
 
-      {/* Floating Bulk Action Bar */}
       <AnimatePresence>
         {selectedOrders.size > 0 && (
             <motion.div
@@ -595,10 +822,11 @@ const OrdersTab = ({
                 <div className="h-6 w-px bg-gray-200"></div>
                 
                 <div className="flex gap-2">
-                    {["Processing", "Shipped", "Delivered"].map(status => (
+                    {/* 🟢 3. SMART ACTIONS: Only show forward steps */}
+                    {availableBulkActions.map(status => (
                         <button
                             key={status}
-                            onClick={() => executeBulkUpdate(status)}
+                            onClick={() => handleBulkActionClick(status)}
                             className="px-4 py-2 rounded-full text-xs font-bold bg-gray-100 hover:bg-black hover:text-white transition-all"
                         >
                             Mark {status}
@@ -615,6 +843,16 @@ const OrdersTab = ({
             </motion.div>
         )}
       </AnimatePresence>
+
+      {isShipmentModalOpen && (
+        <ShipmentModal 
+            isOpen={isShipmentModalOpen}
+            onClose={() => setIsShipmentModalOpen(false)}
+            onSubmit={handleShipmentSubmit}
+            isBulk={isBulkShipment}
+            selectedIds={Array.from(selectedOrders)}
+        />
+      )}
 
     </div>
   );

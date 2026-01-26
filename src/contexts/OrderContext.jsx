@@ -49,8 +49,8 @@ export const OrderProvider = ({ children }) => {
     }
   }, [BACKEND_URL, userdetails?.id, getToken]);
 
-  // Update order status (With token)
-  const updateOrderStatus = useCallback(async (orderId, newStatus) => {
+  // 🟢 UPDATED: Update order status (Accepts logistics data now)
+  const updateOrderStatus = useCallback(async (orderId, newStatus, additionalData = {}) => {
     try {
       const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/status`, {
@@ -58,15 +58,19 @@ export const OrderProvider = ({ children }) => {
         headers,
         body: JSON.stringify({ 
             status: newStatus,
-            // actorId inferred
+            ...additionalData // 🟢 Spread courierName, trackingId, message, etc.
         }),
       });
+      
       if (!res.ok) throw new Error("Failed to update order status");
-      await getorders(true, true);
+      
+      await getorders(true, true); // Refresh list
       window.toast.success(`Order ${orderId} updated to ${newStatus}`);
+      return true; // Return success for UI handling
     } catch (error) {
       console.error("❌ Failed to update order status:", error);
       window.toast.error("Failed to update order status.");
+      return false;
     }
   }, [BACKEND_URL, getorders, getToken]);
 
