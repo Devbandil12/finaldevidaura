@@ -4,8 +4,8 @@ import {
   ThumbsUp, ThumbsDown, BarChart4 
 } from 'lucide-react';
 import { Bar, Doughnut, PolarArea } from 'react-chartjs-2';
-import { AdminContext } from '../contexts/AdminContext';
-import { ProductContext } from '../contexts/productContext';
+import { AdminContext } from '../../contexts/AdminContext';
+import { ProductContext } from '../../contexts/productContext';
 import { 
   Chart as ChartJS, RadialLinearScale, ArcElement, Tooltip, Legend 
 } from 'chart.js';

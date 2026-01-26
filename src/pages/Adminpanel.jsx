@@ -15,22 +15,22 @@ import {
 
 // Modals & Components
 import ImageUploadModal from "./ImageUploadModal";
-import PincodeManager from "./PincodeManager";
-import Reports from "./Reports";
-import DashboardTab from "./DashboardTab";
-import InsightsTab from "./InsightsTab";
-import ProductsTab from "./ProductsTab";
-import CouponsTab from "./CouponsTab";
-import OrdersTab from "./OrdersTab";
-import UsersTab from "./UsersTab";
-import QueriesTab from "./QueriesTab";
-import CartsWishlistsTab from "./CartsWishlistsTab";
-import ProductVariantEditor from "./ProductVariantEditor";
-import ActivityLogsTab from "./ActivityLogsTab";
-import CmsTab from "./CmsTab";
-import ReferralsTab from "./ReferralsTab";
-import AdminRewardsTab from './AdminRewardsTab'; 
-import AdminLotteryTab from './AdminLotteryTab'; 
+import PincodeManager from "../Components/admin/PincodeManager";
+import Reports from "../Components/admin/Reports";
+import DashboardTab from "../Components/admin/DashboardTab";
+import InsightsTab from "../Components/admin/InsightsTab";
+import ProductsTab from "../Components/admin/ProductsTab";
+import CouponsTab from "../Components/admin/CouponsTab";
+import OrdersTab from "../Components/admin/OrdersTab";
+import UsersTab from "../Components/admin/UsersTab";
+import QueriesTab from "../Components/admin/QueriesTab";
+import CartsWishlistsTab from "../Components/admin/CartsWishlistsTab";
+import ProductVariantEditor from "../Components/admin/ProductVariantEditor";
+import ActivityLogsTab from "../Components/admin/ActivityLogsTab";
+import CmsTab from "../Components/admin/CmsTab";
+import ReferralsTab from "../Components/admin/ReferralsTab";
+import AdminRewardsTab from '../Components/admin/AdminRewardsTab'; 
+import AdminLotteryTab from '../Components/admin/AdminLotteryTab'; 
 
 import {
   Chart as ChartJS,

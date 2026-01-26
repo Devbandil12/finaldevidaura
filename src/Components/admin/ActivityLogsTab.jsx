@@ -3,7 +3,7 @@ import {
   History, Search, Filter, User, ShieldAlert, Edit, Trash2, PlusCircle, 
   Clock, CheckCircle, XCircle 
 } from 'lucide-react';
-import { AdminContext } from '../contexts/AdminContext';
+import { AdminContext } from '../../contexts/AdminContext';
 
 const ActivityLogsTab = () => {
   const { activityLogs } = useContext(AdminContext);

@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { ProductContext } from "../contexts/productContext";
-import useCloudinary from "../utils/useCloudinary";
+import { ProductContext } from "../../contexts/productContext";
+import useCloudinary from "../../utils/useCloudinary";
 import { Plus, X, Trash2, UploadCloud, ArrowRight, ArrowLeft, Save, Archive, Undo } from 'lucide-react';
 
 const ModernInput = ({ label, name, value, onChange, type = "text", span = "col-span-1" }) => (

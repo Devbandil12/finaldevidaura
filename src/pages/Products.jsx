@@ -164,8 +164,8 @@ const ProductCard = memo(({
 
         {/* BADGES */}
         {!isOutOfStock && displayVariant.discount > 0 && (
-          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[10px] font-bold px-3 py-1.5 rounded-br-xl shadow-md z-20">
-            -{displayVariant.discount}%
+          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[12px] px-4 py-1.5 rounded-br-xl shadow-md z-20">
+            {displayVariant.discount}%
           </div>
         )}
       </div>

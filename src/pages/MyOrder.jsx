@@ -6,6 +6,7 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext"; 
 import Loader from "../Components/Loader";
 import MiniLoader from "../Components/MiniLoader";
+import { useAuth } from "@clerk/clerk-react"; // Import this
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
@@ -267,6 +268,7 @@ export default function MyOrders() {
   const [refreshingStatusId, setRefreshingStatusId] = useState(null);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+  const { getToken } = useAuth(); // Get the token helper
 
   // --- Click Outside Logic ---
   useEffect(() => {
@@ -375,10 +377,14 @@ export default function MyOrders() {
 
   const handleDownloadInvoice = async (orderId) => {
     try {
+      const token = await getToken();
       setDownloadingInvoiceId(orderId);
       const response = await fetch(`${BACKEND}/api/orders/${orderId}/invoice`, {
         method: 'GET',
-        headers: {},
+        headers: {
+                Authorization: `Bearer ${token}`, // Manually attach token
+                'Content-Type': 'application/json'
+            },
       });
 
       if (!response.ok) throw new Error("Failed to download invoice");

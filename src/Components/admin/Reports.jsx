@@ -4,8 +4,8 @@ import {
   Search, ArrowUpRight, ArrowDownRight 
 } from 'lucide-react';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { AdminContext } from '../contexts/AdminContext';
-import { ProductContext } from '../contexts/productContext';
+import { AdminContext } from '../../contexts/AdminContext';
+import { ProductContext } from '../../contexts/productContext';
 
 // --- HELPER: CSV Export ---
 const downloadCSV = (data, filename) => {

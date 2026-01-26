@@ -150,7 +150,7 @@ const Wishlist = () => {
                           />
                           
                           {/* ⚡ STATS OVERLAY (TOP RIGHT) */}
-                          <div className="absolute top-3 left-3 flex  gap-1.5 z-20 mr-10">
+                          <div className="absolute bottom-3 left-3 flex  gap-1.5 z-20 mr-10">
                               {/* Review Badge */}
                               {avgRating >= 1 && (
                                   <div className="bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center gap-1.5 border border-white/40">
@@ -177,7 +177,7 @@ const Wishlist = () => {
                             ) : (
                               variant.discount > 0 && (
                                 <span className="bg-teal-50 text-teal-800 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-teal-100/50">
-                                  -{variant.discount}% OFF
+                                  {variant.discount}% OFF
                                 </span>
                               )
                             )}

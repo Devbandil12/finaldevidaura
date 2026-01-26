@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Monitor, Layout, Image as ImageIcon, CheckCircle2, Eye, EyeOff, Link as LinkIcon, Type, Save, Upload, BookOpen, Layers, X } from 'lucide-react';
-import useCloudinary from '../utils/useCloudinary';
+import useCloudinary from '../../utils/useCloudinary';
 import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");

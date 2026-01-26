@@ -10,9 +10,9 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, 
   Title, Tooltip, Legend, ArcElement, BarElement, Filler 
 } from 'chart.js';
-import { AdminContext } from '../contexts/AdminContext';
-import { ProductContext } from '../contexts/productContext';
-import { UserContext } from '../contexts/UserContext';
+import { AdminContext } from '../../contexts/AdminContext';
+import { ProductContext } from '../../contexts/productContext';
+import { UserContext } from '../../contexts/UserContext';
 import OrderChart from './OrderChart';
 
 ChartJS.register(

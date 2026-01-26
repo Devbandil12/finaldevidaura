@@ -1,6 +1,6 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { Search, Mail, Phone, Send, CheckCircle, Inbox, RefreshCw, X, Hash, Clock, MoreVertical, ShieldAlert, User as UserIcon } from 'lucide-react';
-import { ContactContext } from '../contexts/ContactContext';
+import { ContactContext } from '../../contexts/ContactContext';
 
 const QueriesTab = ({ queries: tickets, querySearch, setQuerySearch }) => {
   const { replyToTicket, updateTicketStatus, getAllTickets } = useContext(ContactContext);

@@ -4,10 +4,10 @@ import {
   Download, Search, Package, Truck, CheckCircle,
   ChevronDown, ChevronUp, User, MapPin, CreditCard, Phone, Mail,
   Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X,
-  Clock, PackageCheck, Link as LinkIcon 
+  Clock, PackageCheck, Link as LinkIcon, Upload, FileText // Added Upload, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-import { useAdmin } from '../contexts/AdminContext';
+import { useAdmin } from '../../contexts/AdminContext';
 
 // --- CONSTANTS ---
 const STATUS_SEQUENCE = ["Order Placed", "Processing", "Shipped", "Delivered"];
@@ -128,12 +128,13 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
   );
 };
 
-// --- SHIPMENT MODAL ---
+// --- SHIPMENT MODAL (UPDATED WITH CSV) ---
 const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) => {
   const [courierName, setCourierName] = useState('');
   const [singleTrackingId, setSingleTrackingId] = useState('');
   const [singleTrackingUrl, setSingleTrackingUrl] = useState('');
   const [bulkData, setBulkData] = useState({});
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
       if (isOpen) {
@@ -153,6 +154,54 @@ const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) 
           ...prev,
           [id]: { ...prev[id], [field]: value }
       }));
+  };
+
+  // --- CSV PARSER FUNCTION ---
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split(/\r?\n/);
+      const newBulkData = { ...bulkData };
+      let matchCount = 0;
+
+      // Assume simple CSV: OrderID, TrackingID, URL(optional)
+      // Skip header if first row contains "order" (case insensitive)
+      lines.forEach((line, index) => {
+        if (!line.trim()) return;
+        const columns = line.split(',').map(c => c.trim().replace(/^"|"$/g, '')); // Strip quotes
+        
+        // Skip header
+        if (index === 0 && columns[0].toLowerCase().includes('order')) return;
+
+        const csvOrderId = columns[0];
+        const csvTrackingId = columns[1];
+        const csvUrl = columns[2] || '';
+
+        // Match with selected IDs (Handle # prefix if present in CSV)
+        const cleanId = csvOrderId.replace('#', '');
+        
+        if (selectedIds.includes(parseInt(cleanId)) || selectedIds.includes(cleanId)) {
+           // We found a match in our selected list!
+           const targetId = selectedIds.find(id => id.toString() === cleanId.toString());
+           if (targetId) {
+             newBulkData[targetId] = {
+               trackingId: csvTrackingId || '',
+               trackingUrl: csvUrl || ''
+             };
+             matchCount++;
+           }
+        }
+      });
+
+      setBulkData(newBulkData);
+      if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      alert(`CSV Processed: Updated ${matchCount} orders successfully.`);
+    };
+    reader.readAsText(file);
   };
 
   const handleSubmit = () => {
@@ -188,7 +237,7 @@ return (
         onClick={(e) => e.stopPropagation()}
         className={`bg-white rounded-xl shadow-2xl w-[95%] ${isBulk ? 'md:max-w-4xl' : 'md:max-w-md'} flex flex-col max-h-[90vh] overflow-hidden border border-gray-200`}
       >
-        {/* 🟢 HEADER: Minimal Black/White */}
+        {/* 🟢 HEADER */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-black text-white rounded-lg">
@@ -215,7 +264,7 @@ return (
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           
           {/* Courier Input */}
-          <div className="mb-8">
+          <div className="mb-6">
             <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">
               Courier Partner <span className="text-black">*</span>
             </label>
@@ -227,23 +276,43 @@ return (
               onChange={e => setCourierName(e.target.value)}
               autoFocus
             />
-            {isBulk && (
-              <p className="text-[10px] text-gray-500 mt-2 font-medium">
-                • This courier will be applied to all selected orders
-              </p>
-            )}
           </div>
 
           {isBulk ? (
             <div className="space-y-4">
-               <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+               {/* 🟢 CSV UPLOAD SECTION */}
+               <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 text-green-700 rounded-lg">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">Auto-fill from CSV</p>
+                      <p className="text-xs text-gray-500">Format: <code className="bg-gray-200 px-1 rounded">Order ID, Tracking Number</code></p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                     <input 
+                        type="file" 
+                        accept=".csv"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                     />
+                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors">
+                        <Upload size={14} /> Upload CSV
+                     </button>
+                  </div>
+               </div>
+
+               <div className="flex items-center justify-between border-b border-gray-100 pb-2 mt-4">
                   <label className="text-xs font-bold text-black uppercase tracking-wider">Tracking Numbers</label>
                   <span className="text-[10px] bg-gray-100 text-black px-2 py-1 rounded font-bold">Total: {selectedIds.length}</span>
                </div>
                
                <div className="space-y-3">
                   {selectedIds.map(id => (
-                      <div key={id} className="p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-start gap-4 hover:border-black transition-colors">
+                      <div key={id} className="p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-start gap-4 hover:border-black transition-colors bg-white">
                           {/* Order ID Badge */}
                           <div className="md:w-20 flex-shrink-0">
                               <span className="inline-block px-2 py-1 bg-black text-white text-xs font-bold rounded">
@@ -299,7 +368,7 @@ return (
           )}
         </div>
 
-        {/* 🟢 FOOTER: High Contrast */}
+        {/* 🟢 FOOTER */}
         <div className="px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 flex-shrink-0 bg-gray-50">
           <button 
             onClick={onClose} 
@@ -364,6 +433,7 @@ const OrdersTab = ({
         setIsShipmentModalOpen(false); 
         setSelectedOrders(new Set()); 
 
+        // Loop through and update each order individually with its specific tracking info
         for (const item of data) {
             await handleUpdateOrderStatus(item.id, "Shipped", {
                 courierName: item.courierName,
@@ -473,16 +543,11 @@ const OrdersTab = ({
 
   const isAllSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
 
-  // 🟢 2. Selection Logic (Disabled in 'All' Tab)
+  // Selection Logic (Disabled in 'All' Tab)
   const isSelectionEnabled = orderStatusTab !== "All";
 
-  // 🟢 3. Smart Bulk Actions Logic
-  // Get index of current tab
+  // Smart Bulk Actions Logic
   const currentTabIndex = STATUS_SEQUENCE.indexOf(orderStatusTab);
-  
-  // Filter actions: Only show statuses AFTER the current tab status
-  // If currentTabIndex is -1 (e.g. 'All' or 'Payment Pending'), we might want default or none. 
-  // User asked to hide in 'All', so checking isSelectionEnabled covers that.
   const availableBulkActions = STATUS_SEQUENCE.filter((status, index) => {
       // Show only future steps
       return index > currentTabIndex;
@@ -822,7 +887,7 @@ const OrdersTab = ({
                 <div className="h-6 w-px bg-gray-200"></div>
                 
                 <div className="flex gap-2">
-                    {/* 🟢 3. SMART ACTIONS: Only show forward steps */}
+                    {/* Smart Actions: Only show forward steps */}
                     {availableBulkActions.map(status => (
                         <button
                             key={status}
