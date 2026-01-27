@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from "react";
-import { UserContext } from "./UserContext"; 
+import { UserContext } from "./UserContext";
 import { useAuth } from "@clerk/clerk-react";
 
 export const ProductContext = createContext();
@@ -8,7 +8,7 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [archivedProducts, setArchivedProducts] = useState([]);
-  
+
   const { userdetails } = useContext(UserContext);
   const { getToken } = useAuth();
 
@@ -18,8 +18,8 @@ export const ProductProvider = ({ children }) => {
   const getAuthHeaders = async () => {
     const token = await getToken();
     return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
     };
   };
 
@@ -37,7 +37,7 @@ export const ProductProvider = ({ children }) => {
       setLoading(false);
     }
   }, [BACKEND_URL]);
-  
+
   // Fetch archived products
   const getArchivedProducts = useCallback(async () => {
     try {
@@ -60,7 +60,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/products`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ ...newProduct }), 
+        body: JSON.stringify({ ...newProduct }),
       });
       if (!res.ok) throw new Error("Failed to add product");
       await res.json();
@@ -79,7 +79,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ ...updatedData }), 
+        body: JSON.stringify({ ...updatedData }),
       });
       if (!res.ok) throw new Error("Failed to update product");
       await res.json();
@@ -91,14 +91,16 @@ export const ProductProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getProducts, getToken]);
 
+
+
   // Archive product
   const deleteProduct = useCallback(async (productId) => {
     try {
       const headers = await getAuthHeaders();
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}/archive`, {
         method: "PUT",
-        headers, 
-        body: JSON.stringify({ }), 
+        headers,
+        body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error("Failed to archive product");
       await res.json();
@@ -110,7 +112,7 @@ export const ProductProvider = ({ children }) => {
       return false;
     }
   }, [BACKEND_URL, getProducts, getArchivedProducts, getToken]);
-  
+
   // Unarchive product
   const unarchiveProduct = useCallback(async (productId) => {
     try {
@@ -118,7 +120,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/products/${productId}/unarchive`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ }), 
+        body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error("Failed to unarchive product");
       await res.json();
@@ -140,7 +142,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/variants`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ ...variantData }), 
+        body: JSON.stringify({ ...variantData }),
       });
       if (!res.ok) throw new Error("Failed to add variant");
       await res.json();
@@ -161,7 +163,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ ...variantData }), 
+        body: JSON.stringify({ ...variantData }),
       });
       if (!res.ok) throw new Error("Failed to update variant");
       await res.json();
@@ -175,6 +177,30 @@ export const ProductProvider = ({ children }) => {
     }
   }, [BACKEND_URL, getProducts, getToken]);
 
+  // 🟢 NEW: Bulk Update Variants
+  const updateBulkVariants = useCallback(async (updates) => {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${BACKEND_URL}/api/products/variants/bulk`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ updates }),
+      });
+
+      if (!res.ok) throw new Error("Failed to bulk update");
+      
+      const data = await res.json();
+      window.toast.success(data.message || "Bulk update successful");
+      
+      await getProducts(); // Refresh local state
+      return true;
+    } catch (err) {
+      console.error("❌ updateBulkVariants failed:", err);
+      window.toast.error("Failed to update variants");
+      return false;
+    }
+  }, [BACKEND_URL, getProducts, getToken]);
+
   // Archive variant
   const deleteVariant = useCallback(async (variantId) => {
     try {
@@ -182,7 +208,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}/archive`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ }), 
+        body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error("Failed to archive variant");
       await res.json();
@@ -195,7 +221,7 @@ export const ProductProvider = ({ children }) => {
       return false;
     }
   }, [BACKEND_URL, getProducts, getToken]);
-  
+
   // Unarchive variant
   const unarchiveVariant = useCallback(async (variantId) => {
     try {
@@ -203,7 +229,7 @@ export const ProductProvider = ({ children }) => {
       const res = await fetch(`${BACKEND_URL}/api/variants/${variantId}/unarchive`, {
         method: "PUT",
         headers,
-        body: JSON.stringify({ }), 
+        body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error("Failed to unarchive variant");
       await res.json();
@@ -221,11 +247,11 @@ export const ProductProvider = ({ children }) => {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
-      await fetch(`${BACKEND_URL}/api/products/cache/invalidate`, { 
+      await fetch(`${BACKEND_URL}/api/products/cache/invalidate`, {
         method: "POST",
         headers
       });
-      
+
       await getProducts();
       window.toast.success("Live stock updated!");
     } catch (error) {
@@ -245,18 +271,19 @@ export const ProductProvider = ({ children }) => {
     <ProductContext.Provider
       value={{
         products,
-        archivedProducts, 
+        archivedProducts,
         loading,
         getProducts,
-        getArchivedProducts, 
+        getArchivedProducts,
         addProduct,
         updateProduct,
-        deleteProduct,      
-        unarchiveProduct,   
+        deleteProduct,
+        unarchiveProduct,
         addVariant,
         updateVariant,
-        deleteVariant,      
-        unarchiveVariant,   
+        updateBulkVariants,
+        deleteVariant,
+        unarchiveVariant,
         refreshProductStock,
       }}
     >
