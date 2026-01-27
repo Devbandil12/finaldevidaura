@@ -125,10 +125,10 @@ const ProductCard = memo(({
   return (
     <motion.div
       variants={cardVariants}
-      className={`group relative flex flex-col p-3 rounded-[2rem] cursor-pointer ${staggerClass} ${isOutOfStock ? "opacity-90" : ""}`}
+      className={`group relative flex flex-col p-2 md:p-3 rounded-[1.5rem] md:rounded-[2rem] cursor-pointer ${staggerClass} ${isOutOfStock ? "opacity-90" : ""}`}
       onClick={() => onProductClick(product)}
     >
-      <div className="relative w-full aspect-square rounded-[1.5rem] overflow-hidden bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
+      <div className="relative w-full aspect-square rounded-[1rem] md:rounded-[1.5rem] overflow-hidden bg-white shadow-sm transition-shadow duration-300 group-hover:shadow-lg">
         <BlurImage 
           src={imageUrl} 
           alt={product.name} 
@@ -137,65 +137,68 @@ const ProductCard = memo(({
         />
 
         {/* CARD ACTIONS */}
-        <div className="absolute bottom-4 left-4 right-4 z-20">
+        <div className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-4 z-20">
           {!isOutOfStock ? (
             <div className="flex justify-between items-center">
-              <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-3 shadow-sm">
-                <span className="text-xs font-bold text-stone-900">₹{discountedPrice}</span>
-                <div className="w-[1px] h-3 bg-stone-300"></div>
-                <span className="text-[10px] font-mono uppercase text-stone-500">{sizeLabel}</span>
+              {/* Responsive Price Pill */}
+              <div className="bg-white/90 backdrop-blur-sm px-2 py-1.5 md:px-4 md:py-2 rounded-full flex items-center gap-2 md:gap-3 shadow-sm min-w-0">
+                <span className="text-[10px] md:text-xs font-bold text-stone-900 truncate">₹{discountedPrice}</span>
+                <div className="w-[1px] h-2 md:h-3 bg-stone-300 shrink-0"></div>
+                <span className="text-[8px] md:text-[10px] font-mono uppercase text-stone-500 shrink-0">{sizeLabel}</span>
               </div>
+              
+              {/* Responsive Wishlist Button */}
               <button 
                 onClick={(e) => onToggleWishlist(e, product)} 
-                className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                className="w-7 h-7 md:w-9 md:h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm active:scale-90 transition-transform shrink-0 ml-1"
                 aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
               >
-                <Heart size={14} className={inWishlist ? "fill-red-500 text-red-500" : "text-stone-600"} />
+                <Heart className={`w-3 h-3 md:w-3.5 md:h-3.5 ${inWishlist ? "fill-red-500 text-red-500" : "text-stone-600"}`} />
               </button>
             </div>
           ) : (
             <button 
-              className="w-full px-4 py-3 rounded-full flex items-center justify-center gap-2 shadow-lg bg-stone-900/90 backdrop-blur-md text-[#F2F0EB]"
+              className="w-full px-2 py-2 md:px-4 md:py-3 rounded-full flex items-center justify-center gap-1.5 md:gap-2 shadow-lg bg-stone-900/90 backdrop-blur-md text-[#F2F0EB]"
               aria-label="Product sold out"
             >
-              <Bell size={12} className="text-[#C5A059]" />
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Sold Out</span>
+              <Bell className="w-2.5 h-2.5 md:w-3 md:h-3 text-[#C5A059]" />
+              <span className="text-[8px] md:text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap">Sold Out</span>
             </button>
           )}
         </div>
 
         {/* BADGES */}
         {!isOutOfStock && displayVariant.discount > 0 && (
-          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[12px] px-4 py-1.5 rounded-br-xl shadow-md z-20">
+          <div className="absolute top-0 left-0 bg-[#C5A059] text-white text-[10px] md:text-[12px] px-2.5 py-1 md:px-4 md:py-1.5 rounded-br-lg md:rounded-br-xl shadow-md z-20">
             {displayVariant.discount}%
           </div>
         )}
       </div>
 
-      <div className="pt-5 px-2 text-center">
-        <h3 className={`text-xl leading-tight mb-2 ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
+      <div className="pt-3 md:pt-5 px-1 md:px-2 text-center">
+        <h3 className={`text-sm md:text-xl leading-tight mb-1 md:mb-2 font-medium ${isOutOfStock ? "text-stone-400" : "text-stone-900"}`}>
           {product.name}
         </h3>
-        <p className="text-[11px] text-stone-500 line-clamp-2 opacity-70 font-light mb-3">
+        <p className="text-[10px] md:text-[11px] text-stone-500 line-clamp-1 md:line-clamp-2 opacity-70 font-light mb-2 md:mb-3">
           {product.description}
         </p>
         
         {/* STATS SECTION */}
         {(avgRating >= 1 || soldCount >= 1) && (
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-2 md:gap-4">
             {avgRating >= 1 && (
-              <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
-                <Star size={11} className="text-[#C5A059] fill-[#C5A059]" />
-                <span>{avgRating} Reviews</span>
+              <div className="flex items-center gap-1 md:gap-1.5 text-[8px] md:text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                <Star className="w-2.5 h-2.5 md:w-[11px] md:h-[11px] text-[#C5A059] fill-[#C5A059]" />
+                <span>{avgRating} <span className="hidden sm:inline">Reviews</span><span className="sm:hidden">★</span></span>
               </div>
             )}
             {avgRating >= 1 && soldCount >= 1 && (
-              <div className="w-[1px] h-2.5 bg-stone-200"></div>
+              <div className="w-[1px] h-2 md:h-2.5 bg-stone-200"></div>
             )}
             {soldCount >= 1 && (
-              <div className="flex items-center gap-1.5 text-[10px] font-medium text-stone-500 uppercase tracking-wider">
-                <ShoppingBag size={11} className="text-stone-400" />
-                <span>{soldCount} Sold</span>
+              <div className="flex items-center gap-1 md:gap-1.5 text-[8px] md:text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+                <ShoppingBag className="w-2.5 h-2.5 md:w-[11px] md:h-[11px] text-stone-400" />
+                <span>{soldCount} <span className="hidden sm:inline">Sold</span></span>
               </div>
             )}
           </div>
@@ -393,8 +396,8 @@ const Products = () => {
               </div>
 
               {/* GRID */}
-              {/* Added pb-12 to handle the translation offset */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12 pb-12">
+              {/* UPDATED: grid-cols-2 for mobile with tighter gaps */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8 md:gap-x-6 md:gap-y-12 pb-12">
                 {paginatedProducts.map((product, idx) => {
                   const displayVariant = getDisplayVariant(product);
                   if (!displayVariant) return null;
