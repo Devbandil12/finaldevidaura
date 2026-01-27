@@ -29,14 +29,15 @@ export default defineConfig({
     },
   },
   build: {
-    sourcemap: false, // Disable sourcemaps in production to reduce build size/memory
+    sourcemap: false, 
     rollupOptions: {
       output: {
         // Split large vendor libraries into their own chunks
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'gsap-vendor': ['gsap'],
-          'ui-vendor': ['lucide-react'],
+          'gsap-vendor': ['gsap', '@gsap/react'],
+          'framer-vendor': ['framer-motion'], // OPTIMIZATION: Split framer-motion
+          'ui-vendor': ['lucide-react', 'react-icons'], // OPTIMIZATION: Split icons
           'clerk-vendor': ['@clerk/clerk-react', '@clerk/shared'],
         },
       },

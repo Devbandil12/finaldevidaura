@@ -3,17 +3,14 @@ import React, { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUser, AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 
-// --- Minimal Imports (Load these immediately) ---
+// --- Minimal Imports (Load these immediately for LCP) ---
 import SmoothScroll from "./Components/SmoothScroll";
-
 import SsoCallbackLoader from "./Components/SsoCallbackLoader";
-import Home from "./pages/Home";
-import MainLayout from "./pages/MainLayout"; // Import the new layout
+import Home from "./pages/Home"; // Eager load Home for faster LCP
+import MainLayout from "./pages/MainLayout";
 import Loader from "./Components/Loader";
 
 // --- Lazy Load the Heavy Stuff ---
-// These won't load when the user is just logging in
-// const Home = lazy(() => import("./pages/Home"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Cart = lazy(() => import("./pages/Cart"));
@@ -29,7 +26,8 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const CustomComboBuilder = lazy(() => import("./pages/CustomComboBuilder"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
-// --- Utilities & Contexts (Keep these) ---
+
+// --- Utilities & Contexts ---
 import CheckoutGuard from "./CheckoutGuard";
 import { ProductProvider } from "./contexts/productContext";
 import { OrderProvider } from "./contexts/OrderContext";
@@ -40,9 +38,7 @@ import { UserProvider } from "./contexts/UserContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import { ReviewProvider } from "./contexts/ReviewContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
-// 🟢 Imported AuthenticateWithRedirectCallback for SSO handling
 
-// --- Global Error Reporting (no changes needed here) ---
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";
 
@@ -65,18 +61,11 @@ function reportError(type, details) {
 }
 
 if (typeof window !== "undefined") {
-  // Save the original handler
   const originalErrorHandler = window.onerror;
-
   window.onerror = function (msg, url, lineNo, columnNo, error) {
-    // 1. CHECK: Is this the specific benign warning?
     if (msg.includes("ResizeObserver loop completed with undelivered notifications")) {
-      // 2. ACTION: Return true to tell the browser "I handled this, don't show it."
-      // This effectively "swallows" the error log.
       return true;
     }
-
-    // 3. FALLBACK: If it's a REAL error (like a crash), run your normal reporting
     const details = {
       message: msg,
       file: url,
@@ -89,42 +78,27 @@ if (typeof window !== "undefined") {
     return false;
   };
 }
-// --- End Error Reporting ---
 
-
-// --- Helper Component for Post-Login Redirection ---
 function PostLoginRedirector() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isLoaded, isSignedIn } = useUser();
 
   useEffect(() => {
-    // 1. Don't interfere if we are currently handling the Google SSO callback
     if (location.pathname === "/sso-callback") return;
-
-    // 2. Wait for the user to be fully loaded and signed in
     if (!isLoaded || !isSignedIn) return;
 
-    // 3. Check if there is a pending redirect
     const target = sessionStorage.getItem("post_login_redirect");
-
     if (target) {
       if (location.pathname === target) {
-        // ✅ SUCCESS: We have arrived at the target (e.g., /checkout).
-        // Now it is safe to remove the key so we don't redirect again.
         sessionStorage.removeItem("post_login_redirect");
       } else {
-        // ⏳ PENDING: We are not at the target yet (e.g., we are at /).
-        // Redirect the user, but DO NOT remove the key yet. 
-        // We will remove it in the next render when we actually arrive.
         navigate(target, { replace: true });
       }
     }
   }, [isLoaded, isSignedIn, location.pathname, navigate]);
   return null;
 }
-
-
 
 const App = () => {
   return (
@@ -137,16 +111,11 @@ const App = () => {
                 <ReviewProvider>
                   <NotificationProvider>
                     <Router>
-                      
                       <PostLoginRedirector />
-
-                      {/* Suspense handles the loading state for lazy pages */}
                       <Suspense fallback={<Loader text="Loading..." />}>
                       <SmoothScroll>
                         <Routes>
-
                           <Route element={<MainLayout />}>
-                            {/* Home is now lazy-loaded here */}
                             <Route path="/" element={<Home />} />
                             <Route path="/about" element={<AboutUs />} />
                             <Route path="/products" element={<Products />} />
@@ -160,8 +129,6 @@ const App = () => {
                             <Route path="/myaccount" element={<UserPage />} />
                             <Route path="/contact" element={<ContactUs />} />
 
-
-
                             <Route element={<CheckoutGuard />}>
                               <Route path="/checkout" element={<Checkout />} />
                             </Route>
@@ -173,9 +140,7 @@ const App = () => {
                             </AdminProvider>
                           }
                           />
-
                           <Route path="/login" element={<Login />} />
-
                           <Route
                             path="/sso-callback"
                             element={
@@ -185,7 +150,6 @@ const App = () => {
                               </>
                             }
                           />
-
                         </Routes>
                       </SmoothScroll>
                       </Suspense>
