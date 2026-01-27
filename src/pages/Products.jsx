@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ProductContext } from "../contexts/productContext";
 import { CartContext } from "../contexts/CartContext";
-import { Heart, Sparkles, Bell, Star, ShoppingBag } from "lucide-react";
+import { Heart, Sparkles, Bell, Star, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
 
 // --- METADATA ---
@@ -24,6 +24,8 @@ const categoryMetadata = {
     tagline: "For All"
   }
 };
+
+const ITEMS_PER_PAGE = 8;
 
 // --- ANIMATION VARIANTS (Memoized outside to prevent recreation) ---
 const createHeaderVariants = (shouldReduce) => ({
@@ -220,6 +222,9 @@ const Products = () => {
   const shouldReduceMotion = useReducedMotion();
   const observerRef = useRef(null);
   const [visibleSections, setVisibleSections] = useState(new Set());
+  
+  // State to track pagination for each category: { "Him": 1, "Her": 2 }
+  const [pageStates, setPageStates] = useState({});
 
   // 2. OPTIMIZED WISHLIST LOOKUP (O(1) Set)
   const wishlistSet = useMemo(() => {
@@ -245,6 +250,14 @@ const Products = () => {
       toggleWishlist(product, variant);
     }
   }, [toggleWishlist]);
+
+  const handlePageChange = useCallback((category, direction) => {
+    setPageStates((prev) => {
+      const currentPage = prev[category] || 1;
+      const newPage = direction === "next" ? currentPage + 1 : Math.max(currentPage - 1, 1);
+      return { ...prev, [category]: newPage };
+    });
+  }, []);
 
   const isProductInWishlist = useCallback((product) => {
     if (!product.variants) return false;
@@ -310,7 +323,7 @@ const Products = () => {
   const groupedEntries = useMemo(() => Object.entries(groupedProducts), [groupedProducts]);
 
   return (
-    <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 pb-40">
+    <section className="min-h-screen text-stone-800 px-4 md:px-12 pt-24 md:pt-32 ">
       
       {/* HEADER */}
       <div className="max-w-[1600px] mx-auto mb-20 md:mb-28 text-center">
@@ -333,6 +346,13 @@ const Products = () => {
             description: "Explore our exclusive selection.", 
             tagline: "Collection" 
           };
+
+          // Pagination Calculations
+          const currentPage = pageStates[category] || 1;
+          const totalItems = categoryProducts.length;
+          const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+          const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+          const paginatedProducts = categoryProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
           return (
             <motion.div 
@@ -366,7 +386,7 @@ const Products = () => {
                     </p>
                     <div className="hidden md:block w-8 h-[1px] bg-stone-300"></div>
                     <span className="text-[10px] font-mono text-stone-400 uppercase tracking-widest">
-                      {categoryProducts.length} Selections
+                      {totalItems} Selections
                     </span>
                   </div>
                 </div>
@@ -375,7 +395,7 @@ const Products = () => {
               {/* GRID */}
               {/* Added pb-12 to handle the translation offset */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12 pb-12">
-                {categoryProducts.map((product, idx) => {
+                {paginatedProducts.map((product, idx) => {
                   const displayVariant = getDisplayVariant(product);
                   if (!displayVariant) return null;
                   
@@ -400,6 +420,33 @@ const Products = () => {
                   );
                 })}
               </div>
+
+              {/* PAGINATION CONTROLS */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-6 mt-12">
+                  <button
+                    onClick={() => handlePageChange(category, "prev")}
+                    disabled={currentPage === 1}
+                    className="p-3 rounded-full border border-stone-200 text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-stone-100 transition-colors"
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+
+                  <span className="text-xs font-mono font-medium text-stone-400 tracking-[0.2em] uppercase">
+                    Page {currentPage} / {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => handlePageChange(category, "next")}
+                    disabled={currentPage === totalPages}
+                    className="p-3 rounded-full border border-stone-200 text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-stone-100 transition-colors"
+                    aria-label="Next Page"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              )}
             </motion.div>
           );
         })
