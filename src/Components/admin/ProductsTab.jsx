@@ -92,7 +92,7 @@ const ProductsTab = ({
     }));
   };
 
-  // 3. 🟢 UPDATED: Apply All Fields for Specific Size
+  // 3. Apply All Fields for Specific Size
   const applyToSize = (size) => {
     const inputs = sizeInputs[size];
     if (!inputs) return;
@@ -453,7 +453,8 @@ const ProductsTab = ({
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                   />
                               </div>
-                              <div className="absolute top-6 right-6 flex flex-col gap-2 opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out z-10">
+                              {/* 🟢 MODIFIED: Buttons visible on mobile, hover only on large screens */}
+                              <div className="absolute top-6 right-6 flex flex-col gap-2 z-10 opacity-100 translate-x-0 lg:opacity-0 lg:translate-x-4 lg:group-hover:opacity-100 lg:group-hover:translate-x-0 transition-all duration-300 ease-out">
                                 <motion.button
                                   whileHover={{ scale: 1.1 }}
                                   whileTap={{ scale: 0.9 }}
