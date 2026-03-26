@@ -238,7 +238,7 @@ export default function OrderSummary({
             </AnimatePresence>
 
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Delivery Charge</span>
+              <span className="text-slate-500 font-medium">Shipping Charge</span>
               <span className={`font-semibold whitespace-nowrap ${breakdown.deliveryCharge === 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
                 {breakdown.deliveryCharge === 0 ? 'Free' : `₹${breakdown.deliveryCharge}`}
               </span>

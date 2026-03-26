@@ -1,12 +1,14 @@
-// src/pages/PincodeManager.jsx
+// src/Components/admin/PincodeManager.jsx
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   UploadCloud, FileText, Search, MapPin, X, ChevronRight, ChevronDown, Loader2,
-  CreditCard, Globe, Wallet, Plus, Edit2, CheckCircle2, XCircle
+  CreditCard, Globe, Wallet, Plus, CheckCircle2, XCircle, Trash2, Settings, 
+  CheckSquare, Square, Edit3, Edit2, Globe2
 } from 'lucide-react';
-import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
+import { useAuth } from "@clerk/clerk-react";
 
+// --- CONSTANTS ---
 const API_BASE = ((import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "")) + "/api/address/pincodes";
 
 const indianStates = [
@@ -18,7 +20,8 @@ const indianStates = [
   "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
 ];
 
-// ... (Card, Badge, StatCard, Toggle components remain unchanged) ...
+// --- UI HELPERS ---
+
 const Card = ({ children, className = "bg-white" }) => (
     <div className={`rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] ring-1 ring-slate-100 ${className}`}>
         {children}
@@ -72,29 +75,33 @@ export default function PincodeManager() {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     
-    // Settings for Batch Import
+    // Import Settings
     const [settings, setSettings] = useState({
         deliveryCharge: 50,
         isServiceable: true,
         codAvailable: true
     });
 
-    // Manage State
+    // View State
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedStates, setExpandedStates] = useState({}); 
     const [expandedCity, setExpandedCity] = useState(null); 
     const [activeStateForCity, setActiveStateForCity] = useState(null); 
     const [cityPincodes, setCityPincodes] = useState([]);
     
-    // Modals
+    // Selection State
+    const [selectedPincodes, setSelectedPincodes] = useState(new Set());
+    const [bulkFee, setBulkFee] = useState("");
+
+    // Modal States
     const [editingPin, setEditingPin] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [regionModalData, setRegionModalData] = useState(null); // { state, city, isGlobal }
 
-    // 🟢 AUTH TOKEN
     const { getToken } = useAuth();
 
-    // --- API ACTIONS (SECURED) ---
-    
+    // --- DATA FETCHING ---
+
     const fetchPincodes = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -120,11 +127,13 @@ export default function PincodeManager() {
         if (activeStateForCity === state && expandedCity === city) {
             setExpandedCity(null);
             setActiveStateForCity(null);
+            setSelectedPincodes(new Set()); 
             return;
         }
         setActiveStateForCity(state);
         setExpandedCity(city);
         setCityPincodes([]); 
+        setSelectedPincodes(new Set()); 
         try {
             const token = await getToken();
             const res = await fetch(`${API_BASE}/${encodeURIComponent(state)}/${encodeURIComponent(city)}`, {
@@ -135,6 +144,8 @@ export default function PincodeManager() {
         } catch (e) { console.error(e); }
     };
 
+    // --- SINGLE ACTIONS ---
+
     const handleUpdatePincode = async (updatedData) => {
         try {
             const token = await getToken();
@@ -142,17 +153,16 @@ export default function PincodeManager() {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // 🔒
+                    'Authorization': `Bearer ${token}` 
                 },
                 body: JSON.stringify(updatedData)
             });
             if (res.ok) {
                 setEditingPin(null);
-                // Refresh specific city if open, otherwise full list
                 if (activeStateForCity && expandedCity) {
                     fetchCityDetails(activeStateForCity, expandedCity);
                 }
-                fetchPincodes(); // Refresh stats
+                fetchPincodes(); 
             }
         } catch (e) { alert("Update failed"); }
     };
@@ -164,7 +174,7 @@ export default function PincodeManager() {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // 🔒
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ pincodes: [newData] })
             });
@@ -179,7 +189,158 @@ export default function PincodeManager() {
         } catch (e) { alert("Network error"); }
     };
 
-    // --- CSV PARSING (Unchanged Logic) ---
+    // --- BULK SELECTION ACTIONS ---
+
+    const togglePincodeSelection = (pincode) => {
+        const newSet = new Set(selectedPincodes);
+        if (newSet.has(pincode)) newSet.delete(pincode);
+        else newSet.add(pincode);
+        setSelectedPincodes(newSet);
+    };
+
+    const toggleSelectAllCity = () => {
+        const allPins = cityPincodes.map(p => p.pincode);
+        const allSelected = allPins.every(p => selectedPincodes.has(p));
+        
+        if (allSelected) {
+            const newSet = new Set(selectedPincodes);
+            allPins.forEach(p => newSet.delete(p));
+            setSelectedPincodes(newSet);
+        } else {
+            const newSet = new Set(selectedPincodes);
+            allPins.forEach(p => newSet.add(p));
+            setSelectedPincodes(newSet);
+        }
+    };
+
+    const handleBulkUpdate = async (updates) => {
+        if (selectedPincodes.size === 0) return;
+        if (!window.confirm(`Update ${selectedPincodes.size} selected pincodes?`)) return;
+
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/bulk-update`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    pincodes: Array.from(selectedPincodes),
+                    updates: updates
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                alert(data.msg);
+                setSelectedPincodes(new Set());
+                setBulkFee("");
+                if (activeStateForCity && expandedCity) fetchCityDetails(activeStateForCity, expandedCity);
+                fetchPincodes();
+            } else {
+                alert(data.msg || "Update failed");
+            }
+        } catch (e) { console.error(e); alert("Network error"); }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedPincodes.size === 0) return;
+        if (!window.confirm(`⚠️ DANGER: Are you sure you want to DELETE ${selectedPincodes.size} pincodes? This cannot be undone.`)) return;
+
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/bulk-delete`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    pincodes: Array.from(selectedPincodes)
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                alert(data.msg);
+                setSelectedPincodes(new Set());
+                if (activeStateForCity && expandedCity) fetchCityDetails(activeStateForCity, expandedCity);
+                fetchPincodes();
+            } else {
+                alert(data.msg || "Delete failed");
+            }
+        } catch (e) { console.error(e); alert("Network error"); }
+    };
+
+    // --- REGION / GLOBAL ACTIONS ---
+
+    const openRegionModal = (e, state = null, city = null, isGlobal = false) => {
+        if(e) e.stopPropagation(); 
+        setRegionModalData({ state, city, isGlobal });
+    };
+
+    const handleRegionUpdate = async (updates) => {
+        if (!regionModalData) return;
+        const { state, city, isGlobal } = regionModalData;
+        const label = isGlobal ? "THE ENTIRE DATABASE" : (city ? `${city}, ${state}` : state);
+
+        if (!window.confirm(`⚠️ CONFIRM: Update ${label}?`)) return;
+
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/region/update`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ state, city, isGlobal, updates })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.msg);
+                setRegionModalData(null);
+                fetchPincodes();
+                if (city && activeStateForCity === state && expandedCity === city) {
+                    fetchCityDetails(state, city);
+                }
+            } else {
+                alert(data.msg);
+            }
+        } catch (e) { console.error(e); alert("Update failed"); }
+    };
+
+    const handleRegionDelete = async () => {
+        if (!regionModalData) return;
+        const { state, city, isGlobal } = regionModalData;
+        const label = isGlobal ? "THE ENTIRE DATABASE" : (city ? `${city}, ${state}` : state);
+
+        if (!window.confirm(`⚠️ DANGER: DELETE ${label}? This will wipe associated data!`)) return;
+
+        try {
+            const token = await getToken();
+            const res = await fetch(`${API_BASE}/region/delete`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ state, city, isGlobal })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.msg);
+                setRegionModalData(null);
+                fetchPincodes();
+            } else {
+                alert(data.msg);
+            }
+        } catch (e) { console.error(e); alert("Delete failed"); }
+    };
+
+    // --- CSV IMPORT LOGIC ---
+
     const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -196,8 +357,8 @@ export default function PincodeManager() {
                 if (!matches) continue;
                 const cols = matches.map(m => m.replace(/^"|"$/g, '').trim());
                 if (cols.length >= 8 && /^\d{6}$/.test(cols[4])) {
-                    let stateName = toTitleCase(cols[8]);
-                    let cityName = toTitleCase(cols[7]);
+                    let stateName = cols[8] ? cols[8].replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "Unknown";
+                    let cityName = cols[7] ? cols[7].replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "Unknown";
 
                     if (!stateName || stateName === "Na" || stateName === "Null" || !cityName || cityName === "Na" || cityName === "Null") continue;
                     if (stateName === "Dadra And Nagar Haveli" || stateName === "Daman And Diu") stateName = "The Dadra And Nagar Haveli And Daman And Diu";
@@ -214,9 +375,6 @@ export default function PincodeManager() {
         reader.readAsText(file);
     };
 
-    const toTitleCase = (str) => str ? str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()) : "Unknown";
-
-    // --- BATCH UPLOAD (SECURED) ---
     const executeBatchUpload = async () => {
         if (!confirm(`Import ${parsedData.length} pincodes? This might take a moment.`)) return;
         setIsUploading(true);
@@ -225,20 +383,17 @@ export default function PincodeManager() {
         const totalChunks = Math.ceil(parsedData.length / chunkSize);
         
         try {
-            const token = await getToken(); // Get token once
-            
+            const token = await getToken(); 
             for (let i = 0; i < totalChunks; i++) {
                 const chunk = parsedData.slice(i * chunkSize, (i + 1) * chunkSize).map(p => ({ ...p, ...settings }));
-                
                 await fetch(`${API_BASE}/batch`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` // 🔒
+                        'Authorization': `Bearer ${token}` 
                     },
                     body: JSON.stringify({ pincodes: chunk })
                 });
-                
                 setUploadProgress(Math.round(((i + 1) / totalChunks) * 100));
             }
             alert("Success! All pincodes imported.");
@@ -253,21 +408,16 @@ export default function PincodeManager() {
         }
     };
 
-    // --- FILTER & STATS (Unchanged) ---
-    const stats = useMemo(() => {
-        let totalStates = 0;
-        let totalCities = 0;
-        let totalPincodes = 0;
-        let totalCOD = 0;
-        let totalOnlineOnly = 0;
+    // --- COMPUTED DATA ---
 
+    const stats = useMemo(() => {
+        let totalStates = 0, totalCities = 0, totalPincodes = 0, totalCOD = 0, totalOnlineOnly = 0;
         const states = Object.keys(savedPincodes);
         totalStates = states.length;
 
         states.forEach(state => {
             const cities = Object.keys(savedPincodes[state]);
             totalCities += cities.length;
-            
             cities.forEach(city => {
                 const pins = savedPincodes[state][city];
                 totalPincodes += pins.length;
@@ -279,7 +429,6 @@ export default function PincodeManager() {
                 });
             });
         });
-
         return { totalStates, totalCities, totalPincodes, totalCOD, totalOnlineOnly };
     }, [savedPincodes]);
 
@@ -287,32 +436,27 @@ export default function PincodeManager() {
         if (!searchQuery) return savedPincodes;
         const lowerQ = searchQuery.toLowerCase();
         const result = {};
-
         Object.keys(savedPincodes).forEach(state => {
             const cities = savedPincodes[state];
             const matchingCities = {};
             let stateMatches = state.toLowerCase().includes(lowerQ);
-
             Object.keys(cities).forEach(city => {
                 if (stateMatches || city.toLowerCase().includes(lowerQ)) {
                     matchingCities[city] = cities[city];
                 }
             });
-
             if (Object.keys(matchingCities).length > 0) result[state] = matchingCities;
         });
         return result;
     }, [savedPincodes, searchQuery]);
 
-
-    // --- RENDER (Unchanged) ---
-    // (Copying your exact JSX structure below)
     return (
-        <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-6 md:p-10  text-slate-800">
-            {/* 1. HEADER */}
+        <div className="min-h-screen bg-[#F8FAFC] p-3 sm:p-6 md:p-10 text-slate-800 pb-32">
+            
+            {/* --- HEADER --- */}
             <div className="max-w-6xl mx-auto mb-8 sm:mb-12">
                 <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
-                    <div>
+                     <div>
                         <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-slate-900 flex items-center gap-3">
                             <div className="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">
                                 <MapPin className="text-white w-6 h-6" strokeWidth={2.5} />
@@ -323,69 +467,43 @@ export default function PincodeManager() {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        {/* GLOBAL SETTINGS BUTTON */}
                         <button 
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="group w-full sm:w-auto justify-center px-5 py-3 rounded-2xl text-sm font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2"
+                            onClick={() => openRegionModal(null, null, null, true)} 
+                            className="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-bold bg-slate-900 text-white shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
                         >
-                            <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> 
-                            <span className="whitespace-nowrap">Add Pincode</span>
+                            <Globe2 size={18} /> 
+                            <span className="whitespace-nowrap">Global Settings</span>
+                        </button>
+
+                        <button onClick={() => setIsAddModalOpen(true)} className="group w-full sm:w-auto justify-center px-5 py-3 rounded-2xl text-sm font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-200 hover:shadow-indigo-300 hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-2">
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" /> <span className="whitespace-nowrap">Add Pincode</span>
                         </button>
                         
                         <div className="bg-white p-1.5 rounded-2xl shadow-sm ring-1 ring-slate-100 flex w-full sm:w-auto">
-                            <button 
-                                onClick={() => setActiveTab('manage')}
-                                className={`flex-1 sm:flex-none justify-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'manage' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-                            >
-                                <FileText size={16} /> Overview
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('import')}
-                                className={`flex-1 sm:flex-none justify-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'import' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-                            >
-                                <UploadCloud size={16} /> Import
-                            </button>
+                            <button onClick={() => setActiveTab('manage')} className={`flex-1 sm:flex-none justify-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'manage' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}><FileText size={16} /> Overview</button>
+                            <button onClick={() => setActiveTab('import')} className={`flex-1 sm:flex-none justify-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'import' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}><UploadCloud size={16} /> Import</button>
                         </div>
                     </div>
                 </div>
-
-                {/* 2. STATS GRID */}
+                
+                {/* Stats Grid */}
                 {!isLoading && (
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                            <StatCard 
-                            icon={Globe} 
-                            label="States" 
-                            value={stats.totalStates} 
-                            subtext={`${stats.totalCities} Districts`}
-                            colorClass="bg-blue-500 text-blue-600"
-                        />
-                        <StatCard 
-                            icon={MapPin} 
-                            label="Pincodes" 
-                            value={stats.totalPincodes.toLocaleString()} 
-                            subtext="Total Zones"
-                            colorClass="bg-indigo-500 text-indigo-600"
-                        />
-                        <StatCard 
-                            icon={Wallet} 
-                            label="COD + Online" 
-                            value={stats.totalCOD.toLocaleString()} 
-                            subtext="Hybrid Mode"
-                            colorClass="bg-emerald-500 text-emerald-600"
-                        />
-                        <StatCard 
-                            icon={CreditCard} 
-                            label="Prepaid Only" 
-                            value={stats.totalOnlineOnly.toLocaleString()} 
-                            subtext="No COD"
-                            colorClass="bg-amber-500 text-amber-600"
-                        />
+                        <StatCard icon={Globe} label="States" value={stats.totalStates} subtext={`${stats.totalCities} Districts`} colorClass="bg-blue-500 text-blue-600"/>
+                        <StatCard icon={MapPin} label="Pincodes" value={stats.totalPincodes.toLocaleString()} subtext="Total Zones" colorClass="bg-indigo-500 text-indigo-600"/>
+                        <StatCard icon={Wallet} label="COD + Online" value={stats.totalCOD.toLocaleString()} subtext="Hybrid Mode" colorClass="bg-emerald-500 text-emerald-600"/>
+                        <StatCard icon={CreditCard} label="Prepaid Only" value={stats.totalOnlineOnly.toLocaleString()} subtext="No COD" colorClass="bg-amber-500 text-amber-600"/>
                     </div>
                 )}
             </div>
 
+            {/* --- MAIN CONTENT AREA --- */}
             <div className="max-w-6xl mx-auto">
+                
+                {/* 1. IMPORT TAB */}
                 {activeTab === 'import' ? (
-                    <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                   <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Import Card */}
                         <div className="space-y-6">
                             <Card className="p-8 text-center border-dashed border-2 border-indigo-100 hover:border-indigo-300 transition-colors bg-white">
@@ -393,17 +511,12 @@ export default function PincodeManager() {
                                     <UploadCloud size={32} />
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-900">Upload CSV File</h3>
-                                <p className="text-sm text-slate-500 mt-2 mb-6 max-w-xs mx-auto leading-relaxed">
-                                    Upload the "All India Pincode Directory" to bulk update your serviceable zones.
-                                </p>
+                                <p className="text-sm text-slate-500 mt-2 mb-6 max-w-xs mx-auto leading-relaxed">Upload the "All India Pincode Directory" to bulk update your serviceable zones.</p>
                                 <label className="inline-flex w-full sm:w-auto justify-center">
                                     <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-                                    <span className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white font-bold rounded-2xl cursor-pointer hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0">
-                                        Select CSV File
-                                    </span>
+                                    <span className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white font-bold rounded-2xl cursor-pointer hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0">Select CSV File</span>
                                 </label>
                             </Card>
-
                             <Card className="p-6 bg-white">
                                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-4">Default Rules</h3>
                                 <div className="space-y-2">
@@ -416,7 +529,6 @@ export default function PincodeManager() {
                                 </div>
                             </Card>
                         </div>
-
                         {/* Status Card */}
                         <div className="space-y-6">
                             {parsedData.length > 0 ? (
@@ -428,7 +540,6 @@ export default function PincodeManager() {
                                             <h2 className="text-4xl font-black text-white mt-1">{parsedData.length.toLocaleString()} <span className="text-lg font-medium opacity-70">Rows</span></h2>
                                         </div>
                                     </div>
-
                                     <div className="bg-black/20 p-5 rounded-2xl mb-8 backdrop-blur-sm border border-white/10">
                                         <ul className="space-y-3 text-sm font-medium text-indigo-50">
                                             <li className="flex justify-between border-b border-white/10 pb-2"><span>Regions Detected</span> <strong className="text-white">Auto-Scan</strong></li>
@@ -436,21 +547,13 @@ export default function PincodeManager() {
                                             <li className="flex justify-between pt-1"><span>Payment Mode</span> <strong className="text-white">{settings.codAvailable ? 'COD + Online' : 'Prepaid Only'}</strong></li>
                                         </ul>
                                     </div>
-
                                     {isUploading ? (
                                         <div className="space-y-3">
-                                            <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-indigo-100 opacity-90">
-                                                <span>Importing Data...</span>
-                                                <span>{uploadProgress}%</span>
-                                            </div>
-                                            <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden p-0.5">
-                                                <div className="bg-white h-full rounded-full transition-all duration-300 ease-out" style={{width: `${uploadProgress}%`}} />
-                                            </div>
+                                            <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-indigo-100 opacity-90"><span>Importing Data...</span><span>{uploadProgress}%</span></div>
+                                            <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden p-0.5"><div className="bg-white h-full rounded-full transition-all duration-300 ease-out" style={{width: `${uploadProgress}%`}} /></div>
                                         </div>
                                     ) : (
-                                        <button onClick={executeBatchUpload} className="w-full py-4 bg-white text-indigo-600 font-extrabold rounded-2xl hover:bg-indigo-50 transition-all shadow-lg hover:scale-[1.02]">
-                                            Start Import Process
-                                        </button>
+                                        <button onClick={executeBatchUpload} className="w-full py-4 bg-white text-indigo-600 font-extrabold rounded-2xl hover:bg-indigo-50 transition-all shadow-lg hover:scale-[1.02]">Start Import Process</button>
                                     )}
                                 </Card>
                             ) : (
@@ -462,7 +565,7 @@ export default function PincodeManager() {
                         </div>
                     </div>
                 ) : (
-                    /* 3. MANAGE TAB */
+                    /* 2. MANAGE TAB */
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="relative">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -478,15 +581,11 @@ export default function PincodeManager() {
                         <div className="space-y-4">
                             {isLoading ? (
                                 <div className="py-24 text-center text-slate-400 flex flex-col items-center gap-4">
-                                    <div className="p-3 bg-white rounded-full shadow-sm ring-1 ring-slate-100">
-                                        <Loader2 className="animate-spin text-indigo-500" size={28} />
-                                    </div>
+                                    <div className="p-3 bg-white rounded-full shadow-sm ring-1 ring-slate-100"><Loader2 className="animate-spin text-indigo-500" size={28} /></div>
                                     <span className="text-sm font-medium">Syncing database...</span>
                                 </div>
                             ) : Object.keys(filteredTree).length === 0 ? (
-                                <div className="py-24 text-center text-slate-400">
-                                    <p>No results found for "{searchQuery}"</p>
-                                </div>
+                                <div className="py-24 text-center text-slate-400"><p>No results found for "{searchQuery}"</p></div>
                             ) : (
                                 Object.keys(filteredTree).sort().map(state => {
                                     const citiesInState = Object.keys(filteredTree[state]);
@@ -496,9 +595,9 @@ export default function PincodeManager() {
                                     return (
                                         <div key={state} className={`bg-white rounded-2xl ring-1 ring-slate-100 transition-all duration-300 ${isStateOpen ? 'shadow-lg shadow-indigo-500/5 ring-indigo-50' : 'shadow-sm hover:shadow-md'}`}>
                                             
-                                            {/* STATE HEADER */}
+                                            {/* STATE ROW */}
                                             <div 
-                                                className="p-5 flex flex-wrap justify-between items-center cursor-pointer select-none"
+                                                className="p-5 flex flex-wrap justify-between items-center cursor-pointer select-none group"
                                                 onClick={() => toggleState(state)}
                                             >
                                                 <div className="flex items-center gap-4">
@@ -506,7 +605,9 @@ export default function PincodeManager() {
                                                         <ChevronDown size={20} className={`transition-transform duration-300 ${isStateOpen ? 'rotate-180' : ''}`} />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-bold text-slate-800 text-lg leading-tight">{state}</h3>
+                                                        <h3 className="font-bold text-slate-800 text-lg leading-tight flex items-center gap-2">
+                                                            {state}
+                                                        </h3>
                                                         <p className="text-xs text-slate-400 font-medium mt-1">{citiesInState.length} Districts / Cities</p>
                                                     </div>
                                                 </div>
@@ -514,6 +615,14 @@ export default function PincodeManager() {
                                                     <div className={`px-4 py-1.5 text-xs font-bold rounded-full transition-colors ${isStateOpen ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-500'}`}>
                                                         {totalPinsInState} Pincodes
                                                     </div>
+                                                    {/* STATE SETTINGS BUTTON */}
+                                                    <button 
+                                                        onClick={(e) => openRegionModal(e, state)}
+                                                        className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                        title={`Manage all ${state}`}
+                                                    >
+                                                        <Settings size={18} />
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -524,10 +633,12 @@ export default function PincodeManager() {
                                                         {citiesInState.sort().map(city => {
                                                             const isCityOpen = activeStateForCity === state && expandedCity === city;
                                                             const pinCount = filteredTree[state][city].length;
+                                                            const allPins = cityPincodes.map(p => p.pincode);
+                                                            const isAllSelected = cityPincodes.length > 0 && allPins.every(p => selectedPincodes.has(p));
 
                                                             return (
                                                                 <div key={city}>
-                                                                    {/* CITY HEADER */}
+                                                                    {/* CITY ROW */}
                                                                     <button 
                                                                         onClick={() => fetchCityDetails(state, city)}
                                                                         className={`w-full flex flex-wrap items-center justify-between px-5 py-3.5 text-left transition-colors ${isCityOpen ? 'bg-white shadow-sm' : 'hover:bg-white/60'}`}
@@ -538,6 +649,16 @@ export default function PincodeManager() {
                                                                         </div>
                                                                         <div className="flex items-center gap-3">
                                                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{pinCount} ZONES</span>
+                                                                            
+                                                                            {/* CITY SETTINGS BUTTON */}
+                                                                            <div 
+                                                                                onClick={(e) => openRegionModal(e, state, city)}
+                                                                                className="p-1.5 rounded-md hover:bg-indigo-50 text-slate-300 hover:text-indigo-600 transition-colors z-10"
+                                                                                title={`Manage ${city}`}
+                                                                            >
+                                                                                <Edit3 size={14} />
+                                                                            </div>
+
                                                                             <ChevronRight size={14} className={`text-slate-300 transition-transform duration-200 ${isCityOpen ? 'rotate-90 text-indigo-500' : ''}`} />
                                                                         </div>
                                                                     </button>
@@ -545,34 +666,54 @@ export default function PincodeManager() {
                                                                     {/* PINCODE GRID */}
                                                                     {isCityOpen && (
                                                                         <div className="p-4 bg-white border-t border-slate-50 shadow-inner">
+                                                                            {/* Grid Header */}
+                                                                            <div className="flex items-center justify-between mb-3 px-1">
+                                                                                <button onClick={toggleSelectAllCity} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                                                                                    {isAllSelected ? <CheckSquare size={16} className="text-indigo-600"/> : <Square size={16}/>}
+                                                                                    {isAllSelected ? 'Deselect All' : 'Select All'}
+                                                                                </button>
+                                                                                <span className="text-[10px] font-bold text-slate-400 uppercase">{selectedPincodes.size} Selected Globally</span>
+                                                                            </div>
+
                                                                             {cityPincodes.length > 0 ? (
                                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                                    {cityPincodes.map(pin => (
-                                                                                        <div 
-                                                                                            key={pin.pincode} 
-                                                                                            className="group relative bg-white p-3.5 rounded-xl border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-indigo-100 transition-all duration-200 flex items-center justify-between cursor-pointer"
-                                                                                            onClick={() => setEditingPin(pin)}
-                                                                                        >
-                                                                                            <div>
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <span className="text-lg font-bold text-slate-700 font-mono tracking-tight group-hover:text-indigo-600 transition-colors">
-                                                                                                        {pin.pincode}
-                                                                                                    </span>
+                                                                                    {cityPincodes.map(pin => {
+                                                                                        const isSelected = selectedPincodes.has(pin.pincode);
+                                                                                        return (
+                                                                                            <div 
+                                                                                                key={pin.pincode} 
+                                                                                                className={`group relative p-3.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${isSelected ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-white border-slate-100 hover:border-indigo-100'}`}
+                                                                                                onClick={() => togglePincodeSelection(pin.pincode)}
+                                                                                            >
+                                                                                                <div className="flex items-center gap-3">
+                                                                                                    <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-300'}`}>
+                                                                                                        {isSelected && <CheckSquare size={12} className="text-white" />}
+                                                                                                    </div>
+                                                                                                    <div>
+                                                                                                        <div className="flex items-center gap-2">
+                                                                                                            <span className="text-lg font-bold text-slate-700 font-mono tracking-tight group-hover:text-indigo-600 transition-colors">
+                                                                                                                {pin.pincode}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                        <div className="flex gap-2 mt-1">
+                                                                                                            <Badge active={pin.isServiceable} text={pin.isServiceable ? "Active" : "Off"} />
+                                                                                                            {pin.codAvailable && <Badge active={true} text="COD" className="bg-blue-50/80 text-blue-600 ring-1 ring-blue-100" />}
+                                                                                                        </div>
+                                                                                                    </div>
                                                                                                 </div>
-                                                                                                <div className="flex gap-2 mt-2">
-                                                                                                    <Badge active={pin.isServiceable} text={pin.isServiceable ? "Active" : "Off"} />
-                                                                                                    {pin.codAvailable && <Badge active={true} text="COD" className="bg-blue-50/80 text-blue-600 ring-1 ring-blue-100" />}
+                                                                                                
+                                                                                                <div className="text-right flex flex-col items-end gap-2">
+                                                                                                    <div onClick={(e) => { e.stopPropagation(); setEditingPin(pin); }} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                                                                                                        <Edit2 size={14} />
+                                                                                                    </div>
+                                                                                                    <div className="text-right">
+                                                                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Fee</p>
+                                                                                                        <p className="font-bold text-slate-600">₹{pin.deliveryCharge}</p>
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </div>
-                                                                                            
-                                                                                            <div className="text-right">
-                                                                                                <p className="text-[10px] font-bold text-slate-400 uppercase">Fee</p>
-                                                                                                <p className="font-bold text-slate-600">₹{pin.deliveryCharge}</p>
-                                                                                            </div>
-                                                                                            
-                                                                                            <div className="absolute inset-0 border-2 border-indigo-500 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 ring-4 ring-indigo-500/10"></div>
-                                                                                        </div>
-                                                                                    ))}
+                                                                                        );
+                                                                                    })}
                                                                                 </div>
                                                                             ) : (
                                                                                 <div className="flex flex-col items-center justify-center py-8 text-slate-400">
@@ -597,7 +738,69 @@ export default function PincodeManager() {
                 )}
             </div>
 
-            {/* EDIT MODAL */}
+            {/* --- MODALS & OVERLAYS --- */}
+
+            {/* 1. BULK ACTION FLOATING BAR */}
+            {selectedPincodes.size > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-4xl animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 ring-1 ring-white/10">
+                        <div className="flex items-center gap-4 px-2">
+                            <div className="bg-indigo-600 font-bold text-xs px-2.5 py-1 rounded-md shadow-sm border border-indigo-400">
+                                {selectedPincodes.size} Selected
+                            </div>
+                            <button onClick={() => setSelectedPincodes(new Set())} className="text-xs text-slate-400 hover:text-white underline">Clear</button>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 justify-center">
+                            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+                                <span className="text-[10px] font-bold text-slate-400 px-1">FEE:</span>
+                                <input 
+                                    type="number" 
+                                    placeholder="₹" 
+                                    className="w-12 bg-transparent text-sm font-bold text-white outline-none text-center"
+                                    value={bulkFee}
+                                    onChange={(e) => setBulkFee(e.target.value)}
+                                />
+                                <button 
+                                    disabled={!bulkFee}
+                                    onClick={() => handleBulkUpdate({ deliveryCharge: bulkFee })}
+                                    className="p-1 hover:bg-indigo-600 rounded disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                >
+                                    <CheckCircle2 size={14} />
+                                </button>
+                            </div>
+
+                            <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
+
+                            <button onClick={() => handleBulkUpdate({ isServiceable: true })} className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-lg text-xs font-bold border border-emerald-500/20 transition-colors">On</button>
+                            <button onClick={() => handleBulkUpdate({ isServiceable: false })} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold border border-white/10 transition-colors">Off</button>
+                            
+                            <div className="h-6 w-px bg-white/10 hidden sm:block"></div>
+
+                            <button onClick={() => handleBulkUpdate({ codAvailable: true })} className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg text-xs font-bold border border-blue-500/20 transition-colors">Enable COD</button>
+                            <button onClick={() => handleBulkUpdate({ codAvailable: false })} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold border border-white/10 transition-colors">No COD</button>
+                        </div>
+
+                        <div className="pl-2 border-l border-white/10">
+                            <button onClick={handleBulkDelete} className="p-2 hover:bg-red-500/20 text-red-400 hover:text-red-500 rounded-lg transition-colors" title="Delete Selected">
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 2. REGION / GLOBAL MODAL */}
+            {regionModalData && (
+                <RegionModal 
+                    data={regionModalData}
+                    onClose={() => setRegionModalData(null)}
+                    onUpdate={handleRegionUpdate}
+                    onDelete={handleRegionDelete}
+                />
+            )}
+
+            {/* 3. EDIT SINGLE PIN MODAL */}
             {editingPin && (
                 <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <Card className="w-full max-w-sm p-6 animate-in zoom-in-95 duration-200 bg-white shadow-2xl ring-1 ring-black/5">
@@ -622,7 +825,7 @@ export default function PincodeManager() {
                 </div>
             )}
 
-            {/* ADD PINCODE MODAL */}
+            {/* 4. ADD PINCODE MODAL */}
             {isAddModalOpen && (
                 <AddPincodeModal 
                     onClose={() => setIsAddModalOpen(false)} 
@@ -632,6 +835,111 @@ export default function PincodeManager() {
         </div>
     );
 }
+
+// --- SUB-COMPONENTS ---
+
+const RegionModal = ({ data, onClose, onUpdate, onDelete }) => {
+    const [updates, setUpdates] = useState({
+        deliveryCharge: '',
+        isServiceable: null, // null = no change
+        codAvailable: null
+    });
+
+    let title, subtitle;
+    if (data.isGlobal) {
+        title = "Global Settings";
+        subtitle = "You are about to update ALL pincodes in the entire database.";
+    } else if (data.city) {
+        title = `Manage ${data.city}`;
+        subtitle = `Update all zones in ${data.city}, ${data.state}`;
+    } else {
+        title = `Manage ${data.state}`;
+        subtitle = `Update all zones in the entire state of ${data.state}`;
+    }
+
+    return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <Card className="w-full max-w-md p-6 animate-in zoom-in-95 duration-200 bg-white shadow-2xl ring-1 ring-black/5">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900">{title}</h3>
+                        <p className={`text-xs font-medium mt-1 leading-relaxed max-w-[280px] ${data.isGlobal ? "text-red-500" : "text-slate-500"}`}>{subtitle}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"><X size={20}/></button>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase">Service Status</label>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setUpdates({ ...updates, isServiceable: true })}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${updates.isServiceable === true ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                                >
+                                    Active
+                                </button>
+                                <button 
+                                    onClick={() => setUpdates({ ...updates, isServiceable: false })}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${updates.isServiceable === false ? 'bg-red-50 border-red-200 text-red-600' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                                >
+                                    Inactive
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase">Payment Mode</label>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setUpdates({ ...updates, codAvailable: true })}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${updates.codAvailable === true ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                                >
+                                    Enable COD
+                                </button>
+                                <button 
+                                    onClick={() => setUpdates({ ...updates, codAvailable: false })}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${updates.codAvailable === false ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                                >
+                                    No COD
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase block mb-2 pl-1">Bulk Update Delivery Fee</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                            <input 
+                                type="number" 
+                                placeholder="Leave empty to keep unchanged"
+                                value={updates.deliveryCharge} 
+                                onChange={(e) => setUpdates({...updates, deliveryCharge: e.target.value})}
+                                className="w-full pl-8 pr-4 py-3 bg-slate-50 ring-1 ring-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 placeholder:font-normal" 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-100 flex gap-3">
+                        <button 
+                            onClick={onDelete}
+                            className="px-4 py-3 text-red-500 font-bold text-sm bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                        <button 
+                            onClick={() => onUpdate(updates)}
+                            className="flex-1 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg active:scale-[0.98]"
+                        >
+                            Apply Updates
+                        </button>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    );
+};
 
 const AddPincodeModal = ({ onClose, onSave }) => {
     const [form, setForm] = useState({

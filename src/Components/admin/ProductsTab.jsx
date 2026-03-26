@@ -18,10 +18,10 @@ const ProductsTab = ({
   // --- STATE ---
   const [openCategories, setOpenCategories] = useState({});
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [bulkChanges, setBulkChanges] = useState({}); // { variantId: { stock, oprice, discount } }
+  const [bulkChanges, setBulkChanges] = useState({}); // { variantId: { stock, oprice, discount, weight, length... } }
   
-  // State for Size-Based Global Inputs
-  const [sizeInputs, setSizeInputs] = useState({}); // { "50ml": { stock: '', oprice: '', discount: '' } }
+  // State for Size-Based Global Inputs (now includes logistics)
+  const [sizeInputs, setSizeInputs] = useState({}); // { "50ml": { stock, oprice, discount, weight, length, breadth, height } }
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -101,7 +101,9 @@ const ProductsTab = ({
     const hasValue = 
       (inputs.stock !== '' && inputs.stock !== undefined) || 
       (inputs.oprice !== '' && inputs.oprice !== undefined) || 
-      (inputs.discount !== '' && inputs.discount !== undefined);
+      (inputs.discount !== '' && inputs.discount !== undefined) ||
+      (inputs.weight !== '' && inputs.weight !== undefined) ||
+      (inputs.length !== '' && inputs.length !== undefined);
 
     if (!hasValue) return;
 
@@ -114,9 +116,15 @@ const ProductsTab = ({
         if (!newChanges[v.id]) newChanges[v.id] = {};
         
         // Apply only fields that have values entered
-        if (inputs.stock !== '' && inputs.stock !== undefined) newChanges[v.id].stock = Number(inputs.stock);
-        if (inputs.oprice !== '' && inputs.oprice !== undefined) newChanges[v.id].oprice = Number(inputs.oprice);
-        if (inputs.discount !== '' && inputs.discount !== undefined) newChanges[v.id].discount = Number(inputs.discount);
+        if (inputs.stock) newChanges[v.id].stock = Number(inputs.stock);
+        if (inputs.oprice) newChanges[v.id].oprice = Number(inputs.oprice);
+        if (inputs.discount) newChanges[v.id].discount = Number(inputs.discount);
+        
+        // 🟢 Logistics
+        if (inputs.weight) newChanges[v.id].weight = Number(inputs.weight);
+        if (inputs.length) newChanges[v.id].length = Number(inputs.length);
+        if (inputs.breadth) newChanges[v.id].breadth = Number(inputs.breadth);
+        if (inputs.height) newChanges[v.id].height = Number(inputs.height);
         
         count++;
       }
@@ -250,28 +258,18 @@ const ProductsTab = ({
                   </div>
 
                   {/* Inputs Container */}
-                  <div className="flex-1 w-full grid grid-cols-3 gap-3">
-                    <input 
-                      type="number" 
-                      placeholder="Stock" 
-                      value={sizeInputs[size]?.stock || ''}
-                      onChange={(e) => handleSizeInputChange(size, 'stock', e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-sm placeholder-indigo-400 focus:outline-none focus:border-indigo-400 focus:bg-indigo-900 transition-all"
-                    />
-                    <input 
-                      type="number" 
-                      placeholder="Price (₹)" 
-                      value={sizeInputs[size]?.oprice || ''}
-                      onChange={(e) => handleSizeInputChange(size, 'oprice', e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-sm placeholder-indigo-400 focus:outline-none focus:border-indigo-400 focus:bg-indigo-900 transition-all"
-                    />
-                    <input 
-                      type="number" 
-                      placeholder="Disc (%)" 
-                      value={sizeInputs[size]?.discount || ''}
-                      onChange={(e) => handleSizeInputChange(size, 'discount', e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-sm placeholder-indigo-400 focus:outline-none focus:border-indigo-400 focus:bg-indigo-900 transition-all"
-                    />
+                  <div className="flex-1 w-full grid grid-cols-6 gap-2">
+                    <input type="number" placeholder="Stock" value={sizeInputs[size]?.stock || ''} onChange={(e) => handleSizeInputChange(size, 'stock', e.target.value)} className="col-span-1 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400" />
+                    <input type="number" placeholder="Price" value={sizeInputs[size]?.oprice || ''} onChange={(e) => handleSizeInputChange(size, 'oprice', e.target.value)} className="col-span-1 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400" />
+                    <input type="number" placeholder="Disc %" value={sizeInputs[size]?.discount || ''} onChange={(e) => handleSizeInputChange(size, 'discount', e.target.value)} className="col-span-1 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400" />
+                    
+                    {/* 🟢 Logistics Inputs for Bulk Header */}
+                    <input type="number" placeholder="Wt(kg)" value={sizeInputs[size]?.weight || ''} onChange={(e) => handleSizeInputChange(size, 'weight', e.target.value)} className="col-span-1 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400" />
+                    <div className="col-span-2 grid grid-cols-3 gap-1">
+                        <input type="number" placeholder="L" value={sizeInputs[size]?.length || ''} onChange={(e) => handleSizeInputChange(size, 'length', e.target.value)} className="px-2 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400 text-center" />
+                        <input type="number" placeholder="B" value={sizeInputs[size]?.breadth || ''} onChange={(e) => handleSizeInputChange(size, 'breadth', e.target.value)} className="px-2 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400 text-center" />
+                        <input type="number" placeholder="H" value={sizeInputs[size]?.height || ''} onChange={(e) => handleSizeInputChange(size, 'height', e.target.value)} className="px-2 py-2 rounded-lg bg-indigo-900/80 border border-indigo-600 text-white text-xs placeholder-indigo-400 outline-none focus:border-indigo-400 text-center" />
+                    </div>
                   </div>
 
                   {/* Apply Button */}
@@ -293,20 +291,28 @@ const ProductsTab = ({
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-20 shadow-sm">
                   <tr>
-                    <th className="px-6 py-4 font-bold text-gray-500 w-[30%]">Product Details</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 w-[15%]">Size</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 w-[15%]">Stock</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 w-[15%]">Price (₹)</th>
-                    <th className="px-6 py-4 font-bold text-gray-500 w-[15%]">Discount (%)</th>
+                    <th className="px-6 py-4 font-bold text-gray-500 w-[25%]">Product Details</th>
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[10%]">Size</th>
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[10%]">Stock</th>
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[10%]">Price (₹)</th>
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[10%]">Disc (%)</th>
+                    {/* 🟢 New Headers */}
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[10%]">Weight (kg)</th>
+                    <th className="px-4 py-4 font-bold text-gray-500 w-[15%]">L x B x H (cm)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {flatVariants.map((v) => {
-                    // Check if modified
                     const modified = bulkChanges[v.id];
                     const stockVal = modified?.stock !== undefined ? modified.stock : v.stock;
                     const priceVal = modified?.oprice !== undefined ? modified.oprice : v.oprice;
                     const discVal = modified?.discount !== undefined ? modified.discount : v.discount;
+                    
+                    // Logistics
+                    const weightVal = modified?.weight !== undefined ? modified.weight : v.weight || 0.5;
+                    const lVal = modified?.length !== undefined ? modified.length : v.length || 10;
+                    const bVal = modified?.breadth !== undefined ? modified.breadth : v.breadth || 10;
+                    const hVal = modified?.height !== undefined ? modified.height : v.height || 10;
                     
                     const isModified = modified !== undefined;
 
@@ -325,35 +331,33 @@ const ProductsTab = ({
                              </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <span className="px-2.5 py-1 bg-gray-100 rounded-md text-xs font-bold text-gray-700 border border-gray-200">
                             {v.size || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="number"
-                            value={stockVal}
-                            onChange={(e) => handleVariantChange(v.id, 'stock', e.target.value)}
-                            className={`w-24 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.stock !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`}
-                          />
+                        <td className="px-4 py-4">
+                          <input type="number" value={stockVal} onChange={(e) => handleVariantChange(v.id, 'stock', e.target.value)} className={`w-20 px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.stock !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`} />
                         </td>
-                        <td className="px-6 py-4">
-                          <input 
-                            type="number"
-                            value={priceVal}
-                            onChange={(e) => handleVariantChange(v.id, 'oprice', e.target.value)}
-                            className={`w-24 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.oprice !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`}
-                          />
+                        <td className="px-4 py-4">
+                          <input type="number" value={priceVal} onChange={(e) => handleVariantChange(v.id, 'oprice', e.target.value)} className={`w-20 px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.oprice !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`} />
                         </td>
-                        <td className="px-6 py-4">
-                           <input 
-                            type="number"
-                            value={discVal}
-                            onChange={(e) => handleVariantChange(v.id, 'discount', e.target.value)}
-                            className={`w-24 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.discount !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`}
-                          />
+                        <td className="px-4 py-4">
+                           <input type="number" value={discVal} onChange={(e) => handleVariantChange(v.id, 'discount', e.target.value)} className={`w-16 px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.discount !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`} />
                         </td>
+                        
+                        {/* 🟢 Logistics Inputs */}
+                        <td className="px-4 py-4">
+                           <input type="number" step="0.01" value={weightVal} onChange={(e) => handleVariantChange(v.id, 'weight', e.target.value)} className={`w-16 px-2 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-200 outline-none transition-all ${modified?.weight !== undefined ? 'border-indigo-400 bg-white shadow-sm' : 'border-gray-200 bg-gray-50/50'}`} />
+                        </td>
+                        <td className="px-4 py-4">
+                           <div className="flex gap-1">
+                               <input type="number" value={lVal} onChange={(e) => handleVariantChange(v.id, 'length', e.target.value)} className={`w-12 px-1 py-1.5 border rounded-lg text-center text-xs focus:ring-1 focus:ring-indigo-200 outline-none ${modified?.length !== undefined ? 'border-indigo-400 bg-white' : 'border-gray-200 bg-gray-50/50'}`} placeholder="L" />
+                               <input type="number" value={bVal} onChange={(e) => handleVariantChange(v.id, 'breadth', e.target.value)} className={`w-12 px-1 py-1.5 border rounded-lg text-center text-xs focus:ring-1 focus:ring-indigo-200 outline-none ${modified?.breadth !== undefined ? 'border-indigo-400 bg-white' : 'border-gray-200 bg-gray-50/50'}`} placeholder="B" />
+                               <input type="number" value={hVal} onChange={(e) => handleVariantChange(v.id, 'height', e.target.value)} className={`w-12 px-1 py-1.5 border rounded-lg text-center text-xs focus:ring-1 focus:ring-indigo-200 outline-none ${modified?.height !== undefined ? 'border-indigo-400 bg-white' : 'border-gray-200 bg-gray-50/50'}`} placeholder="H" />
+                           </div>
+                        </td>
+
                       </tr>
                     );
                   })}
@@ -367,20 +371,20 @@ const ProductsTab = ({
             initial={{ y: 100 }} animate={{ y: 0 }}
             className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white p-2 rounded-2xl shadow-2xl shadow-indigo-200 border border-gray-100 flex gap-2"
           >
-             <button 
-               onClick={() => { setIsBulkMode(false); setBulkChanges({}); }}
-               className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
-             >
-               <X size={18} /> Cancel
-             </button>
-             <button 
-               onClick={saveBulkChanges}
-               disabled={isSaving || Object.keys(bulkChanges).length === 0}
-               className="px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center gap-2 disabled:opacity-50 disabled:shadow-none"
-             >
-               {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
-               {isSaving ? 'Saving...' : `Save Changes (${Object.keys(bulkChanges).length})`}
-             </button>
+              <button 
+                onClick={() => { setIsBulkMode(false); setBulkChanges({}); }}
+                className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                <X size={18} /> Cancel
+              </button>
+              <button 
+                onClick={saveBulkChanges}
+                disabled={isSaving || Object.keys(bulkChanges).length === 0}
+                className="px-8 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center gap-2 disabled:opacity-50 disabled:shadow-none"
+              >
+                {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Save size={18} />}
+                {isSaving ? 'Saving...' : `Save Changes (${Object.keys(bulkChanges).length})`}
+              </button>
           </motion.div>
 
         </motion.div>

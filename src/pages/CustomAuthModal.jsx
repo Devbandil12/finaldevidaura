@@ -332,11 +332,6 @@ export default function CustomAuthModal({ onClose }) {
               <div className={`relative w-full md:w-1/2 h-64 md:h-full ${isSignUp ? 'md:order-2' : 'md:order-1'}`}>
                 <img src={isSignUp ? SignUpImage : SignInImage} alt="Authentication" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/30"></div>
-                <div className="absolute bottom-0 left-0 p-8 md:p-12">
-                  <h3 className="text-white text-2xl md:text-3xl font-semibold leading-tight max-w-sm text-shadow">
-                    {isSignUp ? "Join the fragrance revolution." : "Welcome back! Great to see you again."}
-                  </h3>
-                </div>
               </div>
             </motion.div>
           </AnimatePresence>

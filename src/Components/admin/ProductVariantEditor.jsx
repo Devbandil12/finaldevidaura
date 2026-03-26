@@ -55,16 +55,30 @@ const ProductVariantEditor = ({ product, onClose }) => {
       if (shouldClose) onClose();
     } catch (error) { window.toast.error("Update failed."); } finally { setIsSaving(false); }
   };
+
   const handleVariantChange = (index, e) => {
     const { name, value } = e.target;
     const newVariants = [...variants];
-    if (["oprice", "costPrice", "discount", "size", "stock"].includes(name)) { newVariants[index][name] = value === "" ? "" : Number(value); } else { newVariants[index][name] = value; }
+    // 🟢 UPDATED: Parse logistics fields as numbers
+    if (["oprice", "costPrice", "discount", "size", "stock", "weight", "length", "breadth", "height"].includes(name)) { 
+        newVariants[index][name] = value === "" ? "" : Number(value); 
+    } else { 
+        newVariants[index][name] = value; 
+    }
     setVariants(newVariants);
   };
+
   const handleAddNewVariant = () => {
     setNewVariantIndex(variants.length);
-    setVariants([...variants, { productId: product.id, name: "New Variant", size: 0, oprice: 0, costPrice: 0, discount: 0, stock: 0, isArchived: false }]);
+    // 🟢 UPDATED: Initialize with logistics defaults
+    setVariants([...variants, { 
+        productId: product.id, 
+        name: "New Variant", 
+        size: 0, oprice: 0, costPrice: 0, discount: 0, stock: 0, isArchived: false,
+        weight: 0.5, length: 10, breadth: 10, height: 10
+    }]);
   };
+
   const handleSaveVariant = async (index) => {
     const variant = variants[index];
     setIsSaving(true);
@@ -171,6 +185,12 @@ const ProductVariantEditor = ({ product, onClose }) => {
                       <ModernInput label="Price" name="oprice" type="number" value={variant.oprice} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="Cost" name="costPrice" type="number" value={variant.costPrice} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="Disc %" name="discount" type="number" value={variant.discount} onChange={(e) => handleVariantChange(index, e)} />
+                      
+                      {/* 🟢 NEW: Shipping Inputs */}
+                      <ModernInput label="Weight (kg)" name="weight" type="number" value={variant.weight} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="L (cm)" name="length" type="number" value={variant.length} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="B (cm)" name="breadth" type="number" value={variant.breadth} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="H (cm)" name="height" type="number" value={variant.height} onChange={(e) => handleVariantChange(index, e)} />
                     </div>
                   </div>
                 ))}

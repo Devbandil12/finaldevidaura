@@ -9,7 +9,8 @@ const VariantInput = ({ index, variant, onChange, onRemove }) => {
     const { name, value } = e.target;
     onChange(index, {
       ...variant,
-      [name]: ["oprice", "costPrice", "discount", "size", "stock"].includes(name)
+      // 🟢 UPDATED: Added logistics fields to number conversion list
+      [name]: ["oprice", "costPrice", "discount", "size", "stock", "weight", "length", "breadth", "height"].includes(name)
         ? Number(value) || 0
         : value,
     });
@@ -58,6 +59,32 @@ const VariantInput = ({ index, variant, onChange, onRemove }) => {
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Discount (%)</label>
           <input name="discount" placeholder="10" type="number" value={variant.discount} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
         </div>
+
+        {/* 🟢 NEW: Shipping Details Section */}
+        <div className="col-span-2 pt-2">
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Shipping Dimensions (Shiprocket)</p>
+                <div className="grid grid-cols-4 gap-3">
+                    <div>
+                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Weight (kg)</label>
+                        <input name="weight" type="number" step="0.01" value={variant.weight} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="0.5" />
+                    </div>
+                    <div>
+                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">L (cm)</label>
+                        <input name="length" type="number" value={variant.length} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                    </div>
+                    <div>
+                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">B (cm)</label>
+                        <input name="breadth" type="number" value={variant.breadth} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                    </div>
+                    <div>
+                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">H (cm)</label>
+                        <input name="height" type="number" value={variant.height} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
       </div>
     </div>
   );
@@ -78,8 +105,9 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     name: "", composition: "", description: "", fragrance: "", fragranceNotes: "", category: "Uncategorized",
   });
 
+  // 🟢 UPDATED: Default variant state includes logistics fields
   const [variants, setVariants] = useState([
-    { name: "20ml", size: 20, oprice: 0, costPrice: 0, discount: 0, stock: 0 },
+    { name: "20ml", size: 20, oprice: 0, costPrice: 0, discount: 0, stock: 0, weight: 0.5, length: 10, breadth: 10, height: 10 },
   ]);
 
   useEffect(() => {
@@ -98,7 +126,8 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   };
 
   const addVariant = () => {
-    setVariants([...variants, { name: "", size: 0, oprice: 0, costPrice: 0, discount: 0, stock: 0 }]);
+    // 🟢 UPDATED: New variant default values
+    setVariants([...variants, { name: "", size: 0, oprice: 0, costPrice: 0, discount: 0, stock: 0, weight: 0.5, length: 10, breadth: 10, height: 10 }]);
   };
 
   const removeVariant = (index) => {
@@ -169,7 +198,8 @@ const ImageUploadModal = ({ isopen, onClose }) => {
     setPreviews([]);
     setUploadedUrls([]);
     setProduct({ name: "", composition: "", description: "", fragrance: "", fragranceNotes: "", category: "Uncategorized" });
-    setVariants([{ name: "20ml", size: 20, oprice: 0, costPrice: 0, discount: 0, stock: 0 }]);
+    // 🟢 UPDATED: Reset variants with logistics fields
+    setVariants([{ name: "20ml", size: 20, oprice: 0, costPrice: 0, discount: 0, stock: 0, weight: 0.5, length: 10, breadth: 10, height: 10 }]);
   };
 
   if (!isOpen) return null;
