@@ -46,11 +46,11 @@ const modalVariants = {
 // 2. HELPER COMPONENTS
 // ==========================================
 
-const BundleItemsList = ({ items, isCompact = false }) => {
+const BundleItemsList = ({ items }) => {
   if (!items || !Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <div className={`mt-2 sm:mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 ${isCompact ? 'opacity-80 scale-95 origin-left -ml-1 sm:ml-0' : ''}`}>
+    <div className="mt-3 grid grid-cols-2 gap-2">
       {items.map((subItem, index) => (
         <div 
           key={index} 
@@ -101,10 +101,10 @@ const OfferInstructionCard = ({ offer, minimalist = false }) => {
   return (
     <div className={`p-4 bg-gray-50 border border-gray-200 rounded-lg ${minimalist ? "py-3 px-3 text-sm" : ""}`}>
       <div className="flex items-start gap-3">
-        <FiTag className={`mt-1 flex-shrink-0 text-black ${minimalist ? "w-3 h-3" : ""}`} />
+        <FiTag className={`mt-1 text-black ${minimalist ? "w-3 h-3" : ""}`} />
         <div>
-          {!minimalist && <p className="font-bold text-gray-900 break-all">{offer.code}</p>}
-          <p className={`${minimalist ? "text-gray-700" : "text-sm text-gray-600 mt-1"} leading-snug`}>{generateInstruction()}</p>
+          {!minimalist && <p className="font-bold text-gray-900">{offer.code}</p>}
+          <p className={`${minimalist ? "text-gray-700" : "text-sm text-gray-600 mt-1"}`}>{generateInstruction()}</p>
         </div>
       </div>
     </div>
@@ -129,11 +129,11 @@ const AutoOfferModal = ({ isOpen, onClose, instructions }) => (
           style={gpuStyle} onClick={(e) => e.stopPropagation()}
           className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
         >
-          <div className="bg-black p-4 sm:p-5 flex justify-between items-center text-white sticky top-0 z-10">
-            <h3 className="text-base sm:text-lg font-bold flex items-center gap-2"><FiGift className="text-white flex-shrink-0" /> Automatic Offers & Help</h3>
+          <div className="bg-black p-5 flex justify-between items-center text-white sticky top-0 z-10">
+            <h3 className="text-lg font-bold flex items-center gap-2"><FiGift className="text-white" /> Automatic Offers & Help</h3>
             <button onClick={onClose} className="text-white/70 hover:text-white transition-colors"><FiX size={24} /></button>
           </div>
-          <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+          <div className="p-6 overflow-y-auto space-y-6">
             <div className="space-y-4">
               <h4 className="font-bold text-gray-900 border-b pb-2">How Automatic Coupons Work</h4>
               <div className="flex gap-4">
@@ -179,14 +179,14 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
           style={gpuStyle} onClick={(e) => e.stopPropagation()}
           className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
         >
-          <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+          <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
             <div>
-              <h3 className="text-lg sm:text-xl font-bold text-black tracking-tight">Select Coupon</h3>
+              <h3 className="text-xl font-bold text-black tracking-tight">Select Coupon</h3>
               <p className="text-xs text-gray-500 mt-1">Find the best deal for your order</p>
             </div>
             <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-black hover:text-white transition-all duration-200"><FiX size={20} /></button>
           </div>
-          <div className="px-4 sm:px-5 pt-4 pb-2">
+          <div className="px-5 pt-4 pb-2">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -195,23 +195,23 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
               />
             </div>
           </div>
-          <div className="p-4 sm:p-5 overflow-y-auto space-y-4 bg-white flex-grow">
+          <div className="p-5 overflow-y-auto space-y-4 bg-white flex-grow">
             {coupons.length > 0 ? (
               coupons.map((coupon) => (
                 <motion.div
                   key={coupon.id} layout whileHover={{ scale: 1.01, borderColor: "#000000" }}
                   transition={{ duration: 0.2, ease: "easeInOut" }} style={{ willChange: "transform" }}
-                  className="group relative flex flex-col sm:flex-row w-full bg-white border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300"
+                  className="group relative flex w-full bg-white border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300"
                 >
-                  <div className="flex-1 p-4 flex flex-col justify-center border-b-2 sm:border-b-0 sm:border-r-2 border-dashed border-gray-200 group-hover:border-gray-900 transition-colors duration-300">
+                  <div className="flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed border-gray-200 group-hover:border-gray-900 transition-colors duration-300">
                     <div className="flex items-center gap-2 mb-1">
-                      <FiTag className="text-gray-400 group-hover:text-black transition-colors flex-shrink-0" size={16} />
-                      <span className="font-bold text-black text-base sm:text-lg tracking-wide uppercase break-all">{coupon.code}</span>
+                      <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={16} />
+                      <span className="font-bold text-black text-lg tracking-wide uppercase">{coupon.code}</span>
                     </div>
                     <span className="text-xs text-gray-500 leading-relaxed">{coupon.description}</span>
                   </div>
-                  <div className="w-full sm:w-[30%] flex items-center justify-center p-3 sm:p-4 bg-gray-50/30">
-                    <button onClick={() => onApply(coupon)} className="text-xs font-bold text-white bg-black px-4 py-3 sm:py-2 rounded-lg hover:bg-gray-800 transition-all shadow-sm w-full">APPLY</button>
+                  <div className="w-[28%] flex items-center justify-center p-3 bg-gray-50/30">
+                    <button onClick={() => onApply(coupon)} className="text-xs font-bold text-white bg-black px-4 py-2 rounded-lg hover:bg-gray-800 transition-all shadow-sm w-full">APPLY</button>
                   </div>
                 </motion.div>
               ))
@@ -248,97 +248,92 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
       style={gpuStyle}
       className="relative group mb-0"
     >
-      <div className="flex flex-row gap-3 sm:gap-5 bg-white p-3 sm:p-5 rounded-2xl sm:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 border border-transparent hover:border-gray-50">
+      {/* Default p-5 and gap-5, shrinks ONLY below 400px */}
+      <div className="flex flex-row gap-5 max-[400px]:gap-3 bg-white p-5 max-[400px]:p-1 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 border border-transparent hover:border-gray-50">
         
-        {/* Image Section - Floating Bubble Style */}
-        <div className="relative w-20 h-20 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-50 rounded-xl sm:rounded-[1.5rem] overflow-hidden p-1 sm:p-2">
+        {/* Default w-28/w-32, shrinks ONLY below 400px */}
+        <div className="relative w-28 h-28 sm:w-32 sm:h-32 max-[400px]:w-24 max-[400px]:h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
           <img 
             src={itemImageUrl} 
             alt={item.product.name} 
-            className={`w-full h-full object-cover rounded-lg sm:rounded-[1rem] transition-opacity duration-300 ${isOutOfStock ? "opacity-50 grayscale" : "opacity-100"}`} 
+            className={`w-full h-full object-cover rounded-[1rem] transition-opacity duration-300 ${isOutOfStock ? "opacity-50 grayscale" : "opacity-100"}`} 
             loading="eager" 
           />
           
-          {/* Out of Stock Overlay */}
           {isOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white/90 backdrop-blur text-[8px] sm:text-[10px] font-bold text-red-600 px-2 sm:px-3 py-1 rounded-full shadow-sm border border-red-50 text-center leading-none">OUT OF STOCK</span>
+              <span className="bg-white/90 backdrop-blur text-[10px] max-[400px]:text-[8px] font-bold text-red-600 px-3 max-[400px]:px-2 py-1 rounded-full shadow-sm border border-red-50 text-center leading-none">OUT OF STOCK</span>
             </div>
           )}
 
-          {/* Discount Overlay (Bottom Center) */}
           {Number(item.variant.discount) > 0 && !isFree && (
-            <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none hidden sm:flex">
-              <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
+            <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
+              <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] max-[400px]:text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
                 {item.variant.discount}% OFF
               </span>
             </div>
           )}
         </div>
 
-        {/* Content Section */}
         <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
           
-          {/* Top: Info & Price */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-4">
-            <div className="flex-1 min-w-0 space-y-1 w-full">
-              <h3 className="font-bold text-gray-900 text-sm sm:text-lg leading-snug truncate pr-2">{item.product.name}</h3>
+          <div className="flex justify-between items-start gap-4 max-[400px]:gap-2">
+            <div className="flex-1 min-w-0 space-y-1">
+              <h3 className="font-bold text-gray-900 text-lg max-[400px]:text-base leading-snug truncate pr-2">{item.product.name}</h3>
               
               {item.isBundle ? (
-                <BundleItemsList items={item.contents} />
+                <div className="opacity-70 origin-left scale-95 -ml-1"><BundleItemsList items={item.contents} /></div>
               ) : (
-                <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider">{item.variant.size} ml</p>
+                <p className="text-xs max-[400px]:text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{item.variant.size} ml</p>
               )}
             </div>
 
-            <div className="text-left sm:text-right flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-0 mt-1 sm:mt-0">
+            <div className="text-right flex flex-col items-end flex-shrink-0">
               {isFree ? (
-                <span className="text-[10px] sm:text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full tracking-wide whitespace-nowrap">FREE GIFT</span>
+                <span className="text-xs max-[400px]:text-[10px] font-bold text-green-700 bg-green-50 px-3 max-[400px]:px-2 py-1 rounded-full tracking-wide">FREE GIFT</span>
               ) : (
-                <span className="text-base sm:text-lg font-bold text-gray-900">₹{sellingPrice}</span>
+                <span className="text-lg max-[400px]:text-base font-bold text-gray-900">₹{sellingPrice}</span>
               )}
-              {showLineThrough && <span className="text-[10px] sm:text-xs text-gray-400 line-through sm:mt-0.5">₹{item.variant.oprice}</span>}
+              {showLineThrough && <span className="text-xs max-[400px]:text-[10px] text-gray-400 line-through mt-0.5">₹{item.variant.oprice}</span>}
             </div>
           </div>
 
-          {/* Bottom: Controls */}
-          <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
+          {/* Original layout structure, strictly scaling down buttons ONLY below 400px */}
+          <div className="flex items-center justify-between mt-4 max-[400px]:gap-2">
             
-            {/* Soft Capsule Quantity Control */}
-            <div className={`flex items-center bg-gray-50 rounded-full p-1 sm:p-1.5 ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`flex items-center bg-gray-50 rounded-full p-1.5 max-[400px]:p-1 flex-shrink-0 ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
               <button 
                 onClick={() => onQuantityChange(item, -1)} 
                 disabled={item.quantity <= 1} 
-                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black disabled:opacity-30 disabled:shadow-none transition-all active:scale-90 text-sm sm:text-base"
+                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black disabled:opacity-30 disabled:shadow-none transition-all active:scale-90 max-[400px]:text-sm"
               >
                 –
               </button>
-              <span className="w-8 sm:w-10 text-center text-xs sm:text-sm font-bold text-gray-900">{item.quantity}</span>
+              <span className="w-10 max-[400px]:w-6 text-center text-sm max-[400px]:text-xs font-bold text-gray-900">{item.quantity}</span>
               <button 
                 onClick={() => onQuantityChange(item, 1)} 
-                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black transition-all active:scale-90 text-sm sm:text-base"
+                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black transition-all active:scale-90 max-[400px]:text-sm"
               >
                 +
               </button>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-2 max-[400px]:gap-1 flex-shrink-0">
               {!isBuyNowActive && (
                 <button 
                   onClick={() => onSaveForLater(item)} 
-                  className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all" 
+                  className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all" 
                   title="Save for later"
                 >
-                  <FiClock className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <FiClock className="w-5 h-5 max-[400px]:w-4 max-[400px]:h-4" />
                 </button>
               )}
               <button 
                 onClick={() => onRemove(item)} 
-                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" 
+                className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" 
                 title="Remove item"
               >
-                <FaTrashAlt className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
+                <FaTrashAlt className="w-[18px] h-[18px] max-[400px]:w-3.5 max-[400px]:h-3.5" />
               </button>
             </div>
             
@@ -353,13 +348,13 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
   // Empty State
   if (items.length === 0) {
     return (
-      <motion.div layout="position" transition={rigidTransition} className="mt-12 sm:mt-16 pt-8">
-        <div className="flex flex-col items-center justify-center text-center py-12 sm:py-16 px-4 sm:px-6 rounded-3xl sm:rounded-[2rem] bg-gray-50/80">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-4 sm:mb-6 text-gray-300">
-            <FiHeart size={24} className="sm:w-7 sm:h-7" />
+      <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
+        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-[2rem] bg-gray-50/80">
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-6 text-gray-300">
+            <FiHeart size={28} />
           </div>
-          <h3 className="text-gray-900 font-bold text-lg sm:text-xl tracking-tight">Your wishlist is quiet</h3>
-          <p className="text-gray-500 text-xs sm:text-sm mt-2 max-w-xs leading-relaxed">
+          <h3 className="text-gray-900 font-bold text-xl tracking-tight">Your wishlist is quiet</h3>
+          <p className="text-gray-500 text-sm mt-2 max-w-xs leading-relaxed">
             Items you want to save for later will appear here, ready when you are.
           </p>
         </div>
@@ -369,22 +364,22 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
 
   // Populated State
   return (
-    <motion.div layout="position" transition={rigidTransition} className="mt-12 sm:mt-16 pt-6 sm:pt-8">
+    <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
       {/* Soft Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8 px-2">
+      <div className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
-             <FiHeart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
+             <FiHeart size={18} />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Saved for Later</h2>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saved for Later</h2>
         </div>
-        <span className="px-3 py-1 sm:px-4 sm:py-1.5 bg-gray-100 rounded-full text-[10px] sm:text-xs font-bold text-gray-600 whitespace-nowrap">
+        <span className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-600">
           {items.length} ITEMS
         </span>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">
           {items.map((item) => {
             const variant = item.variant;
@@ -405,29 +400,29 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                className="group relative bg-white p-4 rounded-2xl sm:rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow duration-300 flex flex-col"
+                className="group relative bg-white p-4 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow duration-300"
               >
                 {/* Soft Remove Button */}
                 <button
                   onClick={() => onRemove(variant.id)}
-                  className="absolute z-10 top-3 right-3 sm:top-5 sm:right-5 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors duration-200 shadow-sm"
+                  className="absolute z-10 top-5 right-5 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors duration-200 shadow-sm"
                 >
                   <FiX size={14} />
                 </button>
 
-                <div className="flex items-center gap-4 sm:gap-5 flex-1">
+                <div className="flex items-center gap-5">
                   {/* Image Bubble with Overlay */}
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-gray-50 rounded-xl sm:rounded-[1.5rem] overflow-hidden p-1.5 sm:p-2">
+                  <div className="relative w-24 h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
                     <img 
                       src={itemImageUrl} 
                       alt={product.name} 
-                      className="w-full h-full object-cover rounded-lg sm:rounded-[1rem] group-hover:scale-105 transition-transform duration-500" 
+                      className="w-full h-full object-cover rounded-[1rem] group-hover:scale-105 transition-transform duration-500" 
                     />
                     
                     {/* Discount Overlay */}
                     {discount > 0 && (
                       <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                        <span className="bg-black/70 backdrop-blur-sm text-white text-[8px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-0.5 sm:mb-1">
+                        <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
                           {discount}% OFF
                         </span>
                       </div>
@@ -436,19 +431,19 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 py-1">
-                    <h3 className="font-bold text-sm sm:text-base text-gray-900 leading-snug truncate">{product.name}</h3>
+                    <h3 className="font-bold text-base text-gray-900 leading-snug truncate">{product.name}</h3>
                     
                     {(item.isBundle || (item.contents && item.contents.length > 0)) ? (
-                      <BundleItemsList items={item.contents} isCompact={true} />
+                      <div className="mt-1 opacity-60 scale-90 origin-left"><BundleItemsList items={item.contents} isCompact={true} /></div>
                     ) : (
-                      <p className="text-[10px] sm:text-xs font-medium text-gray-400 mt-1 uppercase tracking-wide">{variant.size} ml</p>
+                      <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-wide">{variant.size} ml</p>
                     )}
 
                     {/* Price Section */}
-                    <div className="mt-1 sm:mt-2 flex flex-wrap items-baseline gap-2">
-                      <span className="text-sm sm:text-base text-gray-900 font-bold">₹{price}</span>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="text-gray-900 font-bold">₹{price}</span>
                       {showLineThrough && (
-                        <span className="text-[10px] sm:text-xs text-gray-400 line-through decoration-gray-300">
+                        <span className="text-xs text-gray-400 line-through decoration-gray-300">
                           ₹{originalPrice}
                         </span>
                       )}
@@ -457,10 +452,10 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 </div>
 
                 {/* Full Width Soft Button */}
-                <div className="mt-4 sm:mt-5 pt-2 border-t border-gray-50">
+                <div className="mt-5">
                   <button
                     onClick={() => onMoveToCart(item)}
-                    className="w-full py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white bg-black rounded-full hover:bg-gray-800 active:scale-95 transition-all duration-300"
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-black rounded-full hover:bg-gray-800 active:scale-95 transition-all duration-300"
                   >
                     Add to Cart
                   </button>
@@ -479,18 +474,18 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
   const finalPrice = typeof breakdown.totalExcludingDelivery !== "undefined" ? breakdown.totalExcludingDelivery : breakdown.total;
 
   return (
-    <div className="sticky top-4 sm:top-8 z-10">
-      <div className="bg-white rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
+    <div className="sticky top-8">
+      <div className="bg-white rounded-[2.5rem] p-5 max-[400px]:p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
         {/* Subtle Background Blob */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 relative z-10">Order Summary</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-8 relative z-10">Order Summary</h2>
 
         {loadingPrices ? (
-          <div className="space-y-6 animate-pulse px-1 sm:px-2">
+          <div className="space-y-6 animate-pulse px-2">
             <div className="flex justify-between"><div className="h-4 bg-gray-100 rounded-full w-1/3"></div><div className="h-4 bg-gray-100 rounded-full w-1/4"></div></div>
             <div className="flex justify-between"><div className="h-4 bg-gray-100 rounded-full w-1/2"></div><div className="h-4 bg-gray-100 rounded-full w-1/5"></div></div>
-            <div className="h-14 sm:h-16 bg-gray-50 rounded-2xl sm:rounded-3xl w-full mt-6"></div>
+            <div className="h-16 bg-gray-50 rounded-3xl w-full mt-6"></div>
           </div>
         ) : (
           <>
@@ -511,15 +506,15 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
               {breakdown.appliedOffers && Array.isArray(breakdown.appliedOffers) && breakdown.appliedOffers.map((offer, index) => (
                 <div key={index} className="flex justify-between text-sm font-medium">
                   <span className="text-green-600 truncate pr-4">{offer.title}</span>
-                  <span className="text-green-600 flex-shrink-0">-₹{Number(offer.amount || 0).toFixed(2)}</span>
+                  <span className="text-green-600">-₹{Number(offer.amount || 0).toFixed(2)}</span>
                 </div>
               ))}
               
               {/* Divider */}
-              <div className="h-px w-full bg-gray-100 my-5 sm:my-6"></div>
+              <div className="h-px w-full bg-gray-100 my-6"></div>
 
               {/* Coupon Section - Floating Style */}
-              <div className="mb-5 sm:mb-6">
+              <div className="mb-6">
                 <AnimatePresence mode="wait">
                   {appliedCoupon ? (
                     <motion.div 
@@ -527,23 +522,23 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="bg-green-50/50 rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex items-center justify-between border border-green-100"
+                      className="bg-green-50/50 rounded-3xl p-4 flex items-center justify-between border border-green-100"
                     >
                       <div className="flex items-center gap-3">
                         <div className="bg-white p-2 rounded-full text-green-600 shadow-sm"><FiTag size={16} /></div>
                         <div>
-                          <p className="font-bold text-green-800 text-sm break-all">{appliedCoupon.code}</p>
-                          <p className="text-[9px] sm:text-[10px] text-green-600 font-bold uppercase tracking-wider">Applied</p>
+                          <p className="font-bold text-green-800 text-sm">{appliedCoupon.code}</p>
+                          <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Applied</p>
                         </div>
                       </div>
-                      <button onClick={onRemoveCoupon} className="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white text-gray-400 rounded-full shadow-sm hover:text-red-500 transition-colors">
+                      <button onClick={onRemoveCoupon} className="w-8 h-8 flex items-center justify-center bg-white text-gray-400 rounded-full shadow-sm hover:text-red-500 transition-colors">
                         <FiX size={14} />
                       </button>
                     </motion.div>
                   ) : (
                     <div className="bg-gray-50 p-1.5 rounded-[1.5rem] flex relative">
-                      <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none">
-                         <FiTag className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                         <FiTag className="text-gray-400" />
                       </div>
                       <input 
                         type="text" 
@@ -551,11 +546,11 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                         value={manualCouponCode} 
                         onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())} 
                         onKeyDown={(e) => e.key === "Enter" && onManualApply()}
-                        className="bg-transparent border-none text-gray-900 text-sm font-medium w-full pl-9 sm:pl-10 pr-[85px] sm:pr-24 py-3 focus:ring-0 placeholder:text-gray-400" 
+                        className="bg-transparent border-none text-gray-900 text-sm font-medium w-full pl-10 pr-20 py-3 focus:ring-0 placeholder:text-gray-400" 
                       />
                       <button 
                         onClick={onManualApply} 
-                        className="absolute right-1.5 top-1.5 bottom-1.5 bg-white shadow-sm text-black text-[10px] sm:text-xs font-bold px-3 sm:px-4 rounded-full hover:bg-black hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black"
+                        className="absolute right-1.5 top-1.5 bottom-1.5 bg-white shadow-sm text-black text-xs font-bold px-4 rounded-[1.2rem] hover:bg-black hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black"
                         disabled={!manualCouponCode}
                       >
                         APPLY
@@ -565,16 +560,16 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                 </AnimatePresence>
                 
                 {availableCouponsCount > 0 && !appliedCoupon && (
-                   <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-[11px] sm:text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 transition-colors">
+                   <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 transition-colors">
                      See {availableCouponsCount} available offers <FiChevronRight />
                    </button>
                 )}
               </div>
 
               {/* Grand Total */}
-              <div className="flex justify-between items-center pb-2 pt-2">
-                <span className="text-base sm:text-lg text-gray-900">Total</span>
-                <span className="text-xl sm:text-2xl text-gray-900 tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center pb-2">
+                <span className="text-lg  text-gray-900">Total</span>
+                <span className="text-2xl  text-gray-900 tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
               </div>
             </div>
           </>
@@ -583,7 +578,7 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
         <AnimatePresence>
           {checkoutError && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4">
-              <div className="bg-red-50 text-red-500 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center text-[11px] sm:text-xs font-bold tracking-wide leading-relaxed">
+              <div className="bg-red-50 text-red-500 rounded-2xl p-4 text-center text-xs font-bold tracking-wide">
                 {checkoutError}
               </div>
             </motion.div>
@@ -591,16 +586,16 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
         </AnimatePresence>
 
         {/* Big Soft Checkout Button */}
-        <div className="mt-6 sm:mt-8">
+        <div className="mt-8">
           <HeroButton 
-            className="w-full py-4 sm:py-5 text-xs sm:text-sm uppercase tracking-[0.15em] font-bold bg-black text-white rounded-full sm:rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-black/10 transition-all duration-300 ease-out" 
+            className="w-full py-5 text-sm uppercase tracking-[0.15em] font-bold bg-black text-white rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-black/10 transition-all duration-300 ease-out" 
             onClick={onCheckout}
           >
             {isBuyNowActive ? "Pay Now" : "Checkout"}
           </HeroButton>
         </div>
         
-        <div className="mt-5 sm:mt-6 flex justify-center gap-2">
+        <div className="mt-6 flex justify-center gap-2">
            <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
            <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
            <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
@@ -656,9 +651,15 @@ const ShoppingCart = () => {
     const activeAutoCodes = new Set(autoOfferInstructions.map((o) => o.code));
     
     return availableCoupons.filter((c) => {
+      // 1. Exclude if it's currently an active automatic offer
       if (activeAutoCodes.has(c.code)) return false;
+      
+      // 2. Exclude if explicitly marked as auto
       if (c.type === "auto" || c.isAutomatic) return false;
+
+      // 3. Exclude based on naming convention (fallback)
       if (c.code.toUpperCase().startsWith("AUTO")) return false;
+
       return true;
     });
   }, [availableCoupons, autoOfferInstructions]);
@@ -811,34 +812,30 @@ const ShoppingCart = () => {
       />
 
       {isLoading ? <Loader text="Loading cart..." /> : (
-        <main className="max-w-6xl mx-auto my-4 sm:my-8 px-3 sm:px-4 w-full flex flex-col gap-6 sm:gap-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-gray-100 pt-[50px]">
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-              <FaShoppingCart className="w-6 h-6 sm:w-8 sm:h-8" /> 
-              {isBuyNowActive ? "Buy Now" : "Shopping Cart"}
-            </h1>
-            
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full md:w-auto">
+        <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
+          <div className="flex justify-between items-center pb-4 border-b border-gray-100 pt-[50px]">
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3"><FaShoppingCart /> {isBuyNowActive ? "Buy Now" : "Shopping Cart"}</h1>
+            <div className="flex items-center gap-4">
               {autoOfferInstructions.length > 0 && !isBuyNowActive && (
-                <motion.button onClick={() => setShowOffers(true)} className="relative text-gray-500 hover:text-black p-2 sm:p-0" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <FiBell className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span className="absolute top-0 right-0 sm:-top-1 sm:-right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-black text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
+                <motion.button onClick={() => setShowOffers(true)} className="relative text-gray-500 hover:text-black" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <FiBell className="w-6 h-6" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
                 </motion.button>
               )}
               {!isBuyNowActive && cart.length > 0 && (
-                <motion.button onClick={clearCart} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-3 sm:px-4 rounded-lg sm:rounded-xl cursor-pointer flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600 flex-1 md:flex-none justify-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <FaTrashAlt /> <span>Clear Cart</span>
+                <motion.button onClick={clearCart} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <FaTrashAlt /> <span className="hidden sm:inline">Clear Cart</span>
                 </motion.button>
               )}
               {isBuyNowActive && (
-                <motion.button onClick={handleExitBuyNow} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-3 sm:px-4 rounded-lg sm:rounded-xl cursor-pointer flex items-center gap-2 text-xs sm:text-sm font-medium transition-colors duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-800 flex-1 md:flex-none justify-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <FiX /> <span>Exit Buy Now</span>
+                <motion.button onClick={handleExitBuyNow} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-800" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <FiX /> <span className="hidden sm:inline">Exit Buy Now</span>
                 </motion.button>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-8">
             <motion.div layout className="flex flex-col gap-4 relative">
               <AnimatePresence mode="popLayout">
                 {itemsToRender.length > 0 ? (
@@ -849,8 +846,8 @@ const ShoppingCart = () => {
                     />
                   ))
                 ) : (
-                  <motion.div key="empty-cart-message" layout variants={itemVariants} initial="initial" animate="animate" exit="exit" transition={rigidTransition} style={gpuStyle} className="text-center p-6 sm:p-8 bg-white transition-shadow rounded-2xl">
-                    <h3 className="text-base sm:text-lg mb-2">Your cart is empty.</h3><p className="text-sm sm:text-base text-gray-500">Looks like you haven't added anything to your cart yet.</p>
+                  <motion.div key="empty-cart-message" layout variants={itemVariants} initial="initial" animate="animate" exit="exit" transition={rigidTransition} style={gpuStyle} className="text-center p-8 bg-white transition-shadow">
+                    <h3 className="text-lg mb-2">Your cart is empty.</h3><p className="text-gray-500">Looks like you haven't added anything to your cart yet.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -859,6 +856,7 @@ const ShoppingCart = () => {
             <OrderSummary
               breakdown={breakdown} loadingPrices={loadingPrices} appliedCoupon={appliedCoupon} onRemoveCoupon={() => setAppliedCoupon(null)}
               manualCouponCode={manualCouponCode} setManualCouponCode={setManualCouponCode} onManualApply={handleManualApply}
+              // CHANGE HERE: Use manualCoupons.length instead of availableCoupons.length
               availableCouponsCount={manualCoupons.length} 
               onOpenCouponModal={() => setIsCouponModalOpen(true)}
               checkoutError={checkoutError} onCheckout={handleCheckout} isBuyNowActive={isBuyNowActive}
