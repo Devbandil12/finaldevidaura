@@ -120,12 +120,14 @@ const BannerManager = () => {
   const [form, setForm] = useState({ 
     title: '', subtitle: '', imageUrl: '', link: '/products', buttonText: 'Shop Now',
     type: 'hero', layout: 'split',
-    imageLayer1: '', imageLayer2: '', poeticLine: '', description: ''
+    imageLayer1: '', imageLayer2: '', poeticLine: '', description: '',
+    // 🚀 NEW FIELDS FOR ADVANCED BANNERS
+    templateType: 'standard',
+    config: {}
   });
 
   const fetchBanners = useCallback(async () => {
     try {
-      // 🟢 SECURE: Get Token (Optional if GET is public, but good for admin views)
       const token = await getToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
@@ -149,12 +151,12 @@ const BannerManager = () => {
     const payload = { ...form, type: activeTab === 'hero' ? 'hero' : 'mid_section' };
     
     try {
-        const token = await getToken(); // 🟢 Get Token
+        const token = await getToken(); 
         const res = await fetch(`${BACKEND_URL}/api/cms/banners`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // 🔒 Attach Token
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
@@ -163,7 +165,8 @@ const BannerManager = () => {
             fetchBanners();
             setForm({ 
                 title: '', subtitle: '', imageUrl: '', link: '/products', buttonText: 'Shop Now', 
-                type: 'hero', layout: 'split', imageLayer1: '', imageLayer2: '', poeticLine: '', description: '' 
+                type: 'hero', layout: 'split', imageLayer1: '', imageLayer2: '', poeticLine: '', description: '',
+                templateType: 'standard', config: {} // 🚀 Reset new fields
             });
             if (window.toast) window.toast.success("Banner published successfully!");
         } else {
@@ -180,10 +183,10 @@ const BannerManager = () => {
   const deleteBanner = async (id) => {
     if(!window.confirm("Delete this banner?")) return;
     try {
-        const token = await getToken(); // 🟢 Get Token
+        const token = await getToken();
         await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, { 
             method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` } // 🔒 Attach Token
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         fetchBanners();
         if (window.toast) window.toast.success("Banner deleted.");
@@ -194,12 +197,12 @@ const BannerManager = () => {
 
   const toggleActive = async (id, status) => {
     try {
-        const token = await getToken(); // 🟢 Get Token
+        const token = await getToken();
         await fetch(`${BACKEND_URL}/api/cms/banners/${id}`, {
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // 🔒 Attach Token
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ isActive: !status })
         });
@@ -225,6 +228,8 @@ const BannerManager = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* HERO TAB LAYOUT SELECTOR */}
                 {activeTab === 'hero' && (
                     <div className="grid grid-cols-2 gap-3 mb-2">
                         <div onClick={() => setForm({...form, layout: 'split'})} className={`cursor-pointer p-3 rounded-2xl border transition-all duration-300 ${form.layout === 'split' ? 'bg-indigo-50/50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-slate-50 border-transparent hover:bg-slate-100'}`}>
@@ -244,11 +249,49 @@ const BannerManager = () => {
                     </div>
                 )}
 
+                {/* 🚀 NEW: MID TAB ADVANCED TEMPLATE SELECTOR */}
+                {activeTab === 'mid' && (
+                    <div className="space-y-3 p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 mb-4 animate-in fade-in">
+                        <label className="text-[10px] font-bold text-indigo-900 uppercase tracking-widest block ml-1">Select Banner Design</label>
+                        <select 
+                            value={form.templateType} 
+                            onChange={e => setForm({...form, templateType: e.target.value, config: {}})}
+                            className="w-full py-3 px-4 bg-white border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-200 shadow-sm"
+                        >
+                            <option value="standard">Standard (Image Left / Text Right)</option>
+                            <option value="coupon">Coupon Code Banner</option>
+                            <option value="countdown">Flash Sale Countdown</option>
+                            <option value="full_video">Full Width Cinematic (Image/Video)</option>
+                        </select>
+
+                        {/* DYNAMIC CONFIG FIELDS BASED ON SELECTION */}
+                        {form.templateType === 'coupon' && (
+                            <div className="flex gap-2 animate-in slide-in-from-top-2 pt-2">
+                                <div className="flex-1">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase ml-1 block mb-1">Coupon Code</label>
+                                    <input type="text" placeholder="e.g. DIWALI50" value={form.config?.couponCode || ''} onChange={e => setForm({...form, config: { ...form.config, couponCode: e.target.value }})} className="w-full pl-4 pr-4 py-3 bg-white border border-amber-200 rounded-xl text-sm font-medium" required />
+                                </div>
+                                <div className="w-16">
+                                    <label className="text-[10px] text-slate-500 font-bold uppercase ml-1 block mb-1">Color</label>
+                                    <input type="color" value={form.config?.bgColor || '#fef3c7'} onChange={e => setForm({...form, config: { ...form.config, bgColor: e.target.value }})} className="w-full h-[46px] p-1 bg-white border border-slate-200 rounded-xl cursor-pointer" title="Background Color" />
+                                </div>
+                            </div>
+                        )}
+
+                        {form.templateType === 'countdown' && (
+                            <div className="animate-in slide-in-from-top-2 pt-2">
+                                <label className="text-[10px] text-slate-500 font-bold uppercase ml-1 block mb-1">Sale End Date & Time</label>
+                                <input type="datetime-local" value={form.config?.endDate || ''} onChange={e => setForm({...form, config: { ...form.config, endDate: e.target.value }})} className="w-full pl-4 pr-4 py-3 bg-white border border-red-200 rounded-xl text-sm font-medium" required />
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="space-y-3">
                     <input type="text" placeholder="Main Title (Required)" required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full pl-4 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100" />
                     <input type="text" placeholder="Subtitle" value={form.subtitle} onChange={e => setForm({...form, subtitle: e.target.value})} className="w-full pl-4 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100" />
                     
-                    {form.layout === 'split' && (
+                    {form.layout === 'split' && activeTab === 'hero' && (
                         <div className="space-y-3 pt-2 animate-in slide-in-from-top-2">
                             <input type="text" placeholder="Poetic Line (e.g. Build A Legacy)" value={form.poeticLine} onChange={e => setForm({...form, poeticLine: e.target.value})} className="w-full pl-4 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100" />
                             <textarea placeholder="Description Text" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full pl-4 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-100 h-20 resize-none" />
@@ -263,9 +306,9 @@ const BannerManager = () => {
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
                     <div className="col-span-2">
-                        <ImageUploadBox label={form.layout === 'full' ? "Main Banner" : "Main Bottle"} field="imageUrl" value={form.imageUrl} onUpload={handleImageSelect} uploading={uploading} />
+                        <ImageUploadBox label={form.layout === 'full' || activeTab === 'mid' ? "Main Banner Image/Video" : "Main Bottle"} field="imageUrl" value={form.imageUrl} onUpload={handleImageSelect} uploading={uploading} />
                     </div>
-                    {form.layout === 'split' && (
+                    {form.layout === 'split' && activeTab === 'hero' && (
                         <>
                             <ImageUploadBox label="Layer 1 (Back)" field="imageLayer1" value={form.imageLayer1} onUpload={handleImageSelect} uploading={uploading} />
                             <ImageUploadBox label="Layer 2 (Front)" field="imageLayer2" value={form.imageLayer2} onUpload={handleImageSelect} uploading={uploading} />
@@ -284,13 +327,21 @@ const BannerManager = () => {
             {currentBanners.map((b, idx) => (
                 <div key={b.id} className="bg-white p-4 rounded-3xl shadow-[0_5px_20px_-5px_rgba(0,0,0,0.03)] border border-slate-50 flex flex-col group hover:shadow-md transition-all">
                     <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-slate-50 mb-4 group-hover:ring-4 group-hover:ring-slate-50 transition-all">
-                        <img src={b.imageUrl} className="w-full h-full object-cover" alt={b.title} />
+                        {/* Support Video Previews for Full Video Banners */}
+                        {b.imageUrl?.match(/\.(mp4|webm|ogg)$/i) ? (
+                             <video src={b.imageUrl} className="w-full h-full object-cover" muted />
+                        ) : (
+                             <img src={b.imageUrl} className="w-full h-full object-cover" alt={b.title} />
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 backdrop-blur-[1px]">
                             <button onClick={()=>toggleActive(b.id, b.isActive)} className="w-10 h-10 rounded-full bg-white text-indigo-600 shadow-lg flex items-center justify-center hover:scale-110 transition-transform">{b.isActive ? <Eye size={18}/> : <EyeOff size={18}/>}</button>
                             <button onClick={()=>deleteBanner(b.id)} className="w-10 h-10 rounded-full bg-white text-red-500 shadow-lg flex items-center justify-center hover:scale-110 transition-transform"><Trash2 size={18} /></button>
                         </div>
+                        {/* 🚀 NEW: Dynamic Tag label based on template/type */}
                         <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-600 shadow-sm">
-                            {b.layout === 'split' ? '3D Split' : 'Full Banner'}
+                            {b.type === 'hero' 
+                                ? (b.layout === 'split' ? '3D Split' : 'Full Hero') 
+                                : (b.templateType === 'coupon' ? 'Coupon Banner' : b.templateType === 'countdown' ? 'Flash Sale' : b.templateType === 'full_video' ? 'Video Banner' : 'Standard Mid')}
                         </div>
                     </div>
                     <h4 className="font-bold text-slate-800 text-lg truncate leading-tight">{b.title}</h4>

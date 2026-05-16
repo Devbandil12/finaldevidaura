@@ -102,6 +102,7 @@ const Home = () => {
       </div>
 
       <MidSectionBanner index={1} />
+      <MidSectionBanner index={2} />
 
       <div id="custom-combo-section">
         <CustomComboBuilder isStandalone={false} />

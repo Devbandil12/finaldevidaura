@@ -109,11 +109,8 @@ const SidebarItem = memo(({ icon: Icon, label, to, onClick, badge }) => {
   );
 });
 
-// --- ⚡ OPTIMIZATION: Memoized Notification Item ---
-// Extracts logic from the map loop to prevent full list repaints on parent re-renders
+// --- Memoized Notification Item ---
 const NotificationItem = memo(({ notif, onNavigate }) => {
-
-  // Use a callback here to ensure the handler is stable
   const handleClick = useCallback(() => {
     onNavigate(notif.link);
   }, [onNavigate, notif.link]);
@@ -210,7 +207,6 @@ const Navbar = ({ onVisibilityChange }) => {
     document.documentElement.style.overflow = 'hidden';
   }, []);
 
-  // ⚡ STABLE HANDLER FOR NOTIFICATIONS
   const handleNotificationClick = useCallback((link) => {
     navigate(link || '/');
     setIsNotificationOpen(false);
@@ -382,15 +378,19 @@ const Navbar = ({ onVisibilityChange }) => {
 
   const isHomePage = location.pathname === "/";
   const navbarTransitionClass = "transition-[transform,width,border-radius,background-color,top,box-shadow,padding] duration-[400ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)]";
-  const navbarBaseClass = `fixed left-0 right-0 mx-auto flex items-center justify-between z-[9999] pointer-events-auto backface-hidden antialiased will-change-[transform,width,border-radius,background-color,top] ${navbarTransitionClass}
-  ${!isHomePage ? "max-[750px]:!bg-white" : ""}`;
+  
+  // Adjusted responsive classes for container
+  const navbarBaseClass = `fixed left-0 right-0 mx-auto flex items-center justify-between z-[9999] pointer-events-auto backface-hidden antialiased will-change-[transform,width,border-radius,background-color,top] ${navbarTransitionClass} ${!isHomePage ? "max-[850px]:!bg-white" : ""}`;
 
+  // Reverted the scroll width to stay wide (95-96%) while keeping the padding adjustments
   const navbarStateClass = isScrolled
-    ? `w-[95%] max-w-[1440px] h-[60px] top-[10px] rounded-[50px] px-[25px] bg-white/70 backdrop-blur-[8px] saturate-[180%] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-black max-[885px]:px-[0.8rem]`
-    : `w-full h-[60px] top-0 px-[2rem] pt-[0.7rem] rounded-none bg-transparent max-[885px]:px-[0.8rem]`;
+    ? `w-[95%] sm:w-[96%] max-w-[1440px] h-[60px] top-[10px] rounded-[50px] px-[15px] md:px-[25px] lg:px-[30px] bg-white/70 backdrop-blur-[8px] saturate-[180%] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] text-black`
+    : `w-full h-[60px] top-0 px-[15px] md:px-[2rem] lg:px-[3rem] pt-[0.7rem] rounded-none bg-transparent`;
 
   const textColorClass = !isScrolled ? "text-black mix-blend-normal shadow-none" : "text-black shadow-none font-normal";
-  const iconBtnClass = `group relative inline-flex items-center justify-center border-none bg-transparent cursor-pointer p-[8px] rounded-full transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] hover:bg-black/6 hover:scale-115 active:scale-95 ${!isScrolled ? "text-black" : "text-black hover:bg-black/8"}`;
+  
+  // Icon Button Class with dynamic padding
+  const iconBtnClass = `group relative inline-flex items-center justify-center border-none bg-transparent cursor-pointer p-[5px] min-[400px]:p-[6px] sm:p-[8px] lg:p-[10px] rounded-full transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] hover:bg-black/6 hover:scale-115 active:scale-95 ${!isScrolled ? "text-black" : "text-black hover:bg-black/8"}`;
 
   return (
     <header ref={navRef} className="w-full flex justify-center items-center z-[9999]">
@@ -401,21 +401,25 @@ const Navbar = ({ onVisibilityChange }) => {
           transform: navbarVisible ? "translateY(0)" : "translateY(-180%)",
         }}
       >
-        <div className={`part-1 nav-brand flex items-center text-[1.5rem] pl-0 shrink-0 max-[885px]:text-[1.2rem] max-[700px]:text-[1rem] ${textColorClass}`}>
-          <Link to="/" className="logo no-underline cursor-pointer max-[700px]:text-[1.2rem]">
-            <h1 className="pl-[10px] text-[1.6rem] tracking-[0.5px] m-0 max-[885px]:text-[1.5rem] max-[300px]:text-[1.3rem] !text-black">DEVID AURA</h1>
+        {/* Brand Container */}
+        <div className={`part-1 nav-brand flex items-center shrink-0 z-10 ${textColorClass}`}>
+          <Link to="/" className="logo no-underline cursor-pointer">
+            <h1 className="text-[1.3rem] sm:text-[1.5rem] md:text-[1.6rem] tracking-[0.5px] m-0 !text-black whitespace-nowrap">
+              DEVID AURA
+            </h1>
           </Link>
         </div>
 
-        <div className="part-2 absolute left-1/2 -translate-x-1/2 w-auto flex items-center justify-center max-[750px]:hidden">
-          <ul className="nav-links flex gap-[3rem] m-0 p-0 list-none max-[1095px]:gap-[1.2rem] max-[885px]:gap-[1.5rem]">
+        {/* Desktop Links Container */}
+        <div className="part-2 absolute left-1/2 -translate-x-1/2 w-auto hidden min-[850px]:flex items-center justify-center">
+          <ul className="nav-links flex gap-[1.2rem] lg:gap-[2.5rem] xl:gap-[3rem] m-0 p-0 list-none">
             {["Home", "Shop", "Build Combo", "Our Story"].map((text, idx) => {
               const paths = ["/", "/products", "/custom-combo", "/about"];
               return (
-                <li key={text} className="text-[1.2rem] cursor-pointer">
+                <li key={text} className="text-[1.1rem] lg:text-[1.2rem] cursor-pointer">
                   <Link
                     to={paths[idx]}
-                    className={`relative text-[16px] no-underline font-[200] !text-black transition-all
+                    className={`relative text-[15px] lg:text-[16px] no-underline font-[200] !text-black transition-all
                             after:content-[''] after:absolute after:left-0 after:-bottom-[2px] after:w-0 after:h-[1px] after:transition-[width] after:duration-500 after:ease-in-out hover:after:w-full
                             ${!isScrolled ? "after:bg-black after:shadow-none" : "after:bg-black text-black"}`}
                     style={{ color: '#000000' }}
@@ -428,14 +432,15 @@ const Navbar = ({ onVisibilityChange }) => {
           </ul>
         </div>
 
-        <div className="part-3 flex justify-end shrink-0 items-center">
-          <motion.div className="icons flex items-center gap-[6px]" layout transition={springConfig}>
-
-            <motion.div layout className="wishlist-icon flex items-center max-[750px]:hidden">
+        {/* Right Icons Container */}
+        <div className="part-3 flex justify-end shrink-0 items-center z-10">
+          <motion.div className="icons flex items-center gap-[2px] min-[400px]:gap-[4px] sm:gap-[6px] lg:gap-[10px]" layout transition={springConfig}>
+            
+            <motion.div layout className="wishlist-icon flex items-center max-[850px]:hidden">
               <Link to="/wishlist" id="wishlist-icon" className={iconBtnClass} aria-label={`Wishlist (${wishCount})`}>
-                <img className="w-[24px] h-[24px] object-contain brightness-0" src={WishlistIcon} alt="wishlist" />
+                <img className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] object-contain brightness-0" src={WishlistIcon} alt="wishlist" />
                 {wishCount > 0 && (
-                  <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
+                  <span className="badge absolute top-[4px] right-[4px] sm:top-[6px] sm:right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
                     {wishCount}
                   </span>
                 )}
@@ -444,9 +449,9 @@ const Navbar = ({ onVisibilityChange }) => {
 
             <motion.div layout className="cart-icon flex items-center">
               <Link to="/cart" id="cart-icon" className={iconBtnClass} aria-label={`Cart (${cartCount})`}>
-                <ShoppingCart strokeWidth={1.2} className="w-[24px] h-[24px] stroke-black text-black" />
+                <ShoppingCart strokeWidth={1.2} className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] stroke-black text-black" />
                 {cartCount > 0 && (
-                  <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
+                  <span className="badge absolute top-[4px] right-[4px] sm:top-[6px] sm:right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
                     {cartCount}
                   </span>
                 )}
@@ -454,20 +459,20 @@ const Navbar = ({ onVisibilityChange }) => {
             </motion.div>
 
             {isLoggedIn && (
-              <motion.div layout className="notification-wrapper flex items-center" ref={notificationRef}>
+              <motion.div layout className="notification-wrapper flex items-center relative" ref={notificationRef}>
                 <div className="notification-icon">
                   <button onClick={toggleNotification} className={iconBtnClass} aria-label={`Notifications (${unreadCount})`}>
-                    <Bell strokeWidth={1.3} className="w-[24px] h-[24px] stroke-black text-black" />
+                    <Bell strokeWidth={1.3} className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] stroke-black text-black" />
                     {unreadCount > 0 && (
-                      <span className="badge absolute top-[6px] right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
+                      <span className="badge absolute top-[4px] right-[4px] sm:top-[6px] sm:right-[6px] flex items-center justify-center min-w-[10px] h-[12px] px-[3px] text-[8px] font-semibold text-white bg-black rounded-full text-center border border-white shadow-none">
                         {unreadCount}
                       </span>
                     )}
                   </button>
                 </div>
                 <div
-                  className={`profile-content notification-dropdown absolute top-[60px] right-0 max-[750px]:right-[50px] bg-white rounded-[16px] min-w-[300px] max-w-[300px] min-h-[350px] max-h-[350px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000]
-                    ${isNotificationOpen ? "opacity-100 translate-y-0 scale-100 visible" : "opacity-0 -translate-y-[10px] scale-[0.98] invisible"}`}
+                  className={`profile-content notification-dropdown absolute top-[55px] right-[-10px] sm:right-0 bg-white rounded-[16px] w-[90vw] max-w-[320px] sm:w-[300px] sm:min-w-[300px] min-h-[350px] max-h-[350px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000]
+                  ${isNotificationOpen ? "opacity-100 translate-y-0 scale-100 visible" : "opacity-0 -translate-y-[10px] scale-[0.98] invisible"}`}
                   id="notificationContent"
                 >
                   <div className="notification-header flex justify-between items-center p-[12px_16px] bg-[#fafafa] border-b border-[#f0f0f0a3] shadow-[0_4px_12px_rgba(53,52,52,0.055)]">
@@ -493,7 +498,6 @@ const Navbar = ({ onVisibilityChange }) => {
                           <React.Fragment key={groupKey}>
                             <li className="notification-group-header p-[3px_12px] !important text-[10px] font-bold text-[#6c757d] bg-white pointer-events-none"><a>{groupKey}</a></li>
                             {groupedNotifications[groupKey].map(notif => (
-                              // ⚡ USE MEMOIZED ITEM COMPONENT HERE
                               <NotificationItem
                                 key={notif.id}
                                 notif={notif}
@@ -508,7 +512,7 @@ const Navbar = ({ onVisibilityChange }) => {
               </motion.div>
             )}
 
-            <motion.div layout className="auth-item-container flex items-center justify-center min-w-[44px] max-[750px]:hidden" ref={profileWrapperRef}>
+            <motion.div layout className="auth-item-container flex items-center justify-center min-w-[44px] max-[850px]:hidden relative" ref={profileWrapperRef}>
               <AnimatePresence mode="popLayout" initial={false} >
                 {isLoggedIn ? (
                   <motion.div
@@ -517,16 +521,16 @@ const Navbar = ({ onVisibilityChange }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.2 }}
-                    className="profile-wrapper flex items-center max-[750px]:hidden"
+                    className="profile-wrapper flex items-center"
                   >
                     <div className="profile-icon" id="profile-btn">
                       <button id="profileButton" className={iconBtnClass} onClick={toggleProfile} aria-expanded={isProfileOpen} aria-label="User Profile">
-                        <img src={ProfileIcon} alt="Profile" className="w-[24px] h-[24px] object-contain brightness-0" />
+                        <img src={ProfileIcon} alt="Profile" className="w-[22px] h-[22px] sm:w-[24px] sm:h-[24px] object-contain brightness-0" />
                       </button>
                     </div>
                     <div className="profile-container">
                       <div
-                        className={`profile-content absolute top-[60px] right-0 bg-white rounded-[16px] min-w-[300px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000] 
+                        className={`profile-content absolute top-[55px] right-[-10px] sm:right-0 bg-white rounded-[16px] w-[90vw] max-w-[320px] sm:w-[300px] sm:min-w-[300px] p-0 border border-[#f0f0f0] shadow-[0_12px_32px_rgba(0,0,0,0.1)] overflow-hidden origin-top-right will-change-[transform,opacity] transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-[1000] 
                         ${isProfileOpen ? "opacity-100 translate-y-0 scale-100 visible" : "opacity-0 -translate-y-[10px] scale-[0.98] invisible"}`}
                         id="profileContent"
                       >
@@ -534,14 +538,14 @@ const Navbar = ({ onVisibilityChange }) => {
                           <img src={userdetails?.profileImage || user?.imageUrl || UserIcon} alt="User" className="mob-profile-img w-[50px] h-[50px] rounded-full object-cover border-[2px] border-white shadow-[0_0_0_1px_#e0e0e0]" />
                           <div className="user-data flex flex-col gap-[2px] items-start min-w-0">
                             <div className="user-name-role flex items-center gap-[8px]">
-                              <h3 id="profile-name" className="text-[16px] font-[600] text-[#1a1a1a] m-0 shadow-none">{userdetails?.name}</h3>
+                              <h3 id="profile-name" className="text-[16px] font-[600] text-[#1a1a1a] m-0 shadow-none truncate">{userdetails?.name}</h3>
                               {userdetails?.role && (
                                 <span className={`user-role-badge text-[10px] font-[700] p-[3px_10px] rounded-full uppercase leading-none ${userdetails.role === "admin" ? "bg-[#fef9c3] text-[#854d0e]" : "bg-[#eef2ff] text-[#4338ca]"}`}>
                                   {userdetails.role}
                                 </span>
                               )}
                             </div>
-                            <p id="profile-email" className="text-[13px] text-[#666] font-[400] m-0 whitespace-nowrap overflow-hidden text-ellipsis shadow-none">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
+                            <p id="profile-email" className="text-[13px] text-[#666] font-[400] m-0 whitespace-nowrap overflow-hidden text-ellipsis shadow-none w-full max-w-[180px]">{user?.primaryEmailAddress?.emailAddress || "NA"}</p>
                           </div>
                         </div>
                         <ul className="list-none m-0 p-[8px]">
@@ -592,7 +596,7 @@ const Navbar = ({ onVisibilityChange }) => {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
-                    className="nav-signin-btn flex items-center gap-[8px] bg-black text-white border-none py-[8px] px-[20px] rounded-full text-[14px] font-[600] cursor-pointer transition-all duration-200 ml-[10px] whitespace-nowrap hover:bg-[#333333] hover:scale-102 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] max-[700px]:hidden"
+                    className="nav-signin-btn flex items-center gap-[8px] bg-black text-white border-none py-[8px] px-[20px] rounded-full text-[14px] font-[600] cursor-pointer transition-all duration-200 ml-[10px] whitespace-nowrap hover:bg-[#333333] hover:scale-102 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
                     onClick={openAuthModal}
                   >
                     <img src={ProfileIcon} alt="" aria-hidden="true" className="w-[18px] h-[18px] object-contain brightness-0 invert" />
@@ -602,147 +606,147 @@ const Navbar = ({ onVisibilityChange }) => {
               </AnimatePresence>
             </motion.div>
 
-            <div className="part-1 text-[1.5rem] flex items-center pl-0 shrink-0 max-[885px]:text-[1.2rem] max-[750px]:text-[1rem]">
-              <div className="mobile-view hidden max-[750px]:block">
-                <div className="menu-icon flex items-center relative z-[99999] pr-0">
-                  <button
-                    ref={hamburgerRef}
-                    className="hamburger-btn bg-none border-none p-0 cursor-pointer relative pointer-events-auto"
-                    id="hamburger-toggle"
-                    aria-label={isOpen ? "Close menu" : "Open menu"}
-                    aria-expanded={isOpen}
-                    onClick={(e) => { toggleSidebar(e); }}
-                  >
-                    <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
-                      <div
-                        className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
-                        ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
-                        style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
-                      />
-                      <div
-                        className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
-                        ${isOpen ? "" : "w-[35px]"}`}
-                        style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
-                      />
-                      <div
-                        className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
-                        ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
-                        style={isOpen ? { transform: 'rotate(-135deg) translateY(255%)', backgroundColor: 'black', width: '21px' } : {}}
-                      />
-                    </div>
-                  </button>
+            {/* Mobile Hamburger Wrapper */}
+            <motion.div layout className="mobile-view flex items-center min-[850px]:hidden ml-1 sm:ml-2">
+              <div className="menu-icon flex items-center relative z-[99999]">
+                <button
+                  ref={hamburgerRef}
+                  className="hamburger-btn bg-none border-none p-0 cursor-pointer relative pointer-events-auto"
+                  id="hamburger-toggle"
+                  aria-label={isOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isOpen}
+                  onClick={(e) => { toggleSidebar(e); }}
+                >
+                  <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
+                    <div
+                      className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
+                      ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
+                      style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
+                    />
+                    <div
+                      className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
+                      ${isOpen ? "" : "w-[35px]"}`}
+                      style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
+                    />
+                    <div
+                      className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
+                      ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
+                      style={isOpen ? { transform: 'rotate(-135deg) translateY(255%)', backgroundColor: 'black', width: '21px' } : {}}
+                    />
+                  </div>
+                </button>
 
-                  {createPortal(
-                    <aside
-                      ref={sidebarScopeRef}
-                      className={`sidebar flex flex-col justify-between fixed top-0 right-0 bottom-0 h-[100dvh] w-[70vw] max-w-[300px] bg-white text-white overflow-hidden z-[99999] pointer-events-auto shadow-[0_8px_28px_rgba(0,0,0,0.12)] mt-0 p-0 rounded-none rounded-tl-[30px] rounded-bl-[30px] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
-                      ${isOpen ? "translate-x-0" : "translate-x-full"}`}
-                      id="sidebar"
-                      role="dialog"
-                      aria-modal={isOpen}
-                      aria-label="Mobile Navigation Menu"
-                    >
-                      <div className="menu-icon flex items-center wifull p-[1rem] pl-[1.4rem] pt-[1.38rem] pb-[0.8rem] justify-start">
-                        <button
-                          ref={hamburgerRef}
-                          className="hamburger-btn bg-none border-none p-0 cursor-pointer relative pointer-events-auto"
-                          id="hamburger-toggle"
-                          aria-label={isOpen ? "Close menu" : "Open menu"}
-                          aria-expanded={isOpen}
-                          onClick={(e) => { toggleSidebar(e); }}
-                        >
-                          <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
-                            <div
-                              className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
-                        ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
-                              style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
-                            />
-                            <div
-                              className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
-                        ${isOpen ? "" : "w-[35px]"}`}
-                              style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
-                            />
-                            <div
-                              className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
-                        ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
-                              style={isOpen ? { transform: 'rotate(-135deg) translateY(255%)', backgroundColor: 'black', width: '21px' } : {}}
-                            />
+                {createPortal(
+                  <aside
+                    ref={sidebarScopeRef}
+                    className={`sidebar flex flex-col justify-between fixed top-0 right-0 bottom-0 h-[100dvh] w-[85vw] max-w-[350px] bg-white text-white overflow-hidden z-[99999] pointer-events-auto shadow-[0_8px_28px_rgba(0,0,0,0.12)] mt-0 p-0 rounded-none rounded-tl-[30px] rounded-bl-[30px] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] 
+                    ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                    id="sidebar"
+                    role="dialog"
+                    aria-modal={isOpen}
+                    aria-label="Mobile Navigation Menu"
+                  >
+                    <div className="menu-icon flex items-center w-full p-[1rem] pl-[1.4rem] pt-[1.38rem] pb-[0.8rem] justify-start">
+                      <button
+                        ref={hamburgerRef}
+                        className="hamburger-btn bg-none border-none p-0 cursor-pointer relative pointer-events-auto"
+                        id="hamburger-toggle"
+                        aria-label={isOpen ? "Close menu" : "Open menu"}
+                        aria-expanded={isOpen}
+                        onClick={(e) => { toggleSidebar(e); }}
+                      >
+                        <div className={`hamburger w-[35px] h-[25px] flex flex-col justify-between items-center transition-transform duration-500 ease-linear ${isOpen ? "active" : ""}`}>
+                          <div
+                            className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
+                            ${isOpen ? "" : "w-[17.5px] -translate-x-1/2"}`}
+                            style={isOpen ? { transform: 'rotate(-135deg) translateY(-240%)', backgroundColor: 'black', width: '18.5px' } : {}}
+                          />
+                          <div
+                            className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full 
+                            ${isOpen ? "" : "w-[35px]"}`}
+                            style={isOpen ? { transform: 'rotate(-45deg)', backgroundColor: 'black', width: '35px' } : {}}
+                          />
+                          <div
+                            className={`line h-[3px] bg-black transition-all duration-500 ease-linear rounded-full origin-center
+                            ${isOpen ? "" : "w-[17.5px] translate-x-1/2"}`}
+                            style={isOpen ? { transform: 'rotate(-135deg) translateY(255%)', backgroundColor: 'black', width: '21px' } : {}}
+                          />
+                        </div>
+                      </button>
+                    </div>
+                    <header className="sidebar-header pt-[0px] sticky top-0 z-[10] p-[1rem_1.5rem] border-b border-[#f0f0f0] border-t border-[#f0f0f0] bg-white flex flex-col">
+                      <div className="sidebar-top flex justify-between items-start mb-[1rem] pt-[5px]">
+                        <div className="sidebar-user-details flex items-center text-left">
+                          <img
+                            src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon}
+                            alt=""
+                            className="user-avatar w-[56px] h-[56px] rounded-[10%] object-cover mr-[1rem] shadow-[0_0_0_2px_#fff]"
+                          />
+                          <div className="user-info flex flex-col items-start text-left min-w-0">
+                            <h4 className="text-[1.15rem] font-[700] m-0 !text-[#1a1a1a] leading-[1.2] break-words shadow-none">
+                              {isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}
+                            </h4>
+                            <p className="user-email text-[0.8rem] !text-[#6b6b6b] m-[0.1rem_0_0_0] whitespace-nowrap overflow-hidden text-ellipsis w-[180px] sm:w-[200px] shadow-none">
+                              {isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login'}
+                            </p>
                           </div>
+                        </div>
+                      </div>
+
+                      <div className="sidebar-actions">
+                        <button
+                          className={`sidebar-action-btn w-full p-[0.5rem_0.75rem] text-[0.95rem] font-[600] rounded-[16px] cursor-pointer capitalize transition-all duration-200 
+                          ${isLoggedIn
+                              ? 'sidebar-view-account bg-black text-white border-none hover:bg-[#333]'
+                              : 'sidebar-signin bg-white text-[#222] border border-[#ccc] hover:bg-[#f5f5f5]'}`}
+                          onClick={() => {
+                            if (isLoggedIn) { navigate('/myaccount'); closeSidebar(); }
+                            else { openAuthModal(); closeSidebar(); }
+                          }}
+                        >
+                          {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
                         </button>
                       </div>
-                      <header className="sidebar-header pt-[0px] sticky top-0 z-[10] p-[1rem_1.5rem] border-b border-[#f0f0f0]  border-t border-[#f0f0f0] bg-white flex flex-col">
-                        <div className="sidebar-top flex justify-between items-start mb-[1rem] pt-[5px]">
-                          <div className="sidebar-user-details flex items-center text-left">
-                            <img
-                              src={isLoggedIn ? userdetails?.profileImage || user?.imageUrl || UserIcon : UserIcon}
-                              alt=""
-                              className="user-avatar w-[56px] h-[56px] rounded-[10%] object-cover mr-[1rem] shadow-[0_0_0_2px_#fff]"
-                            />
-                            <div className="user-info flex flex-col items-start text-left min-w-0">
-                              <h4 className="text-[1.15rem] font-[700] m-0 !text-[#1a1a1a] leading-[1.2] break-words shadow-none">
-                                {isLoggedIn ? (userdetails?.name || user?.fullName) : 'Guest'}
-                              </h4>
-                              <p className="user-email text-[0.8rem] !text-[#6b6b6b] m-[0.1rem_0_0_0] whitespace-nowrap max-w-full shadow-none">
-                                {isLoggedIn ? user?.primaryEmailAddress?.emailAddress : 'Login'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                    </header>
 
-                        <div className="sidebar-actions">
-                          <button
-                            className={`sidebar-action-btn w-full p-[0.5rem_0.75rem] text-[0.95rem] font-[600] rounded-[16px] cursor-pointer capitalize transition-all duration-200 
-                            ${isLoggedIn
-                                ? 'sidebar-view-account bg-black text-white border-none hover:bg-[#333]'
-                                : 'sidebar-signin bg-white text-[#222] border border-[#ccc] hover:bg-[#f5f5f5]'}`}
-                            onClick={() => {
-                              if (isLoggedIn) { navigate('/myaccount'); closeSidebar(); }
-                              else { openAuthModal(); closeSidebar(); }
-                            }}
-                          >
-                            {isLoggedIn ? 'View Profile' : 'Login / Sign Up'}
-                          </button>
-                        </div>
-                      </header>
+                    <nav className="sidebar-nav p-[1rem_0] grow overflow-y-auto ">
+                      <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
+                        <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</div>
+                        <ul className="list-none m-0 p-0">
+                          {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
+                        </ul>
+                      </div>
+                      <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
+                        <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Account</div>
+                        <ul className="list-none m-0 p-0">
+                          {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} to={l.to} onClick={l.onClick} />))}
+                          {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} to={'/admin'} onClick={() => { closeSidebar(); }} />)}
+                        </ul>
+                      </div>
+                      <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
+                        <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Support</div>
+                        <ul className="list-none m-0 p-0">
+                          {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
+                        </ul>
+                      </div>
+                    </nav>
 
-                      <nav className="sidebar-nav p-[1rem_0] grow overflow-y-auto ">
-                        <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Explore</div>                          <ul className="list-none m-0 p-0">
-                            {primaryLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
-                          </ul>
-                        </div>
-                        <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Account</div>
-                          <ul className="list-none m-0 p-0">
-                            {accountLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} badge={l.badge} to={l.to} onClick={l.onClick} />))}
-                            {isLoggedIn && userdetails?.role === 'admin' && (<SidebarItem icon={AdminIcon} label={'Admin Panel'} to={'/admin'} onClick={() => { closeSidebar(); }} />)}
-                          </ul>
-                        </div>
-                        <div className="sidebar-section mb-[1.4rem] mt-[0.5rem]">
-                          <div role="heading" aria-level="3" className="section-title text-[1rem] font-[600] text-[#888] uppercase tracking-[0.5px] p-[0_1.5rem_0.5rem_1.5rem] mt-0 shadow-none">Support</div>
-                          <ul className="list-none m-0 p-0">
-                            {supportLinks.map((l) => (<SidebarItem key={l.label} icon={l.icon} label={l.label} to={l.to} onClick={l.onClick} />))}
-                          </ul>
-                        </div>
-                      </nav>
-
-                      {isLoggedIn && (
-                        <footer className="sidebar-footer p-[1rem_1.5rem] border-t border-[#f0f0f0] text-left">
-                          <button
-                            onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: '/' }); closeSidebar(); }}
-                            className="flex items-center gap-[0.75rem] bg-none border-none text-[1rem] cursor-pointer !text-[#d11] font-[700] shadow-none"
-                          >
-                            <img src={LogOutIcon} alt="Log out" className="w-[20px]" />
-                            <span>Log Out</span>
-                          </button>
-                        </footer>
-                      )}
-                    </aside>,
-                    document.body
-                  )}
-                </div>
+                    {isLoggedIn && (
+                      <footer className="sidebar-footer p-[1rem_1.5rem] border-t border-[#f0f0f0] text-left">
+                        <button
+                          onClick={async (e) => { e.preventDefault(); await signOut({ redirectUrl: '/' }); closeSidebar(); }}
+                          className="flex items-center gap-[0.75rem] bg-none border-none text-[1rem] cursor-pointer !text-[#d11] font-[700] shadow-none"
+                        >
+                          <img src={LogOutIcon} alt="Log out" className="w-[20px]" />
+                          <span>Log Out</span>
+                        </button>
+                      </footer>
+                    )}
+                  </aside>,
+                  document.body
+                )}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </nav>
