@@ -66,7 +66,7 @@ const Home = () => {
     <AuraFinder />
       {/* Admin Modal - Luxury Style */}
       {showAdminModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
           <div className="w-[90%] max-w-md transform overflow-hidden rounded-2xl bg-white p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] ring-1 ring-gray-900/5 transition-all">
             <h2 className="font-cormorant text-3xl font-medium text-gray-900 mb-6">Admin Dashboard</h2>
 
@@ -92,8 +92,8 @@ const Home = () => {
       )}
 
       <HeroSection />
-      <DualMarquee />
       <MidSectionBanner index={0} />
+      <DualMarquee />
 
       <div id="scents-section"><ProductShowcaseCarousel /></div>
       
@@ -102,14 +102,16 @@ const Home = () => {
       </div>
 
       <MidSectionBanner index={1} />
-      <MidSectionBanner index={2} />
 
       <div id="custom-combo-section">
         <CustomComboBuilder isStandalone={false} />
       </div>
+      <MidSectionBanner index={2} />
 
       <div id="about-section"><AboutUs /></div>
+      <MidSectionBanner index={3} />
       <TestimonialsSection />
+      <MidSectionBanner index={4} />
     </>
   );
 };

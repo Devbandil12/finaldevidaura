@@ -2,9 +2,11 @@
 @font-face {
   font-family: 'Manrope';
   src: url('/fonts/Manrope-VariableFont_wght.woff2') format('woff2');
-  font-weight: 200 800; /* Defines the available range */
+  font-weight: 200 800;
+  /* Defines the available range */
   font-style: normal;
-  font-display: block; /* Critical for LCP: Shows text immediately */
+  font-display: block;
+  /* Critical for LCP: Shows text immediately */
 }
 
 /* 2. Cormorant Garamond (Variable Normal: Weights 300-700) */
@@ -24,6 +26,7 @@
   font-style: italic;
   font-display: block;
 }
+
 @import "tailwindcss";
 
 /* ⚡️ PERFORMANCE OPTIMIZATION LAYER */
@@ -40,7 +43,16 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     /* Use optimizeSpeed if still laggy */
-    background-color: var(--color-off-white);
+    background: radial-gradient(circle at top left,
+        rgba(255, 255, 255, 0.95),
+        transparent 35%),
+      radial-gradient(circle at bottom right,
+        rgba(212, 184, 122, 0.35),
+        transparent 40%),
+      linear-gradient(135deg,
+        #FCFAF7 0%,
+        #F3E9DC 45%,
+        #E5D1B2 100%);
     color: var(--color-black);
     font-family: "Manrope", sans-serif;
     overflow-x: hidden;
@@ -332,9 +344,10 @@ p {
 .smooth-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch; 
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
+
 .smooth-scrollbar::-webkit-scrollbar {
   display: none;
 }
