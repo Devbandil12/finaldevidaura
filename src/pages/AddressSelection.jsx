@@ -15,6 +15,12 @@ const smoothTransition = {
   duration: 0.4
 };
 
+// Regex helper to validate 10-digit Indian phone numbers
+const isValidPhone = (phone) => {
+  const phoneRegex = /^[6-9]\d{9}$/;
+  return phoneRegex.test(phone);
+};
+
 const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddress, editAddress, deleteAddress }) => {
     const fullAddress = [addr.address, addr.landmark, `${addr.city}, ${addr.state} - ${addr.postalCode}`].filter(Boolean).join(", ");
     const isSelected = selectedIndex === index;
@@ -216,8 +222,22 @@ export default function AddressSelection({ userId, onSelect }) {
     if (!userId) {
       return window.toast.error("User ID is missing. Please try again.");
     }
+    
+    // Check required fields
     if (!formAddress.name || !formAddress.phone || !formAddress.address || !formAddress.city || !formAddress.state || !formAddress.postalCode) {
       setFormError("Please fill all required fields marked with *.");
+      return;
+    }
+
+    // Strict phone number validation
+    if (!isValidPhone(formAddress.phone)) {
+      setFormError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    // Strict alternate phone validation (if provided)
+    if (formAddress.altPhone && !isValidPhone(formAddress.altPhone)) {
+      setFormError("Please enter a valid 10-digit alternate mobile number.");
       return;
     }
 
@@ -435,14 +455,42 @@ export default function AddressSelection({ userId, onSelect }) {
                   <input id="name" value={formAddress.name} onChange={(e) => updateFormAddress("name", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="name" className="floating-label">Full Name *</label>
                 </div>
+                
+                {/* 🟢 PHONE INPUT - Enforces numbers and maxlength */}
                 <div className="relative">
-                  <input id="phone" type="tel" value={formAddress.phone} onChange={(e) => updateFormAddress("phone", e.target.value)} className="form-input peer w-full" placeholder=" " required />
+                  <input 
+                    id="phone" 
+                    type="tel" 
+                    maxLength="10"
+                    value={formAddress.phone} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      updateFormAddress("phone", val);
+                    }} 
+                    className="form-input peer w-full" 
+                    placeholder=" " 
+                    required 
+                  />
                   <label htmlFor="phone" className="floating-label">Phone *</label>
                 </div>
+
+                {/* 🟢 ALT PHONE INPUT - Enforces numbers and maxlength */}
                 <div className="relative">
-                   <input id="altPhone" type="tel" value={formAddress.altPhone || ""} onChange={(e) => updateFormAddress("altPhone", e.target.value)} className="form-input peer w-full" placeholder=" " />
+                   <input 
+                     id="altPhone" 
+                     type="tel" 
+                     maxLength="10"
+                     value={formAddress.altPhone || ""} 
+                     onChange={(e) => {
+                       const val = e.target.value.replace(/\D/g, '');
+                       updateFormAddress("altPhone", val);
+                     }} 
+                     className="form-input peer w-full" 
+                     placeholder=" " 
+                   />
                    <label htmlFor="altPhone" className="floating-label">Alternate Phone</label>
                 </div>
+
                 <div className="relative sm:col-span-2">
                   <input id="address" value={formAddress.address || ""} onChange={(e) => updateFormAddress("address", e.target.value)} className="form-input peer w-full" placeholder=" " required />
                   <label htmlFor="address" className="floating-label">Address (House No, Building, Street, Area) *</label>

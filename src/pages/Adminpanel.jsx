@@ -249,6 +249,33 @@ const AdminPanel = () => {
   
   const handleCancelOrder = async (order) => { if (window.confirm(`Cancel Order #${order.id}?`)) await cancelOrder(order.id, order.paymentMode, order.totalAmount); };
 
+  // 🟢 NEW: Admin function to initiate return
+  const handleReturnOrder = async (orderId) => {
+    if (window.confirm(`Initiate Return for Order #${orderId}? A reverse pickup will be arranged.`)) {
+      try {
+        const token = await getToken();
+        const response = await fetch(`${BASE}/api/orders/${orderId}/return`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+          }
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+          window.toast.success(`Return for order ${orderId} initiated successfully.`);
+          getAllOrders(); // Refresh the global orders list in context
+        } else {
+          window.toast.error(data.error || "Failed to initiate return.");
+        }
+      } catch (error) {
+        console.error("Error initiating return:", error);
+        window.toast.error("Failed to initiate return.");
+      }
+    }
+  };
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsSidebarOpen(false);
@@ -423,7 +450,7 @@ const AdminPanel = () => {
               {activeTab === "logs" && <ActivityLogsTab />}
               {activeTab === "products" && <ProductsTab products={products} archivedProducts={archivedProducts} showArchived={showArchived} loading={loading} handleProductArchive={handleProductArchive} handleProductUnarchive={handleProductUnarchive} setEditingProduct={setEditingProduct} downloadCSV={downloadCSV} setOpenModal={setOpenModal} setShowArchived={setShowArchived} refreshProductStock={refreshProductStock} />}
               {activeTab === "coupons" && <CouponsTab coupons={coupons} users={users} couponSubTab={couponSubTab} setCouponSubTab={setCouponSubTab} editingCoupon={editingCoupon} setEditingCoupon={setEditingCoupon} saveCoupon={saveCoupon} deleteCoupon={deleteCoupon} />}
-              {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
+              {activeTab === "orders" && <OrdersTab orders={orders} orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery} orderStatusTab={orderStatusTab} setOrderStatusTab={setOrderStatusTab} handleUpdateOrderStatus={handleUpdateOrderStatus} handleCancelOrder={handleCancelOrder} handleReturnOrder={handleReturnOrder} getSingleOrderDetails={getSingleOrderDetails} downloadCSV={downloadCSV} />}
               {activeTab === "users" && <UsersTab users={users} filteredUsers={filteredUsers} userSearchQuery={userSearchQuery} setUserSearchQuery={setUserSearchQuery} editingUser={editingUser} setEditingUser={setEditingUser} handleEditUser={handleEditUser} handleSaveUser={handleSaveUser} handleDeleteUser={handleDeleteUser} handleUpdateUserRole={handleUpdateUserRole} downloadCSV={downloadCSV} />}
               {activeTab === "queries" && <QueriesTab queries={queries} querySearch={querySearch} setQuerySearch={setQuerySearch} />}
               {activeTab === "carts" && <CartsWishlistsTab flatCarts={abandonedCarts} stats={wishlistStats} />}

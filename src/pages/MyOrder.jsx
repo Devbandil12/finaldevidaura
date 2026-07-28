@@ -69,7 +69,7 @@ const formatDateTime = (dateString) => {
 const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreatedAt }) => {
   const normStatus = (currentStatus || "").toLowerCase();
   const isCancelled = normStatus.includes("cancelled");
-  const isReturned = normStatus.includes("returned");
+  const isReturned = normStatus.includes("returned") || normStatus.includes("return");
 
   // Define the standard flow steps
   const getSteps = () => {
@@ -101,8 +101,8 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
     if (s.includes('placed')) return 0;
     if (s.includes('processing') || s.includes('packed')) return 1;
     if (s.includes('shipped') || s.includes('transit') || s.includes('out for delivery')) return 2;
-    if (s.includes('delivered')) return 3;
-    if (s.includes('returned')) return 4;
+    if (s === 'delivered') return 3;
+    if (s.includes('return')) return 4;
     if (s.includes('cancelled')) return 1; // Special case handled by step list
     return 0;
   };
@@ -118,6 +118,7 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
         // Mappings
         if (k === 'processing') return s === 'processing' || s === 'packed';
         if (k === 'shipped') return s === 'shipped' || s === 'in transit' || s === 'out for delivery';
+        if (k === 'returned') return s.includes('return');
         if (k === 'cancelled') return s.includes('cancelled');
         return s === k;
     });
@@ -136,6 +137,9 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
         let displayLabel = step.label;
         if (step.key === 'shipped' && normStatus === 'out for delivery') {
             displayLabel = "Out for Delivery";
+        }
+        if (step.key === 'returned' && normStatus === 'return initiated') {
+            displayLabel = "Return Initiated";
         }
 
         // Determine Line Color (Connection to next step)
@@ -177,11 +181,11 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
                     {eventData?.description || step.description || (isCompleted ? "Completed" : "Pending")}
                   </p>
 
-                  {/* Courier Details (Only on Shipped step if active) */}
-                  {step.key === 'shipped' && isCompleted && courierDetails?.trackingId && (
+                  {/* Courier Details (Only on Shipped or Return step if active) */}
+                  {(step.key === 'shipped' || step.key === 'returned') && isCompleted && courierDetails?.trackingId && (
                     <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-lg inline-block">
                       <p className="text-xs text-blue-800 font-medium">
-                        Courier: {courierDetails.courierName}
+                        Courier: {courierDetails.courierName || 'Shiprocket'}
                       </p>
                       <p className="text-xs text-blue-600 mt-0.5">
                         AWB: {courierDetails.trackingId}
@@ -302,13 +306,15 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
 
 export default function MyOrders() {
   const navigate = useNavigate(); 
-  const { orders, setOrders, cancelOrder, loadingOrders } = useContext(OrderContext);
+  // 🟢 IMPORTED returnOrder from context
+  const { orders, setOrders, cancelOrder, returnOrder, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { startBuyNow } = useContext(CartContext); 
 
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [returningOrderId, setReturningOrderId] = useState(null); // 🟢 State for return loading
   const [refreshingStatusId, setRefreshingStatusId] = useState(null);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -338,10 +344,14 @@ export default function MyOrders() {
 
   const activeOrders = sortedOrders.filter(o => {
     const s = o.status.toLowerCase();
-    return !s.includes('cancelled') && s !== 'delivered';
+    return !s.includes('cancelled') && s !== 'delivered' && !s.includes('return'); // 🟢 Exclude returns from active
   });
 
-  const deliveredOrders = sortedOrders.filter(o => o.status.toLowerCase() === 'delivered');
+  const deliveredOrders = sortedOrders.filter(o => {
+    const s = o.status.toLowerCase();
+    return s === 'delivered' || s.includes('return'); // 🟢 Group returns with delivered
+  });
+  
   const cancelledOrders = sortedOrders.filter(o => o.status.toLowerCase().includes('cancelled'));
 
   const handleConfirmCancel = async () => {
@@ -363,6 +373,15 @@ export default function MyOrders() {
     };
     startBuyNow(buyNowItem);
     navigate("/cart", { state: { isBuyNow: true } });
+  };
+
+  // 🟢 Function to handle Return button click
+  const handleReturn = async (orderId) => {
+    if (window.confirm("Are you sure you want to return this order? A reverse pickup will be arranged.")) {
+      setReturningOrderId(orderId);
+      await returnOrder(orderId);
+      setReturningOrderId(null);
+    }
   };
 
   const toggleTrackOrder = (orderId) => {
@@ -390,7 +409,7 @@ export default function MyOrders() {
     if (isOnline) {
       return status !== 'order placed';
     } else {
-      return status === 'delivered';
+      return status === 'delivered' || status.includes('return');
     }
   };
 
@@ -475,7 +494,7 @@ export default function MyOrders() {
               <div className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-500 border-zinc-200'}`}>
                 {isPrepaid ? <CreditCard size={10} strokeWidth={2} className="md:w-3 md:h-3" /> : <Banknote size={10} strokeWidth={2} className="md:w-3 md:h-3" />}{isPrepaid ? "PREPAID" : "COD"}
               </div>
-              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status === 'delivered' ? 'bg-zinc-100 text-zinc-900 border-zinc-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{order.status}</div>
+              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status.toLowerCase() === 'delivered' || order.status.toLowerCase().includes('return') ? 'bg-zinc-100 text-zinc-900 border-zinc-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{order.status}</div>
             </div>
           </div>
 
@@ -517,20 +536,33 @@ export default function MyOrders() {
               <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold mb-0 sm:mb-1">Total Amount</span>
               <span className="text-lg md:text-xl font-medium text-zinc-900">₹{order.totalAmount.toFixed(2)}</span>
             </div>
+            
             <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 w-full sm:flex sm:w-auto sm:items-center sm:justify-end">
               {canDownloadInvoice(order) && (
                 <button onClick={() => handleDownloadInvoice(order.id)} disabled={downloadingInvoiceId === order.id} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto">
                   {downloadingInvoiceId === order.id ? <RotateCw className="animate-spin" size={14} /> : <Download size={14} />}{downloadingInvoiceId === order.id ? "Downloading..." : "Invoice"}
                 </button>
               )}
+              
               {order.status === "Order Placed" && !refundInfo && (
                 cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
                   <button onClick={() => setModalOrder(order)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto">Cancel Order</button>
                 )
               )}
+
+              {/* 🟢 NEW: Return Button */}
+              {order.status.toLowerCase() === "delivered" && (
+                returningOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
+                   <button onClick={() => handleReturn(order.id)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-colors w-full sm:w-auto flex justify-center items-center gap-2">
+                     <RotateCcw size={14} /> Return
+                   </button>
+                )
+              )}
+              
               {order.status.toLowerCase() === "delivered" && (
                 <button onClick={() => reorder(order.id)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"><Repeat size={14} /> Buy Again</button>
               )}
+
               {order.status !== "Order Cancelled" && (
                 <button onClick={() => toggleTrackOrder(order.id)} className="px-4 py-3 md:px-8 md:py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto">
                   {isExpanded ? "Hide Details" : "Track Order"}
@@ -545,7 +577,6 @@ export default function MyOrders() {
           {isExpanded && order.status !== "Order Cancelled" && (
             <motion.div initial="collapsed" animate="open" exit="collapsed" variants={{ open: { opacity: 1, height: "auto" }, collapsed: { opacity: 0, height: 0 } }} transition={softSpring} className="bg-zinc-50/50 border-t border-zinc-50">
               <div className="p-5 md:p-8">
-                {/* 🟢 MODIFIED: Use Vertical Timeline with full props */}
                 <VerticalTimeline 
                     timeline={order.timeline} 
                     currentStatus={order.status}
@@ -592,7 +623,7 @@ export default function MyOrders() {
           ) : (
             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-16">
               {activeOrders.length > 0 && <section><h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">Active Orders<span className="text-sm font-normal text-zinc-400 bg-zinc-50 px-2.5 py-0.5 rounded-full border border-zinc-100">{activeOrders.length}</span></h2><div className="space-y-6 md:space-y-8">{activeOrders.map(renderOrderCard)}</div></section>}
-              {deliveredOrders.length > 0 && <section><h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">Delivered</h2><div className="space-y-6 md:space-y-8">{deliveredOrders.map(renderOrderCard)}</div></section>}
+              {deliveredOrders.length > 0 && <section><h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">Delivered & Returns</h2><div className="space-y-6 md:space-y-8">{deliveredOrders.map(renderOrderCard)}</div></section>}
               {cancelledOrders.length > 0 && <section><h2 className="text-xl md:text-2xl font-medium text-zinc-900 tracking-tight mb-6 flex items-center gap-3">Cancelled</h2><div className="space-y-6 md:space-y-8 opacity-80 hover:opacity-100 transition-opacity duration-300">{cancelledOrders.map(renderOrderCard)}</div></section>}
             </motion.div>
           )}

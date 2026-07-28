@@ -107,6 +107,35 @@ export const OrderProvider = ({ children }) => {
   [BACKEND_URL, getorders, getToken]
 );
 
+  // 🟢 NEW: Return order (Reverse Pickup via Shiprocket)
+  const returnOrder = useCallback(
+    async (orderId) => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch(`${BACKEND_URL}/api/orders/${orderId}/return`, {
+          method: "POST",
+          headers,
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Return initiation failed");
+        }
+
+        const data = await res.json();
+        window.toast.success(data.message || `Return for order ${orderId} initiated successfully.`);
+        
+        await getorders(true, false); // Refresh list for the user
+        return true;
+      } catch (error) {
+        console.error("❌ Failed to initiate return:", error);
+        window.toast.error(error.message || "Failed to initiate return.");
+        return false;
+      }
+    },
+    [BACKEND_URL, getorders, getToken]
+  );
+
   const getSingleOrderDetails = useCallback(async (orderId) => {
     try {
       const headers = await getAuthHeaders();
@@ -143,6 +172,7 @@ export const OrderProvider = ({ children }) => {
         setOrders,
         updateOrderStatus,
         cancelOrder,
+        returnOrder, // 🟢 NEW: Export the return function
         getSingleOrderDetails,
       }}
     >

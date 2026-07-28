@@ -45,6 +45,7 @@ export default function OrdersTab({ orders, loadingOrders, products }) {
             let statusStyle = "bg-zinc-100 text-zinc-600 border-zinc-200";
             if (isDelivered) statusStyle = "bg-emerald-50 text-emerald-700 border-emerald-100";
             else if (order.status.toLowerCase().includes('cancel')) statusStyle = "bg-rose-50 text-rose-700 border-rose-100";
+            else if (order.status.toLowerCase().includes('return')) statusStyle = "bg-orange-50 text-orange-700 border-orange-100"; // 🟢 Added Return Status Color
             else if (order.status.toLowerCase().includes('ship')) statusStyle = "bg-blue-50 text-blue-700 border-blue-100";
 
             return (
@@ -148,9 +149,20 @@ export default function OrdersTab({ orders, loadingOrders, products }) {
 
                  {/* Summary Stats */}
                  <div className="bg-zinc-50 rounded-3xl p-6 space-y-3">
+                    {/* 🟢 Added Order Status & AWB display */}
+                    <div className="flex justify-between text-sm">
+                        <span className="text-zinc-500">Order Status</span>
+                        <span className="font-medium text-zinc-900 capitalize">{viewOrder.status}</span>
+                    </div>
+                    {viewOrder.shiprocketAwb && (
+                      <div className="flex justify-between text-sm">
+                          <span className="text-zinc-500">Tracking AWB</span>
+                          <span className="font-medium text-zinc-900">{viewOrder.shiprocketAwb}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Payment Status</span>
-                        <span className="font-medium text-zinc-900 capitalize">{viewOrder.paymentInfo?.status || "Paid"}</span>
+                        <span className="font-medium text-zinc-900 capitalize">{viewOrder.paymentInfo?.status || viewOrder.paymentStatus || "Paid"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Order Date</span>

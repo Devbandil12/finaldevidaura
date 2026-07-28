@@ -43,27 +43,12 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     /* Use optimizeSpeed if still laggy */
-    background: radial-gradient(circle at top left,
-        rgba(255, 255, 255, 0.95),
-        transparent 35%),
-      radial-gradient(circle at bottom right,
-        rgba(212, 184, 122, 0.35),
-        transparent 40%),
-      linear-gradient(135deg,
-        #FCFAF7 0%,
-        #F3E9DC 45%,
-        #E5D1B2 100%);
+   
     color: var(--color-black);
     font-family: "Manrope", sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
     margin: 0;
     line-height: 1.6;
-  }
-
-  /* 4. GPU Acceleration for images to prevent stutter */
-  img {
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
 }
 
@@ -202,8 +187,11 @@ p {
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out;
 }
+html.lenis,
+html.lenis body {
+  height: auto;
+}
 
-/* 4. SMOOTH SCROLL UTILS (Lenis) */
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }
@@ -212,10 +200,14 @@ p {
   overscroll-behavior: contain;
 }
 
-.lenis.lenis-stopped {
-  overflow: hidden;
+/* CRITICAL FIX */
+.lenis {
+  overflow: visible !important;
 }
 
+.lenis body {
+  overflow: visible !important;
+}
 /* 5. VISUAL CONNECTORS */
 .connector-line {
   width: 1px;
@@ -351,3 +343,4 @@ p {
 .smooth-scrollbar::-webkit-scrollbar {
   display: none;
 }
+

@@ -4,13 +4,13 @@ import {
   Download, Search, Package, Truck, CheckCircle,
   ChevronDown, ChevronUp, User, MapPin, CreditCard, Phone, Mail,
   Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X,
-  Clock, PackageCheck, Link as LinkIcon, Upload, FileText // Added Upload, FileText
+  Clock, PackageCheck, Link as LinkIcon, Upload, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from '../../contexts/AdminContext';
 
 // --- CONSTANTS ---
-const STATUS_SEQUENCE = ["Order Placed", "Processing", "Shipped", "Delivered"];
+const STATUS_SEQUENCE = ["Order Placed", "Processing", "Shipped", "Delivered", "Return Initiated", "Returned"];
 
 // --- VERTICAL TIMELINE COMPONENT ---
 const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
@@ -39,9 +39,9 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">{event.title}</h4>
                   <p className="text-xs text-gray-500 mt-1 max-w-md leading-relaxed">{event.description}</p>
-                  {event.status === 'Shipped' && courierDetails?.trackingId && (
+                  {(event.status === 'Shipped' || event.status === 'Return Initiated') && courierDetails?.trackingId && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg inline-block">
-                        <p className="text-xs text-blue-800 font-bold">Courier: {courierDetails.courierName}</p>
+                        <p className="text-xs text-blue-800 font-bold">Courier: {courierDetails.courierName || 'Shiprocket'}</p>
                         <p className="text-xs text-blue-600 mt-0.5">AWB: {courierDetails.trackingId}</p>
                         {courierDetails.trackingUrl && (
                            <a href={courierDetails.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline mt-1 block">Track Shipment</a>
@@ -103,9 +103,9 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-75 border border-gray-50">
-          <div className="p-1">
+          <div className="p-1 max-h-64 overflow-y-auto">
             {STATUS_SEQUENCE.map((status, index) => {
-               const isDisabled = index < currentIndex;
+               const isDisabled = index < currentIndex && status !== 'Return Initiated' && status !== 'Returned'; 
                return (
                   <button
                     key={status}
@@ -128,7 +128,7 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
   );
 };
 
-// --- SHIPMENT MODAL (UPDATED WITH CSV) ---
+// --- SHIPMENT MODAL ---
 const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) => {
   const [courierName, setCourierName] = useState('');
   const [singleTrackingId, setSingleTrackingId] = useState('');
@@ -156,7 +156,6 @@ const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) 
       }));
   };
 
-  // --- CSV PARSER FUNCTION ---
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -168,24 +167,19 @@ const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) 
       const newBulkData = { ...bulkData };
       let matchCount = 0;
 
-      // Assume simple CSV: OrderID, TrackingID, URL(optional)
-      // Skip header if first row contains "order" (case insensitive)
       lines.forEach((line, index) => {
         if (!line.trim()) return;
-        const columns = line.split(',').map(c => c.trim().replace(/^"|"$/g, '')); // Strip quotes
+        const columns = line.split(',').map(c => c.trim().replace(/^"|"$/g, '')); 
         
-        // Skip header
         if (index === 0 && columns[0].toLowerCase().includes('order')) return;
 
         const csvOrderId = columns[0];
         const csvTrackingId = columns[1];
         const csvUrl = columns[2] || '';
 
-        // Match with selected IDs (Handle # prefix if present in CSV)
         const cleanId = csvOrderId.replace('#', '');
         
         if (selectedIds.includes(parseInt(cleanId)) || selectedIds.includes(cleanId)) {
-           // We found a match in our selected list!
            const targetId = selectedIds.find(id => id.toString() === cleanId.toString());
            if (targetId) {
              newBulkData[targetId] = {
@@ -198,7 +192,7 @@ const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) 
       });
 
       setBulkData(newBulkData);
-      if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = ''; 
       alert(`CSV Processed: Updated ${matchCount} orders successfully.`);
     };
     reader.readAsText(file);
@@ -237,7 +231,6 @@ return (
         onClick={(e) => e.stopPropagation()}
         className={`bg-white rounded-xl shadow-2xl w-[95%] ${isBulk ? 'md:max-w-4xl' : 'md:max-w-md'} flex flex-col max-h-[90vh] overflow-hidden border border-gray-200`}
       >
-        {/* 🟢 HEADER */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-black text-white rounded-lg">
@@ -260,10 +253,7 @@ return (
           </button>
         </div>
         
-        {/* 🟢 SCROLLABLE BODY */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-          
-          {/* Courier Input */}
           <div className="mb-6">
             <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">
               Courier Partner <span className="text-black">*</span>
@@ -280,7 +270,6 @@ return (
 
           {isBulk ? (
             <div className="space-y-4">
-               {/* 🟢 CSV UPLOAD SECTION */}
                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 text-green-700 rounded-lg">
@@ -313,14 +302,12 @@ return (
                <div className="space-y-3">
                   {selectedIds.map(id => (
                       <div key={id} className="p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-start gap-4 hover:border-black transition-colors bg-white">
-                          {/* Order ID Badge */}
                           <div className="md:w-20 flex-shrink-0">
                               <span className="inline-block px-2 py-1 bg-black text-white text-xs font-bold rounded">
                                 #{id}
                               </span>
                           </div>
                           
-                          {/* Inputs */}
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                               <input 
                                 type="text" 
@@ -368,7 +355,6 @@ return (
           )}
         </div>
 
-        {/* 🟢 FOOTER */}
         <div className="px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 flex-shrink-0 bg-gray-50">
           <button 
             onClick={onClose} 
@@ -390,9 +376,10 @@ return (
 }
 
 // --- MAIN COMPONENT ---
+// 🟢 UPDATED: Added handleReturnOrder prop
 const OrdersTab = ({
   orders, orderSearchQuery, setOrderSearchQuery, orderStatusTab, setOrderStatusTab,
-  handleUpdateOrderStatus, handleCancelOrder, getSingleOrderDetails, downloadCSV
+  handleUpdateOrderStatus, handleCancelOrder, handleReturnOrder, getSingleOrderDetails, downloadCSV
 }) => {
 
   const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -429,11 +416,9 @@ const OrdersTab = ({
 
   const handleShipmentSubmit = async (data) => {
     if (isBulkShipment) {
-        // data is Array of updates: [{ id, courierName, trackingId, trackingUrl }, ...]
         setIsShipmentModalOpen(false); 
         setSelectedOrders(new Set()); 
 
-        // Loop through and update each order individually with its specific tracking info
         for (const item of data) {
             await handleUpdateOrderStatus(item.id, "Shipped", {
                 courierName: item.courierName,
@@ -458,7 +443,7 @@ const OrdersTab = ({
 
   const isOrderSelectable = (order) => {
     const s = (order.status || "").toLowerCase();
-    return s !== "delivered" && s !== "order cancelled";
+    return s !== "delivered" && s !== "order cancelled" && !s.includes("return");
   };
 
   const calculateBreakdown = (orderData) => {
@@ -499,10 +484,13 @@ const OrdersTab = ({
       "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
       "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
       "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
+      "return initiated": "bg-orange-50 text-orange-600 border-orange-100",
+      "returned": "bg-emerald-50 text-emerald-600 border-emerald-100"
     };
     let styleClass = styles["order placed"];
     if (styles[normalizedStatus]) styleClass = styles[normalizedStatus];
     else if (normalizedStatus.includes('pending')) styleClass = styles["pending_payment"];
+    else if (normalizedStatus.includes('return')) styleClass = styles["return initiated"];
 
     return (
       <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styleClass}`}>
@@ -523,6 +511,7 @@ const OrdersTab = ({
       const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
       return matchesStatus && isOnline && isNotPaid;
     }
+    if (orderStatusTab === "Returns") return o.status.toLowerCase().includes("return");
     return o.status === orderStatusTab;
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
 
@@ -549,7 +538,6 @@ const OrdersTab = ({
   // Smart Bulk Actions Logic
   const currentTabIndex = STATUS_SEQUENCE.indexOf(orderStatusTab);
   const availableBulkActions = STATUS_SEQUENCE.filter((status, index) => {
-      // Show only future steps
       return index > currentTabIndex;
   });
 
@@ -576,7 +564,7 @@ const OrdersTab = ({
       {/* --- Filters --- */}
       <div className="flex flex-col md:flex-row md:justify-between gap-4">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1 max-w-[100vw]">
-          {["All", "Payment Pending", "Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"].map((status) => (
+          {["All", "Payment Pending", "Order Placed", "Processing", "Shipped", "Delivered", "Returns", "Cancelled"].map((status) => (
             <button
               key={status}
               onClick={() => { setOrderStatusTab(status); setSelectedOrders(new Set()); }}
@@ -622,7 +610,7 @@ const OrdersTab = ({
       <div className="space-y-4">
         {filteredOrders?.length > 0 ? filteredOrders.map((order, idx) => {
 
-          const isEditable = order.status !== "Order Cancelled" && order.status !== "Delivered";
+          const isEditable = order.status !== "Order Cancelled" && order.status !== "Returned" && order.status !== "Delivered"; 
           const isExpanded = expandedOrderId === order.id;
           const isSelected = selectedOrders.has(order.id);
           const canSelect = isOrderSelectable(order) && isSelectionEnabled; 
@@ -732,7 +720,7 @@ const OrdersTab = ({
                             currentStatus={order.status}
                             courierDetails={{
                                 courierName: orderDetailsData.courierName,
-                                trackingId: orderDetailsData.trackingId,
+                                trackingId: orderDetailsData.shiprocketAwb || orderDetailsData.trackingId, 
                                 trackingUrl: orderDetailsData.trackingUrl
                             }}
                         />
@@ -844,7 +832,9 @@ const OrdersTab = ({
                                 </span>
                               </div>
                             </div>
-                            {isEditable && (
+                            
+                            {/* 🟢 Cancel / Return Action Buttons */}
+                            {(isEditable && order.status !== "Return Initiated" && order.status !== "Returned") && (
                               <button
                                 onClick={() => handleCancelOrder(order)}
                                 className="w-full mt-5 py-2 text-xs font-bold text-red-500 bg-red-50/50 border border-red-100 rounded-xl hover:bg-red-50 hover:border-red-200 transition duration-200"
@@ -852,6 +842,16 @@ const OrdersTab = ({
                                 Cancel Order
                               </button>
                             )}
+
+                            {order.status === "Delivered" && (
+                              <button
+                                onClick={() => handleReturnOrder && handleReturnOrder(order.id)}
+                                className="w-full mt-3 py-2 text-xs font-bold text-orange-500 bg-orange-50/50 border border-orange-100 rounded-xl hover:bg-orange-50 hover:border-orange-200 transition duration-200"
+                              >
+                                Initiate Return
+                              </button>
+                            )}
+
                           </div>
                         </div>
                       </div>
@@ -887,7 +887,6 @@ const OrdersTab = ({
                 <div className="h-6 w-px bg-gray-200"></div>
                 
                 <div className="flex gap-2">
-                    {/* Smart Actions: Only show forward steps */}
                     {availableBulkActions.map(status => (
                         <button
                             key={status}
