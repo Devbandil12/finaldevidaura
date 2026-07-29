@@ -1,8 +1,8 @@
 // src/pages/Checkout.jsx
 
-import React, { useState, useEffect, useContext, useCallback, useMemo, useRef } from "react"; // 🟢 Added useRef
+import React, { useState, useEffect, useContext, useCallback, useMemo } from "react"; 
 import { useNavigate, useSearchParams } from "react-router-dom"; 
-import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
+import { useAuth } from "@clerk/clerk-react"; 
 import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext";
 import { OrderContext } from "../contexts/OrderContext";
@@ -21,21 +21,10 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  const { getCartitems } = useContext(CartContext); 
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
-  const { getToken } = useAuth(); // 🟢 Get Token Helper
+  const { getToken } = useAuth(); 
 
-  // 🟢 FIX 2.4: GENERATE IDEMPOTENCY KEY FOR THIS CHECKOUT SESSION
-  const idempotencyKeyRef = useRef();
-  if (!idempotencyKeyRef.current) {
-    // Uses native browser UUID, with a fallback just in case
-    idempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID 
-      ? crypto.randomUUID() 
-      : `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  }
-
-  // Derive Step from URL (Default to 'address' -> Step 1)
   const stepParam = searchParams.get("step");
   const step = stepParam === "payment" ? 2 : 1;
 
@@ -48,13 +37,11 @@ export default function Checkout() {
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [transactionId, setTransactionId] = useState("");
 
-  // 🟢 Lifted Wallet State
   const [useWallet, setUseWallet] = useState(false);
 
-  // 🟢 Calculate Final Breakdown with Wallet
   const finalBreakdown = useMemo(() => {
     const walletBalance = userdetails?.walletBalance || 0;
-    const currentTotal = breakdown.total; // Total after coupons/shipping
+    const currentTotal = breakdown.total; 
     
     let walletUsed = 0;
     let finalPayable = currentTotal;
@@ -66,16 +53,14 @@ export default function Checkout() {
 
     return {
       ...breakdown,
-      total: finalPayable, // Update total to be the payable amount
-      walletUsed: walletUsed, // Add wallet usage info
-      originalTotalBeforeWallet: breakdown.total // Keep reference if needed
+      total: finalPayable, 
+      walletUsed: walletUsed, 
+      originalTotalBeforeWallet: breakdown.total 
     };
   }, [breakdown, useWallet, userdetails]);
 
 
-  // --- Logic: Init & Validation ---
   useEffect(() => {
-    // 1. Validate Cart
     try {
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
       if (items.length > 0) setSelectedItems(items);
@@ -84,26 +69,21 @@ export default function Checkout() {
       if (coupon) setAppliedCoupon(JSON.parse(coupon));
     } catch (error) { navigate("/cart"); }
 
-    // 2. Ensure URL looks professional on load
     if (!stepParam) {
       setSearchParams({ step: "address" }, { replace: true });
     }
     
-    // 3. Security: If on payment step but no address, force back to address
     if (step === 2 && !selectedAddress) {
        setSearchParams({ step: "address" }, { replace: true });
        window.toast.info("Please select a delivery address first.");
     }
 
-    // 4. Professional Title Update
     document.title = step === 1 ? "Secure Checkout | Delivery" : "Secure Checkout | Payment";
-    
-    // 5. Scroll to top on step change
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   }, [navigate, stepParam, setSearchParams, step, selectedAddress]);
 
-  // --- Logic: Price Breakdown (Secured) ---
+  // --- Logic: Price Breakdown (Secured & Updated Endpoint) ---
   useEffect(() => {
     const fetchBreakdown = async () => {
       if (selectedItems.length === 0 || !selectedAddress) {
@@ -113,38 +93,43 @@ export default function Checkout() {
       }
       setLoadingPrices(true);
       try {
-        // 🟢 SECURE: Get Token
         const token = await getToken();
         
-        const res = await fetch(`${BACKEND}/api/payments/breakdown`, {
+        // 🟢 FIX: Call the newly secured Price Preview Engine endpoint
+        const res = await fetch(`${BACKEND}/api/cart/price-preview`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // 🔒 Auth Header
+            'Authorization': `Bearer ${token}` 
           },
           body: JSON.stringify({
             cartItems: selectedItems.map(i => ({ variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
             couponCode: appliedCoupon?.code || null,
             pincode: selectedAddress.postalCode,
+            userId: userdetails?.id // Send user info for accurate history limits
           }),
         });
         const data = await res.json();
-        if (data.success) setBreakdown(data.breakdown);
+        
+        if (data.success) {
+            setBreakdown(data.breakdown);
+        } else if (data.error) {
+            // Surface the backend validation failure (e.g. usage limit reached)
+            window.toast.error(data.message);
+            setAppliedCoupon(null);
+        }
       } catch (error) { console.error(error); } finally { setLoadingPrices(false); }
     };
     fetchBreakdown();
-  }, [selectedItems, appliedCoupon, selectedAddress, getToken]);
+  }, [selectedItems, appliedCoupon, selectedAddress, getToken, userdetails?.id]);
 
-  // HELPER: Refreshes orders in background (Fire & Forget)
   const refreshOrdersOnly = useCallback(() => {
     if (getorders) getorders().catch(err => console.log("Bg refresh error", err));
   }, [getorders]);
 
-  // OPTIMIZED: ONLINE SUCCESS
   const handleRazorpaySuccess = useCallback(async (paymentId) => {
     setIsSubmitting(true);
     try { 
-      // Pass Order ID in URL for robustness
       navigate(`/order-confirmation?orderId=${paymentId || transactionId || "ONLINE-PAYMENT"}`, { 
         replace: true 
       });
@@ -162,36 +147,37 @@ export default function Checkout() {
     if (!selectedAddress) return window.toast.error("Please select a delivery address.");
     setIsSubmitting(true);
     
+    // 🟢 FIX 2.4: Generate fresh idempotency key ON CLICK to allow safe retries
+    const freshIdempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    
     try {
-      // 🟢 SECURE: Get Token
       const token = await getToken();
 
       const res = await fetch(`${BACKEND}/api/payments/createOrder`, {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // 🔒 Auth Header
-            "x-idempotency-key": idempotencyKeyRef.current // 🟢 FIX 2.4: Send Idempotency Key
+            "Authorization": `Bearer ${token}`,
+            "x-idempotency-key": freshIdempotencyKey 
         },
         body: JSON.stringify({
-          // 🛑 REMOVED insecure 'user' object. Backend uses token.
           phone: selectedAddress.phone,
           paymentMode: "cod",
           couponCode: appliedCoupon?.code || null,
           cartItems: selectedItems.map(i => ({ ...i, variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
           userAddressId: selectedAddress.id,
-          // breakdown: breakdown, // No longer needed, backend recalculates
           useWallet: useWallet 
         }),
       });
       
       const data = await res.json();
       
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         throw new Error(data.msg || "Order failed.");
       }
       
-      // Navigate using URL Param for robustness against refreshes
       navigate(`/order-confirmation?orderId=${data.orderId}`, { 
         replace: true 
       });
@@ -205,7 +191,6 @@ export default function Checkout() {
     } 
   }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, isSubmitting, navigate, useWallet, getToken]);
 
-  // NAVIGATION HANDLERS (Update URL Params)
   const handleNext = () => {
     if (loadingPrices) return;
     if (step === 1 && !selectedAddress) return window.toast.warn("Please select a delivery address.");
@@ -235,7 +220,6 @@ export default function Checkout() {
             md:bg-white md:text-slate-900 md:border-b md:border-slate-100
             px-4 pb-10 pt-4 sm:px-12 sm:pb-12
           ">
-            {/* ... (Header Visuals same as before) ... */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
@@ -330,7 +314,7 @@ export default function Checkout() {
                         setTransactionId={setTransactionId}
                         useWallet={useWallet} 
                         setUseWallet={setUseWallet} 
-                        idempotencyKey={idempotencyKeyRef.current} // 🟢 FIX 2.4: Passed to PaymentDetails
+                        // Note: Idempotency keys are now generated internally per click
                       />
                     )}
                   </motion.div>
