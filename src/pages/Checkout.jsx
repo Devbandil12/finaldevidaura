@@ -11,6 +11,7 @@ import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldCheck } from "lucide-react";
+import { generateIdempotencyKey } from "../utils/idempotency";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
@@ -148,10 +149,9 @@ export default function Checkout() {
     setIsSubmitting(true);
     
     // 🟢 FIX 2.4: Generate fresh idempotency key ON CLICK to allow safe retries
-    const freshIdempotencyKey = typeof crypto !== 'undefined' && crypto.randomUUID 
-      ? crypto.randomUUID() 
-      : `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    
+    const freshIdempotencyKey = generateIdempotencyKey();
+
+
     try {
       const token = await getToken();
 
@@ -314,7 +314,9 @@ export default function Checkout() {
                         setTransactionId={setTransactionId}
                         useWallet={useWallet} 
                         setUseWallet={setUseWallet} 
-                        // Note: Idempotency keys are now generated internally per click
+                        // 🟢 FIX: idempotency key for the Razorpay flow is now generated
+                        // internally inside PaymentDetails.jsx, fresh per attempt — see
+                        // handleRazorpayPayment(). No prop needed here.
                       />
                     )}
                   </motion.div>

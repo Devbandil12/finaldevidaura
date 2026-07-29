@@ -5,6 +5,7 @@ import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { CreditCard, Truck, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { loadRazorpayScript } from "../utils/useRazorpay"; 
+import { generateIdempotencyKey } from "../utils/idempotency";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
@@ -22,8 +23,12 @@ export default function PaymentDetails({
     paymentVerified,
     setTransactionId,
     useWallet, 
-    setUseWallet,
-    idempotencyKey // 🟢 FIX 2.4: Receive Idempotency Key
+    setUseWallet
+    // 🟢 FIX: idempotency key is no longer passed as a prop — Checkout.jsx
+    // never actually supplied it, which meant every Razorpay checkout sent
+    // the literal string "undefined" as the header value and could lock
+    // ALL users out of online payment for 24h after the first order. It's
+    // now generated fresh, right here, per attempt (see handleRazorpayPayment).
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
@@ -91,12 +96,20 @@ export default function PaymentDetails({
             // 🟢 SECURE: Get Token
             const token = await getToken();
 
+            // 🟢 FIX: Generate a fresh idempotency key for THIS attempt only.
+            // Fresh-per-attempt (not fresh-per-session) matters here: if this
+            // createOrder call succeeds but the user then cancels the Razorpay
+            // popup or the payment fails, a retry must get a brand-new key —
+            // the backend only clears its Redis lock on error, so reusing the
+            // same key across attempts would block the user's own retry.
+            const freshIdempotencyKey = generateIdempotencyKey();
+
             const orderResponse = await fetch(`${BACKEND}/api/payments/createOrder`, {
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`, // 🔒 Secure Header
-                    "x-idempotency-key": idempotencyKey // 🟢 FIX 2.4: Send Idempotency Key
+                    "x-idempotency-key": freshIdempotencyKey // 🟢 FIX: Send fresh key for this attempt
                 },
                 body: JSON.stringify({
                     // 🛑 REMOVED insecure 'user' object. Backend uses token.
