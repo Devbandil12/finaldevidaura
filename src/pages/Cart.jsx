@@ -166,7 +166,7 @@ const AutoOfferModal = ({ isOpen, onClose, instructions }) => (
   </AnimatePresence>
 );
 
-const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange, onApply }) => (
+const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange, onApply, cartSubtotal, cartItemCount }) => (
   <AnimatePresence>
     {isOpen && (
       <motion.div
@@ -198,24 +198,54 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
           </div>
           <div className="p-5 overflow-y-auto space-y-4 bg-white flex-grow">
             {coupons.length > 0 ? (
-              coupons.map((coupon) => (
-                <motion.div
-                  key={coupon.id} layout whileHover={{ scale: 1.01, borderColor: "#000000" }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }} style={{ willChange: "transform" }}
-                  className="group relative flex w-full bg-white border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300"
-                >
-                  <div className="flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed border-gray-200 group-hover:border-gray-900 transition-colors duration-300">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FiTag className="text-gray-400 group-hover:text-black transition-colors" size={16} />
-                      <span className="font-bold text-black text-lg tracking-wide uppercase">{coupon.code}</span>
+              coupons.map((coupon) => {
+                const shortfall = (coupon.minOrderValue || 0) - cartSubtotal;
+                const itemShortfall = (coupon.minItemCount || 0) - cartItemCount;
+                
+                let isDisabled = false;
+                let requirementMsg = null;
+
+                if (shortfall > 0) {
+                    isDisabled = true;
+                    requirementMsg = `Add items worth ₹${shortfall} more to apply`;
+                } else if (itemShortfall > 0) {
+                    isDisabled = true;
+                    requirementMsg = `Add ${itemShortfall} more item${itemShortfall > 1 ? 's' : ''} to apply`;
+                }
+
+                return (
+                  <motion.div
+                    key={coupon.id} layout whileHover={{ scale: 1.01, borderColor: isDisabled ? "#e5e7eb" : "#000000" }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }} style={{ willChange: "transform" }}
+                    className={`group relative flex w-full bg-white border-2 border-dashed rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300 ${isDisabled ? 'border-gray-200 opacity-70' : 'border-gray-300'}`}
+                  >
+                    <div className={`flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed transition-colors duration-300 ${isDisabled ? 'border-gray-100' : 'border-gray-200 group-hover:border-gray-900'}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <FiTag className={`transition-colors ${isDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-black'}`} size={16} />
+                        <span className={`font-bold text-lg tracking-wide uppercase ${isDisabled ? 'text-gray-400' : 'text-black'}`}>{coupon.code}</span>
+                      </div>
+                      <span className="text-xs text-gray-500 leading-relaxed">{coupon.description}</span>
+                      
+                      {requirementMsg && (
+                        <div className="mt-2 inline-block">
+                            <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-md">
+                                {requirementMsg}
+                            </span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-gray-500 leading-relaxed">{coupon.description}</span>
-                  </div>
-                  <div className="w-[28%] flex items-center justify-center p-3 bg-gray-50/30">
-                    <button onClick={() => onApply(coupon)} className="text-xs font-bold text-white bg-black px-4 py-2 rounded-lg hover:bg-gray-800 transition-all shadow-sm w-full">APPLY</button>
-                  </div>
-                </motion.div>
-              ))
+                    <div className="w-[28%] flex items-center justify-center p-3 bg-gray-50/30">
+                      <button 
+                        onClick={() => onApply(coupon)} 
+                        disabled={isDisabled}
+                        className={`text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm w-full ${isDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}`}
+                      >
+                        APPLY
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })
             ) : (
               <div className="text-center py-12 flex flex-col items-center justify-center text-gray-400">
                 <FiSearch size={40} className="mb-3 opacity-20" />
@@ -668,6 +698,18 @@ const ShoppingCart = () => {
   const visibleSavedItems = savedItems;
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+  // 🟢 CALCULATE SUBTOTALS FOR THE MODAL
+  const cartSubtotal = useMemo(() => {
+    return itemsToRender.reduce((acc, item) => {
+      const price = Math.floor((item.variant?.oprice || 0) * (1 - (item.variant?.discount || 0) / 100));
+      return acc + (price * (item.quantity || 1));
+    }, 0);
+  }, [itemsToRender]);
+
+  const cartItemCount = useMemo(() => {
+    return itemsToRender.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  }, [itemsToRender]);
+
   const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
   const [loadingPrices, setLoadingPrices] = useState(true);
   const lastRequestRef = useRef("");
@@ -765,7 +807,6 @@ const ShoppingCart = () => {
   const handleMoveToCart = (item) => moveSavedToCart(item);
   const handleRemoveSavedItem = (variantId) => removeSavedItem(variantId);
   
-  // 🟢 FIXED: handleApplyCoupon now correctly references validateCoupon from context
   const handleApplyCoupon = useCallback(async (couponObj) => {
     if (!userdetails?.id) {
       window.toast.error("Please log in to apply coupons.");
@@ -809,6 +850,8 @@ const ShoppingCart = () => {
         isOpen={isCouponModalOpen} onClose={() => setIsCouponModalOpen(false)}
         coupons={filteredCoupons} search={couponSearch} onSearchChange={(e) => setCouponSearch(e.target.value)}
         onApply={(coupon) => { handleApplyCoupon(coupon); setIsCouponModalOpen(false); setCouponSearch(""); }}
+        cartSubtotal={cartSubtotal}
+        cartItemCount={cartItemCount}
       />
 
       {isLoading ? <Loader text="Loading cart..." /> : (
@@ -876,4 +919,4 @@ const ShoppingCart = () => {
   );
 };
 
-export default ShoppingCart;                                                                                                      
+export default ShoppingCart;
