@@ -22,7 +22,8 @@ export default function PaymentDetails({
     paymentVerified,
     setTransactionId,
     useWallet, 
-    setUseWallet 
+    setUseWallet,
+    idempotencyKey // 🟢 FIX 2.4: Receive Idempotency Key
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
@@ -94,7 +95,8 @@ export default function PaymentDetails({
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // 🔒 Secure Header
+                    "Authorization": `Bearer ${token}`, // 🔒 Secure Header
+                    "x-idempotency-key": idempotencyKey // 🟢 FIX 2.4: Send Idempotency Key
                 },
                 body: JSON.stringify({
                     // 🛑 REMOVED insecure 'user' object. Backend uses token.

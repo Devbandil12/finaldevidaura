@@ -1,6 +1,6 @@
 // src/pages/Checkout.jsx
 
-import React, { useState, useEffect, useContext, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useContext, useCallback, useMemo, useRef } from "react"; // 🟢 Added useRef
 import { useNavigate, useSearchParams } from "react-router-dom"; 
 import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { UserContext } from "../contexts/UserContext";
@@ -25,6 +25,15 @@ export default function Checkout() {
   const { getorders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { getToken } = useAuth(); // 🟢 Get Token Helper
+
+  // 🟢 FIX 2.4: GENERATE IDEMPOTENCY KEY FOR THIS CHECKOUT SESSION
+  const idempotencyKeyRef = useRef();
+  if (!idempotencyKeyRef.current) {
+    // Uses native browser UUID, with a fallback just in case
+    idempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  }
 
   // Derive Step from URL (Default to 'address' -> Step 1)
   const stepParam = searchParams.get("step");
@@ -161,7 +170,8 @@ export default function Checkout() {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 🔒 Auth Header
+            "Authorization": `Bearer ${token}`, // 🔒 Auth Header
+            "x-idempotency-key": idempotencyKeyRef.current // 🟢 FIX 2.4: Send Idempotency Key
         },
         body: JSON.stringify({
           // 🛑 REMOVED insecure 'user' object. Backend uses token.
@@ -320,6 +330,7 @@ export default function Checkout() {
                         setTransactionId={setTransactionId}
                         useWallet={useWallet} 
                         setUseWallet={setUseWallet} 
+                        idempotencyKey={idempotencyKeyRef.current} // 🟢 FIX 2.4: Passed to PaymentDetails
                       />
                     )}
                   </motion.div>
@@ -332,7 +343,7 @@ export default function Checkout() {
                     <button
                       onClick={handlePrev}
                       disabled={isSubmitting}
-                      className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-black transition-colors px-6 py-3 rounded-xl hover:bg-slate-100"                                    >
+                      className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-black transition-colors px-6 py-3 rounded-xl hover:bg-slate-100"                    >
                       <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                       <span>{step === 1 ? "Cart" : "Go Back"}</span>
                     </button>
