@@ -1,1 +1,0 @@
-ALTER TABLE "add_to_cart" ALTER COLUMN "product_id" SET DATA TYPE integer;

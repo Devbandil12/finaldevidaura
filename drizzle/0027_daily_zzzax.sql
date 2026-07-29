@@ -1,1 +1,0 @@
-ALTER TABLE "orders" ADD COLUMN "progressStep" text DEFAULT '0';

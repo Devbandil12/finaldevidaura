@@ -1,1 +1,0 @@
-ALTER TABLE "add_to_cart" ALTER COLUMN "user_id" SET DATA TYPE text;

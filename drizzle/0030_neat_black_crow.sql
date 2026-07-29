@@ -1,1 +1,0 @@
-ALTER TABLE "users" ADD COLUMN "cart_length" integer DEFAULT 0;

@@ -29,8 +29,9 @@ import {
   Calendar,
   PackageCheck,
   MapPin,
-  Truck,      // 🟢 Added
-  RotateCcw   // 🟢 Added for Returned
+  Truck,
+  RotateCcw,
+  ExternalLink // 🟢 Added for Live Tracking
 } from "lucide-react";
 
 // --- Soft "Buttery" Animation Config ---
@@ -69,7 +70,7 @@ const formatDateTime = (dateString) => {
 const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreatedAt }) => {
   const normStatus = (currentStatus || "").toLowerCase();
   const isCancelled = normStatus.includes("cancelled");
-  const isReturned = normStatus.includes("returned") || normStatus.includes("return");
+  const isReturned = normStatus.includes("returned") || normStatus.includes("return") || normStatus.includes("rto");
 
   // Define the standard flow steps
   const getSteps = () => {
@@ -95,15 +96,15 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
 
   const steps = getSteps();
 
-  // Helper to determine active step index based on current status string
+  // 🟢 FIXED: Added RTO branches to prevent falling back to step 0
   const getStatusIndex = (status) => {
     const s = (status || '').toLowerCase();
     if (s.includes('placed')) return 0;
     if (s.includes('processing') || s.includes('packed')) return 1;
     if (s.includes('shipped') || s.includes('transit') || s.includes('out for delivery')) return 2;
     if (s === 'delivered') return 3;
-    if (s.includes('return')) return 4;
-    if (s.includes('cancelled')) return 1; // Special case handled by step list
+    if (s.includes('return') || s.includes('rto')) return 4; 
+    if (s.includes('cancelled')) return 1; 
     return 0;
   };
 
@@ -118,7 +119,7 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
         // Mappings
         if (k === 'processing') return s === 'processing' || s === 'packed';
         if (k === 'shipped') return s === 'shipped' || s === 'in transit' || s === 'out for delivery';
-        if (k === 'returned') return s.includes('return');
+        if (k === 'returned') return s.includes('return') || s.includes('rto');
         if (k === 'cancelled') return s.includes('cancelled');
         return s === k;
     });
@@ -138,8 +139,10 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
         if (step.key === 'shipped' && normStatus === 'out for delivery') {
             displayLabel = "Out for Delivery";
         }
-        if (step.key === 'returned' && normStatus === 'return initiated') {
-            displayLabel = "Return Initiated";
+        if (step.key === 'returned') {
+            if (normStatus === 'return initiated') displayLabel = "Return Initiated";
+            if (normStatus === 'rto initiated') displayLabel = "RTO Initiated";
+            if (normStatus === 'rto in transit') displayLabel = "RTO In Transit";
         }
 
         // Determine Line Color (Connection to next step)
@@ -181,20 +184,26 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
                     {eventData?.description || step.description || (isCompleted ? "Completed" : "Pending")}
                   </p>
 
-                  {/* Courier Details (Only on Shipped or Return step if active) */}
+                  {/* 🟢 FIXED: Purged manual tracking URLs, added live Shiprocket tracking link */}
                   {(step.key === 'shipped' || step.key === 'returned') && isCompleted && courierDetails?.trackingId && (
                     <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-lg inline-block">
                       <p className="text-xs text-blue-800 font-medium">
                         Courier: {courierDetails.courierName || 'Shiprocket'}
                       </p>
-                      <p className="text-xs text-blue-600 mt-0.5">
-                        AWB: {courierDetails.trackingId}
-                      </p>
-                      {courierDetails.trackingUrl && (
-                        <a href={courierDetails.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline mt-1 block">
-                          Track Shipment
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-blue-600 font-medium">
+                          AWB: {courierDetails.trackingId}
+                        </p>
+                        <a 
+                          href={`https://shiprocket.co/tracking/${courierDetails.trackingId}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-[10px] text-blue-700 hover:text-blue-900 bg-blue-100/50 hover:bg-blue-200/50 px-2 py-0.5 rounded flex items-center gap-1 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Track Live <ExternalLink size={10} />
                         </a>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -287,8 +296,9 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
             <div className={`transition-transform duration-300 text-zinc-400 ${expanded ? 'rotate-180' : ''}`}><ChevronDown size={16} /></div>
           </div>
         </div>
+        {/* 🟢 FIXED: Updated Title so users know this button only refreshes the refund sync with Razorpay */}
         {showRefresh && (
-          <button onClick={(e) => { e.stopPropagation(); onRefresh(); }} disabled={isRefreshing} className="p-2 rounded-full hover:bg-black/5 transition-colors" title="Check for status updates">
+          <button onClick={(e) => { e.stopPropagation(); onRefresh(); }} disabled={isRefreshing} className="p-2 rounded-full hover:bg-black/5 transition-colors" title="Check for refund updates">
             <RotateCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
         )}
@@ -306,7 +316,6 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
 
 export default function MyOrders() {
   const navigate = useNavigate(); 
-  // 🟢 IMPORTED returnOrder from context
   const { orders, setOrders, cancelOrder, returnOrder, loadingOrders } = useContext(OrderContext);
   const { userdetails } = useContext(UserContext);
   const { startBuyNow } = useContext(CartContext); 
@@ -314,7 +323,7 @@ export default function MyOrders() {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
-  const [returningOrderId, setReturningOrderId] = useState(null); // 🟢 State for return loading
+  const [returningOrderId, setReturningOrderId] = useState(null);
   const [refreshingStatusId, setRefreshingStatusId] = useState(null);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
   const BACKEND = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -343,16 +352,16 @@ export default function MyOrders() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const activeOrders = sortedOrders.filter(o => {
-    const s = o.status.toLowerCase();
-    return !s.includes('cancelled') && s !== 'delivered' && !s.includes('return'); // 🟢 Exclude returns from active
+    const s = (o.status || "").toLowerCase();
+    return !s.includes('cancelled') && s !== 'delivered' && !s.includes('return') && !s.includes('rto'); 
   });
 
   const deliveredOrders = sortedOrders.filter(o => {
-    const s = o.status.toLowerCase();
-    return s === 'delivered' || s.includes('return'); // 🟢 Group returns with delivered
+    const s = (o.status || "").toLowerCase();
+    return s === 'delivered' || s.includes('return') || s.includes('rto'); 
   });
   
-  const cancelledOrders = sortedOrders.filter(o => o.status.toLowerCase().includes('cancelled'));
+  const cancelledOrders = sortedOrders.filter(o => (o.status || "").toLowerCase().includes('cancelled'));
 
   const handleConfirmCancel = async () => {
     if (!modalOrder) return;
@@ -375,7 +384,6 @@ export default function MyOrders() {
     navigate("/cart", { state: { isBuyNow: true } });
   };
 
-  // 🟢 Function to handle Return button click
   const handleReturn = async (orderId) => {
     if (window.confirm("Are you sure you want to return this order? A reverse pickup will be arranged.")) {
       setReturningOrderId(orderId);
@@ -402,14 +410,15 @@ export default function MyOrders() {
     }
   };
 
+  // 🟢 FIXED: Case sensitivity bug resolved
   const canDownloadInvoice = (order) => {
-    const status = order.status?.toLowerCase() || "";
+    const status = (order.status || "").toLowerCase();
     const isOnline = order.paymentMode === 'online' || order.paymentMode === 'wallet';
     if (status.includes('cancelled')) return false;
     if (isOnline) {
       return status !== 'order placed';
     } else {
-      return status === 'delivered' || status.includes('return');
+      return status === 'delivered' || status.includes('return') || status.includes('rto');
     }
   };
 
@@ -481,6 +490,9 @@ export default function MyOrders() {
     const discount = (order.discountAmount || 0) + (order.offerDiscount || 0);
     const wallet = order.walletAmountUsed || 0;
     const delivery = Math.max(0, order.totalAmount - subtotal + discount + wallet);
+    
+    const normalizedStatus = (order.status || "").toLowerCase();
+    const isDeliveredOrReturn = normalizedStatus === 'delivered' || normalizedStatus.includes('return') || normalizedStatus.includes('rto');
 
     return (
       <motion.div data-order-id={order.id} variants={cardVariant} layout key={order.id} className="group bg-white rounded-3xl md:rounded-[32px] border border-zinc-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.04)] transition-all duration-500 overflow-hidden">
@@ -494,7 +506,8 @@ export default function MyOrders() {
               <div className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] font-bold tracking-wider border flex items-center gap-1.5 ${isPrepaid ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-500 border-zinc-200'}`}>
                 {isPrepaid ? <CreditCard size={10} strokeWidth={2} className="md:w-3 md:h-3" /> : <Banknote size={10} strokeWidth={2} className="md:w-3 md:h-3" />}{isPrepaid ? "PREPAID" : "COD"}
               </div>
-              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${order.status.toLowerCase() === 'delivered' || order.status.toLowerCase().includes('return') ? 'bg-zinc-100 text-zinc-900 border-zinc-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{order.status}</div>
+              {/* 🟢 FIXED: Case sensitivity in status styling check */}
+              <div className={`px-3 py-1 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-semibold tracking-wide border capitalize ${isDeliveredOrReturn ? 'bg-zinc-100 text-zinc-900 border-zinc-200' : 'bg-white text-zinc-600 border-zinc-200'}`}>{order.status}</div>
             </div>
           </div>
 
@@ -544,14 +557,13 @@ export default function MyOrders() {
                 </button>
               )}
               
-              {order.status === "Order Placed" && !refundInfo && (
+              {normalizedStatus === "order placed" && !refundInfo && (
                 cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
                   <button onClick={() => setModalOrder(order)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto">Cancel Order</button>
                 )
               )}
 
-              {/* 🟢 NEW: Return Button */}
-              {order.status.toLowerCase() === "delivered" && (
+              {normalizedStatus === "delivered" && (
                 returningOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
                    <button onClick={() => handleReturn(order.id)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-orange-600 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-colors w-full sm:w-auto flex justify-center items-center gap-2">
                      <RotateCcw size={14} /> Return
@@ -559,11 +571,11 @@ export default function MyOrders() {
                 )
               )}
               
-              {order.status.toLowerCase() === "delivered" && (
+              {normalizedStatus === "delivered" && (
                 <button onClick={() => reorder(order.id)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold border border-zinc-200 text-zinc-800 hover:bg-zinc-50 transition-all flex items-center justify-center gap-2 w-full sm:w-auto"><Repeat size={14} /> Buy Again</button>
               )}
 
-              {order.status !== "Order Cancelled" && (
+              {!normalizedStatus.includes("cancelled") && (
                 <button onClick={() => toggleTrackOrder(order.id)} className="px-4 py-3 md:px-8 md:py-3 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-lg shadow-zinc-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto">
                   {isExpanded ? "Hide Details" : "Track Order"}
                   {isExpanded ? <ChevronUp size={14} /> : <ArrowRight size={14} />}
@@ -574,7 +586,7 @@ export default function MyOrders() {
         </div>
 
         <AnimatePresence>
-          {isExpanded && order.status !== "Order Cancelled" && (
+          {isExpanded && !normalizedStatus.includes("cancelled") && (
             <motion.div initial="collapsed" animate="open" exit="collapsed" variants={{ open: { opacity: 1, height: "auto" }, collapsed: { opacity: 0, height: 0 } }} transition={softSpring} className="bg-zinc-50/50 border-t border-zinc-50">
               <div className="p-5 md:p-8">
                 <VerticalTimeline 
@@ -583,8 +595,7 @@ export default function MyOrders() {
                     orderCreatedAt={order.createdAt}
                     courierDetails={{
                         courierName: order.courierName,
-                        trackingId: order.shiprocketAwb || order.trackingId, // Prefer Shiprocket AWB if available
-                        trackingUrl: order.trackingUrl
+                        trackingId: order.shiprocketAwb // 🟢 FIXED: Purely uses Shiprocket AWB now
                     }} 
                 />
               </div>

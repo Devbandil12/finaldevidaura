@@ -1,1 +1,0 @@
-ALTER TABLE "user_address" ALTER COLUMN "address" SET DEFAULT '';

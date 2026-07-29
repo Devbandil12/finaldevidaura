@@ -1,1 +1,0 @@
-ALTER TABLE "orders" ADD COLUMN "transaction_id" text DEFAULT 'null';

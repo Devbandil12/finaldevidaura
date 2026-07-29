@@ -4,13 +4,24 @@ import {
   Download, Search, Package, Truck, CheckCircle,
   ChevronDown, ChevronUp, User, MapPin, CreditCard, Phone, Mail,
   Box, Loader2, Check, Calendar, AlertCircle, CheckSquare, Square, X,
-  Clock, PackageCheck, Link as LinkIcon, Upload, FileText
+  Clock, PackageCheck, Link as LinkIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from '../../contexts/AdminContext';
 
-// --- CONSTANTS ---
-const STATUS_SEQUENCE = ["Order Placed", "Processing", "Shipped", "Delivered", "Return Initiated", "Returned"];
+// --- FIXED CONSTANTS ---
+// Added all possible webhook statuses so the bulk action/next-step logic understands them
+const STATUS_SEQUENCE = [
+  "Order Placed", 
+  "Processing", 
+  "Packed", 
+  "Shipped", 
+  "Out for Delivery", 
+  "Delivered", 
+  "Return Initiated", 
+  "Returned", 
+  "RTO Initiated"
+];
 
 // --- VERTICAL TIMELINE COMPONENT ---
 const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
@@ -39,13 +50,23 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">{event.title}</h4>
                   <p className="text-xs text-gray-500 mt-1 max-w-md leading-relaxed">{event.description}</p>
-                  {(event.status === 'Shipped' || event.status === 'Return Initiated') && courierDetails?.trackingId && (
+                  
+                  {/* 🟢 FIXED: Live tracking link using Shiprocket AWB */}
+                  {(event.status === 'Shipped' || event.status === 'Out for Delivery' || event.status.includes('Return') || event.status.includes('RTO')) && courierDetails?.trackingId && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg inline-block">
                         <p className="text-xs text-blue-800 font-bold">Courier: {courierDetails.courierName || 'Shiprocket'}</p>
-                        <p className="text-xs text-blue-600 mt-0.5">AWB: {courierDetails.trackingId}</p>
-                        {courierDetails.trackingUrl && (
-                           <a href={courierDetails.trackingUrl} target="_blank" rel="noreferrer" className="text-[10px] text-blue-500 underline mt-1 block">Track Shipment</a>
-                        )}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-blue-600 font-medium">AWB: {courierDetails.trackingId}</p>
+                          <a 
+                            href={`https://shiprocket.co/tracking/${courierDetails.trackingId}`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="text-[10px] text-blue-700 hover:text-blue-900 bg-blue-100/50 hover:bg-blue-200/50 px-2 py-0.5 rounded flex items-center gap-1 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Track Live <LinkIcon size={10} />
+                          </a>
+                        </div>
                     </div>
                   )}
                 </div>
@@ -69,7 +90,7 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails }) => {
 };
 
 // --- CUSTOM STATUS DROPDOWN ---
-const StatusDropdown = ({ currentStatus, onUpdate }) => {
+const StatusDropdown = ({ currentStatus, hasAwb, onUpdate }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -102,15 +123,23 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-75 border border-gray-50">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-75 border border-gray-50">
           <div className="p-1 max-h-64 overflow-y-auto">
             {STATUS_SEQUENCE.map((status, index) => {
-               const isDisabled = index < currentIndex && status !== 'Return Initiated' && status !== 'Returned'; 
+               // 🟢 FIXED: Prevent moving forward to post-fulfillment statuses if Shiprocket hasn't generated an AWB
+               const requiresAwb = ["Shipped", "Out for Delivery", "Delivered"];
+               let isDisabled = index < currentIndex && !status.includes('Return') && !status.includes('RTO'); 
+               
+               if (requiresAwb.includes(status) && !hasAwb) {
+                   isDisabled = true;
+               }
+
                return (
                   <button
                     key={status}
                     disabled={isDisabled}
                     onClick={() => !isDisabled && handleSelect(status)}
+                    title={requiresAwb.includes(status) && !hasAwb ? "Waiting for Shiprocket to generate AWB" : ""}
                     className={`w-full text-left px-3 py-2 text-[10px] sm:text-xs font-medium flex items-center justify-between rounded-lg transition-colors 
                     ${currentStatus === status ? 'bg-gray-50 text-black font-bold' : ''}
                     ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}
@@ -128,255 +157,8 @@ const StatusDropdown = ({ currentStatus, onUpdate }) => {
   );
 };
 
-// --- SHIPMENT MODAL ---
-const ShipmentModal = ({ isOpen, onClose, onSubmit, isBulk, selectedIds = [] }) => {
-  const [courierName, setCourierName] = useState('');
-  const [singleTrackingId, setSingleTrackingId] = useState('');
-  const [singleTrackingUrl, setSingleTrackingUrl] = useState('');
-  const [bulkData, setBulkData] = useState({});
-  const fileInputRef = useRef(null);
-
-  useEffect(() => {
-      if (isOpen) {
-          setCourierName('');
-          setSingleTrackingId('');
-          setSingleTrackingUrl('');
-          const initialBulk = {};
-          selectedIds.forEach(id => {
-              initialBulk[id] = { trackingId: '', trackingUrl: '' };
-          });
-          setBulkData(initialBulk);
-      }
-  }, [isOpen, selectedIds]);
-
-  const handleBulkChange = (id, field, value) => {
-      setBulkData(prev => ({
-          ...prev,
-          [id]: { ...prev[id], [field]: value }
-      }));
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target.result;
-      const lines = text.split(/\r?\n/);
-      const newBulkData = { ...bulkData };
-      let matchCount = 0;
-
-      lines.forEach((line, index) => {
-        if (!line.trim()) return;
-        const columns = line.split(',').map(c => c.trim().replace(/^"|"$/g, '')); 
-        
-        if (index === 0 && columns[0].toLowerCase().includes('order')) return;
-
-        const csvOrderId = columns[0];
-        const csvTrackingId = columns[1];
-        const csvUrl = columns[2] || '';
-
-        const cleanId = csvOrderId.replace('#', '');
-        
-        if (selectedIds.includes(parseInt(cleanId)) || selectedIds.includes(cleanId)) {
-           const targetId = selectedIds.find(id => id.toString() === cleanId.toString());
-           if (targetId) {
-             newBulkData[targetId] = {
-               trackingId: csvTrackingId || '',
-               trackingUrl: csvUrl || ''
-             };
-             matchCount++;
-           }
-        }
-      });
-
-      setBulkData(newBulkData);
-      if (fileInputRef.current) fileInputRef.current.value = ''; 
-      alert(`CSV Processed: Updated ${matchCount} orders successfully.`);
-    };
-    reader.readAsText(file);
-  };
-
-  const handleSubmit = () => {
-      if (isBulk) {
-          const updates = selectedIds.map(id => ({
-              id,
-              courierName,
-              trackingId: bulkData[id]?.trackingId || '',
-              trackingUrl: bulkData[id]?.trackingUrl || ''
-          }));
-          onSubmit(updates);
-      } else {
-          onSubmit({
-              courierName,
-              trackingId: singleTrackingId,
-              trackingUrl: singleTrackingUrl
-          });
-      }
-  };
-
-  if (!isOpen) return null;
-
-  const isValid = isBulk 
-    ? courierName && selectedIds.every(id => bulkData[id]?.trackingId) 
-    : courierName && singleTrackingId;
-
-return (
-    <div className="fixed inset-0 bg-black/80 z-[99999] flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose}>
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-xl shadow-2xl w-[95%] ${isBulk ? 'md:max-w-4xl' : 'md:max-w-md'} flex flex-col max-h-[90vh] overflow-hidden border border-gray-200`}
-      >
-        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-black text-white rounded-lg">
-              <Truck size={20} strokeWidth={2} />
-            </div>
-            <div>
-              <h3 className="font-bold text-black text-lg leading-tight">
-                {isBulk ? "Bulk Shipment" : "Shipment Details"}
-              </h3>
-              <p className="text-xs text-gray-500 font-medium">
-                {isBulk ? `Processing ${selectedIds.length} orders` : "Update tracking info"}
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-black"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
-          <div className="mb-6">
-            <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">
-              Courier Partner <span className="text-black">*</span>
-            </label>
-            <input 
-              type="text" 
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400 text-black"
-              placeholder="e.g. BlueDart, FedEx"
-              value={courierName}
-              onChange={e => setCourierName(e.target.value)}
-              autoFocus
-            />
-          </div>
-
-          {isBulk ? (
-            <div className="space-y-4">
-               <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 text-green-700 rounded-lg">
-                      <FileText size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-800">Auto-fill from CSV</p>
-                      <p className="text-xs text-gray-500">Format: <code className="bg-gray-200 px-1 rounded">Order ID, Tracking Number</code></p>
-                    </div>
-                  </div>
-                  <div className="relative">
-                     <input 
-                        type="file" 
-                        accept=".csv"
-                        ref={fileInputRef}
-                        onChange={handleFileUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                     />
-                     <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors">
-                        <Upload size={14} /> Upload CSV
-                     </button>
-                  </div>
-               </div>
-
-               <div className="flex items-center justify-between border-b border-gray-100 pb-2 mt-4">
-                  <label className="text-xs font-bold text-black uppercase tracking-wider">Tracking Numbers</label>
-                  <span className="text-[10px] bg-gray-100 text-black px-2 py-1 rounded font-bold">Total: {selectedIds.length}</span>
-               </div>
-               
-               <div className="space-y-3">
-                  {selectedIds.map(id => (
-                      <div key={id} className="p-4 rounded-lg border border-gray-200 flex flex-col md:flex-row md:items-start gap-4 hover:border-black transition-colors bg-white">
-                          <div className="md:w-20 flex-shrink-0">
-                              <span className="inline-block px-2 py-1 bg-black text-white text-xs font-bold rounded">
-                                #{id}
-                              </span>
-                          </div>
-                          
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <input 
-                                type="text" 
-                                placeholder="AWB / Tracking ID *"
-                                className="w-full px-3 py-2 rounded border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm placeholder:text-gray-400"
-                                value={bulkData[id]?.trackingId || ''}
-                                onChange={e => handleBulkChange(id, 'trackingId', e.target.value)}
-                              />
-                              <input 
-                                type="text" 
-                                placeholder="Tracking URL (Optional)"
-                                className="w-full px-3 py-2 rounded border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm placeholder:text-gray-400"
-                                value={bulkData[id]?.trackingUrl || ''}
-                                onChange={e => handleBulkChange(id, 'trackingUrl', e.target.value)}
-                              />
-                          </div>
-                      </div>
-                  ))}
-               </div>
-            </div>
-          ) : (
-             <div className="space-y-6">
-                <div>
-                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">Tracking ID / AWB <span className="text-black">*</span></label>
-                    <input 
-                      type="text" 
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400"
-                      placeholder="e.g. 123456789"
-                      value={singleTrackingId}
-                      onChange={e => setSingleTrackingId(e.target.value)}
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-2">Tracking Link (Optional)</label>
-                    <input 
-                        type="text" 
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none text-sm font-medium transition-all placeholder:text-gray-400"
-                        placeholder="https://..."
-                        value={singleTrackingUrl}
-                        onChange={e => setSingleTrackingUrl(e.target.value)}
-                    />
-                </div>
-             </div>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 flex-shrink-0 bg-gray-50">
-          <button 
-            onClick={onClose} 
-            className="w-full sm:w-auto px-5 py-3 text-sm font-bold text-black bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-all"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSubmit}
-            disabled={!isValid}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-bold text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-all"
-          >
-            {isBulk ? `Confirm (${selectedIds.length})` : 'Confirm Shipment'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
 
 // --- MAIN COMPONENT ---
-// 🟢 UPDATED: Added handleReturnOrder prop
 const OrdersTab = ({
   orders, orderSearchQuery, setOrderSearchQuery, orderStatusTab, setOrderStatusTab,
   handleUpdateOrderStatus, handleCancelOrder, handleReturnOrder, getSingleOrderDetails, downloadCSV
@@ -388,50 +170,14 @@ const OrdersTab = ({
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const { updateBulkOrderStatus } = useAdmin(); 
 
-  // --- Modal States ---
-  const [isShipmentModalOpen, setIsShipmentModalOpen] = useState(false);
-  const [orderIdToShip, setOrderIdToShip] = useState(null); 
-  const [isBulkShipment, setIsBulkShipment] = useState(false); 
-
   // --- Handlers ---
-
   const handleStatusChangeRequest = (orderId, newStatus) => {
-    if (newStatus === "Shipped") {
-        setOrderIdToShip(orderId);
-        setIsBulkShipment(false);
-        setIsShipmentModalOpen(true);
-    } else {
-        handleUpdateOrderStatus(orderId, newStatus);
-    }
+    handleUpdateOrderStatus(orderId, newStatus);
   };
 
   const handleBulkActionClick = (status) => {
-      if (status === "Shipped") {
-          setIsBulkShipment(true);
-          setIsShipmentModalOpen(true);
-      } else {
-          executeBulkUpdate(status);
-      }
+    executeBulkUpdate(status);
   }
-
-  const handleShipmentSubmit = async (data) => {
-    if (isBulkShipment) {
-        setIsShipmentModalOpen(false); 
-        setSelectedOrders(new Set()); 
-
-        for (const item of data) {
-            await handleUpdateOrderStatus(item.id, "Shipped", {
-                courierName: item.courierName,
-                trackingId: item.trackingId,
-                trackingUrl: item.trackingUrl
-            });
-        }
-    } else if (orderIdToShip) {
-        handleUpdateOrderStatus(orderIdToShip, "Shipped", data);
-        setIsShipmentModalOpen(false);
-        setOrderIdToShip(null);
-    }
-  };
 
   const executeBulkUpdate = async (status) => {
     if (!window.confirm(`Update ${selectedOrders.size} orders to "${status}"?`)) return;
@@ -443,7 +189,7 @@ const OrdersTab = ({
 
   const isOrderSelectable = (order) => {
     const s = (order.status || "").toLowerCase();
-    return s !== "delivered" && s !== "order cancelled" && !s.includes("return");
+    return s !== "delivered" && s !== "order cancelled" && !s.includes("return") && !s.includes("rto");
   };
 
   const calculateBreakdown = (orderData) => {
@@ -476,21 +222,27 @@ const OrdersTab = ({
 
   const getStatusBadge = (status) => {
     const normalizedStatus = (status || "").toLowerCase();
+    
+    // 🟢 FIXED: Added visual styles for all new statuses
     const styles = {
       "delivered": "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
       "shipped": "bg-blue-50/50 text-blue-600 border-blue-100/50",
+      "out for delivery": "bg-indigo-50/50 text-indigo-600 border-indigo-100/50",
+      "packed": "bg-cyan-50/50 text-cyan-600 border-cyan-100/50",
       "processing": "bg-amber-50/50 text-amber-600 border-amber-100/50",
       "order cancelled": "bg-red-50/50 text-red-600 border-red-100/50",
       "order placed": "bg-gray-50/50 text-gray-600 border-gray-100/50",
       "pending_payment": "bg-orange-50 text-orange-600 border-orange-100",
       "payment_pending": "bg-orange-50 text-orange-600 border-orange-100",
-      "return initiated": "bg-orange-50 text-orange-600 border-orange-100",
-      "returned": "bg-emerald-50 text-emerald-600 border-emerald-100"
+      "return initiated": "bg-rose-50 text-rose-600 border-rose-100",
+      "returned": "bg-emerald-50 text-emerald-600 border-emerald-100",
+      "rto initiated": "bg-rose-50 text-rose-600 border-rose-100",
     };
+    
     let styleClass = styles["order placed"];
     if (styles[normalizedStatus]) styleClass = styles[normalizedStatus];
     else if (normalizedStatus.includes('pending')) styleClass = styles["pending_payment"];
-    else if (normalizedStatus.includes('return')) styleClass = styles["return initiated"];
+    else if (normalizedStatus.includes('return') || normalizedStatus.includes('rto')) styleClass = styles["return initiated"];
 
     return (
       <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wide whitespace-nowrap ${styleClass}`}>
@@ -511,7 +263,10 @@ const OrdersTab = ({
       const isNotPaid = !pStatus.includes("paid") && !pStatus.includes("success") && !pStatus.includes("captured");
       return matchesStatus && isOnline && isNotPaid;
     }
-    if (orderStatusTab === "Returns") return o.status.toLowerCase().includes("return");
+    if (orderStatusTab === "Returns") {
+        const s = (o.status || "").toLowerCase();
+        return s.includes("return") || s.includes("rto");
+    }
     return o.status === orderStatusTab;
   }).filter((o) => o.id.toString().includes(orderSearchQuery.trim()));
 
@@ -564,7 +319,8 @@ const OrdersTab = ({
       {/* --- Filters --- */}
       <div className="flex flex-col md:flex-row md:justify-between gap-4">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide flex-1 max-w-[100vw]">
-          {["All", "Payment Pending", "Order Placed", "Processing", "Shipped", "Delivered", "Returns", "Cancelled"].map((status) => (
+          {/* 🟢 FIXED: Added the missing Webhook tabs to the UI */}
+          {["All", "Payment Pending", "Order Placed", "Processing", "Packed", "Shipped", "Out for Delivery", "Delivered", "Returns", "Cancelled"].map((status) => (
             <button
               key={status}
               onClick={() => { setOrderStatusTab(status); setSelectedOrders(new Set()); }}
@@ -689,6 +445,7 @@ const OrdersTab = ({
                       <div onClick={(e) => e.stopPropagation()} className="min-w-[120px] sm:min-w-[140px]">
                         <StatusDropdown
                           currentStatus={order.status}
+                          hasAwb={!!order.shiprocketAwb}
                           onUpdate={(newStatus) => handleStatusChangeRequest(order.id, newStatus)}
                         />
                       </div>
@@ -720,8 +477,7 @@ const OrdersTab = ({
                             currentStatus={order.status}
                             courierDetails={{
                                 courierName: orderDetailsData.courierName,
-                                trackingId: orderDetailsData.shiprocketAwb || orderDetailsData.trackingId, 
-                                trackingUrl: orderDetailsData.trackingUrl
+                                trackingId: orderDetailsData.shiprocketAwb, // 🟢 Purely uses Shiprocket AWB now
                             }}
                         />
                       )}
@@ -833,7 +589,7 @@ const OrdersTab = ({
                               </div>
                             </div>
                             
-                            {/* 🟢 Cancel / Return Action Buttons */}
+                            {/* Cancel / Return Action Buttons */}
                             {(isEditable && order.status !== "Return Initiated" && order.status !== "Returned") && (
                               <button
                                 onClick={() => handleCancelOrder(order)}
@@ -887,15 +643,30 @@ const OrdersTab = ({
                 <div className="h-6 w-px bg-gray-200"></div>
                 
                 <div className="flex gap-2">
-                    {availableBulkActions.map(status => (
-                        <button
-                            key={status}
-                            onClick={() => handleBulkActionClick(status)}
-                            className="px-4 py-2 rounded-full text-xs font-bold bg-gray-100 hover:bg-black hover:text-white transition-all"
-                        >
-                            Mark {status}
-                        </button>
-                    ))}
+                    {availableBulkActions.map(status => {
+                        // 🟢 FIXED: For bulk updates, disable "Shipped" & beyond if ANY selected order lacks a Shiprocket AWB.
+                        const requiresAwb = ["Shipped", "Out for Delivery", "Delivered"];
+                        const isBulkActionDisabled = requiresAwb.includes(status) && !Array.from(selectedOrders).every(id => {
+                            const o = orders.find(ord => ord.id === id);
+                            return !!o?.shiprocketAwb;
+                        });
+
+                        return (
+                            <button
+                                key={status}
+                                onClick={() => !isBulkActionDisabled && handleBulkActionClick(status)}
+                                disabled={isBulkActionDisabled}
+                                title={isBulkActionDisabled ? "One or more selected orders are waiting for a Shiprocket AWB" : ""}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                    isBulkActionDisabled 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-gray-100 hover:bg-black hover:text-white'
+                                }`}
+                            >
+                                Mark {status}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 <button 
@@ -907,17 +678,6 @@ const OrdersTab = ({
             </motion.div>
         )}
       </AnimatePresence>
-
-      {isShipmentModalOpen && (
-        <ShipmentModal 
-            isOpen={isShipmentModalOpen}
-            onClose={() => setIsShipmentModalOpen(false)}
-            onSubmit={handleShipmentSubmit}
-            isBulk={isBulkShipment}
-            selectedIds={Array.from(selectedOrders)}
-        />
-      )}
-
     </div>
   );
 };
