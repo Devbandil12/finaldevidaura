@@ -1,3 +1,4 @@
+// ✅ file: src/pages/Cart.jsx
 import React, { useState, useEffect, useContext, useCallback, useMemo, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -10,7 +11,7 @@ import { CouponContext } from "../contexts/CouponContext";
 
 import Loader from "../Components/Loader";
 import HeroButton from "../Components/HeroButton";
-import CartRecommendations from "./CartRecommendations"; 
+import CartRecommendations from "./CartRecommendations";
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
 import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiClock, FiHeart } from "react-icons/fi";
 
@@ -52,8 +53,8 @@ const BundleItemsList = ({ items }) => {
   return (
     <div className="mt-3 grid grid-cols-2 gap-2">
       {items.map((subItem, index) => (
-        <div 
-          key={index} 
+        <div
+          key={index}
           className="flex flex-col justify-center px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
         >
           <p className="font-bold text-gray-800 text-[11px] truncate w-full">
@@ -248,18 +249,15 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
       style={gpuStyle}
       className="relative group mb-0"
     >
-      {/* Default p-5 and gap-5, shrinks ONLY below 400px */}
       <div className="flex flex-row gap-5 max-[400px]:gap-3 bg-white p-5 max-[400px]:p-1 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 border border-transparent hover:border-gray-50">
-        
-        {/* Default w-28/w-32, shrinks ONLY below 400px */}
         <div className="relative w-28 h-28 sm:w-32 sm:h-32 max-[400px]:w-24 max-[400px]:h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
-          <img 
-            src={itemImageUrl} 
-            alt={item.product.name} 
-            className={`w-full h-full object-cover rounded-[1rem] transition-opacity duration-300 ${isOutOfStock ? "opacity-50 grayscale" : "opacity-100"}`} 
-            loading="eager" 
+          <img
+            src={itemImageUrl}
+            alt={item.product.name}
+            className={`w-full h-full object-cover rounded-[1rem] transition-opacity duration-300 ${isOutOfStock ? "opacity-50 grayscale" : "opacity-100"}`}
+            loading="eager"
           />
-          
+
           {isOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="bg-white/90 backdrop-blur text-[10px] max-[400px]:text-[8px] font-bold text-red-600 px-3 max-[400px]:px-2 py-1 rounded-full shadow-sm border border-red-50 text-center leading-none">OUT OF STOCK</span>
@@ -276,11 +274,10 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
         </div>
 
         <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-          
           <div className="flex justify-between items-start gap-4 max-[400px]:gap-2">
             <div className="flex-1 min-w-0 space-y-1">
               <h3 className="font-bold text-gray-900 text-lg max-[400px]:text-base leading-snug truncate pr-2">{item.product.name}</h3>
-              
+
               {item.isBundle ? (
                 <div className="opacity-70 origin-left scale-95 -ml-1"><BundleItemsList items={item.contents} /></div>
               ) : (
@@ -298,20 +295,18 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
             </div>
           </div>
 
-          {/* Original layout structure, strictly scaling down buttons ONLY below 400px */}
           <div className="flex items-center justify-between mt-4 max-[400px]:gap-2">
-            
             <div className={`flex items-center bg-gray-50 rounded-full p-1.5 max-[400px]:p-1 flex-shrink-0 ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
-              <button 
-                onClick={() => onQuantityChange(item, -1)} 
-                disabled={item.quantity <= 1} 
+              <button
+                onClick={() => onQuantityChange(item, -1)}
+                disabled={item.quantity <= 1}
                 className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black disabled:opacity-30 disabled:shadow-none transition-all active:scale-90 max-[400px]:text-sm"
               >
                 –
               </button>
               <span className="w-10 max-[400px]:w-6 text-center text-sm max-[400px]:text-xs font-bold text-gray-900">{item.quantity}</span>
-              <button 
-                onClick={() => onQuantityChange(item, 1)} 
+              <button
+                onClick={() => onQuantityChange(item, 1)}
                 className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black transition-all active:scale-90 max-[400px]:text-sm"
               >
                 +
@@ -320,23 +315,22 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
 
             <div className="flex items-center gap-2 max-[400px]:gap-1 flex-shrink-0">
               {!isBuyNowActive && (
-                <button 
-                  onClick={() => onSaveForLater(item)} 
-                  className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all" 
+                <button
+                  onClick={() => onSaveForLater(item)}
+                  className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all"
                   title="Save for later"
                 >
                   <FiClock className="w-5 h-5 max-[400px]:w-4 max-[400px]:h-4" />
                 </button>
               )}
-              <button 
-                onClick={() => onRemove(item)} 
-                className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" 
+              <button
+                onClick={() => onRemove(item)}
+                className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all"
                 title="Remove item"
               >
                 <FaTrashAlt className="w-[18px] h-[18px] max-[400px]:w-3.5 max-[400px]:h-3.5" />
               </button>
             </div>
-            
           </div>
         </div>
       </div>
@@ -345,7 +339,6 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
 };
 
 const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
-  // Empty State
   if (items.length === 0) {
     return (
       <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
@@ -362,14 +355,12 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
     );
   }
 
-  // Populated State
   return (
     <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
-      {/* Soft Header */}
       <div className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
-             <FiHeart size={18} />
+            <FiHeart size={18} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saved for Later</h2>
         </div>
@@ -378,14 +369,13 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
         </span>
       </div>
 
-      {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <AnimatePresence mode="popLayout">
           {items.map((item) => {
             const variant = item.variant;
             const product = item.product || item.variant.product;
             const itemImageUrl = Array.isArray(product.imageurl) && product.imageurl.length > 0 ? product.imageurl[0] : "/placeholder.png";
-            
+
             const originalPrice = Number(variant.oprice || 0);
             const discount = Number(variant.discount || 0);
             const price = Math.floor(originalPrice * (1 - discount / 100));
@@ -402,7 +392,6 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 exit="exit"
                 className="group relative bg-white p-4 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow duration-300"
               >
-                {/* Soft Remove Button */}
                 <button
                   onClick={() => onRemove(variant.id)}
                   className="absolute z-10 top-5 right-5 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors duration-200 shadow-sm"
@@ -411,15 +400,13 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 </button>
 
                 <div className="flex items-center gap-5">
-                  {/* Image Bubble with Overlay */}
                   <div className="relative w-24 h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
-                    <img 
-                      src={itemImageUrl} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover rounded-[1rem] group-hover:scale-105 transition-transform duration-500" 
+                    <img
+                      src={itemImageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover rounded-[1rem] group-hover:scale-105 transition-transform duration-500"
                     />
-                    
-                    {/* Discount Overlay */}
+
                     {discount > 0 && (
                       <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
                         <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
@@ -429,17 +416,15 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0 py-1">
                     <h3 className="font-bold text-base text-gray-900 leading-snug truncate">{product.name}</h3>
-                    
+
                     {(item.isBundle || (item.contents && item.contents.length > 0)) ? (
                       <div className="mt-1 opacity-60 scale-90 origin-left"><BundleItemsList items={item.contents} isCompact={true} /></div>
                     ) : (
                       <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-wide">{variant.size} ml</p>
                     )}
 
-                    {/* Price Section */}
                     <div className="mt-2 flex items-baseline gap-2">
                       <span className="text-gray-900 font-bold">₹{price}</span>
                       {showLineThrough && (
@@ -451,7 +436,6 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                   </div>
                 </div>
 
-                {/* Full Width Soft Button */}
                 <div className="mt-5">
                   <button
                     onClick={() => onMoveToCart(item)}
@@ -469,14 +453,13 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
   );
 };
 
-const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon, manualCouponCode, setManualCouponCode, onManualApply, availableCouponsCount, onOpenCouponModal, checkoutError, onCheckout, isBuyNowActive }) => {
+const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon, manualCouponCode, setManualCouponCode, onManualApply, availableCouponsCount, onOpenCouponModal, checkoutError, onCheckout, isBuyNowActive, couponMessage }) => {
   const productDiscount = Number(breakdown.originalTotal || 0) - Number(breakdown.productTotal || 0);
   const finalPrice = typeof breakdown.totalExcludingDelivery !== "undefined" ? breakdown.totalExcludingDelivery : breakdown.total;
 
   return (
     <div className="sticky top-8">
       <div className="bg-white rounded-[2.5rem] p-5 max-[400px]:p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-        {/* Subtle Background Blob */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-8 relative z-10">Order Summary</h2>
@@ -489,7 +472,6 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
           </div>
         ) : (
           <>
-            {/* Price Details */}
             <div className="space-y-4 px-1">
               <div className="flex justify-between text-gray-500 text-sm font-medium">
                 <span>Subtotal</span>
@@ -509,15 +491,13 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                   <span className="text-green-600">-₹{Number(offer.amount || 0).toFixed(2)}</span>
                 </div>
               ))}
-              
-              {/* Divider */}
+
               <div className="h-px w-full bg-gray-100 my-6"></div>
 
-              {/* Coupon Section - Floating Style */}
               <div className="mb-6">
                 <AnimatePresence mode="wait">
                   {appliedCoupon ? (
-                    <motion.div 
+                    <motion.div
                       key="applied"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -538,18 +518,18 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                   ) : (
                     <div className="bg-gray-50 p-1.5 rounded-[1.5rem] flex relative">
                       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                         <FiTag className="text-gray-400" />
+                        <FiTag className="text-gray-400" />
                       </div>
-                      <input 
-                        type="text" 
-                        placeholder="Promo Code" 
-                        value={manualCouponCode} 
-                        onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())} 
+                      <input
+                        type="text"
+                        placeholder="Promo Code"
+                        value={manualCouponCode}
+                        onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
                         onKeyDown={(e) => e.key === "Enter" && onManualApply()}
-                        className="bg-transparent border-none text-gray-900 text-sm font-medium w-full pl-10 pr-20 py-3 focus:ring-0 placeholder:text-gray-400" 
+                        className="bg-transparent border-none text-gray-900 text-sm font-medium w-full pl-10 pr-20 py-3 focus:ring-0 placeholder:text-gray-400"
                       />
-                      <button 
-                        onClick={onManualApply} 
+                      <button
+                        onClick={onManualApply}
                         className="absolute right-1.5 top-1.5 bottom-1.5 bg-white shadow-sm text-black text-xs font-bold px-4 rounded-[1.2rem] hover:bg-black hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black"
                         disabled={!manualCouponCode}
                       >
@@ -558,18 +538,22 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                     </div>
                   )}
                 </AnimatePresence>
-                
+
+                {/* 🟢 STEP 4.2: Surface backend notifications / auto-offer beat notices */}
+                {couponMessage && (
+                  <p className="text-xs font-medium text-blue-600 mt-2 px-2">{couponMessage}</p>
+                )}
+
                 {availableCouponsCount > 0 && !appliedCoupon && (
-                   <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 transition-colors">
-                     See {availableCouponsCount} available offers <FiChevronRight />
-                   </button>
+                  <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 transition-colors">
+                    See {availableCouponsCount} available offers <FiChevronRight />
+                  </button>
                 )}
               </div>
 
-              {/* Grand Total */}
               <div className="flex justify-between items-center pb-2">
-                <span className="text-lg  text-gray-900">Total</span>
-                <span className="text-2xl  text-gray-900 tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
+                <span className="text-lg text-gray-900">Total</span>
+                <span className="text-2xl text-gray-900 tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
               </div>
             </div>
           </>
@@ -585,20 +569,19 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
           )}
         </AnimatePresence>
 
-        {/* Big Soft Checkout Button */}
         <div className="mt-8">
-          <HeroButton 
-            className="w-full py-5 text-sm uppercase tracking-[0.15em] font-bold bg-black text-white rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-black/10 transition-all duration-300 ease-out" 
+          <HeroButton
+            className="w-full py-5 text-sm uppercase tracking-[0.15em] font-bold bg-black text-white rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-black/10 transition-all duration-300 ease-out"
             onClick={onCheckout}
           >
             {isBuyNowActive ? "Pay Now" : "Checkout"}
           </HeroButton>
         </div>
-        
+
         <div className="mt-6 flex justify-center gap-2">
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
+          <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
+          <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
+          <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
         </div>
       </div>
     </div>
@@ -619,10 +602,11 @@ const ShoppingCart = () => {
 
   const { userdetails } = useContext(UserContext);
   const { cart, buyNow, changeCartQuantity, removeFromCart, clearCart, isCartLoading, startBuyNow, clearBuyNow, addToCart, savedItems, saveForLater, moveSavedToCart, removeSavedItem } = useContext(CartContext);
-  const { availableCoupons, isCouponValid, loadAvailableCoupons, validateCoupon, autoOfferInstructions } = useContext(CouponContext);
+  const { availableCoupons, loadAvailableCoupons, autoOfferInstructions } = useContext(CouponContext);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
+  const [couponMessage, setCouponMessage] = useState(""); // 🟢 ADDED: Stores server engine messages
   const [showOffers, setShowOffers] = useState(false);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [couponSearch, setCouponSearch] = useState("");
@@ -649,17 +633,11 @@ const ShoppingCart = () => {
   // --- STEP 1: ISOLATE MANUAL COUPONS (For the Count) ---
   const manualCoupons = useMemo(() => {
     const activeAutoCodes = new Set(autoOfferInstructions.map((o) => o.code));
-    
+
     return availableCoupons.filter((c) => {
-      // 1. Exclude if it's currently an active automatic offer
       if (activeAutoCodes.has(c.code)) return false;
-      
-      // 2. Exclude if explicitly marked as auto
       if (c.type === "auto" || c.isAutomatic) return false;
-
-      // 3. Exclude based on naming convention (fallback)
       if (c.code.toUpperCase().startsWith("AUTO")) return false;
-
       return true;
     });
   }, [availableCoupons, autoOfferInstructions]);
@@ -667,10 +645,10 @@ const ShoppingCart = () => {
   // --- STEP 2: FILTER FOR SEARCH (For the Modal List) ---
   const filteredCoupons = useMemo(() => {
     if (!couponSearch) return manualCoupons;
-    
+
     const lowerSearch = couponSearch.toLowerCase();
-    return manualCoupons.filter(c => 
-      c.code.toLowerCase().includes(lowerSearch) || 
+    return manualCoupons.filter(c =>
+      c.code.toLowerCase().includes(lowerSearch) ||
       (c.description && c.description.toLowerCase().includes(lowerSearch))
     );
   }, [manualCoupons, couponSearch]);
@@ -696,7 +674,7 @@ const ShoppingCart = () => {
   const [loadingPrices, setLoadingPrices] = useState(true);
   const lastRequestRef = useRef("");
 
-  // --- PRICE FETCHING ---
+  // --- PRICE FETCHING (🟢 UPDATED TO USE STEP 4.2 PRICE-PREVIEW ENDPOINT) ---
   useEffect(() => {
     if (isCartLoading || itemsToRender.length === 0) {
       setLoadingPrices(false);
@@ -711,18 +689,37 @@ const ShoppingCart = () => {
       const requestBody = {
         cartItems: itemsToRender.map((i) => ({ variantId: i.variant?.id ?? i.variantId, quantity: i.quantity, productId: i.product?.id ?? i.productId })),
         couponCode: appliedCoupon?.code || null,
-        isCart: true,
         pincode: null,
+        userId: userdetails?.id || null
       };
       const requestString = JSON.stringify(requestBody);
       if (lastRequestRef.current === requestString) return;
 
       setLoadingPrices(true);
       try {
-        const res = await fetch(`${API_BASE}/api/payments/breakdown`, { method: "POST", headers: { "Content-Type": "application/json" }, body: requestString });
-        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).msg || "Failed to fetch price details.");
+        // 🟢 POINTED TO THE NEW CENTRALIZED ENGINE ROUTE
+        const res = await fetch(`${API_BASE}/api/cart/price-preview`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Include authorization if your backend price-preview middleware requires token validation
+            ...(window.Clerk?.session ? { Authorization: `Bearer ${await window.Clerk.session.getToken()}` } : {})
+          },
+          body: requestString
+        });
+
         const data = await res.json();
-        setBreakdown(data.breakdown ?? data);
+
+        if (data.error) {
+          // Server engine threw a business logic error (e.g., usage limit hit)
+          window.toast?.error(data.message);
+          setAppliedCoupon(null);
+          setCouponMessage("");
+        } else {
+          setBreakdown(data.breakdown ?? data);
+          setCouponMessage(data.message || ""); // Captures auto-offer beat notices
+        }
+
         lastRequestRef.current = requestString;
       } catch (error) {
         console.error("Price breakdown error:", error);
@@ -732,7 +729,7 @@ const ShoppingCart = () => {
     };
     const timer = setTimeout(() => fetchBreakdown(), 300);
     return () => clearTimeout(timer);
-  }, [itemsToRender, appliedCoupon?.code, isCartLoading, API_BASE]);
+  }, [itemsToRender, appliedCoupon?.code, isCartLoading, API_BASE, userdetails?.id]);
 
   useEffect(() => { if (userdetails?.id) loadAvailableCoupons(userdetails.id); }, [userdetails?.id, loadAvailableCoupons]);
 
@@ -758,7 +755,7 @@ const ShoppingCart = () => {
     localStorage.setItem("selectedItems", JSON.stringify(fullCartItems));
     localStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon));
     sessionStorage.setItem("checkout_intent", JSON.stringify({ ts: Date.now(), source: isBuyNowActive ? "buy_now" : "cart" }));
-    
+
     if (!isSignedIn) { sessionStorage.setItem("post_login_redirect", "/checkout"); navigate("/login", { replace: true }); return; }
     navigate("/checkout");
   };
@@ -772,17 +769,30 @@ const ShoppingCart = () => {
   const handleSaveForLater = (item) => !isBuyNowActive && saveForLater(item);
   const handleMoveToCart = (item) => moveSavedToCart(item);
   const handleRemoveSavedItem = (variantId) => removeSavedItem(variantId);
-  
-  const handleApplyCoupon = useCallback(async (coupon) => {
-    const validated = await validateCoupon(coupon.code, userdetails?.id);
-    if (validated && isCouponValid(validated, itemsToRender, Number(breakdown.productTotal || 0) - Number(breakdown.offerDiscount || 0))) {
-      setAppliedCoupon(validated); window.toast.success(`Coupon ${validated.code} applied!`);
-    } else { setAppliedCoupon(null); }
-  }, [itemsToRender, userdetails?.id, isCouponValid, validateCoupon, breakdown]);
 
-  const handleManualApply = async () => {
+  // 🟢 SIMPLIFIED: Let the server-side price engine validate the coupon upon breakdown fetch
+  // --- Updated handleApplyCoupon in Cart.jsx ---
+  const handleApplyCoupon = useCallback(async (couponObj) => {
+    if (!userdetails?.id) {
+      window.toast.error("Please log in to apply coupons.");
+      return;
+    }
+
+    // Hit the server-side validation endpoint we secured in Step 1 & 2
+    const validatedCoupon = await validateCoupon(couponObj.code, userdetails.id);
+
+    if (validatedCoupon) {
+      setAppliedCoupon(validatedCoupon);
+      setCouponMessage("");
+      window.toast.success(`Coupon ${validatedCoupon.code} applied successfully!`);
+    } else {
+      setAppliedCoupon(null);
+    }
+  }, [userdetails?.id, validateCoupon]);
+
+  const handleManualApply = () => {
     if (!manualCouponCode) return window.toast.error("Please enter a coupon code");
-    await handleApplyCoupon({ code: manualCouponCode });
+    handleApplyCoupon({ code: manualCouponCode });
   };
 
   const handleAddToCart = (variant, product) => {
@@ -792,9 +802,6 @@ const ShoppingCart = () => {
   };
 
   const handleExitBuyNow = () => { clearBuyNow(); navigate("/cart", { replace: true, state: {} }); };
-  useEffect(() => {
-    if (appliedCoupon && !isCouponValid(appliedCoupon, itemsToRender, Number(breakdown.productTotal || 0) - Number(breakdown.offerDiscount || 0))) setAppliedCoupon(null);
-  }, [itemsToRender, appliedCoupon, isCouponValid, breakdown]);
 
   const isLoading = !isBuyNowActive && isCartLoading;
 
@@ -804,7 +811,7 @@ const ShoppingCart = () => {
       <meta name="description" content="Review your selected items, apply coupons, and proceed to a secure checkout. Manage your Devid Aura shopping experience." />
 
       <AutoOfferModal isOpen={showOffers} onClose={() => setShowOffers(false)} instructions={autoOfferInstructions} />
-      
+
       <CouponSelectionModal
         isOpen={isCouponModalOpen} onClose={() => setIsCouponModalOpen(false)}
         coupons={filteredCoupons} search={couponSearch} onSearchChange={(e) => setCouponSearch(e.target.value)}
@@ -854,12 +861,12 @@ const ShoppingCart = () => {
             </motion.div>
 
             <OrderSummary
-              breakdown={breakdown} loadingPrices={loadingPrices} appliedCoupon={appliedCoupon} onRemoveCoupon={() => setAppliedCoupon(null)}
+              breakdown={breakdown} loadingPrices={loadingPrices} appliedCoupon={appliedCoupon} onRemoveCoupon={() => { setAppliedCoupon(null); setCouponMessage(""); }}
               manualCouponCode={manualCouponCode} setManualCouponCode={setManualCouponCode} onManualApply={handleManualApply}
-              // CHANGE HERE: Use manualCoupons.length instead of availableCoupons.length
-              availableCouponsCount={manualCoupons.length} 
+              availableCouponsCount={manualCoupons.length}
               onOpenCouponModal={() => setIsCouponModalOpen(true)}
               checkoutError={checkoutError} onCheckout={handleCheckout} isBuyNowActive={isBuyNowActive}
+              couponMessage={couponMessage}
             />
           </div>
 

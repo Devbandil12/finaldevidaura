@@ -5,15 +5,15 @@ import { useAuth } from "@clerk/clerk-react";
 export const CouponContext = createContext({
   coupons: [],
   availableCoupons: [],
-  autoOfferInstructions: [], 
+  autoOfferInstructions: [],
   editingCoupon: null,
-  setEditingCoupon: () => {},
-  refreshCoupons: () => {},
-  saveCoupon: () => {},
-  deleteCoupon: () => {},
+  setEditingCoupon: () => { },
+  refreshCoupons: () => { },
+  saveCoupon: () => { },
+  deleteCoupon: () => { },
   isCouponValid: () => false,
-  loadAvailableCoupons: () => {},
-  loadAutoOfferInstructions: () => {}, 
+  loadAvailableCoupons: () => { },
+  loadAutoOfferInstructions: () => { },
   validateCoupon: () => null,
 });
 
@@ -21,19 +21,19 @@ export const CouponProvider = ({ children }) => {
   const [coupons, setCoupons] = useState([]);
   const [editingCoupon, setEditingCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [autoOfferInstructions, setAutoOfferInstructions] = useState([]); 
-  
+  const [autoOfferInstructions, setAutoOfferInstructions] = useState([]);
+
   const { userdetails, isUserLoading } = useContext(UserContext);
   const { getToken } = useAuth();
-  
+
   const BASE_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
   // Helper
   const getAuthHeaders = async () => {
     const token = await getToken();
     return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
     };
   };
 
@@ -66,13 +66,13 @@ export const CouponProvider = ({ children }) => {
       console.error("[CouponContext] failed to load available coupons:", err);
     }
   }, [BASE_URL]);
-  
+
   // --- 3. Function to get automatic offer instructions ---
   const loadAutoOfferInstructions = useCallback(async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/coupons/automatic-offers`);
       if (!res.ok) throw new Error("Failed to fetch auto offers");
-      const data = await res.json(); 
+      const data = await res.json();
       setAutoOfferInstructions(data);
     } catch (err) {
       console.error("[CouponContext] failed to load auto offers:", err);
@@ -85,9 +85,9 @@ export const CouponProvider = ({ children }) => {
     if (isUserLoading) {
       return;
     }
-    
+
     loadAutoOfferInstructions();
-    
+
     if (userdetails?.role === 'admin') {
       refreshCoupons();
     } else if (userdetails?.id) {
@@ -111,13 +111,13 @@ export const CouponProvider = ({ children }) => {
       discountValue: editingCoupon.discountValue,
       minOrderValue: editingCoupon.minOrderValue,
       minItemCount: editingCoupon.minItemCount,
-      maxDiscountAmount: editingCoupon.maxDiscountAmount || null, 
-      
+      maxDiscountAmount: editingCoupon.maxDiscountAmount || null,
+
       validFrom: editingCoupon.validFrom ? new Date(editingCoupon.validFrom) : null,
       validUntil: editingCoupon.validUntil ? new Date(editingCoupon.validUntil) : null,
       firstOrderOnly: editingCoupon.firstOrderOnly ?? false,
       maxUsagePerUser: editingCoupon.maxUsagePerUser ?? null,
-      
+
       isAutomatic: editingCoupon.isAutomatic ?? false,
       cond_requiredCategory: editingCoupon.cond_requiredCategory || null,
       cond_requiredSize: editingCoupon.cond_requiredSize || null,
@@ -127,7 +127,7 @@ export const CouponProvider = ({ children }) => {
       action_getY: editingCoupon.action_getY || null,
 
       targetUserId: editingCoupon.targetUserId || null,
-      targetCategory: editingCoupon.targetCategory || null, 
+      targetCategory: editingCoupon.targetCategory || null,
       // actorId inferred from token
     };
 
@@ -141,7 +141,7 @@ export const CouponProvider = ({ children }) => {
       const res = await fetch(url, {
         method,
         headers,
-        body: JSON.stringify(formattedPayload), 
+        body: JSON.stringify(formattedPayload),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -150,7 +150,7 @@ export const CouponProvider = ({ children }) => {
       window.toast.success(editingCoupon.id ? "Coupon updated" : "Coupon added");
       setEditingCoupon(null);
       await refreshCoupons();
-    } catch(err) {
+    } catch (err) {
       window.toast.error(err.message || "Save failed");
     }
   };
@@ -173,43 +173,13 @@ export const CouponProvider = ({ children }) => {
   };
 
   // --- 7. isCouponValid ---
+  // --- 7. isCouponValid (Simplified to trust the robust backend engine) ---
   const isCouponValid = useCallback((coupon, cart, postOfferTotal) => {
-    const totalValue = postOfferTotal ?? cart.reduce(
-      (acc, item) =>
-        acc +
-        item.quantity *
-        Math.floor(item.variant.oprice * (1 - item.variant.discount / 100)),
-      0
-    ); 
-    
-    const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-    if (coupon.isAutomatic) {
+    if (coupon?.isAutomatic) {
       window.toast.error("This is an automatic offer and cannot be applied manually.");
       return false;
     }
-
-    if (coupon.minOrderValue && totalValue < coupon.minOrderValue) {
-      window.toast.error(`Minimum order value ₹${coupon.minOrderValue} required`);
-      return false;
-    }
-
-    if (coupon.minItemCount && totalItems < coupon.minItemCount) {
-      window.toast.error(`Minimum ${coupon.minItemCount} items required`);
-      return false;
-    }
-
-    const now = new Date();
-    if (coupon.validFrom && new Date(coupon.validFrom) > now) {
-      window.toast.error(`Coupon is not active yet`);
-      return false;
-    }
-
-    if (coupon.validUntil && new Date(coupon.validUntil) < now) {
-      window.toast.error(`Coupon has expired`);
-      return false;
-    }
-
+    // Let the backend engine handle minOrderValue, limits, and segments dynamically!
     return true;
   }, []);
 
@@ -219,15 +189,15 @@ export const CouponProvider = ({ children }) => {
       window.toast.error("Coupon code and user are required.");
       return null;
     }
-    
+
     try {
       const res = await fetch(`${BASE_URL}/api/coupons/validate?code=${code}&userId=${userId}`, {
         method: "GET",
       });
-      
+
       const data = await res.json();
-      
-      if (!res.ok || !data.code) { 
+
+      if (!res.ok || !data.code) {
         window.toast.error(data.message || "Invalid coupon code");
         return null;
       }
@@ -251,7 +221,7 @@ export const CouponProvider = ({ children }) => {
         saveCoupon,
         deleteCoupon,
         isCouponValid,
-        loadAvailableCoupons, 
+        loadAvailableCoupons,
         loadAutoOfferInstructions,
         validateCoupon,
       }}
