@@ -1,209 +1,262 @@
-import React, { useState, useMemo } from 'react';
-import { Loader2, ShoppingBag, X, ChevronRight, Package, Calendar, ArrowRight, ExternalLink } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { 
+  ShoppingBag, ArrowRight, Package, Clock, 
+  CreditCard, Star, ChevronRight, User, MapPin, Copy, Check, Share2
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-// --- Shared Utility ---
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString("en-IN", { 
-    month: "short", day: "numeric", year: "numeric" 
-  });
-};
+import { generateReferralCardBlob } from "../../utils/referralCard"; // 🟢 NEW: designed image share
 
-export default function OrdersTab({ orders, loadingOrders, products }) {
-  const [viewOrder, setViewOrder] = useState(null);
-  const productMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+// 🟢 UPDATED: new template — converted to WhatsApp's real formatting syntax
+// (*bold*, not markdown's **bold**; ```monospace```, not single backticks)
+const buildReferralShareText = (code) =>
+  `✨ *I've been using Devid Aura and absolutely loved it!* 🌸\n\n` +
+  `💝 *Your first Devid Aura order comes with a little surprise…*\n\n` +
+  `Use my referral code and *₹50 gets added to your wallet instantly!* ✨\n\n` +
+  `🎁 *Code:* \`\`\`${code}\`\`\`\n\n` +
+  `Treat yourself to your favorite fragrance and enjoy your welcome reward. 💖\n\n` +
+  `🛍️ *Shop Now:* https://www.devidaura.com\n\n` +
+  `Happy shopping! 💖`;
 
-  // Helper to determine status badge colors based on our webhook mappings
-  const getStatusStyle = (status) => {
-    const s = status?.toLowerCase() || '';
-    if (s === 'delivered') return "bg-emerald-50 text-emerald-700 border-emerald-100";
-    if (s.includes('cancel')) return "bg-rose-50 text-rose-700 border-rose-100";
-    if (s.includes('return') || s.includes('rto')) return "bg-orange-50 text-orange-700 border-orange-100";
-    if (s.includes('ship') || s.includes('packed') || s.includes('transit') || s.includes('delivery')) return "bg-blue-50 text-blue-700 border-blue-100";
-    return "bg-zinc-100 text-zinc-600 border-zinc-200"; // Default (Processing, Placed, etc.)
+// --- Components ---
+
+const StatItem = ({ label, value, onClick }) => (
+  <div onClick={onClick} className="group cursor-pointer flex flex-col justify-between h-32 p-6 bg-zinc-50 hover:bg-zinc-900 transition-colors duration-500 rounded-[2rem]">
+    <div className="flex justify-between items-start">
+      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-400 group-hover:text-zinc-500 transition-colors">
+        {label}
+      </span>
+      <div className="w-6 h-6 rounded-full border border-zinc-200 group-hover:border-zinc-700 flex items-center justify-center">
+        <ArrowRight size={10} className="text-zinc-400 group-hover:text-white -rotate-45 group-hover:rotate-0 transition-all duration-500" />
+      </div>
+    </div>
+    <span className="font-serif text-4xl text-zinc-900 group-hover:text-white transition-colors duration-500">
+      {value}
+    </span>
+  </div>
+);
+
+const SectionHeader = ({ title, action, onAction }) => (
+  <div className="flex items-baseline justify-between mb-8 px-2">
+    <h3 className="font-serif text-2xl text-zinc-900">{title}</h3>
+    {action && (
+      <button onClick={onAction} className="text-xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors">
+        {action}
+      </button>
+    )}
+  </div>
+);
+
+const ActivityRow = ({ item, onClick }) => (
+  <div onClick={onClick} className="group flex items-center gap-6 py-6 border-b border-zinc-100 cursor-pointer hover:pl-4 transition-all duration-300">
+    <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-colors">
+      <item.icon size={18} strokeWidth={1.5} />
+    </div>
+    <div className="flex-1">
+      <h4 className="font-serif text-lg text-zinc-900 group-hover:text-amber-600 transition-colors">{item.title}</h4>
+      <p className="text-xs text-zinc-400 mt-1 font-sans">{item.subtitle}</p>
+    </div>
+    <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest group-hover:text-zinc-500">
+      {item.timeAgo}
+    </span>
+  </div>
+);
+
+export default function OverviewTab({ user, orders, cart, wishlist, address, tickets, userReviews, setActiveTab }) {
+  const navigate = useNavigate();
+  const [copied, setCopied] = useState(false); // 🟢 NEW: referral code copy/share
+
+  const handleCopyReferral = () => {
+    if (!user.referralCode) return;
+    navigator.clipboard.writeText(user.referralCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleShareReferral = async () => {
+    if (!user.referralCode) return;
+    const code = user.referralCode;
+    const text = buildReferralShareText(code);
+    try {
+      const blob = await generateReferralCardBlob(code);
+      const file = new File([blob], "devid-aura-referral.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text, title: "Devid Aura" });
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share({ title: "Devid Aura", text });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "devid-aura-referral.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      window.toast?.success?.("Referral card downloaded — attach it to your message!");
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+      console.error("Referral share failed:", err);
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  // Data Logic
+  const recentOrder = orders?.[0];
+  const activities = useMemo(() => {
+    const all = [
+      ...(orders || []).map(o => ({ 
+        type: 'order', date: new Date(o.createdAt), title: `Order #${o.id.slice(-6).toUpperCase()}`, 
+        subtitle: `${o.status} • ₹${o.totalAmount}`, icon: Package, link: 'orders' 
+      })),
+      ...(tickets || []).map(t => ({ 
+        type: 'ticket', date: new Date(t.createdAt), title: `Support Request`, 
+        subtitle: t.subject, icon: User, link: 'support' 
+      })),
+      ...(userReviews || []).map(r => ({ 
+        type: 'review', date: new Date(r.createdAt), title: `Product Review`, 
+        subtitle: 'You shared your thoughts', icon: Star, link: 'reviews' 
+      }))
+    ];
+    return all.sort((a, b) => b.date - a.date).slice(0, 4).map(i => ({
+      ...i, timeAgo: i.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+    }));
+  }, [orders, tickets, userReviews]);
+
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-zinc-100">
+    <div className="animate-fadeIn space-y-12 pb-10">
+      
+      {/* 1. Header: Personal Greeting */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-100">
         <div>
-          <h2 className="font-serif text-3xl font-medium text-zinc-900 tracking-tight">Order History</h2>
-          <p className="text-zinc-500 font-light text-sm mt-1 font-sans">Track your past purchases and returns.</p>
+           <h1 className="font-serif text-5xl md:text-6xl text-zinc-900 leading-[0.9]">
+             Hello, <br/> <span className="text-zinc-400 italic">{(user.name || '').split(' ')[0] || 'there'}.</span>
+           </h1>
+           <p className="mt-6 text-zinc-500 font-light max-w-md text-sm leading-relaxed">
+          Your personal atelier. Track your collection, manage your aura points, and discover your next signature scent.
+        </p>
+        </div>
+        <div className="flex gap-4">
+           <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Member Since</p>
+              <p className="font-serif text-xl text-zinc-900">{new Date(user.createdAt || Date.now()).getFullYear()}</p>
+           </div>
+           <div className="w-px h-10 bg-zinc-100"></div>
+           <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Aura Status</p>
+              <p className="font-serif text-xl text-zinc-900">Gold</p>
+           </div>
         </div>
       </div>
 
-      {loadingOrders ? (
-        <div className="flex justify-center py-32">
-          <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-32 bg-zinc-50/50 rounded-[2rem] border border-dashed border-zinc-200">
-          <ShoppingBag className="text-zinc-300 mb-4" size={48} strokeWidth={1} />
-          <h3 className="font-serif text-xl text-zinc-900">No orders yet</h3>
-          <p className="text-zinc-400 font-light text-sm mt-2 max-w-xs text-center">Your collection awaits. Discover our signature scents.</p>
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          {orders.map((order) => {
-            const previewImages = order.orderItems.slice(0, 4).map((item) => {
-              const prod = productMap.get(item.productId);
-              return prod?.imageurl?.[0] || item.img;
-            });
-            const remaining = Math.max(0, order.orderItems.length - 4);
-            const statusStyle = getStatusStyle(order.status);
-
-            return (
-              <motion.div 
-                key={order.id} 
-                layoutId={order.id} 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setViewOrder(order)}
-                className="group relative bg-white rounded-[2rem] p-6 sm:p-8 cursor-pointer border border-zinc-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:border-zinc-200 transition-all"
-              >
-                <div className="flex flex-col md:flex-row gap-8 justify-between">
-                  
-                  {/* Left: Info */}
-                  <div className="space-y-6 flex-1">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${statusStyle}`}>
-                        {order.status}
-                      </span>
-                      <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
-                        <Calendar size={12} /> {formatDate(order.createdAt)}
-                      </div>
-                      <div className="text-xs text-zinc-300 font-mono">#{order.id.slice(-6).toUpperCase()}</div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      {previewImages.map((img, idx) => (
-                        <div key={idx} className="w-14 h-14 rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 p-1.5 shadow-sm">
-                          <img src={img} className="w-full h-full object-contain mix-blend-multiply" alt="Product thumbnail" />
-                        </div>
-                      ))}
-                      {remaining > 0 && (
-                        <div className="w-14 h-14 rounded-xl border border-zinc-100 bg-zinc-50 flex items-center justify-center text-xs font-bold text-zinc-400">
-                          +{remaining}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Price & Action */}
-                  <div className="flex items-center justify-between md:flex-col md:items-end md:justify-center gap-4 border-t md:border-t-0 border-zinc-50 pt-4 md:pt-0 pl-0 md:pl-8 md:border-l border-zinc-50">
-                    <div className="md:text-right">
-                      <p className="font-serif text-2xl font-medium text-zinc-900">₹{order.totalAmount}</p>
-                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Total Paid</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:bg-zinc-900 group-hover:text-white transition-colors">
-                        <ArrowRight size={18} />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Order Detail Modal */}
-      <AnimatePresence>
-        {viewOrder && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-[100] bg-zinc-900/60 backdrop-blur-sm flex items-center justify-center p-4" 
-            onClick={() => setViewOrder(null)}
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }} 
-              animate={{ scale: 1, y: 0 }} 
-              exit={{ scale: 0.95, y: 20 }} 
-              className="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col" 
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
-                <div>
-                   <h3 className="font-serif text-2xl text-zinc-900">Order Details</h3>
-                   <p className="text-xs text-zinc-500 font-mono mt-1">ID: {viewOrder.id}</p>
-                </div>
-                <button 
-                  onClick={() => setViewOrder(null)} 
-                  className="p-2.5 bg-white border border-zinc-200 rounded-full hover:bg-zinc-50 transition-colors text-zinc-500"
-                  aria-label="Close modal"
-                >
-                   <X size={20} />
-                </button>
+      {/* 2. Hero: Active Context */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left: The "Main Event" (Latest Order) */}
+        <div className="lg:col-span-2 relative group cursor-pointer" onClick={() => setActiveTab('orders')}>
+           <div className="absolute inset-0 bg-zinc-900 rounded-[2.5rem] transform transition-transform duration-500 group-hover:scale-[1.01]"></div>
+           <div className="relative h-full bg-zinc-900 rounded-[2.5rem] p-10 flex flex-col justify-between overflow-hidden">
+              {/* Abstract Art */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-full blur-3xl opacity-50 -mr-10 -mt-10 pointer-events-none"></div>
+              
+              <div className="relative z-10 flex justify-between items-start">
+                 <div className="flex items-center gap-3 text-amber-500">
+                    <Clock size={18} />
+                    <span className="text-xs font-bold uppercase tracking-widest">Latest Update</span>
+                 </div>
+                 {recentOrder && <div className="px-3 py-1 rounded-full border border-white/10 text-xs font-bold text-zinc-300 uppercase tracking-wide">{recentOrder.status}</div>}
               </div>
 
-              {/* Scrollable Content */}
-              <div className="p-8 overflow-y-auto custom-scrollbar space-y-8">
-                 {/* Product List */}
-                 <div className="space-y-6">
-                    {viewOrder.orderItems.map(item => {
-                        const prod = productMap.get(item.productId);
-                        return (
-                            <div key={item.id} className="flex gap-5 items-center">
-                                <div className="w-20 h-20 rounded-2xl bg-zinc-50 border border-zinc-100 p-2 flex-shrink-0">
-                                    <img src={prod?.imageurl?.[0] || item.img} className="w-full h-full object-contain mix-blend-multiply" alt={item.productName} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-zinc-900 truncate font-serif text-lg">{item.productName}</h4>
-                                    <p className="text-xs text-zinc-500 mt-1">Quantity: {item.quantity}</p>
-                                </div>
-                                <p className="font-medium text-zinc-900 font-serif text-lg">₹{item.totalPrice}</p>
-                            </div>
-                        )
-                    })}
-                 </div>
-
-                 {/* Summary Stats */}
-                 <div className="bg-zinc-50 rounded-3xl p-6 space-y-4">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">Order Status</span>
-                        <span className="font-medium text-zinc-900 capitalize">{viewOrder.status}</span>
-                    </div>
-                    
-                    {/* Live Tracking Link Implementation */}
-                    {viewOrder.shiprocketAwb && (
-                      <div className="flex justify-between text-sm items-center">
-                          <span className="text-zinc-500">Tracking AWB</span>
-                          <a 
-                            href={`https://shiprocket.co/tracking/${viewOrder.shiprocketAwb}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
-                          >
-                            {viewOrder.shiprocketAwb}
-                            <ExternalLink size={14} />
-                          </a>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">Payment Status</span>
-                        <span className="font-medium text-zinc-900 capitalize">
-                          {viewOrder.paymentInfo?.status || viewOrder.paymentStatus || "Paid"}
-                        </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">Order Date</span>
-                        <span className="font-medium text-zinc-900">{formatDate(viewOrder.createdAt)}</span>
-                    </div>
-                    <div className="h-px bg-zinc-200 my-2"></div>
-                    <div className="flex justify-between text-lg font-serif font-bold">
-                        <span className="text-zinc-900">Total Amount</span>
-                        <span className="text-zinc-900">₹{viewOrder.totalAmount}</span>
-                    </div>
-                 </div>
+              <div className="relative z-10 mt-12 mb-8">
+                 {recentOrder ? (
+                   <>
+                     <h2 className="font-serif text-4xl md:text-5xl text-white leading-tight">
+                       Order <span className="text-zinc-500">#{recentOrder.id.slice(-6)}</span>
+                     </h2>
+                     <p className="text-zinc-400 mt-4 max-w-md font-light leading-relaxed">
+                        Currently {(recentOrder.status || '').toLowerCase()}. Track your package for real-time updates.
+                     </p>
+                   </>
+                 ) : (
+                   <>
+                     <h2 className="font-serif text-4xl md:text-5xl text-white leading-tight">
+                       Your Collection <br/> <span className="text-zinc-600 italic">is empty.</span>
+                     </h2>
+                     <p className="text-zinc-400 mt-4 max-w-md font-light leading-relaxed">
+                        Discover our signature fragrances and start building your aura.
+                     </p>
+                   </>
+                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+              <div className="relative z-10 flex items-center gap-4">
+                 <button className="h-12 px-8 rounded-full bg-white text-zinc-900 font-bold text-xs uppercase tracking-widest hover:bg-zinc-200 transition-colors">
+                    {recentOrder ? 'Track Order' : 'Start Shopping'}
+                 </button>
+              </div>
+           </div>
+        </div>
+
+        {/* Right: Quick Stats Column */}
+        <div className="space-y-4">
+           <StatItem label="Shopping Cart" value={cart?.length || 0} onClick={() => navigate('/cart')} />
+           <StatItem label="Wishlist" value={wishlist?.length || 0} onClick={() => navigate('/wishlist')} />
+           <StatItem label="Addresses" value={address?.length || 0} onClick={() => setActiveTab('addresses')} />
+        </div>
+      </div>
+
+      {/* 3. The Feed: Minimal List */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-8">
+         <div className="lg:col-span-8">
+            <SectionHeader title="Recent Activity" action="View All" onAction={() => setActiveTab('activity_log')} />
+            <div className="flex flex-col">
+               {activities.length > 0 ? activities.map((item, i) => (
+                  <ActivityRow key={i} item={item} onClick={() => setActiveTab(item.link)} />
+               )) : (
+                  <div className="py-12 text-center border-y border-zinc-100 text-zinc-400 font-light italic">
+                     No recent activity found.
+                  </div>
+               )}
+            </div>
+         </div>
+
+         <div className="lg:col-span-4">
+            <SectionHeader title="Aura Circle" />
+            <div className="bg-[#F5F5F0] rounded-[2.5rem] p-8 text-center relative overflow-hidden">
+               <div className="relative z-10">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Referral Program</p>
+                  <h4 className="font-serif text-3xl text-zinc-900 mb-2">Invite & Earn</h4>
+                  <p className="text-zinc-500 text-sm font-light mb-6">Share your code. Get instant wallet credits.</p>
+
+                  {/* 🟢 NEW: the actual code, instead of just a generic pitch */}
+                  {user.referralCode ? (
+                    <>
+                      <button
+                        onClick={handleCopyReferral}
+                        className="w-full flex items-center justify-between px-5 py-3.5 bg-white rounded-2xl border border-zinc-200 mb-3 group/copy"
+                      >
+                        <span className="font-mono text-lg tracking-wider text-zinc-900">{user.referralCode}</span>
+                        {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} className="text-zinc-400 group-hover/copy:text-zinc-900 transition-colors" />}
+                      </button>
+                      <button
+                        onClick={handleShareReferral}
+                        className="w-full py-4 bg-zinc-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2"
+                      >
+                        <Share2 size={14} /> Share with a friend
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => setActiveTab('wallet')} className="w-full py-4 bg-zinc-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-black transition-all">
+                       View Wallet
+                    </button>
+                  )}
+               </div>
+            </div>
+         </div>
+      </div>
+
     </div>
   );
 }

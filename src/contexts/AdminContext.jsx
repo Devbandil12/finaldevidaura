@@ -183,6 +183,46 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // 🟢 NEW: Part D — bulk "Ship Now". Preview is read-only (no optimistic
+  // update, nothing has changed yet); shipOrders is the actual mutation.
+  const previewShipOrders = async (orderIds) => {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${BACKEND_URL}/api/orders/admin/ship-preview`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ orderIds }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Preview failed");
+      return data;
+    } catch (err) {
+      console.error("❌ previewShipOrders failed:", err);
+      window.toast.error(err.message || "Couldn't fetch shipping estimate.");
+      return null;
+    }
+  };
+
+  const shipOrders = async (shipRequests) => {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`${BACKEND_URL}/api/orders/admin/ship-now`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ orders: shipRequests }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Ship now failed");
+      window.toast.success(data.message || "Orders shipped.");
+      await getAllOrders();
+      return data;
+    } catch (err) {
+      console.error("❌ shipOrders failed:", err);
+      window.toast.error(err.message || "Couldn't ship the selected orders.");
+      return null;
+    }
+  };
+
   // 🟢 OPTIMIZED: Cancel Order without Refetch
   const cancelOrder = async (orderId, paymentMode, amount) => {
     try {
@@ -348,6 +388,8 @@ export const AdminProvider = ({ children }) => {
         getSingleOrderDetails,
         updateOrderStatus,
         updateBulkOrderStatus,
+        previewShipOrders, // 🟢 NEW: Part D
+        shipOrders,        // 🟢 NEW: Part D
         cancelOrder,
         createCoupon,
         getReportData,

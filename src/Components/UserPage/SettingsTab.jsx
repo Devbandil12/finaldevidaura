@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { useForm, Controller } from "react-hook-form";
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, ShieldCheck } from 'lucide-react';
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import useCloudinary from "../../utils/useCloudinary"; // Path adjust needed based on folder structure
 import { Button, FloatingInput, FloatingDropdown } from './SharedUserComponents';
+import usePhoneVerification from "../../hooks/usePhoneVerification"; // 🟢 NEW: Part A2
+import PhoneOtpModal from "../PhoneOtpModal"; // 🟢 NEW: Part A2
 
 const NotificationSettings = ({ user, onUpdate }) => {
   const { register, handleSubmit, formState: { isDirty } } = useForm({
     defaultValues: { notify_order_updates: user.notify_order_updates ?? true, notify_promos: user.notify_promos ?? true, notify_pincode: user.notify_pincode ?? true }
   });
-  const onSubmit = async (data) => { if (await onUpdate(data)) window.toast.success("Preferences Saved"); };
+  const onSubmit = async (data) => {
+    const result = await onUpdate(data);
+    if (result.success) window.toast.success("Preferences Saved");
+    else window.toast.error(result.msg || "Failed to save preferences.");
+  };
 
   const SettingRow = ({ label, desc, ...props }) => (
     <label className="flex items-center justify-between p-6 bg-white border border-zinc-100 rounded-3xl cursor-pointer hover:border-zinc-300 transition-all gap-4 shadow-sm group">
@@ -45,14 +51,37 @@ export default function SettingsTab({ user, onUpdate, activeSection = 'profile' 
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(user.profileImage);
 
+  // 🟢 NEW: Part A2 — profile phone verification, optional, no reward
+  const currentPhone = user.phone;
+  const isPhoneVerified = !!(user.phoneVerified && currentPhone);
+  const { modal: otpModal, startVerification, verifyCode, resendCode, closeModal } = usePhoneVerification({
+    onVerified: async () => {
+      window.toast.success("Number verified!");
+      await onUpdate({}); // re-fetch to pick up phoneVerified: true from the backend
+    },
+  });
+  const handleVerifyClick = async () => {
+    if (!currentPhone || !/^[6-9]\d{9}$/.test(currentPhone)) {
+      return window.toast.error("Enter a valid 10-digit number and save it first.");
+    }
+    await startVerification(currentPhone);
+  };
+
   const onSubmit = async (data) => {
-    try { await onUpdate({ ...data, dob: data.dob ? data.dob.toISOString().split('T')[0] : null }); window.toast.success("Profile Updated"); } catch (e) { window.toast.error("Update failed"); }
+    const result = await onUpdate({ ...data, dob: data.dob ? data.dob.toISOString().split('T')[0] : null });
+    if (result.success) window.toast.success("Profile Updated");
+    else window.toast.error(result.msg || "Update failed."); // 🟢 FIX: was always showing success regardless of outcome
   };
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setLoading(true);
-      try { const url = await uploadImage(file); await onUpdate({ profileImage: url }); setImagePreview(url); window.toast.success("Profile photo updated!"); } catch (e) { window.toast.error("Upload failed."); } finally { setLoading(false); }
+      try {
+        const url = await uploadImage(file);
+        const result = await onUpdate({ profileImage: url });
+        if (result.success) { setImagePreview(url); window.toast.success("Profile photo updated!"); }
+        else window.toast.error(result.msg || "Failed to save photo.");
+      } catch (e) { window.toast.error("Upload failed."); } finally { setLoading(false); }
     }
   };
 
@@ -70,11 +99,24 @@ export default function SettingsTab({ user, onUpdate, activeSection = 'profile' 
               </label>
             </div>
           </div>
-          <div><h3 className="font-medium text-zinc-900">Profile Photo</h3><p className="text-xs text-zinc-500 mb-3 font-light">Update your public avatar.</p>{imagePreview && !loading && (<button onClick={async () => { if (window.confirm("Remove?")) { await onUpdate({ profileImage: "" }); setImagePreview(null); } }} className="text-xs text-red-500 font-bold hover:underline">Remove Photo</button>)}</div>
+          <div><h3 className="font-medium text-zinc-900">Profile Photo</h3><p className="text-xs text-zinc-500 mb-3 font-light">Update your public avatar.</p>{imagePreview && !loading && (<button onClick={async () => { if (window.confirm("Remove?")) { const result = await onUpdate({ profileImage: "" }); if (result.success) setImagePreview(null); else window.toast.error(result.msg || "Failed to remove photo."); } }} className="text-xs text-red-500 font-bold hover:underline">Remove Photo</button>)}</div>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <FloatingInput label="Full Name" {...register("name")} />
-          <FloatingInput label="Phone" {...register("phone")} />
+          <div>
+            <FloatingInput label="Phone" {...register("phone")} />
+            <div className="mt-2">
+              {isPhoneVerified ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                  <ShieldCheck size={13} /> Verified
+                </span>
+              ) : currentPhone ? (
+                <button type="button" onClick={handleVerifyClick} className="text-xs font-semibold text-zinc-700 hover:text-black underline decoration-zinc-300 underline-offset-4">
+                  Verify this number
+                </button>
+              ) : null}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Controller control={control} name="dob" render={({ field }) => (<ReactDatePicker selected={field.value} onChange={field.onChange} customInput={<FloatingInput label="Date of Birth" />} showPopperArrow={false} />)} />
             <Controller control={control} name="gender" render={({ field }) => (<FloatingDropdown label="Gender" value={field.value} onChange={field.onChange} options={["Male", "Female", "Other"]} />)} />
@@ -82,6 +124,15 @@ export default function SettingsTab({ user, onUpdate, activeSection = 'profile' 
           <Button type="submit" disabled={!isDirty || loading} variant="primary" className="mt-4">Save Changes</Button>
         </form>
       </div>
+      <PhoneOtpModal
+        open={otpModal.open}
+        maskedPhone={otpModal.maskedPhone}
+        channel={otpModal.channel}
+        expiresInSeconds={otpModal.expiresInSeconds}
+        onVerify={verifyCode}
+        onResend={resendCode}
+        onClose={closeModal}
+      />
     </div>
   );
 }

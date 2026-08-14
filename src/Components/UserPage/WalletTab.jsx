@@ -3,15 +3,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Loader2, Copy, Check, ArrowUpRight, ArrowDownLeft, 
-  Sparkles, CreditCard, Ticket
+  Sparkles, CreditCard, Ticket, Share2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
+import { generateReferralCardBlob } from "../../utils/referralCard"; // 🟢 NEW: designed image share
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 // --- Utils ---
 const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+
+// 🟢 UPDATED: new template — converted to WhatsApp's real formatting syntax
+// (*bold*, not markdown's **bold**; ```monospace```, not single backticks —
+// WhatsApp would otherwise show the literal ** and ` characters unrendered)
+const buildReferralShareText = (code) =>
+  `✨ *I've been using Devid Aura and absolutely loved it!* 🌸\n\n` +
+  `💝 *Your first Devid Aura order comes with a little surprise…*\n\n` +
+  `Use my referral code and *₹50 gets added to your wallet instantly!* ✨\n\n` +
+  `🎁 *Code:* \`\`\`${code}\`\`\`\n\n` +
+  `Treat yourself to your favorite fragrance and enjoy your welcome reward. 💖\n\n` +
+  `🛍️ *Shop Now:* https://www.devidaura.com\n\n` +
+  `Happy shopping! 💖`;
 
 export default function WalletTab({ userId }) {
   const [data, setData] = useState(null);
@@ -47,6 +60,46 @@ export default function WalletTab({ userId }) {
     navigator.clipboard.writeText(data?.referralCode || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // 🟢 UPDATED: tries to share the designed image card first (the actual
+  // "styled" output — WhatsApp text itself can never look designed, that
+  // dark bubble is WhatsApp's own chrome). Falls back gracefully for
+  // browsers that don't support file-sharing.
+  const handleShare = async () => {
+    const code = data?.referralCode;
+    if (!code) return;
+    const text = buildReferralShareText(code);
+
+    try {
+      const blob = await generateReferralCardBlob(code);
+      const file = new File([blob], "devid-aura-referral.png", { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text, title: "Devid Aura" });
+        return;
+      }
+      if (navigator.share) {
+        // Can share text but not files on this browser — text-only is still better than nothing.
+        await navigator.share({ title: "Devid Aura", text });
+        return;
+      }
+      // No Web Share API at all (most desktop browsers): download the
+      // card so it can be attached manually, and open WhatsApp Web with
+      // the text pre-filled as a starting point.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "devid-aura-referral.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      window.toast?.success?.("Referral card downloaded — attach it to your message!");
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      if (err?.name === "AbortError") return; // user cancelled the share sheet, not an error
+      console.error("Referral share failed:", err);
+      // Last-resort fallback: plain text share, same as before this card existed.
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    }
   };
 
   // 🟢 SECURE: Redeem Code
@@ -117,9 +170,19 @@ export default function WalletTab({ userId }) {
               <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-6 mt-6">
                  <div>
                     <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Referral Code</p>
-                    <div className="flex items-center gap-3 mt-1 cursor-pointer group/copy" onClick={handleCopy}>
-                       <span className="font-mono text-xl tracking-wider text-white">{data?.referralCode || "----"}</span>
-                       {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} className="text-zinc-600 group-hover/copy:text-white transition-colors" />}
+                    <div className="flex items-center gap-3 mt-1">
+                       <div className="flex items-center gap-2 cursor-pointer group/copy" onClick={handleCopy}>
+                          <span className="font-mono text-xl tracking-wider text-white">{data?.referralCode || "----"}</span>
+                          {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} className="text-zinc-600 group-hover/copy:text-white transition-colors" />}
+                       </div>
+                       {data?.referralCode && (
+                         <button
+                           onClick={handleShare}
+                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-bold text-white transition-colors"
+                         >
+                           <Share2 size={12} /> Share
+                         </button>
+                       )}
                     </div>
                  </div>
                  <div className="text-right">

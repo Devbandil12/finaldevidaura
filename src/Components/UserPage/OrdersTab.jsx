@@ -11,7 +11,7 @@ const formatDate = (dateString) => {
 
 export default function OrdersTab({ orders, loadingOrders, products }) {
   const [viewOrder, setViewOrder] = useState(null);
-  const productMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+  const productMap = useMemo(() => new Map((products || []).map(p => [p.id, p])), [products]); // 🟢 FIX: same guard as OverviewTab.jsx
 
   return (
     <div className="space-y-8 animate-fadeIn">

@@ -8,6 +8,7 @@ import { UserContext } from "../contexts/UserContext";
 import { CartContext } from "../contexts/CartContext"; 
 import Loader from "../Components/Loader";
 import MiniLoader from "../Components/MiniLoader";
+import CancellationWindow, { CANCELLABLE_STATUSES } from "../Components/CancellationWindow"; // 🟢 NEW: Part B
 import { useAuth } from "@clerk/clerk-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -557,9 +558,12 @@ export default function MyOrders() {
                 </button>
               )}
               
-              {normalizedStatus === "order placed" && !refundInfo && (
+              {CANCELLABLE_STATUSES.includes(normalizedStatus) && !refundInfo && (
                 cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
-                  <button onClick={() => setModalOrder(order)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto">Cancel Order</button>
+                  <div className="flex flex-col items-end gap-1.5 w-full sm:w-auto">
+                    <button onClick={() => setModalOrder(order)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto">Cancel Order</button>
+                    <CancellationWindow createdAt={order.createdAt} status={order.status} />
+                  </div>
                 )
               )}
 

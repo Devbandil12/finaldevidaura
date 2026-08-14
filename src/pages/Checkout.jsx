@@ -12,6 +12,7 @@ import PaymentDetails from "./PaymentDetails";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldCheck } from "lucide-react";
 import { generateIdempotencyKey } from "../utils/idempotency";
+import CheckoutOtpModal from "../Components/CheckoutOtpModal"; // 🟢 NEW: COD WhatsApp OTP
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
@@ -39,6 +40,16 @@ export default function Checkout() {
   const [transactionId, setTransactionId] = useState("");
 
   const [useWallet, setUseWallet] = useState(false);
+
+  // 🟢 NEW: COD WhatsApp OTP — only populated when the backend risk engine
+  // actually flags this order; most checkouts never touch this state.
+  const [otpModal, setOtpModal] = useState({
+    open: false,
+    otpRequestId: null,
+    maskedPhone: "",
+    channel: "whatsapp",
+    expiresInSeconds: 300,
+  });
 
   const finalBreakdown = useMemo(() => {
     const walletBalance = userdetails?.walletBalance || 0;
@@ -142,16 +153,50 @@ export default function Checkout() {
     finally { setIsSubmitting(false); }
   }, [refreshOrdersOnly, navigate, transactionId]);
 
+  // 🟢 NEW: COD WhatsApp OTP — asks the risk engine whether this order
+  // needs verification. Returns { required: false } for the vast majority
+  // of orders (nothing shown, nothing sent). Only opens the modal — and
+  // only then does MSG91 actually get billed — when the backend says yes.
+  const requestCodOtp = useCallback(async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${BACKEND}/api/checkout-otp/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userAddressId: selectedAddress.id,
+          cartTotal: finalBreakdown.total,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.msg || "Couldn't start verification.");
+      }
+      if (data.required) {
+        setOtpModal({
+          open: true,
+          otpRequestId: data.otpRequestId,
+          maskedPhone: data.maskedPhone,
+          channel: data.channel,
+          expiresInSeconds: data.expiresInSeconds || 300,
+        });
+      }
+      return data;
+    } catch (err) {
+      window.toast.error(err.message || "Couldn't start verification.");
+      return { required: false, success: false };
+    }
+  }, [getToken, selectedAddress, finalBreakdown.total]);
+
   // OPTIMIZED: COD SUCCESS (Secured)
-  const handlePlaceOrderCOD = useCallback(async () => {
-    if (isSubmitting) return;
-    if (!selectedAddress) return window.toast.error("Please select a delivery address.");
-    setIsSubmitting(true);
-    
-    // 🟢 FIX 2.4: Generate fresh idempotency key ON CLICK to allow safe retries
+  // 🟢 UPDATED: now token-aware. otpVerificationToken is null for the vast
+  // majority of orders (the risk engine didn't flag them) and only set
+  // after the customer clears the WhatsApp OTP modal below.
+  const submitCodOrder = useCallback(async (otpVerificationToken = null) => {
     const freshIdempotencyKey = generateIdempotencyKey();
-
-
     try {
       const token = await getToken();
 
@@ -168,13 +213,22 @@ export default function Checkout() {
           couponCode: appliedCoupon?.code || null,
           cartItems: selectedItems.map(i => ({ ...i, variantId: i.variant.id, quantity: i.quantity, productId: i.product.id })),
           userAddressId: selectedAddress.id,
-          useWallet: useWallet 
+          useWallet: useWallet,
+          otpVerificationToken, // 🟢 NEW: COD WhatsApp OTP
         }),
       });
       
       const data = await res.json();
       
       if (!res.ok || !data.success) {
+        // 🟢 NEW: defense-in-depth path — the backend is the real gate, so
+        // even if our own /send call said "not required" (e.g. a race, or
+        // a client that skipped it), handle a late OTP_REQUIRED gracefully
+        // instead of just showing a raw error.
+        if (data.code === "OTP_REQUIRED") {
+          const sendRes = await requestCodOtp();
+          if (sendRes?.required) return; // modal is now open, user will retry via it
+        }
         throw new Error(data.msg || "Order failed.");
       }
       
@@ -187,9 +241,53 @@ export default function Checkout() {
 
     } catch (err) { 
       window.toast.error(err.message); 
-      setIsSubmitting(false); 
-    } 
-  }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, isSubmitting, navigate, useWallet, getToken]);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, navigate, useWallet, getToken, requestCodOtp]);
+
+  const handlePlaceOrderCOD = useCallback(async () => {
+    if (isSubmitting) return;
+    if (!selectedAddress) return window.toast.error("Please select a delivery address.");
+    setIsSubmitting(true);
+
+    const otpCheck = await requestCodOtp();
+    if (otpCheck?.required) {
+      // Modal is now open — submitCodOrder(token) fires from onVerifySuccess below.
+      setIsSubmitting(false);
+      return;
+    }
+    await submitCodOrder(null);
+  }, [isSubmitting, selectedAddress, requestCodOtp, submitCodOrder]);
+
+  // 🟢 NEW: COD WhatsApp OTP — modal handlers
+  const handleOtpVerify = useCallback(async (code) => {
+    const token = await getToken();
+    const res = await fetch(`${BACKEND}/api/checkout-otp/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ otpRequestId: otpModal.otpRequestId, code }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setOtpModal((prev) => ({ ...prev, open: false }));
+      setIsSubmitting(true);
+      await submitCodOrder(data.verificationToken);
+    }
+    return data;
+  }, [getToken, otpModal.otpRequestId, submitCodOrder]);
+
+  const handleOtpResend = useCallback(async () => {
+    return requestCodOtp();
+  }, [requestCodOtp]);
+
+  const handleOtpClose = useCallback(() => {
+    setOtpModal((prev) => ({ ...prev, open: false }));
+    setIsSubmitting(false);
+  }, []);
 
   const handleNext = () => {
     if (loadingPrices) return;
@@ -375,6 +473,16 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      <CheckoutOtpModal
+        open={otpModal.open}
+        maskedPhone={otpModal.maskedPhone}
+        channel={otpModal.channel}
+        expiresInSeconds={otpModal.expiresInSeconds}
+        onVerify={handleOtpVerify}
+        onResend={handleOtpResend}
+        onClose={handleOtpClose}
+      />
     </>
   );
 }

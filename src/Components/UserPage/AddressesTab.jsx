@@ -3,6 +3,8 @@ import { useForm, Controller } from "react-hook-form";
 import { Plus, CheckCircle2, Pencil, Trash2, MapPin, Home, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ReactDatePicker from "react-datepicker"; // If needed by form, though typically not for address
+import AddressPhoneField from "../AddressPhoneField"; // 🟢 NEW: Part A3
+import { FloatingDropdown } from "./SharedUserComponents"; // 🟢 NEW: match Settings tab's styled dropdown
 
 // --- Reusing the standard Button/Input styles (Inline for simplicity) ---
 const BTN_PRIMARY = "px-6 py-3 rounded-xl bg-zinc-900 text-white font-bold text-sm hover:bg-black transition-all shadow-lg shadow-zinc-900/10";
@@ -14,14 +16,16 @@ export default function AddressesTab({ address, addAddress, editAddress, deleteA
   const [isAdding, setIsAdding] = useState(false);
 
   const handleFormSubmit = async (data) => {
-    try {
-      if (editingAddress) await editAddress(editingAddress.id, data);
-      else await addAddress(data);
-      setIsAdding(false); 
+    const result = editingAddress ? await editAddress(editingAddress.id, data) : await addAddress(data);
+    if (result.success) {
+      setIsAdding(false);
       setEditingAddress(null);
-      if(window.toast) window.toast.success("Address saved successfully");
-    } catch (e) { 
-      if(window.toast) window.toast.error("Failed to save address"); 
+      if (window.toast) window.toast.success("Address saved successfully");
+    } else {
+      // 🟢 FIX: this used to always show success and close the form,
+      // even on a real failure (e.g. the new "you already have a Home
+      // address" check) — now the form stays open and shows why.
+      if (window.toast) window.toast.error(result.msg || "Failed to save address");
     }
   };
 
@@ -119,18 +123,19 @@ const AddressForm = ({ initialData, onCancel, onSubmit }) => {
       <div className="grid grid-cols-2 gap-4">
          <div className="space-y-1">
             <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider ml-1">Phone</label>
-            <input {...register("phone", { required: "Required" })} className={INPUT_CLASS} placeholder="+91 98765..." />
+            <Controller
+              control={control} name="phone" rules={{ required: "Required" }} defaultValue=""
+              render={({ field }) => (
+                <AddressPhoneField value={field.value} onChange={field.onChange} inputClassName={INPUT_CLASS} />
+              )}
+            />
+            {errors.phone && <span className="text-xs text-red-500 ml-1">{errors.phone.message}</span>}
          </div>
          <div className="space-y-1">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider ml-1">Type</label>
             <Controller 
                 control={control} name="addressType" defaultValue="Home"
                 render={({ field }) => (
-                    <select {...field} className={`${INPUT_CLASS} appearance-none`}>
-                        <option>Home</option>
-                        <option>Work</option>
-                        <option>Other</option>
-                    </select>
+                    <FloatingDropdown label="Type" value={field.value} onChange={field.onChange} options={["Home", "Work", "Other"]} />
                 )} 
             />
          </div>

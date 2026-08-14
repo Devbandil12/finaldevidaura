@@ -127,6 +127,7 @@ const App = () => {
                             <Route path="/wishlist" element={<Wishlist />} />
                             <Route path="/cart" element={<Cart />} />
                             <Route path="/myaccount" element={<UserPage />} />
+                            <Route path="/myaccount/:tab" element={<UserPage />} />
                             <Route path="/contact" element={<ContactUs />} />
 
                             <Route element={<CheckoutGuard />}>

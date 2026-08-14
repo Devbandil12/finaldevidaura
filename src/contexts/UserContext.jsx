@@ -167,7 +167,7 @@ export const UserProvider = ({ children }) => {
 
   const updateUser = useCallback(
     async (updatedData) => {
-      if (!userdetails?.id) return null;
+      if (!userdetails?.id) return { success: false, msg: "Not logged in." };
       try {
         const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/users/${userdetails.id}`, {
@@ -178,15 +178,22 @@ export const UserProvider = ({ children }) => {
           },
           body: JSON.stringify({ ...updatedData }),
         });
-        if (!res.ok) throw new Error("Failed to update user");
         const data = await res.json();
-        if (mountedRef.current) {
-          setUserdetails((prev) => ({ ...prev, ...(data || updatedData) }));
+        // 🟢 FIX: this used to always return the parsed body (or null on a
+        // thrown exception) with no way for callers to tell a real failure
+        // apart from success — every caller's "if (await updateUser(...))"
+        // or bare try/catch was showing a success toast even when the PUT
+        // failed server-side (e.g. validation, permission, or a 500).
+        if (!res.ok) {
+          return { success: false, msg: data?.error || data?.message || "Failed to update profile." };
         }
-        return data;
+        if (mountedRef.current) {
+          setUserdetails((prev) => ({ ...prev, ...data }));
+        }
+        return { success: true, data };
       } catch (error) {
         console.error("❌ Failed to update user:", error);
-        return null;
+        return { success: false, msg: "Network error. Please try again." };
       }
     },
     [userdetails?.id, BACKEND_URL, getToken]
@@ -194,7 +201,7 @@ export const UserProvider = ({ children }) => {
 
   const addAddress = useCallback(
     async (newAddress) => {
-      if (!userdetails?.id) return null;
+      if (!userdetails?.id) return { success: false, msg: "Not logged in." };
       try {
         const token = await getToken();
         const res = await fetch(`${BACKEND_URL}/api/address/`, {
@@ -208,12 +215,15 @@ export const UserProvider = ({ children }) => {
         const data = await res.json();
         if (data?.success) {
           await getUserAddress();
-          return data.data;
+          return { success: true, data: data.data };
         }
-        return null;
+        // 🟢 FIX: same as updateUser — surface the real backend message
+        // (e.g. "You already have a Home address saved...") instead of
+        // silently returning null and letting the caller show a false success.
+        return { success: false, msg: data?.msg || "Failed to add address." };
       } catch (error) {
         console.error("❌ Failed to add address:", error);
-        return null;
+        return { success: false, msg: "Network error. Please try again." };
       }
     },
     [userdetails?.id, BACKEND_URL, getUserAddress, getToken]
@@ -234,12 +244,12 @@ export const UserProvider = ({ children }) => {
         const data = await res.json();
         if (data?.success) {
           await getUserAddress();
-          return data.data;
+          return { success: true, data: data.data };
         }
-        return null;
+        return { success: false, msg: data?.msg || "Failed to update address." }; // 🟢 FIX
       } catch (error) {
         console.error("❌ Failed to edit address:", error);
-        return null;
+        return { success: false, msg: "Network error. Please try again." };
       }
     },
     [BACKEND_URL, getUserAddress, getToken]

@@ -38,8 +38,9 @@ export default function AlertsTab({ user, onUpdate }) {
   });
 
   const onSubmit = async (data) => {
-    const ok = await onUpdate(data);
-    if (ok && window.toast) window.toast.success("Preferences Saved");
+    const result = await onUpdate(data);
+    if (result.success && window.toast) window.toast.success("Preferences Saved");
+    else if (!result.success && window.toast) window.toast.error(result.msg || "Failed to save preferences.");
   };
 
   return (

@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Check, Truck, Package, Copy, ArrowRight, MapPin, CreditCard, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { CartContext } from "../contexts/CartContext";
+import CancellationWindow from "../Components/CancellationWindow"; // 🟢 NEW: Part B
 
 const smoothTransition = {
   type: "tween",
@@ -174,6 +175,10 @@ export default function Confirmation() {
                 <motion.p variants={fadeInUp} className="text-slate-500 text-base max-w-md mx-auto leading-relaxed">
                   We've received your order and will begin processing it right away.
                 </motion.p>
+                {/* 🟢 NEW: Part B — cancellation window, stated upfront rather than left as a surprise later */}
+                <motion.div variants={fadeInUp} className="mt-2">
+                  <CancellationWindow createdAt={new Date().toISOString()} status="Order Placed" className="justify-center flex" />
+                </motion.div>
 
                 {/* Timeline Steps */}
                 <motion.div variants={fadeInUp} className="mt-6 mb-6 py-3 border-y border-dashed border-slate-100">

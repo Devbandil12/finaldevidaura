@@ -168,7 +168,10 @@ const OrdersTab = ({
   const [orderDetailsData, setOrderDetailsData] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState(new Set());
-  const { updateBulkOrderStatus } = useAdmin(); 
+  const { updateBulkOrderStatus, previewShipOrders, shipOrders } = useAdmin();
+
+  // 🟢 NEW: Part D — bulk "Ship Now" modal state
+  const [shipModal, setShipModal] = useState({ open: false, loading: false, results: [], totalEstimate: 0, confirming: false });
 
   // --- Handlers ---
   const handleStatusChangeRequest = (orderId, newStatus) => {
@@ -185,6 +188,32 @@ const OrdersTab = ({
     if (success) {
       setSelectedOrders(new Set());
     }
+  };
+
+  // 🟢 NEW: Part D — open the preview modal (read-only, nothing shipped yet)
+  const handleShipNowClick = async () => {
+    setShipModal({ open: true, loading: true, results: [], totalEstimate: 0, confirming: false });
+    const data = await previewShipOrders(Array.from(selectedOrders));
+    if (!data) {
+      setShipModal({ open: false, loading: false, results: [], totalEstimate: 0, confirming: false });
+      return;
+    }
+    setShipModal({ open: true, loading: false, results: data.results, totalEstimate: data.totalEstimate, confirming: false });
+  };
+
+  // 🟢 NEW: Part D — the actual commit, only fires on explicit confirmation
+  const handleConfirmShip = async () => {
+    const shipRequests = shipModal.results
+      .filter(r => !r.error)
+      .map(r => ({ orderId: r.orderId, courierId: r.courierId }));
+    if (shipRequests.length === 0) {
+      setShipModal({ open: false, loading: false, results: [], totalEstimate: 0, confirming: false });
+      return;
+    }
+    setShipModal(prev => ({ ...prev, confirming: true }));
+    await shipOrders(shipRequests);
+    setShipModal({ open: false, loading: false, results: [], totalEstimate: 0, confirming: false });
+    setSelectedOrders(new Set());
   };
 
   const isOrderSelectable = (order) => {
@@ -643,6 +672,27 @@ const OrdersTab = ({
                 <div className="h-6 w-px bg-gray-200"></div>
                 
                 <div className="flex gap-2">
+                    {/* 🟢 NEW: Part D — bulk Ship Now, calls Shiprocket's AWB assignment directly */}
+                    {(() => {
+                        const shippableCount = Array.from(selectedOrders).filter(id => {
+                            const o = orders.find(ord => ord.id === id);
+                            return o?.shiprocketShipmentId && !o?.shiprocketAwb;
+                        }).length;
+                        return (
+                            <button
+                                onClick={handleShipNowClick}
+                                disabled={shippableCount === 0}
+                                title={shippableCount === 0 ? "None of the selected orders are ready to ship (need a Shiprocket shipment, no AWB yet)" : ""}
+                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                    shippableCount === 0
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                }`}
+                            >
+                                <Truck size={13} /> Ship Now {shippableCount > 0 ? `(${shippableCount})` : ''}
+                            </button>
+                        );
+                    })()}
                     {availableBulkActions.map(status => {
                         // 🟢 FIXED: For bulk updates, disable "Shipped" & beyond if ANY selected order lacks a Shiprocket AWB.
                         const requiresAwb = ["Shipped", "Out for Delivery", "Delivered"];
@@ -676,6 +726,64 @@ const OrdersTab = ({
                     <X size={16} />
                 </button>
             </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🟢 NEW: Part D — Ship Now preview/confirm modal. Two clicks, on purpose:
+          this render is read-only; nothing ships until "Confirm & Ship". */}
+      <AnimatePresence>
+        {shipModal.open && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[999999] bg-black/50 flex items-center justify-center px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            >
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2"><Truck size={16} /> Ship Now — Review</h3>
+                <button onClick={() => setShipModal({ open: false, loading: false, results: [], totalEstimate: 0, confirming: false })} className="p-1 rounded-full hover:bg-gray-100"><X size={16} /></button>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto px-6 py-4">
+                {shipModal.loading ? (
+                  <div className="flex items-center justify-center py-10 text-gray-400"><Loader2 className="animate-spin" size={20} /></div>
+                ) : (
+                  <div className="space-y-2">
+                    {shipModal.results.map(r => (
+                      <div key={r.orderId} className="flex items-center justify-between text-sm border-b border-gray-50 pb-2">
+                        <div>
+                          <p className="font-semibold text-gray-800">#{r.orderId}</p>
+                          {r.error ? (
+                            <p className="text-xs text-red-500">{r.error}</p>
+                          ) : (
+                            <p className="text-xs text-gray-500">{r.courierName} · {r.estimatedDays} day(s)</p>
+                          )}
+                        </div>
+                        {!r.error && <p className="font-bold text-gray-900">₹{r.estimatedRate}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+                <div>
+                  <p className="text-xs text-gray-400">Estimated total shipping</p>
+                  <p className="font-bold text-lg text-gray-900">₹{shipModal.totalEstimate}</p>
+                </div>
+                <button
+                  onClick={handleConfirmShip}
+                  disabled={shipModal.loading || shipModal.confirming || shipModal.results.every(r => r.error)}
+                  className="px-5 py-2.5 rounded-full bg-black text-white text-sm font-bold disabled:opacity-40 flex items-center gap-2"
+                >
+                  {shipModal.confirming ? <Loader2 className="animate-spin" size={14} /> : null}
+                  Confirm & Ship
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

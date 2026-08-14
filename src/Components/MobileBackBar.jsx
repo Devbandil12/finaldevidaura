@@ -20,6 +20,15 @@ import {
 } from "lucide-react";
 
 const PRODUCT_DETAIL_PATH = "/product/:productId";
+const MYACCOUNT_TAB_PATH = "/myaccount/:tab"; // 🟢 NEW: matches every real per-tab account URL
+
+// 🟢 NEW: one title per tab, since /myaccount/orders, /myaccount/settings
+// etc. are now distinct real URLs rather than one path with hidden state.
+const accountTabTitles = {
+  overview: "My Profile", wallet: "Wallet", orders: "My Orders", offers: "My Offers",
+  activity_log: "Activity Log", addresses: "Addresses", reviews: "My Reviews",
+  support: "Support", settings: "Settings", notifications: "Notifications", earncash: "Earn Cash",
+};
 
 const pageConfig = {
   "/login": { title: "Sign In", icon: User },
@@ -89,6 +98,13 @@ const MobileBackBar = () => {
     Icon = null;
   }
 
+  // 🟢 NEW: /myaccount/orders, /myaccount/settings, etc.
+  const accountMatch = matchPath(MYACCOUNT_TAB_PATH, currentPath);
+  if (accountMatch && !title) {
+    title = accountTabTitles[accountMatch.params.tab] || "My Profile";
+    Icon = User;
+  }
+
   // Fallback for other pages
   if (!title) {
       if (currentPath.includes('/product/')) {
@@ -142,4 +158,4 @@ const MobileBackBar = () => {
   );
 };
 
-export default MobileBackBar; 
+export default MobileBackBar;

@@ -12,7 +12,7 @@ const formatDate = (dateString) => {
 
 export default function ReviewsTab({ userReviews, loadingReviews, products }) {
   const navigate = useNavigate();
-  const productMap = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
+  const productMap = useMemo(() => new Map((products || []).map(p => [p.id, p])), [products]); // 🟢 FIX: same guard as OverviewTab.jsx
 
   return (
     <div className="space-y-8 animate-fadeIn">

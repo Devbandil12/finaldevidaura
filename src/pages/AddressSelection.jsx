@@ -6,6 +6,7 @@ import { useAuth, useUser } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Assuming you use this
 import { faLocationArrow } from '@fortawesome/free-solid-svg-icons'; // Assuming you use this
+import AddressPhoneField from "../Components/AddressPhoneField"; // 🟢 NEW: Part A3
 
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "") + "/api/address";
 
@@ -456,22 +457,14 @@ export default function AddressSelection({ userId, onSelect }) {
                   <label htmlFor="name" className="floating-label">Full Name *</label>
                 </div>
                 
-                {/* 🟢 PHONE INPUT - Enforces numbers and maxlength */}
+                {/* 🟢 UPDATED (Part A3): shared quick-picker + verify field, replaces the plain input */}
                 <div className="relative">
-                  <input 
-                    id="phone" 
-                    type="tel" 
-                    maxLength="10"
-                    value={formAddress.phone} 
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      updateFormAddress("phone", val);
-                    }} 
-                    className="form-input peer w-full" 
-                    placeholder=" " 
-                    required 
+                  <AddressPhoneField
+                    value={formAddress.phone}
+                    onChange={(val) => updateFormAddress("phone", val)}
+                    inputClassName="form-input peer w-full"
+                    label={<label htmlFor="phone" className="floating-label">Phone *</label>}
                   />
-                  <label htmlFor="phone" className="floating-label">Phone *</label>
                 </div>
 
                 {/* 🟢 ALT PHONE INPUT - Enforces numbers and maxlength */}

@@ -7,6 +7,7 @@ import { ProductContext } from "../contexts/productContext";
 import { ContactContext } from "../contexts/ContactContext";
 import { ReviewContext } from "../contexts/ReviewContext";
 import { useClerk, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
+import { useNavigate, useParams } from "react-router-dom"; // 🟢 UPDATED: real per-tab URLs (/myaccount/orders, etc.) instead of ?tab=
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -39,8 +40,25 @@ export default function UserPage() {
   const { signOut } = useClerk();
   const { getToken } = useAuth(); // 🟢 Get Token Helper
 
-  const [activeTab, setActiveTab] = useState("overview");
+  // 🟢 UPDATED: /myaccount/orders, /myaccount/settings, etc. — a real,
+  // bookmarkable, shareable URL per tab (matches how Flipkart/Amazon do
+  // account pages), rather than one URL with tab state hidden in React.
+  // No user ID in the URL — which account you're viewing is always
+  // determined by who's logged in, never by anything in the address bar.
+  const navigate = useNavigate();
+  const { tab } = useParams();
+  const VALID_TABS = ["overview", "wallet", "orders", "offers", "activity_log", "addresses", "reviews", "support", "settings", "notifications", "earncash"];
+  const activeTab = VALID_TABS.includes(tab) ? tab : "overview";
+  const setActiveTab = (nextTab) => navigate(`/myaccount/${nextTab}`);
   const [personalLogs, setPersonalLogs] = useState([]);
+
+  // An unrecognized tab segment (typo'd URL, stale bookmark) quietly
+  // redirects to Overview instead of rendering a blank/broken page.
+  useEffect(() => {
+    if (!tab || !VALID_TABS.includes(tab)) {
+      navigate("/myaccount/overview", { replace: true });
+    }
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch specialized logs or tickets on load
   useEffect(() => {
@@ -123,6 +141,7 @@ export default function UserPage() {
                   address={address} 
                   tickets={tickets}             // Added
                   userReviews={userReviews}     // Added
+                  products={products}           // 🟢 FIX: was missing — caused "Cannot read properties of undefined (reading 'map')" on this tab
                   setActiveTab={setActiveTab} 
                 />
               )}

@@ -1,6 +1,7 @@
 // src/pages/Home.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
+import { useNavigate } from "react-router-dom";
 import HeroSection from "./HeroSection";
 import Products from "./Products";
 import CustomComboBuilder from "./CustomComboBuilder";
@@ -11,12 +12,23 @@ import AboutUs from "./AboutUs";
 import MidSectionBanner from "./MidSectionBanner";
 import { UserContext } from "../contexts/UserContext";
 import AuraFinder from "../Components/AuraFinder";
+import VerifyNumberNudge from "../Components/VerifyNumberNudge"; // 🟢 NEW: Part A2 home nudge
+import { shouldShowHomeNudge } from "../utils/firstLoadFlag"; // 🟢 NEW
 
 const Home = () => {
   const { userdetails } = useContext(UserContext);
   const { getToken } = useAuth(); // 🟢 Get Token Helper
+  const navigate = useNavigate();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminStats, setAdminStats] = useState({ todayCount: 0, pendingCount: 0 });
+
+  // 🟢 NEW: Part A2 — first-load-only nudge, never on client-side nav back to Home
+  const [showNudge, setShowNudge] = useState(false);
+  useEffect(() => {
+    if (userdetails?.id && !userdetails.phoneVerified && shouldShowHomeNudge()) {
+      setShowNudge(true);
+    }
+  }, [userdetails?.id, userdetails?.phoneVerified]);
 
   // Admin Check Effect
   useEffect(() => {
@@ -112,6 +124,10 @@ const Home = () => {
       <MidSectionBanner index={3} />
       <TestimonialsSection />
       <MidSectionBanner index={4} />
+
+      {showNudge && (
+        <VerifyNumberNudge onVerifyClick={() => navigate("/myaccount/settings")} />
+      )}
     </>
   );
 };
