@@ -94,7 +94,7 @@ export default function AdministratorsTab() {
           </p>
         </div>
         
-        {(currentAdminRole === 'SUPER_ADMIN' || hasPermission('roles.assign')) && (
+        {(currentAdminRole === 'SUPER_ADMIN' || currentAdminRole === 'SUPER ADMIN' || hasPermission('roles.assign')) && (
           <button 
             onClick={() => setIsAssignModalOpen(true)} 
             className="flex items-center gap-2 bg-[var(--brand)] text-[var(--surface)] px-6 py-3 rounded-lg font-bold text-sm tracking-wide transition-all shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] button-hero"
@@ -145,7 +145,7 @@ export default function AdministratorsTab() {
                     </span>
                   </td>
                   <td className="p-4 pr-6 text-right">
-                    {(currentAdminRole === 'SUPER_ADMIN' || hasPermission('roles.assign')) && (
+                    {(currentAdminRole === 'SUPER_ADMIN' || currentAdminRole === 'SUPER ADMIN' || hasPermission('roles.assign')) && (
                       <button 
                         onClick={() => handleDeleteAssignment(admin.clerkId)} 
                         className="p-2.5 text-[var(--muted)] hover:text-[var(--error)] hover:bg-[var(--surface-muted)] rounded-lg transition-colors inline-flex"
@@ -226,8 +226,12 @@ export default function AdministratorsTab() {
                     >
                       <option value="">-- Choose a role --</option>
                       {roles.map(r => (
-                        <option key={r.id} value={r.id} disabled={r.name === 'SUPER_ADMIN' && currentAdminRole !== 'SUPER_ADMIN'}>
-                          {r.name?.replace(/_/g, ' ')} {r.name === 'SUPER_ADMIN' && currentAdminRole !== 'SUPER_ADMIN' ? '(Requires SUPER_ADMIN)' : ''}
+                        <option 
+                          key={r.id} 
+                          value={r.id} 
+                          disabled={(r.name === 'SUPER_ADMIN' || r.name === 'SUPER ADMIN') && (currentAdminRole !== 'SUPER_ADMIN' && currentAdminRole !== 'SUPER ADMIN')}
+                        >
+                          {r.name?.replace(/_/g, ' ')} {(r.name === 'SUPER_ADMIN' || r.name === 'SUPER ADMIN') && (currentAdminRole !== 'SUPER_ADMIN' && currentAdminRole !== 'SUPER ADMIN') ? '(Requires SUPER ADMIN)' : ''}
                         </option>
                       ))}
                     </select>

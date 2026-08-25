@@ -125,7 +125,7 @@ export default function RolesTab() {
           </h2>
           <p className="font-display italic text-lg text-[var(--sub)] mt-2 tracking-wide">Manage custom access roles and their granular capabilities.</p>
         </div>
-        {(adminRole === 'SUPER_ADMIN' || hasPermission('roles.manage')) && (
+        {(adminRole === 'SUPER_ADMIN' || adminRole === 'SUPER ADMIN' || hasPermission('roles.manage')) && (
           <button 
             onClick={() => handleOpenModal()} 
             className="flex items-center gap-2 bg-[var(--brand)] text-[var(--surface)] hover:brightness-110 px-6 py-3 rounded-lg font-body font-bold text-sm tracking-wide transition-all shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] button-hero"
@@ -166,7 +166,7 @@ export default function RolesTab() {
             </div>
 
             <div className="flex gap-3 mt-auto pt-5 border-t border-[var(--border)]">
-              {(!role.isSystem && (adminRole === 'SUPER_ADMIN' || hasPermission('roles.manage'))) && (
+              {(!role.isSystem && (adminRole === 'SUPER_ADMIN' || adminRole === 'SUPER ADMIN' || hasPermission('roles.manage'))) && (
                 <>
                   <button onClick={() => handleOpenModal(role)} className="flex-1 flex items-center justify-center gap-2 text-[var(--brand)] bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--accent-soft)] hover:border-[var(--brand)] py-2.5 rounded-xl font-body font-bold transition-colors text-sm shadow-sm">
                     <Edit2 size={16} strokeWidth={2} /> Edit
@@ -177,7 +177,7 @@ export default function RolesTab() {
                 </>
               )}
               {/* If system role, provide a view button instead of blank space */}
-              {(role.isSystem || (!hasPermission('roles.manage') && adminRole !== 'SUPER_ADMIN')) && (
+              {(role.isSystem || (!hasPermission('roles.manage') && adminRole !== 'SUPER_ADMIN' && adminRole !== 'SUPER ADMIN')) && (
                  <button onClick={() => handleOpenModal(role, true)} className="w-full flex items-center justify-center gap-2 text-[var(--text)] bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] py-2.5 rounded-xl font-body font-bold transition-colors text-sm shadow-sm">
                     View Details
                  </button>

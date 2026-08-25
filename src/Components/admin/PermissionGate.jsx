@@ -15,8 +15,8 @@ export const PermissionGate = ({
     return null;
   }
 
-  // SUPER_ADMIN overrides everything
-  if (role === 'SUPER_ADMIN') {
+  // SUPER_ADMIN / SUPER ADMIN overrides everything
+  if (role === 'SUPER_ADMIN' || role === 'SUPER ADMIN') {
     return <>{children}</>;
   }
 

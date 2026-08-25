@@ -35,18 +35,20 @@ export const usePermissions = () => {
     fetchPermissions();
   }, [isSignedIn, isLoaded]);
 
+  const isSuperAdmin = role === 'SUPER_ADMIN' || role === 'SUPER ADMIN';
+
   const hasPermission = (requiredPermission) => {
-    if (role === 'SUPER_ADMIN') return true;
+    if (isSuperAdmin) return true;
     return permissions.includes(requiredPermission);
   };
 
   const hasAnyPermission = (requiredPermissions) => {
-    if (role === 'SUPER_ADMIN') return true;
+    if (isSuperAdmin) return true;
     return requiredPermissions.some(perm => permissions.includes(perm));
   };
 
   const hasAllPermissions = (requiredPermissions) => {
-    if (role === 'SUPER_ADMIN') return true;
+    if (isSuperAdmin) return true;
     return requiredPermissions.every(perm => permissions.includes(perm));
   };
 
