@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useProducts } from "../features/catalog/hooks/useProducts";
-import { ComboBuilderSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ComboBuilderSkeleton } from "../Components/ui/ShimmerSkeleton";
 import { useAddCustomBundle } from "../features/cart/hooks/useCart";
 import { useCheckout } from "../features/checkout/hooks/useCheckout";
 import { UserContext } from "../contexts/UserContext";

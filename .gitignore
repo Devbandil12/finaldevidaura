@@ -26,3 +26,13 @@ backend
 *.sln
 *.sw?
 .gitattributes
+
+# Temporary, audit & scratch scripts
+scratch/
+scratch/
+*.scratch.*
+task.md
+task_plan.md
+check_*.js
+check_*.cjs
+check_*.mjs

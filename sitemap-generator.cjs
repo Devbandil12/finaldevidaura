@@ -23,23 +23,25 @@ async function generateSitemap() {
   console.log('⏳ Starting sitemap generation...');
 
   try {
-    // 3. FETCH DYNAMIC PRODUCTS FROM BACKEND
-    console.log(`🔍 Fetching products from ${BACKEND_URL}...`);
-    const response = await fetch(`${BACKEND_URL}/api/products`);
-    const productsData = await response.json();
-    
-    // Handle array or { data: [] } structure
-    const productList = Array.isArray(productsData) ? productsData : (productsData.data || []);
-
-    // 4. MAP PRODUCTS TO SITEMAP LINKS
-    const productLinks = productList.map(product => ({
-      // ⚠️ Check if your route is /product/:id or /product/:slug
-      url: `/product/${product.id}`,
-      changefreq: 'weekly',
-      priority: 0.8
-    }));
-
-    console.log(`✅ Found ${productLinks.length} products.`);
+    let productLinks = [];
+    try {
+      console.log(`🔍 Fetching products from ${BACKEND_URL}...`);
+      const response = await fetch(`${BACKEND_URL}/api/products`);
+      if (response.ok) {
+        const productsData = await response.json();
+        const productList = Array.isArray(productsData) ? productsData : (productsData.data || []);
+        productLinks = productList.map(product => ({
+          url: `/product/${product.id}`,
+          changefreq: 'weekly',
+          priority: 0.8
+        }));
+        console.log(`✅ Found ${productLinks.length} products.`);
+      } else {
+        console.warn(`⚠️ Failed to fetch products from backend (Status: ${response.status}). Proceeding with static links.`);
+      }
+    } catch (fetchErr) {
+      console.warn(`⚠️ Could not connect to backend at ${BACKEND_URL}. Proceeding with static links.`);
+    }
 
     // 5. COMBINE ALL LINKS
     const allLinks = [...staticLinks, ...productLinks];

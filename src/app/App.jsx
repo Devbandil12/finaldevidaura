@@ -5,7 +5,7 @@ import { useUser } from "@clerk/clerk-react";
 import SmoothScroll from "../Components/SmoothScroll";
 import Loader from "../Components/Loader";
 import AppRouter from "./router";
-import ThemeSwitcher from "../components/ThemeSwitcher";
+import ThemeSwitcher from "../Components/ThemeSwitcher";
 
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 const LOG_ERROR_URL = API_BASE ? `${API_BASE}/api/log-error` : "/api/log-error";

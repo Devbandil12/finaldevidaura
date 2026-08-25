@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './App.css'; // Assume you have some CSS to handle `open`, `active`, `no-scroll`
+ // Assume you have some CSS to handle `open`, `active`, `no-scroll`
 
 function Sidebar() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);

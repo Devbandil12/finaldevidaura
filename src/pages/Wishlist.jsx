@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { ShoppingCart, X, Trash2, ArrowRight, Sparkles, Star, ShoppingBag } from "lucide-react";
 import { useWishlist, useRemoveFromWishlist, useClearWishlist, useMoveFromWishlistToCart } from "../features/cart/hooks/useWishlist";
-import { ProductCardSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ProductCardSkeleton } from "../Components/ui/ShimmerSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 

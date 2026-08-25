@@ -12,7 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useUserDetails, useUserAddresses, useAddAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress, useUpdateUser } from "../features/users/hooks/useUsers";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { ShimmerSweep } from "../components/ui/ShimmerSkeleton";
+import { ShimmerSweep } from "../Components/ui/ShimmerSkeleton";
 
 // Components
 import Sidebar from "../Components/UserPage/Sidebar";

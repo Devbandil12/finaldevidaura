@@ -28,7 +28,7 @@ const TermsAndConditions = lazy(() => import("./TermsAndConditions"));
 const Login = lazy(() => import("./CustomAuthModal"));
 
 // --- Utilities ---
-import CheckoutGuard from "../CheckoutGuard";
+import CheckoutGuard from "../app/guards/CheckoutGuard";
 
 
 // Helper for Home Page Composition

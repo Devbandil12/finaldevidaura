@@ -6,7 +6,7 @@ import useCloudinary from "../hooks/useCloudinary";
 import { optimizeImage } from "../utils/imageOptimizer";
 import { UserContext } from "../contexts/UserContext";
 import { useMyOrders } from "../features/orders/hooks/useOrders";
-import { TestimonialCardSkeleton } from "../components/ui/ShimmerSkeleton";
+import { TestimonialCardSkeleton } from "../Components/ui/ShimmerSkeleton";
 
 const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
 const FALLBACK_AVATAR = "/images/avatar-placeholder.webp";

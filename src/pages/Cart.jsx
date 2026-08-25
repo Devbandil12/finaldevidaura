@@ -9,7 +9,7 @@ import { useCart, useAddToCart, useUpdateCartQuantity, useRemoveFromCart, useCle
 import { useAvailableCoupons, useAutoOfferInstructions, useValidateCoupon } from "../features/coupons/hooks/useCoupons";
 import { useCheckout } from "../features/checkout/hooks/useCheckout";
 
-import { CartItemSkeleton } from "../components/ui/ShimmerSkeleton";
+import { CartItemSkeleton } from "../Components/ui/ShimmerSkeleton";
 import HeroButton from "../Components/HeroButton";
 import CartRecommendations from "./CartRecommendations"; 
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";

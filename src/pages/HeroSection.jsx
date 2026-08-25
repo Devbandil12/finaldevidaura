@@ -4,7 +4,7 @@ import { gsap } from "gsap";
 import { ArrowRight, Droplet, Clock, Sparkles, ShieldCheck } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
 import { useBanners } from "../features/cms/hooks/useCms";
-import { ShimmerBlock as ShimmerSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ShimmerBlock as ShimmerSkeleton } from "../Components/ui/ShimmerSkeleton";
 
 // DEFAULT ASSETS
 import bottleMain from "/images/SAPPHIRE-MIST.webp";

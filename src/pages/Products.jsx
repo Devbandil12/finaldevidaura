@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState, useMemo, memo, useCallback, use
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useProducts } from "../features/catalog/hooks/useProducts";
-import { ProductCardSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ProductCardSkeleton } from "../Components/ui/ShimmerSkeleton";
 import { useWishlist, useToggleWishlist } from "../features/cart/hooks/useWishlist";
 import { useAddToCart } from "../features/cart/hooks/useCart";
 import { Heart, Sparkles, Bell, Star, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown, ArrowUpDown, Tag } from "lucide-react";

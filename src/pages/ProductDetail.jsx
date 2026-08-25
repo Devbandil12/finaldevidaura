@@ -2,7 +2,7 @@
 import React, { useState, useContext, useEffect, useMemo, memo, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useProducts } from "../features/catalog/hooks/useProducts";
-import { ShimmerBlock as ShimmerSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ShimmerBlock as ShimmerSkeleton } from "../Components/ui/ShimmerSkeleton";
 import { useCart, useAddToCart } from "../features/cart/hooks/useCart";
 import { useWishlist, useToggleWishlist } from "../features/cart/hooks/useWishlist";
 import { useCheckout } from "../features/checkout/hooks/useCheckout";

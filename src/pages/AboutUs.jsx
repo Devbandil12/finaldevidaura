@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState, useEffect, useMemo } from 're
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Star, Droplets, Sun, Fingerprint, ArrowRight, Minus } from 'lucide-react'; 
-import { ShimmerBlock as ShimmerSkeleton } from "../components/ui/ShimmerSkeleton";
+import { ShimmerBlock as ShimmerSkeleton } from "../Components/ui/ShimmerSkeleton";
 import { useAboutUs } from "../features/cms/hooks/useCms";
 // 👇 IMPORT OPTIMIZER
 import { optimizeImage } from "../utils/imageOptimizer"; 
