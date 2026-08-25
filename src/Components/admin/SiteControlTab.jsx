@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useSiteStatus } from '../../features/site/useSiteStatus';
 import { useAdminSiteStatus, useCreateAnnouncement } from '../../features/site/useSiteControl';
 import { useAnnouncements } from '../../features/site/useAnnouncements';
-import { ShieldAlert, Zap, Clock, Calendar, CheckCircle, Info, Megaphone, X, AlertTriangle } from 'lucide-react';
+import { useWaitlist, exportWaitlistCSV } from '../../features/site/useWaitlist';
+import { useAuth } from '@clerk/clerk-react';
+import { ShieldAlert, Zap, Clock, Calendar, CheckCircle, Info, Megaphone, X, AlertTriangle, Download, Users, Search, ChevronLeft, ChevronRight, Sparkles, UserCheck, UserX } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SiteControlTab = () => {
@@ -10,11 +12,39 @@ const SiteControlTab = () => {
   const { updateStatus } = useAdminSiteStatus();
   const createAnnouncement = useCreateAnnouncement();
   const { data: activeAnnouncements, isLoading: announcementsLoading } = useAnnouncements();
+  const { getToken } = useAuth();
 
   const [schedule, setSchedule] = useState({ start: '', end: '', message: '' });
   const [announcement, setAnnouncement] = useState({
     title: '', message: '', type: 'INFO', severity: 'Low'
   });
+
+  // Waitlist State
+  const [waitlistSearch, setWaitlistSearch] = useState('');
+  const [waitlistSort, setWaitlistSort] = useState('desc');
+  const [waitlistPage, setWaitlistPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { data: waitlistData, isLoading: waitlistLoading } = useWaitlist({
+    search: waitlistSearch,
+    sort: waitlistSort,
+    page: waitlistPage,
+    limit: 10,
+  });
+
+  const handleExportWaitlist = async () => {
+    try {
+      setIsExporting(true);
+      await exportWaitlistCSV(getToken);
+      window.toast.success('Waitlist CSV downloaded successfully');
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
+      window.toast.error('Failed to export waitlist CSV');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, type: '', payload: null });
   const [promptInput, setPromptInput] = useState('');
@@ -324,6 +354,161 @@ const SiteControlTab = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── 3. Launch Waitlist Management ──────────────────────────────────── */}
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-[color-mix(in_srgb,var(--brand)_15%,transparent)] text-[var(--brand)] rounded-xl">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium text-[var(--text)]">Launch Waitlist</h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-white">
+                    {waitlistData?.total ? waitlistData.total.toLocaleString() : 0} Subscribers
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--muted)] mt-0.5">Subscribers collected during the Coming Soon period</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                <input
+                  type="text"
+                  value={waitlistSearch}
+                  onChange={(e) => {
+                    setWaitlistSearch(e.target.value);
+                    setWaitlistPage(1);
+                  }}
+                  placeholder="Search email..."
+                  className="bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl pl-9 pr-4 py-2 text-xs text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] w-48 sm:w-64"
+                />
+              </div>
+
+              {/* Sort Selector */}
+              <select
+                value={waitlistSort}
+                onChange={(e) => setWaitlistSort(e.target.value)}
+                className="bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs text-[var(--text)] focus:outline-none"
+              >
+                <option value="desc">Newest ▾</option>
+                <option value="asc">Oldest ▾</option>
+              </select>
+
+              {/* Export CSV Button */}
+              <button
+                type="button"
+                onClick={handleExportWaitlist}
+                disabled={isExporting || !waitlistData?.total}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white border border-white/20 px-4 py-2 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {isExporting ? 'Exporting...' : 'Export CSV'}
+              </button>
+            </div>
+          </div>
+
+          {/* Subscribers Table */}
+          <div className="overflow-x-auto border border-[var(--border)] rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[var(--surface-muted)] text-[var(--muted)] border-b border-[var(--border)] font-medium">
+                <tr>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Subscribed Date</th>
+                  <th className="py-3 px-4">Account Type</th>
+                  <th className="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {waitlistLoading ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-[var(--muted)]">Loading subscribers...</td>
+                  </tr>
+                ) : waitlistData?.subscribers?.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-[var(--muted)] italic">
+                      {waitlistSearch ? 'No subscribers match your search.' : 'No waitlist subscribers yet.'}
+                    </td>
+                  </tr>
+                ) : (
+                  waitlistData?.subscribers?.map((sub) => (
+                    <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-4 font-mono font-medium text-[var(--text)]">
+                        {sub.email}
+                      </td>
+                      <td className="py-3 px-4 text-[var(--muted)]">
+                        {new Date(sub.subscribedAt).toLocaleString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </td>
+                      <td className="py-3 px-4">
+                        {sub.isRegisteredUser ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <UserCheck className="w-3 h-3" />
+                            Registered User {sub.userName ? `(${sub.userName})` : ''}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
+                            <UserX className="w-3 h-3" />
+                            Guest Visitor
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {sub.status === 'notified' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                            <CheckCircle className="w-3 h-3" />
+                            Notified {sub.notifiedAt ? `(${new Date(sub.notifiedAt).toLocaleDateString()})` : ''}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <Clock className="w-3 h-3" />
+                            Subscribed
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {waitlistData?.totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4 text-xs text-[var(--muted)]">
+              <div>
+                Page {waitlistData.page} of {waitlistData.totalPages} ({waitlistData.total} total)
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWaitlistPage((p) => Math.max(1, p - 1))}
+                  disabled={waitlistPage <= 1}
+                  className="p-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-muted)] disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWaitlistPage((p) => Math.min(waitlistData.totalPages, p + 1))}
+                  disabled={waitlistPage >= waitlistData.totalPages}
+                  className="p-1.5 rounded-lg border border-[var(--border)] hover:bg-[var(--surface-muted)] disabled:opacity-30"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
