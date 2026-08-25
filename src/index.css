@@ -205,6 +205,56 @@
    ========================================================= */
 
 :root {
+  /* -------------------------------------------------------
+     THEME MOTION — single source of truth.
+     Declared OUTSIDE the per-theme blocks below so that a
+     theme switch can never change the duration or easing
+     while that very switch is still running.
+     ------------------------------------------------------- */
+  --theme-duration: 200ms;
+  --theme-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* -------------------------------------------------------
+     THEME-SWITCH MOTION — separate on purpose.
+
+     --theme-duration above is INTERACTION timing. It is also
+     read by the .form-input focus ring, .button-hero and the
+     react-datepicker hover rules, so raising it to slow the
+     theme fade would also make every focus ring and hover
+     feel laggy. The switch therefore gets its own pair, read
+     ONLY by section 23 and the view-transition cross-fade at
+     the end of this file.
+
+     TUNING
+     ---------------------------------------------------------
+       300ms  brisk, barely reads as a fade
+       450ms  current — clearly a fade, still responsive
+       600ms  languid; about the ceiling before the snapshot
+              path starts to feel like the page is stuck
+     Past ~600ms the View Transitions path holds a frozen
+     snapshot long enough to notice: framer-motion animations
+     visibly pause underneath it and clicks land on DOM the
+     user cannot see yet.
+
+     WHY A SINE-ISH EASE AND NOT THE MATERIAL CURVE
+     ---------------------------------------------------------
+     This one drives a cross-dissolve, not a movement. A
+     symmetric ease-in-out has no abrupt start or stop and
+     does not linger at the halfway point, which is the frame
+     where old and new are both half-strength and the image
+     looks its muddiest. Swap in
+     cubic-bezier(0.4, 0, 0.2, 1) if you want the midpoint
+     crossed faster still.
+     ------------------------------------------------------- */
+  --switch-duration: 450ms;
+  --switch-ease: cubic-bezier(0.37, 0, 0.63, 1);
+
+  /* Switches the NATIVE layer with the CSS layer: scrollbars,
+     <select> popups, date/number spinners, autofill shading,
+     caret colour. Without this the scrollbar stayed light
+     while the page went black. */
+  color-scheme: light;
+
   --bg: #FAF8F3;
   --surface: #FBF8F3;
   --surface-muted: #F1EADF;
@@ -226,10 +276,24 @@
   --glass-bg: rgba(250, 248, 243, 0.86);
   --overlay: rgba(14, 13, 11, 0.045);
   --grain-opacity: 0.012;
+
+  /* These two used to be declared ONLY in the html.light block
+     below — and that block never activates, because nothing in
+     the app ever sets a "light" class or data-theme (the theme
+     switcher toggles "dark" and nothing else). So in light mode
+     --brand-contrast (82 usages) and --overlay-strong (9 usages)
+     were invalid-at-computed-value-time. An invalid value cannot
+     be interpolated, so every one of those 91 usages hard-snapped
+     to a fallback colour on each dark -> light switch. */
+  --brand-contrast: #FAF8F3;
+  --overlay-strong: rgba(14, 13, 11, 0.60);
+  --text-2: #6B6660;
 }
 
 html.light,
 html[data-theme="light"] {
+  color-scheme: light;
+
   --bg: #FAF8F3;
   --surface: #FBF8F3;
   --surface-muted: #F1EADF;
@@ -252,11 +316,14 @@ html[data-theme="light"] {
   --glass-bg: rgba(250, 248, 243, 0.86);
   --overlay: rgba(14, 13, 11, 0.045);
   --overlay-strong: rgba(14, 13, 11, 0.60);
+  --text-2: #6B6660;
   --grain-opacity: 0.012;
 }
 
 html.dark,
 html[data-theme="dark"] {
+  color-scheme: dark;
+
   --bg: #090909;
   --surface: #090909;
   --surface-muted: #1E1E1E;
@@ -328,7 +395,14 @@ html[data-theme="dark"] {
 */
 
 body {
-    transition: background-color 500ms ease-in-out, color 500ms ease-in-out;
+  /* Deliberately NO transition here.
+     This rule is unlayered, so it outranked the @layer base rule
+     in section 7 and gave the page background a 500ms ease-in-out
+     fade while everything painted on top of it faded in 280ms
+     cubic-bezier. The background therefore finished 220ms after
+     its own content, on a different curve — the single biggest
+     reason the switch read as smeared rather than instant.
+     Theme motion now lives in exactly one rule (section 7). */
   font-family: "Manrope", sans-serif;
 }
 
@@ -621,17 +695,71 @@ p {
   html {
     overscroll-behavior: none;
     touch-action: pan-y;
-    background: var(--bg);
+    background-color: var(--bg);
   }
 
-  /* Emulate the exact transition behavior from the reference website 
-     and apply it globally ONLY to color properties. 
-     This ensures all borders, icons, and backgrounds fade smoothly 
-     without layout thrashing or frame drops. */
-  * {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 280ms;
+  /* =======================================================
+     THE theme transition. Every themed surface in the app
+     fades on this timeline and no other, so nothing lands
+     early, late, or on a different curve.
+
+     Tune the switch itself from --switch-duration /
+     --switch-ease above — NOT from --theme-duration, which is
+     interaction timing and is shared with focus rings, hovers
+     and the datepicker. Do not add a competing `transition`
+     anywhere else.
+
+     The property list is deliberately minimal:
+
+       * text-decoration-color, fill and stroke are gone.
+         They resolve to currentColor everywhere in this app
+         (lucide icons included), so they already follow
+         `color` for free. Listing them only added two more
+         transition entries to every node in the tree — the
+         work that shows up as dropped frames mid-switch.
+
+       * box-shadow stays out on purpose. Interpolating a
+         blurred shadow forces a re-rasterisation every frame,
+         and the alpha delta between themes (0.08 -> 0.24) is
+         imperceptible against the surface colour change that
+         is happening at the same moment.
+
+       * opacity stays out too. --grain-opacity only moves
+         0.012 -> 0.018, and a universal opacity transition
+         would fight framer-motion, which drives opacity
+         itself via inline styles.
+
+     ::before / ::after are included because the bare `*`
+     selector never matches pseudo-elements, so themed
+     generated content used to snap while its host faded.
+     ======================================================= */
+  /* There is deliberately NO permanent universal transition here.
+     A base-layer rule cannot drive a theme switch: @layer
+     utilities outranks @layer base, and this app ships 412
+     `transition-all`, 353 `transition-colors` and 391 explicit
+     `duration-*` utilities, so ~986 elements would keep their own
+     clock (300ms, 500ms, 700ms, 1000ms) no matter what was
+     written here. The switch is forced onto one timeline from
+     section 23 instead, which is unlayered and !important.
+
+     What stays is a short colour fade on the things a user
+     actually interacts with, so hover and focus still feel
+     alive. That is a few dozen nodes in view rather than every
+     node in the document — and during a theme switch section 23
+     overrides it, so these cannot drift off the timeline. */
+  a,
+  button,
+  summary,
+  label,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    transition-property: color, background-color, border-color, outline-color;
+    transition-timing-function: var(--theme-ease);
+    transition-duration: 150ms;
   }
 
   body {
@@ -740,9 +868,9 @@ p:last-child {
     color: var(--text);
 
     transition:
-      border-color 220ms ease,
-      box-shadow 220ms ease,
-      background-color 220ms ease;
+      border-color var(--theme-duration) var(--theme-ease),
+      box-shadow var(--theme-duration) var(--theme-ease),
+      background-color var(--theme-duration) var(--theme-ease);
   }
 
   .form-input:focus {
@@ -834,9 +962,9 @@ p:last-child {
 
   transition:
     transform 160ms ease,
-    background-color 220ms ease,
-    color 220ms ease,
-    border-color 220ms ease;
+    background-color var(--theme-duration) var(--theme-ease),
+    color var(--theme-duration) var(--theme-ease),
+    border-color var(--theme-duration) var(--theme-ease);
 
   will-change: transform;
 }
@@ -895,17 +1023,22 @@ p:last-child {
 /* =========================================================
    12. THEME TRANSITION
    ---------------------------------------------------------
-   Add .theme-transition to <html> while switching themes.
+   Legacy opt-in helper, superseded by section 23. Kept only so
+   that any existing markup carrying .theme-transition stays on
+   the shared tokens instead of the old hard-coded 280ms. It
+   cannot drive a theme switch: it is layer-less but not
+   !important, so it still loses to `transition-all duration-500`
+   in the utilities layer. Prefer section 23.
    ========================================================= */
 
-.theme-transition *,
-.theme-transition {
+.theme-transition,
+.theme-transition * {
   transition-property:
-    background-color, border-color, color, fill, stroke, box-shadow;
+    color, background-color, border-color, outline-color, box-shadow;
 
-  transition-duration: 280ms;
+  transition-duration: var(--theme-duration);
 
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-timing-function: var(--theme-ease);
 }
 
 /* =========================================================
@@ -1053,7 +1186,11 @@ html.lenis body {
   padding: 0.25rem 0.5rem !important;
   border-radius: 0.5rem !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  /* was `all 0.2s ease`: transitioned layout properties as well,
+     and switched 80ms faster than the rest of the page. */
+  transition:
+    color var(--theme-duration) var(--theme-ease),
+    background-color var(--theme-duration) var(--theme-ease) !important;
   visibility: visible !important;
 }
 
@@ -1088,7 +1225,9 @@ html.lenis body {
   font-size: 0.875rem !important;
   padding: 0.5rem 1rem !important;
   cursor: pointer !important;
-  transition: background 0.15s ease, color 0.15s ease !important;
+  transition:
+    background-color var(--theme-duration) var(--theme-ease),
+    color var(--theme-duration) var(--theme-ease) !important;
 }
 
 .react-datepicker__month-option:hover,
@@ -1281,4 +1420,110 @@ html[data-theme="dark"] .blend-luxury {
 
     scroll-behavior: auto !important;
   }
+}
+
+/* =========================================================
+   23. THEME SWITCH — THE ONLY THEME TIMELINE
+   ---------------------------------------------------------
+   ThemeSwitcher.jsx sets data-theme-switching on <html> for
+   the length of a switch and removes it afterwards.
+
+   WHY THIS RULE HAS TO BE !important AND HAS TO LIVE HERE
+   ---------------------------------------------------------
+   Cascade layers, not specificity, are the problem. Tailwind
+   utilities are a later layer than @layer base, so anything
+   written in base loses to every `duration-*` utility in the
+   app — and there are 391 of them: 220 at 300ms, 122 at 500ms,
+   23 at 700ms, 4 at 1000ms. That is what a switch looked like
+   before: a card fading over half a second next to text that
+   had already finished, next to a button on a third clock.
+   A layer-less !important declaration outranks a normal
+   declaration in any layer, so this is the one place the
+   timeline can actually be enforced.
+
+   FORCING transition-property MATTERS AS MUCH AS DURATION
+   ---------------------------------------------------------
+   412 elements carry `transition-all`. On a theme change that
+   animates box-shadow, transform, filter and backdrop-filter
+   as well as colour — and 71 elements carry backdrop-blur,
+   each of which has to re-sample and re-blur its backdrop on
+   every frame the page behind it is still moving. Pinning the
+   property list to four colour longhands is what removes that
+   work.
+
+   WHY AN ATTRIBUTE AND NOT A CLASS
+   ---------------------------------------------------------
+   SalesPerformanceChart.jsx, CustomerSnapshot.jsx and
+   OrderChart.jsx each run a MutationObserver with
+   attributeFilter ['class', 'data-theme'] and rebuild their
+   Chart.js canvas on every hit. A switching *class* would fire
+   them twice more per toggle — once on add, once on remove —
+   so the flag is carried on a name they do not watch.
+
+   Wrapped in prefers-reduced-motion: no-preference so it can
+   never fight the reduce block in section 22.
+   ========================================================= */
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-switching],
+  html[data-theme-switching] *,
+  html[data-theme-switching] *::before,
+  html[data-theme-switching] *::after {
+    transition-property:
+      color, background-color, border-color, outline-color !important;
+
+    transition-duration: var(--switch-duration) !important;
+
+    transition-timing-function: var(--switch-ease) !important;
+
+    transition-delay: 0s !important;
+  }
+
+  /* 477+ lucide icons, each an <svg> wrapping several path /
+     circle / line nodes. None of them paint any of the four
+     properties above — they inherit stroke and fill from
+     currentColor on the <svg> itself — so tracking them is pure
+     overhead on a dense admin view. */
+  html[data-theme-switching] svg * {
+    transition-property: none !important;
+  }
+
+  /* Snapshot path. When the browser supports View Transitions the
+     theme is applied instantly and the whole page is cross-faded
+     from a GPU texture, so no element transition should run
+     underneath — otherwise the snapshot fades over a page that is
+     itself still fading. */
+  html[data-theme-switching="snapshot"],
+  html[data-theme-switching="snapshot"] *,
+  html[data-theme-switching="snapshot"] *::before,
+  html[data-theme-switching="snapshot"] *::after {
+    transition-property: none !important;
+  }
+}
+
+/* =========================================================
+   24. THE FADE ITSELF (View Transitions path)
+   ---------------------------------------------------------
+   Duration and easing only. The keyframes and the blending
+   are deliberately left to the browser.
+
+   The UA stylesheet cross-fades these two pseudo-elements
+   with mix-blend-mode: plus-lighter inside an isolated
+   stacking context, which is what keeps a cross-dissolve from
+   dipping darker as it passes the halfway point — two layers
+   at 50% opacity composited normally do NOT add back up to
+   the original image, and plus-lighter is the fix. Writing
+   custom @keyframes here would opt out of that and reintroduce
+   the dip, which at 450ms is long enough to see.
+
+   Harmlessly ignored where View Transitions are unsupported;
+   those browsers get the forced element fade in section 23,
+   on the same duration and curve.
+   ========================================================= */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--switch-duration);
+
+  animation-timing-function: var(--switch-ease);
 }
