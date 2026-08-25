@@ -6,11 +6,9 @@ import {
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { useAdminWishlistStats, useAdminOrders, useAdminFunnelStats, useAdminTopReturnedProducts } from '../../features/admin/hooks/useAdmin';
 import { useProducts } from '../../features/catalog/hooks/useProducts';
-import { 
-  Chart as ChartJS, RadialLinearScale, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title 
-} from 'chart.js';
+import { Chart as ChartJS, registerables } from 'chart.js';
 
-ChartJS.register(RadialLinearScale, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(...registerables);
 
 const InsightsTab = () => {
   const { data: wishlistStats = [] } = useAdminWishlistStats();

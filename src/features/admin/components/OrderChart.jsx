@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Pie } from 'react-chartjs-2';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, registerables } from 'chart.js';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(...registerables);
 
 // Hook to dynamically extract computed CSS variables and trigger a canvas re-render on theme switch
 const useChartTheme = () => {

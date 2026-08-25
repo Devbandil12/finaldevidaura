@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TrendingUp, BarChart2, Layers } from 'lucide-react';
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, Title, Tooltip, Legend, Filler,
-} from 'chart.js';
+import { Chart as ChartJS, registerables } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(...registerables);
 
 const fmt = (v) => {
   if (v >= 100000) return '₹' + (v / 100000).toFixed(1) + 'L';
