@@ -3,14 +3,15 @@
 import React, { useContext, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom"; 
-import { OrderContext } from "../contexts/OrderContext";
+import { useMyOrders, useCancelOrder, useReturnOrder } from "../features/orders/hooks/useOrders";
 import { UserContext } from "../contexts/UserContext";
-import { CartContext } from "../contexts/CartContext"; 
+import { useCheckout } from "../features/checkout/hooks/useCheckout";
 import Loader from "../Components/Loader";
 import MiniLoader from "../Components/MiniLoader";
 import CancellationWindow, { CANCELLABLE_STATUSES } from "../Components/CancellationWindow"; // 🟢 NEW: Part B
 import { useAuth } from "@clerk/clerk-react"; 
 import { motion, AnimatePresence } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle,
   Clock,
@@ -237,18 +238,23 @@ const VerticalTimeline = ({ timeline, currentStatus, courierDetails, orderCreate
 const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
   const [expanded, setExpanded] = useState(false);
 
-  if (!refund || !refund.status) return null;
+  if (!refund) return null;
 
-  const { status, amount, refund_completed_at, speed } = refund;
-  const formattedAmount = `₹${(amount / 100).toFixed(2)}`;
+  const status = String(refund.refundStatus || refund.status || '').toLowerCase();
+  if (!status) return null;
+
+  const amountPaise = Number(refund.amount) || 0;
+  const formattedAmount = `₹${(amountPaise / 100).toFixed(2)}`;
+  const speed = refund.refundSpeed || refund.speedProcessed || refund.speed || 'optimum';
+  const completedAt = refund.completedAt || refund.processed_at;
 
   const currentStatus = ['created', 'queued', 'pending', 'in_progress'].includes(status)
     ? 'pending'
     : status;
 
   let isLongAgo = false;
-  if (refund_completed_at) {
-    const completedDate = new Date(refund_completed_at);
+  if (completedAt) {
+    const completedDate = new Date(completedAt);
     const today = new Date();
     const diffTime = Math.abs(today - completedDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -317,9 +323,13 @@ const RefundStatusDisplay = ({ refund, onRefresh, isRefreshing }) => {
 
 export default function MyOrders() {
   const navigate = useNavigate(); 
-  const { orders, setOrders, cancelOrder, returnOrder, loadingOrders } = useContext(OrderContext);
+  const { data: orders = [], isLoading: loadingOrders } = useMyOrders();
+  const { mutateAsync: cancelOrder } = useCancelOrder();
+  const { mutateAsync: returnOrder } = useReturnOrder();
+  
   const { userdetails } = useContext(UserContext);
-  const { startBuyNow } = useContext(CartContext); 
+  const { startBuyNow } = useCheckout();
+  const queryClient = useQueryClient();
 
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
@@ -368,7 +378,7 @@ export default function MyOrders() {
     if (!modalOrder) return;
     setCancellingOrderId(modalOrder.id);
     setModalOrder(null);
-    await cancelOrder(modalOrder.id, modalOrder.paymentMode, modalOrder.totalAmount);
+    await cancelOrder({ orderId: modalOrder.id, amount: modalOrder.totalAmount });
     setCancellingOrderId(null);
   };
 
@@ -402,8 +412,7 @@ export default function MyOrders() {
     try {
       const res = await fetch(`${BACKEND}/api/orders/${orderId}`);
       if (!res.ok) throw new Error("Failed to fetch order status");
-      const updatedOrder = await res.json();
-      setOrders(prev => prev.map(o => (o.id === orderId ? updatedOrder : o)));
+      queryClient.invalidateQueries({ queryKey: ['orders', userdetails?.id] });
     } catch (err) {
       console.error("Refresh failed:", err);
     } finally {
@@ -486,7 +495,10 @@ export default function MyOrders() {
   const renderOrderCard = (order) => {
     const isExpanded = expandedOrderId === order.id;
     const isPrepaid = order.paymentMode === "online" || order.paymentMode === "wallet";
-    const refundInfo = order.refund_status ? { status: order.refund_status, amount: order.refund_amount, refund_completed_at: order.refund_completed_at, speed: order.refund_speed } : null;
+    const refundList = (order.refunds && order.refunds.length > 0)
+      ? order.refunds
+      : (order.refund ? [order.refund] : []);
+    const hasRefunds = refundList.length > 0;
     const subtotal = order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const discount = (order.discountAmount || 0) + (order.offerDiscount || 0);
     const wallet = order.walletAmountUsed || 0;
@@ -531,9 +543,11 @@ export default function MyOrders() {
           </div>
 
           <AnimatePresence>
-            {refundInfo && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                <RefundStatusDisplay refund={refundInfo} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
+            {hasRefunds && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
+                {refundList.map((r, idx) => (
+                  <RefundStatusDisplay key={r.id || r.gatewayRefundId || idx} refund={r} onRefresh={() => handleRefreshStatus(order.id)} isRefreshing={refreshingStatusId === order.id} />
+                ))}
               </motion.div>
             )}
           </AnimatePresence>
@@ -558,7 +572,7 @@ export default function MyOrders() {
                 </button>
               )}
               
-              {CANCELLABLE_STATUSES.includes(normalizedStatus) && !refundInfo && (
+              {CANCELLABLE_STATUSES.includes(normalizedStatus) && !hasRefunds && (
                 cancellingOrderId === order.id ? <div className="flex justify-center w-full"><MiniLoader /></div> : (
                   <div className="flex flex-col items-end gap-1.5 w-full sm:w-auto">
                     <button onClick={() => setModalOrder(order)} className="px-4 py-3 md:px-6 md:py-3 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100 transition-colors w-full sm:w-auto">Cancel Order</button>

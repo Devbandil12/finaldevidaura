@@ -2,8 +2,10 @@ import React, { useState, useContext, useMemo, useCallback, useEffect, memo } fr
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { ProductContext } from "../contexts/productContext";
-import { CartContext } from "../contexts/CartContext";
+import { useProducts } from "../features/catalog/hooks/useProducts";
+import { ComboBuilderSkeleton } from "../components/ui/ShimmerSkeleton";
+import { useAddCustomBundle } from "../features/cart/hooks/useCart";
+import { useCheckout } from "../features/checkout/hooks/useCheckout";
 import { UserContext } from "../contexts/UserContext";
 
 import { FaShoppingBag, FaArrowRight, FaLock, FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -19,7 +21,7 @@ const HeroButton = memo(({ children, className, variant = "primary", ...props })
     const baseStyle = "flex items-center justify-center px-8 py-4 rounded-full font-bold uppercase tracking-widest text-xs transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed";
 
     const variants = {
-        primary: "bg-[#C5A059] text-black hover:bg-[#1a1a1a] hover:text-white shadow-lg shadow-[#C5A059]/20",
+        primary: "bg-[#C5A059] text-black hover:bg-[var(--text)] hover:text-white shadow-lg shadow-[#C5A059]/20",
         outline: "border border-white/20 text-white hover:bg-white hover:text-black hover:border-white"
     };
 
@@ -37,8 +39,8 @@ const HeroButton = memo(({ children, className, variant = "primary", ...props })
 
 const Loader = ({ text = "Loading..." }) => (
     <div className="min-h-[400px] flex flex-col items-center justify-center">
-        <div className="w-12 h-12 border-2 border-gray-200 border-t-[#C5A059] rounded-full animate-spin mb-4"></div>
-        <span className="text-gray-400  italic tracking-wider text-sm">{text}</span>
+        <div className="w-12 h-12 border-2 border-[var(--border)] border-t-[#C5A059] rounded-full animate-spin mb-4"></div>
+        <span className="text-[var(--muted)]  italic tracking-wider text-sm">{text}</span>
     </div>
 );
 
@@ -84,7 +86,7 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
             className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-300 cursor-pointer border border-transparent
             ${isSelected
                     ? "bg-white ring-1 ring-[#C5A059]/30 border-[#C5A059]/10 shadow-sm"
-                    : "hover:bg-white/50 hover:border-gray-100"
+                    : "hover:bg-white/50 hover:border-[var(--border)]"
                 }
             ${isOutOfStock
                     ? "opacity-40 grayscale cursor-not-allowed"
@@ -95,7 +97,7 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
             `}
         >
             {/* LEFT: COMPACT IMAGE BOX */}
-            <div className="relative w-20 h-28 shrink-0 bg-gray-50 rounded-lg overflow-hidden shadow-sm">
+            <div className="relative w-20 h-28 shrink-0 bg-[var(--surface-muted)] rounded-lg overflow-hidden shadow-sm">
                 <img
                     src={imageUrl}
                     alt={product.name}
@@ -109,17 +111,17 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
             {/* RIGHT: TEXT CONTENT */}
             <div className="flex flex-col flex-1 min-w-0 h-28 py-0.5 justify-between">
                 <div>
-                    <h3 className="text-lg text-[#1a1a1a] leading-none mb-1.5 truncate capitalize">
+                    <h3 className="text-lg text-[var(--text)] leading-none mb-1.5 truncate capitalize">
                         {product.name}
                     </h3>
 
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 tracking-widest uppercase mb-1">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--muted)] tracking-widest uppercase mb-1">
                         <span>{variant.size}ML</span>
-                        <span className="text-gray-300">•</span>
-                        <span className={isSelected ? "text-[#C5A059]" : "text-gray-600"}>₹{discountedPrice}</span>
+                        <span className="text-[var(--muted)]">•</span>
+                        <span className={isSelected ? "text-[#C5A059]" : "text-[var(--sub)]"}>₹{discountedPrice}</span>
                     </div>
 
-                    <p className="italic text-gray-400 text-[10px] leading-snug line-clamp-2">
+                    <p className="italic text-[var(--muted)] text-[10px] leading-snug line-clamp-2">
                         {product.description || "Premium fragrance"}
                     </p>
                 </div>
@@ -148,8 +150,9 @@ const PerfumeCard = memo(({ variant, product, count, isOutOfStock, isDisabled, o
 // --- MAIN COMPONENT ---
 const CustomComboBuilder = () => {
     const navigate = useNavigate();
-    const { products: contextProducts, loading: contextLoading } = useContext(ProductContext);
-    const { addCustomBundle, startBuyNow } = useContext(CartContext);
+    const { data: contextProducts = [], isLoading: contextLoading } = useProducts();
+    const { mutateAsync: addCustomBundle } = useAddCustomBundle();
+    const { startBuyNow } = useCheckout();
     const { userdetails } = useContext(UserContext);
 
     // ⚡ DYNAMIC PAGINATION STATE
@@ -312,16 +315,25 @@ const CustomComboBuilder = () => {
     };
 
     // --- RENDER ---
-    if (products.length === 0 && contextLoading) return <Loader text="Curating Library..." />;
+    if (products.length === 0 && contextLoading) return (
+        <section className="min-h-screen py-22 px-4 md:px-12 pt-20">
+            <div className="max-w-4xl mx-auto mb-16 flex flex-col items-center">
+                <div className="h-8 w-48 bg-[var(--surface-muted)] rounded-full mb-6 animate-pulse" />
+                <div className="h-12 w-3/4 bg-[var(--surface-muted)] rounded-2xl mb-6 animate-pulse" />
+                <div className="h-6 w-1/2 bg-[var(--surface-muted)] rounded-xl animate-pulse" />
+            </div>
+            <ComboBuilderSkeleton />
+        </section>
+    );
 
     if (products.length === 0 && !contextLoading) return (
-        <div className="min-h-screen flex items-center justify-center text-gray-400">
+        <div className="min-h-screen flex items-center justify-center text-[var(--muted)]">
             No products available.
         </div>
     );
 
     if (!templateVariant) return (
-        <div className="p-12 text-center text-gray-500 bg-gray-100 rounded-3xl m-4">
+        <div className="p-12 text-center text-[var(--muted)] bg-[var(--surface-muted)] rounded-3xl m-4">
             <FiAlertTriangle className="mx-auto text-4xl mb-4 opacity-20" />
             <p>Combo Builder is currently unavailable.</p>
         </div>
@@ -338,14 +350,14 @@ const CustomComboBuilder = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border)] bg-white text-xs font-bold tracking-widest uppercase mb-6 shadow-sm">
                             <BsStars size={12} className="text-[#C5A059]" />
                             Bespoke Signature Set
                         </span>
-                        <h1 className="text-4xl md:text-6xl  mb-6 text-[#1a1a1a]">
+                        <h1 className="text-4xl md:text-6xl  mb-6 text-[var(--text)]">
                             Build Your Collection
                         </h1>
-                        <p className="text-gray-500 text-lg font-light max-w-2xl mx-auto">
+                        <p className="text-[var(--muted)] text-lg font-light max-w-2xl mx-auto">
                             Select 4 signature scents to unlock the exclusive bundle price.
                         </p>
                     </motion.div>
@@ -358,7 +370,7 @@ const CustomComboBuilder = () => {
                         <div className="flex items-center justify-between mb-8 px-2">
                             <div className="flex items-center gap-3">
                                 <HiOutlineSparkles className="text-[#C5A059]" />
-                                <span className="text-gray-400 tracking-widest text-xs">Available Library</span>
+                                <span className="text-[var(--muted)] tracking-widest text-xs">Available Library</span>
                             </div>
                             <span className="text-xs font-bold text-white bg-black px-3 py-1 rounded-full shadow-md">
                                 {4 - selectedPerfumes.length} SLOTS REMAINING
@@ -400,11 +412,11 @@ const CustomComboBuilder = () => {
 
                         {/* PAGINATION CONTROLS */}
                         {totalPages > 1 && (
-                            <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+                            <div className="mt-8 flex items-center justify-between border-t border-[var(--border)] pt-6">
                                 <button
                                     onClick={() => setPage((p) => Math.max(0, p - 1))}
                                     disabled={page === 0}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[var(--surface-muted)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     <FaChevronLeft /> Prev
                                 </button>
@@ -423,7 +435,7 @@ const CustomComboBuilder = () => {
                                 <button
                                     onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                                     disabled={page === totalPages - 1}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-[var(--surface-muted)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     Next <FaChevronRight />
                                 </button>
@@ -433,18 +445,18 @@ const CustomComboBuilder = () => {
 
                     {/* RIGHT: FLOATING SUMMARY BOX (Light Theme) */}
                     <div className="lg:col-span-4 lg:sticky lg:top-32 self-start">
-                        <div className="bg-white text-[#1a1a1a] rounded-[2rem] shadow-xl shadow-black/5 p-8 relative overflow-hidden border border-gray-100">
+                        <div className="bg-white text-[var(--text)] rounded-[2rem] shadow-xl shadow-black/5 p-8 relative overflow-hidden border border-[var(--border)]">
 
                             {/* Header */}
                             <div className="relative z-10 mb-8">
                                 <div className="flex justify-between items-center mb-1">
-                                    <h3 className="text-2xl  text-[#1a1a1a]">Your Personal Set</h3>
+                                    <h3 className="text-2xl  text-[var(--text)]">Your Personal Set</h3>
                                     <FaShoppingBag className="text-[#C5A059]" />
                                 </div>
                                 <p className="text-[#C5A059] text-xs  italic mb-3">
                                     The Devid Aura Signature Edit
                                 </p>
-                                <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-full h-1 bg-[var(--surface-muted)] rounded-full overflow-hidden">
                                     <motion.div
                                         className="h-full bg-[#C5A059]"
                                         initial={{ width: 0 }}
@@ -468,7 +480,7 @@ const CustomComboBuilder = () => {
                                                         initial={{ opacity: 0, x: -10 }}
                                                         animate={{ opacity: 1, x: 0 }}
                                                         exit={{ opacity: 0, scale: 0.9 }}
-                                                        className="flex items-center gap-4 bg-white border border-gray-100 p-2 rounded-2xl group shadow-sm"
+                                                        className="flex items-center gap-4 bg-white border border-[var(--border)] p-2 rounded-2xl group shadow-sm"
                                                     >
                                                         <img
                                                             // ⚡ Optimize thumbnail in slot too
@@ -477,13 +489,13 @@ const CustomComboBuilder = () => {
                                                             alt=""
                                                         />
                                                         <div className="flex-1 min-w-0">
-                                                            <h5 className="text-sm  text-[#1a1a1a] truncate">{productInfo.product.name}</h5>
+                                                            <h5 className="text-sm  text-[var(--text)] truncate">{productInfo.product.name}</h5>
                                                             <p className="text-[10px] uppercase tracking-wider text-[#C5A059]">{variant.size} ml</p>
                                                         </div>
                                                         <button
                                                             onClick={() => !isProcessing && handleRemoveFromSlot(i)}
                                                             disabled={isProcessing}
-                                                            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-gray-100 transition-colors"
+                                                            className="w-8 h-8 flex items-center justify-center rounded-full text-[var(--muted)] hover:text-red-500 hover:bg-[var(--surface-muted)] transition-colors"
                                                         >
                                                             <span className="text-xl leading-none">-</span>
                                                         </button>
@@ -492,12 +504,12 @@ const CustomComboBuilder = () => {
                                                     <motion.div
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
-                                                        className="flex items-center gap-4 p-2 rounded-2xl border border-dashed border-gray-200"
+                                                        className="flex items-center gap-4 p-2 rounded-2xl border border-dashed border-[var(--border)]"
                                                     >
-                                                        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm font-bold ">
+                                                        <div className="w-12 h-12 rounded-xl bg-[var(--surface-muted)] flex items-center justify-center text-[var(--muted)] text-sm font-bold ">
                                                             {i + 1}
                                                         </div>
-                                                        <span className="text-xs text-gray-500 uppercase tracking-widest">Empty Slot</span>
+                                                        <span className="text-xs text-[var(--muted)] uppercase tracking-widest">Empty Slot</span>
                                                     </motion.div>
                                                 )}
                                             </div>
@@ -507,22 +519,22 @@ const CustomComboBuilder = () => {
                             </div>
 
                             {/* Pricing & Actions */}
-                            <div className="mt-10 pt-6 border-t border-gray-100 relative z-10">
+                            <div className="mt-10 pt-6 border-t border-[var(--border)] relative z-10">
                                 {isFull ? (
                                     <div className="mb-6">
-                                        <div className="mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                                        <div className="mb-6 bg-[var(--surface-muted)] p-5 rounded-2xl border border-[var(--border)]">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-sm text-[#1a1a1a] ">Final Price</span>
+                                                <span className="text-sm text-[var(--text)] ">Final Price</span>
                                                 <span className="text-3xl  text-[#C5A059]">₹{comboFinalPrice}</span>
                                             </div>
                                             <div className="flex justify-between items-center opacity-80">
-                                                <span className="text-xs text-gray-500 uppercase tracking-widest">Original Value</span>
-                                                <span className="text-sm text-gray-500 line-through decoration-gray-300">₹{comboOriginalPrice}</span>
+                                                <span className="text-xs text-[var(--muted)] uppercase tracking-widest">Original Value</span>
+                                                <span className="text-sm text-[var(--muted)] line-through decoration-gray-300">₹{comboOriginalPrice}</span>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="mb-8 flex items-center justify-center gap-2 text-gray-500 bg-gray-100 py-4 rounded-xl border border-gray-100 shadow-inner">
+                                    <div className="mb-8 flex items-center justify-center gap-2 text-[var(--muted)] bg-[var(--surface-muted)] py-4 rounded-xl border border-[var(--border)] shadow-inner">
                                         <FaLock size={12} />
                                         <span className="text-[10px] uppercase tracking-widest font-bold">
                                             Add {4 - selectedPerfumes.length} more to unlock
@@ -544,7 +556,7 @@ const CustomComboBuilder = () => {
                                         variant="outline"
                                         onClick={handleAddToCart}
                                         disabled={!isFull || isProcessing}
-                                        className="w-full !border-[#1a1a1a]/30 !text-[#1a1a1a] hover:!bg-[#1a1a1a] hover:!text-white hover:!border-[#1a1a1a]"
+                                        className="w-full !border-[#1a1a1a]/30 !text-[var(--text)] hover:!bg-[var(--text)] hover:!text-white hover:!border-[#1a1a1a]"
                                     >
                                         {isAddingToCart ? "Adding..." : "Add to Cart"}
                                     </HeroButton>

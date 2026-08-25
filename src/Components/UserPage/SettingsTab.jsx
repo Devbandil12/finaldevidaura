@@ -3,9 +3,9 @@ import { useForm, Controller } from "react-hook-form";
 import { Loader2, Upload, ShieldCheck } from 'lucide-react';
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import useCloudinary from "../../utils/useCloudinary"; // Path adjust needed based on folder structure
+import useCloudinary from "../../hooks/useCloudinary"; // Path adjust needed based on folder structure
 import { Button, FloatingInput, FloatingDropdown } from './SharedUserComponents';
-import usePhoneVerification from "../../hooks/usePhoneVerification"; // 🟢 NEW: Part A2
+import usePhoneVerification from "../../features/verification/hooks/usePhoneVerification"; // 🟢 NEW: Part A2
 import PhoneOtpModal from "../PhoneOtpModal"; // 🟢 NEW: Part A2
 
 const NotificationSettings = ({ user, onUpdate }) => {
@@ -23,7 +23,7 @@ const NotificationSettings = ({ user, onUpdate }) => {
       <div className="flex-1 min-w-0"><p className="font-medium text-zinc-900">{label}</p><p className="text-xs text-zinc-500 mt-1 font-light">{desc}</p></div>
       <div className="relative flex-shrink-0">
         <input type="checkbox" className="sr-only peer" {...props} />
-        <div className="w-11 h-6 bg-zinc-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-900"></div>
+        <div className="w-11 h-6 bg-zinc-200 rounded-full peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[var(--border)] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-900"></div>
       </div>
     </label>
   );

@@ -1,8 +1,11 @@
 // src/pages/ProductDetail.jsx
 import React, { useState, useContext, useEffect, useMemo, memo, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ProductContext } from "../contexts/productContext";
-import { CartContext } from "../contexts/CartContext";
+import { useProducts } from "../features/catalog/hooks/useProducts";
+import { ShimmerBlock as ShimmerSkeleton } from "../components/ui/ShimmerSkeleton";
+import { useCart, useAddToCart } from "../features/cart/hooks/useCart";
+import { useWishlist, useToggleWishlist } from "../features/cart/hooks/useWishlist";
+import { useCheckout } from "../features/checkout/hooks/useCheckout";
 import { UserContext } from "../contexts/UserContext";
 import ReviewComponent from "./ReviewComponent";
 import {
@@ -142,10 +145,10 @@ const Button = memo(({ onClick, variant = 'primary', size = 'default', className
       icon: "h-10 w-10"
     };
     const variantStyles = {
-      primary: "bg-gray-900 text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.2)] hover:bg-black",
-      secondary: "bg-white text-gray-700 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]",
-      ghost: "hover:bg-gray-50 text-gray-600 hover:text-gray-900",
-      outline: "border border-gray-200 text-gray-900 hover:bg-gray-50"
+      primary: "bg-[var(--brand)] text-[var(--brand-contrast)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] hover:bg-[var(--brand-hover)]",
+      secondary: "bg-[var(--surface)] text-[var(--sub)] border border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--surface-muted)] shadow-[var(--shadow)]",
+      ghost: "hover:bg-[var(--surface-muted)] text-[var(--sub)] hover:text-[var(--text)]",
+      outline: "border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)]"
     };
   
     return (
@@ -195,7 +198,7 @@ const SuggestionCard = memo(({ product, className = "" }) => {
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleClick}
       >
-        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-100 mb-4 border border-gray-100">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--surface-muted)] mb-4 border border-[var(--border)]">
           <img 
             src={imageSrc}
             alt={product.name}
@@ -203,23 +206,23 @@ const SuggestionCard = memo(({ product, className = "" }) => {
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
           />
-          <div className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+          <div className={`absolute inset-0 bg-[var(--overlay)] transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
           
           {priceData.showDiscount && (
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+            <div className="absolute top-3 left-3 bg-[var(--surface)]/90 backdrop-blur text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
               -{variant.discount}%
             </div>
           )}
         </div>
   
         <div className="flex flex-col gap-1 px-1">
-          <h3 className="font-serif text-lg text-gray-900 group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate">
+          <h3 className="font-serif text-lg text-[var(--text)] group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate">
             {product.name}
           </h3>
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-gray-900">{formatCurrency(priceData.price)}</span>
+            <span className="font-medium text-[var(--text)]">{formatCurrency(priceData.price)}</span>
             {priceData.showDiscount && (
-              <span className="text-gray-400 line-through text-xs">{formatCurrency(variant.oprice)}</span>
+              <span className="text-[var(--muted)] line-through text-xs">{formatCurrency(variant.oprice)}</span>
             )}
           </div>
         </div>
@@ -262,15 +265,15 @@ const OlfactoryPyramid = memo(({ product }) => {
   
     return (
       <div className="mb-12">
-        <div className="bg-[#F9F9F9] rounded-[2rem] p-2 inline-flex mb-8 w-full sm:w-auto">
+        <div className="bg-[var(--bg)] rounded-[2rem] p-2 inline-flex mb-8 w-full sm:w-auto">
           {notesData.map((note) => (
             <button
               key={note.id}
               onClick={() => setActiveTab(note.id)}
               className={`flex-1 sm:flex-none px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300 ${
                 activeTab === note.id 
-                  ? 'bg-white text-gray-900 shadow-md transform scale-105' 
-                  : 'text-gray-400 hover:text-gray-600'
+                  ? 'bg-[var(--surface)] text-[var(--text)] shadow-md transform scale-105' 
+                  : 'text-[var(--muted)] hover:text-[var(--sub)]'
               }`}
             >
               {note.label}
@@ -285,27 +288,27 @@ const OlfactoryPyramid = memo(({ product }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.3 }}
-            className="bg-white border border-gray-100 rounded-[2.5rem] p-8 md:p-10 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.03)]"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-[2.5rem] p-8 md:p-10 shadow-[var(--shadow)]"
           >
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex-1 space-y-4">
-                <div className="w-12 h-12 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#D4AF37]">
+                <div className="w-12 h-12 rounded-full bg-[var(--surface)] flex items-center justify-center text-[var(--accent)]">
                   {activeNote.icon}
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Primary Scent</span>
-                  <h4 className="font-serif text-3xl md:text-4xl text-gray-900">{activeNote.scent}</h4>
+                  <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest block mb-2">Primary Scent</span>
+                  <h4 className="font-serif text-3xl md:text-4xl text-[var(--text)]">{activeNote.scent}</h4>
                 </div>
               </div>
               
-              <div className="flex-1 md:border-l md:border-gray-100 md:pl-8 space-y-4">
+              <div className="flex-1 md:border-l md:border-[var(--border)] md:pl-8 space-y-4">
                  <div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Duration</span>
-                  <p className="text-lg font-medium text-gray-900">{activeNote.duration}</p>
+                  <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest block mb-2">Duration</span>
+                  <p className="text-lg font-medium text-[var(--text)]">{activeNote.duration}</p>
                  </div>
                  <div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Experience</span>
-                  <p className="text-gray-500 font-light leading-relaxed">{activeNote.story}</p>
+                  <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest block mb-2">Experience</span>
+                  <p className="text-[var(--muted)] font-light leading-relaxed">{activeNote.story}</p>
                  </div>
               </div>
             </div>
@@ -317,22 +320,22 @@ const OlfactoryPyramid = memo(({ product }) => {
 
 const ShippingRefundSection = memo(() => {
     return (
-        <div className="max-w-3xl mx-auto px-4 py-12 border-t border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 py-12 border-t border-[var(--border)]">
             <div className="flex flex-col md:flex-row gap-8 justify-between">
                 <div className="flex gap-4 flex-1">
-                    <div className="shrink-0 mt-1"><Truck className="w-6 h-6 text-gray-900" strokeWidth={1.5} /></div>
+                    <div className="shrink-0 mt-1"><Truck className="w-6 h-6 text-[var(--text)]" strokeWidth={1.5} /></div>
                     <div>
-                        <h4 className="font-bold text-gray-900 mb-2">Shipping & Delivery</h4>
-                        <p className="text-sm text-gray-500 leading-relaxed">Dispatched in 24-48 hrs. Delivery takes 3-5 days.</p>
+                        <h4 className="font-bold text-[var(--text)] mb-2">Shipping & Delivery</h4>
+                        <p className="text-sm text-[var(--muted)] leading-relaxed">Dispatched in 24-48 hrs. Delivery takes 3-5 days.</p>
                     </div>
                 </div>
-                <div className="hidden md:block w-px bg-gray-100" />
+                <div className="hidden md:block w-px bg-[var(--surface-muted)]" />
                 <div className="flex gap-4 flex-1">
-                    <div className="shrink-0 mt-1"><ShieldCheck className="w-6 h-6 text-gray-900" strokeWidth={1.5} /></div>
+                    <div className="shrink-0 mt-1"><ShieldCheck className="w-6 h-6 text-[var(--text)]" strokeWidth={1.5} /></div>
                     <div>
-                        <h4 className="font-bold text-gray-900 mb-2">Refund Policy</h4>
-                        <p className="text-sm text-gray-500 leading-relaxed mb-2">
-                            <span className="font-bold text-gray-900">No Return, Only Refund.</span> Refund only if 'Order Placed'. Status locks after <strong>6 hours</strong>.
+                        <h4 className="font-bold text-[var(--text)] mb-2">Refund Policy</h4>
+                        <p className="text-sm text-[var(--muted)] leading-relaxed mb-2">
+                            <span className="font-bold text-[var(--text)]">No Return, Only Refund.</span> Refund only if 'Order Placed'. Status locks after <strong>6 hours</strong>.
                         </p>
                     </div>
                 </div>
@@ -349,8 +352,12 @@ const ProductDetail = () => {
   const shouldReduceMotion = useReducedMotion();
 
   const { userdetails } = useContext(UserContext);
-  const { products, loading: productsLoading } = useContext(ProductContext);
-  const { cart, wishlist, addToCart, toggleWishlist, startBuyNow } = useContext(CartContext);
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: cart = [] } = useCart();
+  const { data: wishlist = [] } = useWishlist();
+  const { mutateAsync: addToCart } = useAddToCart();
+  const { mutateAsync: toggleWishlist } = useToggleWishlist();
+  const { startBuyNow } = useCheckout();
 
   const [isUnboxing, setIsUnboxing] = useState(!shouldReduceMotion);
   const [quantity, setQuantity] = useState(1);
@@ -455,7 +462,7 @@ const ProductDetail = () => {
   const handleAddToCart = useCallback(async () => {
     if (isInCart) { navigate("/cart"); return; }
     if (selectedVariant.stock <= 0) { window.toast?.error("Sold out."); return; }
-    await addToCart(product, selectedVariant, quantity);
+    await addToCart({ product, variant: selectedVariant, quantity });
   }, [isInCart, selectedVariant, quantity, product, navigate, addToCart]);
 
   const handleBuyNow = useCallback(() => {
@@ -464,7 +471,7 @@ const ProductDetail = () => {
     navigate("/cart", { replace: true, state: { isBuyNow: true } });
   }, [selectedVariant, quantity, product, startBuyNow, navigate]);
 
-  const handleToggleWishlist = useCallback(() => toggleWishlist(product, selectedVariant), [product, selectedVariant, toggleWishlist]);
+  const handleToggleWishlist = useCallback(() => toggleWishlist({ product, variant: selectedVariant }), [product, selectedVariant, toggleWishlist]);
   
   const handleShare = useCallback(async () => {
     if (navigator.share) {
@@ -478,12 +485,27 @@ const ProductDetail = () => {
 
   if (!product && productsLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FDFDFD]">
-        <div className="relative">
-          <div className="absolute inset-0 bg-[#D4AF37] blur-xl opacity-20 animate-pulse" />
-          <div className="w-16 h-16 border-[1px] border-[#D4AF37]/30 rounded-full animate-spin border-t-[#D4AF37]" />
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 min-h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 mb-32">
+          <div className="space-y-6">
+            <ShimmerSkeleton className="w-full aspect-[4/5] rounded-[2.5rem]" />
+            <div className="flex gap-4">
+              <ShimmerSkeleton className="w-24 aspect-square rounded-[1rem]" />
+              <ShimmerSkeleton className="w-24 aspect-square rounded-[1rem]" />
+            </div>
+          </div>
+          <div className="flex flex-col pt-10">
+            <ShimmerSkeleton className="w-24 h-6 mb-8 rounded-full" />
+            <ShimmerSkeleton className="w-3/4 h-12 mb-4" />
+            <ShimmerSkeleton className="w-1/3 h-6 mb-8" />
+            <ShimmerSkeleton className="w-full h-24 mb-12" />
+            <div className="flex gap-4 mb-8">
+               <ShimmerSkeleton className="w-32 h-14 rounded-full" />
+               <ShimmerSkeleton className="w-32 h-14 rounded-full" />
+            </div>
+            <ShimmerSkeleton className="w-full h-16 rounded-full" />
+          </div>
         </div>
-        <p className="mt-6 font-serif italic text-[#D4AF37] tracking-widest">Unboxing...</p>
       </div>
     );
   }
@@ -513,13 +535,13 @@ const ProductDetail = () => {
             className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
           >
             <motion.div
-              className="absolute inset-y-0 left-0 w-1/2 bg-[#F9F8F6] border-r border-[#D4AF37]/20"
+              className="absolute inset-y-0 left-0 w-1/2 bg-[var(--bg)] border-r border-[var(--accent)]/20"
               initial={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             />
             <motion.div
-              className="absolute inset-y-0 right-0 w-1/2 bg-[#F9F8F6] border-l border-[#D4AF37]/20"
+              className="absolute inset-y-0 right-0 w-1/2 bg-[var(--bg)] border-l border-[var(--accent)]/20"
               initial={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
@@ -531,8 +553,8 @@ const ProductDetail = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <span className="font-serif italic text-2xl text-[#D4AF37] mb-2">Devid Aura</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Presents</span>
+              <span className="font-serif italic text-2xl text-[var(--accent)] mb-2">Devid Aura</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-[var(--muted)]">Presents</span>
             </motion.div>
             <motion.div className="relative z-20 w-64 h-64 md:w-96 md:h-96">
               <motion.img
@@ -548,14 +570,14 @@ const ProductDetail = () => {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-[#FDFDFD] text-gray-800 overflow-x-hidden">
+      <div className="min-h-screen bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
         <main className="max-w-7xl mx-auto pt-[80px] pb-20 px-4 md:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-25 mb-20">
             {/* --- Left Column: Images --- */}
             <div className="lg:col-span-6">
               <div className="sticky top-24">
-                <div className="relative aspect-[3/3] md:aspect-[1/1] lg:aspect-[5/5] rounded-[2rem] overflow-hidden bg-white border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)] group">
+                <div className="relative aspect-[3/3] md:aspect-[1/1] lg:aspect-[5/5] rounded-[2rem] overflow-hidden bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow)] group">
                   <AnimatePresence mode="wait">
                     {(!isUnboxing || currentImg !== 0) && (
                       <motion.img
@@ -589,12 +611,12 @@ const ProductDetail = () => {
                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 z-20 pointer-events-none">
                         {/* Pointer events auto enables buttons but lets swipe happen elsewhere */}
                         <div className="pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="bg-white/80 backdrop-blur-sm">
+                            <Button onClick={() => changeImage((currentImg - 1 + allImages.length) % allImages.length)} variant="secondary" size="icon" className="bg-[var(--surface)]/80 backdrop-blur-sm">
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
                         </div>
                         <div className="pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <Button onClick={() => changeImage((currentImg + 1) % allImages.length)} variant="secondary" size="icon" className="bg-white/80 backdrop-blur-sm">
+                            <Button onClick={() => changeImage((currentImg + 1) % allImages.length)} variant="secondary" size="icon" className="bg-[var(--surface)]/80 backdrop-blur-sm">
                                 <ChevronRight className="h-5 w-5" />
                             </Button>
                         </div>
@@ -603,7 +625,7 @@ const ProductDetail = () => {
                   {allImages.length > 1 && (
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                       {allImages.map((_, idx) => (
-                        <div key={idx} className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentImg ? 'w-5 bg-black' : 'w-1.5 bg-black/20'}`} />
+                        <div key={idx} className={`h-1.5 rounded-full transition-all duration-500 ${idx === currentImg ? 'w-5 bg-[var(--text)]' : 'w-1.5 bg-[var(--text)]/20'}`} />
                       ))}
                     </div>
                   )}
@@ -645,15 +667,15 @@ const ProductDetail = () => {
                         <Sparkles className="h-2.5 w-2.5" />
                         {stockStatus}
                       </span>
-                      <h1 className="text-3xl md:text-5xl font-medium text-gray-900 leading-tight tracking-tight text-balance">
+                      <h1 className="text-3xl md:text-5xl font-medium text-[var(--text)] leading-tight tracking-tight text-balance">
                         {product.name}
                       </h1>
                     </div>
                     <div className="flex gap-2">
-                     <button onClick={handleToggleWishlist} className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all active:scale-90 ${isInWishlist ? 'bg-red-50 border-red-200 text-red-500' : 'border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900'}`}>
+                     <button onClick={handleToggleWishlist} className={`w-12 h-12 rounded-full border flex items-center justify-center transition-all active:scale-90 ${isInWishlist ? 'bg-red-50 border-red-200 text-red-500' : 'border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-gray-900'}`}>
                             <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-current' : ''}`} />
                         </button>
-                     <button onClick={handleShare} className="w-12 h-12 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center transition-all hover:text-gray-900 hover:border-gray-900 active:scale-90">
+                     <button onClick={handleShare} className="w-12 h-12 rounded-full border border-[var(--border)] text-[var(--muted)] flex items-center justify-center transition-all hover:text-[var(--text)] hover:border-gray-900 active:scale-90">
                             <Share2 className="w-5 h-5" />
                         </button>
                     </div>
@@ -668,7 +690,7 @@ const ProductDetail = () => {
                     )}
                     {product.avgRating >= 1 && product.soldCount >= 1 && <div className="w-[1px] h-3 bg-gray-300"></div>}
                     {product.soldCount >= 1 && (
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
                         <ShoppingBag size={13} />
                         <span>{product.soldCount} Sold</span>
                       </div>
@@ -680,11 +702,11 @@ const ProductDetail = () => {
                 <motion.div variants={textVariants} className="flex flex-col gap-6 mb-8">
                   <div className="flex justify-between items-center gap-6">
                     <div className="mt-6 flex items-center gap-3">
-                      <span className="text-3xl font-light text-gray-900">{formatCurrency(priceInfo.final)}</span>
+                      <span className="text-3xl font-light text-[var(--text)]">{formatCurrency(priceInfo.final)}</span>
                       {priceInfo.discount > 0 && (
                         <>
-                          <span className="text-base text-gray-400 line-through font-light">{formatCurrency(priceInfo.base)}</span>
-                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-green-600 text-xs font-semibold">-{priceInfo.discount}%</span>
+                          <span className="text-base text-[var(--muted)] line-through font-light">{formatCurrency(priceInfo.base)}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-[var(--surface-muted)] text-green-600 text-xs font-semibold">-{priceInfo.discount}%</span>
                         </>
                       )}
                     </div>
@@ -693,13 +715,13 @@ const ProductDetail = () => {
                     {/* Size Selector */}
                     <div>
                         <div className="flex justify-between mb-4">
-                             <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">Select Variant</span>
+                             <span className="text-xs font-bold text-[var(--text)] uppercase tracking-widest">Select Variant</span>
                              {selectedVariant.stock <= 5 && selectedVariant.stock > 0 && <span className="text-[10px] text-red-500 font-bold animate-pulse">Low Stock</span>}
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {product.variants.map((v) => (
                                 <button key={v.id} onClick={() => setSelectedVariant(v)} disabled={v.stock === 0}
-                                    className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${selectedVariant.id === v.id ? 'bg-[#1A1C20] text-white shadow-lg shadow-black/20 scale-105' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'} ${v.stock === 0 ? 'opacity-40 border-dashed bg-gray-50' : ''}`}
+                                    className={`px-8 py-3 rounded-full text-sm font-bold transition-all ${selectedVariant.id === v.id ? 'bg-[var(--brand)] text-[var(--brand-contrast)] shadow-lg shadow-[var(--shadow)] scale-105' : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--sub)] hover:border-gray-400'} ${v.stock === 0 ? 'opacity-40 border-dashed bg-[var(--surface-muted)]' : ''}`}
                                 >
                                     {v.name}
                                 </button>
@@ -709,11 +731,11 @@ const ProductDetail = () => {
 
                     {/* Quantity Selector */}
                     <div>
-                        <span className="text-xs font-bold text-gray-900 uppercase tracking-widest block mb-4">Quantity</span>
-                        <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1.5 shadow-sm">
-                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"><Minus className="w-4 h-4" /></button>
+                        <span className="text-xs font-bold text-[var(--text)] uppercase tracking-widest block mb-4">Quantity</span>
+                        <div className="inline-flex items-center bg-[var(--surface)] border border-[var(--border)] rounded-full p-1.5 shadow-sm">
+                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--surface-muted)] transition-colors"><Minus className="w-4 h-4" /></button>
                             <span className="w-12 text-center font-serif text-xl">{quantity}</span>
-                            <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"><Plus className="w-4 h-4" /></button>
+                            <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--surface-muted)] transition-colors"><Plus className="w-4 h-4" /></button>
                         </div>
                     </div>
                  </div>
@@ -721,8 +743,8 @@ const ProductDetail = () => {
 
                 {/* Description */}
                 <motion.div variants={textVariants} className="mb-10">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">The Scent</h3>
-                  <p className="text-gray-500 leading-7 font-light text-sm md:text-base">{product.description}</p>
+                  <h3 className="text-sm font-bold text-[var(--text)] mb-3 uppercase tracking-wider">The Scent</h3>
+                  <p className="text-[var(--muted)] leading-7 font-light text-sm md:text-base">{product.description}</p>
                 </motion.div>
 
                 {/* OLFACTORY PYRAMID */}
@@ -735,7 +757,7 @@ const ProductDetail = () => {
                   <Button onClick={handleAddToCart} disabled={!isInCart && selectedVariant.stock === 0} variant="secondary" className="flex-1">
                     {isInCart ? <><ShoppingBag className="mr-2 h-4 w-4" /> VIEW BAG</> : selectedVariant.stock === 0 ? "SOLD OUT" : <><ShoppingCart className="mr-2 h-4 w-4" /> ADD TO BAG</>}
                   </Button>
-                  <Button onClick={handleBuyNow} disabled={selectedVariant.stock === 0} className="flex-1 bg-gray-900 hover:bg-black">
+                  <Button onClick={handleBuyNow} disabled={selectedVariant.stock === 0} className="flex-1">
                     {selectedVariant.stock === 0 ? "SOLD OUT" : "BUY NOW"}
                   </Button>
                 </motion.div>
@@ -754,12 +776,12 @@ const ProductDetail = () => {
 
           {/* SECTION 1: YOU MAY ALSO LIKE */}
           {youMayAlsoLike.length > 0 && (
-            <div className="pt-20 border-t border-gray-100">
+            <div className="pt-20 border-t border-[var(--border)]">
               <div className="flex items-center justify-between mb-10">
-                <h2 className="text-2xl md:text-3xl font-serif text-gray-900">You May Also Like</h2>
+                <h2 className="text-2xl md:text-3xl font-serif text-[var(--text)]">You May Also Like</h2>
                 <button 
                   onClick={() => navigate('/products')}
-                  className="group flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                  className="group flex items-center gap-2 text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors"
                 >
                   View Collection <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
@@ -778,17 +800,17 @@ const ProductDetail = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="pt-16 border-t border-gray-100"
+            className="pt-16 border-t border-[var(--border)]"
           >
             <ReviewComponent productId={product.id} userdetails={userdetails} editReviewId={editReviewId} />
           </motion.div>
 
           {/* SECTION 2: RECENTLY VIEWED */}
           {recentlyViewed.length > 0 && (
-            <div className="pt-20 pb-10 border-t border-gray-100 mt-20">
+            <div className="pt-20 pb-10 border-t border-[var(--border)] mt-20">
                <div className="flex items-center gap-3 mb-10">
                  <div className="h-px bg-gray-200 flex-1"></div>
-                 <h2 className="text-lg uppercase tracking-widest text-gray-400 font-bold">Recently Viewed</h2>
+                 <h2 className="text-lg uppercase tracking-widest text-[var(--muted)] font-bold">Recently Viewed</h2>
                  <div className="h-px bg-gray-200 flex-1"></div>
                </div>
               <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 opacity-70 hover:opacity-100 transition-opacity duration-500">

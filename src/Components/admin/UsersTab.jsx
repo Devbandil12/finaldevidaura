@@ -1,148 +1,27 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import {
-  Download, Search, User, Mail, Phone, MapPin, Calendar,
-  Shield, Trash2, ExternalLink, ArrowLeft, Package, CheckCircle,
-  ArrowUpDown, ChevronDown, Check
-} from 'lucide-react';
-
-// --- CUSTOM SORT DROPDOWN (Existing - UNCHANGED) ---
-const SortDropdown = ({ currentSort, onSortChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const options = [
-    { label: "Sort: Newest Joined", value: "newest" },
-    { label: "Sort: Most Delivered", value: "most-delivered" }
-  ];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelect = (value) => {
-    onSortChange(value);
-    setIsOpen(false);
-  };
-
-  const currentLabel = options.find(o => o.value === currentSort)?.label;
-
-  return (
-    <div className="relative w-full sm:w-auto" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full sm:w-56 flex items-center justify-between px-4 py-3 bg-white border rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-sm font-medium transition-all ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-gray-200 hover:border-gray-300 text-gray-700'}`}
-      >
-        <div className="flex items-center gap-2 truncate">
-          <ArrowUpDown size={16} className="text-gray-400" />
-          <span>{currentLabel}</span>
-        </div>
-        <ChevronDown size={16} className={`ml-2 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-full sm:w-56 bg-white  rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
-          <div className="p-1">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-3 py-2.5 text-sm font-medium flex items-center justify-between rounded-lg transition-colors ${currentSort === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                {option.label}
-                {currentSort === option.value && <Check size={16} className="text-indigo-600" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- ROLE DROPDOWN COMPONENT (Existing - UNCHANGED) ---
-const RoleDropdown = ({ currentRole, onRoleChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const options = [
-    { label: "User", value: "user" },
-    { label: "Admin", value: "admin" }
-  ];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelect = (value) => {
-    if (value !== currentRole) {
-      onRoleChange(value);
-    }
-    setIsOpen(false);
-  };
-
-  const roleStyles = {
-    admin: "bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 hover:border-purple-300",
-    user: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300"
-  };
-
-  const activeStyle = roleStyles[currentRole] || "bg-gray-100 text-gray-700 border-gray-200";
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold uppercase tracking-wide transition-all duration-200 ${activeStyle}`}
-      >
-        <span>{currentRole}</span>
-        <ChevronDown size={14} className={`opacity-70 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute left-0 mt-2 w-36 bg-white  rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-75">
-          <div className="p-1.5 space-y-0.5">
-            {options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-3 py-2 text-sm font-medium flex items-center justify-between rounded-lg transition-colors ${currentRole === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                {option.label}
-                {currentRole === option.value && <Check size={14} className="text-indigo-600" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+import React, { useState, useMemo } from 'react';
+import { User, Download } from 'lucide-react';
+import { UserList } from '../../features/admin/components/users/UserList';
+import { UserDetails } from '../../features/admin/components/users/UserDetails';
+import { useAdminUsers } from '../../features/admin/hooks/useAdmin';
 
 // --- MAIN COMPONENT ---
-const UsersTab = ({
-  users, filteredUsers, userSearchQuery, setUserSearchQuery,
-  editingUser, setEditingUser, handleEditUser, handleDeleteUser,
-  handleUpdateUserRole,
-  downloadCSV
-}) => {
+  const UsersTab = ({
+    userSearchQuery, setUserSearchQuery,
+    editingUser, setEditingUser, handleEditUser, handleDeleteUser,
+    downloadCSV
+  }) => {
 
   const [sortBy, setSortBy] = useState('newest');
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-  // --- SORTING LOGIC ---
+  const { data: usersResponse, isLoading } = useAdminUsers(page, limit, userSearchQuery);
+  const users = usersResponse?.data || [];
+  const meta = usersResponse?.meta || { totalPages: 1, currentPage: 1 };
+
   const sortedUsers = useMemo(() => {
-    if (!filteredUsers) return [];
-    const sorted = [...filteredUsers];
+    if (!users) return [];
+    const sorted = [...users];
     const getDeliveredCount = (user) => user.orders?.filter(o => o.status === 'Delivered').length || 0;
 
     if (sortBy === 'most-delivered') {
@@ -150,258 +29,70 @@ const UsersTab = ({
     } else {
       return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
-  }, [filteredUsers, sortBy]);
-
-  const getAvatarColor = (name) => {
-    const colors = ["bg-red-50 text-red-600", "bg-orange-50 text-orange-600", "bg-amber-50 text-amber-600", "bg-green-50 text-green-600", "bg-teal-50 text-teal-600", "bg-blue-50 text-blue-600", "bg-indigo-50 text-indigo-600", "bg-purple-50 text-purple-600", "bg-pink-50 text-pink-600"];
-    return colors[(name ? name.length : 0) % colors.length];
-  };
-
-  const getOrderStatusBadge = (status) => {
-    // Softened badges
-    const styles = {
-      "Delivered": "bg-emerald-50 text-emerald-700 border-emerald-100",
-      "Shipped": "bg-blue-50 text-blue-700 border-blue-100",
-      "Processing": "bg-amber-50 text-amber-700 border-amber-100",
-      "Order Cancelled": "bg-red-50 text-red-700 border-red-100",
-      "Order Placed": "bg-gray-50 text-gray-700 border-gray-100",
-    };
-    return <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${styles[status] || styles["Order Placed"]}`}>{status}</span>;
-  };
-
-  const UserAvatar = ({ user, size = "md", className = "" }) => {
-    const [imgError, setImgError] = useState(false);
-    const imgSrc = user.image || user.avatar || user.imageUrl || user.profileImage;
-    const sizeClasses = { sm: "w-10 h-10 text-sm", md: "w-12 h-12 text-lg", lg: "w-24 h-24 text-3xl" };
-
-    if (imgSrc && !imgError) {
-      // Changed border-gray-100 to border-white or very light
-      return <img src={imgSrc} alt={user.name} onError={() => setImgError(true)} className={`object-cover rounded-full border border-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] bg-white ${sizeClasses[size]} ${className}`} />;
-    }
-    return <div className={`rounded-full flex items-center justify-center font-bold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] ${getAvatarColor(user.name)} ${sizeClasses[size]} ${className}`}>{user.name ? user.name.charAt(0).toUpperCase() : "?"}</div>;
-  };
+  }, [users, sortBy]);
 
   return (
-    <div className="space-y-6 p-4 sm:p-8 bg-gray-50/50 min-h-screen text-gray-900 ">
-
+    <div className="p-4 sm:p-6 lg:p-8 bg-[var(--bg)] min-h-screen font-body animate-fadeIn transition-colors duration-300 pb-20 space-y-8">
+      
       {/* --- HEADER (List View Only) --- */}
       {!editingUser && (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 bg-[var(--surface)] p-6 md:p-8 rounded-xl shadow-[var(--shadow)] border border-[var(--border)]">
           <div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 flex items-center">
-              <User className="w-6 h-6 mr-3 text-indigo-600" /> User Management
+            <h2 className="font-display text-3xl font-medium text-[var(--text)] tracking-tight flex items-center">
+              <User className="w-7 h-7 mr-3 text-[var(--accent)]" strokeWidth={1.5} /> 
+              User Management
             </h2>
-            <p className="text-sm text-gray-500 mt-1">Manage customer accounts and details.</p>
+            <p className="font-display italic text-[var(--sub)] text-lg mt-2 tracking-wide">
+              Manage customer accounts and details.
+            </p>
           </div>
-          {/* Softened Button Border */}
-          <button onClick={() => downloadCSV(users, 'users.csv')} className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-white  text-gray-700 rounded-lg hover:bg-black hover:text-white hover:border-black transition text-sm font-semibold shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+          <button 
+            onClick={() => downloadCSV(users, 'users.csv')} 
+            className="flex items-center px-6 py-3 bg-[var(--surface)] text-[var(--text)] rounded-lg border border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)] transition-all font-body font-bold text-sm shadow-sm whitespace-nowrap w-full sm:w-auto justify-center"
+          >
+            <Download className="w-4 h-4 mr-2 text-[var(--muted)]" strokeWidth={2} /> Export CSV
           </button>
         </div>
       )}
 
       {/* --- CONTENT --- */}
       {editingUser ? (
-
-        /* ---------------- DETAILS VIEW ---------------- */
-        <div className="max-w-5xl mx-auto animate-in slide-in-from-right-4 duration-300 pb-10">
-
-          <button onClick={() => setEditingUser(null)} className="flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 transition mb-6">
-            <ArrowLeft className="w-4 h-4 mr-1" /> Back to User List
-          </button>
-
-          {/* Profile Header - Very Light Border & Soft Shadow */}
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  p-6 sm:p-8 mb-6">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-              <UserAvatar user={editingUser} size="lg" className="ring-4 ring-gray-50" />
-              <div className="flex-1 w-full">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{editingUser.name}</h1>
-                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500 justify-center md:justify-start">
-                      <div className="flex items-center gap-1.5"><Mail size={16} className="text-gray-400" />{editingUser.email}</div>
-                      <span className="hidden sm:inline text-gray-300">|</span>
-                      <div className="flex items-center gap-1.5"><Shield size={16} className="text-gray-400" /><span className="capitalize">{editingUser.role}</span></div>
-                    </div>
-                  </div>
-
-                  {/* Quick Stats - Very Light Borders */}
-                  <div className="flex gap-4 w-full sm:w-auto justify-center">
-                    <div className="flex-1 sm:flex-none px-4 py-2 bg-gray-50 rounded-xl  text-center min-w-[100px]">
-                      <p className="text-xs text-gray-500 font-bold uppercase">Joined</p>
-                      <p className="text-sm font-semibold text-gray-900">{new Date(editingUser.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex-1 sm:flex-none px-4 py-2 bg-indigo-50/50 rounded-xl border border-indigo-100/50 text-center min-w-[100px]">
-                      <p className="text-xs text-indigo-500 font-bold uppercase">Orders</p>
-                      <p className="text-sm font-semibold text-indigo-900">{editingUser.orders?.length || 0}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Contact Info - Very Light Border */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white p-6 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-full">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><User size={14} /> Personal Details</h3>
-                <div className="space-y-4">
-                  <div><label className="text-xs text-gray-500 font-medium">Email</label><div className="flex items-center gap-2 mt-1 text-sm font-medium text-gray-900 break-all"><Mail size={16} className="text-gray-400 flex-shrink-0" /> {editingUser.email}</div></div>
-                  <div><label className="text-xs text-gray-500 font-medium">Phone</label><div className="flex items-center gap-2 mt-1 text-sm font-medium text-gray-900"><Phone size={16} className="text-gray-400 flex-shrink-0" /> {editingUser.phone || 'Not Provided'}</div></div>
-
-                  {/* Custom Role Dropdown */}
-                  <div>
-                    <label className="text-xs text-gray-500 font-medium">Role</label>
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <div className="p-1.5 bg-gray-50 rounded-md text-gray-400"><Shield size={16} /></div>
-                      <RoleDropdown
-                        currentRole={editingUser.role}
-                        onRoleChange={(newRole) => handleUpdateUserRole(editingUser.id, newRole)}
-                      />
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-
-            {/* Addresses - Very Light Border */}
-            <div className="lg:col-span-2">
-              <div className="bg-white p-6 rounded-xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] h-full">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><MapPin size={14} /> Saved Addresses</h3>
-                {editingUser.addresses?.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    {editingUser.addresses.map((address) => (
-                      <div key={address.id} className="p-4 rounded-xl  bg-gray-50/50 hover:border-indigo-100 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 bg-white rounded-lg shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-indigo-600 mt-1 flex-shrink-0"><MapPin size={16} /></div>
-                          <div className="text-sm flex-1">
-                            <p className="font-bold text-gray-900 mb-1">{address.city}, {address.state}</p>
-                            <p className="text-gray-600 leading-relaxed text-xs line-clamp-2">{address.address}</p>
-                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100"><p className="text-gray-500 text-xs font-mono">{address.zipCode}</p><p className="text-[10px] font-bold text-gray-400 uppercase">{address.country}</p></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-40 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                    <MapPin className="w-8 h-8 text-gray-300 mb-2" /><p className="text-sm text-gray-500 font-medium">No addresses found.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Order History - Very Light Border */}
-          <div className="bg-white rounded-2xl  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-2 justify-between items-center">
-              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2"><Package size={16} className="text-indigo-600" /> Order History</h3>
-              <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]">{editingUser.orders?.length || 0} Orders</span>
-            </div>
-            {editingUser.orders && editingUser.orders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[600px]">
-                  <thead className="bg-white text-gray-500 border-b border-gray-50 text-xs uppercase font-semibold">
-                    <tr><th className="px-6 py-3">Order ID</th><th className="px-6 py-3">Date</th><th className="px-6 py-3">Status</th><th className="px-6 py-3">Total Amount</th><th className="px-6 py-3 text-right">Items</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {editingUser.orders.map((order) => (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-900">#{order.id}</td>
-                        <td className="px-6 py-4 text-gray-500"><div className="flex items-center gap-2"><Calendar size={14} />{new Date(order.createdAt).toLocaleDateString()}</div></td>
-                        <td className="px-6 py-4">{getOrderStatusBadge(order.status)}</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">₹{order.totalAmount}</td>
-                        <td className="px-6 py-4 text-right text-gray-500">{order.orderItems?.length || 0}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3"><Package className="w-6 h-6 text-gray-300" /></div>
-                <p className="text-gray-500 font-medium">No orders found.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
+        <UserDetails 
+          editingUser={editingUser} 
+          setEditingUser={setEditingUser} 
+        />
       ) : (
+        <UserList 
+          sortedUsers={sortedUsers} 
+          userSearchQuery={userSearchQuery} 
+          setUserSearchQuery={setUserSearchQuery} 
+          sortBy={sortBy} 
+          setSortBy={setSortBy} 
+          handleEditUser={handleEditUser} 
+          handleDeleteUser={handleDeleteUser} 
+        />
+      )}
 
-        /* ---------------- LIST VIEW ---------------- */
-        <div className="space-y-6 animate-in fade-in duration-500">
-
-          {/* Search & Sort Bar */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Search by name, email or phone..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-                // Replaced border-gray-200 with border-gray-100
-                className="w-full pl-10 pr-4 py-3 bg-white  rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] text-sm transition-all"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
-            {/* Custom Sort Dropdown */}
-            <SortDropdown currentSort={sortBy} onSortChange={setSortBy} />
-          </div>
-
-          {/* User Grid */}
-          {sortedUsers?.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedUsers.map((user) => {
-                const deliveredCount = user.orders?.filter(o => o.status === 'Delivered').length || 0;
-
-                return (
-                  // Replaced border-gray-200 with border-gray-100 and added soft shadow
-                  <div key={user.id} className="bg-white rounded-2xl p-5  shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-md hover:shadow-indigo-500/5 transition-all duration-300 group flex flex-col">
-
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="relative">
-                        <UserAvatar user={user} size="md" />
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-50 text-gray-600  uppercase tracking-wide">
-                        {user.role}
-                      </span>
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">{user.name}</h3>
-                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-                        <Calendar size={12} /> Joined {new Date(user.createdAt).toLocaleDateString()}
-                      </div>
-
-                      {/* Delivered Orders Badge - Softened */}
-                      {deliveredCount > 0 && (
-                        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 text-green-700 rounded-md border border-green-100 text-[10px] font-bold">
-                          <CheckCircle size={10} /> {deliveredCount} Delivered
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-gray-50 flex gap-2">
-                      <button onClick={() => handleEditUser(user)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
-                        <ExternalLink size={14} /> Profile
-                      </button>
-                      <button onClick={() => handleDeleteUser(user.id)} className="flex-none flex items-center justify-center p-2 text-gray-400 bg-white  rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors" title="Delete User">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-              <div className="p-4 bg-gray-50 rounded-full mb-3"><Search className="w-6 h-6 text-gray-400" /></div>
-              <p className="text-gray-500 font-medium">No users found matching your search.</p>
-            </div>
-          )}
+      {/* Pagination Controls */}
+      {!editingUser && meta.totalPages > 1 && (
+        <div className="flex justify-center items-center gap-5 mt-10 font-body">
+          <button 
+            disabled={page <= 1} 
+            onClick={() => setPage(p => p - 1)}
+            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-lg disabled:opacity-40 hover:bg-[var(--surface)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-all font-bold text-sm shadow-sm"
+          >
+            Previous
+          </button>
+          <span className="font-body text-[11px] uppercase tracking-widest font-bold text-[var(--muted)]">
+            Page {meta.currentPage} of {meta.totalPages}
+          </span>
+          <button 
+            disabled={page >= meta.totalPages} 
+            onClick={() => setPage(p => p + 1)}
+            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-lg disabled:opacity-40 hover:bg-[var(--surface)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-all font-bold text-sm shadow-sm"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

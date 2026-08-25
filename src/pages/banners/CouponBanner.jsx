@@ -45,8 +45,8 @@ const CouponBanner = ({ banner }) => {
           rounded-[40px]
           overflow-hidden
           cursor-pointer
-          bg-[#0f0f10]
-          text-white
+          bg-[var(--brand)]
+          text-[var(--brand-contrast)]
           group
         "
       >
@@ -71,15 +71,15 @@ const CouponBanner = ({ banner }) => {
             />
 
             {/* overlays */}
-            <div className="absolute inset-0 bg-black/45" />
+            <div className="absolute inset-0 bg-[var(--brand)]/45" />
 
             <div
               className="
                 absolute
                 inset-0
                 bg-gradient-to-r
-                from-black
-                via-black/60
+                from-[var(--brand)]
+                via-[var(--brand)]/60
                 to-transparent
               "
             />
@@ -132,8 +132,8 @@ const CouponBanner = ({ banner }) => {
                 py-2
                 rounded-full
                 border
-                border-white/10
-                bg-white/5
+                border-[var(--brand-contrast)]/10
+                bg-[var(--brand-contrast)]/5
                 backdrop-blur-xl
                 text-[11px]
                 uppercase
@@ -172,7 +172,7 @@ const CouponBanner = ({ banner }) => {
                   mt-8
                   text-lg
                   md:text-xl
-                  text-white/70
+                  text-[var(--brand-contrast)]/70
                   max-w-[580px]
                   leading-relaxed
                 "
@@ -205,13 +205,13 @@ const CouponBanner = ({ banner }) => {
                   overflow-hidden
                   rounded-2xl
                   border
-                  border-white/10
-                  bg-white/10
+                  border-[var(--brand-contrast)]/10
+                  bg-[var(--brand-contrast)]/10
                   backdrop-blur-2xl
                   px-7
                   py-5
                   min-w-[260px]
-                  hover:bg-white/15
+                  hover:bg-[var(--brand-contrast)]/15
                   transition-all
                   duration-500
                 "
@@ -221,7 +221,7 @@ const CouponBanner = ({ banner }) => {
                     absolute
                     inset-0
                     bg-gradient-to-r
-                    from-white/10
+                    from-[var(--brand-contrast)]/10
                     to-transparent
                     opacity-0
                     group-hover/coupon:opacity-100
@@ -231,7 +231,7 @@ const CouponBanner = ({ banner }) => {
 
                 <div className="relative z-10 flex items-center justify-between gap-8">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 mb-2">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--brand-contrast)]/50 mb-2">
                       Coupon Code
                     </p>
 
@@ -274,8 +274,8 @@ const CouponBanner = ({ banner }) => {
                           w-12
                           h-12
                           rounded-full
-                          bg-white
-                          text-black
+                          bg-[var(--brand-contrast)]
+                          text-[var(--brand)]
                           flex
                           items-center
                           justify-center
@@ -298,7 +298,7 @@ const CouponBanner = ({ banner }) => {
                   gap-3
                   text-lg
                   font-semibold
-                  text-white
+                  text-[var(--brand-contrast)]
                 "
               >
                 Shop Collection
@@ -309,11 +309,11 @@ const CouponBanner = ({ banner }) => {
                     h-11
                     rounded-full
                     border
-                    border-white/20
+                    border-[var(--brand-contrast)]/20
                     flex
                     items-center
                     justify-center
-                    bg-white/5
+                    bg-[var(--brand-contrast)]/5
                     backdrop-blur-xl
                   "
                 >
@@ -338,8 +338,8 @@ const CouponBanner = ({ banner }) => {
                 h-[420px]
                 rounded-[32px]
                 border
-                border-white/10
-                bg-white/10
+                border-[var(--brand-contrast)]/10
+                bg-[var(--brand-contrast)]/10
                 backdrop-blur-3xl
                 shadow-2xl
                 overflow-hidden
@@ -363,14 +363,14 @@ const CouponBanner = ({ banner }) => {
                   absolute
                   inset-0
                   bg-gradient-to-t
-                  from-black/60
+                  from-[var(--brand)]/60
                   via-transparent
                   to-transparent
                 "
               />
 
               <div className="absolute bottom-8 left-8">
-                <p className="text-white/60 text-sm mb-2">
+                <p className="text-[var(--brand-contrast)]/60 text-sm mb-2">
                   New Arrival
                 </p>
 

@@ -23,6 +23,10 @@ export async function subscribeToPush(userId, token) {
       console.error("❌ Push Aborted: VITE_VAPID_PUBLIC_KEY is missing.");
       return;
   }
+  if (!token) {
+      console.error("❌ Push Aborted: Auth token is missing.");
+      return;
+  }
 
   try {
     const register = await navigator.serviceWorker.register('/sw.js');

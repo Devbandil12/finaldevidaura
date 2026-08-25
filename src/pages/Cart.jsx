@@ -4,16 +4,16 @@ import { useUser } from "@clerk/clerk-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { ProductContext } from "../contexts/productContext";
 import { UserContext } from "../contexts/UserContext";
-import { CartContext } from "../contexts/CartContext";
-import { CouponContext } from "../contexts/CouponContext";
+import { useCart, useAddToCart, useUpdateCartQuantity, useRemoveFromCart, useClearCart, useSavedItems, useSaveForLater, useMoveSavedToCart, useRemoveSavedItem, usePricePreview } from "../features/cart/hooks/useCart";
+import { useAvailableCoupons, useAutoOfferInstructions, useValidateCoupon } from "../features/coupons/hooks/useCoupons";
+import { useCheckout } from "../features/checkout/hooks/useCheckout";
 
-import Loader from "../Components/Loader";
+import { CartItemSkeleton } from "../components/ui/ShimmerSkeleton";
 import HeroButton from "../Components/HeroButton";
 import CartRecommendations from "./CartRecommendations"; 
 import { FaShoppingCart, FaTrashAlt } from "react-icons/fa";
-import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch, FiTag, FiClock, FiHeart } from "react-icons/fi";
+import { FiGift, FiCheckCircle, FiX, FiBell, FiChevronRight, FiSearch,FiMinus, FiTag, FiClock, FiHeart } from "react-icons/fi";
 
 // ==========================================
 // 1. CONSTANTS & ANIMATIONS
@@ -55,12 +55,12 @@ const BundleItemsList = ({ items }) => {
       {items.map((subItem, index) => (
         <div 
           key={index} 
-          className="flex flex-col justify-center px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200"
+          className="flex flex-col justify-center px-3 py-2 rounded-xl bg-[var(--surface-muted)] hover:bg-[var(--surface-muted)] transition-colors duration-200"
         >
-          <p className="font-bold text-gray-800 text-[11px] truncate w-full">
+          <p className="font-bold text-[var(--text)] text-[11px] truncate w-full">
             {subItem.product?.name || subItem.name}
           </p>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+          <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-wider mt-0.5">
             {subItem.variant?.size || subItem.variantName || "30ml"}
           </p>
         </div>
@@ -100,12 +100,12 @@ const OfferInstructionCard = ({ offer, minimalist = false }) => {
   };
 
   return (
-    <div className={`p-4 bg-gray-50 border border-gray-200 rounded-lg ${minimalist ? "py-3 px-3 text-sm" : ""}`}>
+    <div className={`p-4 bg-[var(--surface-muted)] border border-[var(--border)] rounded-lg ${minimalist ? "py-3 px-3 text-sm" : ""}`}>
       <div className="flex items-start gap-3">
-        <FiTag className={`mt-1 text-black ${minimalist ? "w-3 h-3" : ""}`} />
+        <FiTag className={`mt-1 text-[var(--text)] ${minimalist ? "w-3 h-3" : ""}`} />
         <div>
-          {!minimalist && <p className="font-bold text-gray-900">{offer.code}</p>}
-          <p className={`${minimalist ? "text-gray-700" : "text-sm text-gray-600 mt-1"}`}>{generateInstruction()}</p>
+          {!minimalist && <p className="font-bold text-[var(--text)]">{offer.code}</p>}
+          <p className={`${minimalist ? "text-[var(--sub)]" : "text-sm text-[var(--sub)] mt-1"}`}>{generateInstruction()}</p>
         </div>
       </div>
     </div>
@@ -122,43 +122,43 @@ const AutoOfferModal = ({ isOpen, onClose, instructions }) => (
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }} style={{ willChange: "opacity" }}
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-[var(--overlay-strong)] backdrop-blur-sm z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
           variants={modalVariants} initial="hidden" animate="visible" exit="exit"
           style={gpuStyle} onClick={(e) => e.stopPropagation()}
-          className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
+          className="bg-[var(--surface)] rounded-xl shadow-[var(--shadow-strong)] w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]"
         >
-          <div className="bg-black p-5 flex justify-between items-center text-white sticky top-0 z-10">
-            <h3 className="text-lg font-bold flex items-center gap-2"><FiGift className="text-white" /> Automatic Offers & Help</h3>
-            <button onClick={onClose} className="text-white/70 hover:text-white transition-colors"><FiX size={24} /></button>
+          <div className="bg-[var(--brand)] p-5 flex justify-between items-center text-[var(--brand-contrast)] sticky top-0 z-10">
+            <h3 className="text-lg font-bold flex items-center gap-2"><FiGift className="text-[var(--brand-contrast)]" /> Automatic Offers & Help</h3>
+            <button onClick={onClose} className="text-[var(--brand-contrast)]/70 hover:text-[var(--brand-contrast)] transition-colors"><FiX size={24} /></button>
           </div>
           <div className="p-6 overflow-y-auto space-y-6">
             <div className="space-y-4">
-              <h4 className="font-bold text-gray-900 border-b pb-2">How Automatic Coupons Work</h4>
+              <h4 className="font-bold text-[var(--text)] border-b pb-2">How Automatic Coupons Work</h4>
               <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
+                <div className="w-8 h-8 rounded-full bg-[var(--brand-contrast)] text-[var(--brand)] flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
                 <div>
-                  <h4 className="font-bold text-gray-900 mb-1">Add Items to Cart</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">Simply browse our collection and add the products you love to your cart.</p>
+                  <h4 className="font-bold text-[var(--text)] mb-1">Add Items to Cart</h4>
+                  <p className="text-sm text-[var(--sub)] leading-relaxed">Simply browse our collection and add the products you love to your cart.</p>
                 </div>
               </div>
             </div>
-            <div className="border-t border-gray-100"></div>
+            <div className="border-t border-[var(--border)]"></div>
             <div>
-              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Current Active Offers</h4>
+              <h4 className="text-sm font-bold text-[var(--muted)] uppercase tracking-wider mb-3">Current Active Offers</h4>
               <div className="space-y-3">
                 {instructions.length > 0 ? (
                   instructions.map((offer) => <OfferInstructionCard key={offer.id} offer={offer} />)
                 ) : (
-                  <p className="text-sm text-gray-500 italic">No automatic offers are currently active.</p>
+                  <p className="text-sm text-[var(--muted)] italic">No automatic offers are currently active.</p>
                 )}
               </div>
             </div>
           </div>
-          <div className="p-4 border-t border-gray-100 bg-gray-50 text-center">
-            <button onClick={onClose} className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-100 transition-colors">Got it</button>
+          <div className="p-4 border-t border-[var(--border)] bg-[var(--surface-muted)] text-center">
+            <button onClick={onClose} className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--sub)] font-semibold py-3 rounded-xl hover:bg-[var(--surface-muted)] transition-colors">Got it</button>
           </div>
         </motion.div>
       </motion.div>
@@ -173,30 +173,30 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }} style={{ willChange: "opacity" }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
+        className="fixed inset-0 bg-[var(--overlay-strong)] backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
       >
         <motion.div
           variants={modalVariants} initial="hidden" animate="visible" exit="exit"
           style={gpuStyle} onClick={(e) => e.stopPropagation()}
-          className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
+          className="bg-[var(--surface)] w-full max-w-md rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
         >
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+          <div className="p-5 border-b border-[var(--border)] flex justify-between items-center bg-[var(--surface)] sticky top-0 z-10">
             <div>
-              <h3 className="text-xl font-bold text-black tracking-tight">Select Coupon</h3>
-              <p className="text-xs text-gray-500 mt-1">Find the best deal for your order</p>
+              <h3 className="text-xl font-bold text-[var(--text)] tracking-tight">Select Coupon</h3>
+              <p className="text-xs text-[var(--muted)] mt-1">Maximize your savings</p>
             </div>
-            <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-500 hover:bg-black hover:text-white transition-all duration-200"><FiX size={20} /></button>
+            <button onClick={onClose} className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--muted)] hover:bg-[var(--brand)] hover:text-[var(--brand-contrast)] transition-all duration-200"><FiX size={20} /></button>
           </div>
           <div className="px-5 pt-4 pb-2">
             <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
               <input
                 type="text" placeholder="Search coupons..." value={search} onChange={onSearchChange}
-                className="w-full bg-gray-50 border border-gray-200 pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
+                className="w-full bg-[var(--surface-muted)] border border-[var(--border)] pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all"
               />
             </div>
           </div>
-          <div className="p-5 overflow-y-auto space-y-4 bg-white flex-grow">
+          <div className="p-5 overflow-y-auto space-y-4 bg-[var(--surface)] flex-grow">
             {coupons.length > 0 ? (
               coupons.map((coupon) => {
                 const shortfall = (coupon.minOrderValue || 0) - cartSubtotal;
@@ -217,14 +217,14 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
                   <motion.div
                     key={coupon.id} layout whileHover={{ scale: 1.01, borderColor: isDisabled ? "#e5e7eb" : "#000000" }}
                     transition={{ duration: 0.2, ease: "easeInOut" }} style={{ willChange: "transform" }}
-                    className={`group relative flex w-full bg-white border-2 border-dashed rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300 ${isDisabled ? 'border-gray-200 opacity-70' : 'border-gray-300'}`}
+                    className={`group relative flex w-full bg-[var(--bg)] border-2 border-dashed rounded-xl overflow-hidden cursor-default min-h-[80px] transition-colors duration-300 ${isDisabled ? 'border-[var(--border)] opacity-70' : 'border-[var(--border)]'}`}
                   >
-                    <div className={`flex-1 p-4 flex flex-col justify-center border-r-2 border-dashed transition-colors duration-300 ${isDisabled ? 'border-gray-100' : 'border-gray-200 group-hover:border-gray-900'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <FiTag className={`transition-colors ${isDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-black'}`} size={16} />
-                        <span className={`font-bold text-lg tracking-wide uppercase ${isDisabled ? 'text-gray-400' : 'text-black'}`}>{coupon.code}</span>
+                    <div className="flex flex-col justify-center px-4 py-3 bg-[var(--surface-muted)]/30 border-r border-dashed border-[var(--border)] w-[100px] flex-shrink-0 items-center">
+                      <div className="flex items-center gap-1.5 text-[var(--brand)] mb-1">
+                        <FiTag className={`transition-colors ${isDisabled ? 'text-[var(--muted)]' : 'text-[var(--muted)] group-hover:text-[var(--brand)]'}`} size={16} />
+                        <span className={`font-bold text-lg tracking-wide uppercase ${isDisabled ? 'text-[var(--muted)]' : 'text-[var(--text)]'}`}>{coupon.code}</span>
                       </div>
-                      <span className="text-xs text-gray-500 leading-relaxed">{coupon.description}</span>
+                      <span className="text-xs text-[var(--muted)] leading-relaxed">{coupon.description}</span>
                       
                       {requirementMsg && (
                         <div className="mt-2 inline-block">
@@ -234,11 +234,11 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
                         </div>
                       )}
                     </div>
-                    <div className="w-[28%] flex items-center justify-center p-3 bg-gray-50/30">
+                    <div className="w-[28%] flex items-center justify-center p-3 bg-[var(--surface-muted)]/30">
                       <button 
                         onClick={() => onApply(coupon)} 
                         disabled={isDisabled}
-                        className={`text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm w-full ${isDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}`}
+                        className={`text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm w-full ${isDisabled ? 'bg-[var(--surface-muted)] text-[var(--muted)] cursor-not-allowed' : 'bg-[var(--brand)] text-[var(--brand-contrast)] hover:bg-[var(--brand-hover)]'}`}
                       >
                         APPLY
                       </button>
@@ -247,9 +247,9 @@ const CouponSelectionModal = ({ isOpen, onClose, coupons, search, onSearchChange
                 );
               })
             ) : (
-              <div className="text-center py-12 flex flex-col items-center justify-center text-gray-400">
+              <div className="text-center py-12 flex flex-col items-center justify-center text-[var(--muted)]">
                 <FiSearch size={40} className="mb-3 opacity-20" />
-                <p className="font-medium text-gray-900">No coupons found</p>
+                <p className="font-medium text-[var(--text)]">No coupons found</p>
               </div>
             )}
           </div>
@@ -279,8 +279,8 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
       style={gpuStyle}
       className="relative group mb-0"
     >
-      <div className="flex flex-row gap-5 max-[400px]:gap-3 bg-white p-5 max-[400px]:p-1 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 border border-transparent hover:border-gray-50">
-        <div className="relative w-28 h-28 sm:w-32 sm:h-32 max-[400px]:w-24 max-[400px]:h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
+      <div className="flex flex-row gap-5 max-[400px]:gap-3 bg-[var(--surface)] p-5 max-[400px]:p-1 rounded-[2rem] shadow-[var(--shadow)] transition-all duration-300 border border-transparent hover:border-[var(--border)]">
+        <div className="relative w-28 h-28 sm:w-32 sm:h-32 max-[400px]:w-24 max-[400px]:h-24 flex-shrink-0 bg-[var(--surface-muted)] rounded-[1.5rem] overflow-hidden p-2">
           <img 
             src={itemImageUrl} 
             alt={item.product.name} 
@@ -290,13 +290,13 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
           
           {isOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="bg-white/90 backdrop-blur text-[10px] max-[400px]:text-[8px] font-bold text-red-600 px-3 max-[400px]:px-2 py-1 rounded-full shadow-sm border border-red-50 text-center leading-none">OUT OF STOCK</span>
+              <span className="bg-[var(--surface)]/90 backdrop-blur text-[10px] max-[400px]:text-[8px] font-bold text-[var(--error)] px-3 max-[400px]:px-2 py-1 rounded-full shadow-sm border border-[var(--error)]/20 text-center leading-none">OUT OF STOCK</span>
             </div>
           )}
 
           {Number(item.variant.discount) > 0 && !isFree && (
             <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-              <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] max-[400px]:text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
+              <span className="bg-[var(--overlay-strong)] backdrop-blur-sm text-[var(--surface)] text-[9px] max-[400px]:text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
                 {item.variant.discount}% OFF
               </span>
             </div>
@@ -306,12 +306,12 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
         <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
           <div className="flex justify-between items-start gap-4 max-[400px]:gap-2">
             <div className="flex-1 min-w-0 space-y-1">
-              <h3 className="font-bold text-gray-900 text-lg max-[400px]:text-base leading-snug truncate pr-2">{item.product.name}</h3>
+              <h3 className="font-bold text-[var(--text)] text-lg max-[400px]:text-base leading-snug truncate pr-2">{item.product.name}</h3>
               
               {item.isBundle ? (
                 <div className="opacity-70 origin-left scale-95 -ml-1"><BundleItemsList items={item.contents} /></div>
               ) : (
-                <p className="text-xs max-[400px]:text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{item.variant.size} ml</p>
+                <p className="text-xs max-[400px]:text-[10px] font-semibold text-[var(--muted)] uppercase tracking-wider">{item.variant.size} ml</p>
               )}
             </div>
 
@@ -319,25 +319,25 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
               {isFree ? (
                 <span className="text-xs max-[400px]:text-[10px] font-bold text-green-700 bg-green-50 px-3 max-[400px]:px-2 py-1 rounded-full tracking-wide">FREE GIFT</span>
               ) : (
-                <span className="text-lg max-[400px]:text-base font-bold text-gray-900">₹{sellingPrice}</span>
+                <span className="text-lg max-[400px]:text-base font-bold text-[var(--text)]">₹{sellingPrice}</span>
               )}
-              {showLineThrough && <span className="text-xs max-[400px]:text-[10px] text-gray-400 line-through mt-0.5">₹{item.variant.oprice}</span>}
+              {showLineThrough && <span className="text-xs max-[400px]:text-[10px] text-[var(--muted)] line-through mt-0.5">₹{item.variant.oprice}</span>}
             </div>
           </div>
 
           <div className="flex items-center justify-between mt-4 max-[400px]:gap-2">
-            <div className={`flex items-center bg-gray-50 rounded-full p-1.5 max-[400px]:p-1 flex-shrink-0 ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`flex items-center bg-[var(--surface-muted)] rounded-full p-1.5 max-[400px]:p-1 flex-shrink-0 ${isOutOfStock ? "opacity-50 pointer-events-none" : ""}`}>
               <button 
                 onClick={() => onQuantityChange(item, -1)} 
                 disabled={item.quantity <= 1} 
-                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black disabled:opacity-30 disabled:shadow-none transition-all active:scale-90 max-[400px]:text-sm"
+                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-[var(--surface)] rounded-full shadow-sm text-[var(--muted)] hover:text-[var(--text)] disabled:opacity-30 disabled:shadow-none transition-all active:scale-90 max-[400px]:text-sm"
               >
-                –
+                <FiMinus size={14} strokeWidth={3} />
               </button>
-              <span className="w-10 max-[400px]:w-6 text-center text-sm max-[400px]:text-xs font-bold text-gray-900">{item.quantity}</span>
+              <span className="w-10 max-[400px]:w-6 text-center text-sm max-[400px]:text-xs font-bold text-[var(--text)]">{item.quantity}</span>
               <button 
                 onClick={() => onQuantityChange(item, 1)} 
-                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black transition-all active:scale-90 max-[400px]:text-sm"
+                className="w-8 h-8 max-[400px]:w-6 max-[400px]:h-6 flex items-center justify-center bg-[var(--surface)] rounded-full shadow-sm text-[var(--muted)] hover:text-[var(--text)] transition-all active:scale-90 max-[400px]:text-sm"
               >
                 +
               </button>
@@ -347,7 +347,7 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
               {!isBuyNowActive && (
                 <button 
                   onClick={() => onSaveForLater(item)} 
-                  className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-all" 
+                  className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-muted)] rounded-full transition-all" 
                   title="Save for later"
                 >
                   <FiClock className="w-5 h-5 max-[400px]:w-4 max-[400px]:h-4" />
@@ -355,7 +355,7 @@ const CartItemCard = ({ item, breakdown, isBuyNowActive, onQuantityChange, onRem
               )}
               <button 
                 onClick={() => onRemove(item)} 
-                className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" 
+                className="w-10 h-10 max-[400px]:w-8 max-[400px]:h-8 flex items-center justify-center text-[var(--muted)] hover:text-[var(--error)] hover:bg-red-50 rounded-full transition-all" 
                 title="Remove item"
               >
                 <FaTrashAlt className="w-[18px] h-[18px] max-[400px]:w-3.5 max-[400px]:h-3.5" />
@@ -372,12 +372,12 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
   if (items.length === 0) {
     return (
       <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
-        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-[2rem] bg-gray-50/80">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-6 text-gray-300">
+        <div className="flex flex-col items-center justify-center text-center py-16 px-6 rounded-[2rem] bg-[var(--surface-muted)]/80">
+          <div className="w-20 h-20 bg-[var(--surface)] rounded-full flex items-center justify-center shadow-[var(--shadow)] mb-6 text-[var(--muted)]">
             <FiHeart size={28} />
           </div>
-          <h3 className="text-gray-900 font-bold text-xl tracking-tight">Your wishlist is quiet</h3>
-          <p className="text-gray-500 text-sm mt-2 max-w-xs leading-relaxed">
+          <h3 className="text-[var(--text)] font-bold text-xl tracking-tight">Your wishlist is quiet</h3>
+          <p className="text-[var(--muted)] text-sm mt-2 max-w-xs leading-relaxed">
             Items you want to save for later will appear here, ready when you are.
           </p>
         </div>
@@ -389,12 +389,12 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
     <motion.div layout="position" transition={rigidTransition} className="mt-16 pt-8">
       <div className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-900">
+          <div className="w-10 h-10 bg-[var(--surface-muted)] rounded-full flex items-center justify-center text-[var(--text)]">
              <FiHeart size={18} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saved for Later</h2>
+          <h2 className="text-2xl font-bold text-[var(--text)] tracking-tight">Saved for Later</h2>
         </div>
-        <span className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-600">
+        <span className="px-4 py-1.5 bg-[var(--surface-muted)] rounded-full text-xs font-bold text-[var(--sub)]">
           {items.length} ITEMS
         </span>
       </div>
@@ -420,17 +420,17 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                className="group relative bg-white p-4 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow duration-300"
+                className="group relative bg-[var(--surface)] p-4 rounded-[2rem] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] transition-shadow duration-300"
               >
                 <button
                   onClick={() => onRemove(variant.id)}
-                  className="absolute z-10 top-5 right-5 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors duration-200 shadow-sm"
+                  className="absolute z-10 top-5 right-5 w-8 h-8 flex items-center justify-center bg-[var(--surface)]/80 backdrop-blur hover:bg-red-50 text-[var(--muted)] hover:text-[var(--error)] rounded-full transition-colors duration-200 shadow-sm"
                 >
                   <FiX size={14} />
                 </button>
 
                 <div className="flex items-center gap-5">
-                  <div className="relative w-24 h-24 flex-shrink-0 bg-gray-50 rounded-[1.5rem] overflow-hidden p-2">
+                  <div className="relative w-24 h-24 flex-shrink-0 bg-[var(--surface-muted)] rounded-[1.5rem] overflow-hidden p-2">
                     <img 
                       src={itemImageUrl} 
                       alt={product.name} 
@@ -439,7 +439,7 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                     
                     {discount > 0 && (
                       <div className="absolute inset-0 flex items-end justify-center pb-1 pointer-events-none">
-                        <span className="bg-black/70 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
+                        <span className="bg-[var(--overlay-strong)] backdrop-blur-sm text-[var(--surface)] text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm mb-1">
                           {discount}% OFF
                         </span>
                       </div>
@@ -447,18 +447,18 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                   </div>
 
                   <div className="flex-1 min-w-0 py-1">
-                    <h3 className="font-bold text-base text-gray-900 leading-snug truncate">{product.name}</h3>
+                    <h3 className="font-bold text-base text-[var(--text)] leading-snug truncate">{product.name}</h3>
                     
                     {(item.isBundle || (item.contents && item.contents.length > 0)) ? (
                       <div className="mt-1 opacity-60 scale-90 origin-left"><BundleItemsList items={item.contents} isCompact={true} /></div>
                     ) : (
-                      <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-wide">{variant.size} ml</p>
+                      <p className="text-xs font-medium text-[var(--muted)] mt-1 uppercase tracking-wide">{variant.size} ml</p>
                     )}
 
                     <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-gray-900 font-bold">₹{price}</span>
+                      <span className="text-[var(--text)] font-bold">₹{price}</span>
                       {showLineThrough && (
-                        <span className="text-xs text-gray-400 line-through decoration-gray-300">
+                        <span className="text-xs text-[var(--muted)] line-through decoration-gray-300">
                           ₹{originalPrice}
                         </span>
                       )}
@@ -469,7 +469,7 @@ const SavedForLaterSection = ({ items, onRemove, onMoveToCart }) => {
                 <div className="mt-5">
                   <button
                     onClick={() => onMoveToCart(item)}
-                    className="w-full py-3.5 text-xs font-bold uppercase tracking-widest text-white bg-black rounded-full hover:bg-gray-800 active:scale-95 transition-all duration-300"
+                    className="w-full py-3.5 text-xs font-bold uppercase tracking-widest text-[var(--brand-contrast)] bg-[var(--brand)] rounded-full hover:bg-[var(--brand-hover)] active:scale-95 transition-all duration-300"
                   >
                     Add to Cart
                   </button>
@@ -489,28 +489,28 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
 
   return (
     <div className="sticky top-8">
-      <div className="bg-white rounded-[2.5rem] p-5 max-[400px]:p-1 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+      <div className="bg-[var(--surface)] rounded-[2.5rem] p-5 max-[400px]:p-1 shadow-[var(--shadow)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--surface-muted)] rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-8 relative z-10">Order Summary</h2>
+        <h2 className="text-2xl font-bold text-[var(--text)] mb-8 relative z-10">Order Summary</h2>
 
         {loadingPrices ? (
           <div className="space-y-6 animate-pulse px-2">
-            <div className="flex justify-between"><div className="h-4 bg-gray-100 rounded-full w-1/3"></div><div className="h-4 bg-gray-100 rounded-full w-1/4"></div></div>
-            <div className="flex justify-between"><div className="h-4 bg-gray-100 rounded-full w-1/2"></div><div className="h-4 bg-gray-100 rounded-full w-1/5"></div></div>
-            <div className="h-16 bg-gray-50 rounded-3xl w-full mt-6"></div>
+            <div className="flex justify-between"><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/3"></div><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/4"></div></div>
+            <div className="flex justify-between"><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/2"></div><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/5"></div></div>
+            <div className="h-16 bg-[var(--surface-muted)] rounded-3xl w-full mt-6"></div>
           </div>
         ) : (
           <>
             <div className="space-y-4 px-1">
-              <div className="flex justify-between text-gray-500 text-sm font-medium">
+              <div className="flex justify-between text-[var(--muted)] text-sm font-medium">
                 <span>Subtotal</span>
-                <span className="text-gray-900">₹{Number(breakdown.originalTotal || 0).toFixed(2)}</span>
+                <span className="text-[var(--text)]">₹{Number(breakdown.originalTotal || 0).toFixed(2)}</span>
               </div>
 
               {productDiscount > 0 && (
                 <div className="flex justify-between text-sm font-medium">
-                  <span className="text-gray-400">Discount</span>
+                  <span className="text-[var(--muted)]">Discount</span>
                   <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded-md">-₹{productDiscount.toFixed(2)}</span>
                 </div>
               )}
@@ -522,7 +522,7 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                 </div>
               ))}
               
-              <div className="h-px w-full bg-gray-100 my-6"></div>
+              <div className="h-px w-full bg-[var(--surface-muted)] my-6"></div>
 
               <div className="mb-6">
                 <AnimatePresence mode="wait">
@@ -535,20 +535,20 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                       className="bg-green-50/50 rounded-3xl p-4 flex items-center justify-between border border-green-100"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="bg-white p-2 rounded-full text-green-600 shadow-sm"><FiTag size={16} /></div>
+                        <div className="bg-[var(--surface)] p-2 rounded-full text-[var(--success)] shadow-sm"><FiTag size={16} /></div>
                         <div>
-                          <p className="font-bold text-green-800 text-sm">{appliedCoupon.code}</p>
-                          <p className="text-[10px] text-green-600 font-bold uppercase tracking-wider">Applied</p>
+                          <p className="text-sm font-bold text-[var(--success)]">{appliedCoupon.code}</p>
+                          <p className="text-xs text-[var(--success)]/80 mt-0.5">{appliedCoupon.description}</p>
                         </div>
                       </div>
-                      <button onClick={onRemoveCoupon} className="w-8 h-8 flex items-center justify-center bg-white text-gray-400 rounded-full shadow-sm hover:text-red-500 transition-colors">
+                      <button onClick={onRemoveCoupon} className="w-8 h-8 flex items-center justify-center bg-[var(--surface)] text-[var(--muted)] rounded-full shadow-sm hover:text-[var(--error)] transition-colors">
                         <FiX size={14} />
                       </button>
                     </motion.div>
                   ) : (
-                    <div className="bg-gray-50 p-1.5 rounded-[1.5rem] flex relative">
+                    <div className="bg-[var(--surface-muted)] p-1.5 rounded-[1.5rem] flex relative">
                       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                         <FiTag className="text-gray-400" />
+                         <FiTag className="text-[var(--muted)]" />
                       </div>
                       <input 
                         type="text" 
@@ -556,11 +556,11 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                         value={manualCouponCode} 
                         onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())} 
                         onKeyDown={(e) => e.key === "Enter" && onManualApply()}
-                        className="bg-transparent border-none text-gray-900 text-sm font-medium w-full pl-10 pr-20 py-3 focus:ring-0 placeholder:text-gray-400" 
+                        className="bg-transparent border-none text-[var(--text)] text-sm font-medium w-full pl-10 pr-20 py-3 focus:ring-0 placeholder:text-[var(--muted)]" 
                       />
                       <button 
                         onClick={onManualApply} 
-                        className="absolute right-1.5 top-1.5 bottom-1.5 bg-white shadow-sm text-black text-xs font-bold px-4 rounded-[1.2rem] hover:bg-black hover:text-white transition-all disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black"
+                        className="absolute right-1.5 top-1.5 bottom-1.5 bg-[var(--bg)] shadow-sm text-[var(--text)] text-xs font-bold px-4 rounded-[1.2rem] hover:bg-[var(--brand)] hover:text-[var(--brand-contrast)] transition-all disabled:opacity-50 disabled:hover:bg-[var(--bg)] disabled:hover:text-[var(--text)]"
                         disabled={!manualCouponCode}
                       >
                         APPLY
@@ -574,15 +574,15 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
                 )}
                 
                 {availableCouponsCount > 0 && !appliedCoupon && (
-                   <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-xs font-bold text-gray-500 hover:text-black flex items-center gap-1 transition-colors">
+                   <button onClick={onOpenCouponModal} className="mt-3 ml-2 text-xs font-bold text-[var(--muted)] hover:text-[var(--text)] flex items-center gap-1 transition-colors">
                       See {availableCouponsCount} available offers <FiChevronRight />
                    </button>
                 )}
               </div>
 
               <div className="flex justify-between items-center pb-2">
-                <span className="text-lg text-gray-900">Total</span>
-                <span className="text-2xl text-gray-900 tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
+                <span className="text-lg text-[var(--text)]">Total</span>
+                <span className="text-2xl text-[var(--text)] tracking-tighter">₹{Number(finalPrice || 0).toFixed(2)}</span>
               </div>
             </div>
           </>
@@ -600,7 +600,7 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
 
         <div className="mt-8">
           <HeroButton 
-            className="w-full py-5 text-sm uppercase tracking-[0.15em] font-bold bg-black text-white rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-black/10 transition-all duration-300 ease-out" 
+            className="w-full py-5 text-sm uppercase tracking-[0.15em] font-bold bg-[var(--brand)] text-[var(--brand-contrast)] rounded-[2rem] hover:scale-[1.02] active:scale-[0.98] hover:shadow-xl hover:shadow-[var(--shadow-strong)] transition-all duration-300 ease-out" 
             onClick={onCheckout}
           >
             {isBuyNowActive ? "Pay Now" : "Checkout"}
@@ -608,9 +608,9 @@ const OrderSummary = ({ breakdown, loadingPrices, appliedCoupon, onRemoveCoupon,
         </div>
         
         <div className="mt-6 flex justify-center gap-2">
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
-           <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
+           <span className="w-1.5 h-1.5 bg-[var(--border)] rounded-full"></span>
+           <span className="w-1.5 h-1.5 bg-[var(--border)] rounded-full"></span>
+           <span className="w-1.5 h-1.5 bg-[var(--border)] rounded-full"></span>
         </div>
       </div>
     </div>
@@ -630,10 +630,21 @@ const ShoppingCart = () => {
   const [addingProductId, setAddingProductId] = useState(null);
 
   const { userdetails } = useContext(UserContext);
-  const { cart, buyNow, changeCartQuantity, removeFromCart, clearCart, isCartLoading, startBuyNow, clearBuyNow, addToCart, savedItems, saveForLater, moveSavedToCart, removeSavedItem } = useContext(CartContext);
+  const { buyNow, startBuyNow, clearBuyNow } = useCheckout();
   
-  // 🟢 FIXED: Destructured validateCoupon directly from CouponContext
-  const { availableCoupons, loadAvailableCoupons, autoOfferInstructions, validateCoupon } = useContext(CouponContext);
+  const { data: cart = [], isLoading: isCartLoading } = useCart();
+  const { data: savedItems = [] } = useSavedItems();
+  const { mutateAsync: changeCartQuantity } = useUpdateCartQuantity();
+  const { mutateAsync: removeFromCart } = useRemoveFromCart();
+  const { mutateAsync: clearCart } = useClearCart();
+  const { mutateAsync: addToCart } = useAddToCart();
+  const { mutateAsync: saveForLater } = useSaveForLater();
+  const { mutateAsync: moveSavedToCart } = useMoveSavedToCart();
+  const { mutateAsync: removeSavedItem } = useRemoveSavedItem();
+
+  const { data: availableCoupons = [] } = useAvailableCoupons();
+  const { data: autoOfferInstructions = [] } = useAutoOfferInstructions();
+  const { mutateAsync: validateCoupon } = useValidateCoupon();
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCouponCode, setManualCouponCode] = useState("");
@@ -711,64 +722,49 @@ const ShoppingCart = () => {
   }, [itemsToRender]);
 
   const [breakdown, setBreakdown] = useState({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
-  const [loadingPrices, setLoadingPrices] = useState(true);
-  const lastRequestRef = useRef("");
+  
+  const requestBody = useMemo(() => {
+    if (itemsToRender.length === 0) return null;
+    return {
+      cartItems: itemsToRender.map((i) => ({ variantId: i.variant?.id ?? i.variantId, quantity: i.quantity, productId: i.product?.id ?? i.productId })),
+      couponCode: appliedCoupon?.code || null,
+      pincode: null,
+      userId: userdetails?.id || null
+    };
+  }, [itemsToRender, appliedCoupon?.code, userdetails?.id]);
 
-  // --- PRICE FETCHING ---
+  const { data: priceData, isLoading: loadingPricesHook, isError: isPricePreviewError } = usePricePreview(requestBody);
+  const loadingPrices = isCartLoading || loadingPricesHook;
+
   useEffect(() => {
-    if (isCartLoading || itemsToRender.length === 0) {
-      setLoadingPrices(false);
-      if (itemsToRender.length === 0) {
-        setBreakdown({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
-        lastRequestRef.current = "";
-      }
+    if (!requestBody) {
+      setBreakdown({ productTotal: 0, deliveryCharge: 0, discountAmount: 0, total: 0, originalTotal: 0, codAvailable: false, offerDiscount: 0, appliedOffers: [] });
       return;
     }
-
-    const fetchBreakdown = async () => {
-      const requestBody = {
-        cartItems: itemsToRender.map((i) => ({ variantId: i.variant?.id ?? i.variantId, quantity: i.quantity, productId: i.product?.id ?? i.productId })),
-        couponCode: appliedCoupon?.code || null,
-        pincode: null,
-        userId: userdetails?.id || null
-      };
-      const requestString = JSON.stringify(requestBody);
-      if (lastRequestRef.current === requestString) return;
-
-      setLoadingPrices(true);
-      try {
-        const res = await fetch(`${API_BASE}/api/cart/price-preview`, { 
-            method: "POST", 
-            headers: { 
-                "Content-Type": "application/json",
-                ...(window.Clerk?.session ? { Authorization: `Bearer ${await window.Clerk.session.getToken()}` } : {})
-            }, 
-            body: requestString 
-        });
-        
-        const data = await res.json();
-        
-        if (data.error) {
-            window.toast?.error(data.message);
+    if (priceData && !priceData.error) {
+        setBreakdown(priceData.breakdown ?? priceData);
+        setCouponMessage(priceData.message || ""); 
+    } else if ((priceData && priceData.error) || isPricePreviewError) {
+        if (priceData?.error) {
+            window.toast?.error(priceData.message);
             setAppliedCoupon(null);
             setCouponMessage("");
-        } else {
-            setBreakdown(data.breakdown ?? data);
-            setCouponMessage(data.message || ""); 
         }
-        
-        lastRequestRef.current = requestString;
-      } catch (error) {
-        console.error("Price breakdown error:", error);
-      } finally {
-        setLoadingPrices(false);
-      }
-    };
-    const timer = setTimeout(() => fetchBreakdown(), 300);
-    return () => clearTimeout(timer);
-  }, [itemsToRender, appliedCoupon?.code, isCartLoading, API_BASE, userdetails?.id]);
+        // Fallback calculation for Order Summary
+        const original = itemsToRender.reduce((acc, i) => acc + (i.variant?.oprice || 0) * (i.quantity || 1), 0);
+        const total = itemsToRender.reduce((acc, i) => acc + Math.floor((i.variant?.oprice || 0) * (1 - (i.variant?.discount || 0)/100)) * (i.quantity || 1), 0);
+        setBreakdown({
+            originalTotal: original,
+            productTotal: total,
+            total: total,
+            discountAmount: original - total,
+            deliveryCharge: 0,
+            appliedOffers: []
+        });
+    }
+  }, [priceData, requestBody, isPricePreviewError, itemsToRender]);
 
-  useEffect(() => { if (userdetails?.id) loadAvailableCoupons(userdetails.id); }, [userdetails?.id, loadAvailableCoupons]);
+
 
   useEffect(() => {
     if (isBuyNowActive && !buyNow) { navigate("/cart", { replace: true, state: {} }); return; }
@@ -800,7 +796,7 @@ const ShoppingCart = () => {
   const callStartBuyNow = useCallback((itemLike) => startBuyNow(normalizeBuyNow(itemLike)), [normalizeBuyNow, startBuyNow]);
   const handleQuantityChange = (item, delta) => {
     const nextQty = Math.max(1, (item.quantity || 1) + delta);
-    isBuyNowActive ? callStartBuyNow({ ...item, quantity: nextQty }) : changeCartQuantity(item.variant, nextQty);
+    isBuyNowActive ? callStartBuyNow({ ...item, quantity: nextQty }) : changeCartQuantity({ variant: item.variant, quantity: nextQty });
   };
   const handleRemove = (item) => isBuyNowActive ? clearBuyNow() : removeFromCart(item.variant);
   const handleSaveForLater = (item) => !isBuyNowActive && saveForLater(item);
@@ -813,7 +809,7 @@ const ShoppingCart = () => {
       return;
     }
 
-    const validatedCoupon = await validateCoupon(couponObj.code, userdetails.id);
+    const validatedCoupon = await validateCoupon(couponObj.code);
 
     if (validatedCoupon) {
       setAppliedCoupon(validatedCoupon);
@@ -831,7 +827,7 @@ const ShoppingCart = () => {
 
   const handleAddToCart = (variant, product) => {
     if (addingProductId) return;
-    setAddingProductId(variant.id); addToCart(product, variant, 1);
+    setAddingProductId(variant.id); addToCart({ product, variant, quantity: 1 });
     setTimeout(() => setAddingProductId(null), 1500);
   };
 
@@ -854,24 +850,44 @@ const ShoppingCart = () => {
         cartItemCount={cartItemCount}
       />
 
-      {isLoading ? <Loader text="Loading cart..." /> : (
+      {isLoading ? (
         <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
-          <div className="flex justify-between items-center pb-4 border-b border-gray-100 pt-[50px]">
+          <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] pt-[50px]">
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3"><FaShoppingCart /> {isBuyNowActive ? "Buy Now" : "Shopping Cart"}</h1>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] lg:items-start gap-8">
+            <div className="flex flex-col gap-4">
+              <CartItemSkeleton />
+              <CartItemSkeleton />
+            </div>
+            <div className="bg-[var(--surface)] rounded-[2.5rem] p-5 shadow-[var(--shadow)] relative">
+                <div className="h-8 w-40 bg-[var(--surface-muted)] rounded mb-8 animate-pulse"></div>
+                <div className="space-y-6 animate-pulse px-2">
+                    <div className="flex justify-between"><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/3"></div><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/4"></div></div>
+                    <div className="flex justify-between"><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/2"></div><div className="h-4 bg-[var(--surface-muted)] rounded-full w-1/5"></div></div>
+                    <div className="h-16 bg-[var(--surface-muted)] rounded-3xl w-full mt-6"></div>
+                </div>
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="max-w-6xl mx-auto my-4 sm:my-8 px-4 w-full flex flex-col gap-8">
+          <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] pt-[50px]">
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3"><FaShoppingCart /> {isBuyNowActive ? "Buy Now" : "Shopping Cart"}</h1>
             <div className="flex items-center gap-4">
               {autoOfferInstructions.length > 0 && !isBuyNowActive && (
-                <motion.button onClick={() => setShowOffers(true)} className="relative text-gray-500 hover:text-black" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                  <FiBell className="w-6 h-6" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-black text-white text-[10px] font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
+                <motion.button onClick={() => setShowOffers(true)} className="relative text-[var(--muted)] hover:text-[var(--text)]" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <FiGift size={22} />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--brand)] text-[var(--brand-contrast)] text-[10px] font-bold rounded-full flex items-center justify-center">{autoOfferInstructions.length}</span>
                 </motion.button>
               )}
               {!isBuyNowActive && cart.length > 0 && (
-                <motion.button onClick={clearCart} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.button onClick={clearCart} className="bg-transparent border border-[var(--border)] text-[var(--muted)] py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-red-50 hover:text-red-600 hover:border-red-600" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <FaTrashAlt /> <span className="hidden sm:inline">Clear Cart</span>
                 </motion.button>
               )}
               {isBuyNowActive && (
-                <motion.button onClick={handleExitBuyNow} className="bg-transparent border border-gray-200 text-gray-500 py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-800" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.button onClick={handleExitBuyNow} className="bg-transparent border border-[var(--border)] text-[var(--muted)] py-2 px-4 rounded-xl cursor-pointer flex items-center gap-2 font-medium transition-colors duration-200 ease-in-out hover:bg-[var(--surface-muted)] hover:text-[var(--text)]" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <FiX /> <span className="hidden sm:inline">Exit Buy Now</span>
                 </motion.button>
               )}
@@ -889,8 +905,8 @@ const ShoppingCart = () => {
                     />
                   ))
                 ) : (
-                  <motion.div key="empty-cart-message" layout variants={itemVariants} initial="initial" animate="animate" exit="exit" transition={rigidTransition} style={gpuStyle} className="text-center p-8 bg-white transition-shadow">
-                    <h3 className="text-lg mb-2">Your cart is empty.</h3><p className="text-gray-500">Looks like you haven't added anything to your cart yet.</p>
+                  <motion.div key="empty-cart-message" layout variants={itemVariants} initial="initial" animate="animate" exit="exit" transition={rigidTransition} style={gpuStyle} className="text-center p-8 bg-transparent transition-shadow">
+                    <h3 className="text-lg mb-2">Your cart is empty.</h3><p className="text-[var(--muted)]">Looks like you haven't added anything to your cart yet.</p>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -105,7 +105,7 @@ export default function Footer() {
   return (
     <footer
       ref={footerRef}
-      className="bg-white text-gray-900 pt-24 pb-10 border-t border-gray-100 relative overflow-hidden"
+      className="bg-[var(--brand)] text-[var(--surface)] pt-24 pb-10 border-t border-[var(--surface)]/20 relative overflow-hidden"
     >
       <div className="footer-watermark absolute top-0 left-1/2 -translate-x-1/2 w-full pointer-events-none opacity-[0.03] select-none flex justify-center mt-20">
         <span className="text-[18vw] font-['Cormorant_Garamond'] font-bold whitespace-nowrap leading-none">
@@ -122,7 +122,7 @@ export default function Footer() {
                   {word.split("").map((char, charIndex) => (
                     <span
                       key={`${wordIndex}-${charIndex}`}
-                      className="brand-char font-['Cormorant_Garamond'] font-medium inline-block text-black opacity-0 
+                      className="brand-char font-['Cormorant_Garamond'] font-medium inline-block text-[var(--accent)] opacity-0 
                                  text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
                       style={{ willChange: "transform, opacity, filter" }}
                     >
@@ -133,7 +133,7 @@ export default function Footer() {
               ))}
             </div>
 
-            <p className="footer-column opacity-0 text-gray-500 font-light text-lg leading-relaxed max-w-md">
+            <p className="footer-column opacity-0 text-[var(--surface)]/70 font-light text-lg leading-relaxed max-w-md">
               An olfactory signature. A presence unseen but always felt.
               Crafted for those who leave a mark.
             </p>
@@ -151,7 +151,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label} // Added Aria Label
-                  className="social-btn opacity-0 w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-black transition-all duration-300 group"
+                  className="social-btn opacity-0 w-12 h-12 flex items-center justify-center rounded-full border border-[var(--surface)]/20 text-[var(--surface)]/80 hover:bg-[var(--accent)] hover:text-[var(--brand)] hover:border-[var(--accent)] transition-all duration-300 group"
                 >
                   <Icon size={20} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
                 </a>
@@ -162,7 +162,7 @@ export default function Footer() {
           {/* ✅ FIX: Updated links to use 'to' prop and Link component */}
           <div className="flex gap-12 md:gap-24 flex-wrap">
             <div className="footer-column opacity-0 min-w-[120px]">
-              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Discover</h4>
+              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-[var(--surface)]/70">Discover</h4>
               <ul className="space-y-3">
                 <FooterLink to='/products' label="All Products" />
                 <FooterLink to='/custom-combo' label="Build Your Combo" highlight />
@@ -172,7 +172,7 @@ export default function Footer() {
             </div>
 
             <div className="footer-column opacity-0 min-w-[120px]">
-              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Company</h4>
+              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-[var(--surface)]/70">Company</h4>
               <ul className="space-y-3">
                 <FooterLink to='/about' label="Our Story" />
                 <FooterLink to='/contact' label="Contact Us" />
@@ -181,7 +181,7 @@ export default function Footer() {
             </div>
 
             <div className="footer-column opacity-0 min-w-[120px]">
-              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-gray-400">Legal</h4>
+              <h4 className="font-bold uppercase tracking-[0.15em] text-xs mb-6 text-[var(--surface)]/70">Legal</h4>
               <ul className="space-y-3">
                 <FooterLink to='/privacy' label="Privacy Policy" />
                 <FooterLink to='/terms' label="Terms of Service" />
@@ -191,7 +191,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="footer-column opacity-0 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 font-medium tracking-wide">
+        <div className="footer-column opacity-0 pt-8 border-t border-[var(--surface)]/20 flex flex-col md:flex-row justify-between items-center text-xs text-[var(--surface)]/70 font-medium tracking-wide">
           <p>© {new Date().getFullYear()} Devid Aura. All rights reserved.</p>
           <div className="flex items-center gap-1 mt-3 md:mt-0 opacity-70 hover:opacity-100 transition-opacity">
             <span>Designed with Precision</span>
@@ -209,7 +209,7 @@ const FooterLink = ({ to, label, highlight }) => (
       to={to}
       className={`
         group flex items-center gap-1 cursor-pointer transition-all duration-300 
-        ${highlight ? "text-amber-700 font-semibold" : "text-gray-600 hover:text-black"}
+        ${highlight ? "text-[var(--accent)] font-semibold" : "text-[var(--surface)]/80 hover:text-[var(--accent)]"}
       `}
     >
       <span className="relative">

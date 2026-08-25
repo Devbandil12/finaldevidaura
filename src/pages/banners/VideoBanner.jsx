@@ -38,7 +38,7 @@ const VideoBanner = ({ banner }) => {
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 1.2, ease: "easeOut" }}
                 onClick={() => navigate(banner.link)}
-                className="w-full max-w-[1600px] h-[60vh] md:h-[75vh] min-h-[500px] rounded-[2.5rem] cursor-pointer relative group isolate overflow-hidden shadow-2xl bg-neutral-950"
+                className="w-full max-w-[1600px] h-[60vh] md:h-[75vh] min-h-[500px] rounded-[2.5rem] cursor-pointer relative group isolate overflow-hidden shadow-2xl bg-[var(--brand)]"
             >
                 {/* Shimmer Loading Skeleton */}
                 <AnimatePresence>
@@ -46,19 +46,19 @@ const VideoBanner = ({ banner }) => {
                         <motion.div 
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.8 }}
-                            className="absolute inset-0 z-10 bg-neutral-900 overflow-hidden"
+                            className="absolute inset-0 z-10 bg-[var(--surface-muted)] overflow-hidden"
                         >
                             <motion.div
                                 animate={{ x: ['-100%', '200%'] }}
                                 transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"
+                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--brand-contrast)]/10 to-transparent skew-x-12"
                             />
                         </motion.div>
                     )}
                 </AnimatePresence>
 
                 {/* Media Layer */}
-                <div className="absolute inset-0 w-full h-full bg-black">
+                <div className="absolute inset-0 w-full h-full bg-[var(--brand)]">
                     {isVideo ? (
                         <motion.video 
                             src={banner.imageUrl} 
@@ -101,14 +101,14 @@ const VideoBanner = ({ banner }) => {
                         variants={containerVariants}
                         initial="hidden"
                         animate={mediaLoaded ? "visible" : "hidden"}
-                        className="relative bg-white/5 backdrop-blur-md border border-white/10 p-10 md:p-16 rounded-[2rem] text-center max-w-3xl w-full group-hover:bg-white/10 group-hover:backdrop-blur-xl group-hover:border-white/20 transition-all duration-700 ease-out shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
+                        className="relative bg-[var(--brand-contrast)]/5 backdrop-blur-md border border-[var(--brand-contrast)]/10 p-10 md:p-16 rounded-[2rem] text-center max-w-3xl w-full group-hover:bg-[var(--brand-contrast)]/10 group-hover:backdrop-blur-xl group-hover:border-[var(--brand-contrast)]/20 transition-all duration-700 ease-out shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
                     >
                         {/* Subtle inner glow */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[var(--brand-contrast)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                         {isVideo && (
                             <motion.div variants={itemVariants} className="flex justify-center mb-6">
-                                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-white">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--brand-contrast)]/10 border border-[var(--brand-contrast)]/20 backdrop-blur-md text-[var(--brand-contrast)]">
                                     <Play size={18} className="ml-1 opacity-80" />
                                 </div>
                             </motion.div>
@@ -116,7 +116,7 @@ const VideoBanner = ({ banner }) => {
 
                         <motion.h2 
                             variants={itemVariants}
-                            className="text-4xl md:text-6xl lg:text-7xl font-extralight text-white mb-6 tracking-tight leading-[1.1]"
+                            className="text-4xl md:text-6xl lg:text-7xl font-extralight text-[var(--brand-contrast)] mb-6 tracking-tight leading-[1.1]"
                         >
                             {banner.title}
                         </motion.h2>
@@ -124,7 +124,7 @@ const VideoBanner = ({ banner }) => {
                         {banner.subtitle && (
                             <motion.p 
                                 variants={itemVariants}
-                                className="text-xs md:text-sm text-white/60 uppercase tracking-[0.3em] font-semibold mb-10 max-w-xl mx-auto leading-relaxed"
+                                className="text-xs md:text-sm text-[var(--brand-contrast)]/60 uppercase tracking-[0.3em] font-semibold mb-10 max-w-xl mx-auto leading-relaxed"
                             >
                                 {banner.subtitle}
                             </motion.p>
@@ -134,7 +134,7 @@ const VideoBanner = ({ banner }) => {
                             variants={itemVariants}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.98 }}
-                            className="relative inline-flex items-center gap-4 px-10 py-5 bg-white text-black font-bold uppercase text-xs tracking-[0.2em] rounded-full overflow-hidden hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all duration-300 group/btn"
+                            className="relative inline-flex items-center gap-4 px-10 py-5 bg-[var(--brand-contrast)] text-[var(--brand)] font-bold uppercase text-xs tracking-[0.2em] rounded-full overflow-hidden hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all duration-300 group/btn"
                         >
                             <span className="relative z-10">{banner.buttonText}</span>
                             <ArrowRight size={16} className="relative z-10 group-hover/btn:translate-x-1 transition-transform duration-300" />

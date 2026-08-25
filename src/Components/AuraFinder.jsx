@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { optimizeImage } from "../utils/imageOptimizer";
+import { useAuraMatch } from "../features/catalog/hooks/useProducts";
 
 // --- ORIGINAL DATA (Preserved) ---
 const questions = [
@@ -166,7 +167,7 @@ export default function AuraFinder() {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
+  const { mutateAsync: fetchAuraMatch } = useAuraMatch();
 
   // Helper to map icons if not in data object (fallback)
   const getIcon = (OptionIcon) => OptionIcon ? <OptionIcon className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />;
@@ -202,14 +203,7 @@ export default function AuraFinder() {
 
   const findMatchOnServer = async (occasion, vibe) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/products/aura-match`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ occasion, vibe }),
-      });
-
-      if (!response.ok) throw new Error("Consultation failed");
-      const bestMatch = await response.json();
+      const bestMatch = await fetchAuraMatch({ occasion, vibe });
 
       setTimeout(() => {
         setRecommendation(bestMatch);
@@ -242,13 +236,13 @@ export default function AuraFinder() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleStart}
-            className="fixed bottom-8 right-8 z-50 flex items-center gap-3 bg-white pl-2 pr-6 py-2 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-black/5 group"
+            className="fixed bottom-25 right-8 z-50 flex items-center gap-3 bg-white pl-2 pr-6 py-2 rounded-full shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] border border-black/5 group"
           >
             <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-[#D4AF37]">
               <Sparkles className="w-5 h-5" />
             </div>
             <div className="flex flex-col items-start">
-              <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Concierge</span>
+              <span className="text-[10px] uppercase tracking-widest text-[var(--muted)] font-bold">Concierge</span>
               <span className="font-serif italic text-black leading-none">Find your Aura</span>
             </div>
           </motion.button>
@@ -263,7 +257,7 @@ export default function AuraFinder() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[10000] bg-[#FAFAFA] overflow-y-auto smooth-scrolling overflow-x-hidden"
+              className="fixed inset-0 z-[10000] bg-[var(--bg)] overflow-y-auto smooth-scrolling overflow-x-hidden"
             >
               <div className="min-h-screen relative flex flex-col items-center">
                 
@@ -311,7 +305,7 @@ export default function AuraFinder() {
                           <h2 className="text-4xl md:text-6xl font-serif text-black mb-4">
                             {questions[step - 1].title}
                           </h2>
-                          <p className="text-gray-400 uppercase tracking-widest text-xs font-medium">
+                          <p className="text-[var(--muted)] uppercase tracking-widest text-xs font-medium">
                             {questions[step - 1].subtitle}
                           </p>
                         </motion.div>
@@ -329,19 +323,19 @@ export default function AuraFinder() {
                               
                               <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-6">
-                                  <div className="w-10 h-10 rounded-2xl bg-gray-50 group-hover:bg-[#D4AF37]/10 flex items-center justify-center text-gray-400 group-hover:text-[#D4AF37] transition-colors duration-300">
+                                  <div className="w-10 h-10 rounded-2xl bg-[var(--surface-muted)] group-hover:bg-[#D4AF37]/10 flex items-center justify-center text-[var(--muted)] group-hover:text-[#D4AF37] transition-colors duration-300">
                                     {getIcon(option.icon)}
                                   </div>
-                                  <span className="text-[10px] font-bold text-gray-300 group-hover:text-black transition-colors">
+                                  <span className="text-[10px] font-bold text-[var(--muted)] group-hover:text-black transition-colors">
                                     0{idx + 1}
                                   </span>
                                 </div>
                                 
-                                <h3 className="text-xl font-serif text-gray-900 group-hover:text-black mb-2 transition-colors">
+                                <h3 className="text-xl font-serif text-[var(--text)] group-hover:text-black mb-2 transition-colors">
                                   {option.label}
                                 </h3>
                                 
-                                <p className="text-xs text-gray-500 font-medium leading-relaxed group-hover:text-gray-700 transition-colors">
+                                <p className="text-xs text-[var(--muted)] font-medium leading-relaxed group-hover:text-[var(--sub)] transition-colors">
                                   {option.desc}
                                 </p>
                               </div>
@@ -362,7 +356,7 @@ export default function AuraFinder() {
                       >
                         <div className="relative w-24 h-24 mb-10">
                           <motion.div 
-                            className="absolute inset-0 border-4 border-gray-100 rounded-full" 
+                            className="absolute inset-0 border-4 border-[var(--border)] rounded-full" 
                           />
                           <motion.div 
                             className="absolute inset-0 border-4 border-t-[#D4AF37] border-r-[#D4AF37] border-b-transparent border-l-transparent rounded-full"
@@ -375,9 +369,9 @@ export default function AuraFinder() {
                         </div>
                         
                         <div className="text-center">
-                          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Curating</h3>
+                          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--muted)] mb-2">Curating</h3>
                           <p className="font-serif text-2xl md:text-3xl text-black">
-                            {selections.occasion?.keywords[0]} <span className="text-gray-300">&</span> {selections.vibe?.keywords[0]}
+                            {selections.occasion?.keywords[0]} <span className="text-[var(--muted)]">&</span> {selections.vibe?.keywords[0]}
                           </p>
                         </div>
                       </motion.div>
@@ -434,13 +428,13 @@ export default function AuraFinder() {
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                                 <div className="bg-white p-6 rounded-3xl border border-black/[0.02] shadow-sm">
-                                  <h4 className="text-[10px] uppercase tracking-widest text-gray-400 mb-3">The Composition</h4>
-                                  <p className="font-serif text-lg leading-relaxed text-gray-800">
+                                  <h4 className="text-[10px] uppercase tracking-widest text-[var(--muted)] mb-3">The Composition</h4>
+                                  <p className="font-serif text-lg leading-relaxed text-[var(--text)]">
                                     {recommendation.description?.slice(0, 100)}...
                                   </p>
                                 </div>
                                 <div className="bg-white p-6 rounded-3xl border border-black/[0.02] shadow-sm flex flex-col justify-center">
-                                   <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                                   <p className="text-sm font-medium text-[var(--muted)] leading-relaxed">
                                      Selected for its ability to harmonize the <span className="text-black">{selections.occasion?.label}</span> environment with your desire for <span className="text-black">{selections.vibe?.label}</span>.
                                    </p>
                                 </div>
@@ -455,7 +449,7 @@ export default function AuraFinder() {
                                 </button>
                                 <button
                                   onClick={restart}
-                                  className="px-8 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] border border-gray-200 hover:border-black hover:bg-gray-50 transition-all duration-300 flex items-center justify-center gap-2"
+                                  className="px-8 py-4 rounded-full text-xs font-bold uppercase tracking-[0.2em] border border-[var(--border)] hover:border-black hover:bg-[var(--surface-muted)] transition-all duration-300 flex items-center justify-center gap-2"
                                 >
                                   <RefreshCcw className="w-3 h-3" />
                                   Restart

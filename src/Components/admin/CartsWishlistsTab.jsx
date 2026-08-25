@@ -1,15 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { 
-  ShoppingCart, Heart, Mail, Clock, TrendingUp, AlertCircle, Package, Send, CheckCircle, Loader2
+  ShoppingCart, Heart, Clock, TrendingUp, Package, Send, Loader2, ArrowRight
 } from 'lucide-react';
-
-// Use backend URL from env
-const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+import { useRecoverAbandonedCart } from "../../features/admin/hooks/useAdmin";
 
 const CartsWishlistsTab = ({ flatCarts, stats }) => {
-  const [isSending, setIsSending] = useState(false);
+  const { mutateAsync: recoverCart, isPending: isSending } = useRecoverAbandonedCart();
   
-  // Logic remains unchanged
   const abandonedCarts = useMemo(() => {
     if (!flatCarts) return [];
     const userMap = new Map();
@@ -35,99 +32,90 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
     return Array.from(userMap.values()).sort((a, b) => b.lastActivity - a.lastActivity);
   }, [flatCarts]);
 
-  // 🟢 NEW: Handle Recover All
   const handleRecoverAll = async () => {
     if (abandonedCarts.length === 0) return;
-    setIsSending(true);
-
     try {
         const userIds = abandonedCarts.map(c => c.user.id);
-        
-        const res = await fetch(`${BACKEND_URL}/api/notifications/recover-abandoned`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userIds })
-        });
-
-        if (res.ok) {
-            window.toast.success(`Recovery sent to ${userIds.length} users! 🚀`);
-        } else {
-            throw new Error("Failed to send");
-        }
+        await recoverCart({ userIds });
     } catch (error) {
-        console.error(error);
-        window.toast.error("Failed to send notifications");
-    } finally {
-        setIsSending(false);
+        console.error("Error sending recovery emails:", error);
     }
   };
 
   return (
-    <div className="space-y-8 p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 ">
+    <div className="space-y-10 p-4 sm:p-8 bg-[var(--bg)] min-h-screen font-body animate-fadeIn transition-colors duration-300 pb-20">
       
-      {/* --- HEADER --- */}
-      <div className="pb-6 border-b border-gray-200">
-        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 flex items-center">
-          <TrendingUp className="w-6 h-6 mr-3 text-indigo-600" /> Cart & Wishlist Analytics
+      {/* HEADER */}
+      <div className="pb-6 border-b border-[var(--border)]">
+        <h2 className="font-display text-4xl font-medium text-[var(--text)] flex items-center">
+          <TrendingUp className="w-8 h-8 mr-3 text-[var(--accent)]" strokeWidth={1.5} /> 
+          Cart & Wishlist Analytics
         </h2>
-        <p className="text-sm text-gray-500 mt-1">Monitor abandoned checkouts and popular wishlist items.</p>
+        <p className="font-display italic text-[var(--sub)] text-lg mt-2 tracking-wide">
+          Monitor abandoned checkouts and popular wishlist items.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         
-        {/* --- LEFT: ABANDONED CARTS --- */}
+        {/* LEFT: ABANDONED CARTS */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <ShoppingCart className="text-amber-500" size={20} /> Abandoned Carts
-              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full">{abandonedCarts.length}</span>
+            <h3 className="font-display text-2xl font-medium text-[var(--text)] flex items-center gap-3">
+              <ShoppingCart className="text-[var(--accent)]" strokeWidth={1.5} size={24} /> 
+              Abandoned Carts
+              <span className="font-body text-xs px-2.5 py-0.5 rounded-md font-bold bg-[var(--surface-muted)] text-[var(--text)] border border-[var(--border)]">
+                {abandonedCarts.length}
+              </span>
             </h3>
 
-            {/* 🟢 NEW: Combined Action Button */}
             {abandonedCarts.length > 0 && (
                 <button 
                     onClick={handleRecoverAll}
                     disabled={isSending}
-                    className="flex items-center gap-2 px-4 py-2 bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-all shadow-md"
+                    className="flex items-center gap-2 px-6 py-3 bg-[var(--brand)] text-[var(--surface)] text-[11px] font-bold uppercase tracking-widest rounded-lg hover:bg-[var(--brand-hover)] transition-all shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] button-hero disabled:opacity-50"
                 >
-                    {isSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                    {isSending ? "Sending..." : "Send Recovery to All"}
+                    {isSending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+                    {isSending ? "Sending..." : "Recover All"}
+                    {!isSending && <div className="pulse border-[var(--surface)]"></div>}
                 </button>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {abandonedCarts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
-                <ShoppingCart className="w-10 h-10 text-gray-300 mb-3" />
-                <p className="text-gray-500 font-medium">No abandoned carts found.</p>
+              <div className="flex flex-col items-center justify-center py-24 bg-[var(--surface)] rounded-2xl border border-[var(--border)] border-dashed shadow-sm">
+                <ShoppingCart className="w-12 h-12 text-[var(--muted)] mb-4 opacity-50" strokeWidth={1} />
+                <p className="font-display italic text-xl text-[var(--sub)] tracking-wide">No abandoned carts found.</p>
               </div>
             ) : (
               abandonedCarts.map((cart) => (
-                <div key={cart.user.id} className="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden hover:shadow-md transition-shadow relative">
+                <div key={cart.user.id} className="bg-[var(--surface)] rounded-xl shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] border border-[var(--border)] overflow-hidden transition-all duration-300 hover:border-[var(--border)] group">
                   
                   {/* Cart Header */}
-                  <div className="p-5 flex justify-between items-start border-b border-gray-50">
+                  <div className="p-5 flex justify-between items-start border-b border-[var(--border)] bg-[var(--surface)] group-hover:bg-[var(--surface)] transition-colors duration-300">
                     <div>
-                      <h4 className="font-bold text-gray-900">{cart.user.name}</h4>
-                      <p className="text-sm text-gray-500">{cart.user.email}</p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                        <Clock size={12} /> Active: {cart.lastActivity.toLocaleDateString()}
+                      <h4 className="font-body font-bold text-[var(--text)] text-sm tracking-wide group-hover:text-[var(--brand)] transition-colors">{cart.user.name}</h4>
+                      <p className="font-body text-[11px] font-bold text-[var(--sub)] mt-0.5">{cart.user.email}</p>
+                      <div className="flex items-center gap-1.5 mt-3 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">
+                        <Clock size={12} strokeWidth={2} /> 
+                        <span className="text-[var(--text)]">{cart.lastActivity.toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-extrabold text-gray-900">₹{cart.totalValue.toLocaleString()}</p>
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {/* Font body enforced for all numbers */}
+                      <p className="font-body text-xl font-bold text-[var(--text)] tracking-tight">₹{cart.totalValue.toLocaleString()}</p>
+                      <span className="font-body text-[10px] uppercase tracking-widest font-bold text-[var(--muted)] bg-[var(--surface-muted)] px-2 py-0.5 rounded border border-[var(--border)] inline-block mt-1">
                         {cart.items.length} Items
                       </span>
                     </div>
                   </div>
 
                   {/* Cart Items Preview */}
-                  <div className="bg-gray-50/50 p-4 space-y-3">
+                  <div className="bg-[var(--surface)] p-5 space-y-4">
                     {cart.items.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex-shrink-0">
+                      <div key={idx} className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-[var(--surface)] overflow-hidden flex-shrink-0 border border-[var(--border)]">
                           <img 
                             src={(Array.isArray(item.imageurl) ? item.imageurl[0] : item.imageurl) || "/fallback.png"} 
                             alt={item.name} 
@@ -135,74 +123,75 @@ const CartsWishlistsTab = ({ flatCarts, stats }) => {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                          <p className="text-xs text-gray-500">{item.variantName}</p>
+                          <p className="font-body text-sm font-bold text-[var(--text)] truncate">{item.name}</p>
+                          <p className="font-body text-[11px] font-bold text-[var(--sub)] mt-0.5">{item.variantName}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-bold text-gray-900">₹{item.itemValue.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400">x{item.quantity}</p>
+                          <p className="font-body text-sm font-bold text-[var(--success)]">₹{item.itemValue.toLocaleString()}</p>
+                          <p className="font-body text-[11px] font-bold text-[var(--muted)] mt-0.5">Qty: {item.quantity}</p>
                         </div>
                       </div>
                     ))}
                     {cart.items.length > 3 && (
-                      <p className="text-xs text-center text-gray-400 font-medium pt-1">
-                        + {cart.items.length - 3} more items
+                      <p className="font-body text-[10px] text-center text-[var(--sub)] uppercase tracking-widest font-bold pt-3 border-t border-[var(--border)]">
+                        + {cart.items.length - 3} more items in cart
                       </p>
                     )}
                   </div>
-
-                  {/* Removed individual button footer */}
                 </div>
               ))
             )}
           </div>
         </div>
 
-        {/* --- RIGHT: WISHLIST STATS --- */}
+        {/* RIGHT: WISHLIST STATS */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Heart className="text-rose-500" size={20} /> Most Wishlisted
+            <h3 className="font-display text-2xl font-medium text-[var(--text)] flex items-center gap-3">
+              <Heart className="text-[var(--error)]" strokeWidth={1.5} size={24} /> 
+              Most Wishlisted
             </h3>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="bg-[var(--surface)] rounded-xl shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] border border-[var(--border)] overflow-hidden transition-all duration-300">
             {stats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Heart className="w-10 h-10 text-gray-300 mb-3" />
-                <p className="text-gray-500 font-medium">No wishlist data available.</p>
+              <div className="flex flex-col items-center justify-center py-24">
+                <Heart className="w-12 h-12 text-[var(--muted)] mb-4 opacity-50" strokeWidth={1.5} />
+                <p className="font-display italic text-xl text-[var(--sub)] tracking-wide">No wishlist data available.</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-[var(--border)]">
                 {stats.map((item, index) => (
-                  <div key={item.variantId} className="p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex-shrink-0 w-8 text-center font-bold text-gray-400 text-sm">
-                      #{index + 1}
+                  <div key={item.variantId} className="p-5 flex items-center gap-5 hover:bg-[var(--surface)] transition-colors duration-300 group cursor-default">
+                    {/* Numbers updated to Manrope */}
+                    <div className="flex-shrink-0 w-8 text-center font-body text-sm font-bold text-[var(--muted)] group-hover:text-[var(--brand)] transition-colors">
+                      {String(index + 1).padStart(2, '0')}.
                     </div>
                     
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
+                    <div className="w-14 h-14 rounded-lg bg-[var(--surface)] overflow-hidden flex-shrink-0 border border-[var(--border)] group-hover:border-[var(--brand)] transition-colors duration-300">
                       <img 
                         src={item.productImage || "/fallback.png"} 
                         alt={item.productName} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-gray-900 truncate">{item.productName}</h4>
-                      <p className="text-xs text-gray-500">{item.variantName}</p>
+                      <h4 className="font-body text-sm font-bold text-[var(--text)] truncate tracking-wide group-hover:text-[var(--brand)] transition-colors">{item.productName}</h4>
+                      <p className="font-body text-[11px] font-bold text-[var(--sub)] mt-1">{item.variantName}</p>
                       
-                      <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="mt-3 w-full bg-[var(--surface-muted)] rounded-full h-1 overflow-hidden">
                         <div 
-                          className="bg-rose-500 h-1.5 rounded-full" 
-                          style={{ width: `${Math.min((item.count / stats[0].count) * 100, 100)}%` }}
+                          className="bg-[var(--error)] h-full rounded-full transition-all duration-700 ease-out" 
+                          style={{ width: `${Math.max((item.count / stats[0].count) * 100, 2)}%` }}
                         ></div>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <span className="block text-lg font-bold text-gray-900">{item.count}</span>
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Fans</span>
+                      {/* Numbers updated to Manrope */}
+                      <span className="block font-body text-xl font-bold text-[var(--text)] tracking-tight">{item.count}</span>
+                      <span className="font-body text-[10px] text-[var(--muted)] uppercase font-bold tracking-widest mt-0.5 block">Fans</span>
                     </div>
                   </div>
                 ))}

@@ -223,7 +223,7 @@ export default function CustomAuthModal({ onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-[var(--overlay-strong)] backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onClick={(e) => { if (e.target === e.currentTarget) { handleClose(); } }}
@@ -237,9 +237,9 @@ export default function CustomAuthModal({ onClose }) {
           animate="animate"
           exit="exit"
           ref={modalContentRef}
-          className="w-full max-w-4xl min-h-[650px] bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-50"
+          className="w-full max-w-4xl min-h-[650px] bg-[var(--surface)] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden relative z-50"
         >
-          <button onClick={handleClose} className="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-gray-900 transition-colors bg-white rounded-full shadow-lg">
+          <button onClick={handleClose} className="absolute top-4 right-4 z-50 p-2 text-[var(--muted)] hover:text-[var(--text)] transition-colors bg-[var(--surface)] rounded-full shadow-lg">
             <X size={24} />
           </button>
 
@@ -259,41 +259,41 @@ export default function CustomAuthModal({ onClose }) {
                 <button
                   onClick={handleGoogle}
                   disabled={isGoogleLoading || sendingOtp || otpSent}
-                  className={`flex items-center justify-center gap-3 w-full py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed`}
+                  className={`flex items-center justify-center gap-3 w-full py-3 border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--sub)] hover:bg-[var(--surface-muted)] transition-colors disabled:bg-[var(--surface-muted)] disabled:cursor-not-allowed`}
                 >
-                  {isGoogleLoading ? <Loader2 className="w-5 h-5 animate-spin text-gray-600" /> : <><GoogleIcon className="w-5 h-5" /> Sign in with Google</>}
+                  {isGoogleLoading ? <Loader2 className="w-5 h-5 animate-spin text-[var(--sub)]" /> : <><GoogleIcon className="w-5 h-5" /> Sign in with Google</>}
                 </button>
 
                 <div className="flex items-center my-6">
                   <div className="flex-grow h-px bg-gray-200"></div>
-                  <span className="px-2 text-xs text-gray-400 font-medium">OR</span>
-                  <div className="flex-grow h-px bg-gray-200"></div>
+                  <span className="px-2 text-xs text-[var(--muted)] font-medium">OR</span>
+                  <div className="flex-grow h-px bg-[var(--border)]"></div>
                 </div>
 
                 <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
                   {isSignUp && (
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="relative">
-                        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="First Name" required />
-                        <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">First Name</label>
+                        <input type="text" name="firstName" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent outline-none transition-all placeholder-transparent bg-transparent" />
+                        <label className="absolute left-4 -top-2 text-xs text-[var(--muted)] bg-[var(--surface)] px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-[var(--brand)]">First Name</label>
                       </div>
                       <div className="relative">
-                        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Last Name" required />
-                        <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Last Name</label>
+                        <input type="text" name="lastName" value={lastName} onChange={e => setLastName(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent outline-none transition-all placeholder-transparent bg-transparent" />
+                        <label className="absolute left-4 -top-2 text-xs text-[var(--muted)] bg-[var(--surface)] px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-[var(--brand)]">Last Name</label>
                       </div>
                     </div>
                   )}
                   <div className="relative mb-4">
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={isGoogleLoading} className="peer w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-transparent" placeholder="Email Address" required />
-                    <label className="absolute left-4 -top-2 text-xs text-gray-500 bg-white px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-indigo-600">Email Address</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent outline-none transition-all placeholder-transparent bg-transparent" />
+                    <label className="absolute left-4 -top-2 text-xs text-[var(--muted)] bg-[var(--surface)] px-1 transition-all pointer-events-none peer-placeholder-shown:text-sm peer-placeholder-shown:top-3 peer-focus:-top-2 peer-focus:text-xs peer-focus:text-[var(--brand)]">Email Address</label>
                   </div>
                   {!otpSent ? (
-                    <button type="submit" disabled={sendingOtp || isGoogleLoading} className="w-full bg-black text-white py-3 rounded-lg font-semibold text-sm hover:bg-zinc-800 transition-colors disabled:bg-gray-300">
+                    <button type="submit" disabled={sendingOtp || isGoogleLoading} className="w-full bg-[var(--brand)] text-[var(--brand-contrast)] py-3 rounded-lg font-semibold text-sm hover:bg-[var(--brand-hover)] transition-colors disabled:opacity-50 disabled:pointer-events-none">
                       {sendingOtp ? "Sending..." : "Continue"}
                     </button>
                   ) : (
                     <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-4">Enter the code sent to your email.</p>
+                      <p className="text-sm text-[var(--sub)] mb-4">Enter the code sent to your email.</p>
                       <div className="flex justify-center gap-2 mb-4">
                         {otp.map((digit, i) => (
                           <input
@@ -305,7 +305,7 @@ export default function CustomAuthModal({ onClose }) {
                             value={digit}
                             onChange={e => handleOtpChange(e, i)}
                             onKeyDown={e => handleKeyDown(e, i)}
-                            className={`w-12 h-14 text-center text-2xl font-semibold border-2 rounded-lg transition-all duration-300 ${verified ? 'border-green-500 bg-green-50' : 'border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500'}`}
+                            className={`w-12 h-14 text-center text-2xl font-semibold border-2 rounded-lg transition-all duration-300 ${verified ? 'border-green-500 bg-green-50' : 'border-[var(--border)] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500'}`}
                           />
                         ))}
                       </div>
@@ -314,7 +314,7 @@ export default function CustomAuthModal({ onClose }) {
                           <CheckCircle size={20} /> Verified! Redirecting...
                         </div>
                       ) : (
-                        <button type="button" onClick={handleSendOtp} disabled={sendingOtp || cooldown > 0 || isGoogleLoading} className="text-sm text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline">
+                        <button type="button" onClick={handleSendOtp} disabled={sendingOtp || cooldown > 0 || isGoogleLoading} className="text-sm text-indigo-600 hover:underline disabled:text-[var(--muted)] disabled:no-underline">
                           {sendingOtp ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
                         </button>
                       )}
@@ -322,7 +322,7 @@ export default function CustomAuthModal({ onClose }) {
                   )}
                 </form>
                 {error && <p className="text-red-600 text-sm mt-4 text-center">{error}</p>}
-                <p className="text-center text-sm text-gray-600 mt-8">
+                <p className="text-center text-sm text-[var(--sub)] mt-8">
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <span onClick={handleToggle} className="font-semibold text-indigo-600 cursor-pointer hover:underline">
                     {isSignUp ? "Log In" : "Sign Up"}
@@ -331,7 +331,7 @@ export default function CustomAuthModal({ onClose }) {
               </div>
               <div className={`relative w-full md:w-1/2 h-64 md:h-full ${isSignUp ? 'md:order-2' : 'md:order-1'}`}>
                 <img src={isSignUp ? SignUpImage : SignInImage} alt="Authentication" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/30"></div>
+                <div className="absolute inset-0 bg-[var(--overlay-strong)]"></div>
               </div>
             </motion.div>
           </AnimatePresence>

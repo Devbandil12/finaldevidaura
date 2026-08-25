@@ -2,10 +2,11 @@ import React, { useEffect, useState, useMemo, memo, useContext, useRef } from "r
 import { Star, Quote, X, UploadCloud, CheckCircle, Lock } from "lucide-react";
 import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
-import useCloudinary from "../utils/useCloudinary";
+import useCloudinary from "../hooks/useCloudinary";
 import { optimizeImage } from "../utils/imageOptimizer";
 import { UserContext } from "../contexts/UserContext";
-import { OrderContext } from "../contexts/OrderContext";
+import { useMyOrders } from "../features/orders/hooks/useOrders";
+import { TestimonialCardSkeleton } from "../components/ui/ShimmerSkeleton";
 
 const API_URL = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/testimonials`;
 const FALLBACK_AVATAR = "/images/avatar-placeholder.webp";
@@ -28,6 +29,7 @@ const animationStyles = `
 
 export default function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const formRef = useRef(null);
@@ -36,7 +38,8 @@ export default function TestimonialsSection() {
   const { userdetails, isSignedIn } = useContext(UserContext);
   const { user } = useUser();
   const { getToken } = useAuth(); // 🟢 Get Token Helper
-  const { orders } = useContext(OrderContext);
+  const { data: ordersData } = useMyOrders();
+  const orders = ordersData?.orders || [];
 
   const [form, setForm] = useState({
     name: "",
@@ -85,6 +88,8 @@ export default function TestimonialsSection() {
       }
     } catch (err) {
       console.error("Error loading testimonials:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -165,37 +170,47 @@ export default function TestimonialsSection() {
   const maxTextLength = 220;
 
   return (
-    <section className="relative py-24 md:py-32 bg-white overflow-hidden font-sans selection:bg-black selection:text-white">
+    <section className="relative py-24 md:py-32 bg-[var(--bg)] overflow-hidden font-sans selection:bg-[var(--text)] selection:text-[var(--bg)]">
       <style>{animationStyles}</style>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* === Header === */}
         <div className="text-center mb-20 space-y-4">
-          <span className="block text-xs font-bold tracking-[0.3em] text-gray-400 uppercase">
+          <span className="block text-xs font-bold tracking-[0.3em] text-[var(--muted)] uppercase">
             Community Voices
           </span>
-          <h2 className="text-4xl md:text-6xl font-serif text-black tracking-tight">
+          <h2 className="text-4xl md:text-6xl font-serif text-[var(--text)] tracking-tight">
             The Devid Aura
           </h2>
-          <p className="max-w-xl mx-auto text-lg text-gray-500 font-light leading-relaxed">
+          <p className="max-w-xl mx-auto text-lg text-[var(--muted)] font-light leading-relaxed">
             The presence they feel. The stories they tell.
           </p>
         </div>
 
         {/* === Marquee Streams === */}
         <div className="space-y-10 marquee-container">
-          <Marquee direction="left" speed={60}>
-            {chunks[0]?.map((t, i) => (
-              <TestimonialCard key={`row1-${i}`} data={t} />
-            ))}
-          </Marquee>
-
-          {chunks[1]?.length > 0 && (
-            <Marquee direction="right" speed={70}>
-              {chunks[1].map((t, i) => (
-                <TestimonialCard key={`row2-${i}`} data={t} />
+          {isLoading ? (
+            <div className="flex gap-8 overflow-hidden pt-3 pb-7 pointer-events-none opacity-80">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <TestimonialCardSkeleton key={i} />
               ))}
-            </Marquee>
+            </div>
+          ) : (
+            <>
+              <Marquee direction="left" speed={60}>
+                {chunks[0]?.map((t, i) => (
+                  <TestimonialCard key={`row1-${i}`} data={t} />
+                ))}
+              </Marquee>
+
+              {chunks[1]?.length > 0 && (
+                <Marquee direction="right" speed={70}>
+                  {chunks[1].map((t, i) => (
+                    <TestimonialCard key={`row2-${i}`} data={t} />
+                  ))}
+                </Marquee>
+              )}
+            </>
           )}
         </div>
 
@@ -211,15 +226,14 @@ export default function TestimonialsSection() {
                 text-sm font-bold tracking-widest uppercase transition-all duration-300 rounded-full 
                 ${
                   showForm
-                    ? "bg-white text-black border border-gray-200 shadow-sm"
-                    : "bg-black text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)]"
-                }
-              `}
+                    ? "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] shadow-[var(--shadow)]"
+                    : "bg-[var(--brand)] text-[var(--brand-contrast)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
+                }`}
             >
               {showForm ? "Close" : "Share Your Experience"}
             </motion.button>
           ) : (
-            <div className="flex flex-col items-center gap-3 text-gray-300">
+            <div className="flex flex-col items-center gap-3 text-[var(--muted)]">
               <Lock size={20} />
               <p className="text-sm font-medium">
                 {!isSignedIn
@@ -241,16 +255,16 @@ export default function TestimonialsSection() {
               transition={{ type: "spring", stiffness: 200, damping: 25, mass: 1 }}
               className="overflow-hidden mt-12"
             >
-              <div className="max-w-3xl mx-auto bg-white rounded-[2rem] border border-gray-100 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.05)] p-8 md:p-12 relative">
+              <div className="max-w-3xl mx-auto bg-[var(--surface)] rounded-[2rem] border border-[var(--border)] shadow-[var(--shadow-strong)] p-8 md:p-12 relative">
                 <form onSubmit={handleSubmit}>
                   <div className="flex justify-between items-center mb-10 pb-4 border-b border-gray-50">
-                    <h3 className="text-3xl font-serif text-black">
+                    <h3 className="text-3xl font-serif text-[var(--text)]">
                       Write a Review
                     </h3>
                     <button
                       type="button"
                       onClick={() => setShowForm(false)}
-                      className="text-gray-300 hover:text-black transition-colors p-2"
+                      className="text-[var(--muted)] hover:text-[var(--text)] transition-colors p-2"
                     >
                       <X size={28} strokeWidth={1.5} />
                     </button>
@@ -260,14 +274,14 @@ export default function TestimonialsSection() {
                     <div className="flex flex-col items-center gap-4">
                       {form.avatar ? (
                         <div className="text-center group">
-                          <div className="relative p-1 rounded-full border-2 border-gray-100 group-hover:border-gray-300 transition-colors">
+                          <div className="relative p-1 rounded-full border-2 border-[var(--border)] group-hover:border-[var(--border)] transition-colors">
                             <img
                                 src={optimizeImage(form.avatar, 'thumbnail')}
                                 alt="User"
                                 className="w-28 h-28 rounded-full object-cover"
                             />
                           </div>
-                          <span className="block mt-3 text-xs font-bold text-gray-400 uppercase tracking-wider truncate max-w-[140px]">
+                          <span className="block mt-3 text-xs font-bold text-[var(--muted)] uppercase tracking-wider truncate max-w-[140px]">
                             {form.name}
                           </span>
                         </div>
@@ -275,11 +289,11 @@ export default function TestimonialsSection() {
                         <label
                           className={`
                             w-32 h-32 rounded-full border-2 border-dashed flex flex-col items-center justify-center 
-                            cursor-pointer transition-all duration-300 hover:border-black hover:bg-gray-50/50
+                            cursor-pointer transition-all duration-300 hover:border-black hover:bg-[var(--surface-muted)]/50
                             ${
                               uploading
-                                ? "border-gray-200 bg-gray-50"
-                                : "border-gray-200"
+                                ? "border-[var(--border)] bg-[var(--surface-muted)]"
+                                : "border-[var(--border)]"
                             }
                           `}
                         >
@@ -290,7 +304,7 @@ export default function TestimonialsSection() {
                             disabled={uploading}
                             className="hidden"
                           />
-                          <div className="text-center text-gray-300 px-2">
+                          <div className="text-center text-[var(--muted)] px-2">
                             <UploadCloud size={24} strokeWidth={1.5} className="mx-auto mb-2" />
                             <span className="text-[11px] uppercase font-bold tracking-wider">
                               {uploading ? "..." : "Upload"}
@@ -315,13 +329,13 @@ export default function TestimonialsSection() {
                           onChange={(e) =>
                             setForm({ ...form, name: e.target.value })
                           }
-                          className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-black peer"
+                          className="block py-2.5 px-0 w-full text-sm text-[var(--text)] bg-transparent border-0 border-b-2 border-[var(--border)] appearance-none focus:outline-none focus:ring-0 focus:border-black peer"
                           placeholder=" "
                           required
                         />
                         <label
                           htmlFor="name"
-                          className="peer-focus:font-medium absolute text-sm text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-black peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                          className="peer-focus:font-medium absolute text-sm text-[var(--muted)] duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-[var(--brand)] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
                         >
                           Full Name
                         </label>
@@ -335,19 +349,19 @@ export default function TestimonialsSection() {
                           onChange={(e) =>
                             setForm({ ...form, title: e.target.value })
                           }
-                          className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-200 appearance-none focus:outline-none focus:ring-0 focus:border-black peer"
+                          className="block py-2.5 px-0 w-full text-sm text-[var(--text)] bg-transparent border-0 border-b-2 border-[var(--border)] appearance-none focus:outline-none focus:ring-0 focus:border-black peer"
                           placeholder=" "
                         />
                         <label
                           htmlFor="title"
-                          className="peer-focus:font-medium absolute text-sm text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-black peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                          className="peer-focus:font-medium absolute text-sm text-[var(--muted)] duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-[var(--brand)] peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
                         >
                           Headline (Optional)
                         </label>
                       </div>
 
                       <div>
-                        <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                        <span className="block text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3">
                           Your Rating
                         </span>
                         <div className="flex gap-2">
@@ -366,7 +380,7 @@ export default function TestimonialsSection() {
                                 className={`transition-colors duration-200 ${
                                   i < form.rating
                                     ? "fill-[#C5A059] text-[#C5A059]"
-                                    : "fill-transparent text-gray-200 hover:text-gray-300"
+                                    : "fill-transparent text-[var(--border)] hover:text-[var(--muted)]"
                                 }`}
                               />
                             </motion.button>
@@ -383,9 +397,9 @@ export default function TestimonialsSection() {
                           maxLength={maxTextLength}
                           required
                           placeholder="Share your experience..."
-                          className="w-full bg-white border-2 border-gray-100 rounded-xl p-5 text-stone-900 text-sm min-h-[140px] focus:outline-none focus:border-black transition-colors resize-y placeholder:text-gray-300"
+                          className="w-full bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl p-5 text-[var(--text)] text-sm min-h-[140px] focus:outline-none focus:border-[var(--brand)] transition-colors resize-y placeholder:text-[var(--muted)]"
                         />
-                        <div className="absolute bottom-3 right-4 text-[10px] font-medium text-gray-300">
+                        <div className="absolute bottom-3 right-4 text-[10px] font-medium text-[var(--muted)]">
                           {form.text.length}/{maxTextLength}
                         </div>
                       </div>
@@ -395,7 +409,7 @@ export default function TestimonialsSection() {
                         disabled={uploading}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className="w-full py-4 bg-black text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+                        className="w-full py-4 bg-[var(--brand)] text-[var(--brand-contrast)] text-sm font-bold uppercase tracking-widest rounded-xl shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                       >
                         {uploading ? "Uploading..." : "Publish Review"}
                       </motion.button>
@@ -414,22 +428,22 @@ export default function TestimonialsSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/50 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--overlay)] backdrop-blur-md"
           >
             <motion.div 
                initial={{ scale: 0.9, y: 20 }}
                animate={{ scale: 1, y: 0 }}
                exit={{ scale: 0.9, y: 20 }}
                transition={{ type: "spring", damping: 25 }}
-              className="bg-white rounded-[2rem] p-10 max-w-sm w-full text-center shadow-[0_20px_60px_-20px_rgba(0,0,0,0.1)] border border-gray-50"
+              className="bg-[var(--surface)] rounded-[2rem] p-10 max-w-sm w-full text-center shadow-[var(--shadow-strong)] border border-[var(--border)]"
             >
-              <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <CheckCircle size={36} className="text-white" strokeWidth={1.5} />
+              <div className="w-20 h-20 bg-[var(--brand)] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <CheckCircle size={36} className="text-[var(--brand-contrast)]" strokeWidth={1.5} />
               </div>
-              <h3 className="text-2xl font-serif text-black mb-3">
+              <h3 className="text-2xl font-serif text-[var(--text)] mb-3">
                 Review Submitted
               </h3>
-              <p className="text-gray-500 font-light">
+              <p className="text-[var(--muted)] font-light">
                 Thank you for adding your voice to the Aura.
               </p>
             </motion.div>
@@ -481,15 +495,15 @@ const TestimonialCard = memo(({ data }) => {
     <motion.div
       whileHover={{ y: -8, scale: 1.005 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className="group relative w-[320px] md:w-[340px] bg-white rounded-[2rem] p-8 
-        border border-gray-100/50
+      className="group relative w-[320px] md:w-[340px] bg-[var(--surface)] rounded-[2rem] p-8 
+        border border-[var(--border)]/50
         shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] 
         hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] 
-        hover:border-gray-200/80
+        hover:border-[var(--border)]/80
         transition-colors duration-300"
     >
       <Quote
-        className="absolute top-8 right-8 text-gray-50 scale-x-[-1] transition-colors duration-300 group-hover:text-gray-100"
+        className="absolute top-8 right-8 text-[var(--surface-muted)] scale-x-[-1] transition-colors duration-300 group-hover:text-[var(--border)]"
         size={48}
         strokeWidth={1}
       />
@@ -497,7 +511,7 @@ const TestimonialCard = memo(({ data }) => {
       <div className="relative z-10 flex items-center gap-5 mb-6">
         <div className="relative w-14 h-14 rounded-full overflow-hidden border-[3px] border-white shadow-sm group-hover:shadow-md transition-all duration-300">
           {!loaded && (
-            <div className="absolute inset-0 bg-gray-50 animate-pulse" />
+            <div className="absolute inset-0 bg-[var(--surface-muted)] animate-pulse" />
           )}
           <img
             src={avatarUrl}
@@ -511,7 +525,7 @@ const TestimonialCard = memo(({ data }) => {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-[15px] font-bold text-black leading-tight mb-1">
+          <span className="text-[15px] font-bold text-[var(--text)] leading-tight mb-1">
             {data.name}
           </span>
           <div className="flex gap-0.5">
@@ -523,7 +537,7 @@ const TestimonialCard = memo(({ data }) => {
                 className={
                   i < data.rating
                     ? "fill-[#C5A059] text-[#C5A059]"
-                    : "fill-transparent text-gray-200"
+                    : "fill-transparent text-[var(--border)]"
                 }
               />
             ))}
@@ -533,11 +547,11 @@ const TestimonialCard = memo(({ data }) => {
 
       <div className="relative z-10">
         {data.title && (
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 line-clamp-1 group-hover:text-black transition-colors">
+          <h4 className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3 line-clamp-1 group-hover:text-[var(--text)] transition-colors">
             {data.title}
           </h4>
         )}
-        <p className="text-[15px] leading-relaxed text-gray-600 font-light italic line-clamp-4">
+        <p className="text-[15px] leading-relaxed text-[var(--sub)] font-light italic line-clamp-4">
           "{data.text}"
         </p>
       </div>

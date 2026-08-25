@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { ArrowRight, Droplet, Clock, Sparkles, ShieldCheck } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
+import { useBanners } from "../features/cms/hooks/useCms";
+import { ShimmerBlock as ShimmerSkeleton } from "../components/ui/ShimmerSkeleton";
 
 // DEFAULT ASSETS
 import bottleMain from "/images/SAPPHIRE-MIST.webp";
@@ -20,20 +22,17 @@ const HeroSection = () => {
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const boundsRef = useRef({ left: 0, top: 0, width: 0, height: 0 });
 
-  const [activeBanner, setActiveBanner] = useState(() => {
-    try {
-      const cached = sessionStorage.getItem("hero_banner_cache");
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) { return null; }
-  });
 
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 1024 : false
   );
   const [isReducedMotion, setIsReducedMotion] = useState(false);
 
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") || "";
-
+  const { data: banners, isLoading } = useBanners();
+  const activeBanner = useMemo(() => {
+    if (!banners) return null;
+    return banners.find((b) => b.type === "hero" && b.isActive) || null;
+  }, [banners]);
   // Check for reduced motion preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -44,37 +43,7 @@ const HeroSection = () => {
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  // 1. Fetch Banner Data with improved caching
-  useEffect(() => {
-    const controller = new AbortController();
-    const fetchBanners = async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/cms/banners`, { 
-          signal: controller.signal,
-          headers: { 'Cache-Control': 'max-age=300' }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const hero = data.find((b) => b.type === "hero" && b.isActive);
-          if (hero) {
-            setActiveBanner((prev) => {
-              const prevStr = JSON.stringify(prev);
-              const newStr = JSON.stringify(hero);
-              if (prevStr !== newStr) {
-                sessionStorage.setItem("hero_banner_cache", newStr);
-                return hero;
-              }
-              return prev;
-            });
-          }
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') console.error("Banner fetch failed:", err);
-      }
-    };
-    fetchBanners();
-    return () => controller.abort();
-  }, [BACKEND_URL]);
+  // CMS data is fetched via React Query hooks
 
   // Optimized mobile detection
   useEffect(() => {
@@ -136,6 +105,8 @@ const HeroSection = () => {
 
   // 4. Optimized GSAP Entrance Animations
   useEffect(() => {
+    if (isLoading) return;
+
     if (isReducedMotion) {
       gsap.set([".hero-text-reveal", ".hero-image-container", ".bg-decoration", ".usp-item"], { 
         opacity: 1, y: 0, x: 0, scale: 1 
@@ -182,7 +153,7 @@ const HeroSection = () => {
       }
     }, comp);
     return () => ctx.revert();
-  }, [isMobile, isReducedMotion]);
+  }, [isMobile, isReducedMotion, isLoading]);
 
   // 5. Highly Optimized Mouse Effect with RAF
   useEffect(() => {
@@ -277,11 +248,30 @@ const HeroSection = () => {
     { icon: <ShieldCheck className="w-5 h-5" />, title: "Skin Safe", desc: "Pure ethanol & skin-friendly base." }
   ], []);
 
+  if (isLoading) {
+    return (
+      <section className="relative min-h-[90vh] md:h-screen w-full bg-[var(--bg)] overflow-hidden pb-20 lg:pb-0">
+        <main className="relative z-10 w-full max-w-[1800px] mx-auto min-h-[90vh] md:min-h-screen flex flex-col lg:flex-row items-center px-6 lg:px-16 pt-[80px]">
+          <div className="w-full lg:w-[45%] flex flex-col justify-center items-center lg:items-start text-center lg:text-left z-20 order-2 lg:order-1 mt-12 lg:mt-0 gap-6">
+            <ShimmerSkeleton className="h-4 w-32 rounded" />
+            <ShimmerSkeleton className="h-16 w-3/4 rounded-2xl" />
+            <ShimmerSkeleton className="h-6 w-2/3 rounded" />
+            <ShimmerSkeleton className="h-20 w-full max-w-md rounded-2xl" />
+            <ShimmerSkeleton className="h-12 w-48 rounded-full" />
+          </div>
+          <div className="w-full lg:w-[50%] h-[50vh] lg:h-[85vh] lg:max-h-[900px] relative flex items-center justify-center lg:items-center order-1 lg:order-2 ml-auto">
+             <ShimmerSkeleton className="w-[220px] lg:w-[280px] h-auto aspect-[4/6] rounded-[3rem]" />
+          </div>
+        </main>
+      </section>
+    );
+  }
+
   return (
-    <div ref={comp} className="relative w-full min-h-screen text-[#1a1a1a] overflow-hidden selection:bg-[#D4AF37] selection:text-white pb-20 lg:pb-0">
+    <section ref={comp} className="relative w-full min-h-screen text-[var(--text)] overflow-hidden selection:bg-[var(--accent)] selection:text-[var(--brand-contrast)] pb-20 lg:pb-0">
       {/* Background Watermark */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0 flex items-center justify-center opacity-[0.03]">
-        <h1 className="text-[19vw] font-bold tracking-tighter text-black whitespace-nowrap parallax-bg-text origin-center">
+        <h1 className="text-[19vw] font-bold tracking-tighter text-[var(--text)] whitespace-nowrap parallax-bg-text origin-center">
           DEVID AURA
         </h1>
       </div>
@@ -290,36 +280,36 @@ const HeroSection = () => {
         {/* LEFT: Content */}
         <div className="w-full lg:w-[45%] flex flex-col justify-center items-center lg:items-start text-center lg:text-left z-20 order-2 lg:order-1 mt-12 lg:mt-0">
           <div className="hero-text-reveal flex items-center gap-3 mb-4 opacity-0">
-            <span className="h-[1px] w-12 bg-[#D4AF37]"></span>
-            <span className="text-xs font-bold tracking-[0.3em] uppercase text-[#D4AF37]">{displayData.subtitle}</span>
+            <span className="h-[1px] w-12 bg-[var(--accent)]"></span>
+            <span className="text-xs font-bold tracking-[0.3em] uppercase text-[var(--accent)]">{displayData.subtitle}</span>
           </div>
           <div className="overflow-hidden mb-2">
-            <h1 className="hero-text-reveal text-5xl lg:text-7xl xl:text-8xl font-medium leading-[1.1] pb-2 text-gray-900 opacity-0">
+            <h1 className="hero-text-reveal text-5xl lg:text-7xl xl:text-8xl font-medium leading-[1.1] pb-2 text-[var(--text)] opacity-0">
               {displayData.title}
             </h1>
           </div>
           <div className="overflow-hidden mb-8">
-            <p className="hero-text-reveal text-xl lg:text-2xl italic text-gray-600 opacity-0">
+            <p className="hero-text-reveal text-xl lg:text-2xl italic text-[var(--sub)] opacity-0">
               {displayData.poeticLine}
             </p>
           </div>
           <div className="overflow-hidden max-w-md mb-10">
-            <p className="hero-text-reveal text-sm lg:text-base text-stone-700 leading-relaxed font-light opacity-0">
+            <p className="hero-text-reveal text-sm lg:text-base text-[var(--sub)] leading-relaxed font-light opacity-0">
               {displayData.description}
             </p>
           </div>
           <div className="hero-text-reveal opacity-0 mb-16">
             <button 
               onClick={handleLinkAction} 
-              className="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-gray-900/10 transition-all hover:border-[#D4AF37] active:scale-95"
+              className="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-[var(--border)] transition-all hover:border-[var(--accent)] active:scale-95"
               aria-label={displayData.buttonText}
             >
-              <div className="absolute inset-0 w-full h-full bg-[#1a1a1a] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out"></div>
+              <div className="absolute inset-0 w-full h-full bg-[var(--brand)] scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out"></div>
               <div className="relative flex items-center gap-4">
-                <span className="text-xs font-bold tracking-[0.2em] uppercase text-gray-900 group-hover:text-[#D4AF37] transition-colors duration-300">
+                <span className="text-xs font-bold tracking-[0.2em] uppercase text-[var(--text)] group-hover:text-[var(--brand-contrast)] transition-colors duration-300">
                   {displayData.buttonText}
                 </span>
-                <ArrowRight className="w-4 h-4 text-gray-900 group-hover:text-white transition-colors duration-300" />
+                <ArrowRight className="w-4 h-4 text-[var(--text)] group-hover:text-[var(--brand-contrast)] transition-colors duration-300" />
               </div>
             </button>
           </div>
@@ -329,18 +319,18 @@ const HeroSection = () => {
               {features.map((item, index) => (
                 <div 
                   key={index} 
-                  className="usp-item group flex flex-shrink-0 items-start gap-4 opacity-0 w-[280px] snap-center bg-white/50 p-4 rounded-2xl border border-gray-100 lg:w-auto lg:bg-transparent lg:p-0 lg:border-none"
+                  className="usp-item group flex flex-shrink-0 items-start gap-4 opacity-0 w-[280px] snap-center bg-[var(--surface-muted)]/50 p-4 rounded-2xl border border-[var(--border)] lg:w-auto lg:bg-transparent lg:p-0 lg:border-none"
                 >
-                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full bg-[#D4AF37]/5 flex items-center justify-center border border-[#D4AF37]/10 transition-all duration-300 group-hover:bg-[#D4AF37] group-hover:scale-110">
-                    <div className="text-[#D4AF37] group-hover:text-white transition-colors duration-300">
+                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full bg-[var(--accent)]/5 flex items-center justify-center border border-[var(--accent)]/10 transition-all duration-300 group-hover:bg-[var(--accent)] group-hover:scale-110">
+                    <div className="text-[var(--accent)] group-hover:text-[var(--bg)] transition-colors duration-300">
                       {item.icon}
                     </div>
                   </div>
                   <div className="text-left flex flex-col justify-center">
-                    <h2 className="text-[22px] mb-1 group-hover:text-[#D4AF37] transition-colors duration-300">
+                    <h2 className="text-[22px] mb-1 group-hover:text-[var(--accent)] transition-colors duration-300">
                       {item.title}
                     </h2>
-                    <p className="text-sm opacity-80 text-stone-600 leading-snug">
+                    <p className="text-sm opacity-80 text-[var(--sub)] leading-snug">
                       {item.desc}
                     </p>
                   </div>
@@ -349,7 +339,7 @@ const HeroSection = () => {
             </div>
             <div className="flex lg:hidden justify-center gap-1.5 mt-2" role="presentation">
               {features.map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]/20" />
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]/20" />
               ))}
             </div>
           </div>
@@ -357,7 +347,7 @@ const HeroSection = () => {
 
         {/* RIGHT: Visuals */}
         <div className="w-full lg:w-[50%] h-[50vh] lg:h-[85vh] lg:max-h-[900px] relative flex items-center justify-center lg:items-center order-1 lg:order-2 lg:pt-15 lg:pr-12 ml-auto" style={{ perspective: '1000px' }}>
-          <div className="bg-decoration absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/3 w-[300px] lg:w-[600px] h-[300px] lg:h-[600px] bg-gradient-to-tr from-[#D4AF37]/18 to-transparent rounded-full blur-3xl opacity-0"></div>
+          <div className="bg-decoration absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/3 w-[300px] lg:w-[600px] h-[300px] lg:h-[600px] bg-gradient-to-tr from-[var(--accent)]/18 to-transparent rounded-full blur-3xl opacity-0"></div>
           <div className="hero-image-container relative w-full h-full flex items-center justify-center opacity-0 scale-125">
             {displayData.layer1 && (
               <div 
@@ -426,7 +416,7 @@ const HeroSection = () => {
           * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
         }
       `}</style>
-    </div>
+    </section>
   );
 };
 

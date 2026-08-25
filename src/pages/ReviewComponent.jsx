@@ -16,7 +16,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
-import useCloudinary from "../utils/useCloudinary";
+import useCloudinary from "../hooks/useCloudinary";
 import imageCompression from 'browser-image-compression';
 import { useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 
@@ -45,7 +45,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         type="button"
-        className="inline-flex justify-between items-center w-full rounded-md border border-slate-100 px-4 py-2 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 "
+        className="inline-flex justify-between items-center w-full rounded-md border border-[var(--border)] px-4 py-2 bg-[var(--surface)] text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-muted)] "
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedOption.label}
@@ -61,7 +61,7 @@ const CustomDropdown = ({ options, value, onChange }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-[0_8px_12px_rgba(230,229,229,0.3)] bg-white z-50"
+            className="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-[var(--shadow-strong)] bg-[var(--surface)] z-50"
           >
             <div className="py-1">
               {options.map((option) => (
@@ -476,7 +476,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                         {isLastImage && remainingImages > 0 && (
                           <div
                             onClick={() => openImagePreview(idx, r.photoUrls)}
-                            className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xl font-bold rounded-md cursor-pointer"
+                            className="absolute inset-0 bg-[var(--overlay-strong)] flex items-center justify-center text-[var(--surface)] text-xl font-bold rounded-md cursor-pointer"
                           >
                             +{remainingImages}
                           </div>
@@ -512,7 +512,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
         {!formOpen && userdetails && (
           <motion.button
             onClick={() => setFormOpen(true)}
-            className="px-8 py-3 bg-zinc-900 text-white rounded-md font-semibold transition-colors hover:bg-zinc-700 shadow-lg"
+            className="px-8 py-3 bg-[var(--brand)] text-[var(--brand-contrast)] rounded-md font-semibold transition-colors hover:bg-[var(--brand-hover)] shadow-[var(--shadow)]"
             whileHover={{ y: -2 }}
             whileTap={{ y: 1 }}
           >
@@ -598,7 +598,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
-                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-slate-800 text-white rounded-full p-0.5 shadow-md hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="absolute top-0 right-0 -mt-2 -mr-2 bg-[var(--surface-muted)] text-[var(--text)] rounded-full p-0.5 shadow-md hover:bg-[var(--error)] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--error)]"
                         aria-label="Remove image"
                       >
                         <X size={14} />
@@ -611,7 +611,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-12 px-6 bg-zinc-900 text-white rounded-md font-semibold transition-all hover:bg-zinc-700 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full h-12 px-6 bg-[var(--brand)] text-[var(--brand-contrast)] rounded-md font-semibold transition-all hover:bg-[var(--brand-hover)] disabled:bg-[var(--surface-muted)] disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isSubmitting ? (
                   <Loader2 className="animate-spin" size={24} />
@@ -626,18 +626,18 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
       <AnimatePresence>
         {preview.index !== null && (
           <motion.div
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4"
+            className="fixed inset-0 bg-[var(--overlay-strong)] flex items-center justify-center z-[1000] p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={closePreview}
           >
             <motion.div
-              className="relative bg-white rounded-lg p-2 max-w-4xl max-h-[90vh] flex flex-col items-center"
+              className="relative bg-[var(--surface)] rounded-lg p-2 max-w-4xl max-h-[90vh] flex flex-col items-center"
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={closePreview}
-                className="absolute top-3 right-3 p-2 bg-white/70 backdrop-blur-sm rounded-full shadow-md text-slate-800 hover:bg-white z-10"
+                className="absolute top-3 right-3 p-2 bg-[var(--surface)]/70 backdrop-blur-sm rounded-full shadow-[var(--shadow)] text-[var(--text)] hover:bg-[var(--surface)] z-10"
               >
                 <X size={24} />
               </button>
@@ -657,7 +657,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                     e.stopPropagation();
                     setPreview(p => ({ ...p, index: (p.index > 0 ? p.index - 1 : p.images.length - 1) }))
                   }}
-                  className="p-3 bg-white/70 backdrop-blur-sm rounded-full text-slate-800 hover:bg-white shadow-md"
+                  className="p-3 bg-[var(--surface)]/70 backdrop-blur-sm rounded-full text-[var(--text)] hover:bg-[var(--surface)] shadow-[var(--shadow)]"
                 >
                   <ChevronLeft size={24} />
                 </button>
@@ -666,7 +666,7 @@ const ReviewComponent = ({ productId, userdetails, editReviewId }) => {
                     e.stopPropagation();
                     setPreview(p => ({ ...p, index: (p.index < p.images.length - 1 ? p.index + 1 : 0) }))
                   }}
-                  className="p-3 bg-white/70 backdrop-blur-sm rounded-full text-slate-800 hover:bg-white shadow-md"
+                  className="p-3 bg-[var(--surface)]/70 backdrop-blur-sm rounded-full text-[var(--text)] hover:bg-[var(--surface)] shadow-[var(--shadow)]"
                 >
                   <ChevronRight size={24} />
                 </button>

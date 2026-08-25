@@ -11,10 +11,21 @@
 
   <meta name="description"
     content="More than perfume, Devid Aura is an invisible aura of confidence and artistry..." />
+  <script>
+    (function() {
+      try {
+        var localTheme = localStorage.getItem('theme');
+        if (localTheme === 'dark' || (!localTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
+  <div id="portal-root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 

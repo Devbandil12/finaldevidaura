@@ -3,7 +3,7 @@ import React, { useEffect, useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaShoppingCart, FaMagic } from "react-icons/fa";
-import { CartContext } from "../contexts/CartContext";
+import { useAddToCart } from "../features/cart/hooks/useCart";
 import { UserContext } from "../contexts/UserContext";
 import HeroButton from "../Components/HeroButton"; 
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -27,7 +27,7 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
   const [loading, setLoading] = useState(false);
   const [addingProductId, setAddingProductId] = useState(null);
 
-  const { addToCart } = useContext(CartContext);
+  const { mutateAsync: addToCart } = useAddToCart();
   const { userdetails } = useContext(UserContext);
 
   const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
@@ -76,14 +76,14 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
   const handleAddToCart = (variant, product) => {
     if (addingProductId) return;
     setAddingProductId(variant.id);
-    addToCart(product, variant, 1);
+    addToCart({ product, variant, quantity: 1 });
     setTimeout(() => setAddingProductId(null), 1000);
   };
 
   if (recommendations.length === 0) return null;
 
   return (
-    <div className="pt-12 mt-8 border-t border-gray-100">
+    <div className="pt-12 mt-8 border-t border-[var(--border)]">
       
       {/* --- HEADER --- */}
       <div className="flex items-center gap-3 mb-8 px-1">
@@ -91,10 +91,10 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
             <FaMagic className="w-4 h-4" /> 
         </div>
         <div>
-          <h2 className="text-xl md:text-2xl font-serif text-gray-900 leading-none">
+          <h2 className="text-xl md:text-2xl font-serif text-[var(--text)] leading-none">
             Recommended for You
           </h2>
-          <p className="text-xs text-gray-400 font-medium mt-1.5 tracking-wide">
+          <p className="text-xs text-[var(--muted)] font-medium mt-1.5 tracking-wide">
             Curated based on your taste profile
           </p>
         </div>
@@ -137,12 +137,12 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
                 style={gpuStyle}
                 transition={rigidTransition}
                 // 🟢 MATCHED CARD STYLING (Fixed width on mobile for scroll)
-                className="group relative flex flex-col bg-white rounded-2xl min-w-[180px] w-[60vw] md:w-auto flex-shrink-0 snap-center h-full border border-transparent hover:border-gray-100 transition-colors"
+                className="group relative flex flex-col bg-white rounded-2xl min-w-[180px] w-[60vw] md:w-auto flex-shrink-0 snap-center h-full border border-transparent hover:border-[var(--border)] transition-colors"
               >
                 
                 {/* --- IMAGE SECTION --- */}
                 <div 
-                  className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-gray-50 mb-3 cursor-pointer"
+                  className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[var(--surface-muted)] mb-3 cursor-pointer"
                   onClick={() => {
                     window.scrollTo(0,0);
                     navigate(`/product/${product.id}`);
@@ -170,7 +170,7 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
                   
                   {/* Title */}
                   <h3 
-                    className="font-serif text-lg text-gray-900 group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate cursor-pointer"
+                    className="font-serif text-lg text-[var(--text)] group-hover:underline decoration-gray-300 underline-offset-4 decoration-1 truncate cursor-pointer"
                     onClick={() => navigate(`/product/${product.id}`)}
                   >
                     {product.name}
@@ -178,9 +178,9 @@ const CartRecommendations = ({ currentCartItems = [] }) => {
 
                   {/* Price Row */}
                   <div className="flex items-center gap-2 text-sm mb-3">
-                    <span className="font-bold text-gray-900">₹{price}</span>
+                    <span className="font-bold text-[var(--text)]">₹{price}</span>
                     {cheapestVariant.discount > 0 && (
-                      <span className="text-gray-400 line-through text-xs">
+                      <span className="text-[var(--muted)] line-through text-xs">
                         ₹{cheapestVariant.oprice}
                       </span>
                     )}

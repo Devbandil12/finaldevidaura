@@ -2,12 +2,12 @@ import React from "react";
 
 export default function TermsAndConditions() {
   return (
-    <div className=" text-zinc-700 space-y-12 px-2 pb-6">
+    <div className=" text-[var(--sub)] space-y-12 px-2 pb-6">
       
       {/* Header */}
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-zinc-900 tracking-tight">Terms of Service</h2>
-        <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest mt-2">Effective Date: July 18, 2025</p>
+        <h2 className="text-3xl font-bold text-[var(--text)] tracking-tight">Terms of Service</h2>
+        <p className="text-xs font-medium text-[var(--muted)] uppercase tracking-widest mt-2">Effective Date: July 18, 2025</p>
       </div>
 
       <div className="space-y-10 relative">
@@ -87,8 +87,8 @@ export default function TermsAndConditions() {
       </div>
 
       <div className="mt-12 text-center pt-8 border-t border-zinc-100">
-        <p className="text-xs text-zinc-400">Questions about the Terms?</p>
-        <a href="mailto:devidauraofficial@gmail.com" className="text-sm font-medium text-zinc-900 hover:text-blue-600 transition-colors">devidauraofficial@gmail.com</a>
+        <p className="text-xs text-[var(--muted)]">Questions about the Terms?</p>
+        <a href="mailto:devidauraofficial@gmail.com" className="text-sm font-medium text-[var(--text)] hover:text-[var(--brand)] transition-colors">devidauraofficial@gmail.com</a>
       </div>
     </div>
   );
@@ -97,12 +97,12 @@ export default function TermsAndConditions() {
 function TermSection({ num, title, content }) {
   return (
     <div className="relative flex flex-col sm:flex-row gap-4 sm:gap-8 items-start group">
-      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 text-zinc-400 font-semibold flex items-center justify-center text-sm shadow-[0_4px_10px_rgb(0,0,0,0.03)] group-hover:scale-105 group-hover:bg-white group-hover:border-zinc-200 group-hover:text-black transition-all duration-300 z-10">
+      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[var(--surface-muted)] border border-[var(--border)] text-[var(--muted)] font-semibold flex items-center justify-center text-sm shadow-[0_4px_10px_rgb(0,0,0,0.03)] group-hover:scale-105 group-hover:bg-[var(--surface)] group-hover:border-[var(--brand)] group-hover:text-[var(--text)] transition-all duration-300 z-10">
         {num}
       </div>
-      <div className="pt-1">
-        <h3 className="text-zinc-900 font-bold text-base mb-2 group-hover:text-black transition-colors">{title}</h3>
-        <div className="text-sm text-zinc-500 leading-relaxed font-light">
+      <div>
+        <h3 className="text-[var(--text)] font-bold text-base mb-2 group-hover:text-[var(--brand)] transition-colors">{title}</h3>
+        <div className="text-sm text-[var(--sub)] leading-relaxed font-light">
             {content}
         </div>
       </div>

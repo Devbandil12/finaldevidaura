@@ -143,7 +143,7 @@ export default function ActivityLogTab({ orders, tickets, reviews, securityLogs,
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: groupIdx * 0.1 }}
           >
-            <div className="sticky top-0 bg-[#FDFDFD] z-10 py-2 mb-4">
+            <div className="sticky top-0 bg-[var(--bg)] z-10 py-2 mb-4">
                <span className="inline-block px-3 py-1 bg-zinc-100 rounded-lg text-[10px] font-bold text-zinc-500 uppercase tracking-widest border border-zinc-200">
                   {label}
                </span>

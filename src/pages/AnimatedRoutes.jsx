@@ -29,7 +29,7 @@ const Login = lazy(() => import("./CustomAuthModal"));
 
 // --- Utilities ---
 import CheckoutGuard from "../CheckoutGuard";
-import { AdminProvider } from "../contexts/AdminContext";
+
 
 // Helper for Home Page Composition
 const HomePage = () => (
@@ -72,11 +72,7 @@ const AnimatedRoutes = () => {
                 <Route path="/myaccount" element={<UserPage />} />
                 <Route path="/contact" element={<ContactUs />} />
 
-                <Route path="/Admin" element={
-                  <AdminProvider>
-                    <Adminpannel />
-                  </AdminProvider>
-                } />
+                <Route path="/Admin" element={<Adminpannel />} />
 
                 <Route element={<CheckoutGuard />}>
                   <Route path="/checkout" element={<Checkout />} />

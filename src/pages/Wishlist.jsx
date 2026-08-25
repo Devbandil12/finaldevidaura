@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { ShoppingCart, X, Trash2, ArrowRight, Sparkles, Star, ShoppingBag } from "lucide-react";
-import { CartContext } from "../contexts/CartContext";
-import Loader from "../Components/Loader";
+import { useWishlist, useRemoveFromWishlist, useClearWishlist, useMoveFromWishlistToCart } from "../features/cart/hooks/useWishlist";
+import { ProductCardSkeleton } from "../components/ui/ShimmerSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -16,9 +16,9 @@ const Button = ({ onClick, variant = 'primary', size = 'default', className = ''
   };
 
   const variantStyles = {
-    primary: "bg-gray-900 text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] hover:shadow-[0_15px_25px_-5px_rgba(0,0,0,0.2)] hover:bg-black",
-    secondary: "bg-white text-gray-700 border border-gray-100 hover:border-gray-200 hover:bg-gray-50 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]",
-    text: "bg-transparent text-gray-400 hover:text-gray-900 px-0 h-auto"
+    primary: "bg-[var(--brand)] text-[var(--brand-contrast)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] hover:bg-[var(--brand-hover)]",
+    secondary: "bg-[var(--surface)] text-[var(--sub)] border border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--surface-muted)] shadow-[var(--shadow)]",
+    text: "bg-transparent text-[var(--muted)] hover:text-[var(--text)] px-0 h-auto"
   };
 
   return (
@@ -34,18 +34,33 @@ const Button = ({ onClick, variant = 'primary', size = 'default', className = ''
 
 const Wishlist = () => {
   const navigate = useNavigate();
-  const {
-    wishlist,
-    isWishlistLoading,
-    removeFromWishlist,
-    clearWishlist,
-    moveFromWishlistToCart,
-  } = useContext(CartContext);
+  const { data: wishlist = [], isLoading: isWishlistLoading } = useWishlist();
+  const { mutateAsync: removeFromWishlist } = useRemoveFromWishlist();
+  const { mutateAsync: clearWishlist } = useClearWishlist();
+  const { mutateAsync: moveFromWishlistToCart } = useMoveFromWishlistToCart();
 
   if (isWishlistLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFDFD]">
-        <Loader text="Loading collection..." />
+      <div className="min-h-screen text-[var(--text)] bg-[var(--bg)]">
+        <main className="max-w-7xl mx-auto px-4 md:px-8 w-full pt-[80px] pb-32">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-medium text-[var(--text)] mb-2 tracking-tight">
+                Wishlist
+              </h1>
+              <p className="text-[var(--muted)] text-sm font-light tracking-wide">
+                Loading your collection...
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="group relative flex flex-col p-2 md:p-3 rounded-[1.6rem] md:rounded-[2rem]">
+                <ProductCardSkeleton />
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
@@ -54,16 +69,16 @@ const Wishlist = () => {
     <>
       <title>My Wishlist | Devid Aura</title>
 
-      <div className="min-h-screen text-gray-800 bg-[#FDFDFD] selection:bg-gray-100 selection:text-black">
+      <div className="min-h-screen text-[var(--text)] bg-[var(--bg)] selection:bg-[var(--surface-muted)] selection:text-[var(--text)]">
         <main className="max-w-7xl mx-auto px-4 md:px-8 w-full pt-[80px] pb-32">
 
           {/* --- Header --- */}
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
-              <h1 className="text-4xl md:text-5xl font-medium text-gray-900 mb-2 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-medium text-[var(--text)] mb-2 tracking-tight">
                 Wishlist
               </h1>
-              <p className="text-gray-400 text-sm font-light tracking-wide">
+              <p className="text-[var(--muted)] text-sm font-light tracking-wide">
                 {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'} curated in your collection
               </p>
             </div>
@@ -85,13 +100,13 @@ const Wishlist = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center text-center py-24 bg-white rounded-[2rem] border border-gray-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.03)]"
+                className="flex flex-col items-center justify-center text-center py-24 bg-[var(--surface)] rounded-[2rem] border border-[var(--border)] shadow-[var(--shadow)]"
               >
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                  <Sparkles className="h-6 w-6 text-gray-400" strokeWidth={1.5} />
+                <div className="w-16 h-16 bg-[var(--surface-muted)] rounded-full flex items-center justify-center mb-6">
+                  <Sparkles className="h-6 w-6 text-[var(--muted)]" strokeWidth={1.5} />
                 </div>
-                <h2 className="text-2xl font-light text-gray-900 mb-3">Your collection is empty</h2>
-                <p className="text-gray-500 mb-8 max-w-sm font-light">
+                <h2 className="text-2xl font-light text-[var(--text)] mb-3">Your collection is empty</h2>
+                <p className="text-[var(--muted)] mb-8 max-w-sm font-light">
                   Discover our captivating fragrances and curate your personal olfactory signature.
                 </p>
                 <Button onClick={() => navigate("/")} variant="primary" className="gap-3">
@@ -124,7 +139,7 @@ const Wishlist = () => {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="group relative bg-white rounded-[2rem] p-4 flex flex-col transition-all duration-500 border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                        className="group relative bg-[var(--surface)] rounded-[2rem] p-4 flex flex-col transition-all duration-500 border border-[var(--border)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]"
                       >
                         {/* Remove Button */}
                         <button
@@ -132,14 +147,14 @@ const Wishlist = () => {
                             e.stopPropagation();
                             removeFromWishlist(variant);
                           }}
-                          className="absolute top-6 right-6 z-30 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm border border-gray-100"
+                          className="absolute top-6 right-6 z-30 w-9 h-9 flex items-center justify-center rounded-full bg-[var(--surface)]/80 backdrop-blur-sm text-[var(--muted)] hover:text-[var(--error)] hover:bg-[var(--error)]/10 transition-all shadow-sm border border-[var(--border)]"
                         >
                           <X className="h-4 w-4" />
                         </button>
 
                         {/* Image Area */}
                         <div
-                          className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-6 cursor-pointer bg-gray-50/30"
+                          className="relative aspect-[4/5] rounded-[1.5rem] overflow-hidden mb-6 cursor-pointer bg-[var(--surface-muted)]/30"
                           onClick={() => navigate(`/product/${product.id}`)}
                         >
                           <img
@@ -153,7 +168,7 @@ const Wishlist = () => {
                           <div className="absolute bottom-3 left-3 flex  gap-1.5 z-20 mr-10">
                               {/* Review Badge */}
                               {avgRating >= 1 && (
-                                  <div className="bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center gap-1.5 border border-white/40">
+                                  <div className="bg-[var(--surface)]/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[var(--shadow)] flex items-center gap-1.5 border border-white/40">
                                       <Star size={10} className="text-[#C5A059] fill-[#C5A059]" />
                                       <span className="text-[10px] font-bold text-stone-700 leading-none pt-[1px]">{avgRating}</span>
                                   </div>
@@ -162,8 +177,8 @@ const Wishlist = () => {
                               {/* Sold Badge */}
                               {soldCount >= 1 && (
                                   <div className="bg-stone-900/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.1)] flex items-center gap-1.5 border border-white/10">
-                                      <ShoppingBag size={10} className="text-[#F2F0EB]" />
-                                      <span className="text-[9px] font-bold text-[#F2F0EB] uppercase tracking-wider leading-none pt-[1px]">{soldCount} Sold</span>
+                                      <ShoppingBag size={10} className="text-[var(--bg)]" />
+                                      <span className="text-[9px] font-bold text-[var(--bg)] uppercase tracking-wider leading-none pt-[1px]">{soldCount} Sold</span>
                                   </div>
                               )}
                           </div>
@@ -188,22 +203,22 @@ const Wishlist = () => {
                         <div className="flex flex-col flex-grow px-2">
                           <h3
                             onClick={() => navigate(`/product/${product.id}`)}
-                            className="text-xl font-medium text-gray-900 cursor-pointer hover:text-gray-600 transition-colors mb-1"
+                            className="text-xl font-medium text-[var(--text)] cursor-pointer hover:text-[var(--sub)] transition-colors mb-1"
                           >
                             {product.name}
                           </h3>
 
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mb-4">
+                          <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-[0.2em] mb-4">
                             {variant.name || `${variant.size}ML`}
                           </p>
 
                           <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between gap-4">
                             <div className="flex flex-col">
-                              <span className="text-lg font-light text-gray-900">
+                              <span className="text-lg font-light text-[var(--text)]">
                                 ₹{price.toLocaleString("en-IN")}
                               </span>
                               {variant.discount > 0 && (
-                                <span className="text-xs line-through text-gray-400 font-light">
+                                <span className="text-xs line-through text-[var(--muted)] font-light">
                                   ₹{variant.oprice.toLocaleString("en-IN")}
                                 </span>
                               )}
@@ -212,11 +227,9 @@ const Wishlist = () => {
                             <Button
                               onClick={() => {
                                 if (isOutOfStock) {
-                                  // Navigate to product page if out of stock
                                   navigate(`/product/${product.id}`);
                                 } else {
-                                  // Add to cart if in stock
-                                  moveFromWishlistToCart(product, variant);
+                                  moveFromWishlistToCart({ product, variant: variant || { id: item.variantId } });
                                 }
                               }}
                               variant={isOutOfStock ? "secondary" : "primary"}

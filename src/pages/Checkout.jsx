@@ -4,8 +4,6 @@ import React, { useState, useEffect, useContext, useCallback, useMemo } from "re
 import { useNavigate, useSearchParams } from "react-router-dom"; 
 import { useAuth } from "@clerk/clerk-react"; 
 import { UserContext } from "../contexts/UserContext";
-import { CartContext } from "../contexts/CartContext";
-import { OrderContext } from "../contexts/OrderContext";
 import AddressSelection from "./AddressSelection";
 import OrderSummary from "./OrderSummary";
 import PaymentDetails from "./PaymentDetails";
@@ -23,7 +21,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  const { getorders } = useContext(OrderContext);
+
   const { userdetails } = useContext(UserContext);
   const { getToken } = useAuth(); 
 
@@ -76,7 +74,7 @@ export default function Checkout() {
     try {
       const items = JSON.parse(localStorage.getItem("selectedItems") || "[]");
       if (items.length > 0) setSelectedItems(items);
-      else { window.toast.warn("Your cart is empty."); navigate("/cart"); }
+      else { window.toast.error("Your cart is empty."); navigate("/cart"); }
       const coupon = localStorage.getItem("appliedCoupon");
       if (coupon) setAppliedCoupon(JSON.parse(coupon));
     } catch (error) { navigate("/cart"); }
@@ -107,7 +105,24 @@ export default function Checkout() {
       try {
         const token = await getToken();
         
-        // 🟢 FIX: Call the newly secured Price Preview Engine endpoint
+        // 1. Check Shiprocket Serviceability FIRST (so Redis has it cached for the Price Engine)
+        let isServiceable = true;
+        if (selectedAddress?.postalCode) {
+            try {
+              const svcRes = await fetch(`${BACKEND}/api/cart/check-serviceability`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ pincode: selectedAddress.postalCode })
+              });
+              const svcData = await svcRes.json();
+              if (svcData.success === false) {
+                 window.toast.error("Delivery is not available at this pincode.");
+                 isServiceable = false;
+              }
+            } catch(e) { console.error("Serviceability check failed:", e); }
+        }
+
+        // 2. Call the newly secured Price Preview Engine endpoint
         const res = await fetch(`${BACKEND}/api/cart/price-preview`, {
           method: 'POST',
           headers: { 
@@ -291,7 +306,10 @@ export default function Checkout() {
 
   const handleNext = () => {
     if (loadingPrices) return;
-    if (step === 1 && !selectedAddress) return window.toast.warn("Please select a delivery address.");
+    if (step === 1 && !selectedAddress) return window.toast.error("Please select a delivery address.");
+    if (step === 1 && selectedAddress && !selectedAddress.isVerified) {
+      return window.toast.error("Please verify the phone number on this address to proceed.");
+    }
     setSearchParams({ step: "payment" });
   };
 
@@ -308,35 +326,33 @@ export default function Checkout() {
 
   return (
     <>
-      <div className="min-h-screen bg-white  py-20 sm:py-24 px-4 sm:px-6 flex items-start justify-center">
+      <div className="min-h-screen bg-[var(--bg)] py-20 sm:py-24 px-4 sm:px-6 flex items-start justify-center">
 
-        <div className="w-full max-w-8xl bg-white rounded-[2rem] sm:rounded-[2.5rem] shadow-sm overflow-hidden border border-white/50">
+        <div className="w-full max-w-8xl bg-[var(--surface)] rounded-[2rem] sm:rounded-[2.5rem] shadow-[var(--shadow-strong)] overflow-hidden border border-[var(--border)]">
 
           <div className="
             relative overflow-hidden transition-colors duration-300
-            bg-black text-white 
-            md:bg-white md:text-slate-900 md:border-b md:border-slate-100
+            bg-[var(--surface)] text-[var(--text)] border-b border-[var(--border)]
             px-4 pb-10 pt-4 sm:px-12 sm:pb-12
           ">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--brand)]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 md:hidden" />
 
             <div className="relative z-10 flex flex-col items-center">
               <div className={`
                   flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full border transition-colors
-                  bg-white/10 border-white/10
-                  md:bg-emerald-50 md:border-emerald-100
+                  bg-[var(--success)]/10 border-[var(--success)]/20
                 `}>
-                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400 md:text-emerald-600" />
-                <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap text-white md:text-emerald-800">
+                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-[var(--success)]" />
+                <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] uppercase whitespace-nowrap text-[var(--success)]">
                   Secure Encrypted Checkout
                 </span>
               </div>
 
               <div className="relative w-full max-w-4xl">
-                <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 bg-white/20 md:bg-slate-200" />
+                <div className="absolute top-1/2 left-6 right-6 h-[1px] -translate-y-1/2 bg-[var(--border)]" />
                 <div className="absolute top-1/2 left-6 right-6 h-[1px] flex -translate-y-1/2 pointer-events-none">
                   <motion.div
-                    className="h-full shadow-[0_0_15px_rgba(255,255,255,0.8)] md:shadow-none bg-white md:bg-black"
+                    className="h-full bg-[var(--text)]"
                     initial={{ width: "0%" }}
                     animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
                     transition={{ duration: 0.8, ease: luxuryEase }}
@@ -353,8 +369,8 @@ export default function Checkout() {
                           className={`
                             relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-500 z-10
                             ${isActive || isCompleted
-                              ? "bg-white text-black border-white md:bg-black md:text-white md:border-black md:shadow-md"
-                              : "bg-black text-slate-500 border-slate-700 md:bg-white md:text-slate-300 md:border-slate-200"
+                              ? "bg-[var(--text)] text-[var(--bg)] border-transparent shadow-[var(--shadow)]"
+                              : "bg-[var(--surface)] text-[var(--muted)] border-[var(--border)]"
                             }
                           `}
                           animate={{ scale: isActive ? 1.15 : 1 }}
@@ -364,7 +380,7 @@ export default function Checkout() {
                         <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 w-32 text-center">
                           <span className={`
                             text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors duration-300
-                            ${isActive ? "text-white md:text-black" : "text-slate-600 md:text-slate-400"}
+                            ${isActive ? "text-[var(--text)]" : "text-[var(--sub)]"}
                           `}>
                             {s.name}
                           </span>
@@ -377,7 +393,7 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="bg-white p-3 sm:p-2 lg:p-6 lg:px-8">
+          <div className="bg-transparent p-3 sm:p-2 lg:p-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
 
               <motion.main
@@ -427,7 +443,7 @@ export default function Checkout() {
                     <button
                       onClick={handlePrev}
                       disabled={isSubmitting}
-                      className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-black transition-colors px-6 py-3 rounded-xl hover:bg-slate-100"                    >
+                      className="group flex items-center gap-2 text-sm font-medium text-[var(--sub)] hover:text-[var(--text)] transition-colors px-6 py-3 rounded-xl hover:bg-[var(--surface-muted)]"                    >
                       <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                       <span>{step === 1 ? "Cart" : "Go Back"}</span>
                     </button>
@@ -438,7 +454,7 @@ export default function Checkout() {
                         disabled={!selectedAddress || isSubmitting || loadingPrices}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-3 bg-black text-white px-8 sm:px-10 py-4 rounded-2xl text-sm font-bold shadow-sm shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="flex items-center gap-3 bg-[var(--brand)] text-[var(--brand-contrast)] px-8 sm:px-10 py-4 rounded-2xl text-sm font-bold shadow-[var(--shadow)] hover:bg-[var(--brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >
                         {loadingPrices && <Loader2 className="w-4 h-4 animate-spin" />}
                         <span className="whitespace-nowrap">{loadingPrices ? "Calculating..." : "Payment"}</span>

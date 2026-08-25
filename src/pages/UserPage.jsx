@@ -1,15 +1,18 @@
 // src/pages/UserPage.jsx
 import React, { useState, useContext, useEffect } from "react";
-import { UserContext } from "../contexts/UserContext";
-import { OrderContext } from "../contexts/OrderContext";
-import { CartContext } from "../contexts/CartContext";
-import { ProductContext } from "../contexts/productContext";
-import { ContactContext } from "../contexts/ContactContext";
-import { ReviewContext } from "../contexts/ReviewContext";
-import { useClerk, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
-import { useNavigate, useParams } from "react-router-dom"; // 🟢 UPDATED: real per-tab URLs (/myaccount/orders, etc.) instead of ?tab=
+import { useMyOrders } from "../features/orders/hooks/useOrders";
+import { useCart } from "../features/cart/hooks/useCart";
+import { useWishlist } from "../features/cart/hooks/useWishlist";
+import { useProducts } from "../features/catalog/hooks/useProducts";
+
+import { useUserReviews } from "../features/reviews/hooks/useReviews";
+import { useMyTickets } from "../features/support/hooks/useSupport";
+import { useClerk, useAuth } from "@clerk/clerk-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useUserDetails, useUserAddresses, useAddAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress, useUpdateUser } from "../features/users/hooks/useUsers";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { ShimmerSweep } from "../components/ui/ShimmerSkeleton";
 
 // Components
 import Sidebar from "../Components/UserPage/Sidebar";
@@ -30,12 +33,66 @@ const smoothTransition = { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] };
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
 export default function UserPage() {
-  const { userdetails, updateUser, address, deleteAddress, setDefaultAddress, addAddress, editAddress } = useContext(UserContext);
-  const { orders, loadingOrders } = useContext(OrderContext);
-  const { cart, wishlist } = useContext(CartContext);
-  const { tickets, getUserTickets, replyToTicket } = useContext(ContactContext);
-  const { userReviews, loadingReviews } = useContext(ReviewContext);
-  const { products } = useContext(ProductContext);
+  const { data: userdetails, isLoading: isUserLoading } = useUserDetails();
+  const { data: address = [] } = useUserAddresses(userdetails?.id);
+  const { data: ticketsData } = useMyTickets(1, 50);
+  const tickets = ticketsData?.data || [];
+  const { mutateAsync: addAddressAsync } = useAddAddress();
+  const { mutateAsync: editAddressAsync } = useUpdateAddress();
+  const { mutateAsync: deleteAddressAsync } = useDeleteAddress();
+  const { mutateAsync: setDefaultAddressAsync } = useSetDefaultAddress();
+  const { mutateAsync: updateUserAsync } = useUpdateUser();
+
+  const addAddress = async (data) => {
+    try {
+      const res = await addAddressAsync({ ...data, userId: userdetails.id });
+      return { success: true, data: res };
+    } catch (error) {
+      return { success: false, msg: error.response?.data?.msg || "Failed to add address" };
+    }
+  };
+
+  const editAddress = async (id, data) => {
+    try {
+      const res = await editAddressAsync({ addressId: id, updatedFields: data });
+      return { success: true, data: res };
+    } catch (error) {
+      return { success: false, msg: error.response?.data?.msg || "Failed to edit address" };
+    }
+  };
+
+  const deleteAddress = async (id) => {
+    try {
+      await deleteAddressAsync(id);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const setDefaultAddress = async (id) => {
+    try {
+      const res = await setDefaultAddressAsync({ addressId: id, userId: userdetails.id });
+      return res;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const updateUser = async (data) => {
+    try {
+      const res = await updateUserAsync({ userId: userdetails.id, updatedData: data });
+      return { success: true, data: res };
+    } catch (error) {
+      return { success: false, msg: error.response?.data?.msg || "Failed to update user" };
+    }
+  };
+  const { data: orders = [], isLoading: loadingOrders } = useMyOrders();
+  const { data: cart = [] } = useCart();
+  const { data: wishlist = [] } = useWishlist();
+
+  const { data: userReviews = [], isLoading: loadingReviews } = useUserReviews(userdetails?.id);
+  const { data: products = [] } = useProducts();
   
   const { signOut } = useClerk();
   const { getToken } = useAuth(); // 🟢 Get Token Helper
@@ -63,7 +120,7 @@ export default function UserPage() {
   // Fetch specialized logs or tickets on load
   useEffect(() => {
     if (userdetails?.email) {
-      getUserTickets(userdetails.email);
+
       
       if (userdetails.id) {
         // 🟢 SECURE: Fetch Logs with Token
@@ -84,7 +141,7 @@ export default function UserPage() {
         fetchLogs();
       }
     }
-  }, [userdetails, getUserTickets, getToken]);
+  }, [userdetails, getToken]);
 
   // Scroll to top when tab changes
   useEffect(() => {
@@ -103,13 +160,24 @@ export default function UserPage() {
   };
 
   if (!userdetails) return (
-    <div className="h-screen flex items-center justify-center bg-[#FDFDFD]">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-300" />
+    <div className="min-h-screen bg-[var(--bg)] pt-24 pb-20 px-4 sm:px-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-3">
+           <div className="relative h-[500px] w-full bg-[var(--surface-muted)] rounded-[2rem] overflow-hidden"><ShimmerSweep /></div>
+        </div>
+        <div className="flex-1 space-y-6">
+           <div className="relative h-40 w-full bg-[var(--surface-muted)] rounded-[2rem] overflow-hidden"><ShimmerSweep /></div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="relative h-[300px] w-full bg-[var(--surface-muted)] rounded-[2rem] overflow-hidden"><ShimmerSweep /></div>
+              <div className="relative h-[300px] w-full bg-[var(--surface-muted)] rounded-[2rem] overflow-hidden"><ShimmerSweep /></div>
+           </div>
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] pt-24 pb-20 px-4 sm:px-8 text-zinc-900 selection:bg-zinc-100">
+    <div className="min-h-screen bg-[var(--bg)] pt-24 pb-20 px-4 sm:px-8 text-zinc-900 selection:bg-zinc-100">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* LEFT SIDEBAR (Sticky) */}
@@ -173,14 +241,7 @@ export default function UserPage() {
               
               {activeTab === 'reviews' && <ReviewsTab userReviews={userReviews} loadingReviews={loadingReviews} products={products} />}
               
-              {activeTab === 'support' && (
-                <SupportTab 
-                  tickets={tickets} 
-                  getUserTickets={getUserTickets} 
-                  replyToTicket={replyToTicket} 
-                  userEmail={userdetails.email} 
-                />
-              )}
+              {activeTab === 'support' && <SupportTab />}
               
               {activeTab === 'settings' && <SettingsTab user={userdetails} onUpdate={updateUser} />}
               {activeTab === 'notifications' && <AlertsTab user={userdetails} onUpdate={updateUser} />}

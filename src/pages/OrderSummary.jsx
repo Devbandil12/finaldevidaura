@@ -237,12 +237,17 @@ export default function OrderSummary({
               )}
             </AnimatePresence>
 
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Shipping Charge</span>
-              <span className={`font-semibold whitespace-nowrap ${breakdown.deliveryCharge === 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
-                {breakdown.deliveryCharge === 0 ? 'Free' : `₹${breakdown.deliveryCharge}`}
-              </span>
-            </div>
+              <div className="flex justify-between text-sm">
+                <div className="flex flex-col">
+                   <span className="text-slate-500 font-medium">Shipping Charge</span>
+                   {breakdown.estimatedDeliveryDays && (
+                     <span className="text-xs text-indigo-500 mt-0.5">Est. Delivery: {breakdown.estimatedDeliveryDays} Days</span>
+                   )}
+                </div>
+                <span className={`font-semibold whitespace-nowrap ${breakdown.deliveryCharge === 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                  {breakdown.deliveryCharge === 0 ? 'Free' : `₹${breakdown.deliveryCharge}`}
+                </span>
+              </div>
           </div>
 
           <div className="my-5 border-t border-dashed border-slate-300" />

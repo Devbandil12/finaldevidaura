@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
-import { ProductContext } from "../contexts/productContext";
-import { CartContext } from "../contexts/CartContext";
+import { useProducts } from "../features/catalog/hooks/useProducts";
+import { ProductCardSkeleton } from "../components/ui/ShimmerSkeleton";
+import { useWishlist, useToggleWishlist } from "../features/cart/hooks/useWishlist";
+import { useAddToCart } from "../features/cart/hooks/useCart";
 import { Heart, Sparkles, Bell, Star, ShoppingBag, ChevronLeft, ChevronRight, ChevronDown, ArrowUpDown, Tag } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
 
@@ -82,14 +84,14 @@ const BlurImage = memo(({ src, alt, className, priority = false }) => {
 
   if (hasError) {
     return (
-      <div className={`relative w-full h-full bg-[#f0eee6] flex items-center justify-center ${className}`}>
+      <div className={`relative w-full h-full bg-[var(--surface-muted)] flex items-center justify-center ${className}`}>
         <span className="text-6xl font-bold opacity-10">{alt?.[0] || '?'}</span>
       </div>
     );
   }
 
   return (
-    <div className={`relative overflow-hidden w-full h-full bg-[#f0eee6] ${className}`}>
+    <div className={`relative overflow-hidden w-full h-full bg-[var(--surface-muted)] ${className}`}>
       {!isLoaded && <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-stone-200 animate-pulse" />}
       <motion.img
         src={optimizedSrc}
@@ -350,11 +352,7 @@ const ProductCard = memo(
                     duration: 0.25,
                   }}
                   onClick={(e) =>
-                    onToggleWishlist(
-                      e,
-                      product,
-                      selectedVariant
-                    )
+                    toggleWishlist({ product, variant: selectedVariant })
                   }
                   className={`relative z-10 w-11 h-11 rounded-full border transition-all duration-300 flex items-center justify-center shadow-sm ${inWishlist
                       ? "bg-stone-900 text-white border-stone-900"
@@ -587,8 +585,10 @@ const ProductCard = memo(
 ProductCard.displayName = "ProductCard";
 
 const Products = () => {
-  const { products } = useContext(ProductContext);
-  const { wishlist, toggleWishlist, addToCart } = useContext(CartContext);
+  const { data: products = [], isLoading } = useProducts();
+  const { data: wishlist = [] } = useWishlist();
+  const { mutateAsync: toggleWishlist } = useToggleWishlist();
+  const { mutateAsync: addToCart } = useAddToCart();
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
   const sortRef = useRef(null);
@@ -620,12 +620,12 @@ const Products = () => {
 
   const handleToggleWishlist = useCallback((e, product, selectedVariant) => {
     e.stopPropagation();
-    if (selectedVariant) toggleWishlist(product, selectedVariant);
+    if (selectedVariant) toggleWishlist({ product, variant: selectedVariant });
   }, [toggleWishlist]);
 
   const handleAddToCart = useCallback((e, product, selectedVariant) => {
     e.stopPropagation();
-    if (selectedVariant) addToCart(product, selectedVariant, 1);
+    if (selectedVariant) addToCart({ product, variant: selectedVariant, quantity: 1 });
   }, [addToCart]);
 
   const handlePageChange = useCallback((category, direction) => {
@@ -688,7 +688,7 @@ const Products = () => {
   }, [groupedProducts, activeCategory]);
 
   return (
-    <section className="min-h-screen bg-[#FDFDFD] text-stone-800 pb-20">
+    <section className="min-h-screen bg-[var(--bg)] text-stone-800 pb-20">
 
       {/* 1. TOP HEADER (Grand & Center) */}
       <div className="max-w-[1600px] mx-auto px-4 md:px-12 pt-28 md:pt-20 pb-8 md:pb-16 text-center">
@@ -977,7 +977,7 @@ const Products = () => {
         {/* ======================================= */}
         {/* MOBILE TOP BAR */}
         {/* ======================================= */}
-        <div className="lg:hidden sticky top-[70px] z-40 bg-[#FDFDFD]/95 backdrop-blur-xl border-b border-stone-100 py-3 mb-4 overflow-x-auto no-scrollbar">
+        <div className="lg:hidden sticky top-[70px] z-40 bg-[var(--bg)]/95 backdrop-blur-xl border-b border-stone-100 py-3 mb-4 overflow-x-auto no-scrollbar">
 
           <div className="flex items-center justify-between gap-4 min-w-max">
 
@@ -1089,7 +1089,7 @@ const Products = () => {
                   {/* Category Inner Header */}
                   {/* Category Inner Header */}
                   <div className="relative mb-12 pl-2 md:pl-6">
-                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem] text-[#F2F0EB] leading-none select-none z-0">
+                    <span className="absolute -top-10 -left-2 text-[6rem] md:text-[9rem] text-[var(--bg)] leading-none select-none z-0">
                       {String(groupIndex + 1).padStart(2, "0")}
                     </span>
 
@@ -1117,23 +1117,33 @@ const Products = () => {
                   </div>
 
                   {/* Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-5 md:gap-x-6 xl:gap-x-8 gap-y-10 md:gap-y-12 xl:gap-y-16">
-                    {paginatedProducts.map((product, idx) => {
-                      return (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          wishlistSet={wishlistSet}
-                          onProductClick={handleProductClick}
-                          onToggleWishlist={handleToggleWishlist}
-                          onAddToCart={handleAddToCart}
-                          isPriority={groupIndex === 0 && idx < 4}
-                          staggerClass={idx % 2 !== 0 ? "md:translate-y-6" : ""}
-                          cardVariants={cardVariants}
-                        />
-                      );
-                    })}
-                  </div>
+                  {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-5 md:gap-x-6 xl:gap-x-8 gap-y-10 md:gap-y-12 xl:gap-y-16">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="group relative flex flex-col p-2 md:p-3 rounded-[1.6rem] md:rounded-[2rem]">
+                          <ProductCardSkeleton />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-5 md:gap-x-6 xl:gap-x-8 gap-y-10 md:gap-y-12 xl:gap-y-16">
+                      {paginatedProducts.map((product, idx) => {
+                        return (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            wishlistSet={wishlistSet}
+                            onProductClick={handleProductClick}
+                            onToggleWishlist={handleToggleWishlist}
+                            onAddToCart={handleAddToCart}
+                            isPriority={groupIndex === 0 && idx < 4}
+                            staggerClass={idx % 2 !== 0 ? "md:translate-y-6" : ""}
+                            cardVariants={cardVariants}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Pagination Controls */}
                   {totalPages > 1 && (

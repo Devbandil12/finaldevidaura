@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
-import useCloudinary from "../utils/useCloudinary";
-import { ProductContext } from "../contexts/productContext";
+import useCloudinary from "../hooks/useCloudinary";
+import { useAddProduct } from "../features/catalog/hooks/useProducts";
 import { Plus, Trash2, X, UploadCloud, Image as ImageIcon, ArrowLeft, ArrowRight } from "lucide-react";
 
 // --- Variant Input (Light Border + Soft Shadow) ---
@@ -29,57 +29,57 @@ const VariantInput = ({ index, variant, onChange, onRemove }) => {
 
       <div className="grid grid-cols-2 gap-5">
         <div className="col-span-2">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Variant Name</label>
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Variant Name</label>
           <input 
             name="name" 
             placeholder="e.g., 20ml" 
             type="text" 
             value={variant.name} 
             onChange={handleChange} 
-            className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+            className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" 
           />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Size (ml)</label>
-          <input name="size" placeholder="20" type="number" value={variant.size} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Size (ml)</label>
+          <input name="size" placeholder="20" type="number" value={variant.size} onChange={handleChange} className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Stock</label>
-          <input name="stock" placeholder="100" type="number" value={variant.stock} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Stock</label>
+          <input name="stock" placeholder="100" type="number" value={variant.stock} onChange={handleChange} className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Orig. Price</label>
-          <input name="oprice" placeholder="1500" type="number" value={variant.oprice} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Orig. Price</label>
+          <input name="oprice" placeholder="1500" type="number" value={variant.oprice} onChange={handleChange} className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Cost Price</label>
-          <input name="costPrice" placeholder="500" type="number" value={variant.costPrice} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Cost Price</label>
+          <input name="costPrice" placeholder="500" type="number" value={variant.costPrice} onChange={handleChange} className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" />
         </div>
         <div className="col-span-2">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">Discount (%)</label>
-          <input name="discount" placeholder="10" type="number" value={variant.discount} onChange={handleChange} className="w-full p-3.5 bg-gray-50  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" />
+          <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">Discount (%)</label>
+          <input name="discount" placeholder="10" type="number" value={variant.discount} onChange={handleChange} className="w-full p-3.5 bg-[var(--surface-muted)]  rounded-xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" />
         </div>
 
         {/* 🟢 NEW: Shipping Details Section */}
         <div className="col-span-2 pt-2">
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Shipping Dimensions (Shiprocket)</p>
+            <div className="p-3 bg-[var(--surface-muted)] rounded-xl border border-[var(--border)]">
+                <p className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-3">Shipping Dimensions (Shiprocket)</p>
                 <div className="grid grid-cols-4 gap-3">
                     <div>
-                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">Weight (kg)</label>
-                        <input name="weight" type="number" step="0.01" value={variant.weight} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="0.5" />
+                        <label className="text-[9px] font-bold text-[var(--muted)] uppercase mb-1 block">Weight (kg)</label>
+                        <input name="weight" type="number" step="0.01" value={variant.weight} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-[var(--border)] outline-none focus:border-indigo-300 transition-all" placeholder="0.5" />
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">L (cm)</label>
-                        <input name="length" type="number" value={variant.length} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                        <label className="text-[9px] font-bold text-[var(--muted)] uppercase mb-1 block">L (cm)</label>
+                        <input name="length" type="number" value={variant.length} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-[var(--border)] outline-none focus:border-indigo-300 transition-all" placeholder="10" />
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">B (cm)</label>
-                        <input name="breadth" type="number" value={variant.breadth} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                        <label className="text-[9px] font-bold text-[var(--muted)] uppercase mb-1 block">B (cm)</label>
+                        <input name="breadth" type="number" value={variant.breadth} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-[var(--border)] outline-none focus:border-indigo-300 transition-all" placeholder="10" />
                     </div>
                     <div>
-                        <label className="text-[9px] font-bold text-gray-400 uppercase mb-1 block">H (cm)</label>
-                        <input name="height" type="number" value={variant.height} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-gray-200 outline-none focus:border-indigo-300 transition-all" placeholder="10" />
+                        <label className="text-[9px] font-bold text-[var(--muted)] uppercase mb-1 block">H (cm)</label>
+                        <input name="height" type="number" value={variant.height} onChange={handleChange} className="w-full p-2 bg-white rounded-lg text-xs font-bold border border-[var(--border)] outline-none focus:border-indigo-300 transition-all" placeholder="10" />
                     </div>
                 </div>
             </div>
@@ -99,7 +99,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
   const [uploadedUrls, setUploadedUrls] = useState([]);
 
   const { uploadImage, uploading, error } = useCloudinary();
-  const { addProduct } = useContext(ProductContext);
+  const { mutateAsync: addProduct } = useAddProduct();
 
   const [product, setProduct] = useState({
     name: "", composition: "", description: "", fragrance: "", fragranceNotes: "", category: "Uncategorized",
@@ -209,12 +209,12 @@ const ImageUploadModal = ({ isopen, onClose }) => {
       <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-white/20">
         
         {/* Header */}
-        <div className="px-8 py-6 bg-white flex justify-between items-center z-10 border-b border-gray-100">
+        <div className="px-8 py-6 bg-white flex justify-between items-center z-10 border-b border-[var(--border)]">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 tracking-tight">Add New Product</h2>
-            <p className="text-sm text-gray-400 mt-0.5 font-medium">Step {step} of 3</p>
+            <h2 className="text-xl font-bold text-[var(--text)] tracking-tight">Add New Product</h2>
+            <p className="text-sm text-[var(--muted)] mt-0.5 font-medium">Step {step} of 3</p>
           </div>
-          <button onClick={handleClose} className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all">
+          <button onClick={handleClose} className="p-2.5 text-[var(--muted)] hover:text-[var(--sub)] hover:bg-[var(--surface-muted)] rounded-full transition-all">
             <X size={22} />
           </button>
         </div>
@@ -226,11 +226,11 @@ const ImageUploadModal = ({ isopen, onClose }) => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 
                 {/* Add Button */}
-                <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-gray-50 hover:bg-indigo-50/50 transition-all group border-2 border-dashed border-gray-200 hover:border-indigo-200">
+                <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-[var(--surface-muted)] hover:bg-indigo-50/50 transition-all group border-2 border-dashed border-[var(--border)] hover:border-indigo-200">
                   <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]  group-hover:scale-110 transition-transform text-indigo-500 mb-4">
                     <Plus size={28} />
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 group-hover:text-indigo-500 uppercase tracking-widest">Add Images</span>
+                  <span className="text-[10px] font-bold text-[var(--muted)] group-hover:text-indigo-500 uppercase tracking-widest">Add Images</span>
                   <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                 </label>
 
@@ -249,14 +249,14 @@ const ImageUploadModal = ({ isopen, onClose }) => {
               </div>
 
               {images.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-56 text-gray-300">
+                <div className="flex flex-col items-center justify-center h-56 text-[var(--muted)]">
                   <ImageIcon size={64} className="mb-4 opacity-20" />
                   <p className="text-sm font-medium">Start by selecting product images</p>
                 </div>
               )}
             </div>
             
-            <div className="p-8 bg-white/50 border-t border-gray-100">
+            <div className="p-8 bg-white/50 border-t border-[var(--border)]">
               <button 
                 onClick={handleUpload} 
                 disabled={uploading || images.length === 0} 
@@ -282,7 +282,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                   { name: "fragrance", type: "text", span: 1, label: "Heart Notes" },
                 ].map((field) => (
                   <div key={field.name} className={field.span === 2 ? "col-span-1 md:col-span-2" : "col-span-1"}>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block ml-1">
+                    <label className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block ml-1">
                       {field.label} {['name', 'category', 'description'].includes(field.name) && <span className="text-red-400">*</span>}
                     </label>
                     {field.name === 'description' ? (
@@ -291,7 +291,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                         rows={3} 
                         value={product[field.name]} 
                         onChange={handleChange} 
-                        className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-gray-300" 
+                        className="w-full p-4 bg-[var(--surface-muted)]  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none placeholder:text-[var(--muted)]" 
                       />
                     ) : (
                       <input 
@@ -299,7 +299,7 @@ const ImageUploadModal = ({ isopen, onClose }) => {
                         type={field.type} 
                         value={product[field.name]} 
                         onChange={handleChange} 
-                        className="w-full p-4 bg-gray-50  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-gray-300" 
+                        className="w-full p-4 bg-[var(--surface-muted)]  rounded-2xl text-sm font-medium outline-none focus:bg-white focus:border-indigo-300 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-[var(--muted)]" 
                       />
                     )}
                   </div>
@@ -307,8 +307,8 @@ const ImageUploadModal = ({ isopen, onClose }) => {
               </div>
             </div>
             
-            <div className="p-8 bg-white/50 border-t border-gray-100 flex gap-4">
-              <button onClick={() => setStep(1)} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+            <div className="p-8 bg-white/50 border-t border-[var(--border)] flex gap-4">
+              <button onClick={() => setStep(1)} className="w-1/3 bg-white text-[var(--sub)]  hover:bg-[var(--surface-muted)] px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
                 <ArrowLeft size={18} /> Back
               </button>
               <button onClick={goToStep3} className="w-2/3 bg-gray-900 hover:bg-black text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-gray-200 transition-all flex items-center justify-center gap-2">
@@ -325,13 +325,13 @@ const ImageUploadModal = ({ isopen, onClose }) => {
               {variants.map((v, i) => (
                 <VariantInput key={i} index={i} variant={v} onChange={handleVariantChange} onRemove={removeVariant} />
               ))}
-              <button onClick={addVariant} className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl text-gray-400 font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wide text-xs">
+              <button onClick={addVariant} className="w-full py-4 border-2 border-dashed border-[var(--border)] rounded-2xl text-[var(--muted)] font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center gap-2 uppercase tracking-wide text-xs">
                 <Plus size={18} /> Add Another Variant
               </button>
             </div>
             
-            <div className="p-8 bg-white/50 border-t border-gray-100 flex gap-4">
-              <button onClick={() => setStep(2)} className="w-1/3 bg-white text-gray-600  hover:bg-gray-50 px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
+            <div className="p-8 bg-white/50 border-t border-[var(--border)] flex gap-4">
+              <button onClick={() => setStep(2)} className="w-1/3 bg-white text-[var(--sub)]  hover:bg-[var(--surface-muted)] px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2">
                 <ArrowLeft size={18} /> Back
               </button>
               <button onClick={handleSubmit} className="w-2/3 bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-2xl font-bold shadow-xl shadow-green-200 transition-all transform hover:-translate-y-0.5">

@@ -1,494 +1,224 @@
-import React, { useState, useMemo, useContext } from 'react';
-import { 
-  TrendingUp, TrendingDown, Users, ShoppingBag, DollarSign, Activity, 
-  CreditCard, Package, AlertTriangle, Clock, ArrowRight,
-  Droplets, RefreshCcw, AlertCircle, UserPlus, Repeat, Ban, Layers,
-  UserCheck, Wallet // 🟢 1. Added Wallet Icon
-} from 'lucide-react';
-import { Line, Doughnut } from 'react-chartjs-2';
-import { 
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, 
-  Title, Tooltip, Legend, ArcElement, BarElement, Filler 
-} from 'chart.js';
-import { AdminContext } from '../../contexts/AdminContext';
-import { ProductContext } from '../../contexts/productContext';
-import { UserContext } from '../../contexts/UserContext';
-import OrderChart from './OrderChart';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCcw, Calendar, TrendingUp, DollarSign, ShoppingBag, PieChart, Users, Repeat, Percent, ArrowDown } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement, Title, 
-  Tooltip, Legend, ArcElement, BarElement, Filler
-);
+// Hooks & Components
+import { useDashboardData } from '../../features/admin/hooks/useDashboardData';
+import { StatCard } from '../../features/admin/components/dashboard/StatCard';
+import AttentionRequired from './dashboard/AttentionRequired';
+import SalesPerformanceChart from './dashboard/SalesPerformanceChart';
+import OrderHealth from './dashboard/OrderHealth';
+import CustomerSnapshot from './dashboard/CustomerSnapshot';
+import InventoryHealth from './dashboard/InventoryHealth';
+import CartRecovery from './dashboard/CartRecovery';
+import QuickActions from './dashboard/QuickActions';
+import TopProducts from './dashboard/TopProducts';
+import GeoDistribution from './dashboard/GeoDistribution';
+import LiveActivityFeed from './dashboard/LiveActivityFeed';
 
-// --- HELPER: Date Ranges ---
-const getDateRange = (range) => {
-  const now = new Date();
-  const start = new Date();
-  const prevStart = new Date();
-  const prevEnd = new Date();
-
-  switch (range) {
-    case 'today':
-      start.setHours(0,0,0,0);
-      prevStart.setDate(now.getDate() - 1);
-      prevStart.setHours(0,0,0,0);
-      prevEnd.setDate(now.getDate() - 1);
-      prevEnd.setHours(23,59,59,999);
-      break;
-    case 'week':
-      start.setDate(now.getDate() - 7);
-      prevStart.setDate(now.getDate() - 14);
-      prevEnd.setDate(now.getDate() - 7);
-      break;
-    case 'month':
-      start.setMonth(now.getMonth() - 1);
-      prevStart.setMonth(now.getMonth() - 2);
-      prevEnd.setMonth(now.getMonth() - 1);
-      break;
-    case 'year':
-      start.setFullYear(now.getFullYear() - 1);
-      prevStart.setFullYear(now.getFullYear() - 2);
-      prevEnd.setFullYear(now.getFullYear() - 1);
-      break;
-    default: 
-      start.setFullYear(2000); 
+// Cinematic, premium staggered entrances
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { 
+    opacity: 1, 
+    transition: { staggerChildren: 0.05, delayChildren: 0.1 } 
   }
-  return { current: { start, end: now }, previous: { start: prevStart, end: prevEnd } };
 };
 
-const calculateTrend = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
+const itemVariants = {
+  hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
+  show: { 
+    opacity: 1, 
+    y: 0, 
+    filter: 'blur(0px)',
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
+  }
 };
 
-// --- COMPONENT: Stat Card ---
-const StatCard = ({ title, value, subtext, icon: Icon, trend, color, loading }) => (
-  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl bg-${color}-50 text-${color}-600 group-hover:scale-110 transition-transform duration-300`}>
-        <Icon size={22} strokeWidth={2} />
-      </div>
-      {trend !== null && !isNaN(trend) && (
-        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${trend >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-          {Math.abs(trend).toFixed(1)}%
-        </div>
-      )}
-    </div>
-    <div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-      {loading ? (
-        <div className="h-8 w-24 bg-gray-200 animate-pulse rounded"></div>
-      ) : (
-        <h4 className="text-2xl font-black text-gray-900 tracking-tight">{value}</h4>
-      )}
-      {subtext && <p className="text-xs text-gray-400 mt-1 font-medium">{subtext}</p>}
-    </div>
-  </div>
-);
+const RANGES = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'week', label: '7 Days' },
+  { value: 'month', label: '30 Days' },
+  { value: '3months', label: '90 Days' },
+  { value: 'year', label: 'This Year' },
+  { value: 'custom', label: 'Custom' },
+];
 
 const DashboardTab = ({ setActiveTab }) => {
-  const { orders, users, reportOrders, abandonedCarts, loading: adminLoading } = useContext(AdminContext);
-  const { products, loading: productsLoading } = useContext(ProductContext);
-  
-  const [timeRange, setTimeRange] = useState('month'); 
+  const [timeRange, setTimeRange] = useState('month');
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
 
-  const dashboardData = useMemo(() => {
-    if (!orders || !products || !users) return null;
+  const { dashboardData, attentionData, isLoading, isAttentionLoading, refreshAll, isFetching } = useDashboardData(
+    timeRange,
+    customStartDate?.toISOString(),
+    customEndDate?.toISOString()
+  );
 
-    const { current, previous } = getDateRange(timeRange);
-
-    const filterByDate = (data, start, end) => 
-      data.filter(item => {
-        const d = new Date(item.createdAt);
-        return d >= start && d <= end;
-      });
-
-    const rawCurrentOrders = filterByDate(orders, current.start, current.end);
-    const rawPrevOrders = filterByDate(orders, previous.start, previous.end);
-
-    const isValidVolumeOrder = (o) => {
-      const isOnlinePending = o.paymentMode === 'online' && (o.paymentStatus === 'pending' || o.paymentStatus === 'pending_payment');
-      return !isOnlinePending; 
-    };
-
-    const currentTotalOrders = rawCurrentOrders.filter(isValidVolumeOrder);
-    
-    // 🟢 2. Updated Revenue Definition (Includes Wallet)
-    const isRevenueOrder = (o) => {
-      if (o.status === 'Order Cancelled') return false;
-      // Added 'wallet' check
-      if (o.paymentMode === 'online' || o.paymentMode === 'wallet') return o.paymentStatus === 'paid';
-      if (o.paymentMode === 'cod' || o.paymentMode === 'cash') return o.status === 'Delivered';
-      return false; 
-    };
-
-    const successOrders = currentTotalOrders.filter(isRevenueOrder);
-    const prevSuccessOrders = rawPrevOrders.filter(isValidVolumeOrder).filter(isRevenueOrder);
-    const cancelledOrders = currentTotalOrders.filter(o => o.status === 'Order Cancelled');
-
-    // 🟢 3. Updated Financials (Sum Cash + Wallet for Total Revenue)
-    const calcRevenue = (list) => list.reduce((sum, o) => {
-        const cash = parseFloat(o.totalAmount || 0);
-        const wallet = parseFloat(o.walletAmountUsed || 0);
-        return sum + cash + wallet;
-    }, 0);
-
-    const revenue = calcRevenue(successOrders);
-    const prevRevenue = calcRevenue(prevSuccessOrders);
-    
-    // Only cash lost (usually we don't count wallet as lost revenue in the same way, but let's keep it consistent)
-    const lostRevenue = calcRevenue(cancelledOrders); 
-
-    // 🟢 4. Calculate Wallet Usage Separately
-    const calcWalletUsed = (list) => list.reduce((sum, o) => sum + (parseFloat(o.walletAmountUsed) || 0), 0);
-    const walletUsed = calcWalletUsed(successOrders);
-    const prevWalletUsed = calcWalletUsed(prevSuccessOrders);
-    
-    // 🟢 5. Updated Profit (Revenue - Cost)
-    const calcProfit = (list) => list.reduce((sum, order) => {
-      let orderCost = 0;
-      const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
-      const items = detailedOrder.products || detailedOrder.orderItems || [];
-      orderCost = items.reduce((pSum, p) => pSum + ((p.costPrice ? parseFloat(p.costPrice) : 0) * p.quantity), 0);
-      
-      // Total Revenue for this specific order
-      const orderRevenue = (parseFloat(order.totalAmount || 0) + parseFloat(order.walletAmountUsed || 0));
-      
-      return sum + (orderRevenue - orderCost);
-    }, 0);
-
-    const profit = calcProfit(successOrders);
-    const prevProfit = calcProfit(prevSuccessOrders);
-
-    // --- CUSTOMER METRICS ---
-    const newCustomersCount = users.filter(u => {
-      const joinedAt = new Date(u.createdAt);
-      return joinedAt >= current.start && joinedAt <= current.end;
-    }).length;
-
-    // B. Returning vs First-Time Buyers
-    const userHistory = new Map();
-    orders.forEach(o => {
-      if (!isRevenueOrder(o)) return; 
-      const uid = String(o.userId);
-      const d = new Date(o.createdAt);
-      if (!userHistory.has(uid)) {
-        userHistory.set(uid, { firstDate: d, totalCount: 1 });
-      } else {
-        const history = userHistory.get(uid);
-        if (d < history.firstDate) history.firstDate = d;
-        history.totalCount += 1;
-      }
-    });
-
-    const activeUserIds = [...new Set(successOrders.map(o => String(o.userId)))];
-    const activeBuyersCount = activeUserIds.length;
-
-    let returningCount = 0;
-    let firstTimeBuyersCount = 0;
-
-    activeUserIds.forEach(uid => {
-      const history = userHistory.get(uid);
-      if (!history) return;
-      if (history.firstDate >= current.start) firstTimeBuyersCount++;
-      if (history.totalCount > 1) returningCount++;
-    });
-
-    const returningRate = (activeBuyersCount > 0) 
-        ? ((returningCount / activeBuyersCount) * 100) 
-        : 0;
-
-    // --- ABANDONED CART LOGIC ---
-    let calcAbandonedVal = 0;
-    const uniqueCartUsers = new Set();
-
-    if (Array.isArray(abandonedCarts)) {
-        abandonedCarts.forEach(item => {
-            const { user, variant, cartItem } = item;
-            if (!user || !variant || !cartItem) return;
-
-            const price = parseFloat(variant.oprice ?? 0);
-            const discount = parseFloat(variant.discount ?? 0);
-            const quantity = parseInt(cartItem.quantity ?? 1);
-
-            const itemValue = (price * (1 - discount / 100)) * quantity;
-
-            if (!isNaN(itemValue)) {
-                calcAbandonedVal += itemValue;
-            }
-            uniqueCartUsers.add(user.id);
-        });
-    }
-
-    const abandonedVal = calcAbandonedVal;
-    const uniqueAbandonedCount = uniqueCartUsers.size;
-
-
-    // Inventory
-    const lowStockVariants = [];
-    products.forEach(p => {
-      p.variants?.forEach(v => {
-        if (v.stock < 10 && !v.isArchived) {
-          lowStockVariants.push({ ...v, productName: p.name, image: p.imageurl?.[0] });
-        }
-      });
-    });
-
-    // Charts
-    const categoryStats = {};
-    successOrders.forEach(order => {
-      const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
-      const items = detailedOrder.products || detailedOrder.orderItems || [];
-      items.forEach(p => {
-        const mainProduct = products.find(prod => prod.id === (p.productId || p.id));
-        const cat = mainProduct?.category || 'Uncategorized';
-        categoryStats[cat] = (categoryStats[cat] || 0) + p.quantity;
-      });
-    });
-
-    const chartLabels = [];
-    const chartRevenue = [];
-    const interval = (current.end - current.start) / (timeRange === 'today' ? 24 : 10);
-    const steps = timeRange === 'today' ? 24 : 10;
-    
-    for(let i=0; i<steps; i++) {
-      const pStart = new Date(current.start.getTime() + (interval * i));
-      const pEnd = new Date(pStart.getTime() + interval);
-      const label = timeRange === 'today' 
-        ? pStart.toLocaleTimeString('en-US', { hour: 'numeric' })
-        : pStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      
-      const chunk = successOrders.filter(o => { const d = new Date(o.createdAt); return d >= pStart && d < pEnd; });
-      
-      // Chart Revenue must also include Wallet
-      const chunkRevenue = chunk.reduce((sum, o) => sum + (parseFloat(o.totalAmount)||0) + (parseFloat(o.walletAmountUsed)||0), 0);
-      
-      chartLabels.push(label);
-      chartRevenue.push(chunkRevenue);
-    }
-
-    return {
-      revenue, revenueTrend: calculateTrend(revenue, prevRevenue),
-      profit, profitTrend: calculateTrend(profit, prevProfit),
-      walletUsed, walletTrend: calculateTrend(walletUsed, prevWalletUsed), // 🟢 6. Added Wallet Data
-      totalOrders: currentTotalOrders.length, 
-      successOrdersCount: successOrders.length,
-      successTrend: calculateTrend(successOrders.length, prevSuccessOrders.length),
-      aov: successOrders.length ? revenue / successOrders.length : 0,
-      
-      newCustomers: newCustomersCount,
-      firstTimeBuyers: firstTimeBuyersCount,
-      returningCustomers: returningCount,
-      activeBuyersCount, 
-      returningRate,
-      lostRevenue,
-      conversionRate: currentTotalOrders.length ? (successOrders.length / currentTotalOrders.length) * 100 : 0, 
-
-      abandonedVal,
-      uniqueAbandonedCount, 
-      lowStockVariants,
-      categoryData: { labels: Object.keys(categoryStats), data: Object.values(categoryStats) },
-      chartData: { labels: chartLabels, revenue: chartRevenue },
-    };
-  }, [orders, reportOrders, products, abandonedCarts, users, timeRange]);
-
-  const isLoading = adminLoading || productsLoading || !dashboardData;
-
-  const lineOptions = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-    scales: { y: { grid: { borderDash: [4, 4], color: '#f3f4f6' }, ticks: { callback: v => '₹' + v } }, x: { grid: { display: false } } },
-    interaction: { mode: 'nearest', axis: 'x', intersect: false }
-  };
+  const handleRefresh = () => refreshAll();
+  const fmt = (v) => '₹' + Math.round(v).toLocaleString('en-IN');
+  const fmtNum = (v) => Math.round(v).toLocaleString('en-IN');
+  const hasTrend = dashboardData?.hasTrend;
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-8 pb-16 max-w-[1600px] mx-auto pt-10 sm:pt-14 lg:pt-16 px-6 sm:px-12 lg:px-16 transition-colors duration-700 ease-in-out">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-             <Activity className="text-indigo-600" /> Executive Dashboard
-          </h1>
-          <p className="text-sm text-gray-500">Real-time performance metrics for {timeRange === 'today' ? "today" : `the last ${timeRange}`}.</p>
-        </div>
-        <div className="flex bg-gray-100 p-1 rounded-xl">
-          {['today', 'week', 'month', 'year'].map((range) => (
-            <button key={range} onClick={() => setTimeRange(range)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all capitalize ${timeRange === range ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              {range}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* STAT CARDS ROW 1: Financials */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard 
-          title="Total Revenue" value={`₹${dashboardData?.revenue.toLocaleString()}`} 
-          trend={dashboardData?.revenueTrend} icon={DollarSign} color="indigo" loading={isLoading}
-          subtext="Online + COD + Wallet"
-        />
-        {/* 🟢 7. ADDED WALLET STAT CARD */}
-        <StatCard 
-          title="Wallet Used" value={`₹${dashboardData?.walletUsed.toLocaleString()}`} 
-          trend={dashboardData?.walletTrend} icon={Wallet} color="pink" loading={isLoading}
-          subtext="Store credit redeemed"
-        />
-        <StatCard 
-          title="Net Profit (Est.)" value={`₹${dashboardData?.profit.toLocaleString()}`} 
-          trend={dashboardData?.profitTrend} icon={TrendingUp} color="emerald" loading={isLoading}
-          subtext={`${((dashboardData?.profit / (dashboardData?.revenue || 1)) * 100).toFixed(1)}% Margin`}
-        />
-        <StatCard 
-          title="Total Orders" value={dashboardData?.totalOrders} 
-          trend={dashboardData?.successTrend} icon={ShoppingBag} color="blue" loading={isLoading}
-          subtext={`${dashboardData?.successOrdersCount} Successful`}
-        />
-        <StatCard 
-          title="Avg. Order Value" value={`₹${dashboardData?.aov.toFixed(0)}`} 
-          icon={CreditCard} color="purple" loading={isLoading}
-          subtext="Per successful transaction"
-        />
-      </div>
-
-      {/* STAT CARDS ROW 2 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        <StatCard 
-          title="New Registrations" value={dashboardData?.newCustomers} 
-          icon={UserPlus} color="teal" loading={isLoading}
-          subtext="Sign-ups in this period"
-        />
-        <StatCard 
-          title="First-Time Buyers" value={dashboardData?.firstTimeBuyers} 
-          icon={UserCheck} color="indigo" loading={isLoading}
-          subtext="Purchased 1st time in this period"
-        />
-        <StatCard 
-          title="Returning Buyers" value={`${dashboardData?.returningCustomers}`} 
-          icon={Repeat} color="cyan" loading={isLoading}
-          subtext={`of ${dashboardData?.activeBuyersCount} active buyers`}
-        />
-        <StatCard 
-          title="Lost Revenue" value={`₹${dashboardData?.lostRevenue.toLocaleString()}`} 
-          icon={Ban} color="rose" loading={isLoading}
-          subtext="From cancelled orders"
-        />
-        <StatCard 
-          title="Conversion Rate" value={`${dashboardData?.conversionRate.toFixed(2)}%`} 
-          icon={Package} color="amber" loading={isLoading}
-          subtext="Order Success Rate"
-        />
-      </div>
-
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-96">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="text-indigo-500" size={20} /> Sales Trend
-            </h3>
-            <span className="text-xs font-medium bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md capitalize">{timeRange} view</span>
-          </div>
-          <div className="h-full pb-8">
-             <Line data={{
-                 labels: dashboardData?.chartData.labels,
-                 datasets: [{
-                     label: 'Revenue', data: dashboardData?.chartData.revenue,
-                     borderColor: '#4F46E5', backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                     fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff',
-                 }]
-               }} options={lineOptions} 
-             />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Layers className="text-pink-500" size={20} /> Category Sales
-          </h3>
-          <div className="flex-1 relative flex items-center justify-center">
-            {dashboardData?.categoryData.data.length > 0 ? (
-              <Doughnut data={{
-                  labels: dashboardData?.categoryData.labels,
-                  datasets: [{
-                    data: dashboardData?.categoryData.data,
-                    backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#3b82f6'],
-                    borderWidth: 0,
-                  }]
-                }} options={{ cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } }}
-              />
-            ) : <div className="text-gray-400 text-sm">No sales data</div>}
-          </div>
-        </div>
-      </div>
-
-      {/* BOTTOM ROW: STOCK & CARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* STOCK */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <AlertTriangle className="text-amber-500" size={20} /> Stock Alerts
-            </h3>
-            <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full">{dashboardData?.lowStockVariants.length} Low</span>
-          </div>
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-            {dashboardData?.lowStockVariants.length === 0 ? (
-               <div className="text-center py-8 text-gray-400">Inventory levels are healthy.</div>
-            ) : (
-              dashboardData?.lowStockVariants.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 border border-amber-100">
-                  <div className="flex items-center gap-3">
-                    <img src={item.image || '/placeholder.png'} className="w-10 h-10 rounded-lg object-cover bg-white" alt="" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-sm">{item.productName}</h4>
-                      <p className="text-xs text-amber-700">{item.name} (Size: {item.size}ml)</p>
-                    </div>
-                  </div>
-                  <div className="text-right"><p className="font-black text-red-600">{item.stock} left</p></div>
-                </div>
-              ))
+      {/* 1. HEADER & CONTROLS */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 relative z-20">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <h1 className="text-5xl font-display font-medium text-[var(--text)] tracking-tighter drop-shadow-sm">Overview</h1>
+          <div className="flex items-center gap-3 mt-3">
+            <p className="text-[var(--sub)] font-body text-sm tracking-wide">Business performance at a glance</p>
+            {dashboardData?.comparisonLabel && (
+              <span className="text-[10px] px-3 py-1 rounded-full bg-[var(--surface)] ring-1 ring-[var(--border)]/50 font-bold text-[var(--text)] uppercase tracking-widest shadow-sm">
+                {dashboardData.comparisonLabel}
+              </span>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* RECOVERY POTENTIAL */}
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-2xl shadow-lg text-white">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <RefreshCcw size={22} className="opacity-80" /> Recovery Potential
-              </h3>
-              <p className="text-indigo-100 text-sm mt-1">Revenue sitting in abandoned carts.</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md p-2 rounded-lg"><Clock size={24} /></div>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }} 
+          className="flex flex-wrap items-center gap-3 bg-[var(--surface)]/60 backdrop-blur-xl p-2 rounded-[2rem] ring-1 ring-[var(--border)]/30 shadow-[0_8px_32px_rgba(0,0,0,0.04)]"
+        >
+          <AnimatePresence mode="popLayout">
+            {timeRange === 'custom' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, width: 0 }}
+                animate={{ opacity: 1, scale: 1, width: 'auto' }}
+                exit={{ opacity: 0, scale: 0.9, width: 0 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center gap-2 overflow-hidden bg-[var(--surface)] ring-1 ring-[var(--border)]/40 rounded-[1.5rem] p-1 shadow-inner"
+              >
+                <div className="relative group">
+                  <DatePicker
+                    selected={customStartDate}
+                    onChange={setCustomStartDate}
+                    selectsStart
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    placeholderText="Start"
+                    className="w-28 pl-9 pr-3 py-2 text-xs font-body font-bold bg-transparent border-none focus:ring-0 text-[var(--text)] outline-none"
+                  />
+                  <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+                <div className="w-1 h-1 rounded-full bg-[var(--muted)]" />
+                <div className="relative group">
+                  <DatePicker
+                    selected={customEndDate}
+                    onChange={setCustomEndDate}
+                    selectsEnd
+                    startDate={customStartDate}
+                    endDate={customEndDate}
+                    minDate={customStartDate}
+                    placeholderText="End"
+                    className="w-28 pl-9 pr-3 py-2 text-xs font-body font-bold bg-transparent border-none focus:ring-0 text-[var(--text)] outline-none"
+                  />
+                  <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] group-hover:text-[var(--brand)] transition-colors" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="bg-[var(--surface)] ring-1 ring-[var(--border)]/40 rounded-[1.5rem] p-1.5 flex items-center shadow-inner overflow-x-auto hide-scrollbar max-w-[600px]">
+            {RANGES.map(range => (
+              <button
+                key={range.value}
+                onClick={() => setTimeRange(range.value)}
+                className={`px-4 py-2 rounded-[1rem] text-[11px] font-bold font-body transition-all duration-500 ease-out whitespace-nowrap ${
+                  timeRange === range.value
+                    ? 'bg-[var(--text)] text-[var(--surface)] shadow-md scale-100'
+                    : 'text-[var(--sub)] hover:text-[var(--text)] hover:bg-[var(--surface-muted)] scale-95 hover:scale-100'
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
           </div>
-          <div className="flex items-end gap-2 mb-6">
-            <h2 className="text-5xl font-black">₹{dashboardData?.abandonedVal.toLocaleString()}</h2>
-            <span className="mb-2 font-medium opacity-80">pending</span>
-          </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setActiveTab('carts')} 
-              className="flex-1 bg-white text-indigo-600 py-3 rounded-xl font-bold text-sm hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
-            >
-               View Carts <ArrowRight size={16} />
-            </button>
-            <div className="bg-white/10 px-4 py-3 rounded-xl flex flex-col items-center justify-center">
-              <span className="text-xl font-bold leading-none">{dashboardData?.uniqueAbandonedCount || 0}</span>
-              <span className="text-[10px] uppercase tracking-wider opacity-70">Carts</span>
-            </div>
-          </div>
-        </div>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="p-3.5 rounded-[1.5rem] ring-1 ring-[var(--border)]/40 bg-[var(--surface)] text-[var(--sub)] hover:text-[var(--text)] hover:shadow-lg transition-all duration-500 group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCcw size={16} strokeWidth={2.5} className={isFetching ? "animate-spin text-[var(--brand)]" : "group-hover:rotate-180 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"} />
+          </motion.button>
+        </motion.div>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Total Order Volume</h3>
-        <OrderChart orders={orders} />
+      {/* 2. KPI CARDS */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 xl:gap-6"
+      >
+        <motion.div variants={itemVariants}>
+          <StatCard title="Total Revenue" value={dashboardData ? fmt(dashboardData.revenue) : 0} trend={hasTrend ? dashboardData?.revenueTrend : null} icon={DollarSign} color="success" isLoading={isLoading} subtext="Realized gross revenue from all successful transactions." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Net Profit" value={dashboardData ? fmt(dashboardData.profit) : 0} trend={hasTrend ? dashboardData?.profitTrend : null} icon={TrendingUp} color="brand" isLoading={isLoading} subtext="Estimated gross profit margin after base product costs." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Total Orders" value={dashboardData ? fmtNum(dashboardData.successOrdersCount) : 0} trend={hasTrend ? dashboardData?.successTrend : null} icon={ShoppingBag} color="info" isLoading={isLoading} subtext="Total successful orders fulfilled or awaiting fulfillment." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Average Order Value" value={dashboardData ? fmt(dashboardData.aov) : 0} trend={hasTrend ? dashboardData?.aovTrend : null} icon={PieChart} color="accent" isLoading={isLoading} subtext="Average cart value for all completed transactions." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="New Customers" value={dashboardData ? fmtNum(dashboardData.newCustomers) : 0} trend={hasTrend ? dashboardData?.customerTrend : null} icon={Users} color="brand" isLoading={isLoading} subtext="Unique first-time buyers acquired during this period." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Returning Customers" value={dashboardData ? fmtNum(dashboardData.returningCustomers) : 0} trend={hasTrend ? dashboardData?.returningCustomersTrend : null} icon={Repeat} color="success" isLoading={isLoading} subtext="Existing customers who made a repeat purchase." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Conversion Rate" value={dashboardData ? `${dashboardData.conversionRate.toFixed(1)}%` : '0%'} trend={hasTrend ? dashboardData?.conversionTrend : null} icon={Percent} color="warning" isLoading={isLoading} subtext="Percentage of checkouts that resulted in a paid order." />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard title="Refunds Processed" value={dashboardData ? fmt(dashboardData.totalRefundsProcessed) : 0} trend={hasTrend ? dashboardData?.refundsTrend : null} icon={ArrowDown} color="error" isLoading={isLoading} reverseTrendColors subtext="Total value returned to customers for cancelled or returned orders." />
+        </motion.div>
+      </motion.div>
+
+      {/* 3. ATTENTION REQUIRED */}
+      <AttentionRequired attentionData={attentionData} isLoading={isAttentionLoading} setActiveTab={setActiveTab} />
+
+      {/* 4. SALES PERFORMANCE */}
+      <SalesPerformanceChart chartData={dashboardData?.chartData} hasTrend={hasTrend} comparisonLabel={dashboardData?.comparisonLabel} timeRange={timeRange} />
+
+      {/* 5. ORDER HEALTH & CUSTOMERS */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6">
+        <OrderHealth orderHealth={dashboardData?.orderHealth} isLoading={isLoading} setActiveTab={setActiveTab} />
+        <CustomerSnapshot dashboardData={dashboardData} isLoading={isLoading} />
       </div>
 
+      {/* 6. PRODUCTS & CART */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6">
+        <InventoryHealth dashboardData={dashboardData} isLoading={isLoading} setActiveTab={setActiveTab} />
+        <CartRecovery dashboardData={dashboardData} isLoading={isLoading} setActiveTab={setActiveTab} />
+      </div>
+
+      {/* 7. TOP PRODUCTS & MARKETS */}
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4 xl:gap-6">
+        <TopProducts topProductsByVolume={dashboardData?.topProductsByVolume} topProductsByRevenue={dashboardData?.topProductsByRevenue} setActiveTab={setActiveTab} />
+        <GeoDistribution geoDistribution={dashboardData?.geoDistribution} setActiveTab={setActiveTab} />
+      </div>
+
+      {/* 8. RECENT ACTIVITY & QUICK ACTIONS */}
+      <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4 xl:gap-6">
+        <LiveActivityFeed activities={dashboardData?.recentActivity} setActiveTab={setActiveTab} />
+        <QuickActions setActiveTab={setActiveTab} />
+      </div>
     </div>
   );
 };

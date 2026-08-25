@@ -1,100 +1,60 @@
-// file: src/pages/AdminRewardsTab.jsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { Check, X, Eye, Settings, Save, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, X, Eye, Settings, Save, Loader2, Image as ImageIcon, AtSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from "@clerk/clerk-react"; // 🟢 Import Auth
+import { 
+  usePendingRewardClaims, 
+  useRewardsConfig, 
+  useUpdateRewardsConfig, 
+  useDecideRewardClaim 
+} from "../../features/admin/hooks/useAdmin";
 
 const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
 
+// --- ANIMATION VARIANTS ---
+const listVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export default function AdminRewardsTab() {
-  const [claims, setClaims] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
-  const [config, setConfig] = useState({ paparazzi: 100, loyal_follower: 50, reviewer: 50, monthly_lottery: 500 });
-  const [savingConfig, setSavingConfig] = useState(false);
+  const [localConfig, setLocalConfig] = useState({ paparazzi: 100, loyal_follower: 50, reviewer: 50, monthly_lottery: 500 });
 
-  // 🟢 Get Token Helper
-  const { getToken } = useAuth(); 
+  // 🟢 TanStack Hooks
+  const { data: claimsData = [], isLoading: loadingClaims } = usePendingRewardClaims();
+  const { data: configData, isLoading: loadingConfig } = useRewardsConfig();
+  const { mutateAsync: updateConfig, isPending: savingConfig } = useUpdateRewardsConfig();
+  const { mutateAsync: decideClaim } = useDecideRewardClaim();
 
-  const fetchData = useCallback(async () => {
-    try {
-        // 🟢 SECURE: Get Token
-        const token = await getToken();
-        const headers = { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // 🔒 Attach Token
-        };
+  // Filter out lottery entries (handled in separate tab)
+  const claims = claimsData.filter(c => !c.taskType.includes('lottery'));
+  const loading = loadingClaims || loadingConfig;
 
-        const claimsRes = await fetch(`${BASE}/api/rewards/admin/pending`, { headers });
-        if (claimsRes.ok) {
-            const claimsData = await claimsRes.json();
-            // Filter out lottery entries (handled in separate tab)
-            setClaims(claimsData.filter(c => !c.taskType.includes('lottery')));
-        }
-
-        const configRes = await fetch(`${BASE}/api/rewards/config`, { headers });
-        if (configRes.ok) {
-            const configData = await configRes.json();
-            setConfig(configData);
-        }
-    } catch (e) { 
-        console.error(e); 
-    } finally {
-        setLoading(false); 
+  useEffect(() => {
+    if (configData) {
+      setLocalConfig(configData);
     }
-  }, [getToken]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  }, [configData]);
 
   const handleSaveConfig = async () => {
-    setSavingConfig(true);
-    try {
-        // 🟢 SECURE: Get Token
-        const token = await getToken();
-        
-        await fetch(`${BASE}/api/rewards/config`, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}` // 🔒 Attach Token
-          },
-          body: JSON.stringify(config)
-        });
-        if(window.toast) window.toast.success("Reward amounts updated!");
-        setShowSettings(false);
-    } catch(e) { 
-        if(window.toast) window.toast.error("Failed to save"); 
-    } finally { 
-        setSavingConfig(false); 
-    }
+    await updateConfig(localConfig);
+    setShowSettings(false);
   };
 
   const handleDecide = async (claimId, decision) => {
     setProcessing(claimId);
     try {
-      // 🟢 SECURE: Get Token
-      const token = await getToken();
-
-      const res = await fetch(`${BASE}/api/rewards/admin/decide`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // 🔒 Attach Token
-        },
-        body: JSON.stringify({ claimId, decision })
-      });
-      
-      if (res.ok) {
-        if(window.toast) window.toast.success(`Claim ${decision}ed`);
-        setClaims(prev => prev.filter(c => c.id !== claimId));
-      }
-    } catch (err) { 
-        alert("Error processing"); 
-    } finally { 
-        setProcessing(null); 
+      await decideClaim({ claimId, decision });
+    } finally {
+      setProcessing(null);
     }
   };
 
@@ -103,84 +63,174 @@ export default function AdminRewardsTab() {
     return !proof.includes(" ") && proof.length > 20 && !proof.startsWith("@");
   };
 
-  if (loading) return <div className="p-10 text-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="p-16 text-center flex flex-col items-center justify-center gap-4 min-h-[50vh] animate-fadeIn">
+        <Loader2 className="animate-spin text-[var(--accent)]" size={32} strokeWidth={1.5} /> 
+        <p className="font-display italic text-xl text-[var(--sub)] tracking-wide">Loading claims...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Pending Task Verifications</h2>
-          <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${showSettings ? 'bg-zinc-900 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-          >
-             <Settings size={16} /> Edit Prices
-          </button>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto font-body animate-fadeIn">
+      
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-[var(--surface)] p-6 md:p-8 rounded-xl shadow-[var(--shadow)] border border-[var(--border)]">
+        <div>
+           <h2 className="font-display text-3xl font-medium text-[var(--text)]">Task Verifications</h2>
+           <p className="text-[var(--sub)] text-base mt-2 font-display italic tracking-wide">Review and approve user reward claims.</p>
+        </div>
+        
+        <button 
+            onClick={() => setShowSettings(!showSettings)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-body font-bold text-sm transition-all duration-300 shadow-sm ${
+              showSettings 
+                ? 'bg-[var(--brand)] text-[var(--surface)] shadow-[var(--shadow-strong)]' 
+                : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] hover:text-[var(--brand)]'
+            }`}
+        >
+            <Settings size={18} strokeWidth={1.5} className={showSettings ? 'animate-spin-slow' : ''} /> 
+            {showSettings ? 'Close Settings' : 'Edit Reward Values'}
+        </button>
       </div>
 
+      {/* SETTINGS PANEL */}
       <AnimatePresence>
         {showSettings && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-6">
-            <div className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
-                {[
-                    { label: "Story Task (₹)", key: "paparazzi" },
-                    { label: "Follow Task (₹)", key: "loyal_follower" },
-                    { label: "Review Bonus (₹)", key: "reviewer" },
-                    { label: "Monthly Lottery (₹)", key: "monthly_lottery" }
-                ].map((field) => (
-                    <div key={field.key}>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{field.label}</label>
-                        <input type="number" value={config[field.key]} onChange={(e) => setConfig({...config, [field.key]: e.target.value})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
-                ))}
-                <button onClick={handleSaveConfig} disabled={savingConfig} className="h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 col-span-2 md:col-span-4 mt-2">
-                  {savingConfig ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} /> Update Amounts</>}
-                </button>
+          <motion.div 
+            initial={{ height: 0, opacity: 0, scale: 0.98 }} 
+            animate={{ height: 'auto', opacity: 1, scale: 1 }} 
+            exit={{ height: 0, opacity: 0, scale: 0.98 }} 
+            className="overflow-hidden mb-8"
+          >
+            <div className="bg-[var(--surface)] p-6 md:p-8 rounded-xl border border-[var(--border)] shadow-[var(--shadow-strong)] relative">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-[var(--accent)] rounded-t-xl" />
+                <h3 className="font-body text-[11px] uppercase tracking-widest font-bold text-[var(--muted)] mb-6">Global Reward Pricing</h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-end">
+                  {[
+                      { label: "Story Task (₹)", key: "paparazzi" },
+                      { label: "Follow Task (₹)", key: "loyal_follower" },
+                      { label: "Review Bonus (₹)", key: "reviewer" },
+                      { label: "Monthly Lottery (₹)", key: "monthly_lottery" }
+                  ].map((field) => (
+                      <div key={field.key} className="group">
+                          <label className="block font-body text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2.5 transition-colors group-focus-within:text-[var(--brand)]">
+                            {field.label}
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] font-body font-bold text-sm">₹</span>
+                            <input 
+                              type="number" 
+                              value={localConfig[field.key]} 
+                              onChange={(e) => setLocalConfig({...localConfig, [field.key]: e.target.value})} 
+                              className="w-full pl-8 pr-4 py-2.5 bg-[var(--surface)] border border-[var(--border)] hover:border-[var(--border)] rounded-lg font-body font-bold text-sm text-[var(--text)] transition-all outline-none focus:border-[var(--brand)] focus:ring-1 focus:ring-[var(--brand)]" 
+                            />
+                          </div>
+                      </div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 pt-6 border-t border-[var(--border)] flex justify-end">
+                  <button 
+                    onClick={handleSaveConfig} 
+                    disabled={savingConfig} 
+                    className="px-8 py-3 bg-[var(--brand)] hover:brightness-110 text-[var(--surface)] rounded-lg font-body font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] disabled:opacity-50 button-hero"
+                  >
+                    {savingConfig ? <Loader2 className="animate-spin" size={18} /> : <><Save size={18} strokeWidth={2} /> Update Values</>}
+                    {!savingConfig && <div className="pulse border-[var(--surface)]"></div>}
+                  </button>
+                </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
       
+      {/* CLAIMS LIST */}
       <div className="grid gap-4">
         {claims.length === 0 ? (
-          <p className="text-gray-400">No pending claims.</p>
+          <div className="bg-[var(--surface)] p-16 rounded-xl border border-[var(--border)] shadow-[var(--shadow)] flex flex-col items-center justify-center text-[var(--muted)]">
+             <Check size={48} strokeWidth={1.5} className="mb-4 text-[var(--accent)]" />
+             <p className="font-display italic text-xl text-[var(--sub)] tracking-wide">All caught up! No pending claims to review.</p>
+          </div>
         ) : (
-          claims.map(claim => (
-            <div key={claim.id} className="bg-white p-4 rounded-xl border border-gray-200 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-4">
+          <motion.div variants={listVariants} initial="hidden" animate="show" className="space-y-4">
+            {claims.map(claim => (
+              <motion.div key={claim.id} variants={itemVariants} className="bg-[var(--surface)] p-4 md:p-6 rounded-xl border border-[var(--border)] hover:border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between shadow-[var(--shadow)] transition-colors duration-300 gap-5 group">
                 
-                <div className="w-20 h-20 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center relative group border border-gray-100 shrink-0">
-                  {isImage(claim.proof) ? (
-                      <>
-                        <img src={`${BASE}/uploads/${claim.proof}`} className="w-full h-full object-cover" onError={(e) => e.target.src = "https://via.placeholder.com/150?text=Error"} />
-                        <a href={`${BASE}/uploads/${claim.proof}`} target="_blank" className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                           <Eye className="text-white" size={20} />
-                        </a>
-                      </>
-                   ) : (
-                      <div className="text-center p-1">
-                        <span className="text-[10px] text-gray-400 uppercase font-bold block mb-1">Handle</span>
-                        <span className="text-xs font-bold text-indigo-600 break-all">{claim.proof}</span>
+                <div className="flex flex-row items-center gap-5">
+                  {/* PROOF THUMBNAIL */}
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-[var(--surface)] rounded-lg overflow-hidden flex flex-col items-center justify-center relative border border-[var(--border)] shrink-0 group-hover:border-[var(--brand)] transition-colors">
+                    {isImage(claim.proof) ? (
+                        <>
+                          <img 
+                            src={`${BASE}/uploads/${claim.proof}`} 
+                            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105" 
+                            onError={(e) => { e.target.onerror = null; e.target.src = "/placeholder.png"; }} 
+                            alt="Proof"
+                          />
+                          <a 
+                            href={`${BASE}/uploads/${claim.proof}`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="absolute inset-0 bg-[var(--overlay-light)] backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                              <Eye className="text-[var(--text)] drop-shadow-md" size={24} strokeWidth={2} />
+                          </a>
+                        </>
+                     ) : (
+                        <div className="text-center p-2 w-full flex flex-col items-center justify-center h-full transition-colors">
+                          <AtSign size={18} className="text-[var(--muted)] mb-1 transition-colors group-hover:text-[var(--brand)]" />
+                          <span className="font-body text-[9px] text-[var(--muted)] uppercase font-bold tracking-widest block mb-1">Handle</span>
+                          <span className="font-body text-[12px] font-bold text-[var(--text)] break-all px-1 leading-tight group-hover:text-[var(--brand)] transition-colors">{claim.proof}</span>
+                        </div>
+                     )}
+                  </div>
+
+                  {/* CLAIM INFO */}
+                  <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                        <h4 className="font-body font-bold text-base text-[var(--text)] capitalize tracking-wide group-hover:text-[var(--brand)] transition-colors">
+                          {claim.taskType.replace(/_/g, ' ')}
+                        </h4>
+                        <span className="font-body font-bold text-base text-[var(--success)] tracking-tight bg-[var(--surface)] px-2.5 py-0.5 rounded-md border border-[var(--border)]">
+                          ₹{claim.rewardAmount}
+                        </span>
                       </div>
-                   )}
+                      
+                      <p className="font-body text-sm text-[var(--sub)] truncate">
+                        <span className="font-bold text-[var(--text)]">{claim.user?.name}</span> <span className="text-[11px] font-bold opacity-80">({claim.user?.email})</span>
+                      </p>
+                      
+                      {claim.adminNote && (
+                        <div className="mt-3 bg-[var(--accent-soft)] border border-transparent text-[var(--brand)] px-3 py-1.5 rounded-md w-fit shadow-sm">
+                          <p className="font-body font-bold text-xs">{claim.adminNote}</p>
+                        </div>
+                      )}
+                  </div>
                 </div>
 
-                <div>
-                   <h4 className="font-bold text-gray-900 capitalize">{claim.taskType.replace('_', ' ')} <span className="text-green-600 ml-2">₹{claim.rewardAmount}</span></h4>
-                   <p className="text-sm text-gray-500">{claim.user?.name} ({claim.user?.email})</p>
-                   {claim.adminNote && <p className="text-xs text-amber-600 mt-1 bg-amber-50 px-2 py-1 rounded w-fit">{claim.adminNote}</p>}
+                {/* ACTIONS */}
+                <div className="flex items-center gap-3 md:ml-auto w-full md:w-auto justify-end pt-4 md:pt-0 border-t md:border-t-0 border-[var(--border)]">
+                    <button 
+                      onClick={() => handleDecide(claim.id, 'reject')} 
+                      disabled={processing === claim.id} 
+                      className="px-5 py-2.5 text-[var(--error)] bg-[var(--surface)] hover:bg-[var(--surface-muted)] border border-[var(--border)] hover:border-[var(--border)] rounded-lg transition-all font-body font-bold text-sm flex items-center gap-2 disabled:opacity-50 shadow-sm"
+                    >
+                      <X size={18} strokeWidth={2} /> <span className="md:hidden">Reject</span>
+                    </button>
+                    <button 
+                      onClick={() => handleDecide(claim.id, 'approve')} 
+                      disabled={processing === claim.id} 
+                      className="px-6 py-2.5 bg-[var(--success)] text-[var(--surface)] rounded-lg font-body font-bold text-sm hover:brightness-110 transition-all flex items-center gap-2 shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] disabled:opacity-70"
+                    >
+                      {processing === claim.id ? <Loader2 className="animate-spin" size={18} /> : <><Check size={18} strokeWidth={2.5} /> Approve</>}
+                    </button>
                 </div>
-              </div>
-
-              <div className="flex gap-2">
-                  <button onClick={() => handleDecide(claim.id, 'reject')} disabled={processing === claim.id} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                    <X size={20} />
-                  </button>
-                  <button onClick={() => handleDecide(claim.id, 'approve')} disabled={processing === claim.id} className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
-                    {processing === claim.id ? <Loader2 className="animate-spin" size={16} /> : <><Check size={16} /> Approve</>}
-                  </button>
-              </div>
-            </div>
-          ))
+              </motion.div>
+            ))}
+          </motion.div>
         )}
       </div>
     </div>

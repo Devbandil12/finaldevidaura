@@ -36,12 +36,12 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
         onClick={() => selectAddress(index)}
         className={`relative rounded-2xl p-4 sm:p-5 flex items-start gap-3 sm:gap-4 cursor-pointer group transition-all duration-300 border ${
           isSelected
-            ? 'bg-slate-50 border-slate-800 shadow-sm' 
-            : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-sm'
+            ? 'bg-[var(--surface-muted)] border-[var(--text)] shadow-sm' 
+            : 'bg-[var(--surface)] border-[var(--border)] hover:border-[var(--brand)] hover:shadow-[var(--shadow)]'
         }`}
       >
         <div className="mt-1 flex-shrink-0">
-          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${isSelected ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
+          <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors duration-300 ${isSelected ? 'border-[var(--brand)]' : 'border-[var(--border)] group-hover:border-[var(--muted)]'}`}>
             <AnimatePresence>
                 {isSelected && (
                     <motion.div 
@@ -49,7 +49,7 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
                         animate={{ scale: 1 }} 
                         exit={{ scale: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="w-2.5 h-2.5 rounded-full bg-black" 
+                        className="w-2.5 h-2.5 rounded-full bg-[var(--brand)]" 
                     />
                 )}
             </AnimatePresence>
@@ -59,18 +59,25 @@ const AddressCard = ({ addr, index, selectedIndex, selectAddress, setDefaultAddr
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap justify-between items-start gap-2">
             <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap">
-              <span className={`font-semibold transition-colors duration-300 ${isSelected ? 'text-black' : 'text-slate-700'}`}>{addr.name}</span>
-              <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 whitespace-nowrap">{addr.addressType}</span>
+              <span className={`font-semibold transition-colors duration-300 ${isSelected ? 'text-[var(--text)]' : 'text-[var(--sub)]'}`}>{addr.name}</span>
+              <span className="text-[10px] uppercase tracking-wider font-bold text-[var(--muted)] bg-[var(--surface-muted)] px-2 py-0.5 rounded-full border border-[var(--border)] whitespace-nowrap">{addr.addressType}</span>
             </div>
-            {addr.isDefault && <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">Default</div>}
+            {addr.isDefault && <div className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-[var(--surface-muted)] text-[var(--muted)] border border-[var(--border)] whitespace-nowrap">Default</div>}
           </div>
           
-          <p className="text-sm text-slate-500 mt-1 leading-relaxed break-words">{fullAddress}</p>
-          <p className="text-sm text-slate-500 mt-2">Phone: <span className="text-slate-700">{addr.phone}</span></p>
+          <p className="text-sm text-[var(--sub)] mt-1 leading-relaxed break-words">{fullAddress}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-sm text-[var(--sub)]">Phone: <span className="text-[var(--text)]">{addr.phone}</span></p>
+            {addr.isVerified ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100"><CheckCircle2 className="w-3 h-3"/> Verified</span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Not Verified</span>
+            )}
+          </div>
           
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4 text-xs font-semibold opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
-            {!addr.isDefault && <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Set Default</button>}
-            <button onClick={(e) => { e.stopPropagation(); editAddress(index); }} className="text-slate-500 hover:text-black transition-colors py-1">Edit</button>
+            {!addr.isDefault && <button onClick={(e) => { e.stopPropagation(); setDefaultAddress(index); }} className="text-[var(--muted)] hover:text-[var(--text)] transition-colors py-1">Set Default</button>}
+            <button onClick={(e) => { e.stopPropagation(); editAddress(index); }} className="text-[var(--muted)] hover:text-[var(--text)] transition-colors py-1">Edit</button>
             <button onClick={(e) => { e.stopPropagation(); deleteAddress(index); }} className="text-red-400 hover:text-red-600 transition-colors py-1">Delete</button>
           </div>
         </div>
@@ -381,16 +388,16 @@ export default function AddressSelection({ userId, onSelect }) {
   }
 
   return (
-    <div className="bg-white p-4 sm:p-8 rounded-3xl border border-slate-200">
+    <div className="bg-[var(--surface)] p-4 sm:p-8 rounded-3xl border border-[var(--border)]">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
-        <h3 className="flex items-center gap-3 text-lg font-bold text-slate-800">
-          <div className="w-9 h-9 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-700">
+        <h3 className="flex items-center gap-3 text-lg font-bold text-[var(--text)]">
+          <div className="w-9 h-9 rounded-full bg-[var(--surface-muted)] flex items-center justify-center border border-[var(--border)] text-[var(--muted)]">
             <MapPin className="w-4 h-4" />
           </div>
           Delivery Address
         </h3>
         {addresses.length > 1 && (
-          <button onClick={() => setShowAll(prev => !prev)} className="text-sm font-semibold text-slate-500 hover:text-black transition-colors duration-300 ml-2 whitespace-nowrap">
+          <button onClick={() => setShowAll(prev => !prev)} className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--text)] transition-colors duration-300 ml-2 whitespace-nowrap">
             {showAll ? 'Show Less' : 'Change'}
           </button>
         )}
@@ -407,7 +414,7 @@ export default function AddressSelection({ userId, onSelect }) {
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     transition={smoothTransition}
-                    className="text-sm text-slate-400 py-10 text-center italic border border-dashed border-slate-100 rounded-2xl bg-slate-50/50"
+                    className="text-sm text-[var(--muted)] py-10 text-center italic border border-dashed border-[var(--border)] rounded-2xl bg-[var(--surface-muted)]"
                   >
                     No addresses found. Please add one below.
                   </motion.div>
@@ -430,7 +437,7 @@ export default function AddressSelection({ userId, onSelect }) {
               whileHover={{ scale: 1.005, backgroundColor: "#f8fafc" }} 
               whileTap={{ scale: 0.99 }}
               transition={{ duration: 0.2 }}
-              className="w-full flex items-center justify-center gap-2 border border-dashed border-slate-200 text-slate-500 py-4 rounded-xl  hover:border-slate-400 hover:text-black transition-colors duration-300"
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-[var(--border)] text-[var(--muted)] py-4 rounded-xl hover:border-[var(--brand)] hover:text-[var(--text)] transition-colors duration-300"
             >
               <Plus className="w-4 h-4" /> Add New Address
             </motion.button>
@@ -447,8 +454,8 @@ export default function AddressSelection({ userId, onSelect }) {
             transition={smoothTransition}
             className="overflow-hidden"
           >
-            <div className="pt-6 mt-6 sm:pt-8 sm:mt-8 border-t border-slate-100">
-              <h4 className="font-bold text-lg mb-6 text-slate-800 tracking-tight">{isEditing ? "Edit Address" : "Add New Address"}</h4>
+            <div className="pt-6 mt-6 sm:pt-8 sm:mt-8 border-t border-[var(--border)]">
+              <h4 className="font-bold text-lg mb-6 text-[var(--text)] tracking-tight">{isEditing ? "Edit Address" : "Add New Address"}</h4>
               {formError && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 shadow-sm">{formError}</div>}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -501,7 +508,7 @@ export default function AddressSelection({ userId, onSelect }) {
                         <input id="postalCode" value={formAddress.postalCode || ""} onChange={(e) => updateFormAddress("postalCode", e.target.value)} onBlur={onPostalBlur} className="form-input peer w-full" placeholder=" " required />
                         <label htmlFor="postalCode" className="floating-label">Postal Code *</label>
                     </div>
-                    <motion.button type="button" onClick={useCurrentLocationInForm} whileTap={{ scale: 0.95 }} className="h-12 px-4 sm:px-5 bg-slate-800 text-white rounded-xl font-semibold text-sm hover:bg-black transition-all duration-300 flex-shrink-0 flex items-center gap-2 shadow-sm hover:shadow-md">
+                    <motion.button type="button" onClick={useCurrentLocationInForm} whileTap={{ scale: 0.95 }} className="h-12 px-4 sm:px-5 bg-[var(--brand)] text-[var(--brand-contrast)] rounded-xl font-semibold text-sm hover:bg-[var(--brand-hover)] transition-all duration-300 flex-shrink-0 flex items-center gap-2 shadow-sm hover:shadow-[var(--shadow)]">
                         <FontAwesomeIcon icon={faLocationArrow} /> <span className="hidden sm:inline">Locate</span>
                     </motion.button>
                 </div>
@@ -510,7 +517,7 @@ export default function AddressSelection({ userId, onSelect }) {
                   <label htmlFor="state" className="floating-label">State *</label>
                 </div>
                 <div className="relative">
-                  <input id="country" value={formAddress.country || "India"} disabled className="form-input peer bg-slate-50 cursor-not-allowed text-slate-500 w-full" placeholder=" "/>
+                  <input id="country" value={formAddress.country || "India"} disabled className="form-input peer bg-[var(--surface-muted)] cursor-not-allowed text-[var(--sub)] w-full" placeholder=" "/>
                   <label htmlFor="country" className="floating-label">Country</label>
                 </div>
                 <div className="relative sm:col-span-2">
@@ -518,15 +525,15 @@ export default function AddressSelection({ userId, onSelect }) {
                   <label htmlFor="deliveryInstructions" className="floating-label">Delivery Instructions (Optional)</label>
                 </div>
                 <div className="sm:col-span-2 mt-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Address Type</label>
+                    <label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider mb-3 block">Address Type</label>
                     <div className="flex flex-wrap items-center gap-4">
                         {['Home', 'Work', 'Other'].map(type => (
                             <label key={type} className="flex items-center gap-2 cursor-pointer group">
-                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors duration-200 ${formAddress.addressType === type ? 'border-black' : 'border-slate-300 group-hover:border-slate-400'}`}>
-                                    {formAddress.addressType === type && <div className="w-2 h-2 rounded-full bg-black" />}
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors duration-200 ${formAddress.addressType === type ? 'border-[var(--brand)]' : 'border-[var(--border)] group-hover:border-[var(--muted)]'}`}>
+                                    {formAddress.addressType === type && <div className="w-2 h-2 rounded-full bg-[var(--brand)]" />}
                                 </div>
                                 <input type="radio" name="addressType" value={type} checked={formAddress.addressType === type} onChange={(e) => updateFormAddress("addressType", e.target.value)} className="hidden" />
-                                <span className={`text-sm font-medium transition-colors ${formAddress.addressType === type ? 'text-black' : 'text-slate-600'}`}>{type}</span>
+                                <span className={`text-sm font-medium transition-colors ${formAddress.addressType === type ? 'text-[var(--text)]' : 'text-[var(--sub)]'}`}>{type}</span>
                             </label>
                         ))}
                     </div>
@@ -538,8 +545,8 @@ export default function AddressSelection({ userId, onSelect }) {
                     )}
                 </div>
                 <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
-                  <motion.button type="button" onClick={() => setShowForm(false)} disabled={loading} whileTap={{ scale: 0.98 }} className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 w-full sm:w-auto">Cancel</motion.button>
-                  <motion.button type="button" onClick={saveAddress} disabled={loading} whileTap={{ scale: 0.98 }} className="px-8 py-3 bg-black text-white rounded-xl font-semibold text-sm hover:bg-slate-800 disabled:bg-slate-300 shadow-lg shadow-slate-200 transition-all duration-200 w-full sm:w-auto">{loading ? "Saving..." : "Save Address"}</motion.button>
+                  <motion.button type="button" onClick={() => setShowForm(false)} disabled={loading} whileTap={{ scale: 0.98 }} className="px-6 py-3 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-xl font-semibold text-sm hover:bg-[var(--surface-muted)] hover:border-[var(--brand)] transition-all duration-200 w-full sm:w-auto">Cancel</motion.button>
+                  <motion.button type="button" onClick={saveAddress} disabled={loading} whileTap={{ scale: 0.98 }} className="px-8 py-3 bg-[var(--brand)] text-[var(--brand-contrast)] rounded-xl font-semibold text-sm hover:bg-[var(--brand-hover)] disabled:bg-[var(--surface-muted)] shadow-[var(--shadow)] transition-all duration-200 w-full sm:w-auto">{loading ? "Saving..." : "Save Address"}</motion.button>
                 </div>
               </div>
             </div>

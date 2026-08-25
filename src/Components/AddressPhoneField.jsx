@@ -21,7 +21,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { ShieldCheck, ChevronDown } from "lucide-react";
 import PhoneOtpModal from "./PhoneOtpModal";
-import usePhoneVerification from "../hooks/usePhoneVerification";
+import usePhoneVerification from "../features/verification/hooks/usePhoneVerification";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 

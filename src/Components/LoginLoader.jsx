@@ -53,7 +53,7 @@ export default function Loader({ text = "Loading..." }) {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-center space-y-2"
         >
-          <h1 className="text-4xl md:text-5xl text-gray-900  tracking-[0.2em] uppercase">
+          <h1 className="text-4xl md:text-5xl text-[var(--text)]  tracking-[0.2em] uppercase">
             Devid Aura
           </h1>
           
@@ -72,7 +72,7 @@ export default function Loader({ text = "Loading..." }) {
           transition={{ duration: 1, delay: 0.8 }}
           className="mt-2 text-center"
         >
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-500 font-medium">
+          <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)] font-medium">
             {text}
             <motion.span
               animate={{ opacity: [0, 1, 0] }}

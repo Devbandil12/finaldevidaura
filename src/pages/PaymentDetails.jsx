@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { CreditCard, Truck, Loader2, ShieldCheck, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { loadRazorpayScript } from "../utils/useRazorpay"; 
+import { loadRazorpayScript } from "../features/checkout/hooks/useRazorpay"; 
 import { generateIdempotencyKey } from "../utils/idempotency";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");

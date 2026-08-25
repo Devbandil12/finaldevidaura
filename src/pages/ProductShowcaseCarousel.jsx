@@ -1,6 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState, useMemo, memo, useRef } from "react";
-import { ProductContext } from "../contexts/productContext";
-import { useSwipeable } from "react-swipeable";
+import { useProducts } from "../features/catalog/hooks/useProducts";import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, MoveRight } from "lucide-react";
 import { optimizeImage } from "../utils/imageOptimizer";
@@ -91,7 +90,7 @@ const BlurImage = memo(({ src, alt, className, priority = false, width, height }
 
     if (hasError) {
         return (
-            <div className={`relative ${className} bg-gray-100 flex items-center justify-center`}>
+            <div className={`relative ${className} bg-[var(--surface-muted)] flex items-center justify-center`}>
                 <span className="text-4xl font-bold opacity-20">{alt?.[0] || '?'}</span>
             </div>
         );
@@ -133,7 +132,7 @@ const BlurImage = memo(({ src, alt, className, priority = false, width, height }
 BlurImage.displayName = "BlurImage";
 
 export default function ProductShowcaseCarousel() {
-    const { products: contextProducts } = useContext(ProductContext);
+    const { data: contextProducts = [] } = useProducts();
     const shouldReduceMotion = useReducedMotion();
     const imageVariants = useMemo(() => createImageVariants(shouldReduceMotion), [shouldReduceMotion]);
 
@@ -517,7 +516,7 @@ export default function ProductShowcaseCarousel() {
                                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <div className="w-full h-full bg-[var(--surface-muted)] flex items-center justify-center">
                                             <span className="text-7xl font-bold opacity-30">{product.name?.[0] || '?'}</span>
                                         </div>
                                     )}

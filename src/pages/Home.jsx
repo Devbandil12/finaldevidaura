@@ -14,11 +14,13 @@ import { UserContext } from "../contexts/UserContext";
 import AuraFinder from "../Components/AuraFinder";
 import VerifyNumberNudge from "../Components/VerifyNumberNudge"; // 🟢 NEW: Part A2 home nudge
 import { shouldShowHomeNudge } from "../utils/firstLoadFlag"; // 🟢 NEW
+import { usePermissions } from "../features/admin/hooks/usePermissions";
 
 const Home = () => {
   const { userdetails } = useContext(UserContext);
   const { getToken } = useAuth(); // 🟢 Get Token Helper
   const navigate = useNavigate();
+  const { role: adminRole } = usePermissions();
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminStats, setAdminStats] = useState({ todayCount: 0, pendingCount: 0 });
 
@@ -34,7 +36,7 @@ const Home = () => {
   useEffect(() => {
     const fetchAdminStats = async () => {
       // Only fetch if user is confirmed as admin
-      if (userdetails?.role === 'admin') {
+      if (adminRole) {
         try {
           const token = await getToken(); // 🟢 Get Token
           const BACKEND_URL = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
@@ -47,7 +49,8 @@ const Home = () => {
           });
 
           if (res.ok) {
-            const orders = await res.json();
+            const result = await res.json();
+            const orders = Array.isArray(result) ? result : (Array.isArray(result.data) ? result.data : (Array.isArray(result.orders) ? result.orders : []));
             const today = new Date().toDateString();
             const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
             const pendingOrders = orders.filter(o => o.status === 'Order Placed' || o.status === 'Processing');
@@ -68,10 +71,8 @@ const Home = () => {
       }
     };
 
-    if (userdetails) {
-      fetchAdminStats();
-    }
-  }, [userdetails, getToken]); // Added getToken dependency
+    fetchAdminStats();
+  }, [adminRole, getToken]); // Added getToken dependency
   
   return (
     <>
@@ -80,16 +81,16 @@ const Home = () => {
       {showAdminModal && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
           <div className="w-[90%] max-w-md transform overflow-hidden rounded-2xl bg-white p-8 text-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] ring-1 ring-gray-900/5 transition-all">
-            <h2 className="font-cormorant text-3xl font-medium text-gray-900 mb-6">Admin Dashboard</h2>
+            <h2 className="font-cormorant text-3xl font-medium text-[var(--text)] mb-6">Admin Dashboard</h2>
 
             <div className="flex justify-around gap-4 mb-8">
-              <div className="flex-1 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100">
+              <div className="flex-1 rounded-xl bg-[var(--surface-muted)] p-4 transition-colors hover:bg-[var(--surface-muted)]">
                 <div className="text-3xl font-bold text-gold-dark mb-1">{adminStats.todayCount}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">New Today</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">New Today</div>
               </div>
-              <div className="flex-1 rounded-xl bg-gray-50 p-4 transition-colors hover:bg-gray-100">
-                <div className="text-3xl font-bold text-gray-900 mb-1">{adminStats.pendingCount}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Pending</div>
+              <div className="flex-1 rounded-xl bg-[var(--surface-muted)] p-4 transition-colors hover:bg-[var(--surface-muted)]">
+                <div className="text-3xl font-bold text-[var(--text)] mb-1">{adminStats.pendingCount}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Pending</div>
               </div>
             </div>
 

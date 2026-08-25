@@ -48,15 +48,15 @@ const CountdownBanner = ({ banner }) => {
         <motion.div 
             variants={itemVariants}
             whileHover={{ scale: 1.05, y: -5 }}
-            className="flex flex-col items-center justify-center bg-white/5 backdrop-blur-xl rounded-2xl w-16 h-16 md:w-24 md:h-24 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] relative overflow-hidden group"
+            className="flex flex-col items-center justify-center bg-[var(--brand-contrast)]/5 backdrop-blur-xl rounded-2xl w-16 h-16 md:w-24 md:h-24 border border-[var(--brand-contrast)]/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] relative overflow-hidden group"
         >
             {/* Subtle inner glow on hover */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[var(--brand-contrast)]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             
-            <span className="text-2xl md:text-4xl font-black text-white tracking-tighter">
+            <span className="text-2xl md:text-4xl font-black text-[var(--brand-contrast)] tracking-tighter">
                 {String(value).padStart(2, '0')}
             </span>
-            <span className="text-[10px] md:text-xs uppercase font-semibold text-white/50 tracking-[0.2em] mt-1">
+            <span className="text-[10px] md:text-xs uppercase font-semibold text-[var(--brand-contrast)]/50 tracking-[0.2em] mt-1">
                 {label}
             </span>
         </motion.div>
@@ -69,14 +69,14 @@ const CountdownBanner = ({ banner }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => navigate(banner.link)}
-                className="w-full max-w-[1400px] h-[500px] rounded-[2.5rem] cursor-pointer overflow-hidden relative group shadow-2xl bg-neutral-950 border border-white/5"
+                className="w-full max-w-[1400px] h-[500px] rounded-[2.5rem] cursor-pointer overflow-hidden relative group shadow-2xl bg-[var(--brand)] border border-[var(--brand-contrast)]/5"
             >
                 {/* Shimmer Loading Skeleton */}
                 <AnimatePresence>
                     {!imageLoaded && (
                         <motion.div 
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-10 bg-neutral-900 overflow-hidden"
+                            className="absolute inset-0 z-10 bg-[var(--surface-muted)] overflow-hidden"
                         >
                             <motion.div
                                 animate={{
@@ -87,7 +87,7 @@ const CountdownBanner = ({ banner }) => {
                                     duration: 1.5,
                                     ease: "linear",
                                 }}
-                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12"
+                                className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-[var(--brand-contrast)]/5 to-transparent skew-x-12"
                             />
                         </motion.div>
                     )}
@@ -107,15 +107,15 @@ const CountdownBanner = ({ banner }) => {
                 )}
                 
                 {/* Premium Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent mix-blend-multiply" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[var(--brand)]/90 via-[var(--brand)]/60 to-transparent mix-blend-multiply" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--brand)]/80 via-transparent to-transparent" />
 
                 {/* Content Container */}
                 <motion.div 
                     variants={containerVariants}
                     initial="hidden"
                     animate={imageLoaded ? "visible" : "hidden"}
-                    className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center max-w-3xl text-white z-20"
+                    className="absolute inset-0 p-8 md:p-16 flex flex-col justify-center max-w-3xl text-[var(--brand-contrast)] z-20"
                 >
                     <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 text-red-500 backdrop-blur-sm border border-red-500/20">
@@ -148,10 +148,10 @@ const CountdownBanner = ({ banner }) => {
                         variants={itemVariants}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="self-start relative overflow-hidden group inline-flex items-center gap-4 px-8 py-4 bg-white text-black font-bold uppercase tracking-widest rounded-full transition-all"
+                        className="self-start relative overflow-hidden group inline-flex items-center gap-4 px-8 py-4 bg-[var(--brand-contrast)] text-[var(--brand)] font-bold uppercase tracking-widest rounded-full transition-all"
                     >
                         {/* Button Hover Glow */}
-                        <div className="absolute inset-0 w-full h-full bg-neutral-200 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                        <div className="absolute inset-0 w-full h-full bg-[var(--border)] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                         
                         <span className="relative z-10">{banner.buttonText}</span>
                         <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300" />

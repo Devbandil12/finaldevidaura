@@ -1,0 +1,136 @@
+{
+  "hash": "ef724d31",
+  "configHash": "d6be5a58",
+  "lockfileHash": "c1fb0a7c",
+  "browserHash": "a56199e8",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "968e51ee",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "78dcacf2",
+      "needsInterop": true
+    },
+    "@clerk/clerk-react": {
+      "src": "../../node_modules/@clerk/clerk-react/dist/index.mjs",
+      "file": "@clerk_clerk-react.js",
+      "fileHash": "7f809b86",
+      "needsInterop": false
+    },
+    "@vercel/analytics/react": {
+      "src": "../../node_modules/@vercel/analytics/dist/react/index.mjs",
+      "file": "@vercel_analytics_react.js",
+      "fileHash": "9c274373",
+      "needsInterop": false
+    },
+    "@vercel/speed-insights/react": {
+      "src": "../../node_modules/@vercel/speed-insights/dist/react/index.mjs",
+      "file": "@vercel_speed-insights_react.js",
+      "fileHash": "c9eb404a",
+      "needsInterop": false
+    },
+    "framer-motion": {
+      "src": "../../node_modules/framer-motion/dist/es/index.mjs",
+      "file": "framer-motion.js",
+      "fileHash": "6391a36b",
+      "needsInterop": false
+    },
+    "react-icons/fi": {
+      "src": "../../node_modules/react-icons/fi/index.mjs",
+      "file": "react-icons_fi.js",
+      "fileHash": "aa70ab17",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "82dd3484",
+      "needsInterop": false
+    },
+    "lenis": {
+      "src": "../../node_modules/lenis/dist/lenis.mjs",
+      "file": "lenis.js",
+      "fileHash": "6536a6e0",
+      "needsInterop": false
+    },
+    "gsap": {
+      "src": "../../node_modules/gsap/index.js",
+      "file": "gsap.js",
+      "fileHash": "9603e908",
+      "needsInterop": false
+    },
+    "gsap/ScrollTrigger": {
+      "src": "../../node_modules/gsap/ScrollTrigger.js",
+      "file": "gsap_ScrollTrigger.js",
+      "fileHash": "180726be",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
+      "file": "lucide-react.js",
+      "fileHash": "799af0f0",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "8be75644",
+      "needsInterop": true
+    },
+    "react-swipeable": {
+      "src": "../../node_modules/react-swipeable/es/index.js",
+      "file": "react-swipeable.js",
+      "fileHash": "ebd896a0",
+      "needsInterop": false
+    },
+    "react-icons/fa": {
+      "src": "../../node_modules/react-icons/fa/index.mjs",
+      "file": "react-icons_fa.js",
+      "fileHash": "cea1e03a",
+      "needsInterop": false
+    },
+    "react-icons/hi": {
+      "src": "../../node_modules/react-icons/hi/index.mjs",
+      "file": "react-icons_hi.js",
+      "fileHash": "855a15ab",
+      "needsInterop": false
+    },
+    "react-icons/bs": {
+      "src": "../../node_modules/react-icons/bs/index.mjs",
+      "file": "react-icons_bs.js",
+      "fileHash": "410f5035",
+      "needsInterop": false
+    },
+    "react-icons/bi": {
+      "src": "../../node_modules/react-icons/bi/index.mjs",
+      "file": "react-icons_bi.js",
+      "fileHash": "9178b2c8",
+      "needsInterop": false
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "396f809b",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-XOSUOILF": {
+      "file": "chunk-XOSUOILF.js"
+    },
+    "chunk-FD4X63VJ": {
+      "file": "chunk-FD4X63VJ.js"
+    },
+    "chunk-N7PDAELF": {
+      "file": "chunk-N7PDAELF.js"
+    },
+    "chunk-EWTE5DHJ": {
+      "file": "chunk-EWTE5DHJ.js"
+    }
+  }
+}

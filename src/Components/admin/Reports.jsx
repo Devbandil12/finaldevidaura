@@ -1,380 +1,105 @@
-import React, { useState, useMemo, useContext } from 'react';
+import React, { useState } from 'react';
 import { 
-  BarChart3, PieChart, Package, Users, Download, 
-  Search, ArrowUpRight, ArrowDownRight 
+  BarChart3, Package, Users, Download, Target, Briefcase, Calendar
 } from 'lucide-react';
-import { Bar, Doughnut } from 'react-chartjs-2';
-import { AdminContext } from '../../contexts/AdminContext';
-import { ProductContext } from '../../contexts/productContext';
+import SalesAnalytics from '../../features/admin/components/analytics/SalesAnalytics';
+import CustomerAnalytics from '../../features/admin/components/analytics/CustomerAnalytics';
+import ProductAnalytics from '../../features/admin/components/analytics/ProductAnalytics';
+import InventoryAnalytics from '../../features/admin/components/analytics/InventoryAnalytics';
+import OperationsAnalytics from '../../features/admin/components/analytics/OperationsAnalytics';
 
-// --- HELPER: CSV Export ---
-const downloadCSV = (data, filename) => {
-  if (!data || !data.length) return;
-  const headers = Object.keys(data[0]);
-  const rows = data.map(obj => headers.map(header => JSON.stringify(obj[header])).join(','));
-  const csvContent = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csvContent], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${filename}.csv`;
-  a.click();
-  window.URL.revokeObjectURL(url);
-};
+const AnalyticsTab = () => {
+  const [activeTab, setActiveTab] = useState('sales');
+  const [timeRange, setTimeRange] = useState('30days'); // today, 7days, 30days, year
 
-const Reports = () => {
-  const { reportOrders, users, orders } = useContext(AdminContext);
-  const { products } = useContext(ProductContext);
-  const [activeTab, setActiveTab] = useState('sales'); // sales, inventory, customers
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // --- 1. SALES ANALYTICS ENGINE (SYNCED WITH DASHBOARD) ---
-  const salesData = useMemo(() => {
-    if (!orders) return [];
-
-    const dailyMap = {};
-
-    orders.forEach(order => {
-       // 🟢 1. STRICT REVENUE CHECK (Updated for Wallet)
-       const isRevenueOrder = () => {
-          if (order.status === 'Order Cancelled') return false;
-          // ✅ Added 'wallet' check
-          if (order.paymentMode === 'online' || order.paymentMode === 'wallet') return order.paymentStatus === 'paid';
-          if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
-          return false;
-       };
-
-       if (!isRevenueOrder()) return;
-
-       const date = new Date(order.createdAt).toLocaleDateString('en-US');
-       
-       if (!dailyMap[date]) dailyMap[date] = { date, revenue: 0, orders: 0, profit: 0 };
-       
-       // 🟢 2. REVENUE CALCULATION (Cash + Wallet)
-       const totalAmount = parseFloat(order.totalAmount || 0);
-       const walletAmount = parseFloat(order.walletAmountUsed || 0);
-       
-       dailyMap[date].revenue += (totalAmount + walletAmount);
-       dailyMap[date].orders += 1;
-       
-       // 🟢 3. PROFIT CALCULATION
-       // Logic: Look up detailed order. If cost exists, use it. If not, cost is 0 (100% profit).
-       let orderCost = 0;
-       
-       // Try to find the detailed version of this order in reportOrders (contains costPrice)
-       const detailedOrder = reportOrders.find(ro => ro.id === order.id) || order;
-       const items = detailedOrder.products || detailedOrder.orderItems || [];
-
-       orderCost = items.reduce((pSum, p) => {
-          const cost = p.costPrice ? parseFloat(p.costPrice) : 0; 
-          const qty = p.quantity || 1;
-          return pSum + (cost * qty);
-       }, 0);
-       
-       // Profit = (Total Revenue including Wallet) - Cost
-       dailyMap[date].profit += ((totalAmount + walletAmount) - orderCost);
-    });
-
-    // Sort by date descending
-    return Object.values(dailyMap).sort((a,b) => new Date(a.date) - new Date(b.date));
-  }, [reportOrders, orders]);
-
-  // --- 2. INVENTORY INTELLIGENCE ---
-  const inventoryData = useMemo(() => {
-    if (!products) return [];
-    return products.flatMap(p => 
-      p.variants?.map(v => {
-        const stock = parseInt(v.stock || 0);
-        const sold = parseInt(v.sold || 0);
-        const price = parseFloat(v.price || v.oprice || 0); 
-
-        return {
-          id: v.id,
-          name: p.name,
-          variant: v.name,
-          sku: v.sku || 'N/A',
-          stock: stock,
-          sold: sold, 
-          price: price,
-          value: stock * price, 
-          turnoverRate: (sold + stock) > 0 ? ((sold / (stock + sold)) * 100).toFixed(1) : 0
-        };
-      }) || []
-    ).sort((a,b) => a.stock - b.stock); 
-  }, [products]);
-
-  // --- 3. CUSTOMER INSIGHTS ---
-  const customerData = useMemo(() => {
-    if (!users || !orders) return [];
-    
-    const userMap = {};
-    orders.forEach(order => {
-        // 🟢 STRICT REVENUE CHECK
-        const isRevenueOrder = () => {
-          if (order.status === 'Order Cancelled') return false;
-          // ✅ Added 'wallet' check
-          if (order.paymentMode === 'online' || order.paymentMode === 'wallet') return order.paymentStatus === 'paid';
-          if (order.paymentMode === 'cod' || order.paymentMode === 'cash') return order.status === 'Delivered';
-          return false;
-        };
-
-        if (!isRevenueOrder()) return;
-        
-        if (!userMap[order.userId]) {
-            const u = users.find(usr => usr.id === order.userId);
-            userMap[order.userId] = {
-                id: order.userId,
-                name: u?.name || 'Guest/Unknown',
-                email: u?.email || 'N/A',
-                totalSpent: 0,
-                orders: 0,
-                lastOrder: order.createdAt,
-                city: order.shippingAddress?.city || 'Unknown' 
-            };
-        }
-        
-        // 🟢 Calculate Spent (Cash + Wallet)
-        const spent = parseFloat(order.totalAmount || 0) + parseFloat(order.walletAmountUsed || 0);
-        userMap[order.userId].totalSpent += spent;
-        userMap[order.userId].orders += 1;
-        
-        if (new Date(order.createdAt) > new Date(userMap[order.userId].lastOrder)) {
-            userMap[order.userId].lastOrder = order.createdAt;
-        }
-    });
-
-    return Object.values(userMap).sort((a,b) => b.totalSpent - a.totalSpent);
-  }, [users, orders]);
+  const tabs = [
+    { id: 'sales', label: 'Sales', icon: BarChart3 },
+    { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'products', label: 'Products', icon: Package },
+    { id: 'inventory', label: 'Inventory', icon: Target },
+    { id: 'operations', label: 'Operations', icon: Briefcase },
+  ];
 
   const handleExport = () => {
-    if (activeTab === 'sales') downloadCSV(salesData, 'Sales_Report');
-    if (activeTab === 'inventory') downloadCSV(inventoryData, 'Inventory_Report');
-    if (activeTab === 'customers') downloadCSV(customerData, 'Customer_Report');
+    alert("CSV Export is currently configured for summary tables. Please see full data exports in the Data Management section.");
   };
 
   const TabButton = ({ id, label, icon: Icon }) => (
     <button 
       onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all ${
+      className={`flex items-center justify-center gap-2.5 px-6 py-3 font-body font-bold text-sm tracking-wide rounded-lg transition-all duration-300 whitespace-nowrap flex-1 md:flex-none ${
         activeTab === id 
-        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-        : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
+        ? 'bg-[var(--brand)] text-[var(--surface)] shadow-[var(--shadow-strong)]' 
+        : 'text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)]'
       }`}
     >
-      <Icon size={18} /> {label}
+      <Icon size={18} strokeWidth={1.5} /> {label}
+    </button>
+  );
+
+  const TimeFilterButton = ({ id, label }) => (
+    <button 
+      onClick={() => setTimeRange(id)}
+      className={`px-4 py-2 font-body font-medium text-xs tracking-wide rounded-md transition-colors ${
+        timeRange === id 
+        ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' 
+        : 'text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'
+      }`}
+    >
+      {label}
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-8  space-y-8 animate-in fade-in">
+    <div className="min-h-screen bg-[var(--bg)] p-4 sm:p-6 lg:p-8 space-y-6 animate-fadeIn font-body transition-colors duration-300 pb-20">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* HEADER WITH GLOBAL FILTERS */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 bg-[var(--surface)] p-6 md:p-8 rounded-xl shadow-[var(--shadow)] border border-[var(--border)]">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Financial Reports</h1>
-          <p className="text-gray-500 text-sm mt-1">Exportable data for accounting and inventory management.</p>
+          <h1 className="font-display text-3xl md:text-4xl font-medium text-[var(--text)] tracking-tight">
+            Analytics
+          </h1>
+          <p className="font-display italic text-base text-[var(--sub)] mt-2 tracking-wide max-w-lg">
+            Deep insights into business performance. Filtered globally by the selected time period.
+          </p>
         </div>
-        <button 
-          onClick={handleExport}
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors"
-        >
-          <Download size={16} /> Export CSV
-        </button>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
+          {/* TIME RANGE SELECTOR */}
+          <div className="flex items-center gap-1 bg-[var(--surface)] p-1 rounded-lg border border-[var(--border)] w-full sm:w-auto overflow-x-auto">
+            <TimeFilterButton id="today" label="Today" />
+            <TimeFilterButton id="week" label="7 Days" />
+            <TimeFilterButton id="month" label="30 Days" />
+            <TimeFilterButton id="6months" label="6 Months" />
+            <TimeFilterButton id="year" label="Year" />
+          </div>
+
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2.5 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] px-6 py-2.5 rounded-lg font-body font-bold text-sm tracking-wide hover:bg-[var(--surface-muted)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-all shadow-sm w-full sm:w-auto justify-center whitespace-nowrap h-full"
+          >
+            <Download size={16} strokeWidth={2} className="text-[var(--muted)]" /> Export CSV
+          </button>
+        </div>
       </div>
 
-      {/* NAVIGATION */}
-      <div className="flex flex-wrap gap-3">
-        <TabButton id="sales" label="Sales Performance" icon={BarChart3} />
-        <TabButton id="inventory" label="Inventory Logic" icon={Package} />
-        <TabButton id="customers" label="Customer Insights" icon={Users} />
+      {/* NAVIGATION TABS */}
+      <div className="flex bg-[var(--surface)] p-1.5 rounded-xl border border-[var(--border)] shadow-sm w-full overflow-x-auto smooth-scrollbar">
+        {tabs.map(tab => (
+          <TabButton key={tab.id} id={tab.id} label={tab.label} icon={tab.icon} />
+        ))}
       </div>
 
       {/* CONTENT AREA */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[500px] overflow-hidden">
-        
-        {/* --- SALES TAB --- */}
-        {activeTab === 'sales' && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-               <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-                 <p className="text-xs font-bold text-indigo-500 uppercase">Total Period Revenue</p>
-                 <h3 className="text-2xl font-black text-indigo-900 mt-1">
-                   ₹{salesData.reduce((a,b) => a + b.revenue, 0).toLocaleString()}
-                 </h3>
-               </div>
-               <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-                 <p className="text-xs font-bold text-emerald-500 uppercase">Total Profit</p>
-                 <h3 className="text-2xl font-black text-emerald-900 mt-1">
-                   ₹{salesData.reduce((a,b) => a + b.profit, 0).toLocaleString()}
-                 </h3>
-               </div>
-               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                 <p className="text-xs font-bold text-blue-500 uppercase">Avg. Daily Sales</p>
-                 <h3 className="text-2xl font-black text-blue-900 mt-1">
-                   ₹{salesData.length ? (salesData.reduce((a,b) => a + b.revenue, 0) / salesData.length).toFixed(0) : 0}
-                 </h3>
-               </div>
-            </div>
-
-            <div className="h-80 mb-8">
-                <Bar 
-                  data={{
-                    labels: salesData.slice(-14).map(d => d.date),
-                    datasets: [
-                      {
-                        label: 'Revenue',
-                        data: salesData.slice(-14).map(d => d.revenue),
-                        backgroundColor: '#4F46E5',
-                        borderRadius: 4
-                      }
-                    ]
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }}
-                />
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-                  <tr>
-                    <th className="px-4 py-3 rounded-l-lg">Date</th>
-                    <th className="px-4 py-3">Orders</th>
-                    <th className="px-4 py-3">Revenue</th>
-                    <th className="px-4 py-3 text-right rounded-r-lg">Profit</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {[...salesData].reverse().map((day, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900">{day.date}</td>
-                      <td className="px-4 py-3">{day.orders}</td>
-                      <td className="px-4 py-3">₹{day.revenue.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-bold text-emerald-600">₹{day.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* --- INVENTORY TAB --- */}
-        {activeTab === 'inventory' && (
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row justify-between mb-6 gap-4">
-               <div className="relative flex-1 max-w-md">
-                 <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                 <input 
-                   type="text" 
-                   placeholder="Search SKU or Product..." 
-                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-                   onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
-                 />
-               </div>
-               <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
-                  Inventory Value: <span className="font-bold">₹{inventoryData.reduce((a,b) => a + b.value, 0).toLocaleString()}</span>
-               </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-                  <tr>
-                    <th className="px-4 py-3">Product Name</th>
-                    <th className="px-4 py-3">Variant</th>
-                    <th className="px-4 py-3">SKU</th>
-                    <th className="px-4 py-3">Stock Level</th>
-                    <th className="px-4 py-3">Turnover Rate</th>
-                    <th className="px-4 py-3 text-right">Potential Rev (₹)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {inventoryData
-                    .filter(i => i.name.toLowerCase().includes(searchTerm) || i.sku.toLowerCase().includes(searchTerm))
-                    .map((item, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-gray-900">{item.name}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.variant}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-400">{item.sku}</td>
-                      <td className={`px-4 py-3 font-bold ${item.stock < 10 ? 'text-red-600' : 'text-green-600'}`}>
-                        {item.stock} Units
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                           <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500" style={{ width: `${Math.min(item.turnoverRate, 100)}%` }}></div>
-                           </div>
-                           <span className="text-xs">{item.turnoverRate}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">₹{item.value.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* --- CUSTOMERS TAB --- */}
-        {activeTab === 'customers' && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-               <div className="bg-gray-50 p-6 rounded-2xl flex items-center justify-center">
-                  <div className="h-40 w-40">
-                    <Doughnut 
-                      data={{
-                        labels: ['VIP (>5k)', 'Regular', 'New'],
-                        datasets: [{
-                           data: [
-                             customerData.filter(c => c.totalSpent > 5000).length,
-                             customerData.filter(c => c.totalSpent <= 5000 && c.orders > 1).length,
-                             customerData.filter(c => c.orders === 1).length
-                           ],
-                           backgroundColor: ['#4F46E5', '#3B82F6', '#93C5FD'],
-                           borderWidth: 0
-                        }]
-                      }}
-                      options={{ maintainAspectRatio: false }}
-                    />
-                  </div>
-                  <div className="ml-8">
-                      <h4 className="font-bold text-gray-900 mb-1">Customer Segments</h4>
-                      <p className="text-xs text-gray-500 max-w-[150px]">Based on Lifetime Value (LTV) and order frequency.</p>
-                  </div>
-               </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
-                  <tr>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Last Active</th>
-                    <th className="px-4 py-3">Orders</th>
-                    <th className="px-4 py-3 text-right">LTV (Total Spent)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {customerData.slice(0, 50).map((c, i) => (
-                    <tr key={i} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-gray-900">{c.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{c.email}</td>
-                      <td className="px-4 py-3 text-gray-500">{new Date(c.lastOrder).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">{c.orders}</td>
-                      <td className="px-4 py-3 text-right font-bold text-indigo-600">₹{c.totalSpent.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
+      <div className="bg-[var(--surface)] rounded-2xl shadow-[var(--shadow)] border border-[var(--border)] min-h-[500px] overflow-hidden transition-all duration-300">
+        {activeTab === 'sales' && <SalesAnalytics timeRange={timeRange} />}
+        {activeTab === 'customers' && <CustomerAnalytics timeRange={timeRange} />}
+        {activeTab === 'products' && <ProductAnalytics timeRange={timeRange} />}
+        {activeTab === 'inventory' && <InventoryAnalytics />}
+        {activeTab === 'operations' && <OperationsAnalytics timeRange={timeRange} />}
       </div>
     </div>
   );
 };
 
-export default Reports;
+export default AnalyticsTab;

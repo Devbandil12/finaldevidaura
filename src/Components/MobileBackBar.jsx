@@ -1,7 +1,7 @@
 // src/Components/MobileBackBar.jsx
 import React, { useContext, useState, useEffect } from 'react';
 import { useLocation, useNavigate, matchPath } from 'react-router-dom';
-import { ProductContext } from "../contexts/productContext";
+import { useProducts } from "../features/catalog/hooks/useProducts";
 import { 
   ArrowLeft, 
   ShoppingCart, 
@@ -51,7 +51,7 @@ const pageConfig = {
 const MobileBackBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { products } = useContext(ProductContext);
+  const { data: products = [] } = useProducts();
   const [isScrolled, setIsScrolled] = useState(false);
 
   const currentPath = location.pathname;

@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from "react";
 import { Tag, Sparkles, Crown, Star, Diamond } from "lucide-react";
 import "../style/DualMarquee.css";
-import { CouponContext } from "../contexts/CouponContext";
+import { useAllCoupons, useAvailableCoupons, useAutoOfferInstructions } from "../features/coupons/hooks/useCoupons";
 
 const defaultPhrases = [
   "Timeless Elegance",
@@ -118,7 +118,9 @@ const formatOffer = (offer) => {
 };
 
 export default function DualMarquee() {
-  const { autoOfferInstructions, availableCoupons, coupons } = useContext(CouponContext);
+  const { data: autoOfferInstructions = [] } = useAutoOfferInstructions();
+  const { data: availableCoupons = [] } = useAvailableCoupons();
+  const { data: coupons = [] } = useAllCoupons();
 
   const marqueeItems = useMemo(() => {
     const allOffers = [];
