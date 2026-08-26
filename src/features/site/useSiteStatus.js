@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
-const BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+const BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
 export const useSiteStatus = () => {
   return useQuery({
@@ -10,8 +10,15 @@ export const useSiteStatus = () => {
       const { data } = await axios.get(`${BASE}/api/site/status`);
       return data;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds to catch schedule changes
-    staleTime: 10000,
+    refetchInterval: (query) => {
+      const data = query?.state?.data;
+      // If currently in maintenance or has scheduled end, poll faster (every 5 seconds)
+      if (data?.mode === 'MAINTENANCE' || data?.scheduledEnd) {
+        return 5000;
+      }
+      return 15000;
+    },
+    staleTime: 3000,
     retry: true,
   });
 };

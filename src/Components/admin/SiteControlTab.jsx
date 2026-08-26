@@ -100,18 +100,40 @@ const SiteControlTab = () => {
     }
   };
 
+  const getMinDateTime = (offsetMinutes = 30) => {
+    const d = new Date(Date.now() + offsetMinutes * 60 * 1000);
+    d.setSeconds(0, 0);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
   const handleSchedule = (e) => {
     e.preventDefault();
     if (!schedule.start || !schedule.end) return window.toast.error("Start and End times are required");
     
+    const startDate = new Date(schedule.start);
+    const endDate = new Date(schedule.end);
+    const minStart = new Date(Date.now() + 29.5 * 60 * 1000);
+
+    if (startDate < minStart) {
+      return window.toast.error("Start time must be at least 30 minutes in the future.");
+    }
+    if (endDate <= startDate) {
+      return window.toast.error("End time must be after the start time.");
+    }
+
     updateStatus.mutate({
-      scheduledStart: new Date(schedule.start).toISOString(),
-      scheduledEnd: new Date(schedule.end).toISOString(),
-      message: schedule.message,
+      scheduledStart: startDate.toISOString(),
+      scheduledEnd: endDate.toISOString(),
+      title: 'Under Scheduled Maintenance',
+      message: schedule.message || 'We are currently performing scheduled maintenance to upgrade our systems. We will be back shortly.',
       showCountdown: true,
       reason: 'Scheduled Maintenance'
     }, {
-      onSuccess: () => window.toast.success("Maintenance Scheduled")
+      onSuccess: () => {
+        window.toast.success("Maintenance Scheduled & All Users Notified");
+        setSchedule({ start: '', end: '', message: '' });
+      }
     });
   };
 
@@ -203,7 +225,7 @@ const SiteControlTab = () => {
                 <Info className="w-5 h-5 text-amber-500 shrink-0" />
                 <div>
                   <h4 className="text-amber-400 font-medium mb-1">Scheduled Maintenance Active</h4>
-                  <p className="text-sm text-amber-500/80 mb-2">The system will automatically transition states.</p>
+                  <p className="text-sm text-amber-500/80 mb-2">Notifications dispatched to all users. Storefront will transition automatically.</p>
                   <div className="grid grid-cols-2 gap-4 text-sm text-[var(--sub)] mt-4">
                     <div>
                       <span className="block text-[var(--muted)] text-xs uppercase mb-1">Start</span>
@@ -221,31 +243,39 @@ const SiteControlTab = () => {
             <form onSubmit={handleSchedule} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-[var(--muted)] mb-2">Start Time</label>
+                  <label className="block text-sm text-[var(--muted)] mb-2">
+                    Start Time <span className="text-xs text-[var(--muted)]">(Min +30m)</span>
+                  </label>
                   <input 
                     type="datetime-local" 
                     value={schedule.start}
+                    min={getMinDateTime(30)}
                     onChange={(e) => setSchedule({...schedule, start: e.target.value})}
                     className="w-full bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-[var(--muted)] mb-2">End Time</label>
+                  <label className="block text-sm text-[var(--muted)] mb-2">
+                    End Time <span className="text-xs text-[var(--muted)]">(After Start)</span>
+                  </label>
                   <input 
                     type="datetime-local" 
                     value={schedule.end}
+                    min={schedule.start || getMinDateTime(35)}
                     onChange={(e) => setSchedule({...schedule, end: e.target.value})}
                     className="w-full bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                    required
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm text-[var(--muted)] mb-2">Public Message</label>
+                <label className="block text-sm text-[var(--muted)] mb-2">Notification Message (Optional)</label>
                 <input 
                   type="text" 
                   value={schedule.message}
                   onChange={(e) => setSchedule({...schedule, message: e.target.value})}
-                  placeholder="Devid Aura will be unavailable from 11 PM to 6 AM."
+                  placeholder="Devid Aura will be unavailable for essential server upgrades."
                   className="w-full bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-zinc-600"
                 />
               </div>

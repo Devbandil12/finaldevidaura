@@ -44,6 +44,34 @@ const ComingSoonPage = ({ status }) => {
     return () => clearInterval(interval);
   }, [status]);
 
+  // Enforce pure dark mode on <html> and <body> while Coming Soon page is active
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevClass = root.classList.contains('dark');
+    const prevTheme = root.getAttribute('data-theme');
+    const prevColorScheme = root.style.colorScheme;
+    const prevBg = document.body.style.backgroundColor;
+
+    root.classList.add('dark');
+    root.setAttribute('data-theme', 'dark');
+    root.style.colorScheme = 'dark';
+    document.body.style.backgroundColor = '#050505';
+
+    return () => {
+      if (!prevClass) {
+        root.classList.remove('dark');
+      }
+      if (prevTheme) {
+        root.setAttribute('data-theme', prevTheme);
+      } else {
+        root.removeAttribute('data-theme');
+      }
+      root.style.colorScheme = prevColorScheme || '';
+      document.body.style.backgroundColor = prevBg || '';
+    };
+  }, []);
+
+
   // Premium staggered animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
