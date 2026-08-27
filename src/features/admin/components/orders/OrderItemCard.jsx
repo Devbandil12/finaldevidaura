@@ -12,47 +12,47 @@ const OrderItemCard = ({
   return (
     <div
       style={{ zIndex: 1000 - idx, position: 'relative' }}
-      className={`bg-[var(--surface)] rounded-2xl transition-all duration-300 group overflow-hidden border font-body cursor-default
+      className={`bg-[var(--surface)] rounded-[1.5rem] transition-all duration-500 group overflow-hidden ring-1 font-body cursor-default
       ${isSelected 
-          ? 'border-[var(--brand)] shadow-[var(--shadow-strong)] bg-[var(--accent-soft)]' 
+          ? 'ring-[var(--brand)] shadow-[0_8px_24px_rgba(0,0,0,0.06)] bg-[var(--brand)]/5' 
           : isExpanded
-            ? 'shadow-[var(--shadow-strong)] ring-0 border-[var(--border)]'
-            : 'border-[var(--border)] hover:border-[var(--border)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)]'
+            ? 'shadow-[0_16px_40px_rgba(0,0,0,0.06)] ring-[var(--border)]/40 dark:ring-[var(--border)]/60'
+            : 'ring-[var(--border)]/30 dark:ring-[var(--border)]/60 shadow-[0_4px_16px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5'
       }`}
     >
       <div
-        className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer"
+        className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-[var(--surface-muted)]/20 transition-colors"
         onClick={() => toggleOrderDetails(order.id)}
       >
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-4">
           {/* Selection Checkbox */}
           {canSelect ? (
             <div 
               onClick={(e) => { e.stopPropagation(); toggleSelectOrder(order.id); }} 
               className="cursor-pointer text-[var(--muted)] hover:text-[var(--brand)] transition-colors"
             >
-                {isSelected ? <CheckSquare size={24} strokeWidth={2} className="text-[var(--brand)]" /> : <Square size={24} strokeWidth={2} />}
+                {isSelected ? <CheckSquare size={20} strokeWidth={2.5} className="text-[var(--brand)]" /> : <Square size={20} strokeWidth={2.5} />}
             </div>
           ) : (
-            <div className="w-6" /> 
+            <div className="w-5" /> 
           )}
 
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ease-out border shrink-0
-            ${isExpanded ? 'bg-[var(--brand)] border-[var(--brand)] text-[var(--bg)] shadow-md scale-105' : 'bg-[var(--surface)] border-[var(--border)] text-[var(--muted)] group-hover:border-[var(--brand)] group-hover:text-[var(--brand)]'}`}>
+          <div className={`w-12 h-12 rounded-[0.85rem] flex items-center justify-center transition-all duration-500 ease-out ring-1 shrink-0
+            ${isExpanded ? 'bg-[var(--text)] ring-[var(--border)] text-[var(--surface)] shadow-md scale-105' : 'bg-[var(--surface-muted)]/50 ring-[var(--border)]/40 text-[var(--muted)] group-hover:ring-[var(--brand)]/30 group-hover:text-[var(--brand)]'}`}>
             <Package size={20} strokeWidth={1.5} />
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-3 mb-1.5">
-              <h3 className="font-body text-base font-bold text-[var(--text)] tracking-wide truncate group-hover:text-[var(--brand)] transition-colors">#{order.id}</h3>
-              <span className="px-2 py-0.5 rounded-md font-body text-[9px] uppercase tracking-widest font-bold bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] whitespace-nowrap">
-                {order.orderItems?.length || 1} Items
+            <div className="flex items-center gap-3 mb-1">
+              <h3 className="font-body text-sm font-medium text-[var(--text)] tracking-tight truncate group-hover:text-[var(--brand)] transition-colors">#{order.id}</h3>
+              <span className="px-2 py-0.5 rounded text-[8px] uppercase tracking-widest font-bold bg-[var(--surface-muted)]/50 text-[var(--muted)] ring-1 ring-[var(--border)]/40 whitespace-nowrap">
+                {order.itemCount || order.orderItems?.length || order.items?.length || 1} Items
               </span>
             </div>
-            <div className="flex items-center gap-2.5 font-body text-[11px] font-bold text-[var(--sub)] flex-wrap">
+            <div className="flex items-center gap-2 font-body text-[10px] font-medium text-[var(--sub)] flex-wrap">
               <Calendar size={12} strokeWidth={2} className="text-[var(--muted)]" />
               <span>{new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-              <span className="text-[var(--border)]">•</span>
+              <span className="text-[var(--border)]/60">•</span>
               <span className="text-[var(--text)] tracking-tight">₹{order.totalAmount.toLocaleString()}</span>
             </div>
           </div>
@@ -76,27 +76,31 @@ const OrderItemCard = ({
 
             <button
               onClick={(e) => { e.stopPropagation(); toggleOrderDetails(order.id); }}
-              className={`p-2 rounded-xl transition-all duration-300 flex-shrink-0 border 
-              ${isExpanded ? "bg-[var(--surface-muted)] text-[var(--brand)] border-[var(--border)]" : "bg-[var(--surface)] border-transparent text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)] hover:border-[var(--border)]"}`}
+              className={`p-2 rounded-xl transition-all duration-300 flex-shrink-0 ring-1 
+              ${isExpanded ? "bg-[var(--surface)] text-[var(--text)] ring-[var(--border)]/60 shadow-sm" : "bg-transparent ring-[var(--border)]/30 text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)] hover:ring-[var(--border)]/60"}`}
             >
-              {isExpanded ? <ChevronUp size={18} strokeWidth={2} /> : <ChevronDown size={18} strokeWidth={2} />}
+              {isExpanded ? <ChevronUp size={16} strokeWidth={2.5} /> : <ChevronDown size={16} strokeWidth={2.5} />}
             </button>
           </div>
         </div>
       </div>
 
-      {isExpanded && (
-          <OrderDetailsPanel 
-            order={order}
-            orderDetailsData={orderDetailsData}
-            loadingDetails={loadingDetails}
-            isEditable={isEditable}
-            finalPaymentStatus={finalPaymentStatus}
-            isPaid={isPaid}
-            handleCancelOrder={handleCancelOrder}
-            handleReturnOrder={handleReturnOrder}
-          />
-      )}
+      <AnimatePresence>
+        {isExpanded && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+              <OrderDetailsPanel 
+                order={order}
+                orderDetailsData={orderDetailsData}
+                loadingDetails={loadingDetails}
+                isEditable={isEditable}
+                finalPaymentStatus={finalPaymentStatus}
+                isPaid={isPaid}
+                handleCancelOrder={handleCancelOrder}
+                handleReturnOrder={handleReturnOrder}
+              />
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

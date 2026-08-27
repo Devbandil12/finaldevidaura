@@ -14,7 +14,6 @@ import OrdersTable from '../../features/admin/components/orders/OrdersTable';
 import OrderDrawer from '../../features/admin/components/orders/OrderDrawer';
 import { getSingleOrderDetails } from '../../api/services/admin.api';
 
-// --- MAIN COMPONENT ---
 const OrdersTab = ({
   handleUpdateOrderStatus, handleCancelOrder, handleReturnOrder, downloadCSV
 }) => {
@@ -72,11 +71,10 @@ const OrdersTab = ({
     setSearchParams(params);
   };
 
-  // Extract requiresAttention flag if status is 'Requires Attention'
   const computedFilters = { ...orderFilters };
   if (computedFilters.status === 'Requires Attention') {
      computedFilters.requiresAttention = 'true';
-     computedFilters.status = 'All'; // Don't filter by a status called 'Requires Attention'
+     computedFilters.status = 'All'; 
   }
 
   const { data: ordersResponse, isLoading } = useAdminOrders(page, limit, orderSearchQuery, computedFilters);
@@ -148,7 +146,7 @@ const OrdersTab = ({
 
   const isAllSelected = selectableFilteredOrders.length > 0 && selectableFilteredOrders.every(o => selectedOrders.has(o.id));
 
-  const isSelectionEnabled = true; // Always enabled for bulk actions
+  const isSelectionEnabled = true;
 
   const currentTabIndex = STATUS_SEQUENCE.indexOf(orderFilters.status);
   const availableBulkActions = STATUS_SEQUENCE.filter((status, index) => {
@@ -175,24 +173,29 @@ const OrdersTab = ({
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 bg-[var(--bg)] min-h-screen font-body w-full overflow-hidden relative pb-24 animate-fadeIn transition-colors duration-300">
+    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8 bg-[var(--bg)] min-h-screen font-body w-full overflow-hidden relative pb-28 animate-fadeIn transition-colors duration-500">
 
       {/* --- HEADER --- */}
-      <div className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-[var(--border)] gap-5 bg-[var(--surface)] p-6 md:p-8 rounded-xl shadow-[var(--shadow)]">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 bg-[var(--surface)] py-5 px-6 sm:px-8 rounded-[1.5rem] sm:rounded-[2rem] border border-[var(--border)]/30 dark:border-[var(--border)]/60 shadow-[0_8px_30px_rgba(0,0,0,0.03)] transition-all duration-500"
+      >
         <div>
-          <h2 className="font-display text-3xl font-medium text-[var(--text)] tracking-tight flex items-center">
-            <Package className="w-7 h-7 mr-3 text-[var(--accent)]" strokeWidth={1.5} />
-            Order Management
+          <h2 className="font-display text-xl sm:text-2xl font-medium text-[var(--text)] tracking-tight flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--surface-muted)]/50 border border-[var(--border)]/40 dark:border-[var(--border)]/60 text-[var(--brand)] shadow-sm">
+              <Package size={18} className="sm:w-5 sm:h-5" strokeWidth={1.5} />
+            </div>
+            Order Operations
           </h2>
-          <p className="font-display italic text-lg text-[var(--sub)] mt-2 tracking-wide">Track and manage customer fulfillment.</p>
+          <p className="font-body text-[10px] sm:text-[11px] text-[var(--muted)] mt-1.5 sm:mt-2 tracking-wide">Monitor fulfillment, payments, and shipments.</p>
         </div>
         <button
           onClick={() => downloadCSV(orders, 'orders.csv')}
-          className="flex items-center px-6 py-3 bg-[var(--surface)] text-[var(--text)] rounded-lg border border-[var(--border)] hover:border-[var(--border)] hover:bg-[var(--surface-muted)] hover:text-[var(--brand)] transition-all font-body font-bold text-sm shadow-sm whitespace-nowrap"
+          className="flex items-center gap-2 px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] rounded-xl border border-[var(--border)]/50 dark:border-[var(--border)]/60 hover:bg-[var(--surface-muted)]/50 hover:text-[var(--brand)] transition-all font-body font-bold text-[10px] sm:text-[11px] uppercase tracking-widest shadow-sm whitespace-nowrap shrink-0"
         >
-          <Download className="w-4 h-4 mr-2 text-[var(--muted)]" strokeWidth={2} /> Export CSV
+          <Download size={14} strokeWidth={2} /> Export CSV
         </button>
-      </div>
+      </motion.div>
 
       {/* --- COMMAND CENTER KPIs --- */}
       <OrderSummaryKPIs />
@@ -208,15 +211,15 @@ const OrdersTab = ({
 
       {/* Selection Info Bar */}
       {isSelectionEnabled && selectableFilteredOrders.length > 0 && (
-        <div className="flex justify-between items-center px-2 py-1">
+        <div className="flex justify-between items-center px-3 py-1 mb-2">
           <button 
               onClick={toggleSelectAll}
-              className="flex items-center gap-2 font-body text-[11px] uppercase tracking-widest font-bold text-[var(--sub)] hover:text-[var(--brand)] transition-colors cursor-pointer"
+              className="flex items-center gap-2.5 font-body text-[10px] uppercase tracking-widest font-bold text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer"
           >
               {isAllSelected ? (
-                  <CheckSquare size={16} strokeWidth={2} className="text-[var(--brand)]" />
+                  <CheckSquare size={16} strokeWidth={2.5} className="text-[var(--brand)]" />
               ) : (
-                  <Square size={16} strokeWidth={2} className="text-[var(--muted)]" />
+                  <Square size={16} strokeWidth={2.5} className="text-[var(--muted)]" />
               )}
               {selectedOrders.size > 0 ? `${selectedOrders.size} Selected` : "Select All"}
           </button>
@@ -236,29 +239,34 @@ const OrdersTab = ({
             toggleOrderDetails={toggleOrderDetails}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 bg-[var(--surface)] rounded-2xl border border-[var(--border)] text-center shadow-[var(--shadow)]">
-            <div className="p-5 bg-[var(--surface)] rounded-full mb-4 border border-[var(--border)] text-[var(--accent)]"><Search className="w-8 h-8" strokeWidth={1.5} /></div>
-            <h3 className="font-display text-2xl font-medium text-[var(--text)]">No orders found</h3>
-            <p className="font-display italic text-[var(--sub)] text-lg mt-2 tracking-wide">Try adjusting your search or filters.</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-24 sm:py-32 bg-[var(--surface)] rounded-[2rem] border border-[var(--border)]/30 dark:border-[var(--border)]/60 shadow-[0_8px_30px_rgba(0,0,0,0.03)] text-center"
+          >
+            <div className="p-4 bg-[var(--surface-muted)]/50 rounded-2xl mb-4 border border-[var(--border)]/40 text-[var(--muted)] shadow-sm">
+              <Search size={28} strokeWidth={1.5} />
+            </div>
+            <h3 className="font-display text-lg sm:text-xl font-medium text-[var(--text)] tracking-tight">No orders match criteria</h3>
+            <p className="font-body text-[11px] text-[var(--sub)] mt-1.5 tracking-wide">Adjust filters or search query to find records.</p>
+          </motion.div>
         )}
       </div>
 
       {/* Pagination Controls */}
       {meta.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-5 mt-10 font-body">
+        <div className="flex justify-center items-center gap-6 mt-10 font-body">
           <button 
             disabled={page <= 1} 
             onClick={() => setPage(p => p - 1)}
-            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-lg disabled:opacity-40 hover:bg-[var(--surface)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-all font-bold text-sm shadow-sm"
+            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]/40 dark:border-[var(--border)]/60 rounded-xl disabled:opacity-40 hover:bg-[var(--surface-muted)]/50 transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm"
           >
-            Previous
+            Prev
           </button>
-          <span className="font-body text-[11px] uppercase tracking-widest font-bold text-[var(--muted)]">Page {meta.currentPage} of {meta.totalPages}</span>
+          <span className="font-body text-[10px] uppercase tracking-widest font-bold text-[var(--muted)]">Page {meta.currentPage} of {meta.totalPages}</span>
           <button 
             disabled={page >= meta.totalPages} 
             onClick={() => setPage(p => p + 1)}
-            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] rounded-lg disabled:opacity-40 hover:bg-[var(--surface)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-all font-bold text-sm shadow-sm"
+            className="px-5 py-2.5 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]/40 dark:border-[var(--border)]/60 rounded-xl disabled:opacity-40 hover:bg-[var(--surface-muted)]/50 transition-all font-bold text-[10px] uppercase tracking-widest shadow-sm"
           >
             Next
           </button>
@@ -269,15 +277,18 @@ const OrdersTab = ({
       <AnimatePresence>
         {selectedOrders.size > 0 && (
             <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 100, opacity: 0 }}
-                className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow-strong)] rounded-full px-6 py-3.5 flex items-center gap-5 z-[99999]"
+                initial={{ y: 100, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 100, opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-[var(--surface)]/95 backdrop-blur-xl border border-[var(--border)]/50 dark:border-[var(--border)]/70 shadow-[0_16px_40px_rgba(0,0,0,0.12)] rounded-[1.5rem] p-2.5 flex items-center gap-3 z-[99999]"
             >
-                <span className="font-body font-bold text-[var(--text)] text-[11px] uppercase tracking-widest">{selectedOrders.size} Selected</span>
-                <div className="h-5 w-px bg-[var(--border)]"></div>
+                <div className="px-4 font-body font-bold text-[var(--text)] text-[10px] uppercase tracking-widest whitespace-nowrap">
+                  {selectedOrders.size} Selected
+                </div>
+                <div className="h-6 w-px bg-[var(--border)]/50"></div>
                 
-                <div className="flex gap-2.5">
+                <div className="flex gap-2 items-center overflow-x-auto smooth-scrollbar px-2">
                     {(() => {
                         const shippableCount = Array.from(selectedOrders).filter(id => {
                             const o = orders.find(ord => ord.id === id);
@@ -288,13 +299,13 @@ const OrdersTab = ({
                                 onClick={handleShipNowClick}
                                 disabled={shippableCount === 0}
                                 title={shippableCount === 0 ? "None of the selected orders are ready to ship" : ""}
-                                className={`px-5 py-2 rounded-full font-body text-xs font-bold transition-all flex items-center gap-2 ${
+                                className={`px-4 py-2 rounded-xl font-body text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
                                     shippableCount === 0
-                                        ? 'bg-[var(--surface-muted)] text-[var(--muted)] cursor-not-allowed border border-transparent'
-                                        : 'bg-[var(--success)] text-[var(--surface)] hover:brightness-110 shadow-md border border-[var(--success)]'
+                                        ? 'bg-[var(--surface-muted)]/50 text-[var(--muted)] cursor-not-allowed'
+                                        : 'bg-[var(--text)] text-[var(--surface)] hover:bg-[var(--brand)] shadow-sm'
                                 }`}
                             >
-                                <Truck size={14} strokeWidth={2} /> Ship Now {shippableCount > 0 ? `(${shippableCount})` : ''}
+                                <Truck size={14} strokeWidth={2.5} /> Ship Now {shippableCount > 0 ? `(${shippableCount})` : ''}
                             </button>
                         );
                     })()}
@@ -311,10 +322,10 @@ const OrdersTab = ({
                                 onClick={() => !isBulkActionDisabled && handleBulkActionClick(status)}
                                 disabled={isBulkActionDisabled}
                                 title={isBulkActionDisabled ? "Orders require a Shiprocket AWB" : ""}
-                                className={`px-5 py-2 rounded-full font-body text-xs font-bold transition-all ${
+                                className={`px-4 py-2 rounded-xl font-body text-[10px] uppercase tracking-widest font-bold transition-all whitespace-nowrap ${
                                     isBulkActionDisabled 
-                                    ? 'bg-[var(--surface-muted)] text-[var(--muted)] cursor-not-allowed border border-transparent' 
-                                    : 'bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--brand)] hover:text-[var(--surface)] border border-[var(--border)] hover:shadow-md'
+                                    ? 'bg-transparent text-[var(--muted)]/50 cursor-not-allowed' 
+                                    : 'bg-[var(--surface)] text-[var(--sub)] hover:bg-[var(--surface-muted)] border border-[var(--border)]/50 shadow-sm'
                                 }`}
                             >
                                 Mark {status}
@@ -325,9 +336,9 @@ const OrdersTab = ({
 
                 <button 
                     onClick={() => setSelectedOrders(new Set())}
-                    className="ml-2 p-2 rounded-full hover:bg-[var(--surface-muted)] text-[var(--muted)] hover:text-[var(--error)] transition-colors"
+                    className="p-2 ml-1 rounded-xl bg-[var(--surface-muted)]/50 hover:bg-[var(--error)]/10 text-[var(--muted)] hover:text-[var(--error)] transition-colors shrink-0"
                 >
-                    <X size={18} strokeWidth={2} />
+                    <X size={16} strokeWidth={2.5} />
                 </button>
             </motion.div>
         )}

@@ -18,6 +18,12 @@ export const useAdminSiteStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['siteStatus']);
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to update site status';
+      if (window.toast?.error) {
+        window.toast.error(msg);
+      }
     }
   });
 
@@ -38,6 +44,12 @@ export const useCreateAnnouncement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['announcements']);
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to publish announcement';
+      if (window.toast?.error) {
+        window.toast.error(msg);
+      }
     }
   });
 };

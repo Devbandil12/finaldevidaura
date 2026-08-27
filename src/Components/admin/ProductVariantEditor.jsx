@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUpdateProduct, useAddVariant, useUpdateVariant, useDeleteVariant, useUnarchiveVariant } from "../../features/catalog/hooks/useProducts";
 import useCloudinary from "../../hooks/useCloudinary";
-import { Plus, X, Trash2, UploadCloud, ArrowRight, ArrowLeft, Save, Archive, Undo } from 'lucide-react';
+import { Plus, X, Trash2, UploadCloud, ArrowRight, ArrowLeft, Save, Archive, Undo, Image as ImageIcon } from 'lucide-react';
 import { ModernInput } from '../../features/admin/components/products/ModernInput';
 
 const ProductVariantEditor = ({ product, onClose }) => {
@@ -117,31 +117,31 @@ const ProductVariantEditor = ({ product, onClose }) => {
   }, [newVariantIndex]);
 
   return (
-    <div className="fixed inset-0 bg-[var(--overlay-light)] backdrop-blur-md flex items-center justify-center z-[100000] p-4 sm:p-6 transition-all duration-300 font-body">
-      <div className="bg-[var(--surface)] w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-[var(--shadow-strong)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-[var(--border)]">
+    <div className="fixed inset-0 bg-[var(--bg)]/80 backdrop-blur-md flex items-center justify-center z-[100000] p-4 sm:p-6 transition-all duration-500 font-body">
+      <div className="bg-[var(--surface)] w-full max-w-5xl max-h-[90vh] rounded-[2rem] shadow-[0_24px_80px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-500 border border-[var(--border)]/40">
         
         {/* MODAL HEADER */}
-        <div className="px-8 py-6 bg-[var(--surface)] flex justify-between items-center z-10 border-b border-[var(--border)]">
+        <div className="px-8 py-6 bg-[var(--surface)] flex justify-between items-center z-10 border-b border-[var(--border)]/30">
           <div>
-            <h2 className="text-3xl font-display font-medium text-[var(--text)] tracking-tight">Edit Product</h2>
-            <p className="text-sm font-body text-[var(--sub)] mt-1 font-bold">{parentData.name}</p>
+            <h2 className="text-2xl font-display font-medium text-[var(--text)] tracking-tight">Edit Configuration</h2>
+            <p className="text-[11px] font-body text-[var(--sub)] mt-1.5 font-bold uppercase tracking-widest">{parentData.name}</p>
           </div>
-          <button onClick={onClose} className="p-2.5 text-[var(--muted)] hover:text-[var(--brand)] hover:bg-[var(--surface-muted)] rounded-full transition-all">
-            <X size={22} />
+          <button onClick={onClose} className="p-2 text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-muted)] rounded-xl transition-all">
+            <X size={20} />
           </button>
         </div>
 
-        {/* TABS */}
-        <div className="flex px-8 gap-8 border-b border-[var(--border)] bg-[var(--surface)]">
+        {/* LUXURY TABS */}
+        <div className="flex px-8 gap-8 border-b border-[var(--border)]/30 bg-[var(--surface-muted)]/20">
           <button 
             onClick={() => setActiveTab("general")} 
-            className={`py-4 text-sm font-bold tracking-wide border-b-2 transition-all ${activeTab === "general" ? "border-[var(--accent)] text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"}`}
+            className={`py-4 text-xs uppercase tracking-widest font-bold border-b-2 transition-all ${activeTab === "general" ? "border-[var(--text)] text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"}`}
           >
-            General & Images
+            Core & Media
           </button>
           <button 
             onClick={() => setActiveTab("variants")} 
-            className={`py-4 text-sm font-bold tracking-wide border-b-2 transition-all ${activeTab === "variants" ? "border-[var(--accent)] text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"}`}
+            className={`py-4 text-xs uppercase tracking-widest font-bold border-b-2 transition-all ${activeTab === "variants" ? "border-[var(--text)] text-[var(--text)]" : "border-transparent text-[var(--muted)] hover:text-[var(--text)]"}`}
           >
             Variants ({variants.length})
           </button>
@@ -152,64 +152,63 @@ const ProductVariantEditor = ({ product, onClose }) => {
           
           {activeTab === "general" && (
             <div className="space-y-8">
-              <div className="bg-[var(--surface)] p-6 md:p-8 rounded-3xl shadow-[var(--shadow)] border border-[var(--border)]">
-                <h3 className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest mb-6 ml-1">Product Gallery</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {/* Media Block */}
+              <div className="bg-[var(--surface)] p-6 sm:p-8 rounded-[1.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[var(--border)]/40">
+                <h3 className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest mb-5 ml-1 flex items-center gap-2"><ImageIcon size={16}/> Media Assets</h3>
+                <div className="flex flex-wrap gap-4">
                   
-                  <label className="flex flex-col items-center justify-center aspect-square rounded-3xl cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-muted)] transition-all group border border-dashed border-[var(--border)] hover:border-[var(--accent)]">
-                    <div className="w-12 h-12 rounded-full bg-[var(--surface)] flex items-center justify-center shadow-[var(--shadow)] group-hover:scale-110 transition-transform text-[var(--brand)] mb-4 border border-[var(--border)]">
-                      <Plus size={24} />
-                    </div>
-                    <span className="text-[10px] font-bold text-[var(--muted)] group-hover:text-[var(--text)] uppercase tracking-wider">Add New</span>
+                  <label className="flex flex-col items-center justify-center w-24 h-24 rounded-2xl cursor-pointer bg-[var(--surface-muted)]/50 hover:bg-[var(--surface)] transition-all group border border-dashed border-[var(--border)] hover:border-[var(--brand)]/50">
+                    <Plus size={20} className="text-[var(--muted)] group-hover:text-[var(--brand)] mb-1.5 transition-colors" />
+                    <span className="text-[9px] font-bold text-[var(--muted)] group-hover:text-[var(--brand)] uppercase tracking-widest">Upload</span>
                     <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                   </label>
 
                   {existingImages.map((url, idx) => (
-                    <div key={`exist-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] transition-all duration-300 bg-[var(--surface)] border border-[var(--border)]">
-                      <img src={url} alt="Product" className="w-full h-full object-cover blend-luxury" />
-                      <button onClick={() => removeExistingImage(idx)} className="absolute top-3 right-3 bg-[var(--surface)] text-[var(--error)] p-2 rounded-full shadow-lg opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transform lg:translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-[var(--error)] hover:text-[var(--surface)]">
-                        <Trash2 size={16} />
+                    <div key={`exist-${idx}`} className="relative w-24 h-24 group rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-sm hover:shadow-md transition-all">
+                      <img src={url} alt="Product" className="w-full h-full object-cover mix-blend-multiply" />
+                      <button onClick={() => removeExistingImage(idx)} className="absolute inset-0 bg-white/80 backdrop-blur-sm text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   ))}
 
                   {previews.map((url, idx) => (
-                    <div key={`new-${idx}`} className="relative aspect-square group rounded-3xl overflow-hidden shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] transition-all duration-300 bg-[var(--surface)] border border-[var(--border)]">
-                      <img src={url} alt="New" className="w-full h-full object-cover border-4 border-[var(--accent-soft)]" />
-                      <div className="absolute inset-x-0 bottom-0 bg-[var(--brand)] text-[var(--surface)] text-[9px] font-bold text-center py-1.5 tracking-wider">NEW UPLOAD</div>
-                      <button onClick={() => removeNewFile(idx)} className="absolute top-3 right-3 bg-[var(--surface)] text-[var(--error)] p-2 rounded-full shadow-lg opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transform lg:translate-y-[-10px] group-hover:translate-y-0 transition-all duration-300 hover:bg-[var(--error)] hover:text-[var(--surface)]">
-                        <X size={16} />
+                    <div key={`new-${idx}`} className="relative w-24 h-24 group rounded-2xl overflow-hidden border-2 border-[var(--accent-soft)] bg-[var(--surface)] shadow-sm">
+                      <img src={url} alt="New" className="w-full h-full object-cover opacity-80" />
+                      <button onClick={() => removeNewFile(idx)} className="absolute inset-0 bg-white/80 backdrop-blur-sm text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <X size={18} />
                       </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-[var(--surface)] p-6 md:p-8 rounded-3xl shadow-[var(--shadow)] border border-[var(--border)] grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ModernInput label="Product Name" name="name" value={parentData.name} onChange={handleParentChange} />
-                <ModernInput label="Category" name="category" value={parentData.category} onChange={handleParentChange} />
-                <div className="md:col-span-2">
-                  <label className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2.5 block ml-1">Description</label>
+              {/* Data Block */}
+              <div className="bg-[var(--surface)] p-6 sm:p-8 rounded-[1.5rem] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-[var(--border)]/40 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ModernInput label="Item Name" name="name" value={parentData.name} onChange={handleParentChange} />
+                <ModernInput label="Classification" name="category" value={parentData.category} onChange={handleParentChange} />
+                <div className="md:col-span-2 group">
+                  <label className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-widest mb-2 block px-1 group-focus-within:text-[var(--brand)] transition-colors">Description</label>
                   <textarea 
                     name="description" 
                     rows={3} 
                     value={parentData.description} 
                     onChange={handleParentChange} 
-                    className="w-full p-4 bg-[var(--surface)] border border-[var(--border)] rounded-2xl text-sm font-bold text-[var(--text)] outline-none focus:bg-[var(--surface)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)] transition-all resize-none placeholder-[var(--muted)] shadow-[var(--shadow)]" 
+                    className="w-full px-4 py-3.5 bg-[var(--surface)] border border-[var(--border)]/40 hover:border-[var(--border)] rounded-xl font-body font-bold text-sm text-[var(--text)] outline-none focus:bg-[var(--surface)] focus:border-[var(--brand)]/50 focus:shadow-[0_0_0_3px_rgba(0,0,0,0.03)] transition-all resize-none shadow-[0_2px_8px_rgba(0,0,0,0.02)] placeholder-[var(--muted)]" 
                   />
                 </div>
                 <ModernInput label="Top Notes" name="composition" value={parentData.composition} onChange={handleParentChange} />
                 <ModernInput label="Base Notes" name="fragranceNotes" value={parentData.fragranceNotes} onChange={handleParentChange} />
-                <ModernInput label="Heart Notes" name="fragrance" value={parentData.fragrance} onChange={handleParentChange} />
+                <ModernInput label="Heart Notes" name="fragrance" value={parentData.fragrance} onChange={handleParentChange} span="md:col-span-2" />
               </div>
 
-              <div className="flex gap-4">
-                <button onClick={() => handleSaveParent(false)} disabled={isSaving || uploading} className="button-hero w-2/3 bg-[var(--brand)] hover:brightness-110 text-[var(--surface)] px-6 py-4 rounded-2xl font-bold shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] transition-all flex items-center justify-center gap-2">
-                  {uploading ? <span className="animate-pulse">Uploading...</span> : isSaving ? "Saving..." : <><UploadCloud size={20} /> Save Details</>}
-                  {!uploading && !isSaving && <div className="pulse border-[var(--surface)]"></div>}
+              {/* Actions */}
+              <div className="flex gap-4 pt-2">
+                <button onClick={() => handleSaveParent(false)} disabled={isSaving || uploading} className="button-hero flex-1 bg-[var(--text)] hover:bg-[var(--brand)] text-[var(--surface)] px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.12)] disabled:opacity-50">
+                  {uploading ? <span className="animate-pulse">Uploading...</span> : isSaving ? "Saving..." : <><UploadCloud size={16} /> Sync Details</>}
                 </button>
-                <button onClick={() => setActiveTab("variants")} className="w-1/3 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[var(--shadow)]">
-                  Next <ArrowRight size={18} />
+                <button onClick={() => setActiveTab("variants")} className="bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]/50 hover:bg-[var(--surface-muted)] px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm">
+                  Next <ArrowRight size={16} />
                 </button>
               </div>
             </div>
@@ -217,40 +216,39 @@ const ProductVariantEditor = ({ product, onClose }) => {
 
           {activeTab === "variants" && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center bg-[var(--surface)] p-5 rounded-2xl shadow-[var(--shadow)] border border-[var(--border)]">
-                <h3 className="text-sm font-bold text-[var(--text)] ml-2">Manage Variants</h3>
-                <button onClick={handleAddNewVariant} className="px-5 py-2.5 bg-[var(--surface)] text-[var(--brand)] border border-[var(--border)] hover:border-[var(--accent)] rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-2 shadow-sm">
-                  <Plus size={16} /> Add Variant
+              <div className="flex justify-between items-center bg-[var(--surface)] p-5 rounded-[1.25rem] shadow-sm border border-[var(--border)]/40">
+                <h3 className="text-sm font-bold text-[var(--text)] ml-1">Configured Variants</h3>
+                <button onClick={handleAddNewVariant} className="px-4 py-2 bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]/50 hover:text-[var(--brand)] hover:border-[var(--brand)]/40 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2 shadow-sm">
+                  <Plus size={14} strokeWidth={2.5} /> New Variant
                 </button>
               </div>
               <div className="space-y-5">
                 {variants.map((variant, index) => (
-                  <div key={variant.id || `new-${index}`} ref={index === newVariantIndex ? newVariantCardRef : null} className={`p-6 md:p-8 rounded-3xl border transition-all duration-300 ${variant.isArchived ? "bg-[var(--surface-muted)] border-[var(--border)] opacity-70" : "bg-[var(--surface)] border-[var(--border)] shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] hover:border-[var(--border)]"}`}>
-                    <div className="flex justify-between items-start mb-8">
-                      <div>
-                        <h4 className="font-bold text-[var(--text)] text-sm tracking-wide flex items-center gap-3">
-                          {variant.name || "Untitled"} 
-                          {variant.isArchived && <span className="px-2.5 py-1 bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] text-[10px] rounded-lg uppercase tracking-widest font-bold">Archived</span>}
-                        </h4>
-                      </div>
+                  <div key={variant.id || `new-${index}`} ref={index === newVariantIndex ? newVariantCardRef : null} className={`p-6 sm:p-8 rounded-[1.5rem] transition-all duration-500 border ${variant.isArchived ? "bg-[var(--surface-muted)]/40 border-[var(--border)]/30 opacity-70" : "bg-[var(--surface)] border-[var(--border)]/40 shadow-[0_8px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)]"}`}>
+                    <div className="flex justify-between items-center mb-6 border-b border-[var(--border)]/30 pb-4">
+                      <h4 className="font-bold text-[var(--text)] text-sm tracking-tight flex items-center gap-3">
+                        {variant.name || "Untitled Config"} 
+                        {variant.isArchived && <span className="px-2 py-1 bg-[var(--surface-muted)] text-[var(--muted)] border border-[var(--border)]/50 text-[9px] rounded-md uppercase tracking-widest font-bold">Archived</span>}
+                      </h4>
                       <div className="flex gap-2.5">
-                        <button onClick={() => handleSaveVariant(index)} disabled={isSaving} className="p-3 bg-[var(--success)] text-[var(--surface)] rounded-xl hover:brightness-110 transition-all shadow-sm">
-                          <Save size={18} />
+                        <button onClick={() => handleSaveVariant(index)} disabled={isSaving} className="p-2.5 bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/20 rounded-xl hover:bg-[var(--success)] hover:text-white transition-colors">
+                          <Save size={16} strokeWidth={2} />
                         </button>
-                        <button onClick={() => handleArchiveToggle(index)} disabled={isSaving} className={`p-3 rounded-xl border transition-colors ${variant.isArchived ? "bg-[var(--surface)] text-[var(--accent)] border-[var(--border)] hover:border-[var(--accent)]" : "bg-[var(--surface)] text-[var(--error)] border-[var(--border)] hover:border-[var(--error)] hover:bg-[var(--error)] hover:text-[var(--surface)]"}`}>
-                          {variant.isArchived ? <Undo size={18} /> : <Archive size={18} />}
+                        <button onClick={() => handleArchiveToggle(index)} disabled={isSaving} className={`p-2.5 rounded-xl border transition-colors ${variant.isArchived ? "bg-[var(--surface)] text-[var(--brand)] border-[var(--border)]/50 hover:border-[var(--brand)]" : "bg-[var(--error)]/5 text-[var(--error)] border-[var(--error)]/20 hover:bg-[var(--error)] hover:text-white"}`}>
+                          {variant.isArchived ? <Undo size={16} strokeWidth={2} /> : <Archive size={16} strokeWidth={2} />}
                         </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                      <ModernInput label="Name" name="name" value={variant.name} onChange={(e) => handleVariantChange(index, e)} />
+                    {/* Breathable Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                      <ModernInput label="SKU/Name" name="name" value={variant.name} onChange={(e) => handleVariantChange(index, e)} span="col-span-2" />
                       <ModernInput label="Size" name="size" type="number" value={variant.size} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="Stock" name="stock" type="number" value={variant.stock} onChange={(e) => handleVariantChange(index, e)} />
-                      <ModernInput label="Price" name="oprice" type="number" value={variant.oprice} onChange={(e) => handleVariantChange(index, e)} />
-                      <ModernInput label="Cost" name="costPrice" type="number" value={variant.costPrice} onChange={(e) => handleVariantChange(index, e)} />
-                      <ModernInput label="Disc %" name="discount" type="number" value={variant.discount} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="Price (₹)" name="oprice" type="number" value={variant.oprice} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="Cost (₹)" name="costPrice" type="number" value={variant.costPrice} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="Disc (%)" name="discount" type="number" value={variant.discount} onChange={(e) => handleVariantChange(index, e)} />
                       
-                      <ModernInput label="Weight (kg)" name="weight" type="number" value={variant.weight} onChange={(e) => handleVariantChange(index, e)} />
+                      <ModernInput label="Wt (kg)" name="weight" type="number" value={variant.weight} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="L (cm)" name="length" type="number" value={variant.length} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="B (cm)" name="breadth" type="number" value={variant.breadth} onChange={(e) => handleVariantChange(index, e)} />
                       <ModernInput label="H (cm)" name="height" type="number" value={variant.height} onChange={(e) => handleVariantChange(index, e)} />
@@ -258,12 +256,12 @@ const ProductVariantEditor = ({ product, onClose }) => {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-4 pt-6 mt-8 border-t border-[var(--border)]">
-                <button onClick={() => setActiveTab("general")} className="w-1/3 bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)] border border-[var(--border)] px-6 py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[var(--shadow)]">
-                  <ArrowLeft size={18} /> Back
+              <div className="flex gap-4 pt-6 mt-8 border-t border-[var(--border)]/40">
+                <button onClick={() => setActiveTab("general")} className="bg-[var(--surface)] text-[var(--text)] hover:bg-[var(--surface-muted)] border border-[var(--border)]/50 px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-sm">
+                  <ArrowLeft size={16} /> Back
                 </button>
-                <button onClick={onClose} className="button-hero w-2/3 bg-[var(--brand)] hover:brightness-110 text-[var(--surface)] px-6 py-4 rounded-2xl font-bold shadow-[var(--shadow)] hover:shadow-[var(--shadow-strong)] transition-all">
-                  Finish Editing
+                <button onClick={onClose} className="button-hero flex-1 bg-[var(--text)] hover:bg-[var(--brand)] text-[var(--surface)] px-6 py-4 rounded-xl font-bold text-xs uppercase tracking-widest shadow-[0_8px_20px_rgba(0,0,0,0.08)] transition-all">
+                  Close Editor
                 </button>
               </div>
             </div>

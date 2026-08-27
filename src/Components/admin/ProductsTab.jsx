@@ -129,44 +129,47 @@ const ProductsTab = ({
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
   };
 
   return (
-    <div className="space-y-10 p-4 sm:p-6 lg:p-10 bg-[var(--bg)] min-h-screen font-body transition-colors duration-300 pb-28">
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8 bg-[var(--bg)] min-h-screen font-body transition-colors duration-500 pb-28 w-full overflow-hidden">
 
-      {/* --- HEADER --- */}
+      {/* --- LUXURY HEADER --- */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-8 border-b border-[var(--border)] bg-[var(--surface)] p-8 rounded-3xl shadow-[var(--shadow)]"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 px-8 bg-[var(--surface)] border border-[var(--border)]/30 rounded-[2rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] gap-6"
       >
         <div>
-          <h2 className="font-display text-4xl font-medium text-[var(--text)] flex items-center tracking-tight">
-            <Package className="w-9 h-9 mr-3.5 text-[var(--accent)]" strokeWidth={1.5} /> Products
+          <h2 className="font-display text-2xl sm:text-3xl font-medium text-[var(--text)] flex items-center tracking-tight gap-3.5">
+            <div className="p-2.5 rounded-2xl bg-[var(--surface-muted)]/50 border border-[var(--border)]/40 text-[var(--brand)] shadow-sm">
+              <Package size={22} strokeWidth={1.5} />
+            </div>
+            Product Catalog
           </h2>
-          <p className="font-display italic text-lg text-[var(--sub)] mt-2 tracking-wide">Manage your store's inventory and luxury catalog.</p>
+          <p className="font-body text-sm text-[var(--muted)] mt-2 tracking-wide">Curate and manage your luxury collections and inventory.</p>
         </div>
         
-        <div className="flex flex-wrap gap-3.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setIsBulkMode(!isBulkMode)}
-            className={`flex-1 sm:flex-none flex items-center justify-center px-6 py-3.5 border rounded-xl transition-all font-body font-bold text-sm shadow-[var(--shadow)] tracking-wide
+            className={`flex items-center justify-center px-5 py-2.5 rounded-xl transition-all font-body font-bold text-xs uppercase tracking-widest shrink-0
               ${isBulkMode 
-                ? 'bg-[var(--brand)] text-[var(--surface)] border-[var(--brand)] shadow-[var(--shadow-strong)]' 
-                : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] hover:text-[var(--brand)]'
+                ? 'bg-[var(--text)] text-[var(--surface)] shadow-[0_4px_16px_rgba(0,0,0,0.1)]' 
+                : 'bg-[var(--surface)] text-[var(--text)] border border-[var(--border)]/50 hover:bg-[var(--surface-muted)] shadow-[0_2px_8px_rgba(0,0,0,0.02)]'
               }`}
           >
-            {isBulkMode ? <List className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-            {isBulkMode ? 'Exit Bulk Edit' : 'Bulk Edit'}
+            {isBulkMode ? <List size={16} className="mr-2" /> : <Edit3 size={16} className="mr-2" />}
+            {isBulkMode ? 'Exit Bulk' : 'Bulk Edit'}
           </motion.button>
 
           {!isBulkMode && (
@@ -176,20 +179,19 @@ const ProductsTab = ({
                 whileTap={{ scale: 0.98 }}
                 onClick={refreshProductStock}
                 disabled={loading}
-                className="flex-1 sm:flex-none flex items-center justify-center px-6 py-3.5 bg-[var(--surface)] text-[var(--brand)] border border-[var(--border)] rounded-xl hover:border-[var(--brand)] hover:shadow-sm transition-all font-body font-bold text-sm tracking-wide shadow-[var(--shadow)] disabled:opacity-50"
+                className="flex items-center justify-center px-5 py-2.5 bg-[var(--surface)] text-[var(--sub)] border border-[var(--border)]/50 rounded-xl hover:text-[var(--brand)] hover:border-[var(--brand)]/30 transition-all font-body font-bold text-xs uppercase tracking-widest shadow-[0_2px_8px_rgba(0,0,0,0.02)] disabled:opacity-50 shrink-0"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
-                {loading ? 'Refreshing...' : 'Refresh'}
+                <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
+                {loading ? 'Syncing...' : 'Sync'}
               </motion.button>
 
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setOpenModal(true)}
-                className="button-hero flex-1 sm:flex-none flex items-center justify-center px-7 py-3.5 bg-[var(--brand)] text-[var(--surface)] border border-[var(--brand)] rounded-xl hover:brightness-110 transition-all font-body font-bold text-sm tracking-wide shadow-[var(--shadow-strong)]"
+                className="flex items-center justify-center px-6 py-2.5 bg-[var(--brand)] text-[var(--surface)] rounded-xl hover:brightness-110 transition-all font-body font-bold text-xs uppercase tracking-widest shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.12)] shrink-0"
               >
-                <Plus className="w-4 h-4 mr-2" strokeWidth={2.5} /> Add Product
-                <div className="pulse border-[var(--surface)]"></div>
+                <Plus size={16} className="mr-2" strokeWidth={2.5} /> Add Item
               </motion.button>
             </>
           )}

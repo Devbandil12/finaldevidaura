@@ -13,18 +13,20 @@ const ArchivedProducts = ({
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="mt-16 pt-10 border-t border-[var(--border)] font-body"
+      className="mt-12 pt-8 border-t border-[var(--border)]/30 font-body"
     >
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="font-display text-3xl font-medium text-[var(--text)] tracking-tight flex items-center gap-4">
-          <Archive className="text-[var(--muted)]" size={32} strokeWidth={1.5} /> Archived Products
-          <span className="font-body bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] text-[11px] px-3.5 py-1 rounded-md font-bold shadow-[var(--shadow)]">{archivedProducts.length}</span>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="font-display text-xl sm:text-2xl font-medium text-[var(--text)] tracking-tight flex items-center gap-3.5">
+          <Archive className="text-[var(--muted)]" size={24} strokeWidth={1.5} /> Archived Catalog
+          <span className="font-body bg-[var(--surface-muted)] border border-[var(--border)]/40 text-[var(--sub)] text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-widest shadow-sm">
+            {archivedProducts.length} Items
+          </span>
         </h3>
         <button
           onClick={() => setShowArchived(!showArchived)}
-          className="px-6 py-3 rounded-xl text-sm font-bold text-[var(--text)] bg-[var(--surface)] border border-[var(--border)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] hover:text-[var(--brand)] transition-colors shadow-[var(--shadow)]"
+          className="px-4 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--text)] bg-[var(--surface)] border border-[var(--border)]/50 hover:bg-[var(--surface-muted)] transition-colors shadow-sm"
         >
-          {showArchived ? "Hide Archived" : "Show Archived"}
+          {showArchived ? "Hide Archive" : "View Archive"}
         </button>
       </div>
 
@@ -34,57 +36,57 @@ const ArchivedProducts = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-[var(--surface)] rounded-3xl overflow-hidden shadow-[var(--shadow)] border border-[var(--border)]"
+            className="bg-[var(--surface)] rounded-[1.5rem] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-[var(--border)]/30"
           >
             {loading ? (
-              <div className="p-16 text-center text-[var(--muted)] font-display italic text-xl animate-pulse tracking-wide">Loading archived items...</div>
+              <div className="p-16 text-center text-[var(--muted)] font-body text-xs font-bold uppercase tracking-widest animate-pulse">Retrieving archives...</div>
             ) : (
               <div className="overflow-x-auto smooth-scrollbar">
-                <table className="w-full text-left min-w-[700px] border-collapse">
-                  <thead className="bg-[var(--surface)] border-b border-[var(--border)] text-[10px] uppercase font-bold text-[var(--muted)] tracking-widest">
+                <table className="w-full text-left min-w-[600px] border-collapse whitespace-nowrap">
+                  <thead className="bg-[var(--surface-muted)]/50 border-b border-[var(--border)]/30 text-[10px] uppercase font-bold text-[var(--muted)] tracking-widest">
                     <tr>
-                      <th className="px-8 py-5">Product</th>
-                      <th className="px-8 py-5">Category</th>
-                      <th className="px-8 py-5 text-right">Actions</th>
+                      <th className="px-6 py-4">Asset</th>
+                      <th className="px-6 py-4">Classification</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--border)]">
+                  <tbody className="divide-y divide-[var(--border)]/20">
                     {archivedProducts.map((product) => (
                       <motion.tr 
                         key={product.id} 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-[var(--surface)] transition-colors duration-300 group cursor-default"
+                        className="hover:bg-[var(--surface-muted)]/30 transition-colors duration-300 group cursor-default"
                       >
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-5 opacity-60 group-hover:opacity-100 transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] shrink-0 group-hover:border-[var(--border)] transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4 opacity-70 group-hover:opacity-100 transition-all duration-300">
+                            <div className="w-12 h-12 rounded-xl overflow-hidden border border-[var(--border)]/40 bg-[var(--surface-muted)] shrink-0">
                               <img
                                 src={Array.isArray(product.imageurl) ? product.imageurl[0] : product.imageurl}
                                 alt={product.name}
-                                className="w-full h-full object-cover blend-luxury grayscale group-hover:grayscale-0 transition-all duration-500"
+                                className="w-full h-full object-cover mix-blend-multiply grayscale group-hover:grayscale-0 transition-all duration-500"
                               />
                             </div>
-                            <span className="font-bold text-base text-[var(--text)] tracking-wide line-through decoration-[var(--muted)] decoration-1 group-hover:no-underline group-hover:text-[var(--brand)] transition-colors">{product.name}</span>
+                            <span className="font-bold text-sm text-[var(--text)] tracking-tight line-through decoration-[var(--border)] group-hover:no-underline group-hover:text-[var(--brand)] transition-colors">{product.name}</span>
                           </div>
                         </td>
-                        <td className="px-8 py-5 text-[var(--sub)] font-bold opacity-70 group-hover:opacity-100 transition-opacity tracking-wide">{product.category || 'N/A'}</td>
-                        <td className="px-8 py-5 text-right">
+                        <td className="px-6 py-4 text-[var(--sub)] text-[11px] font-bold uppercase tracking-widest opacity-70 group-hover:opacity-100 transition-opacity">{product.category || 'N/A'}</td>
+                        <td className="px-6 py-4 text-right">
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleProductUnarchive(product.id)}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-[var(--success)] bg-[var(--surface)] border border-[var(--border)] rounded-xl hover:border-[var(--success)] hover:bg-[var(--surface)] transition-colors shadow-[var(--shadow)]"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--success)] bg-[var(--surface)] border border-[var(--border)]/50 rounded-lg hover:border-[var(--success)]/40 hover:bg-[var(--success)]/10 transition-colors shadow-sm"
                           >
-                            <RotateCcw size={14} strokeWidth={2} /> Unarchive
+                            <RotateCcw size={14} strokeWidth={2.5} /> Restore
                           </motion.button>
                         </td>
                       </motion.tr>
                     ))}
                     {archivedProducts.length === 0 && (
                       <tr>
-                        <td colSpan="3" className="px-8 py-16 text-center text-[var(--sub)] font-display italic text-xl tracking-wide">
-                          No archived products found.
+                        <td colSpan="3" className="px-6 py-12 text-center text-[var(--sub)] font-body text-[11px] font-bold uppercase tracking-widest">
+                          No archived records found.
                         </td>
                       </tr>
                     )}

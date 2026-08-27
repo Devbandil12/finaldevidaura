@@ -3,19 +3,20 @@ import React from 'react';
 const OrderStatusBadge = ({ status }) => {
   const normalizedStatus = (status || "").toLowerCase();
   
+  // Luxury Palette using refined rings and soft tinted backgrounds
   const styles = {
-    "delivered": "bg-[var(--surface)] text-[var(--success)] border-[var(--border)]",
-    "shipped": "bg-[var(--accent-soft)] text-[var(--brand)] border-transparent",
-    "out for delivery": "bg-[var(--surface-muted)] text-[var(--brand)] border-[var(--border)]",
-    "packed": "bg-[var(--surface-muted)] text-[var(--text)] border-transparent",
-    "processing": "bg-[var(--surface)] text-[var(--sub)] border-[var(--border)]",
-    "order cancelled": "bg-[var(--surface)] text-[var(--error)] border-[var(--border)]",
-    "order placed": "bg-[var(--surface-muted)] text-[var(--muted)] border-transparent",
-    "pending_payment": "bg-[var(--surface)] text-[var(--accent)] border-[var(--border)]",
-    "payment_pending": "bg-[var(--surface)] text-[var(--accent)] border-[var(--border)]",
-    "return initiated": "bg-[var(--surface)] text-[var(--error)] border-[var(--border)]",
-    "returned": "bg-[var(--surface)] text-[var(--success)] border-[var(--border)]",
-    "rto initiated": "bg-[var(--surface)] text-[var(--error)] border-[var(--border)]",
+    "delivered": "bg-[var(--success)]/10 text-[var(--success)] ring-[var(--success)]/20",
+    "shipped": "bg-[var(--brand)]/5 text-[var(--brand)] ring-[var(--brand)]/20",
+    "out for delivery": "bg-[var(--brand)]/10 text-[var(--brand)] ring-[var(--brand)]/30",
+    "packed": "bg-[var(--surface-muted)] text-[var(--text)] ring-[var(--border)]/50",
+    "processing": "bg-[var(--warning)]/10 text-[var(--warning)] ring-[var(--warning)]/20",
+    "order cancelled": "bg-[var(--error)]/10 text-[var(--error)] ring-[var(--error)]/20",
+    "order placed": "bg-[var(--surface)] text-[var(--muted)] ring-[var(--border)]/40",
+    "pending_payment": "bg-[var(--accent)]/10 text-[var(--accent)] ring-[var(--accent)]/20",
+    "payment_pending": "bg-[var(--accent)]/10 text-[var(--accent)] ring-[var(--accent)]/20",
+    "return initiated": "bg-[var(--error)]/5 text-[var(--error)] ring-[var(--error)]/20",
+    "returned": "bg-[var(--surface-muted)] text-[var(--sub)] ring-[var(--border)]/50",
+    "rto initiated": "bg-[var(--error)]/10 text-[var(--error)] ring-[var(--error)]/20",
   };
   
   let styleClass = styles["order placed"];
@@ -24,7 +25,7 @@ const OrderStatusBadge = ({ status }) => {
   else if (normalizedStatus.includes('return') || normalizedStatus.includes('rto')) styleClass = styles["return initiated"];
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 font-body text-[9px] font-bold uppercase tracking-widest whitespace-nowrap rounded-md border transition-colors duration-300 ${styleClass}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 font-body text-[8px] font-bold uppercase tracking-widest whitespace-nowrap rounded ring-1 transition-colors duration-300 ${styleClass}`}>
       {status?.replace(/_/g, " ")}
     </span>
   );

@@ -23,6 +23,9 @@ export const validateCoupon = async (code, userId) => {
 };
 
 export const saveCoupon = async (couponData) => {
+  if (!couponData || typeof couponData !== 'object' || couponData.nativeEvent || couponData.target) {
+    throw new Error("Invalid coupon payload");
+  }
   const { id, ...data } = couponData;
   if (id) {
     const res = await httpClient.put(`/api/coupons/${id}`, data);

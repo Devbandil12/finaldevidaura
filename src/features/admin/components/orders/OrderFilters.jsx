@@ -1,7 +1,85 @@
-import React, { useState } from 'react';
-import { Search, Filter, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Filter, X, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// --- Reusable Custom Luxury Dropdown ---
+const LuxurySelect = ({ value, options, onChange, placeholder = "Any Status" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setIsOpen(false);
+  };
+
+  const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder;
+
+  return (
+    <div className="relative font-body w-full min-w-[150px]" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-xs font-medium tracking-tight transition-all duration-300 ring-1 
+        ${isOpen 
+            ? 'ring-[var(--brand)]/50 shadow-sm bg-[var(--surface)] text-[var(--text)]' 
+            : 'bg-[var(--surface)] ring-[var(--border)]/40 dark:ring-[var(--border)]/60 hover:bg-[var(--surface-muted)]/50 hover:ring-[var(--border)]/80 text-[var(--text)] shadow-sm'}`}
+      >
+        <span className="truncate mr-3">{selectedLabel}</span>
+        <ChevronDown size={14} strokeWidth={2} className={`text-[var(--muted)] transition-transform duration-500 ease-out shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: -5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -5 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-0 mt-2 w-full min-w-[180px] bg-[var(--surface)]/95 backdrop-blur-xl rounded-[1.25rem] shadow-[0_16px_40px_rgba(0,0,0,0.12)] z-[99999] overflow-hidden ring-1 ring-[var(--border)]/40 dark:ring-[var(--border)]/70"
+          >
+            <div className="p-2 max-h-64 overflow-y-auto custom-scrollbar">
+              {/* Option for "Any / Clear" */}
+              <button
+                onClick={() => handleSelect('')}
+                className={`w-full text-left px-3 py-2 text-[11px] font-medium tracking-tight flex items-center justify-between rounded-lg transition-colors duration-200 
+                ${value === '' ? 'bg-[var(--surface-muted)] text-[var(--text)] shadow-inner' : 'text-[var(--sub)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'}`}
+              >
+                {placeholder}
+                {value === '' && <Check size={14} strokeWidth={3} className="text-[var(--text)]" />}
+              </button>
+              
+              <div className="h-px w-full bg-[var(--border)]/30 my-1"></div>
+
+              {options.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSelect(opt.value)}
+                  className={`w-full text-left px-3 py-2 text-[11px] font-medium tracking-tight flex items-center justify-between rounded-lg transition-colors duration-200 
+                  ${value === opt.value ? 'bg-[var(--brand)]/10 text-[var(--brand)] shadow-inner' : 'text-[var(--sub)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]'}`}
+                >
+                  {opt.label}
+                  {value === opt.value && <Check size={14} strokeWidth={3} className="text-[var(--brand)]" />}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+
+// --- MAIN COMPONENT ---
 const OrderFilters = ({ orderFilters, setOrderFilters, orderSearchQuery, setOrderSearchQuery, setSelectedOrders }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -23,18 +101,19 @@ const OrderFilters = ({ orderFilters, setOrderFilters, orderSearchQuery, setOrde
   const activeFilterCount = Object.values(orderFilters).filter(v => v && v !== 'All').length;
 
   return (
-    <div className="flex flex-col gap-4 font-body">
-      <div className="flex flex-col xl:flex-row xl:justify-between items-start xl:items-center gap-5">
-        {/* Quick Status Tabs */}
+    // Added relative z-20 to ensure dropdowns pop over the orders table below
+    <div className="flex flex-col gap-4 sm:gap-5 font-body mb-6 relative z-20">
+      <div className="flex flex-col xl:flex-row xl:justify-between items-start xl:items-center gap-4 sm:gap-5">
+        {/* Soft Luxury Status Tabs */}
         <div className="flex gap-2.5 overflow-x-auto pb-2 smooth-scrollbar flex-1 w-full max-w-[100vw]">
           {["All", "Requires Attention", "Payment Pending", "Order Placed", "Processing", "Packed", "Shipped", "Out for Delivery", "Delivered", "Returns", "Cancelled"].map((status) => (
             <button
               key={status}
               onClick={() => handleFilterChange('status', status)}
-              className={`px-5 py-2.5 rounded-lg font-body text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 border 
+              className={`px-5 py-2.5 rounded-xl font-body text-[9px] sm:text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all duration-300 ring-1 
               ${orderFilters.status === status
-                  ? "bg-[var(--brand)] text-[var(--surface)] border-[var(--brand)] shadow-[var(--shadow)]"
-                  : "bg-[var(--surface)] text-[var(--muted)] border-[var(--border)] hover:bg-[var(--surface-muted)] hover:border-[var(--border)] hover:text-[var(--brand)] shadow-sm"}`}
+                  ? "bg-[var(--surface)] text-[var(--text)] ring-[var(--border)]/60 dark:ring-[var(--border)]/80 shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                  : "bg-transparent text-[var(--muted)] ring-transparent hover:bg-[var(--surface-muted)]/50 hover:text-[var(--text)]"}`}
             >
               {status}
             </button>
@@ -46,22 +125,22 @@ const OrderFilters = ({ orderFilters, setOrderFilters, orderSearchQuery, setOrde
           <div className="relative flex-1 xl:w-80 group">
             <input
               type="text"
-              placeholder="Search by ID, Customer, Phone..."
+              placeholder="Search ID, Customer..."
               value={orderSearchQuery}
               onChange={(e) => setOrderSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 bg-[var(--surface)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--brand)] border border-[var(--border)] hover:border-[var(--border)] focus:border-[var(--brand)] font-body text-sm font-bold text-[var(--text)] transition-all placeholder-[var(--muted)] shadow-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-[var(--surface-muted)]/30 rounded-xl focus:outline-none ring-1 ring-[var(--border)]/40 dark:ring-[var(--border)]/60 focus:ring-[var(--brand)]/50 focus:bg-[var(--surface)] font-body font-medium text-xs sm:text-sm text-[var(--text)] transition-all placeholder-[var(--muted)] shadow-inner z-10 relative"
             />
             <Search 
-              className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--muted)] group-focus-within:text-[var(--brand)] transition-colors" 
-              size={18} 
-              strokeWidth={1.5} 
+              className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--muted)] group-focus-within:text-[var(--brand)] transition-colors z-20" 
+              size={16} 
+              strokeWidth={2} 
             />
           </div>
           <button 
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`px-4 py-2.5 rounded-lg border transition-all flex items-center gap-2 font-bold text-xs ${showAdvanced || activeFilterCount > 0 ? 'bg-[var(--brand)] text-[var(--surface)] border-[var(--brand)]' : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--surface-muted)]'}`}
+            className={`px-4 py-2.5 rounded-xl ring-1 transition-all flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-sm z-10 relative ${showAdvanced || activeFilterCount > 0 ? 'bg-[var(--surface)] text-[var(--text)] ring-[var(--border)]/60 dark:ring-[var(--border)]/80' : 'bg-transparent text-[var(--muted)] ring-[var(--border)]/40 dark:ring-[var(--border)]/60 hover:bg-[var(--surface-muted)]/50'}`}
           >
-            <Filter size={16} /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+            <Filter size={14} strokeWidth={2.5} /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
           </button>
         </div>
       </div>
@@ -69,82 +148,89 @@ const OrderFilters = ({ orderFilters, setOrderFilters, orderSearchQuery, setOrde
       <AnimatePresence>
         {showAdvanced && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
+            // Here is the magic trick: Transition overflow to visible when done animating
+            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
+            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="p-5 bg-[var(--surface-muted)] border border-[var(--border)] rounded-xl flex flex-wrap gap-5 items-end shadow-inner">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--sub)]">Payment</label>
-                <select 
-                  value={orderFilters.paymentStatus || ''} 
-                  onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
-                  className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--brand)] min-w-[140px]"
-                >
-                  <option value="">Any Payment</option>
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="partially_refunded">Partially Refunded</option>
-                  <option value="refunded">Refunded</option>
-                  <option value="failed">Failed</option>
-                </select>
+            <div className="p-5 sm:p-6 bg-[var(--surface-muted)]/20 border border-[var(--border)]/30 dark:border-[var(--border)]/60 rounded-[1.5rem] flex flex-wrap gap-5 items-end shadow-inner">
+              
+              {/* Payment Filter */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] uppercase tracking-widest font-bold text-[var(--muted)] ml-1">Payment</label>
+                <LuxurySelect 
+                  value={orderFilters.paymentStatus || ''}
+                  onChange={(val) => handleFilterChange('paymentStatus', val)}
+                  placeholder="Any Payment"
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "paid", label: "Paid" },
+                    { value: "partially_refunded", label: "Partially Refunded" },
+                    { value: "refunded", label: "Refunded" },
+                    { value: "failed", label: "Failed" }
+                  ]}
+                />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--sub)]">Fulfillment</label>
-                <select 
-                  value={orderFilters.fulfillmentStatus || ''} 
-                  onChange={(e) => handleFilterChange('fulfillmentStatus', e.target.value)}
-                  className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--brand)] min-w-[140px]"
-                >
-                  <option value="">Any Status</option>
-                  <option value="PROCESSING">Processing</option>
-                  <option value="PACKED">Packed</option>
-                  <option value="READY_TO_SHIP">Ready to Ship</option>
-                  <option value="SHIPPED">Shipped</option>
-                  <option value="OOD">Out for Delivery</option>
-                  <option value="DELIVERED">Delivered</option>
-                </select>
+              {/* Fulfillment Filter */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] uppercase tracking-widest font-bold text-[var(--muted)] ml-1">Fulfillment</label>
+                <LuxurySelect 
+                  value={orderFilters.fulfillmentStatus || ''}
+                  onChange={(val) => handleFilterChange('fulfillmentStatus', val)}
+                  placeholder="Any Status"
+                  options={[
+                    { value: "PROCESSING", label: "Processing" },
+                    { value: "PACKED", label: "Packed" },
+                    { value: "READY_TO_SHIP", label: "Ready to Ship" },
+                    { value: "SHIPPED", label: "Shipped" },
+                    { value: "OOD", label: "Out for Delivery" },
+                    { value: "DELIVERED", label: "Delivered" }
+                  ]}
+                />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--sub)]">Returns</label>
-                <select 
-                  value={orderFilters.returnStatus || ''} 
-                  onChange={(e) => handleFilterChange('returnStatus', e.target.value)}
-                  className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--brand)] min-w-[140px]"
-                >
-                  <option value="">Any Status</option>
-                  <option value="NONE">No Return</option>
-                  <option value="REQUESTED">Requested</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="RECEIVED">Received</option>
-                  <option value="REJECTED">Rejected</option>
-                </select>
+              {/* Returns Filter */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] uppercase tracking-widest font-bold text-[var(--muted)] ml-1">Returns</label>
+                <LuxurySelect 
+                  value={orderFilters.returnStatus || ''}
+                  onChange={(val) => handleFilterChange('returnStatus', val)}
+                  placeholder="Any Status"
+                  options={[
+                    { value: "NONE", label: "No Return" },
+                    { value: "REQUESTED", label: "Requested" },
+                    { value: "APPROVED", label: "Approved" },
+                    { value: "RECEIVED", label: "Received" },
+                    { value: "REJECTED", label: "Rejected" }
+                  ]}
+                />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-[var(--sub)]">Refunds</label>
-                <select 
-                  value={orderFilters.refundStatus || ''} 
-                  onChange={(e) => handleFilterChange('refundStatus', e.target.value)}
-                  className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--text)] outline-none focus:border-[var(--brand)] min-w-[140px]"
-                >
-                  <option value="">Any Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="processed">Processed</option>
-                  <option value="failed">Failed</option>
-                </select>
+              {/* Refunds Filter */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] uppercase tracking-widest font-bold text-[var(--muted)] ml-1">Refunds</label>
+                <LuxurySelect 
+                  value={orderFilters.refundStatus || ''}
+                  onChange={(val) => handleFilterChange('refundStatus', val)}
+                  placeholder="Any Status"
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "in_progress", label: "In Progress" },
+                    { value: "processed", label: "Processed" },
+                    { value: "failed", label: "Failed" }
+                  ]}
+                />
               </div>
 
+              {/* Clear All Button */}
               {activeFilterCount > 0 && (
                 <button 
                   onClick={clearFilters}
-                  className="px-4 py-2 bg-[var(--surface)] border border-[var(--border)] text-[var(--error)] rounded-lg text-sm font-bold hover:bg-red-50 hover:border-red-200 flex items-center gap-2 transition-colors ml-auto"
+                  className="px-4 py-2.5 bg-transparent text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-muted)]/50 rounded-xl text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5 transition-colors ml-auto"
                 >
-                  <X size={16} /> Clear All
+                  <X size={14} strokeWidth={2.5} /> Clear All
                 </button>
               )}
             </div>
