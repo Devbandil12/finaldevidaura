@@ -1446,7 +1446,7 @@ const SupportInbox = () => {
                     onChange={e => setNewTemplateContent(e.target.value)}
                     className="w-full bg-[var(--surface)] border border-[var(--border)] focus:border-[var(--brand)] rounded-xl px-4 py-2.5 text-xs outline-none font-body font-bold text-[var(--text)] resize-none"
                   />
-                  <p className="text-[9px] text-[var(--muted)]">Tip: Use `{{agentName}}` to automatically insert the agent's name.</p>
+                  <p className="text-[9px] text-[var(--muted)]">Tip: Use {"{{agentName}}"} to automatically insert the agent's name.</p>
                 </div>
 
                 <div className="flex gap-2 justify-end pt-2 border-t border-[var(--border)]">

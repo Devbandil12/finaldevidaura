@@ -740,7 +740,7 @@ const SiteControlTab = () => {
                   Cancel
                 </button>
                 <button 
-                  onClick={confirmAction}
+                  onClick={confirmModalAction}
                   disabled={updateStatus.isPending || (modalConfig.type === 'EMERGENCY' && promptInput !== 'SHUTDOWN')}
                   className={`px-5 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm disabled:opacity-50 ${
                     modalConfig.type === 'EMERGENCY' ? 'bg-[var(--error)] text-white hover:brightness-110' : 'bg-[var(--text)] text-[var(--surface)] hover:bg-[var(--brand)]'

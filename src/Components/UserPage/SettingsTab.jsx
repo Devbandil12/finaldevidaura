@@ -64,7 +64,7 @@ export default function SettingsTab({ user, onUpdate, activeSection = 'profile' 
     if (!currentPhone || !/^[6-9]\d{9}$/.test(currentPhone)) {
       return window.toast.error("Enter a valid 10-digit number and save it first.");
     }
-    await startVerification(currentPhone);
+    await startVerification(currentPhone, 'PHONE_SETTINGS');
   };
 
   const onSubmit = async (data) => {

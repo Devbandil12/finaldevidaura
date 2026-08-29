@@ -6,7 +6,9 @@ import { useAuth, useUser } from "@clerk/clerk-react"; // 🟢 Import useAuth
 import { motion, AnimatePresence } from "framer-motion";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Assuming you use this
 import { faLocationArrow } from '@fortawesome/free-solid-svg-icons'; // Assuming you use this
-import AddressPhoneField from "../Components/AddressPhoneField"; // 🟢 NEW: Part A3
+import AddressPhoneField from "../Components/AddressPhoneField";
+import PhoneOtpModal from "../Components/PhoneOtpModal";
+import usePhoneVerification from "../features/verification/hooks/usePhoneVerification";
 
 const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "") + "/api/address";
 
@@ -106,6 +108,13 @@ export default function AddressSelection({ userId, onSelect }) {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [customAddressType, setCustomAddressType] = useState("");
+
+  const { modal, startVerification, verifyCode, resendCode, closeModal } = usePhoneVerification({
+    onVerified: () => {
+      window.toast?.success("Number verified! Saving address...");
+      saveAddress(true); // retry save
+    }
+  });
 
   // --- 🟢 1. FETCH ADDRESSES (SECURE) ---
   useEffect(() => {
@@ -225,8 +234,8 @@ export default function AddressSelection({ userId, onSelect }) {
   }
 
   // --- 🟢 4. SAVE ADDRESS (SECURE) ---
-  async function saveAddress() {
-    setFormError("");
+  async function saveAddress(isRetry = false) {
+    if (!isRetry) setFormError("");
     if (!userId) {
       return window.toast.error("User ID is missing. Please try again.");
     }
@@ -290,7 +299,11 @@ export default function AddressSelection({ userId, onSelect }) {
         setEditingId(null);
         window.toast.success(isEditing ? "Address updated successfully!" : "Address added successfully!");
       } else {
-        window.toast.error(data.msg || "Failed to save address.");
+        if (res.status === 403 && data.code === 'PHONE_VERIFICATION_REQUIRED') {
+          startVerification(formAddress.phone, 'ADDRESS');
+        } else {
+          window.toast.error(data.msg || "Failed to save address.");
+        }
       }
     } catch (err) {
       console.error("saveAddress error:", err);
@@ -553,6 +566,16 @@ export default function AddressSelection({ userId, onSelect }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PhoneOtpModal
+        open={modal.open}
+        maskedPhone={modal.maskedPhone}
+        channel={modal.channel}
+        expiresInSeconds={modal.expiresInSeconds}
+        onVerify={verifyCode}
+        onResend={resendCode}
+        onClose={closeModal}
+      />
     </div>
   );
 }

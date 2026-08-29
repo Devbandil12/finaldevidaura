@@ -10,7 +10,8 @@ import PaymentDetails from "./PaymentDetails";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, CreditCard, Check, ArrowLeft, Loader2, ChevronRight, ShieldCheck } from "lucide-react";
 import { generateIdempotencyKey } from "../utils/idempotency";
-import CheckoutOtpModal from "../Components/CheckoutOtpModal"; // 🟢 NEW: COD WhatsApp OTP
+import PhoneOtpModal from "../Components/PhoneOtpModal";
+import usePhoneVerification from "../features/verification/hooks/usePhoneVerification";
 
 const BACKEND = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, '');
 
@@ -39,14 +40,10 @@ export default function Checkout() {
 
   const [useWallet, setUseWallet] = useState(false);
 
-  // 🟢 NEW: COD WhatsApp OTP — only populated when the backend risk engine
-  // actually flags this order; most checkouts never touch this state.
-  const [otpModal, setOtpModal] = useState({
-    open: false,
-    otpRequestId: null,
-    maskedPhone: "",
-    channel: "whatsapp",
-    expiresInSeconds: 300,
+  const { modal: otpModal, startVerification, verifyCode, resendCode, closeModal } = usePhoneVerification({
+    onVerified: () => {
+      window.toast?.success("Number verified! You can now place your order.");
+    }
   });
 
   const finalBreakdown = useMemo(() => {
@@ -151,8 +148,8 @@ export default function Checkout() {
   }, [selectedItems, appliedCoupon, selectedAddress, getToken, userdetails?.id]);
 
   const refreshOrdersOnly = useCallback(() => {
-    if (getorders) getorders().catch(err => console.log("Bg refresh error", err));
-  }, [getorders]);
+    // Orders will be fetched freshly when navigating to My Orders or Confirmation
+  }, []);
 
   const handleRazorpaySuccess = useCallback(async (paymentId) => {
     setIsSubmitting(true);
@@ -168,45 +165,7 @@ export default function Checkout() {
     finally { setIsSubmitting(false); }
   }, [refreshOrdersOnly, navigate, transactionId]);
 
-  // 🟢 NEW: COD WhatsApp OTP — asks the risk engine whether this order
-  // needs verification. Returns { required: false } for the vast majority
-  // of orders (nothing shown, nothing sent). Only opens the modal — and
-  // only then does MSG91 actually get billed — when the backend says yes.
-  const requestCodOtp = useCallback(async () => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`${BACKEND}/api/checkout-otp/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userAddressId: selectedAddress.id,
-          cartTotal: finalBreakdown.total,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.msg || "Couldn't start verification.");
-      }
-      if (data.required) {
-        setOtpModal({
-          open: true,
-          otpRequestId: data.otpRequestId,
-          maskedPhone: data.maskedPhone,
-          channel: data.channel,
-          expiresInSeconds: data.expiresInSeconds || 300,
-        });
-      }
-      return data;
-    } catch (err) {
-      window.toast.error(err.message || "Couldn't start verification.");
-      return { required: false, success: false };
-    }
-  }, [getToken, selectedAddress, finalBreakdown.total]);
-
-  // OPTIMIZED: COD SUCCESS (Secured)
+  // COD Success handler
   // 🟢 UPDATED: now token-aware. otpVerificationToken is null for the vast
   // majority of orders (the risk engine didn't flag them) and only set
   // after the customer clears the WhatsApp OTP modal below.
@@ -236,13 +195,9 @@ export default function Checkout() {
       const data = await res.json();
       
       if (!res.ok || !data.success) {
-        // 🟢 NEW: defense-in-depth path — the backend is the real gate, so
-        // even if our own /send call said "not required" (e.g. a race, or
-        // a client that skipped it), handle a late OTP_REQUIRED gracefully
-        // instead of just showing a raw error.
-        if (data.code === "OTP_REQUIRED") {
-          const sendRes = await requestCodOtp();
-          if (sendRes?.required) return; // modal is now open, user will retry via it
+        if (res.status === 403 && data.code === "PHONE_VERIFICATION_REQUIRED") {
+          startVerification(selectedAddress.phone, 'CHECKOUT');
+          return; // modal is now open, user will retry via it
         }
         throw new Error(data.msg || "Order failed.");
       }
@@ -259,50 +214,14 @@ export default function Checkout() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, navigate, useWallet, getToken, requestCodOtp]);
+  }, [selectedItems, selectedAddress, appliedCoupon, refreshOrdersOnly, navigate, useWallet, getToken, startVerification]);
 
   const handlePlaceOrderCOD = useCallback(async () => {
     if (isSubmitting) return;
     if (!selectedAddress) return window.toast.error("Please select a delivery address.");
     setIsSubmitting(true);
-
-    const otpCheck = await requestCodOtp();
-    if (otpCheck?.required) {
-      // Modal is now open — submitCodOrder(token) fires from onVerifySuccess below.
-      setIsSubmitting(false);
-      return;
-    }
     await submitCodOrder(null);
-  }, [isSubmitting, selectedAddress, requestCodOtp, submitCodOrder]);
-
-  // 🟢 NEW: COD WhatsApp OTP — modal handlers
-  const handleOtpVerify = useCallback(async (code) => {
-    const token = await getToken();
-    const res = await fetch(`${BACKEND}/api/checkout-otp/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({ otpRequestId: otpModal.otpRequestId, code }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      setOtpModal((prev) => ({ ...prev, open: false }));
-      setIsSubmitting(true);
-      await submitCodOrder(data.verificationToken);
-    }
-    return data;
-  }, [getToken, otpModal.otpRequestId, submitCodOrder]);
-
-  const handleOtpResend = useCallback(async () => {
-    return requestCodOtp();
-  }, [requestCodOtp]);
-
-  const handleOtpClose = useCallback(() => {
-    setOtpModal((prev) => ({ ...prev, open: false }));
-    setIsSubmitting(false);
-  }, []);
+  }, [isSubmitting, selectedAddress, submitCodOrder]);
 
   const handleNext = () => {
     if (loadingPrices) return;
@@ -427,10 +346,8 @@ export default function Checkout() {
                         paymentVerified={paymentVerified}
                         setTransactionId={setTransactionId}
                         useWallet={useWallet} 
-                        setUseWallet={setUseWallet} 
-                        // 🟢 FIX: idempotency key for the Razorpay flow is now generated
-                        // internally inside PaymentDetails.jsx, fresh per attempt — see
-                        // handleRazorpayPayment(). No prop needed here.
+                        setUseWallet={setUseWallet}
+                        startVerification={startVerification}
                       />
                     )}
                   </motion.div>
@@ -490,14 +407,14 @@ export default function Checkout() {
         </div>
       </div>
 
-      <CheckoutOtpModal
+      <PhoneOtpModal
         open={otpModal.open}
         maskedPhone={otpModal.maskedPhone}
         channel={otpModal.channel}
         expiresInSeconds={otpModal.expiresInSeconds}
-        onVerify={handleOtpVerify}
-        onResend={handleOtpResend}
-        onClose={handleOtpClose}
+        onVerify={verifyCode}
+        onResend={resendCode}
+        onClose={closeModal}
       />
     </>
   );

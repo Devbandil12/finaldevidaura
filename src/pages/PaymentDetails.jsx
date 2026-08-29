@@ -23,12 +23,8 @@ export default function PaymentDetails({
     paymentVerified,
     setTransactionId,
     useWallet, 
-    setUseWallet
-    // 🟢 FIX: idempotency key is no longer passed as a prop — Checkout.jsx
-    // never actually supplied it, which meant every Razorpay checkout sent
-    // the literal string "undefined" as the header value and could lock
-    // ALL users out of online payment for 24h after the first order. It's
-    // now generated fresh, right here, per attempt (see handleRazorpayPayment).
+    setUseWallet,
+    startVerification
 }) {
     const [paymentMethod, setPaymentMethod] = useState("Razorpay");
     const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
@@ -125,6 +121,11 @@ export default function PaymentDetails({
             const orderData = await orderResponse.json();
 
             if (!orderResponse.ok) {
+                if (orderResponse.status === 403 && orderData.code === "PHONE_VERIFICATION_REQUIRED") {
+                    startVerification(selectedAddress.phone, 'CHECKOUT');
+                    setIsProcessing(false);
+                    return; // User will verify in modal and click pay again
+                }
                 throw new Error(orderData.msg || "Could not create order.");
             }
 

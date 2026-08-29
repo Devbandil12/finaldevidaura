@@ -352,7 +352,7 @@ const ProductCard = memo(
                     duration: 0.25,
                   }}
                   onClick={(e) =>
-                    toggleWishlist({ product, variant: selectedVariant })
+                    onToggleWishlist({ product, variant: selectedVariant })
                   }
                   className={`relative z-10 w-11 h-11 rounded-full border transition-all duration-300 flex items-center justify-center shadow-sm ${inWishlist
                       ? "bg-stone-900 text-white border-stone-900"

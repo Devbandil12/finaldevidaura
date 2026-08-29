@@ -229,7 +229,7 @@ const Wishlist = () => {
                                 if (isOutOfStock) {
                                   navigate(`/product/${product.id}`);
                                 } else {
-                                  moveFromWishlistToCart({ product, variant: variant || { id: item.variantId } });
+                                  moveFromWishlistToCart({ product, variant });
                                 }
                               }}
                               variant={isOutOfStock ? "secondary" : "primary"}

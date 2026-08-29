@@ -36,7 +36,7 @@ export default function AddressPhoneField({ value, onChange, className = "", inp
     (async () => {
       try {
         const token = await getToken();
-        const res = await fetch(`${BACKEND}/api/phone-verification/list`, {
+        const res = await fetch(`${BACKEND}/api/otp/list`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -50,7 +50,12 @@ export default function AddressPhoneField({ value, onChange, className = "", inp
     return () => { cancelled = true; };
   }, [getToken]);
 
-  const isCurrentValueVerified = verifiedPhones.some(p => p.phone === value);
+  const normalizePhone = (p) => {
+    const d = String(p || '').replace(/\D/g, '');
+    return d.length === 10 ? `91${d}` : d;
+  };
+
+  const isCurrentValueVerified = verifiedPhones.some(p => normalizePhone(p.phone) === normalizePhone(value));
 
   const { modal: otpModal, startVerification, verifyCode, resendCode, closeModal } = usePhoneVerification({
     onVerified: (phone) => {
@@ -99,7 +104,7 @@ export default function AddressPhoneField({ value, onChange, className = "", inp
                   key={p.phone}
                   onClick={() => { onChange(p.phone); setShowPicker(false); }}
                   className={`text-xs px-2.5 py-1 rounded-full border flex items-center gap-1 transition-colors ${
-                    value === p.phone ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                    normalizePhone(value) === normalizePhone(p.phone) ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
                   }`}
                 >
                   <ShieldCheck size={11} /> {p.phone}
